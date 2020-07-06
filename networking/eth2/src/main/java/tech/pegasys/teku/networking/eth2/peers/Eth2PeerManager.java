@@ -33,7 +33,7 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFa
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
-import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
@@ -138,7 +138,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     Cancellable periodicStatusUpdateTask = periodicallyUpdatePeerStatus(peer);
     Cancellable periodicPingTask = periodicallyPingPeer(peer);
     peer.subscribeDisconnect(
-        () -> {
+        (reason, locallyInitiated) -> {
           periodicStatusUpdateTask.cancel();
           periodicPingTask.cancel();
         });
@@ -185,12 +185,13 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                       RpcException.class,
                       err -> {
                         LOG.trace("Status message rejected by {}: {}", peer.getId(), err);
-                        eth2Peer.disconnectImmediately();
+                        eth2Peer.disconnectImmediately(
+                            Optional.of(DisconnectReason.REMOTE_FAULT), true);
                       })
                   .defaultCatch(
                       err -> {
                         LOG.debug("Failed to send status to {}: {}", peer.getId(), err);
-                        eth2Peer.disconnectImmediately();
+                        eth2Peer.disconnectImmediately(Optional.empty(), true);
                       }));
     } else {
       ensureStatusReceived(eth2Peer);
@@ -229,7 +230,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
               LOG.error(
                   "Error while waiting for peer {} to exchange status. Disconnecting",
                   peer.getId());
-              peer.disconnectImmediately();
+              peer.disconnectImmediately(Optional.of(DisconnectReason.REMOTE_FAULT), true);
             });
   }
 

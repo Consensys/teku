@@ -22,6 +22,7 @@ import static tech.pegasys.teku.util.Waiter.waitFor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,7 +36,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
@@ -109,7 +110,7 @@ public abstract class BeaconBlocksByRootIntegrationTest {
     final SignedBeaconBlock block = addBlock();
     final Bytes32 blockHash = block.getMessage().hash_tree_root();
 
-    peer1.disconnectImmediately();
+    peer1.disconnectImmediately(Optional.empty(), false);
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     final SafeFuture<Void> res = peer1.requestBlocksByRoot(List.of(blockHash), blocks::add);
 
@@ -139,7 +140,7 @@ public abstract class BeaconBlocksByRootIntegrationTest {
     final SignedBeaconBlock block = addBlock();
     final Bytes32 blockHash = block.getMessage().hash_tree_root();
 
-    peer1.disconnectImmediately();
+    peer1.disconnectImmediately(Optional.empty(), false);
     final SafeFuture<SignedBeaconBlock> res = peer1.requestBlockByRoot(blockHash);
 
     waitFor(() -> assertThat(res).isDone());
