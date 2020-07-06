@@ -370,26 +370,29 @@ public class ForkChoiceUtil {
    */
   private static AttestationProcessingResult indexAndValidateAttestation(
       MutableStore store, ValidateableAttestation attestation, Checkpoint target) {
-    BeaconState target_state;
+    BeaconState targetState;
     try {
-      target_state = store.getCheckpointState(target);
+      Optional<BeaconState> maybeTargetState = store.getCheckpointState(target);
+      if (maybeTargetState.isEmpty()) {
+        return AttestationProcessingResult.UNKNOWN_BLOCK;
+      }
+      targetState = maybeTargetState.get();
     } catch (final InvalidCheckpointException e) {
       LOG.debug("on_attestation: Attestation target checkpoint is invalid", e);
       return AttestationProcessingResult.invalid("Invalid target checkpoint: " + e.getMessage());
     }
 
-    // Get state at the `target` to validate attestation and calculate the committees
-    IndexedAttestation indexed_attestation;
+    IndexedAttestation indexedAttestation;
     try {
-      indexed_attestation = get_indexed_attestation(target_state, attestation.getAttestation());
+      indexedAttestation = get_indexed_attestation(targetState, attestation.getAttestation());
     } catch (IllegalArgumentException e) {
       LOG.debug("on_attestation: Attestation is not valid: ", e);
       return AttestationProcessingResult.invalid(e.getMessage());
     }
-    return is_valid_indexed_attestation(target_state, indexed_attestation)
+    return is_valid_indexed_attestation(targetState, indexedAttestation)
         .ifSuccessful(
             () -> {
-              attestation.setIndexedAttestation(indexed_attestation);
+              attestation.setIndexedAttestation(indexedAttestation);
               return SUCCESSFUL;
             });
   }
