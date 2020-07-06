@@ -17,6 +17,7 @@ import com.google.common.eventbus.EventBus;
 import java.nio.file.Path;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
+import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel;
@@ -136,6 +137,7 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
             metricsSystem,
             chainStorageServer,
             chainStorageServer,
+            new StubProtoArrayStorageChannel(),
             finalizedCheckpointChannel,
             reorgEventChannel,
             eventBus);

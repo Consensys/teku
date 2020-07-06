@@ -16,13 +16,13 @@ package tech.pegasys.teku.cli.deposit;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static tech.pegasys.teku.cli.deposit.KeystorePasswordOptions.readFromEnvironmentVariable;
 import static tech.pegasys.teku.cli.deposit.KeystorePasswordOptions.readFromFile;
-import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -43,9 +43,9 @@ public class GenerateAction {
   private final WithdrawalPasswordOptions withdrawalPasswordOptions;
   private final SecureRandom srng;
   private final ConsoleAdapter consoleAdapter;
-  private final boolean displayConfirmation;
   private final CommandSpec commandSpec;
   private final Function<String, String> envSupplier;
+  private final Consumer<String> commandOutput;
 
   public GenerateAction(
       final int validatorCount,
@@ -53,19 +53,19 @@ public class GenerateAction {
       final boolean encryptKeys,
       final ValidatorPasswordOptions validatorPasswordOptions,
       final WithdrawalPasswordOptions withdrawalPasswordOptions,
-      final boolean displayConfirmation,
       final ConsoleAdapter consoleAdapter,
       final CommandSpec commandSpec,
-      final Function<String, String> envSupplier) {
+      final Function<String, String> envSupplier,
+      final Consumer<String> commandOutput) {
     this.validatorCount = validatorCount;
     this.outputPath = outputPath;
     this.encryptKeys = encryptKeys;
     this.validatorPasswordOptions = validatorPasswordOptions;
     this.withdrawalPasswordOptions = withdrawalPasswordOptions;
     this.consoleAdapter = consoleAdapter;
-    this.displayConfirmation = displayConfirmation;
     this.commandSpec = commandSpec;
     this.envSupplier = envSupplier;
+    this.commandOutput = commandOutput;
     this.srng = SecureRandomProvider.createSecureRandom();
   }
 
@@ -96,11 +96,15 @@ public class GenerateAction {
       final Path keystoreDir = getKeystoreOutputDir();
       keysWriter =
           new EncryptedKeystoreWriter(
-              secureRandom, validatorKeystorePassword, withdrawalKeystorePassword, keystoreDir);
+              secureRandom,
+              validatorKeystorePassword,
+              withdrawalKeystorePassword,
+              keystoreDir,
+              commandOutput);
     } else {
       keysWriter = new YamlKeysWriter(isBlank(outputPath) ? null : Path.of(outputPath));
-      if (consoleAdapter.isConsoleAvailable() && isBlank(outputPath) && displayConfirmation) {
-        SUB_COMMAND_LOG.display(
+      if (consoleAdapter.isConsoleAvailable() && isBlank(outputPath)) {
+        commandOutput.accept(
             "NOTE: This is the only time your keys will be displayed. Save these before they are gone!");
       }
     }
