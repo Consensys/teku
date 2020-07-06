@@ -58,7 +58,7 @@ class DepositGenerateAndRegisterCommandTest {
 
     final DepositGenerateAndRegisterCommand depositGenerateAndRegisterCommand =
         new DepositGenerateAndRegisterCommand(
-            shutdownFunction, registerParams, generateParams, true);
+            shutdownFunction, registerParams, generateParams, new VerboseOutputParam(true));
 
     depositGenerateAndRegisterCommand.run();
 
@@ -81,7 +81,7 @@ class DepositGenerateAndRegisterCommandTest {
 
     final DepositGenerateAndRegisterCommand depositGenerateAndRegisterCommand =
         new DepositGenerateAndRegisterCommand(
-            shutdownFunction, registerParams, generateParams, true);
+            shutdownFunction, registerParams, generateParams, new VerboseOutputParam(true));
 
     depositGenerateAndRegisterCommand.run();
 
@@ -99,11 +99,11 @@ class DepositGenerateAndRegisterCommandTest {
   public void generatesAndRegistersWithQuietOutputMode() {
     final DepositGenerateAndRegisterCommand depositGenerateAndRegisterCommand =
         new DepositGenerateAndRegisterCommand(
-            shutdownFunction, registerParams, generateParams, true);
+            shutdownFunction, registerParams, generateParams, new VerboseOutputParam(false));
 
     depositGenerateAndRegisterCommand.run();
-    verify(generateParams).createGenerateAction(true);
-    verify(registerParams).createRegisterAction(true);
+    verify(generateParams).createGenerateAction(false);
+    verify(registerParams).createRegisterAction(false);
     verify(generateAction).generateKeysStream();
   }
 
@@ -111,11 +111,11 @@ class DepositGenerateAndRegisterCommandTest {
   public void generatesAndRegistersWithDefaultOutputMode() {
     final DepositGenerateAndRegisterCommand depositGenerateAndRegisterCommand =
         new DepositGenerateAndRegisterCommand(
-            shutdownFunction, registerParams, generateParams, false);
+            shutdownFunction, registerParams, generateParams, new VerboseOutputParam(true));
 
     depositGenerateAndRegisterCommand.run();
-    verify(generateParams).createGenerateAction(false);
-    verify(registerParams).createRegisterAction(false);
+    verify(generateParams).createGenerateAction(true);
+    verify(registerParams).createRegisterAction(true);
     verify(generateAction).generateKeysStream();
   }
 

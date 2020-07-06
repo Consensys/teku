@@ -75,7 +75,7 @@ public class GenerateParams {
     this.consoleAdapter = consoleAdapter;
   }
 
-  public GenerateAction createGenerateAction(final boolean quietStdOutput) {
+  public GenerateAction createGenerateAction(final boolean verboseOutputEnabled) {
     return new GenerateAction(
         validatorCount,
         outputPath,
@@ -85,7 +85,7 @@ public class GenerateParams {
         consoleAdapter,
         spec,
         envSupplier,
-        quietStdOutput ? s -> {} : SUB_COMMAND_LOG::display);
+        verboseOutputEnabled ? SUB_COMMAND_LOG::display : s -> {});
   }
 
   public int getValidatorCount() {

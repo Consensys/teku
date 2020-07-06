@@ -43,7 +43,7 @@ public class RegisterAction implements AutoCloseable {
   private final String eth1NodeUrl;
   private final Eth1Address contractAddress;
   private final String network;
-  private final boolean quietStdOutput;
+  private final boolean verboseOutputEnabled;
   private final UnsignedLong amount;
   private final DepositTransactionSender sender;
   private OkHttpClient httpClient;
@@ -57,7 +57,7 @@ public class RegisterAction implements AutoCloseable {
       final Credentials eth1Credentials,
       final Eth1Address contractAddress,
       final String network,
-      final boolean quietStdOutput,
+      final boolean verboseOutputEnabled,
       final UnsignedLong amount,
       final IntConsumer shutdownFunction,
       final ConsoleAdapter consoleAdapter) {
@@ -65,8 +65,8 @@ public class RegisterAction implements AutoCloseable {
     this.eth1Credentials = eth1Credentials;
     this.contractAddress = contractAddress;
     this.network = network;
-    this.quietStdOutput = quietStdOutput;
-    this.commandStdOutput = quietStdOutput ? s -> {} : SUB_COMMAND_LOG::display;
+    this.verboseOutputEnabled = verboseOutputEnabled;
+    this.commandStdOutput = verboseOutputEnabled ? SUB_COMMAND_LOG::display : s -> {};
     this.commandErrorOutput = SUB_COMMAND_LOG::error;
     this.amount = amount;
     this.shutdownFunction = shutdownFunction;
@@ -94,7 +94,7 @@ public class RegisterAction implements AutoCloseable {
   }
 
   public void displayConfirmation(final int totalNumberOfDeposits) {
-    if (quietStdOutput || !consoleAdapter.isConsoleAvailable()) {
+    if (!verboseOutputEnabled || !consoleAdapter.isConsoleAvailable()) {
       return;
     }
 

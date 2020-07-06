@@ -65,10 +65,7 @@ public class DepositRegisterCommand implements Runnable {
       description = "Public withdrawal key for the validator")
   private String withdrawalKey;
 
-  @Option(
-      names = {"--Xquiet"},
-      hidden = true)
-  private boolean quietStdOutput;
+  @Mixin private VerboseOutputParam verboseOutputParam;
 
   DepositRegisterCommand() {
     // required because web3j use non-daemon threads which halts the program
@@ -90,6 +87,7 @@ public class DepositRegisterCommand implements Runnable {
     this.registerParams = registerParams;
     this.validatorKeyOptions = validatorKeyOptions;
     this.withdrawalKey = withdrawalKey;
+    this.verboseOutputParam = new VerboseOutputParam(true);
   }
 
   @Override
@@ -97,7 +95,7 @@ public class DepositRegisterCommand implements Runnable {
     final BLSKeyPair validatorKey = getValidatorKey();
 
     try (final RegisterAction registerAction =
-        registerParams.createRegisterAction(quietStdOutput)) {
+        registerParams.createRegisterAction(verboseOutputParam.isVerboseOutputEnabled())) {
       final BLSPublicKey withdrawalPublicKey =
           BLSPublicKey.fromBytesCompressed(Bytes.fromHexString(this.withdrawalKey));
       registerAction.displayConfirmation(1);

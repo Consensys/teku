@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.function.Consumer;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
-import picocli.CommandLine.Option;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 
 @Command(
@@ -36,11 +35,7 @@ public class DepositGenerateCommand implements Runnable {
   private final Consumer<Integer> shutdownFunction;
 
   @Mixin private GenerateParams generateParams;
-
-  @Option(
-      names = {"--Xquiet"},
-      hidden = true)
-  private boolean quietStdOutput;
+  @Mixin private VerboseOutputParam verboseOutputParam;
 
   public DepositGenerateCommand() {
     this.shutdownFunction =
@@ -51,15 +46,16 @@ public class DepositGenerateCommand implements Runnable {
   DepositGenerateCommand(
       final Consumer<Integer> shutdownFunction,
       final GenerateParams generateParams,
-      final boolean quietStdOutput) {
+      final VerboseOutputParam verboseOutputParam) {
     this.shutdownFunction = shutdownFunction;
     this.generateParams = generateParams;
-    this.quietStdOutput = quietStdOutput;
+    this.verboseOutputParam = verboseOutputParam;
   }
 
   @Override
   public void run() {
-    final GenerateAction generateAction = generateParams.createGenerateAction(quietStdOutput);
+    final GenerateAction generateAction =
+        generateParams.createGenerateAction(verboseOutputParam.isVerboseOutputEnabled());
     generateAction.generateKeys();
     shutdownFunction.accept(0);
   }

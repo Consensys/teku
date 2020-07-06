@@ -92,7 +92,7 @@ public class RegisterParams {
     this.consoleAdapter = consoleAdapter;
   }
 
-  public RegisterAction createRegisterAction(final boolean quietStdOutput) {
+  public RegisterAction createRegisterAction(final boolean verboseOutputEnabled) {
     final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(network);
     Constants.setConstants(networkDefinition.getConstants());
     return new RegisterAction(
@@ -100,7 +100,7 @@ public class RegisterParams {
         getEth1Credentials(),
         getContractAddress(networkDefinition),
         network,
-        quietStdOutput,
+        verboseOutputEnabled,
         getAmount(),
         shutdownFunction,
         consoleAdapter);

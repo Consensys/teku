@@ -36,6 +36,8 @@ public class TekuDepositSender extends Node {
         "generate-and-register",
         "--network",
         "minimal",
+        "--verbose-output-enabled",
+        "false",
         "--encrypted-keystore-enabled",
         ENCRYPTED_KEYSTORE_ENABLED,
         "--eth1-deposit-contract-address",
@@ -45,8 +47,7 @@ public class TekuDepositSender extends Node {
         "--eth1-private-key",
         eth1Node.getRichBenefactorKey(),
         "--eth1-endpoint",
-        eth1Node.getInternalJsonRpcUrl(),
-        "--Xquiet");
+        eth1Node.getInternalJsonRpcUrl());
     final StringBuilder validatorKeys = new StringBuilder();
     container.withLogConsumer(outputFrame -> validatorKeys.append(outputFrame.getUtf8String()));
     container.start();

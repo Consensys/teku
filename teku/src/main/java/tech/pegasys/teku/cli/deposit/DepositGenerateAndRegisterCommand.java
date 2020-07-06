@@ -25,7 +25,6 @@ import org.jetbrains.annotations.NotNull;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
-import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.deposit.GenerateAction.ValidatorKeys;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
@@ -48,11 +47,7 @@ public class DepositGenerateAndRegisterCommand implements Runnable {
 
   @Mixin private RegisterParams registerParams;
   @Mixin private GenerateParams generateParams;
-
-  @Option(
-      names = {"--Xquiet"},
-      hidden = true)
-  private boolean quietStdOutput;
+  @Mixin private VerboseOutputParam verboseOutputParam;
 
   public DepositGenerateAndRegisterCommand() {
     this.shutdownFunction =
@@ -64,19 +59,20 @@ public class DepositGenerateAndRegisterCommand implements Runnable {
       final Consumer<Integer> shutdownFunction,
       final RegisterParams registerParams,
       final GenerateParams generateParams,
-      final boolean quietStdOutput) {
+      final VerboseOutputParam verboseOutputParam) {
     this.shutdownFunction = shutdownFunction;
     this.registerParams = registerParams;
     this.generateParams = generateParams;
-    this.quietStdOutput = quietStdOutput;
+    this.verboseOutputParam = verboseOutputParam;
   }
 
   @Override
   public void run() {
-    final GenerateAction generateAction = generateParams.createGenerateAction(quietStdOutput);
+    final GenerateAction generateAction =
+        generateParams.createGenerateAction(verboseOutputParam.isVerboseOutputEnabled());
 
     try (final RegisterAction registerAction =
-        registerParams.createRegisterAction(quietStdOutput)) {
+        registerParams.createRegisterAction(verboseOutputParam.isVerboseOutputEnabled())) {
       registerAction.displayConfirmation(generateParams.getValidatorCount());
       final List<SafeFuture<TransactionReceipt>> transactionReceipts =
           generateAction
