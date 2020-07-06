@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -87,7 +88,7 @@ public class PeerSyncTest {
     final BlockImportResult result = BlockImportResult.successful(processingRecord);
     when(processingRecord.getBlock()).thenReturn(block);
     when(blockImporter.importBlock(any())).thenReturn(result);
-    peerSync = new PeerSync(asyncRunner, storageClient, blockImporter);
+    peerSync = new PeerSync(asyncRunner, storageClient, blockImporter, new NoOpMetricsSystem());
   }
 
   @Test
@@ -242,7 +243,7 @@ public class PeerSyncTest {
                 peerHeadSlot));
 
     when(peer.getStatus()).thenReturn(peer_status);
-    peerSync = new PeerSync(asyncRunner, storageClient, blockImporter);
+    peerSync = new PeerSync(asyncRunner, storageClient, blockImporter, new NoOpMetricsSystem());
 
     final SafeFuture<Void> requestFuture1 = new SafeFuture<>();
     final SafeFuture<Void> requestFuture2 = new SafeFuture<>();
@@ -315,7 +316,7 @@ public class PeerSyncTest {
                 peerHeadSlot));
 
     when(peer.getStatus()).thenReturn(peer_status);
-    peerSync = new PeerSync(asyncRunner, storageClient, blockImporter);
+    peerSync = new PeerSync(asyncRunner, storageClient, blockImporter, new NoOpMetricsSystem());
 
     final SafeFuture<Void> requestFuture1 = new SafeFuture<>();
     final SafeFuture<Void> requestFuture2 = new SafeFuture<>();

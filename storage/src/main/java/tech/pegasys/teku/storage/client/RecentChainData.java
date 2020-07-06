@@ -68,7 +68,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   private volatile UpdatableStore store;
   private volatile Optional<ProtoArrayForkChoiceStrategy> forkChoiceStrategy;
-  private volatile Optional<SignedBlockAndState> chainHead = Optional.empty();
+  private volatile Optional<SignedBlockAndStateAndSlot> chainHead = Optional.empty();
   private volatile UnsignedLong genesisTime;
 
   RecentChainData(
@@ -186,11 +186,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
             newBestBlock == null ? "block" : "state");
         return;
       }
-      final SignedBlockAndState newChainHead = new SignedBlockAndState(newBestBlock, newBestState);
+      final SignedBlockAndStateAndSlot newChainHead =
+          new SignedBlockAndStateAndSlot(newBestBlock, newBestState, slot);
 
       final Optional<Bytes32> originalBestRoot = chainHead.map(SignedBlockAndState::getRoot);
       final UnsignedLong originalBestSlot =
-          chainHead.map(SignedBlockAndState::getSlot).orElse(UnsignedLong.ZERO);
+          chainHead.map(SignedBlockAndStateAndSlot::getHeadSlot).orElse(UnsignedLong.ZERO);
 
       this.chainHead = Optional.of(newChainHead);
       if (originalBestRoot
@@ -360,5 +361,19 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   public void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint) {
     finalizedCheckpointChannel.onNewFinalizedCheckpoint(finalizedCheckpoint);
     forkChoiceStrategy.ifPresent(strategy -> strategy.maybePrune(finalizedCheckpoint.getRoot()));
+  }
+
+  private static class SignedBlockAndStateAndSlot extends SignedBlockAndState {
+    private final UnsignedLong headSlot;
+
+    public SignedBlockAndStateAndSlot(
+        SignedBeaconBlock block, BeaconState state, UnsignedLong headSlot) {
+      super(block, state);
+      this.headSlot = headSlot;
+    }
+
+    public UnsignedLong getHeadSlot() {
+      return headSlot;
+    }
   }
 }

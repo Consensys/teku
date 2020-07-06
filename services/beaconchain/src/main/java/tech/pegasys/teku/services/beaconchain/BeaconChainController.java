@@ -487,7 +487,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               recentChainData,
               blockImporter);
       SyncManager syncManager =
-          SyncManager.create(asyncRunner, p2pNetwork, recentChainData, blockImporter);
+          SyncManager.create(
+              asyncRunner, p2pNetwork, recentChainData, blockImporter, metricsSystem);
       syncService = new DefaultSyncService(blockManager, syncManager, recentChainData);
       eventChannels
           .subscribe(SlotEventsChannel.class, blockManager)

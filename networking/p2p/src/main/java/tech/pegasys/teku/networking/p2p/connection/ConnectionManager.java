@@ -21,6 +21,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
@@ -41,11 +45,15 @@ public class ConnectionManager extends Service {
   private final DiscoveryService discoveryService;
   private final TargetPeerRange targetPeerCountRange;
   private final ReputationManager reputationManager;
+  private final Counter attemptedConnectionCounter;
+  private final Counter successfulConnectionCounter;
+  private final Counter failedConnectionCounter;
 
   private volatile long peerConnectedSubscriptionId;
   private final NewPeerFilter newPeerFilter = new NewPeerFilter();
 
   public ConnectionManager(
+      final MetricsSystem metricsSystem,
       final DiscoveryService discoveryService,
       final ReputationManager reputationManager,
       final AsyncRunner asyncRunner,
@@ -58,6 +66,16 @@ public class ConnectionManager extends Service {
     this.staticPeers = new HashSet<>(peerAddresses);
     this.discoveryService = discoveryService;
     this.targetPeerCountRange = targetPeerCountRange;
+
+    final LabelledMetric<Counter> connectionAttemptCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.NETWORK,
+            "peer_connection_attempt_count",
+            "Total number of outbound connection attempts made",
+            "status");
+    attemptedConnectionCounter = connectionAttemptCounter.labels("attempted");
+    successfulConnectionCounter = connectionAttemptCounter.labels("successful");
+    failedConnectionCounter = connectionAttemptCounter.labels("failed");
   }
 
   @Override
@@ -103,11 +121,18 @@ public class ConnectionManager extends Service {
   }
 
   private void attemptConnection(final PeerAddress discoveryPeer) {
+    attemptedConnectionCounter.inc();
     network
         .connect(discoveryPeer)
         .finish(
-            peer -> LOG.trace("Successfully connected to peer {}", peer.getId()),
-            error -> LOG.trace(() -> "Failed to connect to peer: " + discoveryPeer.getId(), error));
+            peer -> {
+              LOG.trace("Successfully connected to peer {}", peer.getId());
+              successfulConnectionCounter.inc();
+            },
+            error -> {
+              LOG.trace(() -> "Failed to connect to peer: " + discoveryPeer.getId(), error);
+              failedConnectionCounter.inc();
+            });
   }
 
   private void onPeerConnected(final Peer peer) {
@@ -142,11 +167,13 @@ public class ConnectionManager extends Service {
       return new SafeFuture<>();
     }
     LOG.debug("Connecting to peer {}", peerAddress);
+    attemptedConnectionCounter.inc();
     return network
         .connect(peerAddress)
         .thenApply(
             peer -> {
               LOG.debug("Connection to peer {} was successful", peer.getId());
+              successfulConnectionCounter.inc();
               peer.subscribeDisconnect(
                   () -> {
                     LOG.debug(
@@ -169,6 +196,7 @@ public class ConnectionManager extends Service {
                   peerAddress,
                   error,
                   RECONNECT_TIMEOUT.toSeconds());
+              failedConnectionCounter.inc();
               return asyncRunner.runAfterDelay(
                   () -> maintainPersistentConnection(peerAddress),
                   RECONNECT_TIMEOUT.toMillis(),

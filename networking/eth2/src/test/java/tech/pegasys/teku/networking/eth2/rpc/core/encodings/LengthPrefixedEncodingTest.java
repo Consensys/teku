@@ -31,6 +31,9 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRoot
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ChunkTooLongException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.MessageTruncatedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 class LengthPrefixedEncodingTest {
@@ -57,7 +60,7 @@ class LengthPrefixedEncodingTest {
                   usedBufs.add(bufSlice);
                 }
               })
-          .isEqualTo(RpcException.CHUNK_TOO_LONG);
+          .isInstanceOf(ChunkTooLongException.class);
       assertThat(usedBufs).allMatch(b -> b.refCnt() == 0);
     }
   }
@@ -78,7 +81,7 @@ class LengthPrefixedEncodingTest {
                 }
                 decoder.complete();
               })
-          .isEqualTo(RpcException.PAYLOAD_TRUNCATED);
+          .isInstanceOf(PayloadTruncatedException.class);
       assertThat(usedBufs).allMatch(b -> b.refCnt() == 0);
     }
   }
@@ -102,7 +105,7 @@ class LengthPrefixedEncodingTest {
                 }
                 decoder.complete();
               })
-          .isEqualTo(RpcException.PAYLOAD_TRUNCATED);
+          .isInstanceOf(PayloadTruncatedException.class);
       assertThat(usedBufs).allMatch(b -> b.refCnt() == 0);
     }
   }
@@ -152,7 +155,7 @@ class LengthPrefixedEncodingTest {
                 }
                 decoder.complete();
               })
-          .isEqualTo(RpcException.CHUNK_TOO_LONG);
+          .isInstanceOf(ChunkTooLongException.class);
       assertThat(usedBufs).allMatch(b -> b.refCnt() == 0);
     }
   }
@@ -167,7 +170,7 @@ class LengthPrefixedEncodingTest {
               decoder.decodeOneMessage(input);
               decoder.complete();
             })
-        .isEqualTo(RpcException.MESSAGE_TRUNCATED);
+        .isInstanceOf(MessageTruncatedException.class);
     input.release();
     assertThat(input.refCnt()).isEqualTo(0);
   }
@@ -182,7 +185,7 @@ class LengthPrefixedEncodingTest {
               decoder.decodeOneMessage(input);
               decoder.complete();
             })
-        .isEqualTo(RpcException.MESSAGE_TRUNCATED);
+        .isInstanceOf(MessageTruncatedException.class);
     input.release();
     assertThat(input.refCnt()).isEqualTo(0);
   }
@@ -192,7 +195,7 @@ class LengthPrefixedEncodingTest {
     final ByteBuf input = inputByteBuffer("0x80808001");
     RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.class);
     assertThatThrownBy(() -> decoder.decodeOneMessage(input))
-        .isEqualTo(RpcException.CHUNK_TOO_LONG);
+        .isInstanceOf(ChunkTooLongException.class);
     input.release();
     assertThat(input.refCnt()).isEqualTo(0);
   }

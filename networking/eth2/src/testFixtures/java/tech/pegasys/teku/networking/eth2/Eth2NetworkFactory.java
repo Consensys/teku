@@ -167,11 +167,15 @@ public class Eth2NetworkFactory {
 
         this.peerHandler(eth2PeerManager);
 
+        final NoOpMetricsSystem metricsSystem = new NoOpMetricsSystem();
         final ReputationManager reputationManager =
             new ReputationManager(
-                StubTimeProvider.withTimeInSeconds(1000), Constants.REPUTATION_MANAGER_CAPACITY);
+                metricsSystem,
+                StubTimeProvider.withTimeInSeconds(1000),
+                Constants.REPUTATION_MANAGER_CAPACITY);
         final DiscoveryNetwork<?> network =
             DiscoveryNetwork.create(
+                metricsSystem,
                 asyncRunner,
                 new LibP2PNetwork(
                     asyncRunner,

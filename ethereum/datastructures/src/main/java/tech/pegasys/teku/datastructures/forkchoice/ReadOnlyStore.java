@@ -62,7 +62,5 @@ public interface ReadOnlyStore {
 
   BeaconState getCheckpointState(Checkpoint checkpoint);
 
-  boolean containsCheckpointState(Checkpoint checkpoint);
-
   Set<UnsignedLong> getVotedValidatorIndices();
 }

@@ -23,7 +23,6 @@ import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
 public final class BeaconBlocksByRangeRequestMessage
     implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
-
   private final UnsignedLong startSlot;
   private final UnsignedLong count;
   private final UnsignedLong step;
