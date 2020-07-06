@@ -24,7 +24,7 @@ public class VerboseOutputParam {
       description = "Controls verbose status output. (default: ${DEFAULT-VALUE})",
       arity = "1",
       defaultValue = "true")
-  private boolean verboseOutputEnabled;
+  private boolean verboseOutputEnabled = true;
 
   VerboseOutputParam() {}
 
