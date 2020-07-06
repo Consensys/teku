@@ -40,6 +40,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel.ReorgEvent;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
@@ -51,9 +52,9 @@ import tech.pegasys.teku.util.config.StateStorageMode;
 
 class RecentChainDataTest {
   private final StorageSystem storageSystem =
-      InMemoryStorageSystem.createEmptyV3StorageSystem(StateStorageMode.PRUNE);
+      InMemoryStorageSystem.createEmptyLatestStorageSystem(StateStorageMode.PRUNE);
   private final StorageSystem preGenesisStorageSystem =
-      InMemoryStorageSystem.createEmptyV3StorageSystem(StateStorageMode.PRUNE);
+      InMemoryStorageSystem.createEmptyLatestStorageSystem(StateStorageMode.PRUNE);
 
   private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
@@ -176,6 +177,7 @@ class RecentChainDataTest {
   public void updateBestBlock_noReorgEventWhenBestBlockFirstSet() {
     preGenesisStorageClient.initializeFromGenesis(genesisState);
     assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(getReorgCountMetric(preGenesisStorageSystem)).isZero();
   }
 
   @Test
@@ -205,6 +207,7 @@ class RecentChainDataTest {
     importBlocksAndStates(chainBuilder);
     preGenesisStorageClient.updateBestBlock(slot1Block.getRoot(), UnsignedLong.valueOf(2));
     assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(getReorgCountMetric(preGenesisStorageSystem)).isZero();
 
     final SignedBlockAndState slot2Block = chainBuilder.generateBlockAtSlot(2);
     importBlocksAndStates(chainBuilder);
@@ -214,6 +217,7 @@ class RecentChainDataTest {
     assertThat(reorgEvents).hasSize(1);
     assertThat(reorgEvents.get(0).getBestBlockRoot()).isEqualTo(slot2Block.getRoot());
     assertThat(reorgEvents.get(0).getBestSlot()).isEqualTo(slot2Block.getSlot());
+    assertThat(getReorgCountMetric(preGenesisStorageSystem)).isEqualTo(1);
   }
 
   @Test
@@ -679,5 +683,12 @@ class RecentChainDataTest {
   private void disableForkChoicePruneThreshold() {
     ((ProtoArrayForkChoiceStrategy) storageClient.getForkChoiceStrategy().orElseThrow())
         .setPruneThreshold(0);
+  }
+
+  private long getReorgCountMetric(final StorageSystem storageSystem) {
+    return storageSystem
+        .getMetricsSystem()
+        .getCounter(TekuMetricCategory.BEACON, "reorgs_total")
+        .getValue();
   }
 }
