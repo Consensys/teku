@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -37,6 +38,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final MetricsSystem metricsSystem,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
+      final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ReorgEventChannel reorgEventChannel,
       final EventBus eventBus) {
@@ -44,6 +46,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
         metricsSystem,
         storageQueryChannel::getHotBlocksByRoot,
         storageUpdateChannel,
+        protoArrayStorageChannel,
         finalizedCheckpointChannel,
         reorgEventChannel,
         eventBus);
@@ -56,6 +59,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final AsyncRunner asyncRunner,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
+      final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ReorgEventChannel reorgEventChannel,
       final EventBus eventBus) {
@@ -64,6 +68,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             metricsSystem,
             storageQueryChannel,
             storageUpdateChannel,
+            protoArrayStorageChannel,
             finalizedCheckpointChannel,
             reorgEventChannel,
             eventBus);
@@ -76,6 +81,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final MetricsSystem metricsSystem,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
+      final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ReorgEventChannel reorgEventChannel,
       final EventBus eventBus) {
@@ -84,6 +90,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             metricsSystem,
             storageQueryChannel,
             storageUpdateChannel,
+            protoArrayStorageChannel,
             finalizedCheckpointChannel,
             reorgEventChannel,
             eventBus);
