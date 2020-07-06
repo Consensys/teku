@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
-import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -184,7 +185,7 @@ public class Eth2PeerManagerTest {
 
     peerManager.onConnect(peer);
 
-    verify(eth2Peer).disconnectImmediately();
+    verify(eth2Peer).disconnectImmediately(Optional.of(DisconnectReason.REMOTE_FAULT), true);
   }
 
   @Test
@@ -197,7 +198,7 @@ public class Eth2PeerManagerTest {
 
     peerManager.onConnect(peer);
 
-    verify(eth2Peer).disconnectImmediately();
+    verify(eth2Peer).disconnectImmediately(Optional.empty(), true);
   }
 
   @Test
