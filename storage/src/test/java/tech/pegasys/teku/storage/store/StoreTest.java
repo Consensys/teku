@@ -90,7 +90,7 @@ class StoreTest {
         StoreBuilder.buildForkChoiceStore(
             new StubMetricsSystem(), blockProvider, genesisBlockAndState.getState());
     final Checkpoint checkpoint = new Checkpoint(UnsignedLong.ONE, genesisBlockAndState.getRoot());
-    final BeaconState checkpointState = store.getCheckpointState(checkpoint);
+    final BeaconState checkpointState = store.getCheckpointState(checkpoint).orElseThrow();
     assertThat(checkpointState).isNotNull();
     assertThat(checkpointState.getSlot()).isEqualTo(checkpoint.getEpochStartSlot());
     assertThat(checkpointState.getLatest_block_header().hash_tree_root())
