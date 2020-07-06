@@ -96,7 +96,7 @@ class DepositGenerateAndRegisterCommandTest {
   }
 
   @Test
-  public void generatesAndRegistersWithQuietOutputMode() {
+  public void generatesAndRegistersWithoutDisplayConfirmation() {
     final DepositGenerateAndRegisterCommand depositGenerateAndRegisterCommand =
         new DepositGenerateAndRegisterCommand(
             shutdownFunction, registerParams, generateParams, new VerboseOutputParam(false));
@@ -108,7 +108,7 @@ class DepositGenerateAndRegisterCommandTest {
   }
 
   @Test
-  public void generatesAndRegistersWithDefaultOutputMode() {
+  public void generatesAndRegistersWithDisplayConfirmation() {
     final DepositGenerateAndRegisterCommand depositGenerateAndRegisterCommand =
         new DepositGenerateAndRegisterCommand(
             shutdownFunction, registerParams, generateParams, new VerboseOutputParam(true));
