@@ -142,7 +142,7 @@ public class PeerSync {
       final FailedBlockImportException importException = (FailedBlockImportException) rootException;
       final FailureReason reason = importException.getResult().getFailureReason();
       final SignedBeaconBlock block = importException.getBlock();
-      LOG.warn("Failed to import block from peer {}: {}", block, peer);
+      LOG.warn("Failed to import block from peer (err: {}) {}: {}", reason, block, peer);
       if (reason == FailureReason.FAILED_STATE_TRANSITION
           || reason == FailureReason.UNKNOWN_PARENT) {
         LOG.debug("Disconnecting from peer ({}) who sent invalid block: {}", peer, block);
