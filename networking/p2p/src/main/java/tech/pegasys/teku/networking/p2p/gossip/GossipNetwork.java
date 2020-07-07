@@ -13,7 +13,11 @@
 
 package tech.pegasys.teku.networking.p2p.gossip;
 
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.util.async.SafeFuture;
+
 public interface GossipNetwork {
+  SafeFuture<?> gossip(String topic, Bytes data);
 
   TopicChannel subscribe(String topic, TopicHandler topicHandler);
 }
