@@ -48,15 +48,19 @@ public class AnchorPoint {
   }
 
   public static AnchorPoint fromGenesisState(final BeaconState genesisState) {
-    final BeaconBlock anchorBlock = new BeaconBlock(genesisState.hash_tree_root());
-    final SignedBeaconBlock signedAnchorBlock =
-        new SignedBeaconBlock(anchorBlock, BLSSignature.empty());
+    checkArgument(
+        genesisState.getSlot().equals(UnsignedLong.valueOf(Constants.GENESIS_SLOT)),
+        "Invalid genesis state supplied");
 
-    final Bytes32 anchorRoot = anchorBlock.hash_tree_root();
-    final UnsignedLong anchorEpoch = BeaconStateUtil.get_current_epoch(genesisState);
-    final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
+    final BeaconBlock genesisBlock = new BeaconBlock(genesisState.hash_tree_root());
+    final SignedBeaconBlock signedGenesisBlock =
+        new SignedBeaconBlock(genesisBlock, BLSSignature.empty());
 
-    return new AnchorPoint(anchorCheckpoint, signedAnchorBlock, genesisState);
+    final Bytes32 genesisBlockRoot = genesisBlock.hash_tree_root();
+    final UnsignedLong genesisEpoch = BeaconStateUtil.get_current_epoch(genesisState);
+    final Checkpoint genesisCheckpoint = new Checkpoint(genesisEpoch, genesisBlockRoot);
+
+    return new AnchorPoint(genesisCheckpoint, signedGenesisBlock, genesisState);
   }
 
   public boolean isGenesis() {
