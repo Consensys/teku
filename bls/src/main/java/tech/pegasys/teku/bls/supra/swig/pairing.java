@@ -6,18 +6,18 @@
  * the SWIG interface file instead.
  * ----------------------------------------------------------------------------- */
 
-package tech.pegasys.teku.bls.supra;
+package tech.pegasys.teku.bls.supra.swig;
 
-public class fr {
+public class pairing {
   private transient long swigCPtr;
   protected transient boolean swigCMemOwn;
 
-  protected fr(long cPtr, boolean cMemoryOwn) {
+  protected pairing(long cPtr, boolean cMemoryOwn) {
     swigCMemOwn = cMemoryOwn;
     swigCPtr = cPtr;
   }
 
-  protected static long getCPtr(fr obj) {
+  protected static long getCPtr(pairing obj) {
     return (obj == null) ? 0 : obj.swigCPtr;
   }
 
@@ -30,22 +30,14 @@ public class fr {
     if (swigCPtr != 0) {
       if (swigCMemOwn) {
         swigCMemOwn = false;
-        blstJNI.delete_fr(swigCPtr);
+        blstJNI.delete_pairing(swigCPtr);
       }
       swigCPtr = 0;
     }
   }
 
-  public void setL(long[] value) {
-    blstJNI.fr_l_set(swigCPtr, this, value);
-  }
-
-  public long[] getL() {
-    return blstJNI.fr_l_get(swigCPtr, this);
-  }
-
-  public fr() {
-    this(blstJNI.new_fr(), true);
+  public pairing() {
+    this(blstJNI.new_pairing(), true);
   }
 
 }

@@ -6,7 +6,7 @@
  * the SWIG interface file instead.
  * ----------------------------------------------------------------------------- */
 
-package tech.pegasys.teku.bls.supra;
+package tech.pegasys.teku.bls.supra.swig;
 
 public class SWIGTYPE_p_unsigned_long {
   private transient long swigCPtr;

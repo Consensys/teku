@@ -5,6 +5,10 @@ import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.supra.swig.blst;
+import tech.pegasys.teku.bls.supra.swig.fp;
+import tech.pegasys.teku.bls.supra.swig.p1;
+import tech.pegasys.teku.bls.supra.swig.scalar;
 
 public class BlstTest {
 
