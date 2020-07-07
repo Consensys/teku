@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.storageSystem;
 
 import com.google.common.eventbus.EventBus;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -36,6 +37,8 @@ public interface StorageSystem extends AutoCloseable {
   StorageSystem restarted(StateStorageMode storageMode);
 
   StorageSystem restarted();
+
+  StubMetricsSystem getMetricsSystem();
 
   RecentChainData recentChainData();
 

@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.networking.p2p.peer;
 
+import java.util.Optional;
+
 @FunctionalInterface
 public interface PeerDisconnectedSubscriber {
 
-  void onDisconnected();
+  void onDisconnected(Optional<DisconnectReason> reason, boolean locallyInitiated);
 }
