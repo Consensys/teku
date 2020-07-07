@@ -38,13 +38,13 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   @Test
   public void shouldThrowIfClosedDatabaseIsModified_setGenesis() throws Exception {
     database.close();
-    assertThatThrownBy(() -> database.storeGenesis(genesisEvent))
+    assertThatThrownBy(() -> database.storeGenesis(genesisAnchor))
         .isInstanceOf(ShuttingDownException.class);
   }
 
   @Test
   public void shouldThrowIfClosedDatabaseIsModified_update() throws Exception {
-    database.storeGenesis(genesisEvent);
+    database.storeGenesis(genesisAnchor);
     database.close();
 
     final SignedBlockAndState newValue = chainBuilder.generateBlockAtSlot(1);
@@ -59,7 +59,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
   @Test
   public void shouldThrowIfClosedDatabaseIsRead_createMemoryStore() throws Exception {
-    database.storeGenesis(genesisEvent);
+    database.storeGenesis(genesisAnchor);
     database.close();
 
     assertThatThrownBy(database::createMemoryStore).isInstanceOf(ShuttingDownException.class);
@@ -67,7 +67,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
   @Test
   public void shouldThrowIfClosedDatabaseIsRead_getSlotForFinalizedBlockRoot() throws Exception {
-    database.storeGenesis(genesisEvent);
+    database.storeGenesis(genesisAnchor);
     database.close();
 
     assertThatThrownBy(() -> database.getSlotForFinalizedBlockRoot(Bytes32.ZERO))
@@ -76,7 +76,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
   @Test
   public void shouldThrowIfClosedDatabaseIsRead_getSignedBlock() throws Exception {
-    database.storeGenesis(genesisEvent);
+    database.storeGenesis(genesisAnchor);
     database.close();
 
     assertThatThrownBy(() -> database.getSignedBlock(genesisCheckpoint.getRoot()))
@@ -85,7 +85,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
   @Test
   public void shouldThrowIfClosedDatabaseIsRead_streamFinalizedBlocks() throws Exception {
-    database.storeGenesis(genesisEvent);
+    database.storeGenesis(genesisAnchor);
     database.close();
 
     assertThatThrownBy(() -> database.streamFinalizedBlocks(UnsignedLong.ZERO, UnsignedLong.ONE))
@@ -95,7 +95,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   @Test
   public void shouldThrowIfClosedDatabaseIsRead_streamFinalizedBlocksShuttingDown()
       throws Exception {
-    database.storeGenesis(genesisEvent);
+    database.storeGenesis(genesisAnchor);
     try (final Stream<SignedBeaconBlock> stream =
         database.streamFinalizedBlocks(UnsignedLong.ZERO, UnsignedLong.valueOf(1000L))) {
       database.close();
@@ -106,7 +106,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   @Test
   public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateHotDao()
       throws Exception {
-    database.storeGenesis(genesisEvent);
+    database.storeGenesis(genesisAnchor);
 
     try (final RocksDbHotDao.HotUpdater updater =
         ((RocksDbDatabase) database).hotDao.hotUpdater()) {
@@ -120,7 +120,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   @Test
   public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateFinalizedDao()
       throws Exception {
-    database.storeGenesis(genesisEvent);
+    database.storeGenesis(genesisAnchor);
 
     try (final RocksDbFinalizedDao.FinalizedUpdater updater =
         ((RocksDbDatabase) database).finalizedDao.finalizedUpdater()) {
@@ -134,7 +134,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   @Test
   public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateEth1Dao()
       throws Exception {
-    database.storeGenesis(genesisEvent);
+    database.storeGenesis(genesisAnchor);
 
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     try (final RocksDbEth1Dao.Eth1Updater updater =
@@ -150,7 +150,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   @Test
   public void shouldThrowIfClosedDatabaseIsRead_getHistoricalState() throws Exception {
     // Store genesis
-    database.storeGenesis(genesisEvent);
+    database.storeGenesis(genesisAnchor);
     // Add a new finalized block to supersede genesis
     final SignedBlockAndState newBlock = chainBuilder.generateBlockAtSlot(1);
     final Checkpoint newCheckpoint = getCheckpointForBlock(newBlock.getBlock());

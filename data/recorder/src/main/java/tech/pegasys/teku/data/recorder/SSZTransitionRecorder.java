@@ -24,10 +24,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.storage.events.GenesisEvent;
-import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.storage.events.AnchorPoint;
 
 public class SSZTransitionRecorder {
 
@@ -40,19 +38,12 @@ public class SSZTransitionRecorder {
   }
 
   @Subscribe
-  public void onGenesis(final GenesisEvent genesis) {
-    final Checkpoint finalizedCheckpoint = genesis.getCheckpoint();
-    if (isNotGenesis(finalizedCheckpoint)) {
+  public void onGenesis(final AnchorPoint anchor) {
+    if (!anchor.isGenesis()) {
       return;
     }
-    final BeaconState genesisState = genesis.getState();
+    final BeaconState genesisState = anchor.getState();
     store(outputDirectory.resolve("genesis.ssz"), genesisState);
-  }
-
-  private boolean isNotGenesis(final Checkpoint finalizedCheckpoint) {
-    final UnsignedLong genesisEpoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
-    return finalizedCheckpoint == null
-        || finalizedCheckpoint.getEpoch().compareTo(genesisEpoch) != 0;
   }
 
   @Subscribe

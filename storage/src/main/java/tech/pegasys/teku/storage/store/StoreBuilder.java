@@ -25,9 +25,8 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.storage.events.GenesisEvent;
+import tech.pegasys.teku.storage.events.AnchorPoint;
 
 public class StoreBuilder {
   MetricsSystem metricsSystem;
@@ -51,50 +50,32 @@ public class StoreBuilder {
   public static UpdatableStore buildForkChoiceStore(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
-      final BeaconState genesisState) {
-    return forkChoiceStoreBuilder(metricsSystem, blockProvider, genesisState).build();
-  }
-
-  public static UpdatableStore buildForkChoiceStore(
-      final MetricsSystem metricsSystem,
-      final BlockProvider blockProvider,
-      final GenesisEvent genesis) {
-    return forkChoiceStoreBuilder(metricsSystem, blockProvider, genesis).build();
+      final AnchorPoint anchor) {
+    return forkChoiceStoreBuilder(metricsSystem, blockProvider, anchor).build();
   }
 
   public static StoreBuilder forkChoiceStoreBuilder(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
-      final BeaconState genesisState) {
-    return forkChoiceStoreBuilder(
-        metricsSystem, blockProvider, GenesisEvent.fromGenesisState(genesisState));
-  }
-
-  public static StoreBuilder forkChoiceStoreBuilder(
-      final MetricsSystem metricsSystem,
-      final BlockProvider blockProvider,
-      final GenesisEvent genesis) {
-    final UnsignedLong genesisTime = genesis.getState().getGenesis_time();
-    final UnsignedLong time =
-        genesisTime.plus(
-            UnsignedLong.valueOf(SECONDS_PER_SLOT).times(genesis.getState().getSlot()));
+      final AnchorPoint anchor) {
+    final UnsignedLong genesisTime = anchor.getState().getGenesis_time();
+    final UnsignedLong slot = anchor.getState().getSlot();
+    final UnsignedLong time = genesisTime.plus(UnsignedLong.valueOf(SECONDS_PER_SLOT).times(slot));
 
     Map<Bytes32, Bytes32> childToParentMap = new HashMap<>();
-    Map<UnsignedLong, VoteTracker> votes = new HashMap<>();
-
-    childToParentMap.put(genesis.getRoot(), genesis.getParentRoot());
+    childToParentMap.put(anchor.getRoot(), anchor.getParentRoot());
 
     return create()
         .metricsSystem(metricsSystem)
         .blockProvider(blockProvider)
         .time(time)
         .genesisTime(genesisTime)
-        .finalizedCheckpoint(genesis.getCheckpoint())
-        .justifiedCheckpoint(genesis.getCheckpoint())
-        .bestJustifiedCheckpoint(genesis.getCheckpoint())
+        .finalizedCheckpoint(anchor.getCheckpoint())
+        .justifiedCheckpoint(anchor.getCheckpoint())
+        .bestJustifiedCheckpoint(anchor.getCheckpoint())
         .childToParentMap(childToParentMap)
-        .latestFinalized(genesis.toSignedBlockAndState())
-        .votes(votes);
+        .latestFinalized(anchor.toSignedBlockAndState())
+        .votes(new HashMap<>());
   }
 
   public UpdatableStore build() {

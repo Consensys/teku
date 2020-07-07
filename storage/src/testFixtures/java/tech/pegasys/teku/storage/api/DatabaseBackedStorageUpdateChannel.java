@@ -14,7 +14,7 @@
 package tech.pegasys.teku.storage.api;
 
 import java.util.Optional;
-import tech.pegasys.teku.storage.events.GenesisEvent;
+import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.store.StoreBuilder;
@@ -38,7 +38,7 @@ public class DatabaseBackedStorageUpdateChannel implements StorageUpdateChannel 
   }
 
   @Override
-  public void onGenesis(GenesisEvent genesis) {
+  public void onGenesis(AnchorPoint genesis) {
     database.storeGenesis(genesis);
   }
 }

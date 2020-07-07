@@ -45,7 +45,7 @@ import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.storage.events.GenesisEvent;
+import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -106,7 +106,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public void initializeFromGenesis(final BeaconState genesisState) {
-    final GenesisEvent genesis = GenesisEvent.fromGenesisState(genesisState);
+    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisState);
     final UpdatableStore store =
         StoreBuilder.buildForkChoiceStore(metricsSystem, blockProvider, genesis);
     final boolean result = setStore(store);

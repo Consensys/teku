@@ -38,6 +38,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
+import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.async.SafeFuture;
 
@@ -84,11 +85,11 @@ class StoreTest {
   @Test
   public void getCheckpointState_shouldGenerateCheckpointStates() {
     final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
+    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
     final BlockProvider blockProvider = blockProviderFromChainBuilder();
 
     final UpdatableStore store =
-        StoreBuilder.buildForkChoiceStore(
-            new StubMetricsSystem(), blockProvider, genesisBlockAndState.getState());
+        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis);
     final Checkpoint checkpoint = new Checkpoint(UnsignedLong.ONE, genesisBlockAndState.getRoot());
     final BeaconState checkpointState = store.getCheckpointState(checkpoint).orElseThrow();
     assertThat(checkpointState).isNotNull();
@@ -101,6 +102,7 @@ class StoreTest {
   public void getCheckpointState_shouldThrowInvalidCheckpointExceptionWhenEpochBeforeBlockRoot()
       throws Exception {
     final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
+    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
     final BlockProvider blockProvider = blockProviderFromChainBuilder();
     final Bytes32 futureRoot =
         chainBuilder
@@ -108,8 +110,7 @@ class StoreTest {
             .getRoot();
 
     final UpdatableStore store =
-        StoreBuilder.buildForkChoiceStore(
-            new StubMetricsSystem(), blockProvider, genesisBlockAndState.getState());
+        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis);
     // Add blocks
     final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
     chainBuilder.streamBlocksAndStates().forEach(tx::putBlockAndState);
@@ -123,13 +124,13 @@ class StoreTest {
   public void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction)
       throws StateTransitionException {
     final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
+    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
     final UnsignedLong epoch3Slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(4));
     chainBuilder.generateBlocksUpToSlot(epoch3Slot);
     final BlockProvider blockProvider = blockProviderFromChainBuilder();
 
     final UpdatableStore store =
-        StoreBuilder.buildForkChoiceStore(
-            new StubMetricsSystem(), blockProvider, genesisBlockAndState.getState());
+        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis);
     final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();
     final UnsignedLong initialTime = store.getTime();
     final UnsignedLong genesisTime = store.getGenesisTime();
