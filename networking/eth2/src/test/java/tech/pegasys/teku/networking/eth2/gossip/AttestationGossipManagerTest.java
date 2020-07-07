@@ -144,12 +144,9 @@ public class AttestationGossipManagerTest {
   @Test
   void onNewAttestation_incrementSuccessCount() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    final int subnetId = computeSubnetId(attestation);
-
     when(gossipNetwork.gossip(any(), any())).thenReturn(SafeFuture.completedFuture(null));
 
     // Attestation for dismissed assignment should be ignored
-    final Bytes serialized = gossipEncoding.encode(attestation);
     attestationGossipManager.onNewAttestation(ValidateableAttestation.fromAttestation(attestation));
 
     assertThat(getPublishSuccessCounterValue()).isEqualTo(1);
@@ -159,13 +156,10 @@ public class AttestationGossipManagerTest {
   @Test
   void onNewAttestation_incrementFailureCount() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    final int subnetId = computeSubnetId(attestation);
-
     when(gossipNetwork.gossip(any(), any()))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("Ooops")));
 
     // Attestation for dismissed assignment should be ignored
-    final Bytes serialized = gossipEncoding.encode(attestation);
     attestationGossipManager.onNewAttestation(ValidateableAttestation.fromAttestation(attestation));
 
     assertThat(getPublishSuccessCounterValue()).isZero();
