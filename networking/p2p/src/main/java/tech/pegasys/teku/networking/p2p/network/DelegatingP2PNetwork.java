@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.p2p.network;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
@@ -76,7 +77,7 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   @Override
   public int getListenPort() {
     return network.getListenPort();
-  };
+  }
 
   @Override
   public SafeFuture<?> start() {
@@ -86,6 +87,11 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   @Override
   public void stop() {
     network.stop();
+  }
+
+  @Override
+  public SafeFuture<?> gossip(final String topic, final Bytes data) {
+    return network.gossip(topic, data);
   }
 
   @Override

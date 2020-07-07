@@ -14,13 +14,8 @@
 package tech.pegasys.teku.networking.eth2.gossip;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -33,9 +28,10 @@ import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
-import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -53,7 +49,6 @@ public class AttestationGossipManagerTest {
       MemoryOnlyRecentChainData.create(mock(EventBus.class));
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-  private final TopicChannel topicChannel = mock(TopicChannel.class);
   private AttestationGossipManager attestationGossipManager;
   private final AttestationSubnetSubscriptions attestationSubnetSubscriptions =
       new AttestationSubnetSubscriptions(
@@ -62,13 +57,13 @@ public class AttestationGossipManagerTest {
           attestationValidator,
           recentChainData,
           gossipedAttestationConsumer);
+  private Bytes4 forkDigest;
 
   @BeforeEach
   public void setup() {
     BeaconChainUtil.create(0, recentChainData).initializeStorage();
-    doReturn(topicChannel).when(gossipNetwork).subscribe(contains("beacon_attestation_"), any());
-    attestationGossipManager =
-        new AttestationGossipManager(gossipEncoding, attestationSubnetSubscriptions);
+    forkDigest = recentChainData.getHeadForkInfo().orElseThrow().getForkDigest();
+    attestationGossipManager = new AttestationGossipManager(attestationSubnetSubscriptions);
   }
 
   @Test
@@ -89,14 +84,14 @@ public class AttestationGossipManagerTest {
     final Bytes serialized = gossipEncoding.encode(attestation);
     attestationGossipManager.onNewAttestation(ValidateableAttestation.fromAttestation(attestation));
 
-    verify(topicChannel).gossip(serialized);
+    verify(gossipNetwork).gossip(getSubnetTopic(subnetId), serialized);
 
     // We should process attestations for different committees on the same subnet
     final Bytes serialized2 = gossipEncoding.encode(attestation2);
     attestationGossipManager.onNewAttestation(
         ValidateableAttestation.fromAttestation(attestation2));
 
-    verify(topicChannel).gossip(serialized2);
+    verify(gossipNetwork).gossip(getSubnetTopic(subnetId), serialized2);
   }
 
   @Test
@@ -109,7 +104,7 @@ public class AttestationGossipManagerTest {
     // Post new attestation
     attestationGossipManager.onNewAttestation(ValidateableAttestation.fromAttestation(attestation));
 
-    verifyNoInteractions(topicChannel);
+    verify(gossipNetwork).gossip(getSubnetTopic(subnetId), gossipEncoding.encode(attestation));
   }
 
   @Test
@@ -128,18 +123,22 @@ public class AttestationGossipManagerTest {
     final Bytes serialized = gossipEncoding.encode(attestation);
     attestationGossipManager.onNewAttestation(ValidateableAttestation.fromAttestation(attestation));
 
-    verify(topicChannel, never()).gossip(serialized);
+    verify(gossipNetwork).gossip(getSubnetTopic(dismissedSubnetId), serialized);
 
     // Attestation for remaining assignment should be processed
     final Bytes serialized2 = gossipEncoding.encode(attestation2);
     attestationGossipManager.onNewAttestation(
         ValidateableAttestation.fromAttestation(attestation2));
 
-    verify(topicChannel).gossip(serialized2);
+    verify(gossipNetwork).gossip(getSubnetTopic(subnetId), serialized2);
   }
 
   private Integer computeSubnetId(final Attestation attestation) {
     return CommitteeUtil.computeSubnetForAttestation(
         recentChainData.getBestState().orElseThrow(), attestation);
+  }
+
+  private String getSubnetTopic(final int subnetId) {
+    return TopicNames.getAttestationSubnetTopic(forkDigest, subnetId, gossipEncoding);
   }
 }

@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.storageSystem;
 
 import com.google.common.eventbus.EventBus;
 import java.nio.file.Path;
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
 import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
@@ -45,6 +44,7 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
   private final RestartedStorageSupplier restartedSupplier;
 
   public FileBackedStorageSystem(
+      final StubMetricsSystem metricsSystem,
       final EventBus eventBus,
       final TrackingReorgEventChannel reorgEventChannel,
       final StateStorageMode storageMode,
@@ -52,8 +52,7 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
       final RestartedStorageSupplier restartedSupplier) {
-    super(recentChainData);
-
+    super(metricsSystem, recentChainData);
     this.eventBus = eventBus;
     this.reorgEventChannel = reorgEventChannel;
     this.storageMode = storageMode;
@@ -122,6 +121,7 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
       final Database database,
       final RestartedStorageSupplier restartedSupplier,
       final StateStorageMode storageMode) {
+    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
     final EventBus eventBus = new EventBus();
 
     // Create and start storage server
@@ -134,7 +134,7 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
     final TrackingReorgEventChannel reorgEventChannel = new TrackingReorgEventChannel();
     final RecentChainData recentChainData =
         StorageBackedRecentChainData.createImmediately(
-            new NoOpMetricsSystem(),
+            metricsSystem,
             chainStorageServer,
             chainStorageServer,
             new StubProtoArrayStorageChannel(),
@@ -148,6 +148,7 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
 
     // Return storage system
     return new FileBackedStorageSystem(
+        metricsSystem,
         eventBus,
         reorgEventChannel,
         storageMode,
