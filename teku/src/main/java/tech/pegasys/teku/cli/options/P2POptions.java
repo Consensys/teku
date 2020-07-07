@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.cli.options;
 
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -147,22 +145,10 @@ public class P2POptions {
   }
 
   public int getP2pLowerBound() {
-    if (p2pLowerBound < ATTESTATION_SUBNET_COUNT) {
-      LOG.warn(
-          "--p2p-peer-lower-bound set too low. Defaulting to ATTESTATION_SUBNET_COUNT:  {}",
-          ATTESTATION_SUBNET_COUNT);
-      p2pLowerBound = ATTESTATION_SUBNET_COUNT;
-    }
     return p2pLowerBound;
   }
 
   public int getP2pUpperBound() {
-    if (p2pUpperBound < ATTESTATION_SUBNET_COUNT + 10) {
-      LOG.warn(
-          "--p2p-peer-upper-bound set too low. Defaulting to ATTESTATION_SUBNET_COUNT + 10:  {}",
-          ATTESTATION_SUBNET_COUNT + 10);
-      p2pUpperBound = ATTESTATION_SUBNET_COUNT + 10;
-    }
     return p2pUpperBound;
   }
 
