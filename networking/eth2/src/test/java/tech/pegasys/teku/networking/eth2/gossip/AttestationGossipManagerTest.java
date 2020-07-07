@@ -14,8 +14,10 @@
 package tech.pegasys.teku.networking.eth2.gossip;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -26,6 +28,9 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.metrics.StubCounter;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
@@ -35,6 +40,7 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class AttestationGossipManagerTest {
 
@@ -50,6 +56,7 @@ public class AttestationGossipManagerTest {
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private AttestationGossipManager attestationGossipManager;
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final AttestationSubnetSubscriptions attestationSubnetSubscriptions =
       new AttestationSubnetSubscriptions(
           gossipNetwork,
@@ -63,7 +70,8 @@ public class AttestationGossipManagerTest {
   public void setup() {
     BeaconChainUtil.create(0, recentChainData).initializeStorage();
     forkDigest = recentChainData.getHeadForkInfo().orElseThrow().getForkDigest();
-    attestationGossipManager = new AttestationGossipManager(attestationSubnetSubscriptions);
+    attestationGossipManager =
+        new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
   }
 
   @Test
@@ -131,6 +139,49 @@ public class AttestationGossipManagerTest {
         ValidateableAttestation.fromAttestation(attestation2));
 
     verify(gossipNetwork).gossip(getSubnetTopic(subnetId), serialized2);
+  }
+
+  @Test
+  void onNewAttestation_incrementSuccessCount() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    final int subnetId = computeSubnetId(attestation);
+
+    when(gossipNetwork.gossip(any(), any())).thenReturn(SafeFuture.completedFuture(null));
+
+    // Attestation for dismissed assignment should be ignored
+    final Bytes serialized = gossipEncoding.encode(attestation);
+    attestationGossipManager.onNewAttestation(ValidateableAttestation.fromAttestation(attestation));
+
+    assertThat(getPublishSuccessCounterValue()).isEqualTo(1);
+    assertThat(getPublishFailureCounterValue()).isZero();
+  }
+
+  @Test
+  void onNewAttestation_incrementFailureCount() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    final int subnetId = computeSubnetId(attestation);
+
+    when(gossipNetwork.gossip(any(), any()))
+        .thenReturn(SafeFuture.failedFuture(new RuntimeException("Ooops")));
+
+    // Attestation for dismissed assignment should be ignored
+    final Bytes serialized = gossipEncoding.encode(attestation);
+    attestationGossipManager.onNewAttestation(ValidateableAttestation.fromAttestation(attestation));
+
+    assertThat(getPublishSuccessCounterValue()).isZero();
+    assertThat(getPublishFailureCounterValue()).isEqualTo(1);
+  }
+
+  private long getPublishSuccessCounterValue() {
+    return getPublishCounter().getValue("success");
+  }
+
+  private long getPublishFailureCounterValue() {
+    return getPublishCounter().getValue("failure");
+  }
+
+  private StubCounter getPublishCounter() {
+    return metricsSystem.getCounter(TekuMetricCategory.BEACON, "published_attestation_total");
   }
 
   private Integer computeSubnetId(final Attestation attestation) {

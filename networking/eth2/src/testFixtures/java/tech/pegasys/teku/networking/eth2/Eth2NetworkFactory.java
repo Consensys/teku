@@ -188,6 +188,7 @@ public class Eth2NetworkFactory {
                 config);
 
         return new ActiveEth2Network(
+            metricsSystem,
             network,
             eth2PeerManager,
             eventBus,

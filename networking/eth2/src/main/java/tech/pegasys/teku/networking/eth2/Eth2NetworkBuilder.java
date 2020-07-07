@@ -105,6 +105,7 @@ public class Eth2NetworkBuilder {
     final GossipEncoding gossipEncoding =
         eth2Config.isSnappyCompressionEnabled() ? GossipEncoding.SSZ_SNAPPY : GossipEncoding.SSZ;
     return new ActiveEth2Network(
+        metricsSystem,
         network,
         eth2PeerManager,
         eventBus,
