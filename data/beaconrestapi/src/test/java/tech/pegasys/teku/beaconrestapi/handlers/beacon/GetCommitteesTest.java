@@ -27,35 +27,30 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
-import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class GetCommitteesTest {
-  private static final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private static BeaconState beaconState;
-  private static Bytes32 blockRoot;
-  private static UnsignedLong slot;
-  private static UnsignedLong epoch;
-  private static CombinedChainDataClient combinedChainDataClient;
-  private static StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
+  private final StorageSystem storageSystem =
+      InMemoryStorageSystem.createEmptyLatestStorageSystem(StateStorageMode.ARCHIVE);
+  private UnsignedLong slot;
+  private UnsignedLong epoch;
+  private CombinedChainDataClient combinedChainDataClient;
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Context context = mock(Context.class);
@@ -64,15 +59,14 @@ public class GetCommitteesTest {
   @SuppressWarnings("unchecked")
   private final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
 
-  @BeforeAll
-  public static void setup() {
-    final EventBus localEventBus = new EventBus();
-    final RecentChainData storageClient = MemoryOnlyRecentChainData.create(localEventBus);
-    beaconState = dataStructureUtil.randomBeaconState();
-    storageClient.initializeFromGenesis(beaconState);
-    combinedChainDataClient = new CombinedChainDataClient(storageClient, historicalChainData);
-    blockRoot = storageClient.getBestBlockRoot().orElseThrow();
-    slot = storageClient.getBlockState(blockRoot).get().getSlot();
+  @BeforeEach
+  public void setup() {
+    slot = UnsignedLong.valueOf(SLOTS_PER_EPOCH * 3);
+    storageSystem.chainUpdater().initializeGenesis();
+    SignedBlockAndState bestBlock = storageSystem.chainUpdater().advanceChain(slot);
+    storageSystem.chainUpdater().updateBestBlock(bestBlock);
+
+    combinedChainDataClient = storageSystem.combinedChainDataClient();
     epoch = slot.dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
   }
 
