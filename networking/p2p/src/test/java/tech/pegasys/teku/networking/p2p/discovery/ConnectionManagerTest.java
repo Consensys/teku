@@ -20,10 +20,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -42,13 +42,14 @@ import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.async.StubAsyncRunner;
 
 class ConnectionManagerTest {
 
   private static final Optional<EnrForkId> ENR_FORK_ID = Optional.empty();
-  private static final Optional<List<Integer>> PERSISTENT_SUBNETS = Optional.empty();
+  private static final Bitvector PERSISTENT_SUBNETS = new Bitvector(ATTESTATION_SUBNET_COUNT);
   private static final PeerAddress PEER1 = new PeerAddress(new MockNodeId(1));
   private static final PeerAddress PEER2 = new PeerAddress(new MockNodeId(2));
   private static final PeerAddress PEER3 = new PeerAddress(new MockNodeId(3));

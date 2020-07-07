@@ -14,19 +14,20 @@
 package tech.pegasys.teku.networking.p2p.libp2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import io.libp2p.core.PeerId;
 import io.libp2p.core.multiformats.Multiaddr;
 import io.libp2p.core.multiformats.Protocol;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 
 class MultiaddrUtilTest {
   private static final Bytes PUB_KEY =
@@ -34,7 +35,7 @@ class MultiaddrUtilTest {
   public static final String PEER_ID = "16Uiu2HAmFxCpRh2nZevFR3KGXJ3jhpixMYFSuawqKZyZYHrYoiK5";
   private static final NodeId NODE_ID = new LibP2PNodeId(PeerId.fromBase58(PEER_ID));
   private static final Optional<EnrForkId> ENR_FORK_ID = Optional.empty();
-  private static final Optional<List<Integer>> PERSISTENT_SUBNETS = Optional.empty();
+  private static final Bitvector PERSISTENT_SUBNETS = new Bitvector(ATTESTATION_SUBNET_COUNT);
 
   @Test
   public void fromInetSocketAddress_shouldConvertIpV4Peer() throws Exception {

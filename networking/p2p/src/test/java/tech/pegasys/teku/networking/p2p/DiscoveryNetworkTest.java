@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
 
@@ -51,6 +52,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
@@ -277,6 +279,6 @@ class DiscoveryNetworkTest {
         BLSPublicKey.empty().toBytes(),
         InetSocketAddress.createUnresolved("yo", 9999),
         maybeForkId,
-        Optional.empty());
+        new Bitvector(ATTESTATION_SUBNET_COUNT));
   }
 }

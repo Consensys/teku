@@ -18,7 +18,6 @@ import static tech.pegasys.teku.networking.p2p.DiscoveryNetwork.ETH2_ENR_FIELD;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.net.InetSocketAddress;
-import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.EnrField;
@@ -42,12 +41,12 @@ public class NodeRecordConverter {
         Optional.ofNullable((Bytes) nodeRecord.get(ETH2_ENR_FIELD))
             .map(enrField -> SimpleOffsetSerializer.deserialize(enrField, EnrForkId.class));
 
-    Optional<List<Integer>> persistentSubnets =
+    Bitvector persistentSubnets =
         Optional.ofNullable((Bytes) nodeRecord.get(ATTESTATION_SUBNET_ENR_FIELD))
             .map(
                 attestionSubnetsField ->
-                    Bitvector.fromBytes(attestionSubnetsField, ATTESTATION_SUBNET_COUNT)
-                        .getSetBitIndexes());
+                    Bitvector.fromBytes(attestionSubnetsField, ATTESTATION_SUBNET_COUNT))
+            .orElse(new Bitvector(ATTESTATION_SUBNET_COUNT));
 
     return new DiscoveryPeer(
         ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)), address, enrForkId, persistentSubnets);

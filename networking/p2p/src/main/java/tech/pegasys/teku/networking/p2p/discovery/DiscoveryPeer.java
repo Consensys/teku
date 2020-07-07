@@ -16,22 +16,22 @@ package tech.pegasys.teku.networking.p2p.discovery;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import java.net.InetSocketAddress;
-import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
+import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 
 public class DiscoveryPeer {
   private final Bytes publicKey;
   private final InetSocketAddress nodeAddress;
   private final Optional<EnrForkId> enrForkId;
-  private final Optional<List<Integer>> persistentSubnets;
+  private final Bitvector persistentSubnets;
 
   public DiscoveryPeer(
       final Bytes publicKey,
       final InetSocketAddress nodeAddress,
       final Optional<EnrForkId> enrForkId,
-      final Optional<List<Integer>> persistentSubnets) {
+      final Bitvector persistentSubnets) {
     this.publicKey = publicKey;
     this.nodeAddress = nodeAddress;
     this.enrForkId = enrForkId;
@@ -50,7 +50,7 @@ public class DiscoveryPeer {
     return enrForkId;
   }
 
-  public Optional<List<Integer>> getPersistentSubnets() {
+  public Bitvector getPersistentSubnets() {
     return persistentSubnets;
   }
 

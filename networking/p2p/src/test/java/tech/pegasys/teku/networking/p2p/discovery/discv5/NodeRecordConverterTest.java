@@ -23,7 +23,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt64;
@@ -45,7 +44,7 @@ class NodeRecordConverterTest {
   private static final Bytes IPV6_LOCALHOST =
       Bytes.fromHexString("0x00000000000000000000000000000001");
   private static final Optional<EnrForkId> ENR_FORK_ID = Optional.empty();
-  private static final Optional<List<Integer>> PERSISTENT_SUBNETS = Optional.empty();
+  private static final Bitvector PERSISTENT_SUBNETS = new Bitvector(ATTESTATION_SUBNET_COUNT);
 
   @Test
   public void shouldConvertRealEnrToDiscoveryPeer() throws Exception {
@@ -60,7 +59,7 @@ class NodeRecordConverterTest {
                 "0x03B86ED9F747A7FA99963F39E3B176B45E9E863108A2D145EA3A4E76D8D0935194"),
             new InetSocketAddress(InetAddress.getByAddress(new byte[] {127, 0, 0, 1}), 9000),
             Optional.empty(),
-            Optional.empty());
+            PERSISTENT_SUBNETS);
     assertThat(convertToDiscoveryPeer(nodeRecord)).contains(expectedPeer);
   }
 
@@ -138,9 +137,12 @@ class NodeRecordConverterTest {
 
   @Test
   public void shouldConvertPersistentSubnetsList() {
-    List<Integer> persistentSubnets = List.of(1, 10, 22, 34);
-    Bytes encodedPersistentSubnets =
-        new Bitvector(persistentSubnets, ATTESTATION_SUBNET_COUNT).serialize();
+    Bitvector persistentSubnets = new Bitvector(ATTESTATION_SUBNET_COUNT);
+    persistentSubnets.setBit(1);
+    persistentSubnets.setBit(8);
+    persistentSubnets.setBit(14);
+    persistentSubnets.setBit(32);
+    Bytes encodedPersistentSubnets = persistentSubnets.serialize();
     final Optional<DiscoveryPeer> result =
         convertNodeRecordWithFields(
             new EnrField(EnrField.IP_V6, IPV6_LOCALHOST),
@@ -149,10 +151,7 @@ class NodeRecordConverterTest {
     assertThat(result)
         .contains(
             new DiscoveryPeer(
-                PUB_KEY,
-                new InetSocketAddress("::1", 1234),
-                ENR_FORK_ID,
-                Optional.of(persistentSubnets)));
+                PUB_KEY, new InetSocketAddress("::1", 1234), ENR_FORK_ID, persistentSubnets));
   }
 
   @Test
