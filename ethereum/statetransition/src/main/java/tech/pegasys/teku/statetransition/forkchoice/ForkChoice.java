@@ -25,6 +25,7 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -70,11 +71,12 @@ public class ForkChoice {
     return headBlockRoot;
   }
 
-  public synchronized BlockImportResult onBlock(final SignedBeaconBlock block) {
+  public synchronized BlockImportResult onBlock(
+      final SignedBeaconBlock block, Optional<BeaconState> preState) {
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
     StoreTransaction transaction = recentChainData.startStoreTransaction();
     final BlockImportResult result =
-        on_block(transaction, block, stateTransition, forkChoiceStrategy);
+        on_block(transaction, block, preState, stateTransition, forkChoiceStrategy);
 
     if (!result.isSuccessful()) {
       return result;

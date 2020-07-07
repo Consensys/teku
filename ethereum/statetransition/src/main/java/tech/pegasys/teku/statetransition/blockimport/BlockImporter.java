@@ -26,6 +26,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -67,7 +68,8 @@ public class BlockImporter {
         return BlockImportResult.knownBlock(block);
       }
 
-      BlockImportResult result = forkChoice.onBlock(block);
+      final Optional<BeaconState> preState = recentChainData.getBlockState(block.getParent_root());
+      BlockImportResult result = forkChoice.onBlock(block, preState);
       if (!result.isSuccessful()) {
         LOG.trace(
             "Failed to import block for reason {}: {}",
