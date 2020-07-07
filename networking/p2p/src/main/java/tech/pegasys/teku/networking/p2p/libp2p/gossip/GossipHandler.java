@@ -34,9 +34,9 @@ import tech.pegasys.teku.util.collections.LimitStrategy;
 public class GossipHandler implements Function<MessageApi, CompletableFuture<ValidationResult>> {
   private static final Logger LOG = LogManager.getLogger();
 
-  private static SafeFuture<ValidationResult> VALIDATION_FAILED =
+  private static final SafeFuture<ValidationResult> VALIDATION_FAILED =
       SafeFuture.completedFuture(ValidationResult.Invalid);
-  private static SafeFuture<ValidationResult> VALIDATION_IGNORED =
+  private static final SafeFuture<ValidationResult> VALIDATION_IGNORED =
       SafeFuture.completedFuture(ValidationResult.Ignore);
 
   private static final int MAX_SENT_MESSAGES = 2048;

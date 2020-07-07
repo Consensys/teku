@@ -67,8 +67,7 @@ public class AttestationGossipManagerTest {
   public void setup() {
     BeaconChainUtil.create(0, recentChainData).initializeStorage();
     doReturn(topicChannel).when(gossipNetwork).subscribe(contains("beacon_attestation_"), any());
-    attestationGossipManager =
-        new AttestationGossipManager(gossipEncoding, attestationSubnetSubscriptions);
+    attestationGossipManager = new AttestationGossipManager(attestationSubnetSubscriptions);
   }
 
   @Test
