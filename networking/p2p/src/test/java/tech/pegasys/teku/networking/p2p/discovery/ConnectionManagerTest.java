@@ -57,16 +57,28 @@ class ConnectionManagerTest {
   private static final PeerAddress PEER4 = new PeerAddress(new MockNodeId(4));
   private static final DiscoveryPeer DISCOVERY_PEER1 =
       new DiscoveryPeer(
-          Bytes.of(1), new InetSocketAddress(InetAddress.getLoopbackAddress(), 1), ENR_FORK_ID, PERSISTENT_SUBNETS);
+          Bytes.of(1),
+          new InetSocketAddress(InetAddress.getLoopbackAddress(), 1),
+          ENR_FORK_ID,
+          PERSISTENT_SUBNETS);
   private static final DiscoveryPeer DISCOVERY_PEER2 =
       new DiscoveryPeer(
-          Bytes.of(2), new InetSocketAddress(InetAddress.getLoopbackAddress(), 2), ENR_FORK_ID, PERSISTENT_SUBNETS);
+          Bytes.of(2),
+          new InetSocketAddress(InetAddress.getLoopbackAddress(), 2),
+          ENR_FORK_ID,
+          PERSISTENT_SUBNETS);
   private static final DiscoveryPeer DISCOVERY_PEER3 =
       new DiscoveryPeer(
-          Bytes.of(3), new InetSocketAddress(InetAddress.getLoopbackAddress(), 3), ENR_FORK_ID, PERSISTENT_SUBNETS);
+          Bytes.of(3),
+          new InetSocketAddress(InetAddress.getLoopbackAddress(), 3),
+          ENR_FORK_ID,
+          PERSISTENT_SUBNETS);
   private static final DiscoveryPeer DISCOVERY_PEER4 =
       new DiscoveryPeer(
-          Bytes.of(4), new InetSocketAddress(InetAddress.getLoopbackAddress(), 4), ENR_FORK_ID, PERSISTENT_SUBNETS);
+          Bytes.of(4),
+          new InetSocketAddress(InetAddress.getLoopbackAddress(), 4),
+          ENR_FORK_ID,
+          PERSISTENT_SUBNETS);
 
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> network = mock(P2PNetwork.class);
