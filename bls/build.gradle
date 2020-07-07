@@ -7,6 +7,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.miracl.milagro.amcl:milagro-crypto-java'
+  implementation 'net.java.dev.jna:jna:5.5.0'
 
   testImplementation project(':logging')
   testImplementation 'com.googlecode.json-simple:json-simple'
