@@ -17,12 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import picocli.CommandLine.Option;
 
 public class P2POptions {
-  private static final Logger LOG = LogManager.getLogger();
 
   @Option(
       names = {"--p2p-enabled"},
