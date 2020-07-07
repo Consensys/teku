@@ -167,8 +167,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
         new BlockGossipManager(
             discoveryNetwork, gossipEncoding, forkInfo, blockValidator, eventBus);
 
-    attestationGossipManager =
-        new AttestationGossipManager(gossipEncoding, attestationSubnetSubscriptions);
+    attestationGossipManager = new AttestationGossipManager(attestationSubnetSubscriptions);
 
     aggregateGossipManager =
         new AggregateGossipManager(

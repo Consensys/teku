@@ -17,10 +17,13 @@ import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.PubsubSubscription;
 import io.libp2p.core.pubsub.Topic;
 import io.libp2p.pubsub.gossip.Gossip;
+import io.netty.buffer.Unpooled;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class LibP2PGossipNetwork implements tech.pegasys.teku.networking.p2p.gossip.GossipNetwork {
   private static final Logger LOG = LogManager.getLogger();
@@ -31,6 +34,12 @@ public class LibP2PGossipNetwork implements tech.pegasys.teku.networking.p2p.gos
   public LibP2PGossipNetwork(final Gossip gossip, final PubsubPublisherApi publisher) {
     this.gossip = gossip;
     this.publisher = publisher;
+  }
+
+  @Override
+  public SafeFuture<?> gossip(final String topic, final Bytes data) {
+    return SafeFuture.of(
+        publisher.publish(Unpooled.wrappedBuffer(data.toArrayUnsafe()), new Topic(topic)));
   }
 
   @Override
