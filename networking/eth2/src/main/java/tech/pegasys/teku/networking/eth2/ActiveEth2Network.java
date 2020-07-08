@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
@@ -61,6 +62,7 @@ import tech.pegasys.teku.util.async.SafeFuture;
 
 public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements Eth2Network {
 
+  private final MetricsSystem metricsSystem;
   private final DiscoveryNetwork<?> discoveryNetwork;
   private final Eth2PeerManager peerManager;
   private final EventBus eventBus;
@@ -90,6 +92,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final GossipedOperationConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
 
   public ActiveEth2Network(
+      final MetricsSystem metricsSystem,
       final DiscoveryNetwork<?> discoveryNetwork,
       final Eth2PeerManager peerManager,
       final EventBus eventBus,
@@ -104,6 +107,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
       final VerifiedBlockAttestationsSubscriptionProvider
           verifiedBlockAttestationsSubscriptionProvider) {
     super(discoveryNetwork);
+    this.metricsSystem = metricsSystem;
     this.discoveryNetwork = discoveryNetwork;
     this.peerManager = peerManager;
     this.eventBus = eventBus;
@@ -167,7 +171,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
         new BlockGossipManager(
             discoveryNetwork, gossipEncoding, forkInfo, blockValidator, eventBus);
 
-    attestationGossipManager = new AttestationGossipManager(attestationSubnetSubscriptions);
+    attestationGossipManager =
+        new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
 
     aggregateGossipManager =
         new AggregateGossipManager(
