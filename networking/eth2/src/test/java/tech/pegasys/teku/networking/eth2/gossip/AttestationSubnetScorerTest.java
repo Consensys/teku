@@ -40,7 +40,7 @@ class AttestationSubnetScorerTest {
 
   @Test
   void shouldScoreExistingPeerWithNoSubnetsAsZero() {
-    final AttestationSubnetScorer scorer = new Builder().build();
+    final AttestationSubnetScorer scorer = new AttestationSubnetScorer.Builder().build();
     assertThat(scorer.scoreExistingPeer(new MockNodeId(1))).isZero();
   }
 
@@ -52,7 +52,7 @@ class AttestationSubnetScorerTest {
     final MockNodeId node4 = new MockNodeId(3);
     final MockNodeId node5 = new MockNodeId(4);
     final AttestationSubnetScorer scorer =
-        new Builder()
+        new AttestationSubnetScorer.Builder()
             // Subnet 1
             .addSubscriber(1, node1)
             .addSubscriber(1, node2)
