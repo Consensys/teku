@@ -18,20 +18,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 
 public class AttestationGossipManager {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final GossipEncoding gossipEncoding;
   private final AttestationSubnetSubscriptions subnetSubscriptions;
 
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public AttestationGossipManager(
-      final GossipEncoding gossipEncoding,
       final AttestationSubnetSubscriptions attestationSubnetSubscriptions) {
-    this.gossipEncoding = gossipEncoding;
     subnetSubscriptions = attestationSubnetSubscriptions;
   }
 
@@ -41,13 +37,17 @@ public class AttestationGossipManager {
     }
     final Attestation attestation = validateableAttestation.getAttestation();
     subnetSubscriptions
-        .getChannel(attestation)
-        .ifPresentOrElse(
-            channel -> channel.gossip(gossipEncoding.encode(attestation)),
-            () ->
+        .gossip(attestation)
+        .finish(
+            __ ->
                 LOG.trace(
-                    "Not broadcasting attestation for slot {} because the subnet is not available or could not be calculated",
-                    attestation.getData().getSlot()));
+                    "Successfully published attestation for slot {}",
+                    attestation.getData().getSlot()),
+            error ->
+                LOG.trace(
+                    "Failed to publish attestation for slot {}",
+                    attestation.getData().getSlot(),
+                    error));
   }
 
   public void subscribeToSubnetId(final int subnetId) {

@@ -378,10 +378,9 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public BeaconState getCheckpointState(Checkpoint checkpoint) {
+  public Optional<BeaconState> getCheckpointState(Checkpoint checkpoint) {
     return getCheckpointStateIfAvailable(checkpoint)
-        .or(() -> regenerateAndStoreCheckpointState(checkpoint))
-        .orElse(null);
+        .or(() -> regenerateAndStoreCheckpointState(checkpoint));
   }
 
   private Optional<? extends BeaconState> regenerateAndStoreCheckpointState(
@@ -795,16 +794,10 @@ class Store implements UpdatableStore {
     }
 
     @Override
-    public BeaconState getCheckpointState(final Checkpoint checkpoint) {
-      final BeaconState cachedState = checkpointStateCache.get(checkpoint);
-      if (cachedState != null) {
-        return cachedState;
-      }
-      final Optional<BeaconState> checkpointFromStore =
-          Store.this.getCheckpointStateIfAvailable(checkpoint);
-      return checkpointFromStore
-          .or(() -> regenerateCheckpointState(checkpoint, this::getBlockState))
-          .orElse(null);
+    public Optional<BeaconState> getCheckpointState(final Checkpoint checkpoint) {
+      return Optional.ofNullable(checkpointStateCache.get(checkpoint))
+          .or(() -> Store.this.getCheckpointStateIfAvailable(checkpoint))
+          .or(() -> regenerateCheckpointState(checkpoint, this::getBlockState));
     }
   }
 

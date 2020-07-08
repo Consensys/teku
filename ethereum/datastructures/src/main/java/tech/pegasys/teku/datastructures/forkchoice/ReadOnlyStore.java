@@ -60,7 +60,7 @@ public interface ReadOnlyStore {
 
   BeaconState getBlockState(Bytes32 blockRoot);
 
-  BeaconState getCheckpointState(Checkpoint checkpoint);
+  Optional<BeaconState> getCheckpointState(Checkpoint checkpoint);
 
   Set<UnsignedLong> getVotedValidatorIndices();
 }
