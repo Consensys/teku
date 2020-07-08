@@ -20,6 +20,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -31,6 +32,7 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.network.p2p.peer.StubPeer;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
@@ -41,28 +43,42 @@ import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.async.StubAsyncRunner;
 
 class ConnectionManagerTest {
 
-  private static final Optional<Bytes> ENR_FORK_ID = Optional.of(Bytes.EMPTY);
+  private static final Optional<EnrForkId> ENR_FORK_ID = Optional.empty();
+  private static final Bitvector PERSISTENT_SUBNETS = new Bitvector(ATTESTATION_SUBNET_COUNT);
   private static final PeerAddress PEER1 = new PeerAddress(new MockNodeId(1));
   private static final PeerAddress PEER2 = new PeerAddress(new MockNodeId(2));
   private static final PeerAddress PEER3 = new PeerAddress(new MockNodeId(3));
   private static final PeerAddress PEER4 = new PeerAddress(new MockNodeId(4));
   private static final DiscoveryPeer DISCOVERY_PEER1 =
       new DiscoveryPeer(
-          Bytes.of(1), new InetSocketAddress(InetAddress.getLoopbackAddress(), 1), ENR_FORK_ID);
+          Bytes.of(1),
+          new InetSocketAddress(InetAddress.getLoopbackAddress(), 1),
+          ENR_FORK_ID,
+          PERSISTENT_SUBNETS);
   private static final DiscoveryPeer DISCOVERY_PEER2 =
       new DiscoveryPeer(
-          Bytes.of(2), new InetSocketAddress(InetAddress.getLoopbackAddress(), 2), ENR_FORK_ID);
+          Bytes.of(2),
+          new InetSocketAddress(InetAddress.getLoopbackAddress(), 2),
+          ENR_FORK_ID,
+          PERSISTENT_SUBNETS);
   private static final DiscoveryPeer DISCOVERY_PEER3 =
       new DiscoveryPeer(
-          Bytes.of(3), new InetSocketAddress(InetAddress.getLoopbackAddress(), 3), ENR_FORK_ID);
+          Bytes.of(3),
+          new InetSocketAddress(InetAddress.getLoopbackAddress(), 3),
+          ENR_FORK_ID,
+          PERSISTENT_SUBNETS);
   private static final DiscoveryPeer DISCOVERY_PEER4 =
       new DiscoveryPeer(
-          Bytes.of(4), new InetSocketAddress(InetAddress.getLoopbackAddress(), 4), ENR_FORK_ID);
+          Bytes.of(4),
+          new InetSocketAddress(InetAddress.getLoopbackAddress(), 4),
+          ENR_FORK_ID,
+          PERSISTENT_SUBNETS);
 
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> network = mock(P2PNetwork.class);
