@@ -13,11 +13,9 @@
 
 package tech.pegasys.teku.storage.api;
 
-import java.util.Optional;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.server.Database;
-import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class DatabaseBackedStorageUpdateChannel implements StorageUpdateChannel {
@@ -25,11 +23,6 @@ public class DatabaseBackedStorageUpdateChannel implements StorageUpdateChannel 
 
   public DatabaseBackedStorageUpdateChannel(final Database database) {
     this.database = database;
-  }
-
-  @Override
-  public SafeFuture<Optional<StoreBuilder>> onStoreRequest() {
-    return SafeFuture.completedFuture(database.createMemoryStore());
   }
 
   @Override
