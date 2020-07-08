@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.connection;
 
+import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
@@ -21,11 +22,15 @@ public interface PeerScorer {
 
   int scoreExistingPeer(NodeId peerId);
 
-  default int scoreExistingPeer(Peer peer) {
+  default int scoreExistingPeer(final Peer peer) {
     return scoreExistingPeer(peer.getId());
   }
 
   int scoreCandidatePeer(Bitvector subscriptions);
+
+  default int scoreCandidatePeer(final DiscoveryPeer candidate) {
+    return scoreCandidatePeer(candidate.getPersistentSubnets());
+  }
 
   interface PeerScorerFactory {
 

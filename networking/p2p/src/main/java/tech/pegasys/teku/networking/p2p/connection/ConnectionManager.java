@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -108,9 +109,16 @@ public class ConnectionManager extends Service {
   private void connectToKnownPeers() {
     final int maxAttempts = targetPeerCountRange.getPeersToAdd(network.getPeerCount());
     LOG.trace("Connecting to up to {} known peers", maxAttempts);
+    if (maxAttempts == 0) {
+      return;
+    }
+    final PeerScorer peerScorer = peerScorerFactory.create();
     discoveryService
         .streamKnownPeers()
         .filter(this::isPeerValid)
+        .sorted(
+            Comparator.comparing((Function<DiscoveryPeer, Integer>) peerScorer::scoreCandidatePeer)
+                .reversed())
         .map(network::createPeerAddress)
         .filter(reputationManager::isConnectionInitiationAllowed)
         .filter(peerAddress -> !network.isConnected(peerAddress))
