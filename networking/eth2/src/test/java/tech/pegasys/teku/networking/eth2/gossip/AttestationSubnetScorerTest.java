@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.networking.eth2.gossip.AttestationSubnetScorer.Builder;
 import tech.pegasys.teku.networking.p2p.connection.PeerScorer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -33,7 +32,7 @@ import tech.pegasys.teku.util.config.Constants;
 class AttestationSubnetScorerTest {
   @Test
   void shouldScoreCandidatePeerWithNoSubnetsAsZero() {
-    final AttestationSubnetScorer scorer = new Builder().build();
+    final AttestationSubnetScorer scorer = new AttestationSubnetScorer.Builder().build();
     assertThat(scorer.scoreCandidatePeer(new Bitvector(Constants.ATTESTATION_SUBNET_COUNT)))
         .isZero();
   }
@@ -86,7 +85,7 @@ class AttestationSubnetScorerTest {
     final MockNodeId node2 = new MockNodeId(1);
     final MockNodeId node3 = new MockNodeId(2);
     final AttestationSubnetScorer scorer =
-        new Builder()
+        new AttestationSubnetScorer.Builder()
             // Subnet 1
             .addSubscriber(1, node1)
             .addSubscriber(1, node2)
