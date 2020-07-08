@@ -16,8 +16,12 @@ package tech.pegasys.teku.networking.eth2.gossip;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
 
 public class AttestationGossipManager {
   private static final Logger LOG = LogManager.getLogger();
@@ -25,10 +29,21 @@ public class AttestationGossipManager {
   private final AttestationSubnetSubscriptions subnetSubscriptions;
 
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
+  private final Counter attestationPublishSuccessCounter;
+  private final Counter attestationPublishFailureCounter;
 
   public AttestationGossipManager(
+      final MetricsSystem metricsSystem,
       final AttestationSubnetSubscriptions attestationSubnetSubscriptions) {
     subnetSubscriptions = attestationSubnetSubscriptions;
+    final LabelledMetric<Counter> publishedAttestationCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.BEACON,
+            "published_attestation_total",
+            "Total number of attestations sent to the gossip network",
+            "result");
+    attestationPublishSuccessCounter = publishedAttestationCounter.labels("success");
+    attestationPublishFailureCounter = publishedAttestationCounter.labels("failure");
   }
 
   public void onNewAttestation(final ValidateableAttestation validateableAttestation) {
@@ -39,15 +54,19 @@ public class AttestationGossipManager {
     subnetSubscriptions
         .gossip(attestation)
         .finish(
-            __ ->
-                LOG.trace(
-                    "Successfully published attestation for slot {}",
-                    attestation.getData().getSlot()),
-            error ->
-                LOG.trace(
-                    "Failed to publish attestation for slot {}",
-                    attestation.getData().getSlot(),
-                    error));
+            __ -> {
+              LOG.trace(
+                  "Successfully published attestation for slot {}",
+                  attestation.getData().getSlot());
+              attestationPublishSuccessCounter.inc();
+            },
+            error -> {
+              LOG.trace(
+                  "Failed to publish attestation for slot {}",
+                  attestation.getData().getSlot(),
+                  error);
+              attestationPublishFailureCounter.inc();
+            });
   }
 
   public void subscribeToSubnetId(final int subnetId) {
