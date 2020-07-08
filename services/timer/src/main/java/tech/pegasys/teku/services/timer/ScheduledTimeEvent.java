@@ -38,6 +38,6 @@ public class ScheduledTimeEvent implements Job {
   public void execute(JobExecutionContext context) throws JobExecutionException {
     JobDataMap data = context.getJobDetail().getJobDataMap();
     TimeTickChannel timeTickChannel = (TimeTickChannel) data.get(TimerService.TIME_EVENTS_CHANNEL);
-    timeTickChannel.onTick(Instant.now());
+    timeTickChannel.onTick();
   }
 }
