@@ -19,6 +19,9 @@ import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.net.InetSocketAddress;
 import java.util.Optional;
+import java.util.function.Function;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.ethereum.beacon.discovery.schema.EnrField;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
@@ -28,6 +31,8 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 
 public class NodeRecordConverter {
+  private static final Logger LOG = LogManager.getLogger();
+
   static Optional<DiscoveryPeer> convertToDiscoveryPeer(final NodeRecord nodeRecord) {
     return nodeRecord
         .getTcpAddress()
@@ -37,18 +42,31 @@ public class NodeRecordConverter {
   private static DiscoveryPeer socketAddressToDiscoveryPeer(
       final NodeRecord nodeRecord, final InetSocketAddress address) {
 
-    Optional<EnrForkId> enrForkId =
-        Optional.ofNullable((Bytes) nodeRecord.get(ETH2_ENR_FIELD))
-            .map(enrField -> SimpleOffsetSerializer.deserialize(enrField, EnrForkId.class));
+    final Optional<EnrForkId> enrForkId =
+        parseField(
+            nodeRecord,
+            ETH2_ENR_FIELD,
+            enrField -> SimpleOffsetSerializer.deserialize(enrField, EnrForkId.class));
 
-    Bitvector persistentSubnets =
-        Optional.ofNullable((Bytes) nodeRecord.get(ATTESTATION_SUBNET_ENR_FIELD))
-            .map(
+    final Bitvector persistentSubnets =
+        parseField(
+                nodeRecord,
+                ATTESTATION_SUBNET_ENR_FIELD,
                 attestionSubnetsField ->
                     Bitvector.fromBytes(attestionSubnetsField, ATTESTATION_SUBNET_COUNT))
             .orElse(new Bitvector(ATTESTATION_SUBNET_COUNT));
 
     return new DiscoveryPeer(
         ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)), address, enrForkId, persistentSubnets);
+  }
+
+  private static <T> Optional<T> parseField(
+      final NodeRecord nodeRecord, final String fieldName, final Function<Bytes, T> parse) {
+    try {
+      return Optional.ofNullable((Bytes) nodeRecord.get(fieldName)).map(parse);
+    } catch (final Exception e) {
+      LOG.debug("Failed to parse ENR field {}", fieldName, e);
+      return Optional.empty();
+    }
   }
 }

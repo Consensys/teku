@@ -155,6 +155,26 @@ class NodeRecordConverterTest {
   }
 
   @Test
+  public void shouldUseEmptySubnetListWhenFieldValueIsInvalid() {
+    Bitvector persistentSubnets = new Bitvector(4); // Incorrect length
+    persistentSubnets.setBit(1);
+    persistentSubnets.setBit(2);
+    Bytes encodedPersistentSubnets = persistentSubnets.serialize();
+    final Optional<DiscoveryPeer> result =
+        convertNodeRecordWithFields(
+            new EnrField(EnrField.IP_V6, IPV6_LOCALHOST),
+            new EnrField(EnrField.TCP_V6, 1234),
+            new EnrField(ATTESTATION_SUBNET_ENR_FIELD, encodedPersistentSubnets));
+    assertThat(result)
+        .contains(
+            new DiscoveryPeer(
+                PUB_KEY,
+                new InetSocketAddress("::1", 1234),
+                ENR_FORK_ID,
+                new Bitvector(ATTESTATION_SUBNET_COUNT)));
+  }
+
+  @Test
   public void shouldConvertEnrForkId() {
     EnrForkId enrForkId = new DataStructureUtil().randomEnrForkId();
     Bytes encodedForkId = SimpleOffsetSerializer.serialize(enrForkId);
@@ -170,6 +190,20 @@ class NodeRecordConverterTest {
                 new InetSocketAddress("::1", 1234),
                 Optional.of(enrForkId),
                 PERSISTENT_SUBNETS));
+  }
+
+  @Test
+  public void shouldNotHaveEnrForkIdWhenValueIsInvalid() {
+    Bytes encodedForkId = Bytes.fromHexString("0x1234");
+    final Optional<DiscoveryPeer> result =
+        convertNodeRecordWithFields(
+            new EnrField(EnrField.IP_V6, IPV6_LOCALHOST),
+            new EnrField(EnrField.TCP_V6, 1234),
+            new EnrField(ETH2_ENR_FIELD, encodedForkId));
+    assertThat(result)
+        .contains(
+            new DiscoveryPeer(
+                PUB_KEY, new InetSocketAddress("::1", 1234), Optional.empty(), PERSISTENT_SUBNETS));
   }
 
   private Optional<DiscoveryPeer> convertNodeRecordWithFields(final EnrField... fields) {

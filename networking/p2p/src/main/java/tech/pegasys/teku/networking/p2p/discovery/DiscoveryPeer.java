@@ -76,6 +76,8 @@ public class DiscoveryPeer {
     return MoreObjects.toStringHelper(this)
         .add("publicKey", publicKey)
         .add("nodeAddress", nodeAddress)
+        .add("enrForkId", enrForkId)
+        .add("persistentSubnets", persistentSubnets)
         .toString();
   }
 }
