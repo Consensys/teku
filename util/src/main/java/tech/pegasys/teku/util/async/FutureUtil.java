@@ -44,8 +44,10 @@ public class FutureUtil {
                   } catch (Exception e) {
                     LOG.warn("Exception in exception handler", e);
                   }
+                } finally {
+                  runWithFixedDelay(
+                      runner, runnable, task, delayAmount, delayUnit, exceptionHandler);
                 }
-                runWithFixedDelay(runner, runnable, task, delayAmount, delayUnit, exceptionHandler);
               }
             },
             delayAmount,
@@ -55,7 +57,7 @@ public class FutureUtil {
 
   static Cancellable createCancellable() {
     return new Cancellable() {
-      private boolean cancelled;
+      private volatile boolean cancelled;
 
       @Override
       public void cancel() {
