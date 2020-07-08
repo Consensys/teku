@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
 
@@ -52,6 +53,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
@@ -206,14 +208,13 @@ class DiscoveryNetworkTest {
         ArgumentCaptor.forClass(Predicate.class);
     verify(connectionManager).addPeerPredicate(peerPredicateArgumentCaptor.capture());
 
-    DiscoveryPeer peer1 = createDiscoveryPeer(Optional.of(encodedForkId));
+    DiscoveryPeer peer1 = createDiscoveryPeer(Optional.of(expectedEnrForkId));
     assertThat(peerPredicateArgumentCaptor.getValue().test(peer1)).isTrue();
 
     final EnrForkId newEnrForkId1 =
         new EnrForkId(
             currentForkInfo.getForkDigest(), Bytes4.fromHexString("0xdeadbeef"), UnsignedLong.ZERO);
-    Bytes newEncodedForkId1 = SimpleOffsetSerializer.serialize(newEnrForkId1);
-    DiscoveryPeer peer2 = createDiscoveryPeer(Optional.of(newEncodedForkId1));
+    DiscoveryPeer peer2 = createDiscoveryPeer(Optional.of(newEnrForkId1));
     assertThat(peerPredicateArgumentCaptor.getValue().test(peer2)).isTrue();
 
     final EnrForkId newEnrForkId2 =
@@ -221,8 +222,7 @@ class DiscoveryNetworkTest {
             Bytes4.fromHexString("0xdeadbeef"),
             Bytes4.fromHexString("0xdeadbeef"),
             UnsignedLong.ZERO);
-    Bytes newEncodedForkId2 = SimpleOffsetSerializer.serialize(newEnrForkId2);
-    DiscoveryPeer peer3 = createDiscoveryPeer(Optional.of(newEncodedForkId2));
+    DiscoveryPeer peer3 = createDiscoveryPeer(Optional.of(newEnrForkId2));
     assertThat(peerPredicateArgumentCaptor.getValue().test(peer3)).isFalse();
   }
 
@@ -257,12 +257,11 @@ class DiscoveryNetworkTest {
             currentForkInfo.getForkDigest(),
             currentForkInfo.getFork().getCurrent_version(),
             FAR_FUTURE_EPOCH);
-    Bytes encodedForkId = SimpleOffsetSerializer.serialize(enrForkId);
     ArgumentCaptor<Predicate<DiscoveryPeer>> peerPredicateArgumentCaptor =
         ArgumentCaptor.forClass(Predicate.class);
     verify(connectionManager).addPeerPredicate(peerPredicateArgumentCaptor.capture());
 
-    DiscoveryPeer peer1 = createDiscoveryPeer(Optional.of(encodedForkId));
+    DiscoveryPeer peer1 = createDiscoveryPeer(Optional.of(enrForkId));
     assertThat(peerPredicateArgumentCaptor.getValue().test(peer1)).isFalse();
   }
 
@@ -277,10 +276,11 @@ class DiscoveryNetworkTest {
         .updateCustomENRField("eth2", SimpleOffsetSerializer.serialize(enrForkId));
   }
 
-  public DiscoveryPeer createDiscoveryPeer(Optional<Bytes> maybeEncodedForkId) {
+  public DiscoveryPeer createDiscoveryPeer(Optional<EnrForkId> maybeForkId) {
     return new DiscoveryPeer(
         BLSPublicKey.empty().toBytes(),
         InetSocketAddress.createUnresolved("yo", 9999),
-        maybeEncodedForkId);
+        maybeForkId,
+        new Bitvector(ATTESTATION_SUBNET_COUNT));
   }
 }
