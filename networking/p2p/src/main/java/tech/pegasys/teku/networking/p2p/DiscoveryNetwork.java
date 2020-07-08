@@ -33,6 +33,7 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.logging.StatusLogger;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
+import tech.pegasys.teku.networking.p2p.connection.PeerScorer.PeerScorerFactory;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
@@ -85,6 +86,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
       final AsyncRunner asyncRunner,
       final P2PNetwork<P> p2pNetwork,
       final ReputationManager reputationManager,
+      final PeerScorerFactory peerScorerFactory,
       final NetworkConfig p2pConfig) {
     final DiscoveryService discoveryService = createDiscoveryService(p2pConfig);
     final ConnectionManager connectionManager =
@@ -97,7 +99,8 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
             p2pConfig.getStaticPeers().stream()
                 .map(p2pNetwork::createPeerAddress)
                 .collect(toList()),
-            p2pConfig.getTargetPeerRange());
+            p2pConfig.getTargetPeerRange(),
+            peerScorerFactory);
     return new DiscoveryNetwork<>(p2pNetwork, discoveryService, connectionManager);
   }
 

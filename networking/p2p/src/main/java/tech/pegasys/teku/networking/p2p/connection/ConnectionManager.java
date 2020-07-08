@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.p2p.connection;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -27,6 +28,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.networking.p2p.connection.PeerScorer.PeerScorerFactory;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
@@ -47,6 +49,7 @@ public class ConnectionManager extends Service {
   private final Set<PeerAddress> staticPeers;
   private final DiscoveryService discoveryService;
   private final TargetPeerRange targetPeerCountRange;
+  private final PeerScorerFactory peerScorerFactory;
   private final ReputationManager reputationManager;
   private final Counter attemptedConnectionCounter;
   private final Counter successfulConnectionCounter;
@@ -63,13 +66,15 @@ public class ConnectionManager extends Service {
       final AsyncRunner asyncRunner,
       final P2PNetwork<? extends Peer> network,
       final List<PeerAddress> peerAddresses,
-      final TargetPeerRange targetPeerCountRange) {
+      final TargetPeerRange targetPeerCountRange,
+      final PeerScorerFactory peerScorerFactory) {
     this.reputationManager = reputationManager;
     this.asyncRunner = asyncRunner;
     this.network = network;
     this.staticPeers = new HashSet<>(peerAddresses);
     this.discoveryService = discoveryService;
     this.targetPeerCountRange = targetPeerCountRange;
+    this.peerScorerFactory = peerScorerFactory;
 
     final LabelledMetric<Counter> connectionAttemptCounter =
         metricsSystem.createLabelledCounter(
@@ -148,9 +153,14 @@ public class ConnectionManager extends Service {
 
   private void onPeerConnected(final Peer peer) {
     final int peersToDrop = targetPeerCountRange.getPeersToDrop(network.getPeerCount());
+    if (peersToDrop == 0) {
+      return;
+    }
+    final PeerScorer peerScorer = peerScorerFactory.create();
     network
         .streamPeers()
         .filter(candidate -> !staticPeers.contains(candidate.getAddress()))
+        .sorted(Comparator.comparing(peerScorer::scoreExistingPeer))
         .limit(peersToDrop)
         .forEach(peerToDrop -> peerToDrop.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS));
   }

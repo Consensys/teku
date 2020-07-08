@@ -31,6 +31,7 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.network.p2p.connection.StubPeerScorer;
 import tech.pegasys.teku.network.p2p.peer.StubPeer;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
@@ -69,7 +70,7 @@ class ConnectionManagerTest {
 
   private final DiscoveryService discoveryService = mock(DiscoveryService.class);
   private final ReputationManager reputationManager = mock(ReputationManager.class);
-
+  private final StubPeerScorer peerScorer = new StubPeerScorer();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   @BeforeEach
@@ -377,7 +378,7 @@ class ConnectionManagerTest {
   }
 
   @Test
-  public void shouldDisconnectDiscoveredPeersWhenPeerCountExceedsLimit() {
+  public void shouldDisconnectLowestScoringDiscoveredPeersWhenPeerCountExceedsLimit() {
     final ConnectionManager manager = createManager(new TargetPeerRange(1, 1));
     manager.start().join();
 
@@ -385,13 +386,18 @@ class ConnectionManagerTest {
 
     final StubPeer peer1 = new StubPeer(new MockNodeId(1));
     final StubPeer peer2 = new StubPeer(new MockNodeId(2));
-    when(network.streamPeers()).thenReturn(Stream.of(peer2, peer1));
-    when(network.getPeerCount()).thenReturn(2);
+    final StubPeer peer3 = new StubPeer(new MockNodeId(3));
+    peerScorer.setScore(peer1.getId(), 100);
+    peerScorer.setScore(peer2.getId(), 200);
+    peerScorer.setScore(peer3.getId(), 150);
+    when(network.streamPeers()).thenReturn(Stream.of(peer2, peer1, peer3));
+    when(network.getPeerCount()).thenReturn(3);
     peerConnectedSubscriber.onConnected(peer1);
 
     // Should disconnect one peer to get back down to our target of max 1 peer.
-    assertThat(peer2.getDisconnectReason()).contains(DisconnectReason.TOO_MANY_PEERS);
-    assertThat(peer1.isConnected()).isTrue();
+    assertThat(peer1.getDisconnectReason()).contains(DisconnectReason.TOO_MANY_PEERS);
+    assertThat(peer3.getDisconnectReason()).contains(DisconnectReason.TOO_MANY_PEERS);
+    assertThat(peer2.isConnected()).isTrue();
   }
 
   @Test
@@ -431,7 +437,7 @@ class ConnectionManagerTest {
   }
 
   @Test
-  public void shouldNotConnectPeersThatDontPassPeerFilter() {
+  public void shouldNotConnectPeersThatDoNotPassPeerFilter() {
     final ConnectionManager manager = createManager();
     manager.addPeerPredicate((peer) -> !peer.equals(DISCOVERY_PEER2));
     final StubPeer peer1 = new StubPeer(new MockNodeId(1));
@@ -486,6 +492,7 @@ class ConnectionManagerTest {
         asyncRunner,
         network,
         Arrays.asList(peers),
-        targetPeerCount);
+        targetPeerCount,
+        () -> peerScorer);
   }
 }

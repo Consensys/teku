@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.networking.p2p.mock;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -118,5 +121,10 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   public SafeFuture<?> gossip(final String topic, final Bytes data) {
     // Do nothing
     return SafeFuture.COMPLETE;
+  }
+
+  @Override
+  public Map<String, Collection<NodeId>> getSubscribersByTopic() {
+    return Collections.emptyMap();
   }
 }
