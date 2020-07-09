@@ -88,15 +88,42 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     }
   }
 
+  /**
+   * Creates a completed {@link SafeFuture} instance if no of supplied interruptors is completed,
+   * else creates an exceptionally completed {@link SafeFuture} instance
+   *
+   * @see #orInterrupt(Interruptor...)
+   */
   public static SafeFuture<Void> notInterrupted(Interruptor... interruptors) {
     return SafeFuture.<Void>completedFuture(null).orInterrupt(interruptors);
   }
 
+  /**
+   * Create {@link Interruptor} with default exception supplier which creates {@link
+   * InterruptedException}
+   *
+   * @see #createInterruptor(CompletableFuture, Supplier)
+   */
   public static Interruptor createInterruptor(CompletableFuture<?> interruptFuture) {
     return createInterruptor(
         interruptFuture, () -> new InterruptedException("SafeFuture Interruptor triggered"));
   }
 
+  /**
+   * Creates an {@link Interruptor} instance from the interrupting future and exception supplier for
+   * the case if interruption is triggered.
+   *
+   * <p>The key feature of {@link Interruptor} and {@link #orInterrupt(Interruptor...)} method is
+   * that {@code interruptFuture} doesn't hold the reference to dependent futures after they
+   * complete. It's desired to consider this for long living interrupting futures to avoid memory
+   * leaks
+   *
+   * @param interruptFuture the future which triggers interruption when completes (normally or
+   *     exceptionally)
+   * @param exceptionSupplier creates a desired exception if interruption is triggered
+   * @see #notInterrupted(Interruptor...)
+   * @see #orInterrupt(Interruptor...)
+   */
   public static Interruptor createInterruptor(
       CompletableFuture<?> interruptFuture, Supplier<Exception> exceptionSupplier) {
     return new Interruptor(interruptFuture, exceptionSupplier);
@@ -350,12 +377,28 @@ public class SafeFuture<T> extends CompletableFuture<T> {
 
   @SafeVarargs
   @SuppressWarnings("uncheckedCast")
-  public final SafeFuture<T> or(CompletableFuture<T>... others) {
-    CompletableFuture<T>[] futures = Arrays.copyOf(others, others.length + 1);
+  public final SafeFuture<T> or(SafeFuture<T>... others) {
+    SafeFuture<T>[] futures = Arrays.copyOf(others, others.length + 1);
     futures[others.length] = this;
-    return SafeFuture.of(CompletableFuture.anyOf(futures).thenApply(o -> (T) o));
+    return anyOf(futures).thenApply(o -> (T) o);
   }
 
+  /**
+   * Derives a {@link SafeFuture} which yields the same result as this {@link SafeFuture} if no
+   * {@link Interruptor} was triggered before this future is done.
+   *
+   * <p>If any of supplied {@link Interruptor}s is triggered the returned {@link SafeFuture} is
+   * completed exceptionally. The exception thrown depends on which specific Interruptor was
+   * triggered
+   *
+   * <p>The key feature of this method is that {@code interruptFuture} contained in Interruptor
+   * doesn't hold the reference to dependent futures after they complete. It's desired to consider
+   * this for long living interrupting futures to avoid memory leaks
+   *
+   * @param interruptors a set of interruptors which futures trigger interruption if complete
+   *     (normally or exceptionally)
+   * @see #createInterruptor(CompletableFuture, Supplier)
+   */
   public SafeFuture<T> orInterrupt(Interruptor... interruptors) {
     CompletableFuture<?>[] allFuts = new CompletableFuture<?>[interruptors.length + 1];
     allFuts[0] = this;
@@ -363,7 +406,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
       allFuts[i + 1] = interruptors[i].interruptFuture;
     }
     SafeFuture<T> ret = new SafeFuture<>();
-    CompletableFuture.anyOf(allFuts)
+    anyOf(allFuts)
         .whenComplete(
             (res, err) -> {
               if (this.isDone()) {
@@ -385,8 +428,12 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   /**
-   * Class containing an interrupting Future and exception supplier which is used if
-   *  interrupting Future is triggered
+   * Class containing an interrupting Future and exception supplier which produces exception if
+   * interrupting Future is triggered
+   *
+   * @see #createInterruptor(CompletableFuture, Supplier)
+   * @see #orInterrupt(Interruptor...)
+   * @see #notInterrupted(Interruptor...)
    */
   public static class Interruptor {
     private final CompletableFuture<?> interruptFuture;
