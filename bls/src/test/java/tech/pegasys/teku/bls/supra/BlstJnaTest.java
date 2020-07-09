@@ -51,6 +51,11 @@ public class BlstJnaTest {
     boolean b = BlstLibrary.INSTANCE.blst_p2_on_curve(p2);
 
     assertThat(b).isTrue();
+
+    p2.x.fp_0.l2 = 0;
+
+    b = BlstLibrary.INSTANCE.blst_p2_on_curve(p2);
+    assertThat(b).isFalse();
   }
 
 
