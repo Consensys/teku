@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.network.p2p.peer;
 
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
+
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -33,12 +36,20 @@ public class SimplePeerSelectionStrategy implements PeerSelectionStrategy {
   @Override
   public List<PeerAddress> selectPeersToConnect(
       final P2PNetwork<?> network, final Supplier<List<DiscoveryPeer>> candidates) {
-    return null;
+    final int peersToAdd = targetPeerRange.getPeersToAdd(network.getPeerCount());
+    if (peersToAdd == 0) {
+      return emptyList();
+    }
+    return candidates.get().stream()
+        .map(network::createPeerAddress)
+        .limit(peersToAdd)
+        .collect(toList());
   }
 
   @Override
   public List<Peer> selectPeersToDisconnect(
       final P2PNetwork<?> network, final Predicate<Peer> canBeDisconnected) {
-    return null;
+    final int peersToDrop = targetPeerRange.getPeersToDrop(network.getPeerCount());
+    return network.streamPeers().filter(canBeDisconnected).limit(peersToDrop).collect(toList());
   }
 }
