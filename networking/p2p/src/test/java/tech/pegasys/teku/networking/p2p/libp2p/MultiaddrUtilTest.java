@@ -75,8 +75,6 @@ class MultiaddrUtilTest {
             PERSISTENT_SUBNETS);
     final Multiaddr result = MultiaddrUtil.fromDiscoveryPeer(peer);
     assertThat(result).isEqualTo(Multiaddr.fromString("/ip4/123.34.58.22/tcp/5883/p2p/" + PEER_ID));
-    System.out.println(Bytes.wrap(result.getComponent(Protocol.P2P)));
-    System.out.println(PUB_KEY);
     assertThat(result.getComponent(Protocol.IP4)).isEqualTo(ipAddress);
     assertThat(result.getComponent(Protocol.TCP)).isEqualTo(Protocol.TCP.addressToBytes("5883"));
     assertThat(result.getComponent(Protocol.P2P)).isEqualTo(NODE_ID.toBytes().toArrayUnsafe());
