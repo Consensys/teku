@@ -42,6 +42,7 @@ import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamTimeoutException;
 import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.async.SafeFuture.Interruptor;
 
 public class RpcHandler implements ProtocolBinding<Controller> {
   private static final Duration TIMEOUT = Duration.ofSeconds(5);
@@ -55,56 +56,30 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     this.rpcMethod = rpcMethod;
   }
 
-  @SuppressWarnings("unchecked")
   public SafeFuture<RpcStream> sendRequest(
       Connection connection, Bytes initialPayload, RpcRequestHandler handler) {
-    if (connection.closeFuture().isDone()) {
-      return SafeFuture.failedFuture(new PeerDisconnectedException());
-    }
 
-    SafeFuture<RpcStream> streamFuture = new SafeFuture<>();
+    Interruptor closeInterruptor =
+        SafeFuture.createInterruptor(connection.closeFuture(), PeerDisconnectedException::new);
+    Interruptor timeoutInterruptor =
+        SafeFuture.createInterruptor(
+            asyncRunner.getDelayedFuture(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+            () ->
+                new StreamTimeoutException(
+                    "Timed out waiting to initialize stream for method " + rpcMethod.getId()));
 
-    // Complete future if peer disconnects
-    SafeFuture.of(connection.closeFuture())
-        .always(() -> streamFuture.completeExceptionally(new PeerDisconnectedException()));
-    // Complete future if we fail to initialize
-    asyncRunner
-        .getDelayedFuture(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-        .thenAccept(
-            __ ->
-                streamFuture.completeExceptionally(
-                    new StreamTimeoutException(
-                        "Timed out waiting to initialize stream for method " + rpcMethod.getId())))
-        .reportExceptions();
-
-    // Try to initiate stream
-    SafeFuture.of(
-            connection
-                .muxerSession()
-                .createStream(Multistream.create(this).toStreamHandler())
-                .getController())
+    return SafeFuture.notInterrupted(closeInterruptor)
         .thenCompose(
-            ctr -> {
-              ctr.setRequestHandler(handler);
-              return ctr.getRpcStream()
-                  .writeBytes(initialPayload)
-                  .thenApply(f -> ctr.getRpcStream())
-                  .thenAccept(
-                      rpcStream -> {
-                        if (!streamFuture.complete(rpcStream)) {
-                          // If future was already completed exceptionally, close the controller
-                          ctr.close();
-                        }
-                      });
-            })
-        .exceptionally(
-            err -> {
-              streamFuture.completeExceptionally(err);
-              return null;
-            })
-        .reportExceptions();
-
-    return streamFuture;
+            __ ->
+                connection
+                    .muxerSession()
+                    .createStream(Multistream.create(this).toStreamHandler())
+                    .getController())
+        .orInterrupt(closeInterruptor, timeoutInterruptor)
+        .thenPeek(ctr -> ctr.setRequestHandler(handler))
+        .thenApply(Controller::getRpcStream)
+        .thenCompose(rpcStream -> rpcStream.writeBytes(initialPayload).thenApply(__ -> rpcStream))
+        .orInterrupt(closeInterruptor, timeoutInterruptor);
   }
 
   @NotNull
