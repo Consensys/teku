@@ -100,4 +100,9 @@ public class StubPeer implements Peer {
   public boolean connectionInitiatedRemotely() {
     return false;
   }
+
+  @Override
+  public String toString() {
+    return "StubPeer(" + peerAddress.getId().toBase58() + ")";
+  }
 }
