@@ -44,6 +44,7 @@ import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.network.p2p.connection.StubPeerScorer;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
@@ -149,6 +150,7 @@ class DiscoveryNetworkTest {
             DelayedExecutorAsyncRunner.create(),
             p2pNetwork,
             reputationManager,
+            StubPeerScorer::new,
             new NetworkConfig(
                 null,
                 "127.0.0.1",
