@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.util.async;
 
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
@@ -85,6 +86,20 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     } catch (final Throwable e) {
       return SafeFuture.failedFuture(e);
     }
+  }
+
+  public static SafeFuture<Void> notInterrupted(Interruptor... interruptors) {
+    return SafeFuture.<Void>completedFuture(null).orInterrupt(interruptors);
+  }
+
+  public static Interruptor createInterruptor(CompletableFuture<?> interruptFuture) {
+    return createInterruptor(
+        interruptFuture, () -> new InterruptedException("SafeFuture Interruptor triggered"));
+  }
+
+  public static Interruptor createInterruptor(
+      CompletableFuture<?> interruptFuture, Supplier<Exception> exceptionSupplier) {
+    return new Interruptor(interruptFuture, exceptionSupplier);
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -331,5 +346,64 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   @Override
   public SafeFuture<T> orTimeout(final long timeout, final TimeUnit unit) {
     return (SafeFuture<T>) super.orTimeout(timeout, unit);
+  }
+
+  @SafeVarargs
+  @SuppressWarnings("uncheckedCast")
+  public final SafeFuture<T> or(CompletableFuture<T>... others) {
+    CompletableFuture<T>[] futures = Arrays.copyOf(others, others.length + 1);
+    futures[others.length] = this;
+    return SafeFuture.of(CompletableFuture.anyOf(futures).thenApply(o -> (T) o));
+  }
+
+  public SafeFuture<T> orInterrupt(Interruptor... interruptors) {
+    CompletableFuture<?>[] allFuts = new CompletableFuture<?>[interruptors.length + 1];
+    allFuts[0] = this;
+    for (int i = 0; i < interruptors.length; i++) {
+      allFuts[i + 1] = interruptors[i].interruptFuture;
+    }
+    SafeFuture<T> ret = new SafeFuture<>();
+    CompletableFuture.anyOf(allFuts)
+        .whenComplete(
+            (res, err) -> {
+              if (this.isDone()) {
+                this.propagateTo(ret);
+              } else {
+                for (Interruptor interruptor : interruptors) {
+                  if (interruptor.interruptFuture.isDone()) {
+                    try {
+                      interruptor.getInterruptFuture().get();
+                      ret.completeExceptionally(interruptor.getExceptionSupplier().get());
+                    } catch (Exception e) {
+                      ret.completeExceptionally(e);
+                    }
+                  }
+                }
+              }
+            });
+    return ret;
+  }
+
+  /**
+   * Class containing an interrupting Future and exception supplier which is used if
+   *  interrupting Future is triggered
+   */
+  public static class Interruptor {
+    private final CompletableFuture<?> interruptFuture;
+    private final Supplier<Exception> exceptionSupplier;
+
+    private Interruptor(
+        CompletableFuture<?> interruptFuture, Supplier<Exception> exceptionSupplier) {
+      this.interruptFuture = interruptFuture;
+      this.exceptionSupplier = exceptionSupplier;
+    }
+
+    private CompletableFuture<?> getInterruptFuture() {
+      return interruptFuture;
+    }
+
+    private Supplier<Exception> getExceptionSupplier() {
+      return exceptionSupplier;
+    }
   }
 }
