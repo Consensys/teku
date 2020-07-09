@@ -22,6 +22,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
 
 import com.google.common.eventbus.EventBus;
@@ -133,6 +134,19 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.getDuties(EPOCH, List.of(unknownPublicKey));
     final Optional<List<ValidatorDuties>> duties = assertCompletedSuccessfully(result);
     assertThat(duties.get()).containsExactly(ValidatorDuties.noDuties(unknownPublicKey));
+  }
+
+  @Test
+  public void getDuties_shouldReturnDutiesForInactiveValidator() {
+    BeaconState state = createStateWithMixOfActiveAndInactiveValidators();
+    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+        .thenReturn(completedFuture(Optional.of(state)));
+
+    final BLSPublicKey publicKey = state.getValidators().get(0).getPubkey();
+    final SafeFuture<Optional<List<ValidatorDuties>>> result =
+        validatorApiHandler.getDuties(EPOCH, List.of(publicKey));
+    final Optional<List<ValidatorDuties>> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.get()).containsExactly(ValidatorDuties.noDuties(publicKey));
   }
 
   @Test
@@ -390,6 +404,32 @@ class ValidatorApiHandlerTest {
                         validator
                             .withActivation_eligibility_epoch(ZERO)
                             .withActivation_epoch(ZERO)
+                            .withExit_epoch(Constants.FAR_FUTURE_EPOCH)
+                            .withWithdrawable_epoch(Constants.FAR_FUTURE_EPOCH));
+              }
+            });
+  }
+
+  private BeaconState createStateWithMixOfActiveAndInactiveValidators() {
+    return createStateWithMixOfActiveAndInactiveValidators(PREVIOUS_EPOCH_START_SLOT);
+  }
+
+  private BeaconState createStateWithMixOfActiveAndInactiveValidators(final UnsignedLong slot) {
+    final UnsignedLong futureEpoch = compute_epoch_at_slot(slot).plus(UnsignedLong.valueOf(10));
+    return dataStructureUtil
+        .randomBeaconState(32)
+        .updated(
+            state -> {
+              state.setSlot(slot);
+              final SSZMutableList<Validator> validators = state.getValidators();
+              for (int i = 0; i < validators.size(); i++) {
+                final UnsignedLong activationEpoch = i % 2 == 0 ? futureEpoch : ZERO;
+                validators.update(
+                    i,
+                    validator ->
+                        validator
+                            .withActivation_eligibility_epoch(activationEpoch)
+                            .withActivation_epoch(activationEpoch)
                             .withExit_epoch(Constants.FAR_FUTURE_EPOCH)
                             .withWithdrawable_epoch(Constants.FAR_FUTURE_EPOCH));
               }
