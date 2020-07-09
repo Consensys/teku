@@ -56,6 +56,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     this.rpcMethod = rpcMethod;
   }
 
+  @SuppressWarnings("unchecked")
   public SafeFuture<RpcStream> sendRequest(
       Connection connection, Bytes initialPayload, RpcRequestHandler handler) {
 

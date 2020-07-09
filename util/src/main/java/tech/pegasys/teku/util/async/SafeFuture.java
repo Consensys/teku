@@ -376,7 +376,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   @SafeVarargs
-  @SuppressWarnings("uncheckedCast")
+  @SuppressWarnings("unchecked")
   public final SafeFuture<T> or(SafeFuture<T>... others) {
     SafeFuture<T>[] futures = Arrays.copyOf(others, others.length + 1);
     futures[others.length] = this;
@@ -423,7 +423,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
                   }
                 }
               }
-            });
+            }).exceptionally(e -> null); // all exceptions are propagated to ret
     return ret;
   }
 
