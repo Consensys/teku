@@ -423,7 +423,8 @@ public class SafeFuture<T> extends CompletableFuture<T> {
                   }
                 }
               }
-            }).exceptionally(e -> null); // all exceptions are propagated to ret
+            })
+        .exceptionally(e -> null); // all exceptions are propagated to ret
     return ret;
   }
 
