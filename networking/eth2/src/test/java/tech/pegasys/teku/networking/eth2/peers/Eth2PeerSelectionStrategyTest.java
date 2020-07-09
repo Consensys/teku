@@ -51,7 +51,6 @@ class Eth2PeerSelectionStrategyTest {
   private static final DiscoveryPeer DISCOVERY_PEER1 = createDiscoveryPeer(PEER1);
   private static final DiscoveryPeer DISCOVERY_PEER2 = createDiscoveryPeer(PEER2);
   private static final DiscoveryPeer DISCOVERY_PEER3 = createDiscoveryPeer(PEER3);
-  private static final DiscoveryPeer DISCOVERY_PEER4 = createDiscoveryPeer(PEER4);
 
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> network = mock(P2PNetwork.class);
