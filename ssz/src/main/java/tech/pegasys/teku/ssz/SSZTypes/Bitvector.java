@@ -83,6 +83,10 @@ public class Bitvector {
     return size;
   }
 
+  public IntStream streamAllSetBits() {
+    return data.stream();
+  }
+
   @SuppressWarnings("NarrowingCompoundAssignment")
   public Bytes serialize() {
     byte[] array = new byte[sszSerializationLength(size)];

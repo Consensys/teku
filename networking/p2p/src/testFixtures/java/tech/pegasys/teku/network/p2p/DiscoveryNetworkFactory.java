@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.teku.network.p2p.connection.StubPeerScorer;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
@@ -105,6 +106,7 @@ public class DiscoveryNetworkFactory {
                     Collections.emptyList(),
                     Collections.emptyList()),
                 reputationManager,
+                StubPeerScorer::new,
                 config);
         try {
           network.start().get(30, TimeUnit.SECONDS);
