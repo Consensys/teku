@@ -48,6 +48,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
+import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
@@ -185,8 +186,8 @@ public class Eth2NetworkFactory {
                     METRICS_SYSTEM,
                     new ArrayList<>(rpcMethods),
                     peerHandlers),
-                reputationManager,
-                StubPeerScorer::new,
+                new Eth2PeerSelectionStrategy(
+                    config.getTargetPeerRange(), StubPeerScorer::new, reputationManager),
                 config);
 
         return new ActiveEth2Network(
