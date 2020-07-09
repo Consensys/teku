@@ -13,8 +13,12 @@
 
 package tech.pegasys.teku.networking.p2p.mock;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
@@ -97,7 +101,7 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   @Override
   public int getListenPort() {
     return 0;
-  };
+  }
 
   /** Stops the P2P network layer. */
   @Override
@@ -111,5 +115,16 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   @Override
   public TopicChannel subscribe(final String topic, final TopicHandler topicHandler) {
     return new MockTopicChannel();
+  }
+
+  @Override
+  public SafeFuture<?> gossip(final String topic, final Bytes data) {
+    // Do nothing
+    return SafeFuture.COMPLETE;
+  }
+
+  @Override
+  public Map<String, Collection<NodeId>> getSubscribersByTopic() {
+    return Collections.emptyMap();
   }
 }

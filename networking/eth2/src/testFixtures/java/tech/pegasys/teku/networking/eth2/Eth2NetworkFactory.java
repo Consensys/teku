@@ -42,6 +42,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.network.p2p.connection.StubPeerScorer;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
@@ -167,11 +168,15 @@ public class Eth2NetworkFactory {
 
         this.peerHandler(eth2PeerManager);
 
+        final NoOpMetricsSystem metricsSystem = new NoOpMetricsSystem();
         final ReputationManager reputationManager =
             new ReputationManager(
-                StubTimeProvider.withTimeInSeconds(1000), Constants.REPUTATION_MANAGER_CAPACITY);
+                metricsSystem,
+                StubTimeProvider.withTimeInSeconds(1000),
+                Constants.REPUTATION_MANAGER_CAPACITY);
         final DiscoveryNetwork<?> network =
             DiscoveryNetwork.create(
+                metricsSystem,
                 asyncRunner,
                 new LibP2PNetwork(
                     asyncRunner,
@@ -181,9 +186,11 @@ public class Eth2NetworkFactory {
                     new ArrayList<>(rpcMethods),
                     peerHandlers),
                 reputationManager,
+                StubPeerScorer::new,
                 config);
 
         return new ActiveEth2Network(
+            metricsSystem,
             network,
             eth2PeerManager,
             eventBus,

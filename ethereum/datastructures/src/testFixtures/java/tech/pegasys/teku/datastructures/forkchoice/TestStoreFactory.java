@@ -209,13 +209,8 @@ public class TestStoreFactory {
     }
 
     @Override
-    public BeaconState getCheckpointState(final Checkpoint checkpoint) {
-      return checkpoint_states.get(checkpoint);
-    }
-
-    @Override
-    public boolean containsCheckpointState(final Checkpoint checkpoint) {
-      return checkpoint_states.containsKey(checkpoint);
+    public Optional<BeaconState> getCheckpointState(final Checkpoint checkpoint) {
+      return Optional.ofNullable(checkpoint_states.get(checkpoint));
     }
 
     @Override
@@ -246,11 +241,6 @@ public class TestStoreFactory {
           block_states,
           checkpoint_states,
           votes);
-    }
-
-    @Override
-    public void putCheckpointState(final Checkpoint checkpoint, final BeaconState state) {
-      checkpoint_states.put(checkpoint, state);
     }
 
     @Override

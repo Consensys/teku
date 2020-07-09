@@ -43,6 +43,7 @@ public class Constants {
   public static UnsignedLong HYSTERESIS_QUOTIENT;
   public static UnsignedLong HYSTERESIS_DOWNWARD_MULTIPLIER;
   public static UnsignedLong HYSTERESIS_UPWARD_MULTIPLIER;
+  public static int MAX_REQUEST_BLOCKS = 1024;
 
   // Gwei values
   public static long MIN_DEPOSIT_AMOUNT;
@@ -130,7 +131,7 @@ public class Constants {
   public static final long ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT = 500; // in milli sec
   public static final long ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = 2; // in sec
   public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
-  public static final int REPUTATION_MANAGER_CAPACITY = 100;
+  public static final int REPUTATION_MANAGER_CAPACITY = 1024;
   public static final long STORAGE_REQUEST_TIMEOUT = 5; // in sec
   public static final int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
   public static final int PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD = 256;

@@ -21,8 +21,6 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 
 public interface MutableStore extends ReadOnlyStore {
 
-  void putCheckpointState(Checkpoint checkpoint, BeaconState state);
-
   void putBlockAndState(SignedBeaconBlock block, BeaconState state);
 
   default void putBlockAndState(SignedBlockAndState blockAndState) {

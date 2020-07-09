@@ -53,6 +53,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StorePruningOptions;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -66,6 +67,7 @@ public abstract class AbstractDatabaseTest {
 
   protected final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
 
+  protected AnchorPoint genesisAnchor;
   protected SignedBlockAndState genesisBlockAndState;
   protected SignedBlockAndState checkpoint1BlockAndState;
   protected SignedBlockAndState checkpoint2BlockAndState;
@@ -92,6 +94,7 @@ public abstract class AbstractDatabaseTest {
 
     genesisBlockAndState = chainBuilder.generateGenesis();
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
+    genesisAnchor = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
 
     // Initialize genesis store
     initGenesis();
@@ -250,9 +253,7 @@ public abstract class AbstractDatabaseTest {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     transaction.setGenesis_time(UnsignedLong.valueOf(3));
     transaction.setFinalizedCheckpoint(checkpoint1);
-    transaction.putCheckpointState(checkpoint1, checkpoint1BlockAndState.getState());
     transaction.setJustifiedCheckpoint(checkpoint2);
-    transaction.putCheckpointState(checkpoint2, checkpoint2BlockAndState.getState());
     transaction.setBestJustifiedCheckpoint(checkpoint3);
 
     commit(transaction);
@@ -289,7 +290,6 @@ public abstract class AbstractDatabaseTest {
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     transaction.setJustifiedCheckpoint(newValue);
-    transaction.putCheckpointState(newValue, checkpoint3BlockAndState.getState());
     commit(transaction);
 
     final UpdatableStore result = recreateStore();
@@ -343,93 +343,6 @@ public abstract class AbstractDatabaseTest {
     final UpdatableStore result = recreateStore();
     assertThat(result.getSignedBlock(newBlock.getRoot())).isEqualTo(newBlock.getBlock());
     assertThat(result.getBlockState(newBlock.getRoot())).isEqualTo(newBlock.getState());
-  }
-
-  @Test
-  public void shouldStoreSingleValue_singleCheckpointState() throws StateTransitionException {
-    generateCheckpoints();
-    final Checkpoint checkpoint = checkpoint3;
-    final BeaconState newState = checkpoint3BlockAndState.getState();
-    // Sanity check
-    assertThat(store.getCheckpointState(checkpoint)).isNull();
-
-    final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    transaction.putCheckpointState(checkpoint, newState);
-    commit(transaction);
-
-    final UpdatableStore result = recreateStore();
-    assertThat(result.getCheckpointState(checkpoint)).isEqualTo(newState);
-  }
-
-  @Test
-  public void shouldStoreCheckpointStates() throws StateTransitionException {
-    generateCheckpoints();
-    final StoreTransaction transaction = recentChainData.startStoreTransaction();
-
-    addBlocks(checkpoint1BlockAndState, checkpoint2BlockAndState, checkpoint3BlockAndState);
-
-    transaction.putCheckpointState(checkpoint1, checkpoint1BlockAndState.getState());
-    transaction.putCheckpointState(checkpoint2, checkpoint2BlockAndState.getState());
-    transaction.putCheckpointState(checkpoint3, checkpoint3BlockAndState.getState());
-
-    commit(transaction);
-
-    final UpdatableStore result = recreateStore();
-    assertThat(result.getCheckpointState(checkpoint1))
-        .isEqualTo(checkpoint1BlockAndState.getState());
-    assertThat(result.getCheckpointState(checkpoint2))
-        .isEqualTo(checkpoint2BlockAndState.getState());
-    assertThat(result.getCheckpointState(checkpoint3))
-        .isEqualTo(checkpoint3BlockAndState.getState());
-  }
-
-  @Test
-  public void shouldRemoveCheckpointStatesPriorToFinalizedCheckpoint()
-      throws StateTransitionException {
-    generateCheckpoints();
-    // Store blocks up to final checkpoint
-    final List<SignedBlockAndState> allBlocks =
-        chainBuilder
-            .streamBlocksAndStates(0, checkpoint3BlockAndState.getSlot().longValue())
-            .collect(toList());
-    addBlocks(allBlocks);
-
-    // First store the initial checkpoints.
-    final StoreTransaction transaction1 = recentChainData.startStoreTransaction();
-    // Add blocks
-    transaction1.putBlockAndState(checkpoint1BlockAndState);
-    transaction1.putBlockAndState(checkpoint2BlockAndState);
-    transaction1.putBlockAndState(checkpoint3BlockAndState);
-    // Add checkpoint states
-    transaction1.putCheckpointState(checkpoint1, checkpoint1BlockAndState.getState());
-    transaction1.putCheckpointState(checkpoint2, checkpoint2BlockAndState.getState());
-    transaction1.putCheckpointState(checkpoint3, checkpoint3BlockAndState.getState());
-    commit(transaction1);
-
-    // Now update the finalized checkpoint
-    final Set<SignedBlockAndState> blocksToPrune =
-        chainBuilder
-            .streamBlocksAndStates(0, checkpoint2.getEpochStartSlot().longValue())
-            .collect(Collectors.toSet());
-    blocksToPrune.remove(checkpoint2BlockAndState);
-    final StoreTransaction transaction2 = recentChainData.startStoreTransaction();
-    justifyAndFinalizeEpoch(checkpoint2.getEpoch(), checkpoint2BlockAndState, transaction2);
-    commit(transaction2);
-
-    final Set<Bytes32> expectedPrunedBlocks =
-        blocksToPrune.stream().map(SignedBlockAndState::getRoot).collect(Collectors.toSet());
-    final Set<Checkpoint> expectedPrunedCheckpoints = Set.of(genesisCheckpoint, checkpoint1);
-
-    // Check pruned data has been removed from store
-    assertStoreWasPruned(store, expectedPrunedBlocks, expectedPrunedCheckpoints);
-
-    final UpdatableStore result = recreateStore();
-    assertThat(result.getCheckpointState(checkpoint1)).isNull();
-    assertThat(result.getCheckpointState(checkpoint2))
-        .isEqualTo(transaction1.getCheckpointState(checkpoint2));
-    assertThat(result.getCheckpointState(checkpoint3))
-        .isEqualTo(transaction1.getCheckpointState(checkpoint3));
-    assertStoreWasPruned(result, expectedPrunedBlocks, expectedPrunedCheckpoints);
   }
 
   @Test
@@ -816,9 +729,6 @@ public abstract class AbstractDatabaseTest {
       assertThat(store.getBlock(prunedBlock)).isNull();
       assertThat(store.getBlockState(prunedBlock)).isNull();
     }
-    for (Checkpoint prunedCheckpoint : prunedCheckpoints) {
-      assertThat(store.getCheckpointState(prunedCheckpoint)).isNull();
-    }
   }
 
   protected void addBlocks(final SignedBlockAndState... blocks) {
@@ -873,7 +783,6 @@ public abstract class AbstractDatabaseTest {
       final StoreTransaction transaction) {
     final Checkpoint checkpoint = new Checkpoint(epoch, block.getRoot());
     transaction.setFinalizedCheckpoint(checkpoint);
-    transaction.putCheckpointState(checkpoint, block.getState());
   }
 
   protected void justifyEpoch(
@@ -882,7 +791,6 @@ public abstract class AbstractDatabaseTest {
       final StoreTransaction transaction) {
     final Checkpoint checkpoint = new Checkpoint(epoch, block.getRoot());
     transaction.setJustifiedCheckpoint(checkpoint);
-    transaction.putCheckpointState(checkpoint, block.getState());
   }
 
   protected Checkpoint getCheckpointForBlock(final SignedBeaconBlock block) {

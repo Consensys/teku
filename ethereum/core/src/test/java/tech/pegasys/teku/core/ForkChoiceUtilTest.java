@@ -31,6 +31,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
+import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 
 class ForkChoiceUtilTest {
 
@@ -42,7 +43,7 @@ class ForkChoiceUtilTest {
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final ReadOnlyStore store = new TestStoreFactory().createGenesisStore(genesis.getState());
   private final ProtoArrayForkChoiceStrategy forkChoiceStrategy =
-      ProtoArrayForkChoiceStrategy.create(store);
+      ProtoArrayForkChoiceStrategy.initialize(store, new StubProtoArrayStorageChannel());
 
   @Test
   void getAncestors_shouldGetSimpleSequenceOfAncestors() throws Exception {

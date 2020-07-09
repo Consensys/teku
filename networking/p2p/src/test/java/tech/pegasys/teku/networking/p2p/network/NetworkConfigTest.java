@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
-import java.net.InetAddress;
 import java.util.Optional;
 import java.util.OptionalInt;
 import org.junit.jupiter.api.Test;
@@ -37,10 +36,9 @@ class NetworkConfigTest {
   }
 
   @Test
-  void getAdvertisedIp_shouldResolveAnyLocalAdvertisedAddress() throws Exception {
+  void getAdvertisedIp_shouldResolveAnyLocalAdvertisedAddress() {
     advertisedIp = Optional.of("0.0.0.0");
-    final String expected = InetAddress.getLocalHost().getHostAddress();
-    assertThat(createConfig().getAdvertisedIp()).isEqualTo(expected);
+    assertThat(createConfig().getAdvertisedIp()).isNotEqualTo("0.0.0.0");
   }
 
   @Test
@@ -50,17 +48,17 @@ class NetworkConfigTest {
   }
 
   @Test
-  void getAdvertisedIp_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocal() throws Exception {
+  void getAdvertisedIp_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocal() {
     listenIp = "0.0.0.0";
-    final String expected = InetAddress.getLocalHost().getHostAddress();
-    assertThat(createConfig().getAdvertisedIp()).isEqualTo(expected);
+    assertThat(createConfig().getAdvertisedIp()).isNotEqualTo("0.0.0.0");
   }
 
   @Test
-  void getAdvertisedIp_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocalIpv6() throws Exception {
+  void getAdvertisedIp_shouldResolveLocalhostIpWhenInterfaceIpIsAnyLocalIpv6() {
     listenIp = "::0";
-    final String expected = InetAddress.getLocalHost().getHostAddress();
-    assertThat(createConfig().getAdvertisedIp()).isEqualTo(expected);
+    final String result = createConfig().getAdvertisedIp();
+    assertThat(result).isNotEqualTo("::0");
+    assertThat(result).isNotEqualTo("0.0.0.0");
   }
 
   private NetworkConfig createConfig() {

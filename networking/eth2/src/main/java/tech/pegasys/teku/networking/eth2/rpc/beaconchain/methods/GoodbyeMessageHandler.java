@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
@@ -23,6 +22,7 @@ import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.LocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 
 public class GoodbyeMessageHandler implements LocalMessageHandler<GoodbyeMessage, GoodbyeMessage> {
 
@@ -42,19 +42,10 @@ public class GoodbyeMessageHandler implements LocalMessageHandler<GoodbyeMessage
       final Optional<Eth2Peer> peer,
       final GoodbyeMessage message,
       final ResponseCallback<GoodbyeMessage> callback) {
-    goodbyeCounter.labels(labelForReason(message.getReason())).inc();
-    peer.ifPresent(Eth2Peer::disconnectImmediately);
+    final Optional<DisconnectReason> disconnectReason =
+        DisconnectReason.fromReasonCode(message.getReason());
+    goodbyeCounter.labels(disconnectReason.map(DisconnectReason::name).orElse("UNKNOWN")).inc();
+    peer.ifPresent(eth2Peer -> eth2Peer.disconnectImmediately(disconnectReason, false));
     callback.completeSuccessfully();
-  }
-
-  private String labelForReason(final UnsignedLong reason) {
-    if (GoodbyeMessage.REASON_CLIENT_SHUT_DOWN.equals(reason)) {
-      return "SHUTDOWN";
-    } else if (GoodbyeMessage.REASON_IRRELEVANT_NETWORK.equals(reason)) {
-      return "IRRELEVANT_NETWORK";
-    } else if (GoodbyeMessage.REASON_FAULT_ERROR.equals(reason)) {
-      return "FAULT";
-    }
-    return "UNKNOWN";
   }
 }

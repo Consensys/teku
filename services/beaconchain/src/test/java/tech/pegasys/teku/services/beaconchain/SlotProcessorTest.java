@@ -49,7 +49,7 @@ import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 public class SlotProcessorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
-  private final BeaconState beaconState = dataStructureUtil.randomBeaconState();
+  private final BeaconState beaconState = dataStructureUtil.randomBeaconState(ZERO);
   private final EventLogger eventLogger = mock(EventLogger.class);
 
   private final StorageSystem storageSystem =
@@ -212,7 +212,7 @@ public class SlotProcessorTest {
         EventSink.capture(eventBus, BroadcastAttestationEvent.class);
     when(syncService.isSyncActive()).thenReturn(false);
 
-    when(forkChoice.processHead()).thenReturn(bestRoot);
+    when(forkChoice.processHead(slotProcessor.getNodeSlot().getValue())).thenReturn(bestRoot);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
     slotProcessor.onTick(

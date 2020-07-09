@@ -30,12 +30,14 @@ import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
+import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubReorgEventChannel;
+import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.async.SafeFuture;
@@ -66,6 +68,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
+            new StubProtoArrayStorageChannel(),
             finalizedCheckpointChannel,
             reorgEventChannel,
             eventBus);
@@ -79,7 +82,9 @@ public class StorageBackedRecentChainDataTest {
     // Post a store response to complete initialization
     final StoreBuilder genesisStoreBuilder =
         StoreBuilder.forkChoiceStoreBuilder(
-            new StubMetricsSystem(), BlockProvider.NOOP, INITIAL_STATE);
+            new StubMetricsSystem(),
+            BlockProvider.NOOP,
+            AnchorPoint.fromGenesisState(INITIAL_STATE));
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
@@ -100,6 +105,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
+            new StubProtoArrayStorageChannel(),
             finalizedCheckpointChannel,
             reorgEventChannel,
             eventBus);
@@ -118,7 +124,9 @@ public class StorageBackedRecentChainDataTest {
     // Now set the genesis state
     final UpdatableStore genesisStore =
         StoreBuilder.buildForkChoiceStore(
-            new StubMetricsSystem(), BlockProvider.NOOP, INITIAL_STATE);
+            new StubMetricsSystem(),
+            BlockProvider.NOOP,
+            AnchorPoint.fromGenesisState(INITIAL_STATE));
     client.get().initializeFromGenesis(INITIAL_STATE);
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
@@ -140,6 +148,7 @@ public class StorageBackedRecentChainDataTest {
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
+            new StubProtoArrayStorageChannel(),
             finalizedCheckpointChannel,
             reorgEventChannel,
             eventBus);
@@ -155,7 +164,9 @@ public class StorageBackedRecentChainDataTest {
     // Now set the genesis state
     final StoreBuilder genesisStoreBuilder =
         StoreBuilder.forkChoiceStoreBuilder(
-            new StubMetricsSystem(), BlockProvider.NOOP, INITIAL_STATE);
+            new StubMetricsSystem(),
+            BlockProvider.NOOP,
+            AnchorPoint.fromGenesisState(INITIAL_STATE));
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());

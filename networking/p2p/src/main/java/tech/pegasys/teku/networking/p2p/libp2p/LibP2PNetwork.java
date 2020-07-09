@@ -43,6 +43,7 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import java.net.InetSocketAddress;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -52,6 +53,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.crypto.Hash;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
@@ -301,7 +303,17 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
+  public SafeFuture<?> gossip(final String topic, final Bytes data) {
+    return gossipNetwork.gossip(topic, data);
+  }
+
+  @Override
   public TopicChannel subscribe(final String topic, final TopicHandler topicHandler) {
     return gossipNetwork.subscribe(topic, topicHandler);
+  }
+
+  @Override
+  public Map<String, Collection<NodeId>> getSubscribersByTopic() {
+    return gossipNetwork.getSubscribersByTopic();
   }
 }

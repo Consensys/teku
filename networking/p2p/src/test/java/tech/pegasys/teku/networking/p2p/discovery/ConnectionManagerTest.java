@@ -20,15 +20,21 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
+import com.google.common.primitives.Ints;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
+import tech.pegasys.teku.network.p2p.connection.StubPeerScorer;
 import tech.pegasys.teku.network.p2p.peer.StubPeer;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
@@ -36,44 +42,43 @@ import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
-import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.async.StubAsyncRunner;
 
 class ConnectionManagerTest {
 
-  private static final Optional<Bytes> ENR_FORK_ID = Optional.of(Bytes.EMPTY);
+  private static final Optional<EnrForkId> ENR_FORK_ID = Optional.empty();
   private static final PeerAddress PEER1 = new PeerAddress(new MockNodeId(1));
   private static final PeerAddress PEER2 = new PeerAddress(new MockNodeId(2));
   private static final PeerAddress PEER3 = new PeerAddress(new MockNodeId(3));
   private static final PeerAddress PEER4 = new PeerAddress(new MockNodeId(4));
-  private static final DiscoveryPeer DISCOVERY_PEER1 =
-      new DiscoveryPeer(Bytes.of(1), new InetSocketAddress(1), ENR_FORK_ID);
-  private static final DiscoveryPeer DISCOVERY_PEER2 =
-      new DiscoveryPeer(Bytes.of(2), new InetSocketAddress(2), ENR_FORK_ID);
-  private static final DiscoveryPeer DISCOVERY_PEER3 =
-      new DiscoveryPeer(Bytes.of(3), new InetSocketAddress(3), ENR_FORK_ID);
-  private static final DiscoveryPeer DISCOVERY_PEER4 =
-      new DiscoveryPeer(Bytes.of(4), new InetSocketAddress(4), ENR_FORK_ID);
+  private static final DiscoveryPeer DISCOVERY_PEER1 = createDiscoveryPeer(PEER1);
+  private static final DiscoveryPeer DISCOVERY_PEER2 = createDiscoveryPeer(PEER2);
+  private static final DiscoveryPeer DISCOVERY_PEER3 = createDiscoveryPeer(PEER3);
+  private static final DiscoveryPeer DISCOVERY_PEER4 = createDiscoveryPeer(PEER4);
 
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> network = mock(P2PNetwork.class);
 
   private final DiscoveryService discoveryService = mock(DiscoveryService.class);
   private final ReputationManager reputationManager = mock(ReputationManager.class);
-
+  private final StubPeerScorer peerScorer = new StubPeerScorer();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   @BeforeEach
   public void setUp() {
     when(reputationManager.isConnectionInitiationAllowed(any())).thenReturn(true);
     when(discoveryService.searchForPeers()).thenReturn(new SafeFuture<>());
-    when(network.createPeerAddress(DISCOVERY_PEER1)).thenReturn(PEER1);
-    when(network.createPeerAddress(DISCOVERY_PEER2)).thenReturn(PEER2);
-    when(network.createPeerAddress(DISCOVERY_PEER3)).thenReturn(PEER3);
-    when(network.createPeerAddress(DISCOVERY_PEER4)).thenReturn(PEER4);
+    when(network.createPeerAddress(any(DiscoveryPeer.class)))
+        .thenAnswer(
+            invocation -> {
+              final DiscoveryPeer peer = invocation.getArgument(0);
+              return new PeerAddress(new MockNodeId(peer.getPublicKey()));
+            });
   }
 
   @Test
@@ -121,7 +126,7 @@ class ConnectionManagerTest {
     asyncRunner.executeQueuedActions();
     verify(network, times(2)).connect(PEER1);
 
-    peer.disconnectImmediately();
+    peer.disconnectImmediately(Optional.empty(), true);
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
     verify(network, times(3)).connect(PEER1);
@@ -138,7 +143,7 @@ class ConnectionManagerTest {
         .thenReturn(new SafeFuture<>());
     manager.start().join();
     verify(network).connect(PEER1);
-    peer.disconnectImmediately();
+    peer.disconnectImmediately(Optional.empty(), true);
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
@@ -158,7 +163,7 @@ class ConnectionManagerTest {
 
     manager.addStaticPeer(PEER1);
     verify(network).connect(PEER1);
-    peer.disconnectImmediately();
+    peer.disconnectImmediately(Optional.empty(), true);
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
@@ -208,7 +213,7 @@ class ConnectionManagerTest {
 
     connectionFuture.completeExceptionally(new RuntimeException("Failed"));
 
-    assertThat(asyncRunner.hasDelayedActions()).isFalse();
+    asyncRunner.executeQueuedActions();
     verify(network, times(1)).connect(PEER1); // No further attempts to connect
   }
 
@@ -225,8 +230,8 @@ class ConnectionManagerTest {
     final StubPeer peer = new StubPeer(new MockNodeId(DISCOVERY_PEER1.getPublicKey()));
     connectionFuture.complete(peer);
 
-    peer.disconnectImmediately();
-    assertThat(asyncRunner.hasDelayedActions()).isFalse();
+    peer.disconnectImmediately(Optional.empty(), true);
+    asyncRunner.executeQueuedActions();
     verify(network, times(1)).connect(PEER1); // No further attempts to connect
   }
 
@@ -371,7 +376,7 @@ class ConnectionManagerTest {
   }
 
   @Test
-  public void shouldDisconnectDiscoveredPeersWhenPeerCountExceedsLimit() {
+  public void shouldDisconnectLowestScoringDiscoveredPeersWhenPeerCountExceedsLimit() {
     final ConnectionManager manager = createManager(new TargetPeerRange(1, 1));
     manager.start().join();
 
@@ -379,13 +384,18 @@ class ConnectionManagerTest {
 
     final StubPeer peer1 = new StubPeer(new MockNodeId(1));
     final StubPeer peer2 = new StubPeer(new MockNodeId(2));
-    when(network.streamPeers()).thenReturn(Stream.of(peer2, peer1));
-    when(network.getPeerCount()).thenReturn(2);
+    final StubPeer peer3 = new StubPeer(new MockNodeId(3));
+    peerScorer.setScore(peer1.getId(), 100);
+    peerScorer.setScore(peer2.getId(), 200);
+    peerScorer.setScore(peer3.getId(), 150);
+    when(network.streamPeers()).thenReturn(Stream.of(peer2, peer1, peer3));
+    when(network.getPeerCount()).thenReturn(3);
     peerConnectedSubscriber.onConnected(peer1);
 
     // Should disconnect one peer to get back down to our target of max 1 peer.
-    assertThat(peer2.getDisconnectReason()).contains(DisconnectReason.TOO_MANY_PEERS);
-    assertThat(peer1.isConnected()).isTrue();
+    assertThat(peer1.getDisconnectReason()).contains(DisconnectReason.TOO_MANY_PEERS);
+    assertThat(peer3.getDisconnectReason()).contains(DisconnectReason.TOO_MANY_PEERS);
+    assertThat(peer2.isConnected()).isTrue();
   }
 
   @Test
@@ -425,7 +435,33 @@ class ConnectionManagerTest {
   }
 
   @Test
-  public void shouldNotConnectPeersThatDontPassPeerFilter() {
+  public void shouldConnectToHighestScoringPeersThatPassFilter() {
+    final ConnectionManager manager = createManager(new TargetPeerRange(2, 2));
+    final StubPeer peer1 = new StubPeer(new MockNodeId(1));
+    when(network.connect(any())).thenReturn(SafeFuture.completedFuture(peer1));
+
+    final DiscoveryPeer discoveryPeer1 = createDiscoveryPeer(PEER1, 1);
+    final DiscoveryPeer discoveryPeer2 = createDiscoveryPeer(PEER2, 2);
+    final DiscoveryPeer discoveryPeer3 = createDiscoveryPeer(PEER3, 3);
+    final DiscoveryPeer discoveryPeer4 = createDiscoveryPeer(PEER4, 4);
+    peerScorer.setScore(discoveryPeer1.getPersistentSubnets(), 100);
+    peerScorer.setScore(discoveryPeer2.getPersistentSubnets(), 200);
+    peerScorer.setScore(discoveryPeer3.getPersistentSubnets(), 150);
+    peerScorer.setScore(discoveryPeer4.getPersistentSubnets(), 500);
+
+    when(discoveryService.streamKnownPeers())
+        .thenReturn(Stream.of(discoveryPeer1, discoveryPeer2, discoveryPeer3, discoveryPeer4));
+
+    manager.start().join();
+
+    verify(network).connect(PEER2);
+    verify(network).connect(PEER4);
+    // Connect at most 2 peers
+    verify(network, times(2)).connect(any());
+  }
+
+  @Test
+  public void shouldNotConnectPeersThatDoNotPassPeerFilter() {
     final ConnectionManager manager = createManager();
     manager.addPeerPredicate((peer) -> !peer.equals(DISCOVERY_PEER2));
     final StubPeer peer1 = new StubPeer(new MockNodeId(1));
@@ -474,11 +510,25 @@ class ConnectionManagerTest {
   private ConnectionManager createManager(
       final TargetPeerRange targetPeerCount, final PeerAddress... peers) {
     return new ConnectionManager(
+        new NoOpMetricsSystem(),
         discoveryService,
         reputationManager,
         asyncRunner,
         network,
         Arrays.asList(peers),
-        targetPeerCount);
+        targetPeerCount,
+        () -> peerScorer);
+  }
+
+  private static DiscoveryPeer createDiscoveryPeer(final PeerAddress peer, final int... subnetIds) {
+    return createDiscoveryPeer(peer.getId().toBytes(), subnetIds);
+  }
+
+  private static DiscoveryPeer createDiscoveryPeer(final Bytes peerId, final int... subnetIds) {
+    return new DiscoveryPeer(
+        peerId,
+        new InetSocketAddress(InetAddress.getLoopbackAddress(), peerId.trimLeadingZeros().toInt()),
+        ENR_FORK_ID,
+        new Bitvector(Ints.asList(subnetIds), ATTESTATION_SUBNET_COUNT));
   }
 }

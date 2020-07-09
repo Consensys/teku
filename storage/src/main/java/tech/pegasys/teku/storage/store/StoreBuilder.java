@@ -22,15 +22,11 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.storage.events.AnchorPoint;
 
 public class StoreBuilder {
   MetricsSystem metricsSystem;
@@ -42,7 +38,6 @@ public class StoreBuilder {
   Checkpoint justifiedCheckpoint;
   Checkpoint finalizedCheckpoint;
   Checkpoint bestJustifiedCheckpoint;
-  Map<Checkpoint, BeaconState> checkpointStates;
   SignedBlockAndState latestFinalized;
   Map<UnsignedLong, VoteTracker> votes;
 
@@ -55,44 +50,32 @@ public class StoreBuilder {
   public static UpdatableStore buildForkChoiceStore(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
-      final BeaconState anchorState) {
-    return forkChoiceStoreBuilder(metricsSystem, blockProvider, anchorState).build();
+      final AnchorPoint anchor) {
+    return forkChoiceStoreBuilder(metricsSystem, blockProvider, anchor).build();
   }
 
   public static StoreBuilder forkChoiceStoreBuilder(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
-      final BeaconState anchorState) {
-    final UnsignedLong time =
-        anchorState
-            .getGenesis_time()
-            .plus(UnsignedLong.valueOf(SECONDS_PER_SLOT).times(anchorState.getSlot()));
-    final BeaconBlock anchorBlock = new BeaconBlock(anchorState.hash_tree_root());
-    final SignedBeaconBlock signedAnchorBlock =
-        new SignedBeaconBlock(anchorBlock, BLSSignature.empty());
-    final Bytes32 anchorRoot = anchorBlock.hash_tree_root();
-    final UnsignedLong anchorEpoch = BeaconStateUtil.get_current_epoch(anchorState);
-    final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
+      final AnchorPoint anchor) {
+    final UnsignedLong genesisTime = anchor.getState().getGenesis_time();
+    final UnsignedLong slot = anchor.getState().getSlot();
+    final UnsignedLong time = genesisTime.plus(UnsignedLong.valueOf(SECONDS_PER_SLOT).times(slot));
 
     Map<Bytes32, Bytes32> childToParentMap = new HashMap<>();
-    Map<Checkpoint, BeaconState> checkpointStates = new HashMap<>();
-    Map<UnsignedLong, VoteTracker> votes = new HashMap<>();
-
-    childToParentMap.put(anchorRoot, anchorBlock.getParent_root());
-    checkpointStates.put(anchorCheckpoint, anchorState);
+    childToParentMap.put(anchor.getRoot(), anchor.getParentRoot());
 
     return create()
         .metricsSystem(metricsSystem)
         .blockProvider(blockProvider)
         .time(time)
-        .genesisTime(anchorState.getGenesis_time())
-        .finalizedCheckpoint(anchorCheckpoint)
-        .justifiedCheckpoint(anchorCheckpoint)
-        .bestJustifiedCheckpoint(anchorCheckpoint)
+        .genesisTime(genesisTime)
+        .finalizedCheckpoint(anchor.getCheckpoint())
+        .justifiedCheckpoint(anchor.getCheckpoint())
+        .bestJustifiedCheckpoint(anchor.getCheckpoint())
         .childToParentMap(childToParentMap)
-        .checkpointStates(checkpointStates)
-        .latestFinalized(new SignedBlockAndState(signedAnchorBlock, anchorState))
-        .votes(votes);
+        .latestFinalized(anchor.toSignedBlockAndState())
+        .votes(new HashMap<>());
   }
 
   public UpdatableStore build() {
@@ -106,7 +89,6 @@ public class StoreBuilder {
         finalizedCheckpoint,
         bestJustifiedCheckpoint,
         childToParentRoot,
-        checkpointStates,
         latestFinalized,
         votes,
         StorePruningOptions.createDefault());
@@ -121,7 +103,6 @@ public class StoreBuilder {
     checkState(finalizedCheckpoint != null, "Finalized checkpoint must be defined");
     checkState(bestJustifiedCheckpoint != null, "Best justified checkpoint must be defined");
     checkState(!childToParentRoot.isEmpty(), "Parent and child block data must be supplied");
-    checkState(checkpointStates != null, "Checkpoint states must be defined");
     checkState(latestFinalized != null, "Latest finalized block state must be defined");
     checkState(votes != null, "Votes must be defined");
   }
@@ -171,12 +152,6 @@ public class StoreBuilder {
   public StoreBuilder childToParentMap(final Map<Bytes32, Bytes32> childToParent) {
     checkNotNull(childToParent);
     this.childToParentRoot.putAll(childToParent);
-    return this;
-  }
-
-  public StoreBuilder checkpointStates(final Map<Checkpoint, BeaconState> checkpointStates) {
-    checkNotNull(checkpointStates);
-    this.checkpointStates = checkpointStates;
     return this;
   }
 

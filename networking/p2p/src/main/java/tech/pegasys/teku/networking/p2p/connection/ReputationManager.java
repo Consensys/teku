@@ -15,18 +15,31 @@ package tech.pegasys.teku.networking.p2p.connection;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.util.cache.Cache;
 import tech.pegasys.teku.util.cache.LRUCache;
 import tech.pegasys.teku.util.time.TimeProvider;
 
 public class ReputationManager {
+  static final UnsignedLong FAILURE_BAN_PERIOD =
+      UnsignedLong.valueOf(TimeUnit.MINUTES.toSeconds(2));
   private final TimeProvider timeProvider;
-  private final Cache<PeerAddress, Reputation> peerReputations;
+  private final Cache<NodeId, Reputation> peerReputations;
 
-  public ReputationManager(final TimeProvider timeProvider, final int capacity) {
+  public ReputationManager(
+      final MetricsSystem metricsSystem, final TimeProvider timeProvider, final int capacity) {
     this.timeProvider = timeProvider;
     this.peerReputations = new LRUCache<>(capacity);
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.NETWORK,
+        "peer_reputation_cache_size",
+        "Total number of peer reputations tracked",
+        peerReputations::size);
   }
 
   public void reportInitiatedConnectionFailed(final PeerAddress peerAddress) {
@@ -36,7 +49,7 @@ public class ReputationManager {
 
   public boolean isConnectionInitiationAllowed(final PeerAddress peerAddress) {
     return peerReputations
-        .getCached(peerAddress)
+        .getCached(peerAddress.getId())
         .map(reputation -> reputation.shouldInitiateConnection(timeProvider.getTimeInSeconds()))
         .orElse(true);
   }
@@ -45,28 +58,55 @@ public class ReputationManager {
     getOrCreateReputation(peerAddress).reportInitiatedConnectionSuccessful();
   }
 
+  public void reportDisconnection(
+      final PeerAddress peerAddress,
+      final Optional<DisconnectReason> reason,
+      final boolean locallyInitiated) {
+    getOrCreateReputation(peerAddress)
+        .reportDisconnection(timeProvider.getTimeInSeconds(), reason, locallyInitiated);
+  }
+
   private Reputation getOrCreateReputation(final PeerAddress peerAddress) {
-    return peerReputations.get(peerAddress, key -> new Reputation());
+    return peerReputations.get(peerAddress.getId(), key -> new Reputation());
   }
 
   private static class Reputation {
-    private static final UnsignedLong FAILURE_BAN_PERIOD = UnsignedLong.valueOf(60); // Seconds
     private volatile Optional<UnsignedLong> lastInitiationFailure = Optional.empty();
+    private volatile boolean unsuitable = false;
 
     public void reportInitiatedConnectionFailed(final UnsignedLong failureTime) {
       lastInitiationFailure = Optional.of(failureTime);
     }
 
     public boolean shouldInitiateConnection(final UnsignedLong currentTime) {
-      return lastInitiationFailure
-          .map(
-              lastFailureTime ->
-                  lastFailureTime.plus(FAILURE_BAN_PERIOD).compareTo(currentTime) < 0)
-          .orElse(true);
+      return !unsuitable
+          && lastInitiationFailure
+              .map(
+                  lastFailureTime ->
+                      lastFailureTime.plus(FAILURE_BAN_PERIOD).compareTo(currentTime) < 0)
+              .orElse(true);
     }
 
     public void reportInitiatedConnectionSuccessful() {
       lastInitiationFailure = Optional.empty();
+    }
+
+    public void reportDisconnection(
+        final UnsignedLong disconnectTime,
+        final Optional<DisconnectReason> reason,
+        final boolean locallyInitiated) {
+      if (isLocallyConsideredUnsuitable(reason, locallyInitiated)
+          || reason.map(DisconnectReason::isPermanent).orElse(false)) {
+        unsuitable = true;
+      } else {
+        lastInitiationFailure = Optional.of(disconnectTime);
+      }
+    }
+
+    private boolean isLocallyConsideredUnsuitable(
+        final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
+      return locallyInitiated
+          && reason.map(r -> r != DisconnectReason.TOO_MANY_PEERS).orElse(false);
     }
   }
 }

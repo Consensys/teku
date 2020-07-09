@@ -126,10 +126,10 @@ public class SlotProcessor {
   }
 
   private void processSlotWhileSyncing() {
-    this.forkChoice.processHead();
-    eventLog.syncEvent(
-        nodeSlot.getValue(), recentChainData.getBestSlot(), p2pNetwork.getPeerCount());
-    slotEventsChannelPublisher.onSlot(nodeSlot.getValue());
+    UnsignedLong slot = nodeSlot.getValue();
+    this.forkChoice.processHead(slot);
+    eventLog.syncEvent(slot, recentChainData.getBestSlot(), p2pNetwork.getPeerCount());
+    slotEventsChannelPublisher.onSlot(slot);
   }
 
   boolean isNextSlotDue(final UnsignedLong currentTime, final UnsignedLong genesisTime) {
@@ -175,6 +175,7 @@ public class SlotProcessor {
   private void processSlotStart(final UnsignedLong nodeEpoch) {
     onTickSlotStart = nodeSlot.getValue();
     if (nodeSlot.getValue().equals(compute_start_slot_at_epoch(nodeEpoch))) {
+      forkChoice.save();
       eventLog.epochEvent(
           nodeEpoch,
           recentChainData.getStore().getJustifiedCheckpoint().getEpoch(),
@@ -186,7 +187,7 @@ public class SlotProcessor {
 
   private void processSlotAttestation(final UnsignedLong nodeEpoch) {
     onTickSlotAttestation = nodeSlot.getValue();
-    Bytes32 headBlockRoot = this.forkChoice.processHead();
+    Bytes32 headBlockRoot = this.forkChoice.processHead(onTickSlotAttestation);
     eventLog.slotEvent(
         nodeSlot.getValue(),
         recentChainData.getBestSlot(),

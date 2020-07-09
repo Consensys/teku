@@ -41,6 +41,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
@@ -59,7 +60,6 @@ import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
 import tech.pegasys.teku.storage.store.StoreBuilder;
-import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -133,21 +133,20 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public void storeGenesis(final UpdatableStore store) {
+  public void storeGenesis(final AnchorPoint genesis) {
     try (final HotUpdater hotUpdater = hotDao.hotUpdater();
         final FinalizedUpdater finalizedUpdater = finalizedDao.finalizedUpdater()) {
       // We should only have a single block / state / checkpoint at genesis
-      final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();
+      final Checkpoint genesisCheckpoint = genesis.getCheckpoint();
       final Bytes32 genesisRoot = genesisCheckpoint.getRoot();
-      final BeaconState genesisState = store.getBlockState(genesisRoot);
-      final SignedBeaconBlock genesisBlock = store.getSignedBlock(genesisRoot);
+      final BeaconState genesisState = genesis.getState();
+      final SignedBeaconBlock genesisBlock = genesis.getBlock();
 
-      hotUpdater.setGenesisTime(store.getGenesisTime());
+      hotUpdater.setGenesisTime(genesisState.getGenesis_time());
       hotUpdater.setJustifiedCheckpoint(genesisCheckpoint);
       hotUpdater.setBestJustifiedCheckpoint(genesisCheckpoint);
       hotUpdater.setFinalizedCheckpoint(genesisCheckpoint);
       hotUpdater.setLatestFinalizedState(genesisState);
-      hotUpdater.addCheckpointState(genesisCheckpoint, genesisState);
 
       // We need to store the genesis block in both hot and cold storage so that on restart
       // we're guaranteed to have at least one block / state to load into RecentChainData.
@@ -183,7 +182,6 @@ public class RocksDbDatabase implements Database {
     final Checkpoint bestJustifiedCheckpoint = hotDao.getBestJustifiedCheckpoint().orElseThrow();
     final BeaconState finalizedState = hotDao.getLatestFinalizedState().orElseThrow();
 
-    final Map<Checkpoint, BeaconState> checkpointStates = hotDao.getCheckpointStates();
     final Map<UnsignedLong, VoteTracker> votes = hotDao.getVotes();
 
     // Build child-parent lookup
@@ -211,7 +209,6 @@ public class RocksDbDatabase implements Database {
             .justifiedCheckpoint(justifiedCheckpoint)
             .bestJustifiedCheckpoint(bestJustifiedCheckpoint)
             .childToParentMap(childToParentLookup)
-            .checkpointStates(checkpointStates)
             .latestFinalized(latestFinalized)
             .votes(votes));
   }
@@ -317,12 +314,10 @@ public class RocksDbDatabase implements Database {
       update.getBestJustifiedCheckpoint().ifPresent(updater::setBestJustifiedCheckpoint);
       update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
 
-      updater.addCheckpointStates(update.getCheckpointStates());
       updater.addHotBlocks(update.getHotBlocks());
       updater.addVotes(update.getVotes());
 
       // Delete finalized data from hot db
-      update.getDeletedCheckpointStates().forEach(updater::deleteCheckpointState);
       update.getDeletedHotBlocks().forEach(updater::deleteHotBlock);
 
       updater.commit();

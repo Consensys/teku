@@ -39,7 +39,6 @@ dependencies {
   testFixturesImplementation testFixtures(project(':data:metrics'))
   testFixturesImplementation testFixtures(project(':ethereum:core'))
   testFixturesImplementation testFixtures(project(':pow'))
-  testFixturesImplementation project(':protoarray')
   testFixturesImplementation testFixtures(project(':protoarray'))
   testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'

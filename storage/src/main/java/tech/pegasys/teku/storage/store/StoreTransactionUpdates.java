@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.store;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -40,8 +39,6 @@ class StoreTransactionUpdates {
   private final Map<Bytes32, SignedBeaconBlock> hotBlocks;
   private final Map<Bytes32, BeaconState> hotStates;
   private final Set<Bytes32> prunedHotBlockRoots;
-  private final Map<Checkpoint, BeaconState> checkpointStates;
-  private final Set<Checkpoint> prunedCheckpointStates;
   private final Optional<HashTree> updatedBlockTree;
 
   private StoreTransactionUpdates(
@@ -50,16 +47,12 @@ class StoreTransactionUpdates {
       final Map<Bytes32, SignedBeaconBlock> hotBlocks,
       final Map<Bytes32, BeaconState> hotStates,
       final Set<Bytes32> prunedHotBlockRoots,
-      final Map<Checkpoint, BeaconState> checkpointStates,
-      final Set<Checkpoint> prunedCheckpointStates,
       final Optional<HashTree> updatedBlockTree) {
     this.tx = tx;
     this.finalizedChainData = finalizedChainData;
     this.hotBlocks = hotBlocks;
     this.hotStates = hotStates;
     this.prunedHotBlockRoots = prunedHotBlockRoots;
-    this.checkpointStates = checkpointStates;
-    this.prunedCheckpointStates = prunedCheckpointStates;
     this.updatedBlockTree = updatedBlockTree;
   }
 
@@ -67,7 +60,6 @@ class StoreTransactionUpdates {
     // Save copy of tx data that may be pruned
     final Map<Bytes32, SignedBeaconBlock> hotBlocks = new HashMap<>(tx.blocks);
     final Map<Bytes32, BeaconState> hotStates = new HashMap<>(tx.block_states);
-    final Map<Checkpoint, BeaconState> checkpointStates = new HashMap<>(tx.checkpoint_states);
 
     // If a new checkpoint has been finalized, calculated what to finalize and what to prune
     final CheckpointAndBlock prevFinalizedCheckpoint = baseStore.getFinalizedCheckpointAndBlock();
@@ -93,7 +85,6 @@ class StoreTransactionUpdates {
     // Calculate finalized chain data
     final Optional<FinalizedChainData> finalizedChainData;
     final Set<Bytes32> prunedHotBlockRoots;
-    final Set<Checkpoint> prunedCheckpoints;
     if (newFinalizedCheckpoint.isPresent()) {
       final CheckpointAndBlock finalizedCheckpoint = newFinalizedCheckpoint.get();
       final SignedBeaconBlock finalizedBlock = finalizedCheckpoint.getBlock();
@@ -116,37 +107,17 @@ class StoreTransactionUpdates {
 
       prunedHotBlockRoots =
           calculatePrunedHotBlockRoots(baseStore, tx, updatedBlockTree.orElseThrow());
-      prunedCheckpoints =
-          calculatePrunedCheckpoints(baseStore, tx, finalizedCheckpoint.getCheckpoint());
 
       // Prune transaction collections
-      prunedCheckpoints.forEach(checkpointStates::remove);
       prunedHotBlockRoots.forEach(hotBlocks::remove);
       prunedHotBlockRoots.forEach(hotStates::remove);
     } else {
       finalizedChainData = Optional.empty();
       prunedHotBlockRoots = Collections.emptySet();
-      prunedCheckpoints = Collections.emptySet();
     }
 
     return new StoreTransactionUpdates(
-        tx,
-        finalizedChainData,
-        hotBlocks,
-        hotStates,
-        prunedHotBlockRoots,
-        checkpointStates,
-        prunedCheckpoints,
-        updatedBlockTree);
-  }
-
-  private static Set<Checkpoint> calculatePrunedCheckpoints(
-      final Store baseStore, final Transaction tx, final Checkpoint finalizedCheckpoint) {
-    final Set<Checkpoint> allCheckpoints = new HashSet<>(baseStore.checkpoint_states.keySet());
-    allCheckpoints.addAll(tx.checkpoint_states.keySet());
-    return allCheckpoints.stream()
-        .filter(c -> c.getEpoch().compareTo(finalizedCheckpoint.getEpoch()) < 0)
-        .collect(Collectors.toSet());
+        tx, finalizedChainData, hotBlocks, hotStates, prunedHotBlockRoots, updatedBlockTree);
   }
 
   private static Map<Bytes32, Bytes32> collectFinalizedRoots(
@@ -202,8 +173,6 @@ class StoreTransactionUpdates {
         tx.best_justified_checkpoint,
         hotBlocks,
         prunedHotBlockRoots,
-        checkpointStates,
-        prunedCheckpointStates,
         tx.votes);
   }
 
@@ -215,7 +184,6 @@ class StoreTransactionUpdates {
     tx.best_justified_checkpoint.ifPresent(value -> store.best_justified_checkpoint = value);
     store.blocks.putAll(hotBlocks);
     store.block_states.putAll(hotStates);
-    store.checkpoint_states.putAll(checkpointStates);
     updatedBlockTree.ifPresent(updated -> store.blockTree = updated);
     store.votes.putAll(tx.votes);
 
@@ -230,8 +198,6 @@ class StoreTransactionUpdates {
           store.finalizedBlockAndState = new SignedBlockAndState(finalizedBlock, finalizedState);
         });
 
-    // Prune stale checkpoint states
-    prunedCheckpointStates.forEach(store.checkpoint_states::remove);
     // Prune blocks and states
     prunedHotBlockRoots.forEach(
         (root) -> {
