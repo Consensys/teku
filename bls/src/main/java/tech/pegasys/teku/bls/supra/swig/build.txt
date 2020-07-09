@@ -30,5 +30,26 @@ cd /cygdrive/e/ws/blst/
 mkdir bindings/java
 cd bindings/java
 E:\swigwin-4.0.2\swig.exe  -java -outcurrentdir -DSWIGWORDSIZE64 -package tech.pegasys.teku.bls.supra E:\ws\blst\bindings\blst.swg
-gcc -march=native -fPIC -c blst_wrap.c -I../../../../jdk-11.0.5/include/win32 -I../../../../jdk-11.0.5/include -I..
-gcc -shared blst_wrap.o ../../libblst.a -o jblst.dll
+gcc -shared -march=native -fPIC -c blst_wrap.c -I../../../../jdk-11.0.5/include/win32 -I../../../../jdk-11.0.5/include -I.. -o jblst.dll
+
+
+[Windows shared library]
+
+cygiwn
+
+--- a/build.sh
++++ b/build.sh
+@@ -57,8 +57,8 @@ if [ $shared ]; then
+         mingw*) sharedlib=blst.dll;;
+        *)      sharedlib=libblst.so;;
+     esac
+-    echo "{ global: blst_*; BLS12_381_*; local: *; };" |\
++#    echo "{ global: blst_*; BLS12_381_*; local: *; };" |\
+     (set -x; ${CC} -shared -o $sharedlib ${CFLAGS} libblst.a \
+                    -Wl,-Bsymbolic,--require-defined=blst_keygen \
+-                   -Wl,--version-script=/dev/fd/0)
++                   -Wl,--version-script=./version.script)
+fi
+
+> export CC=gcc
+> build.sh -shared

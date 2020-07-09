@@ -36,12 +36,13 @@ public class fr {
     }
   }
 
-  public void setL(long[] value) {
-    blstJNI.fr_l_set(swigCPtr, this, value);
+  public void setL(SWIGTYPE_p_unsigned_long_long value) {
+    blstJNI.fr_l_set(swigCPtr, this, SWIGTYPE_p_unsigned_long_long.getCPtr(value));
   }
 
-  public long[] getL() {
-    return blstJNI.fr_l_get(swigCPtr, this);
+  public SWIGTYPE_p_unsigned_long_long getL() {
+    long cPtr = blstJNI.fr_l_get(swigCPtr, this);
+    return (cPtr == 0) ? null : new SWIGTYPE_p_unsigned_long_long(cPtr, false);
   }
 
   public fr() {

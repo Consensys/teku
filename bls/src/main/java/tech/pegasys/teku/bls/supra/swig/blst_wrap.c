@@ -219,588 +219,6 @@ static void SWIGUNUSED SWIG_JavaThrowException(JNIEnv *jenv, SWIG_JavaExceptionC
 
 #define SWIG_contract_assert(nullreturn, expr, msg) if (!(expr)) {SWIG_JavaThrowException(jenv, SWIG_JavaIllegalArgumentException, msg); return nullreturn; } else
 
-
-#if defined(SWIG_NOINCLUDE) || defined(SWIG_NOARRAYS)
-
-
-static int SWIG_JavaArrayInSchar (JNIEnv *jenv, jbyte **jarr, signed char **carr, jbyteArray input);
-static void SWIG_JavaArrayArgoutSchar (JNIEnv *jenv, jbyte *jarr, signed char *carr, jbyteArray input);
-static jbyteArray SWIG_JavaArrayOutSchar (JNIEnv *jenv, signed char *result, jsize sz);
-
-
-static int SWIG_JavaArrayInUchar (JNIEnv *jenv, jshort **jarr, unsigned char **carr, jshortArray input);
-static void SWIG_JavaArrayArgoutUchar (JNIEnv *jenv, jshort *jarr, unsigned char *carr, jshortArray input);
-static jshortArray SWIG_JavaArrayOutUchar (JNIEnv *jenv, unsigned char *result, jsize sz);
-
-
-static int SWIG_JavaArrayInShort (JNIEnv *jenv, jshort **jarr, short **carr, jshortArray input);
-static void SWIG_JavaArrayArgoutShort (JNIEnv *jenv, jshort *jarr, short *carr, jshortArray input);
-static jshortArray SWIG_JavaArrayOutShort (JNIEnv *jenv, short *result, jsize sz);
-
-
-static int SWIG_JavaArrayInUshort (JNIEnv *jenv, jint **jarr, unsigned short **carr, jintArray input);
-static void SWIG_JavaArrayArgoutUshort (JNIEnv *jenv, jint *jarr, unsigned short *carr, jintArray input);
-static jintArray SWIG_JavaArrayOutUshort (JNIEnv *jenv, unsigned short *result, jsize sz);
-
-
-static int SWIG_JavaArrayInInt (JNIEnv *jenv, jint **jarr, int **carr, jintArray input);
-static void SWIG_JavaArrayArgoutInt (JNIEnv *jenv, jint *jarr, int *carr, jintArray input);
-static jintArray SWIG_JavaArrayOutInt (JNIEnv *jenv, int *result, jsize sz);
-
-
-static int SWIG_JavaArrayInUint (JNIEnv *jenv, jlong **jarr, unsigned int **carr, jlongArray input);
-static void SWIG_JavaArrayArgoutUint (JNIEnv *jenv, jlong *jarr, unsigned int *carr, jlongArray input);
-static jlongArray SWIG_JavaArrayOutUint (JNIEnv *jenv, unsigned int *result, jsize sz);
-
-
-static int SWIG_JavaArrayInLong (JNIEnv *jenv, jint **jarr, long **carr, jintArray input);
-static void SWIG_JavaArrayArgoutLong (JNIEnv *jenv, jint *jarr, long *carr, jintArray input);
-static jintArray SWIG_JavaArrayOutLong (JNIEnv *jenv, long *result, jsize sz);
-
-
-static int SWIG_JavaArrayInUlong (JNIEnv *jenv, jlong **jarr, unsigned long **carr, jlongArray input);
-static void SWIG_JavaArrayArgoutUlong (JNIEnv *jenv, jlong *jarr, unsigned long *carr, jlongArray input);
-static jlongArray SWIG_JavaArrayOutUlong (JNIEnv *jenv, unsigned long *result, jsize sz);
-
-
-static int SWIG_JavaArrayInLonglong (JNIEnv *jenv, jlong **jarr, jlong **carr, jlongArray input);
-static void SWIG_JavaArrayArgoutLonglong (JNIEnv *jenv, jlong *jarr, jlong *carr, jlongArray input);
-static jlongArray SWIG_JavaArrayOutLonglong (JNIEnv *jenv, jlong *result, jsize sz);
-
-
-static int SWIG_JavaArrayInFloat (JNIEnv *jenv, jfloat **jarr, float **carr, jfloatArray input);
-static void SWIG_JavaArrayArgoutFloat (JNIEnv *jenv, jfloat *jarr, float *carr, jfloatArray input);
-static jfloatArray SWIG_JavaArrayOutFloat (JNIEnv *jenv, float *result, jsize sz);
-
-
-static int SWIG_JavaArrayInDouble (JNIEnv *jenv, jdouble **jarr, double **carr, jdoubleArray input);
-static void SWIG_JavaArrayArgoutDouble (JNIEnv *jenv, jdouble *jarr, double *carr, jdoubleArray input);
-static jdoubleArray SWIG_JavaArrayOutDouble (JNIEnv *jenv, double *result, jsize sz);
-
-
-#else
-
-
-/* signed char[] support */
-static int SWIG_JavaArrayInSchar (JNIEnv *jenv, jbyte **jarr, signed char **carr, jbyteArray input) {
-  int i;
-  jsize sz;
-  if (!input) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null array");
-    return 0;
-  }
-  sz = (*jenv)->GetArrayLength(jenv, input);
-  *jarr = (*jenv)->GetByteArrayElements(jenv, input, 0);
-  if (!*jarr)
-    return 0; 
-  *carr = (signed char*) malloc(sz * sizeof(signed char)); 
-  if (!*carr) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaOutOfMemoryError, "array memory allocation failed");
-    return 0;
-  }
-  for (i=0; i<sz; i++)
-    (*carr)[i] = (signed char)(*jarr)[i];
-  return 1;
-}
-
-static void SWIG_JavaArrayArgoutSchar (JNIEnv *jenv, jbyte *jarr, signed char *carr, jbyteArray input) {
-  int i;
-  jsize sz = (*jenv)->GetArrayLength(jenv, input);
-  for (i=0; i<sz; i++)
-    jarr[i] = (jbyte)carr[i];
-  (*jenv)->ReleaseByteArrayElements(jenv, input, jarr, 0);
-}
-
-static jbyteArray SWIG_JavaArrayOutSchar (JNIEnv *jenv, signed char *result, jsize sz) {
-  jbyte *arr;
-  int i;
-  jbyteArray jresult = (*jenv)->NewByteArray(jenv, sz);
-  if (!jresult)
-    return NULL;
-  arr = (*jenv)->GetByteArrayElements(jenv, jresult, 0);
-  if (!arr)
-    return NULL;
-  for (i=0; i<sz; i++)
-    arr[i] = (jbyte)result[i];
-  (*jenv)->ReleaseByteArrayElements(jenv, jresult, arr, 0);
-  return jresult;
-}
-
-
-/* unsigned char[] support */
-static int SWIG_JavaArrayInUchar (JNIEnv *jenv, jshort **jarr, unsigned char **carr, jshortArray input) {
-  int i;
-  jsize sz;
-  if (!input) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null array");
-    return 0;
-  }
-  sz = (*jenv)->GetArrayLength(jenv, input);
-  *jarr = (*jenv)->GetShortArrayElements(jenv, input, 0);
-  if (!*jarr)
-    return 0; 
-  *carr = (unsigned char*) malloc(sz * sizeof(unsigned char)); 
-  if (!*carr) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaOutOfMemoryError, "array memory allocation failed");
-    return 0;
-  }
-  for (i=0; i<sz; i++)
-    (*carr)[i] = (unsigned char)(*jarr)[i];
-  return 1;
-}
-
-static void SWIG_JavaArrayArgoutUchar (JNIEnv *jenv, jshort *jarr, unsigned char *carr, jshortArray input) {
-  int i;
-  jsize sz = (*jenv)->GetArrayLength(jenv, input);
-  for (i=0; i<sz; i++)
-    jarr[i] = (jshort)carr[i];
-  (*jenv)->ReleaseShortArrayElements(jenv, input, jarr, 0);
-}
-
-static jshortArray SWIG_JavaArrayOutUchar (JNIEnv *jenv, unsigned char *result, jsize sz) {
-  jshort *arr;
-  int i;
-  jshortArray jresult = (*jenv)->NewShortArray(jenv, sz);
-  if (!jresult)
-    return NULL;
-  arr = (*jenv)->GetShortArrayElements(jenv, jresult, 0);
-  if (!arr)
-    return NULL;
-  for (i=0; i<sz; i++)
-    arr[i] = (jshort)result[i];
-  (*jenv)->ReleaseShortArrayElements(jenv, jresult, arr, 0);
-  return jresult;
-}
-
-
-/* short[] support */
-static int SWIG_JavaArrayInShort (JNIEnv *jenv, jshort **jarr, short **carr, jshortArray input) {
-  int i;
-  jsize sz;
-  if (!input) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null array");
-    return 0;
-  }
-  sz = (*jenv)->GetArrayLength(jenv, input);
-  *jarr = (*jenv)->GetShortArrayElements(jenv, input, 0);
-  if (!*jarr)
-    return 0; 
-  *carr = (short*) malloc(sz * sizeof(short)); 
-  if (!*carr) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaOutOfMemoryError, "array memory allocation failed");
-    return 0;
-  }
-  for (i=0; i<sz; i++)
-    (*carr)[i] = (short)(*jarr)[i];
-  return 1;
-}
-
-static void SWIG_JavaArrayArgoutShort (JNIEnv *jenv, jshort *jarr, short *carr, jshortArray input) {
-  int i;
-  jsize sz = (*jenv)->GetArrayLength(jenv, input);
-  for (i=0; i<sz; i++)
-    jarr[i] = (jshort)carr[i];
-  (*jenv)->ReleaseShortArrayElements(jenv, input, jarr, 0);
-}
-
-static jshortArray SWIG_JavaArrayOutShort (JNIEnv *jenv, short *result, jsize sz) {
-  jshort *arr;
-  int i;
-  jshortArray jresult = (*jenv)->NewShortArray(jenv, sz);
-  if (!jresult)
-    return NULL;
-  arr = (*jenv)->GetShortArrayElements(jenv, jresult, 0);
-  if (!arr)
-    return NULL;
-  for (i=0; i<sz; i++)
-    arr[i] = (jshort)result[i];
-  (*jenv)->ReleaseShortArrayElements(jenv, jresult, arr, 0);
-  return jresult;
-}
-
-
-/* unsigned short[] support */
-static int SWIG_JavaArrayInUshort (JNIEnv *jenv, jint **jarr, unsigned short **carr, jintArray input) {
-  int i;
-  jsize sz;
-  if (!input) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null array");
-    return 0;
-  }
-  sz = (*jenv)->GetArrayLength(jenv, input);
-  *jarr = (*jenv)->GetIntArrayElements(jenv, input, 0);
-  if (!*jarr)
-    return 0; 
-  *carr = (unsigned short*) malloc(sz * sizeof(unsigned short)); 
-  if (!*carr) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaOutOfMemoryError, "array memory allocation failed");
-    return 0;
-  }
-  for (i=0; i<sz; i++)
-    (*carr)[i] = (unsigned short)(*jarr)[i];
-  return 1;
-}
-
-static void SWIG_JavaArrayArgoutUshort (JNIEnv *jenv, jint *jarr, unsigned short *carr, jintArray input) {
-  int i;
-  jsize sz = (*jenv)->GetArrayLength(jenv, input);
-  for (i=0; i<sz; i++)
-    jarr[i] = (jint)carr[i];
-  (*jenv)->ReleaseIntArrayElements(jenv, input, jarr, 0);
-}
-
-static jintArray SWIG_JavaArrayOutUshort (JNIEnv *jenv, unsigned short *result, jsize sz) {
-  jint *arr;
-  int i;
-  jintArray jresult = (*jenv)->NewIntArray(jenv, sz);
-  if (!jresult)
-    return NULL;
-  arr = (*jenv)->GetIntArrayElements(jenv, jresult, 0);
-  if (!arr)
-    return NULL;
-  for (i=0; i<sz; i++)
-    arr[i] = (jint)result[i];
-  (*jenv)->ReleaseIntArrayElements(jenv, jresult, arr, 0);
-  return jresult;
-}
-
-
-/* int[] support */
-static int SWIG_JavaArrayInInt (JNIEnv *jenv, jint **jarr, int **carr, jintArray input) {
-  int i;
-  jsize sz;
-  if (!input) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null array");
-    return 0;
-  }
-  sz = (*jenv)->GetArrayLength(jenv, input);
-  *jarr = (*jenv)->GetIntArrayElements(jenv, input, 0);
-  if (!*jarr)
-    return 0; 
-  *carr = (int*) malloc(sz * sizeof(int)); 
-  if (!*carr) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaOutOfMemoryError, "array memory allocation failed");
-    return 0;
-  }
-  for (i=0; i<sz; i++)
-    (*carr)[i] = (int)(*jarr)[i];
-  return 1;
-}
-
-static void SWIG_JavaArrayArgoutInt (JNIEnv *jenv, jint *jarr, int *carr, jintArray input) {
-  int i;
-  jsize sz = (*jenv)->GetArrayLength(jenv, input);
-  for (i=0; i<sz; i++)
-    jarr[i] = (jint)carr[i];
-  (*jenv)->ReleaseIntArrayElements(jenv, input, jarr, 0);
-}
-
-static jintArray SWIG_JavaArrayOutInt (JNIEnv *jenv, int *result, jsize sz) {
-  jint *arr;
-  int i;
-  jintArray jresult = (*jenv)->NewIntArray(jenv, sz);
-  if (!jresult)
-    return NULL;
-  arr = (*jenv)->GetIntArrayElements(jenv, jresult, 0);
-  if (!arr)
-    return NULL;
-  for (i=0; i<sz; i++)
-    arr[i] = (jint)result[i];
-  (*jenv)->ReleaseIntArrayElements(jenv, jresult, arr, 0);
-  return jresult;
-}
-
-
-/* unsigned int[] support */
-static int SWIG_JavaArrayInUint (JNIEnv *jenv, jlong **jarr, unsigned int **carr, jlongArray input) {
-  int i;
-  jsize sz;
-  if (!input) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null array");
-    return 0;
-  }
-  sz = (*jenv)->GetArrayLength(jenv, input);
-  *jarr = (*jenv)->GetLongArrayElements(jenv, input, 0);
-  if (!*jarr)
-    return 0; 
-  *carr = (unsigned int*) malloc(sz * sizeof(unsigned int)); 
-  if (!*carr) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaOutOfMemoryError, "array memory allocation failed");
-    return 0;
-  }
-  for (i=0; i<sz; i++)
-    (*carr)[i] = (unsigned int)(*jarr)[i];
-  return 1;
-}
-
-static void SWIG_JavaArrayArgoutUint (JNIEnv *jenv, jlong *jarr, unsigned int *carr, jlongArray input) {
-  int i;
-  jsize sz = (*jenv)->GetArrayLength(jenv, input);
-  for (i=0; i<sz; i++)
-    jarr[i] = (jlong)carr[i];
-  (*jenv)->ReleaseLongArrayElements(jenv, input, jarr, 0);
-}
-
-static jlongArray SWIG_JavaArrayOutUint (JNIEnv *jenv, unsigned int *result, jsize sz) {
-  jlong *arr;
-  int i;
-  jlongArray jresult = (*jenv)->NewLongArray(jenv, sz);
-  if (!jresult)
-    return NULL;
-  arr = (*jenv)->GetLongArrayElements(jenv, jresult, 0);
-  if (!arr)
-    return NULL;
-  for (i=0; i<sz; i++)
-    arr[i] = (jlong)result[i];
-  (*jenv)->ReleaseLongArrayElements(jenv, jresult, arr, 0);
-  return jresult;
-}
-
-
-/* long[] support */
-static int SWIG_JavaArrayInLong (JNIEnv *jenv, jint **jarr, long **carr, jintArray input) {
-  int i;
-  jsize sz;
-  if (!input) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null array");
-    return 0;
-  }
-  sz = (*jenv)->GetArrayLength(jenv, input);
-  *jarr = (*jenv)->GetIntArrayElements(jenv, input, 0);
-  if (!*jarr)
-    return 0; 
-  *carr = (long*) malloc(sz * sizeof(long)); 
-  if (!*carr) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaOutOfMemoryError, "array memory allocation failed");
-    return 0;
-  }
-  for (i=0; i<sz; i++)
-    (*carr)[i] = (long)(*jarr)[i];
-  return 1;
-}
-
-static void SWIG_JavaArrayArgoutLong (JNIEnv *jenv, jint *jarr, long *carr, jintArray input) {
-  int i;
-  jsize sz = (*jenv)->GetArrayLength(jenv, input);
-  for (i=0; i<sz; i++)
-    jarr[i] = (jint)carr[i];
-  (*jenv)->ReleaseIntArrayElements(jenv, input, jarr, 0);
-}
-
-static jintArray SWIG_JavaArrayOutLong (JNIEnv *jenv, long *result, jsize sz) {
-  jint *arr;
-  int i;
-  jintArray jresult = (*jenv)->NewIntArray(jenv, sz);
-  if (!jresult)
-    return NULL;
-  arr = (*jenv)->GetIntArrayElements(jenv, jresult, 0);
-  if (!arr)
-    return NULL;
-  for (i=0; i<sz; i++)
-    arr[i] = (jint)result[i];
-  (*jenv)->ReleaseIntArrayElements(jenv, jresult, arr, 0);
-  return jresult;
-}
-
-
-/* unsigned long[] support */
-static int SWIG_JavaArrayInUlong (JNIEnv *jenv, jlong **jarr, unsigned long **carr, jlongArray input) {
-  int i;
-  jsize sz;
-  if (!input) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null array");
-    return 0;
-  }
-  sz = (*jenv)->GetArrayLength(jenv, input);
-  *jarr = (*jenv)->GetLongArrayElements(jenv, input, 0);
-  if (!*jarr)
-    return 0; 
-  *carr = (unsigned long*) malloc(sz * sizeof(unsigned long)); 
-  if (!*carr) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaOutOfMemoryError, "array memory allocation failed");
-    return 0;
-  }
-  for (i=0; i<sz; i++)
-    (*carr)[i] = (unsigned long)(*jarr)[i];
-  return 1;
-}
-
-static void SWIG_JavaArrayArgoutUlong (JNIEnv *jenv, jlong *jarr, unsigned long *carr, jlongArray input) {
-  int i;
-  jsize sz = (*jenv)->GetArrayLength(jenv, input);
-  for (i=0; i<sz; i++)
-    jarr[i] = (jlong)carr[i];
-  (*jenv)->ReleaseLongArrayElements(jenv, input, jarr, 0);
-}
-
-static jlongArray SWIG_JavaArrayOutUlong (JNIEnv *jenv, unsigned long *result, jsize sz) {
-  jlong *arr;
-  int i;
-  jlongArray jresult = (*jenv)->NewLongArray(jenv, sz);
-  if (!jresult)
-    return NULL;
-  arr = (*jenv)->GetLongArrayElements(jenv, jresult, 0);
-  if (!arr)
-    return NULL;
-  for (i=0; i<sz; i++)
-    arr[i] = (jlong)result[i];
-  (*jenv)->ReleaseLongArrayElements(jenv, jresult, arr, 0);
-  return jresult;
-}
-
-
-/* jlong[] support */
-static int SWIG_JavaArrayInLonglong (JNIEnv *jenv, jlong **jarr, jlong **carr, jlongArray input) {
-  int i;
-  jsize sz;
-  if (!input) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null array");
-    return 0;
-  }
-  sz = (*jenv)->GetArrayLength(jenv, input);
-  *jarr = (*jenv)->GetLongArrayElements(jenv, input, 0);
-  if (!*jarr)
-    return 0; 
-  *carr = (jlong*) malloc(sz * sizeof(jlong)); 
-  if (!*carr) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaOutOfMemoryError, "array memory allocation failed");
-    return 0;
-  }
-  for (i=0; i<sz; i++)
-    (*carr)[i] = (jlong)(*jarr)[i];
-  return 1;
-}
-
-static void SWIG_JavaArrayArgoutLonglong (JNIEnv *jenv, jlong *jarr, jlong *carr, jlongArray input) {
-  int i;
-  jsize sz = (*jenv)->GetArrayLength(jenv, input);
-  for (i=0; i<sz; i++)
-    jarr[i] = (jlong)carr[i];
-  (*jenv)->ReleaseLongArrayElements(jenv, input, jarr, 0);
-}
-
-static jlongArray SWIG_JavaArrayOutLonglong (JNIEnv *jenv, jlong *result, jsize sz) {
-  jlong *arr;
-  int i;
-  jlongArray jresult = (*jenv)->NewLongArray(jenv, sz);
-  if (!jresult)
-    return NULL;
-  arr = (*jenv)->GetLongArrayElements(jenv, jresult, 0);
-  if (!arr)
-    return NULL;
-  for (i=0; i<sz; i++)
-    arr[i] = (jlong)result[i];
-  (*jenv)->ReleaseLongArrayElements(jenv, jresult, arr, 0);
-  return jresult;
-}
-
-
-/* float[] support */
-static int SWIG_JavaArrayInFloat (JNIEnv *jenv, jfloat **jarr, float **carr, jfloatArray input) {
-  int i;
-  jsize sz;
-  if (!input) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null array");
-    return 0;
-  }
-  sz = (*jenv)->GetArrayLength(jenv, input);
-  *jarr = (*jenv)->GetFloatArrayElements(jenv, input, 0);
-  if (!*jarr)
-    return 0; 
-  *carr = (float*) malloc(sz * sizeof(float)); 
-  if (!*carr) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaOutOfMemoryError, "array memory allocation failed");
-    return 0;
-  }
-  for (i=0; i<sz; i++)
-    (*carr)[i] = (float)(*jarr)[i];
-  return 1;
-}
-
-static void SWIG_JavaArrayArgoutFloat (JNIEnv *jenv, jfloat *jarr, float *carr, jfloatArray input) {
-  int i;
-  jsize sz = (*jenv)->GetArrayLength(jenv, input);
-  for (i=0; i<sz; i++)
-    jarr[i] = (jfloat)carr[i];
-  (*jenv)->ReleaseFloatArrayElements(jenv, input, jarr, 0);
-}
-
-static jfloatArray SWIG_JavaArrayOutFloat (JNIEnv *jenv, float *result, jsize sz) {
-  jfloat *arr;
-  int i;
-  jfloatArray jresult = (*jenv)->NewFloatArray(jenv, sz);
-  if (!jresult)
-    return NULL;
-  arr = (*jenv)->GetFloatArrayElements(jenv, jresult, 0);
-  if (!arr)
-    return NULL;
-  for (i=0; i<sz; i++)
-    arr[i] = (jfloat)result[i];
-  (*jenv)->ReleaseFloatArrayElements(jenv, jresult, arr, 0);
-  return jresult;
-}
-
-
-/* double[] support */
-static int SWIG_JavaArrayInDouble (JNIEnv *jenv, jdouble **jarr, double **carr, jdoubleArray input) {
-  int i;
-  jsize sz;
-  if (!input) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null array");
-    return 0;
-  }
-  sz = (*jenv)->GetArrayLength(jenv, input);
-  *jarr = (*jenv)->GetDoubleArrayElements(jenv, input, 0);
-  if (!*jarr)
-    return 0; 
-  *carr = (double*) malloc(sz * sizeof(double)); 
-  if (!*carr) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaOutOfMemoryError, "array memory allocation failed");
-    return 0;
-  }
-  for (i=0; i<sz; i++)
-    (*carr)[i] = (double)(*jarr)[i];
-  return 1;
-}
-
-static void SWIG_JavaArrayArgoutDouble (JNIEnv *jenv, jdouble *jarr, double *carr, jdoubleArray input) {
-  int i;
-  jsize sz = (*jenv)->GetArrayLength(jenv, input);
-  for (i=0; i<sz; i++)
-    jarr[i] = (jdouble)carr[i];
-  (*jenv)->ReleaseDoubleArrayElements(jenv, input, jarr, 0);
-}
-
-static jdoubleArray SWIG_JavaArrayOutDouble (JNIEnv *jenv, double *result, jsize sz) {
-  jdouble *arr;
-  int i;
-  jdoubleArray jresult = (*jenv)->NewDoubleArray(jenv, sz);
-  if (!jresult)
-    return NULL;
-  arr = (*jenv)->GetDoubleArrayElements(jenv, jresult, 0);
-  if (!arr)
-    return NULL;
-  for (i=0; i<sz; i++)
-    arr[i] = (jdouble)result[i];
-  (*jenv)->ReleaseDoubleArrayElements(jenv, jresult, arr, 0);
-  return jresult;
-}
-
-
-#endif
-
-
-#include <stdint.h>		// Use the C99 official header
-
-
-#define SWIGWORDSIZE64
-#ifndef LONG_MAX
-#include <limits.h>
-#endif
-#if (__WORDSIZE == 32) || (LONG_MAX == INT_MAX)
-# error "SWIG wrapped code invalid in 32 bit architecture, regenerate code using -DSWIGWORDSIZE32"
-#endif
-
 SWIGINTERN blst_pairing *new_blst_pairing(void){ return calloc(1, blst_pairing_sizeof()); }
 SWIGINTERN void delete_blst_pairing(blst_pairing *self){ free(self); }
 
@@ -846,7 +264,7 @@ static jbyteArray SWIG_JavaArrayOutCDATA(JNIEnv *jenv, char *result, jsize sz) {
 extern "C" {
 #endif
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_BLST_1SUCCESS_1get(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_BLST_1SUCCESS_1get(JNIEnv *jenv, jclass jcls) {
   jint jresult = 0 ;
   BLST_ERROR result;
   
@@ -858,32 +276,26 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_BLST_1SUCCESS_1
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_scalar_1l_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlongArray jarg2) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_scalar_1l_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   blst_scalar *arg1 = (blst_scalar *) 0 ;
   limb_t *arg2 ;
-  jlong *jarr2 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg1_;
   arg1 = *(blst_scalar **)&jarg1; 
-  if (jarg2 && (*jenv)->GetArrayLength(jenv, jarg2) != 256/8/sizeof(limb_t)) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return ;
-  }
-  if (!SWIG_JavaArrayInUlong(jenv, &jarr2, (unsigned long **)&arg2, jarg2)) return ; 
+  arg2 = *(limb_t **)&jarg2; 
   {
     size_t ii;
     limb_t *b = (limb_t *) arg1->l;
     for (ii = 0; ii < (size_t)256/8/sizeof(limb_t); ii++) b[ii] = *((limb_t *) arg2 + ii);
   }
-  SWIG_JavaArrayArgoutUlong(jenv, jarr2, (unsigned long *)arg2, jarg2); 
-  free(arg2); 
+  
 }
 
 
-SWIGEXPORT jlongArray JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_scalar_1l_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
-  jlongArray jresult = 0 ;
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_scalar_1l_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jlong jresult = 0 ;
   blst_scalar *arg1 = (blst_scalar *) 0 ;
   limb_t *result = 0 ;
   
@@ -892,12 +304,12 @@ SWIGEXPORT jlongArray JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_scalar_1l
   (void)jarg1_;
   arg1 = *(blst_scalar **)&jarg1; 
   result = (limb_t *)(limb_t *) ((arg1)->l);
-  jresult = SWIG_JavaArrayOutUlong(jenv, (unsigned long *)result, 256/8/sizeof(limb_t)); 
+  *(limb_t **)&jresult = result; 
   return jresult;
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1scalar(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_new_1scalar(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   blst_scalar *result = 0 ;
   
@@ -909,7 +321,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1scalar(JN
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1scalar(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_delete_1scalar(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   blst_scalar *arg1 = (blst_scalar *) 0 ;
   
   (void)jenv;
@@ -919,32 +331,26 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1scalar(
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_fr_1l_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlongArray jarg2) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_fr_1l_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   blst_fr *arg1 = (blst_fr *) 0 ;
   limb_t *arg2 ;
-  jlong *jarr2 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg1_;
   arg1 = *(blst_fr **)&jarg1; 
-  if (jarg2 && (*jenv)->GetArrayLength(jenv, jarg2) != 256/8/sizeof(limb_t)) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return ;
-  }
-  if (!SWIG_JavaArrayInUlong(jenv, &jarr2, (unsigned long **)&arg2, jarg2)) return ; 
+  arg2 = *(limb_t **)&jarg2; 
   {
     size_t ii;
     limb_t *b = (limb_t *) arg1->l;
     for (ii = 0; ii < (size_t)256/8/sizeof(limb_t); ii++) b[ii] = *((limb_t *) arg2 + ii);
   }
-  SWIG_JavaArrayArgoutUlong(jenv, jarr2, (unsigned long *)arg2, jarg2); 
-  free(arg2); 
+  
 }
 
 
-SWIGEXPORT jlongArray JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_fr_1l_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
-  jlongArray jresult = 0 ;
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_fr_1l_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jlong jresult = 0 ;
   blst_fr *arg1 = (blst_fr *) 0 ;
   limb_t *result = 0 ;
   
@@ -953,12 +359,12 @@ SWIGEXPORT jlongArray JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_fr_1l_1ge
   (void)jarg1_;
   arg1 = *(blst_fr **)&jarg1; 
   result = (limb_t *)(limb_t *) ((arg1)->l);
-  jresult = SWIG_JavaArrayOutUlong(jenv, (unsigned long *)result, 256/8/sizeof(limb_t)); 
+  *(limb_t **)&jresult = result; 
   return jresult;
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1fr(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_new_1fr(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   blst_fr *result = 0 ;
   
@@ -970,7 +376,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1fr(JNIEnv
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1fr(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_delete_1fr(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   blst_fr *arg1 = (blst_fr *) 0 ;
   
   (void)jenv;
@@ -980,32 +386,26 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1fr(JNIE
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_fp_1l_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlongArray jarg2) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_fp_1l_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   blst_fp *arg1 = (blst_fp *) 0 ;
   limb_t *arg2 ;
-  jlong *jarr2 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg1_;
   arg1 = *(blst_fp **)&jarg1; 
-  if (jarg2 && (*jenv)->GetArrayLength(jenv, jarg2) != 384/8/sizeof(limb_t)) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return ;
-  }
-  if (!SWIG_JavaArrayInUlong(jenv, &jarr2, (unsigned long **)&arg2, jarg2)) return ; 
+  arg2 = *(limb_t **)&jarg2; 
   {
     size_t ii;
     limb_t *b = (limb_t *) arg1->l;
     for (ii = 0; ii < (size_t)384/8/sizeof(limb_t); ii++) b[ii] = *((limb_t *) arg2 + ii);
   }
-  SWIG_JavaArrayArgoutUlong(jenv, jarr2, (unsigned long *)arg2, jarg2); 
-  free(arg2); 
+  
 }
 
 
-SWIGEXPORT jlongArray JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_fp_1l_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
-  jlongArray jresult = 0 ;
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_fp_1l_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jlong jresult = 0 ;
   blst_fp *arg1 = (blst_fp *) 0 ;
   limb_t *result = 0 ;
   
@@ -1014,12 +414,12 @@ SWIGEXPORT jlongArray JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_fp_1l_1ge
   (void)jarg1_;
   arg1 = *(blst_fp **)&jarg1; 
   result = (limb_t *)(limb_t *) ((arg1)->l);
-  jresult = SWIG_JavaArrayOutUlong(jenv, (unsigned long *)result, 384/8/sizeof(limb_t)); 
+  *(limb_t **)&jresult = result; 
   return jresult;
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1fp(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_new_1fp(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   blst_fp *result = 0 ;
   
@@ -1031,7 +431,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1fp(JNIEnv
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1fp(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_delete_1fp(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   blst_fp *arg1 = (blst_fp *) 0 ;
   
   (void)jenv;
@@ -1041,7 +441,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1fp(JNIE
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_fp2_1fp_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_fp2_1fp_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_fp2 *arg1 = (blst_fp2 *) 0 ;
   blst_fp *arg2 ;
   
@@ -1060,7 +460,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_fp2_1fp_1set(JN
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_fp2_1fp_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_fp2_1fp_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   blst_fp2 *arg1 = (blst_fp2 *) 0 ;
   blst_fp *result = 0 ;
@@ -1075,7 +475,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_fp2_1fp_1get(J
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1fp2(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_new_1fp2(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   blst_fp2 *result = 0 ;
   
@@ -1087,7 +487,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1fp2(JNIEn
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1fp2(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_delete_1fp2(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   blst_fp2 *arg1 = (blst_fp2 *) 0 ;
   
   (void)jenv;
@@ -1097,7 +497,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1fp2(JNI
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_fp6_1fp2_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_fp6_1fp2_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_fp6 *arg1 = (blst_fp6 *) 0 ;
   blst_fp2 *arg2 ;
   
@@ -1116,7 +516,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_fp6_1fp2_1set(J
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_fp6_1fp2_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_fp6_1fp2_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   blst_fp6 *arg1 = (blst_fp6 *) 0 ;
   blst_fp2 *result = 0 ;
@@ -1131,7 +531,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_fp6_1fp2_1get(
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1fp6(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_new_1fp6(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   blst_fp6 *result = 0 ;
   
@@ -1143,7 +543,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1fp6(JNIEn
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1fp6(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_delete_1fp6(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   blst_fp6 *arg1 = (blst_fp6 *) 0 ;
   
   (void)jenv;
@@ -1153,7 +553,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1fp6(JNI
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_fp12_1fp6_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_fp12_1fp6_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_fp12 *arg1 = (blst_fp12 *) 0 ;
   blst_fp6 *arg2 ;
   
@@ -1172,7 +572,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_fp12_1fp6_1set(
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_fp12_1fp6_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_fp12_1fp6_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   blst_fp12 *arg1 = (blst_fp12 *) 0 ;
   blst_fp6 *result = 0 ;
@@ -1187,7 +587,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_fp12_1fp6_1get
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1fp12(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_new_1fp12(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   blst_fp12 *result = 0 ;
   
@@ -1199,7 +599,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1fp12(JNIE
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1fp12(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_delete_1fp12(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   blst_fp12 *arg1 = (blst_fp12 *) 0 ;
   
   (void)jenv;
@@ -1209,7 +609,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1fp12(JN
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1x_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1x_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   blst_fp *arg2 = (blst_fp *) 0 ;
   
@@ -1223,7 +623,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1x_1set(JNIE
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1x_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1x_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   blst_fp *result = 0 ;
@@ -1238,7 +638,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1x_1get(JNI
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1y_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1y_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   blst_fp *arg2 = (blst_fp *) 0 ;
   
@@ -1252,7 +652,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1y_1set(JNIE
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1y_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1y_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   blst_fp *result = 0 ;
@@ -1267,7 +667,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1y_1get(JNI
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1z_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1z_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   blst_fp *arg2 = (blst_fp *) 0 ;
   
@@ -1281,7 +681,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1z_1set(JNIE
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1z_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1z_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   blst_fp *result = 0 ;
@@ -1296,7 +696,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1z_1get(JNI
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1p1(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_new_1p1(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   blst_p1 *result = 0 ;
   
@@ -1308,7 +708,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1p1(JNIEnv
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1p1(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_delete_1p1(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   
   (void)jenv;
@@ -1318,7 +718,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1p1(JNIE
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1affine_1x_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1affine_1x_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p1_affine *arg1 = (blst_p1_affine *) 0 ;
   blst_fp *arg2 = (blst_fp *) 0 ;
   
@@ -1332,7 +732,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1affine_1x_1
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1affine_1x_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1affine_1x_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   blst_p1_affine *arg1 = (blst_p1_affine *) 0 ;
   blst_fp *result = 0 ;
@@ -1347,7 +747,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1affine_1x_
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1affine_1y_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1affine_1y_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p1_affine *arg1 = (blst_p1_affine *) 0 ;
   blst_fp *arg2 = (blst_fp *) 0 ;
   
@@ -1361,7 +761,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1affine_1y_1
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1affine_1y_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1affine_1y_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   blst_p1_affine *arg1 = (blst_p1_affine *) 0 ;
   blst_fp *result = 0 ;
@@ -1376,7 +776,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1affine_1y_
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1p1_1affine(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_new_1p1_1affine(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   blst_p1_affine *result = 0 ;
   
@@ -1388,7 +788,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1p1_1affin
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1p1_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_delete_1p1_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   blst_p1_affine *arg1 = (blst_p1_affine *) 0 ;
   
   (void)jenv;
@@ -1398,7 +798,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1p1_1aff
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1add(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1add(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   blst_p1 *arg2 = (blst_p1 *) 0 ;
   blst_p1 *arg3 = (blst_p1 *) 0 ;
@@ -1415,7 +815,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1add(JNIEnv 
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1add_1or_1double(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1add_1or_1double(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   blst_p1 *arg2 = (blst_p1 *) 0 ;
   blst_p1 *arg3 = (blst_p1 *) 0 ;
@@ -1432,7 +832,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1add_1or_1do
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1add_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1add_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   blst_p1 *arg2 = (blst_p1 *) 0 ;
   blst_p1_affine *arg3 = (blst_p1_affine *) 0 ;
@@ -1449,7 +849,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1add_1affine
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1add_1or_1double_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1add_1or_1double_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   blst_p1 *arg2 = (blst_p1 *) 0 ;
   blst_p1_affine *arg3 = (blst_p1_affine *) 0 ;
@@ -1466,7 +866,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1add_1or_1do
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1double(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1double(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   blst_p1 *arg2 = (blst_p1 *) 0 ;
   
@@ -1480,7 +880,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1double(JNIE
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1mult_1w5(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jlong jarg4) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1mult_1w5(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jlong jarg4) {
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   blst_p1 *arg2 = (blst_p1 *) 0 ;
   blst_scalar *arg3 = (blst_scalar *) 0 ;
@@ -1499,7 +899,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1mult_1w5(JN
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1cneg(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1cneg(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   size_t arg2 ;
   
@@ -1512,7 +912,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1cneg(JNIEnv
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1to_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1to_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p1_affine *arg1 = (blst_p1_affine *) 0 ;
   blst_p1 *arg2 = (blst_p1 *) 0 ;
   
@@ -1526,7 +926,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1to_1affine(
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1from_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1from_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   blst_p1_affine *arg2 = (blst_p1_affine *) 0 ;
   
@@ -1540,7 +940,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1from_1affin
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1affine_1on_1curve(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1affine_1on_1curve(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jint jresult = 0 ;
   blst_p1_affine *arg1 = (blst_p1_affine *) 0 ;
   int result;
@@ -1555,7 +955,7 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1affine_1on_
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1affine_1in_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1affine_1in_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jint jresult = 0 ;
   blst_p1_affine *arg1 = (blst_p1_affine *) 0 ;
   int result;
@@ -1570,7 +970,7 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1affine_1in_
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1affine_1is_1equal(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1affine_1is_1equal(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   jint jresult = 0 ;
   blst_p1_affine *arg1 = (blst_p1_affine *) 0 ;
   blst_p1_affine *arg2 = (blst_p1_affine *) 0 ;
@@ -1588,7 +988,7 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1affine_1is_
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1x_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1x_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   blst_fp2 *arg2 = (blst_fp2 *) 0 ;
   
@@ -1602,7 +1002,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1x_1set(JNIE
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1x_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1x_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   blst_fp2 *result = 0 ;
@@ -1617,7 +1017,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1x_1get(JNI
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1y_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1y_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   blst_fp2 *arg2 = (blst_fp2 *) 0 ;
   
@@ -1631,7 +1031,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1y_1set(JNIE
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1y_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1y_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   blst_fp2 *result = 0 ;
@@ -1646,7 +1046,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1y_1get(JNI
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1z_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1z_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   blst_fp2 *arg2 = (blst_fp2 *) 0 ;
   
@@ -1660,7 +1060,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1z_1set(JNIE
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1z_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1z_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   blst_fp2 *result = 0 ;
@@ -1675,7 +1075,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1z_1get(JNI
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1p2(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_new_1p2(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   blst_p2 *result = 0 ;
   
@@ -1687,7 +1087,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1p2(JNIEnv
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1p2(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_delete_1p2(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   
   (void)jenv;
@@ -1697,7 +1097,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1p2(JNIE
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1affine_1x_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1affine_1x_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p2_affine *arg1 = (blst_p2_affine *) 0 ;
   blst_fp2 *arg2 = (blst_fp2 *) 0 ;
   
@@ -1711,7 +1111,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1affine_1x_1
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1affine_1x_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1affine_1x_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   blst_p2_affine *arg1 = (blst_p2_affine *) 0 ;
   blst_fp2 *result = 0 ;
@@ -1726,7 +1126,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1affine_1x_
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1affine_1y_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1affine_1y_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p2_affine *arg1 = (blst_p2_affine *) 0 ;
   blst_fp2 *arg2 = (blst_fp2 *) 0 ;
   
@@ -1740,7 +1140,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1affine_1y_1
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1affine_1y_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1affine_1y_1get(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jlong jresult = 0 ;
   blst_p2_affine *arg1 = (blst_p2_affine *) 0 ;
   blst_fp2 *result = 0 ;
@@ -1755,7 +1155,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1affine_1y_
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1p2_1affine(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_new_1p2_1affine(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   blst_p2_affine *result = 0 ;
   
@@ -1767,7 +1167,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1p2_1affin
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1p2_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_delete_1p2_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   blst_p2_affine *arg1 = (blst_p2_affine *) 0 ;
   
   (void)jenv;
@@ -1777,7 +1177,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1p2_1aff
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1add(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1add(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   blst_p2 *arg2 = (blst_p2 *) 0 ;
   blst_p2 *arg3 = (blst_p2 *) 0 ;
@@ -1794,7 +1194,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1add(JNIEnv 
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1add_1or_1double(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1add_1or_1double(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   blst_p2 *arg2 = (blst_p2 *) 0 ;
   blst_p2 *arg3 = (blst_p2 *) 0 ;
@@ -1811,7 +1211,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1add_1or_1do
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1add_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1add_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   blst_p2 *arg2 = (blst_p2 *) 0 ;
   blst_p2_affine *arg3 = (blst_p2_affine *) 0 ;
@@ -1828,7 +1228,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1add_1affine
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1add_1or_1double_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1add_1or_1double_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   blst_p2 *arg2 = (blst_p2 *) 0 ;
   blst_p2_affine *arg3 = (blst_p2_affine *) 0 ;
@@ -1845,7 +1245,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1add_1or_1do
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1double(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1double(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   blst_p2 *arg2 = (blst_p2 *) 0 ;
   
@@ -1859,7 +1259,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1double(JNIE
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1mult_1w5(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jlong jarg4) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1mult_1w5(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jlong jarg4) {
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   blst_p2 *arg2 = (blst_p2 *) 0 ;
   blst_scalar *arg3 = (blst_scalar *) 0 ;
@@ -1878,7 +1278,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1mult_1w5(JN
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1cneg(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1cneg(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   size_t arg2 ;
   
@@ -1891,7 +1291,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1cneg(JNIEnv
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1to_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1to_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p2_affine *arg1 = (blst_p2_affine *) 0 ;
   blst_p2 *arg2 = (blst_p2 *) 0 ;
   
@@ -1905,7 +1305,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1to_1affine(
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1from_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1from_1affine(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   blst_p2_affine *arg2 = (blst_p2_affine *) 0 ;
   
@@ -1919,7 +1319,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1from_1affin
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1affine_1on_1curve(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1affine_1on_1curve(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jint jresult = 0 ;
   blst_p2_affine *arg1 = (blst_p2_affine *) 0 ;
   int result;
@@ -1934,7 +1334,7 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1affine_1on_
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1affine_1in_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1affine_1in_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jint jresult = 0 ;
   blst_p2_affine *arg1 = (blst_p2_affine *) 0 ;
   int result;
@@ -1949,7 +1349,7 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1affine_1in_
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1affine_1is_1equal(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1affine_1is_1equal(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   jint jresult = 0 ;
   blst_p2_affine *arg1 = (blst_p2_affine *) 0 ;
   blst_p2_affine *arg2 = (blst_p2_affine *) 0 ;
@@ -1967,7 +1367,7 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1affine_1is_
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_encode_1to_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jbyteArray jarg2, jbyteArray jarg4, jbyteArray jarg6) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_encode_1to_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jbyteArray jarg2, jbyteArray jarg4, jbyteArray jarg6) {
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   byte *arg2 = (byte *) 0 ;
   size_t arg3 ;
@@ -2007,7 +1407,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_encode_1to_1g1(
       arg7 = 0;
     }
   }
-  blst_encode_to_g1(arg1,(unsigned char const *)arg2,arg3,(unsigned char const *)arg4,arg5,(unsigned char const *)arg6,arg7);
+  blst_encode_to_g1(arg1,(uint8_t const *)arg2,arg3,(uint8_t const *)arg4,arg5,(uint8_t const *)arg6,arg7);
   {
     if (jarg2) (*jenv)->ReleaseByteArrayElements(jenv, jarg2, (jbyte *)arg2, 0);
   }
@@ -2023,7 +1423,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_encode_1to_1g1(
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_hash_1to_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jbyteArray jarg2, jbyteArray jarg4, jbyteArray jarg6) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_hash_1to_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jbyteArray jarg2, jbyteArray jarg4, jbyteArray jarg6) {
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   byte *arg2 = (byte *) 0 ;
   size_t arg3 ;
@@ -2063,7 +1463,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_hash_1to_1g1(JN
       arg7 = 0;
     }
   }
-  blst_hash_to_g1(arg1,(unsigned char const *)arg2,arg3,(unsigned char const *)arg4,arg5,(unsigned char const *)arg6,arg7);
+  blst_hash_to_g1(arg1,(uint8_t const *)arg2,arg3,(uint8_t const *)arg4,arg5,(uint8_t const *)arg6,arg7);
   {
     if (jarg2) (*jenv)->ReleaseByteArrayElements(jenv, jarg2, (jbyte *)arg2, 0);
   }
@@ -2079,7 +1479,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_hash_1to_1g1(JN
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_encode_1to_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jbyteArray jarg2, jbyteArray jarg4, jbyteArray jarg6) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_encode_1to_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jbyteArray jarg2, jbyteArray jarg4, jbyteArray jarg6) {
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   byte *arg2 = (byte *) 0 ;
   size_t arg3 ;
@@ -2119,7 +1519,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_encode_1to_1g2(
       arg7 = 0;
     }
   }
-  blst_encode_to_g2(arg1,(unsigned char const *)arg2,arg3,(unsigned char const *)arg4,arg5,(unsigned char const *)arg6,arg7);
+  blst_encode_to_g2(arg1,(uint8_t const *)arg2,arg3,(uint8_t const *)arg4,arg5,(uint8_t const *)arg6,arg7);
   {
     if (jarg2) (*jenv)->ReleaseByteArrayElements(jenv, jarg2, (jbyte *)arg2, 0);
   }
@@ -2135,7 +1535,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_encode_1to_1g2(
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_hash_1to_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jbyteArray jarg2, jbyteArray jarg4, jbyteArray jarg6) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_hash_1to_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jbyteArray jarg2, jbyteArray jarg4, jbyteArray jarg6) {
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   byte *arg2 = (byte *) 0 ;
   size_t arg3 ;
@@ -2175,7 +1575,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_hash_1to_1g2(JN
       arg7 = 0;
     }
   }
-  blst_hash_to_g2(arg1,(unsigned char const *)arg2,arg3,(unsigned char const *)arg4,arg5,(unsigned char const *)arg6,arg7);
+  blst_hash_to_g2(arg1,(uint8_t const *)arg2,arg3,(uint8_t const *)arg4,arg5,(uint8_t const *)arg6,arg7);
   {
     if (jarg2) (*jenv)->ReleaseByteArrayElements(jenv, jarg2, (jbyte *)arg2, 0);
   }
@@ -2191,263 +1591,191 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_hash_1to_1g2(JN
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1serialize(JNIEnv *jenv, jclass jcls, jshortArray jarg1, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1serialize(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2, jobject jarg2_) {
   byte *arg1 ;
   blst_p1 *arg2 = (blst_p1 *) 0 ;
-  jshort *jarr1 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg2_;
-  if (jarg1 && (*jenv)->GetArrayLength(jenv, jarg1) != 96) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return ;
-  }
-  if (!SWIG_JavaArrayInUchar(jenv, &jarr1, (unsigned char **)&arg1, jarg1)) return ; 
+  arg1 = *(byte **)&jarg1; 
   arg2 = *(blst_p1 **)&jarg2; 
   blst_p1_serialize(arg1,(blst_p1 const *)arg2);
-  SWIG_JavaArrayArgoutUchar(jenv, jarr1, (unsigned char *)arg1, jarg1); 
-  free(arg1); 
+  
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1compress(JNIEnv *jenv, jclass jcls, jshortArray jarg1, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1compress(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2, jobject jarg2_) {
   byte *arg1 ;
   blst_p1 *arg2 = (blst_p1 *) 0 ;
-  jshort *jarr1 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg2_;
-  if (jarg1 && (*jenv)->GetArrayLength(jenv, jarg1) != 48) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return ;
-  }
-  if (!SWIG_JavaArrayInUchar(jenv, &jarr1, (unsigned char **)&arg1, jarg1)) return ; 
+  arg1 = *(byte **)&jarg1; 
   arg2 = *(blst_p1 **)&jarg2; 
   blst_p1_compress(arg1,(blst_p1 const *)arg2);
-  SWIG_JavaArrayArgoutUchar(jenv, jarr1, (unsigned char *)arg1, jarg1); 
-  free(arg1); 
+  
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1affine_1serialize(JNIEnv *jenv, jclass jcls, jshortArray jarg1, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1affine_1serialize(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2, jobject jarg2_) {
   byte *arg1 ;
   blst_p1_affine *arg2 = (blst_p1_affine *) 0 ;
-  jshort *jarr1 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg2_;
-  if (jarg1 && (*jenv)->GetArrayLength(jenv, jarg1) != 96) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return ;
-  }
-  if (!SWIG_JavaArrayInUchar(jenv, &jarr1, (unsigned char **)&arg1, jarg1)) return ; 
+  arg1 = *(byte **)&jarg1; 
   arg2 = *(blst_p1_affine **)&jarg2; 
   blst_p1_affine_serialize(arg1,(blst_p1_affine const *)arg2);
-  SWIG_JavaArrayArgoutUchar(jenv, jarr1, (unsigned char *)arg1, jarg1); 
-  free(arg1); 
+  
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1affine_1compress(JNIEnv *jenv, jclass jcls, jshortArray jarg1, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1affine_1compress(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2, jobject jarg2_) {
   byte *arg1 ;
   blst_p1_affine *arg2 = (blst_p1_affine *) 0 ;
-  jshort *jarr1 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg2_;
-  if (jarg1 && (*jenv)->GetArrayLength(jenv, jarg1) != 48) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return ;
-  }
-  if (!SWIG_JavaArrayInUchar(jenv, &jarr1, (unsigned char **)&arg1, jarg1)) return ; 
+  arg1 = *(byte **)&jarg1; 
   arg2 = *(blst_p1_affine **)&jarg2; 
   blst_p1_affine_compress(arg1,(blst_p1_affine const *)arg2);
-  SWIG_JavaArrayArgoutUchar(jenv, jarr1, (unsigned char *)arg1, jarg1); 
-  free(arg1); 
+  
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1uncompress(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jshortArray jarg2) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1uncompress(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   jint jresult = 0 ;
   blst_p1_affine *arg1 = (blst_p1_affine *) 0 ;
   byte *arg2 ;
-  jshort *jarr2 ;
   BLST_ERROR result;
   
   (void)jenv;
   (void)jcls;
   (void)jarg1_;
   arg1 = *(blst_p1_affine **)&jarg1; 
-  if (jarg2 && (*jenv)->GetArrayLength(jenv, jarg2) != 48) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return 0;
-  }
-  if (!SWIG_JavaArrayInUchar(jenv, &jarr2, (unsigned char **)&arg2, jarg2)) return 0; 
-  result = (BLST_ERROR)blst_p1_uncompress(arg1,(unsigned char const (*))arg2);
+  arg2 = *(byte **)&jarg2; 
+  result = (BLST_ERROR)blst_p1_uncompress(arg1,(uint8_t const (*))arg2);
   jresult = (jint)result; 
-  SWIG_JavaArrayArgoutUchar(jenv, jarr2, (unsigned char *)arg2, jarg2); 
-  free(arg2); 
+  
   return jresult;
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1deserialize(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jshortArray jarg2) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1deserialize(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   jint jresult = 0 ;
   blst_p1_affine *arg1 = (blst_p1_affine *) 0 ;
   byte *arg2 ;
-  jshort *jarr2 ;
   BLST_ERROR result;
   
   (void)jenv;
   (void)jcls;
   (void)jarg1_;
   arg1 = *(blst_p1_affine **)&jarg1; 
-  if (jarg2 && (*jenv)->GetArrayLength(jenv, jarg2) != 96) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return 0;
-  }
-  if (!SWIG_JavaArrayInUchar(jenv, &jarr2, (unsigned char **)&arg2, jarg2)) return 0; 
-  result = (BLST_ERROR)blst_p1_deserialize(arg1,(unsigned char const (*))arg2);
+  arg2 = *(byte **)&jarg2; 
+  result = (BLST_ERROR)blst_p1_deserialize(arg1,(uint8_t const (*))arg2);
   jresult = (jint)result; 
-  SWIG_JavaArrayArgoutUchar(jenv, jarr2, (unsigned char *)arg2, jarg2); 
-  free(arg2); 
+  
   return jresult;
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1serialize(JNIEnv *jenv, jclass jcls, jshortArray jarg1, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1serialize(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2, jobject jarg2_) {
   byte *arg1 ;
   blst_p2 *arg2 = (blst_p2 *) 0 ;
-  jshort *jarr1 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg2_;
-  if (jarg1 && (*jenv)->GetArrayLength(jenv, jarg1) != 192) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return ;
-  }
-  if (!SWIG_JavaArrayInUchar(jenv, &jarr1, (unsigned char **)&arg1, jarg1)) return ; 
+  arg1 = *(byte **)&jarg1; 
   arg2 = *(blst_p2 **)&jarg2; 
   blst_p2_serialize(arg1,(blst_p2 const *)arg2);
-  SWIG_JavaArrayArgoutUchar(jenv, jarr1, (unsigned char *)arg1, jarg1); 
-  free(arg1); 
+  
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1compress(JNIEnv *jenv, jclass jcls, jshortArray jarg1, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1compress(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2, jobject jarg2_) {
   byte *arg1 ;
   blst_p2 *arg2 = (blst_p2 *) 0 ;
-  jshort *jarr1 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg2_;
-  if (jarg1 && (*jenv)->GetArrayLength(jenv, jarg1) != 96) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return ;
-  }
-  if (!SWIG_JavaArrayInUchar(jenv, &jarr1, (unsigned char **)&arg1, jarg1)) return ; 
+  arg1 = *(byte **)&jarg1; 
   arg2 = *(blst_p2 **)&jarg2; 
   blst_p2_compress(arg1,(blst_p2 const *)arg2);
-  SWIG_JavaArrayArgoutUchar(jenv, jarr1, (unsigned char *)arg1, jarg1); 
-  free(arg1); 
+  
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1affine_1serialize(JNIEnv *jenv, jclass jcls, jshortArray jarg1, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1affine_1serialize(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2, jobject jarg2_) {
   byte *arg1 ;
   blst_p2_affine *arg2 = (blst_p2_affine *) 0 ;
-  jshort *jarr1 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg2_;
-  if (jarg1 && (*jenv)->GetArrayLength(jenv, jarg1) != 192) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return ;
-  }
-  if (!SWIG_JavaArrayInUchar(jenv, &jarr1, (unsigned char **)&arg1, jarg1)) return ; 
+  arg1 = *(byte **)&jarg1; 
   arg2 = *(blst_p2_affine **)&jarg2; 
   blst_p2_affine_serialize(arg1,(blst_p2_affine const *)arg2);
-  SWIG_JavaArrayArgoutUchar(jenv, jarr1, (unsigned char *)arg1, jarg1); 
-  free(arg1); 
+  
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1affine_1compress(JNIEnv *jenv, jclass jcls, jshortArray jarg1, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1affine_1compress(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2, jobject jarg2_) {
   byte *arg1 ;
   blst_p2_affine *arg2 = (blst_p2_affine *) 0 ;
-  jshort *jarr1 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg2_;
-  if (jarg1 && (*jenv)->GetArrayLength(jenv, jarg1) != 96) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return ;
-  }
-  if (!SWIG_JavaArrayInUchar(jenv, &jarr1, (unsigned char **)&arg1, jarg1)) return ; 
+  arg1 = *(byte **)&jarg1; 
   arg2 = *(blst_p2_affine **)&jarg2; 
   blst_p2_affine_compress(arg1,(blst_p2_affine const *)arg2);
-  SWIG_JavaArrayArgoutUchar(jenv, jarr1, (unsigned char *)arg1, jarg1); 
-  free(arg1); 
+  
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1uncompress(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jshortArray jarg2) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1uncompress(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   jint jresult = 0 ;
   blst_p2_affine *arg1 = (blst_p2_affine *) 0 ;
   byte *arg2 ;
-  jshort *jarr2 ;
   BLST_ERROR result;
   
   (void)jenv;
   (void)jcls;
   (void)jarg1_;
   arg1 = *(blst_p2_affine **)&jarg1; 
-  if (jarg2 && (*jenv)->GetArrayLength(jenv, jarg2) != 96) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return 0;
-  }
-  if (!SWIG_JavaArrayInUchar(jenv, &jarr2, (unsigned char **)&arg2, jarg2)) return 0; 
-  result = (BLST_ERROR)blst_p2_uncompress(arg1,(unsigned char const (*))arg2);
+  arg2 = *(byte **)&jarg2; 
+  result = (BLST_ERROR)blst_p2_uncompress(arg1,(uint8_t const (*))arg2);
   jresult = (jint)result; 
-  SWIG_JavaArrayArgoutUchar(jenv, jarr2, (unsigned char *)arg2, jarg2); 
-  free(arg2); 
+  
   return jresult;
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1deserialize(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jshortArray jarg2) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1deserialize(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   jint jresult = 0 ;
   blst_p2_affine *arg1 = (blst_p2_affine *) 0 ;
   byte *arg2 ;
-  jshort *jarr2 ;
   BLST_ERROR result;
   
   (void)jenv;
   (void)jcls;
   (void)jarg1_;
   arg1 = *(blst_p2_affine **)&jarg1; 
-  if (jarg2 && (*jenv)->GetArrayLength(jenv, jarg2) != 192) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return 0;
-  }
-  if (!SWIG_JavaArrayInUchar(jenv, &jarr2, (unsigned char **)&arg2, jarg2)) return 0; 
-  result = (BLST_ERROR)blst_p2_deserialize(arg1,(unsigned char const (*))arg2);
+  arg2 = *(byte **)&jarg2; 
+  result = (BLST_ERROR)blst_p2_deserialize(arg1,(uint8_t const (*))arg2);
   jresult = (jint)result; 
-  SWIG_JavaArrayArgoutUchar(jenv, jarr2, (unsigned char *)arg2, jarg2); 
-  free(arg2); 
+  
   return jresult;
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_keygen(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jbyteArray jarg2, jbyteArray jarg4) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_keygen(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jbyteArray jarg2, jbyteArray jarg4) {
   blst_scalar *arg1 = (blst_scalar *) 0 ;
   byte *arg2 = (byte *) 0 ;
   size_t arg3 ;
@@ -2476,7 +1804,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_keygen(JNIEnv *
       arg5 = 0;
     }
   }
-  blst_keygen(arg1,(unsigned char const *)arg2,arg3,(unsigned char const *)arg4,arg5);
+  blst_keygen(arg1,(uint8_t const *)arg2,arg3,(uint8_t const *)arg4,arg5);
   {
     if (jarg2) (*jenv)->ReleaseByteArrayElements(jenv, jarg2, (jbyte *)arg2, 0);
   }
@@ -2488,7 +1816,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_keygen(JNIEnv *
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_sk_1to_1pk_1in_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_sk_1to_1pk_1in_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   blst_scalar *arg2 = (blst_scalar *) 0 ;
   
@@ -2502,7 +1830,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_sk_1to_1pk_1in_
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_sign_1pk_1in_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_sign_1pk_1in_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   blst_p2 *arg2 = (blst_p2 *) 0 ;
   blst_scalar *arg3 = (blst_scalar *) 0 ;
@@ -2519,7 +1847,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_sign_1pk_1in_1g
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_sk_1to_1pk_1in_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_sk_1to_1pk_1in_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   blst_scalar *arg2 = (blst_scalar *) 0 ;
   
@@ -2533,7 +1861,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_sk_1to_1pk_1in_
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_sign_1pk_1in_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_sign_1pk_1in_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   blst_p1 *arg2 = (blst_p1 *) 0 ;
   blst_scalar *arg3 = (blst_scalar *) 0 ;
@@ -2550,7 +1878,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_sign_1pk_1in_1g
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1pairing(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_new_1pairing(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   blst_pairing *result = 0 ;
   
@@ -2562,7 +1890,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_new_1pairing(J
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1pairing(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_delete_1pairing(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   blst_pairing *arg1 = (blst_pairing *) 0 ;
   
   (void)jenv;
@@ -2572,7 +1900,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_delete_1pairing
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1sizeof(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_pairing_1sizeof(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   size_t result;
   
@@ -2584,7 +1912,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1sizeo
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1init(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_pairing_1init(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   blst_pairing *arg1 = (blst_pairing *) 0 ;
   
   (void)jenv;
@@ -2595,7 +1923,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1init(J
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1commit(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_pairing_1commit(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   blst_pairing *arg1 = (blst_pairing *) 0 ;
   
   (void)jenv;
@@ -2606,7 +1934,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1commit
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1aggregate_1pk_1in_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jint jarg4, jbyteArray jarg5, jbyteArray jarg7, jbyteArray jarg9) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_pairing_1aggregate_1pk_1in_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jint jarg4, jbyteArray jarg5, jbyteArray jarg7, jbyteArray jarg9) {
   jint jresult = 0 ;
   blst_pairing *arg1 = (blst_pairing *) 0 ;
   blst_p2_affine *arg2 = (blst_p2_affine *) 0 ;
@@ -2656,7 +1984,7 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1aggreg
       arg10 = 0;
     }
   }
-  result = (BLST_ERROR)blst_pairing_aggregate_pk_in_g2(arg1,(blst_p2_affine const *)arg2,(blst_p1_affine const *)arg3,arg4,(unsigned char const *)arg5,arg6,(unsigned char const *)arg7,arg8,(unsigned char const *)arg9,arg10);
+  result = (BLST_ERROR)blst_pairing_aggregate_pk_in_g2(arg1,(blst_p2_affine const *)arg2,(blst_p1_affine const *)arg3,arg4,(uint8_t const *)arg5,arg6,(uint8_t const *)arg7,arg8,(uint8_t const *)arg9,arg10);
   jresult = (jint)result; 
   {
     if (jarg5) (*jenv)->ReleaseByteArrayElements(jenv, jarg5, (jbyte *)arg5, 0);
@@ -2674,7 +2002,7 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1aggreg
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1mul_1n_1aggregate_1pk_1in_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jlong jarg4, jobject jarg4_, jlong jarg5, jlong jarg6) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_pairing_1mul_1n_1aggregate_1pk_1in_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jlong jarg4, jobject jarg4_, jlong jarg5, jlong jarg6) {
   jint jresult = 0 ;
   blst_pairing *arg1 = (blst_pairing *) 0 ;
   blst_p2_affine *arg2 = (blst_p2_affine *) 0 ;
@@ -2696,13 +2024,13 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1mul_1n
   arg4 = *(blst_p1_affine **)&jarg4; 
   arg5 = *(limb_t **)&jarg5; 
   arg6 = (size_t)jarg6; 
-  result = (BLST_ERROR)blst_pairing_mul_n_aggregate_pk_in_g2(arg1,(blst_p2_affine const *)arg2,(blst_p1_affine const *)arg3,(blst_p1_affine const *)arg4,(unsigned long const *)arg5,arg6);
+  result = (BLST_ERROR)blst_pairing_mul_n_aggregate_pk_in_g2(arg1,(blst_p2_affine const *)arg2,(blst_p1_affine const *)arg3,(blst_p1_affine const *)arg4,(uint64_t const *)arg5,arg6);
   jresult = (jint)result; 
   return jresult;
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1aggregate_1pk_1in_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jint jarg4, jbyteArray jarg5, jbyteArray jarg7, jbyteArray jarg9) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_pairing_1aggregate_1pk_1in_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jint jarg4, jbyteArray jarg5, jbyteArray jarg7, jbyteArray jarg9) {
   jint jresult = 0 ;
   blst_pairing *arg1 = (blst_pairing *) 0 ;
   blst_p1_affine *arg2 = (blst_p1_affine *) 0 ;
@@ -2752,7 +2080,7 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1aggreg
       arg10 = 0;
     }
   }
-  result = (BLST_ERROR)blst_pairing_aggregate_pk_in_g1(arg1,(blst_p1_affine const *)arg2,(blst_p2_affine const *)arg3,arg4,(unsigned char const *)arg5,arg6,(unsigned char const *)arg7,arg8,(unsigned char const *)arg9,arg10);
+  result = (BLST_ERROR)blst_pairing_aggregate_pk_in_g1(arg1,(blst_p1_affine const *)arg2,(blst_p2_affine const *)arg3,arg4,(uint8_t const *)arg5,arg6,(uint8_t const *)arg7,arg8,(uint8_t const *)arg9,arg10);
   jresult = (jint)result; 
   {
     if (jarg5) (*jenv)->ReleaseByteArrayElements(jenv, jarg5, (jbyte *)arg5, 0);
@@ -2770,7 +2098,7 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1aggreg
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1mul_1n_1aggregate_1pk_1in_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jlong jarg4, jobject jarg4_, jlong jarg5, jlong jarg6) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_pairing_1mul_1n_1aggregate_1pk_1in_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jlong jarg4, jobject jarg4_, jlong jarg5, jlong jarg6) {
   jint jresult = 0 ;
   blst_pairing *arg1 = (blst_pairing *) 0 ;
   blst_p1_affine *arg2 = (blst_p1_affine *) 0 ;
@@ -2792,13 +2120,13 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1mul_1n
   arg4 = *(blst_p2_affine **)&jarg4; 
   arg5 = *(limb_t **)&jarg5; 
   arg6 = (size_t)jarg6; 
-  result = (BLST_ERROR)blst_pairing_mul_n_aggregate_pk_in_g1(arg1,(blst_p1_affine const *)arg2,(blst_p2_affine const *)arg3,(blst_p2_affine const *)arg4,(unsigned long const *)arg5,arg6);
+  result = (BLST_ERROR)blst_pairing_mul_n_aggregate_pk_in_g1(arg1,(blst_p1_affine const *)arg2,(blst_p2_affine const *)arg3,(blst_p2_affine const *)arg4,(uint64_t const *)arg5,arg6);
   jresult = (jint)result; 
   return jresult;
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1merge(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_pairing_1merge(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   jint jresult = 0 ;
   blst_pairing *arg1 = (blst_pairing *) 0 ;
   blst_pairing *arg2 = (blst_pairing *) 0 ;
@@ -2816,7 +2144,7 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1merge(
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1finalverify(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_pairing_1finalverify(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   jint jresult = 0 ;
   blst_pairing *arg1 = (blst_pairing *) 0 ;
   blst_fp12 *arg2 = (blst_fp12 *) NULL ;
@@ -2834,7 +2162,7 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_pairing_1finalv
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_aggregate_1in_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_aggregate_1in_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3) {
   jint jresult = 0 ;
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   blst_p1 *arg2 = (blst_p1 *) 0 ;
@@ -2848,13 +2176,13 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_aggregate_1in_1
   arg1 = *(blst_p1 **)&jarg1; 
   arg2 = *(blst_p1 **)&jarg2; 
   arg3 = *(byte **)&jarg3; 
-  result = (BLST_ERROR)blst_aggregate_in_g1(arg1,(blst_p1 const *)arg2,(unsigned char const *)arg3);
+  result = (BLST_ERROR)blst_aggregate_in_g1(arg1,(blst_p1 const *)arg2,(uint8_t const *)arg3);
   jresult = (jint)result; 
   return jresult;
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_aggregate_1in_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_aggregate_1in_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jlong jarg3) {
   jint jresult = 0 ;
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   blst_p2 *arg2 = (blst_p2 *) 0 ;
@@ -2868,13 +2196,13 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_aggregate_1in_1
   arg1 = *(blst_p2 **)&jarg1; 
   arg2 = *(blst_p2 **)&jarg2; 
   arg3 = *(byte **)&jarg3; 
-  result = (BLST_ERROR)blst_aggregate_in_g2(arg1,(blst_p2 const *)arg2,(unsigned char const *)arg3);
+  result = (BLST_ERROR)blst_aggregate_in_g2(arg1,(blst_p2 const *)arg2,(uint8_t const *)arg3);
   jresult = (jint)result; 
   return jresult;
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_aggregated_1in_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_aggregated_1in_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_fp12 *arg1 = (blst_fp12 *) 0 ;
   blst_p1_affine *arg2 = (blst_p1_affine *) 0 ;
   
@@ -2888,7 +2216,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_aggregated_1in_
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_aggregated_1in_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_aggregated_1in_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_fp12 *arg1 = (blst_fp12 *) 0 ;
   blst_p2_affine *arg2 = (blst_p2_affine *) 0 ;
   
@@ -2902,7 +2230,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_aggregated_1in_
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_core_1verify_1pk_1in_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jint jarg3, jbyteArray jarg4, jbyteArray jarg6, jbyteArray jarg8) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_core_1verify_1pk_1in_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jint jarg3, jbyteArray jarg4, jbyteArray jarg6, jbyteArray jarg8) {
   jint jresult = 0 ;
   blst_p1_affine *arg1 = (blst_p1_affine *) 0 ;
   blst_p2_affine *arg2 = (blst_p2_affine *) 0 ;
@@ -2949,7 +2277,7 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_core_1verify_1p
       arg9 = 0;
     }
   }
-  result = (BLST_ERROR)blst_core_verify_pk_in_g1((blst_p1_affine const *)arg1,(blst_p2_affine const *)arg2,arg3,(unsigned char const *)arg4,arg5,(unsigned char const *)arg6,arg7,(unsigned char const *)arg8,arg9);
+  result = (BLST_ERROR)blst_core_verify_pk_in_g1((blst_p1_affine const *)arg1,(blst_p2_affine const *)arg2,arg3,(uint8_t const *)arg4,arg5,(uint8_t const *)arg6,arg7,(uint8_t const *)arg8,arg9);
   jresult = (jint)result; 
   {
     if (jarg4) (*jenv)->ReleaseByteArrayElements(jenv, jarg4, (jbyte *)arg4, 0);
@@ -2967,7 +2295,7 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_core_1verify_1p
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_core_1verify_1pk_1in_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jint jarg3, jbyteArray jarg4, jbyteArray jarg6, jbyteArray jarg8) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_core_1verify_1pk_1in_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_, jint jarg3, jbyteArray jarg4, jbyteArray jarg6, jbyteArray jarg8) {
   jint jresult = 0 ;
   blst_p2_affine *arg1 = (blst_p2_affine *) 0 ;
   blst_p1_affine *arg2 = (blst_p1_affine *) 0 ;
@@ -3014,7 +2342,7 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_core_1verify_1p
       arg9 = 0;
     }
   }
-  result = (BLST_ERROR)blst_core_verify_pk_in_g2((blst_p2_affine const *)arg1,(blst_p1_affine const *)arg2,arg3,(unsigned char const *)arg4,arg5,(unsigned char const *)arg6,arg7,(unsigned char const *)arg8,arg9);
+  result = (BLST_ERROR)blst_core_verify_pk_in_g2((blst_p2_affine const *)arg1,(blst_p1_affine const *)arg2,arg3,(uint8_t const *)arg4,arg5,(uint8_t const *)arg6,arg7,(uint8_t const *)arg8,arg9);
   jresult = (jint)result; 
   {
     if (jarg4) (*jenv)->ReleaseByteArrayElements(jenv, jarg4, (jbyte *)arg4, 0);
@@ -3032,7 +2360,7 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_core_1verify_1p
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_BLS12_1381_1G1_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_BLS12_1381_1G1_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   blst_p1_affine *arg1 = (blst_p1_affine *) 0 ;
   
   (void)jenv;
@@ -3043,7 +2371,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_BLS12_1381_1G1_
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_BLS12_1381_1G1_1get(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_BLS12_1381_1G1_1get(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   blst_p1_affine *result = 0 ;
   
@@ -3055,7 +2383,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_BLS12_1381_1G1
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_BLS12_1381_1NEG_1G1_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_BLS12_1381_1NEG_1G1_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   blst_p1_affine *arg1 = (blst_p1_affine *) 0 ;
   
   (void)jenv;
@@ -3066,7 +2394,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_BLS12_1381_1NEG
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_BLS12_1381_1NEG_1G1_1get(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_BLS12_1381_1NEG_1G1_1get(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   blst_p1_affine *result = 0 ;
   
@@ -3078,7 +2406,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_BLS12_1381_1NE
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_BLS12_1381_1G2_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_BLS12_1381_1G2_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   blst_p2_affine *arg1 = (blst_p2_affine *) 0 ;
   
   (void)jenv;
@@ -3089,7 +2417,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_BLS12_1381_1G2_
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_BLS12_1381_1G2_1get(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_BLS12_1381_1G2_1get(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   blst_p2_affine *result = 0 ;
   
@@ -3101,7 +2429,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_BLS12_1381_1G2
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_BLS12_1381_1NEG_1G2_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_BLS12_1381_1NEG_1G2_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   blst_p2_affine *arg1 = (blst_p2_affine *) 0 ;
   
   (void)jenv;
@@ -3112,7 +2440,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_BLS12_1381_1NEG
 }
 
 
-SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_BLS12_1381_1NEG_1G2_1get(JNIEnv *jenv, jclass jcls) {
+SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_BLS12_1381_1NEG_1G2_1get(JNIEnv *jenv, jclass jcls) {
   jlong jresult = 0 ;
   blst_p2_affine *result = 0 ;
   
@@ -3124,7 +2452,7 @@ SWIGEXPORT jlong JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_BLS12_1381_1NE
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1on_1curve(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1on_1curve(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jint jresult = 0 ;
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   int result;
@@ -3139,7 +2467,7 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1on_1curve(J
 }
 
 
-SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1on_1curve(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1on_1curve(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
   jint jresult = 0 ;
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   int result;
@@ -3154,7 +2482,7 @@ SWIGEXPORT jint JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1on_1curve(J
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1from_1jacobian(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p1_1from_1jacobian(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p1 *arg1 = (blst_p1 *) 0 ;
   blst_p1 *arg2 = (blst_p1 *) 0 ;
   
@@ -3168,7 +2496,7 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p1_1from_1jacob
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1from_1jacobian(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_p2_1from_1jacobian(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   blst_p2 *arg1 = (blst_p2 *) 0 ;
   blst_p2 *arg2 = (blst_p2 *) 0 ;
   
@@ -3182,105 +2510,81 @@ SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_p2_1from_1jacob
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_sk_1to_1pk2_1in_1g1(JNIEnv *jenv, jclass jcls, jshortArray jarg1, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_sk_1to_1pk2_1in_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
   byte *arg1 ;
   blst_p1_affine *arg2 = (blst_p1_affine *) 0 ;
   blst_scalar *arg3 = (blst_scalar *) 0 ;
-  jshort *jarr1 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg2_;
   (void)jarg3_;
-  if (jarg1 && (*jenv)->GetArrayLength(jenv, jarg1) != 96) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return ;
-  }
-  if (!SWIG_JavaArrayInUchar(jenv, &jarr1, (unsigned char **)&arg1, jarg1)) return ; 
+  arg1 = *(byte **)&jarg1; 
   arg2 = *(blst_p1_affine **)&jarg2; 
   arg3 = *(blst_scalar **)&jarg3; 
   blst_sk_to_pk2_in_g1(arg1,arg2,(blst_scalar const *)arg3);
-  SWIG_JavaArrayArgoutUchar(jenv, jarr1, (unsigned char *)arg1, jarg1); 
-  free(arg1); 
+  
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_sign_1pk2_1in_1g1(JNIEnv *jenv, jclass jcls, jshortArray jarg1, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jlong jarg4, jobject jarg4_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_sign_1pk2_1in_1g1(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jlong jarg4, jobject jarg4_) {
   byte *arg1 ;
   blst_p2_affine *arg2 = (blst_p2_affine *) 0 ;
   blst_p2 *arg3 = (blst_p2 *) 0 ;
   blst_scalar *arg4 = (blst_scalar *) 0 ;
-  jshort *jarr1 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg2_;
   (void)jarg3_;
   (void)jarg4_;
-  if (jarg1 && (*jenv)->GetArrayLength(jenv, jarg1) != 192) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return ;
-  }
-  if (!SWIG_JavaArrayInUchar(jenv, &jarr1, (unsigned char **)&arg1, jarg1)) return ; 
+  arg1 = *(byte **)&jarg1; 
   arg2 = *(blst_p2_affine **)&jarg2; 
   arg3 = *(blst_p2 **)&jarg3; 
   arg4 = *(blst_scalar **)&jarg4; 
   blst_sign_pk2_in_g1(arg1,arg2,(blst_p2 const *)arg3,(blst_scalar const *)arg4);
-  SWIG_JavaArrayArgoutUchar(jenv, jarr1, (unsigned char *)arg1, jarg1); 
-  free(arg1); 
+  
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_sk_1to_1pk2_1in_1g2(JNIEnv *jenv, jclass jcls, jshortArray jarg1, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_sk_1to_1pk2_1in_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_) {
   byte *arg1 ;
   blst_p2_affine *arg2 = (blst_p2_affine *) 0 ;
   blst_scalar *arg3 = (blst_scalar *) 0 ;
-  jshort *jarr1 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg2_;
   (void)jarg3_;
-  if (jarg1 && (*jenv)->GetArrayLength(jenv, jarg1) != 192) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return ;
-  }
-  if (!SWIG_JavaArrayInUchar(jenv, &jarr1, (unsigned char **)&arg1, jarg1)) return ; 
+  arg1 = *(byte **)&jarg1; 
   arg2 = *(blst_p2_affine **)&jarg2; 
   arg3 = *(blst_scalar **)&jarg3; 
   blst_sk_to_pk2_in_g2(arg1,arg2,(blst_scalar const *)arg3);
-  SWIG_JavaArrayArgoutUchar(jenv, jarr1, (unsigned char *)arg1, jarg1); 
-  free(arg1); 
+  
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_sign_1pk2_1in_1g2(JNIEnv *jenv, jclass jcls, jshortArray jarg1, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jlong jarg4, jobject jarg4_) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_sign_1pk2_1in_1g2(JNIEnv *jenv, jclass jcls, jlong jarg1, jlong jarg2, jobject jarg2_, jlong jarg3, jobject jarg3_, jlong jarg4, jobject jarg4_) {
   byte *arg1 ;
   blst_p1_affine *arg2 = (blst_p1_affine *) 0 ;
   blst_p1 *arg3 = (blst_p1 *) 0 ;
   blst_scalar *arg4 = (blst_scalar *) 0 ;
-  jshort *jarr1 ;
   
   (void)jenv;
   (void)jcls;
   (void)jarg2_;
   (void)jarg3_;
   (void)jarg4_;
-  if (jarg1 && (*jenv)->GetArrayLength(jenv, jarg1) != 96) {
-    SWIG_JavaThrowException(jenv, SWIG_JavaIndexOutOfBoundsException, "incorrect array size");
-    return ;
-  }
-  if (!SWIG_JavaArrayInUchar(jenv, &jarr1, (unsigned char **)&arg1, jarg1)) return ; 
+  arg1 = *(byte **)&jarg1; 
   arg2 = *(blst_p1_affine **)&jarg2; 
   arg3 = *(blst_p1 **)&jarg3; 
   arg4 = *(blst_scalar **)&jarg4; 
   blst_sign_pk2_in_g2(arg1,arg2,(blst_p1 const *)arg3,(blst_scalar const *)arg4);
-  SWIG_JavaArrayArgoutUchar(jenv, jarr1, (unsigned char *)arg1, jarg1); 
-  free(arg1); 
+  
 }
 
 
-SWIGEXPORT jbyteArray JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_cdata(JNIEnv *jenv, jclass jcls, jlong jarg1, jint jarg2) {
+SWIGEXPORT jbyteArray JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_cdata(JNIEnv *jenv, jclass jcls, jlong jarg1, jint jarg2) {
   jbyteArray jresult = 0 ;
   void *arg1 = (void *) 0 ;
   int arg2 ;
@@ -3297,7 +2601,7 @@ SWIGEXPORT jbyteArray JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_cdata(JNI
 }
 
 
-SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_blstJNI_memmove(JNIEnv *jenv, jclass jcls, jlong jarg1, jbyteArray jarg2) {
+SWIGEXPORT void JNICALL Java_tech_pegasys_teku_bls_supra_swig_blstJNI_memmove(JNIEnv *jenv, jclass jcls, jlong jarg1, jbyteArray jarg2) {
   void *arg1 = (void *) 0 ;
   void *arg2 = (void *) 0 ;
   int arg3 ;

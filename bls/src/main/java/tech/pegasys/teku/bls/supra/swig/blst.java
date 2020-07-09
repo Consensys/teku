@@ -9,6 +9,42 @@
 package tech.pegasys.teku.bls.supra.swig;
 
 public class blst {
+  public static void scalar_from_uint32(scalar ret, long[] a) {
+    blstJNI.scalar_from_uint32(scalar.getCPtr(ret), ret, a);
+  }
+
+  public static void uint32_from_scalar(long[] ret, scalar a) {
+    blstJNI.uint32_from_scalar(ret, scalar.getCPtr(a), a);
+  }
+
+  public static void scalar_from_uint64(scalar ret, SWIGTYPE_p_unsigned_long_long a) {
+    blstJNI.scalar_from_uint64(scalar.getCPtr(ret), ret, SWIGTYPE_p_unsigned_long_long.getCPtr(a));
+  }
+
+  public static void uint64_from_scalar(SWIGTYPE_p_unsigned_long_long ret, scalar a) {
+    blstJNI.uint64_from_scalar(SWIGTYPE_p_unsigned_long_long.getCPtr(ret), scalar.getCPtr(a), a);
+  }
+
+  public static void scalar_from_bendian(scalar ret, byte[] a) {
+    blstJNI.scalar_from_bendian(scalar.getCPtr(ret), ret, a);
+  }
+
+  public static void bendian_from_scalar(byte[] ret, scalar a) {
+    blstJNI.bendian_from_scalar(ret, scalar.getCPtr(a), a);
+  }
+
+  public static void scalar_from_lendian(scalar ret, byte[] a) {
+    blstJNI.scalar_from_lendian(scalar.getCPtr(ret), ret, a);
+  }
+
+  public static void lendian_from_scalar(byte[] ret, scalar a) {
+    blstJNI.lendian_from_scalar(ret, scalar.getCPtr(a), a);
+  }
+
+  public static int scalar_fr_check(scalar a) {
+    return blstJNI.scalar_fr_check(scalar.getCPtr(a), a);
+  }
+
   public static void p1_add(p1 out, p1 a, p1 b) {
     blstJNI.p1_add(p1.getCPtr(out), out, p1.getCPtr(a), a, p1.getCPtr(b), b);
   }
@@ -121,51 +157,51 @@ public class blst {
     blstJNI.hash_to_g2(p2.getCPtr(out), out, msg, DST, aug);
   }
 
-  public static void p1_serialize(short[] out, p1 in) {
+  public static void p1_serialize(byte[] out, p1 in) {
     blstJNI.p1_serialize(out, p1.getCPtr(in), in);
   }
 
-  public static void p1_compress(short[] out, p1 in) {
+  public static void p1_compress(byte[] out, p1 in) {
     blstJNI.p1_compress(out, p1.getCPtr(in), in);
   }
 
-  public static void p1_affine_serialize(short[] out, p1_affine in) {
+  public static void p1_affine_serialize(byte[] out, p1_affine in) {
     blstJNI.p1_affine_serialize(out, p1_affine.getCPtr(in), in);
   }
 
-  public static void p1_affine_compress(short[] out, p1_affine in) {
+  public static void p1_affine_compress(byte[] out, p1_affine in) {
     blstJNI.p1_affine_compress(out, p1_affine.getCPtr(in), in);
   }
 
-  public static BLST_ERROR p1_uncompress(p1_affine out, short[] in) {
+  public static BLST_ERROR p1_uncompress(p1_affine out, byte[] in) {
     return BLST_ERROR.swigToEnum(blstJNI.p1_uncompress(p1_affine.getCPtr(out), out, in));
   }
 
-  public static BLST_ERROR p1_deserialize(p1_affine out, short[] in) {
+  public static BLST_ERROR p1_deserialize(p1_affine out, byte[] in) {
     return BLST_ERROR.swigToEnum(blstJNI.p1_deserialize(p1_affine.getCPtr(out), out, in));
   }
 
-  public static void p2_serialize(short[] out, p2 in) {
+  public static void p2_serialize(byte[] out, p2 in) {
     blstJNI.p2_serialize(out, p2.getCPtr(in), in);
   }
 
-  public static void p2_compress(short[] out, p2 in) {
+  public static void p2_compress(byte[] out, p2 in) {
     blstJNI.p2_compress(out, p2.getCPtr(in), in);
   }
 
-  public static void p2_affine_serialize(short[] out, p2_affine in) {
+  public static void p2_affine_serialize(byte[] out, p2_affine in) {
     blstJNI.p2_affine_serialize(out, p2_affine.getCPtr(in), in);
   }
 
-  public static void p2_affine_compress(short[] out, p2_affine in) {
+  public static void p2_affine_compress(byte[] out, p2_affine in) {
     blstJNI.p2_affine_compress(out, p2_affine.getCPtr(in), in);
   }
 
-  public static BLST_ERROR p2_uncompress(p2_affine out, short[] in) {
+  public static BLST_ERROR p2_uncompress(p2_affine out, byte[] in) {
     return BLST_ERROR.swigToEnum(blstJNI.p2_uncompress(p2_affine.getCPtr(out), out, in));
   }
 
-  public static BLST_ERROR p2_deserialize(p2_affine out, short[] in) {
+  public static BLST_ERROR p2_deserialize(p2_affine out, byte[] in) {
     return BLST_ERROR.swigToEnum(blstJNI.p2_deserialize(p2_affine.getCPtr(out), out, in));
   }
 
@@ -205,16 +241,16 @@ public class blst {
     return BLST_ERROR.swigToEnum(blstJNI.pairing_aggregate_pk_in_g2(pairing.getCPtr(ctx), ctx, p2_affine.getCPtr(PK), PK, p1_affine.getCPtr(signature), signature, hash_or_encode, msg, DST, aug));
   }
 
-  public static BLST_ERROR pairing_mul_n_aggregate_pk_in_g2(pairing ctx, p2_affine PK, p1_affine sig, p1_affine hash, SWIGTYPE_p_unsigned_long scalar, long nbits) {
-    return BLST_ERROR.swigToEnum(blstJNI.pairing_mul_n_aggregate_pk_in_g2(pairing.getCPtr(ctx), ctx, p2_affine.getCPtr(PK), PK, p1_affine.getCPtr(sig), sig, p1_affine.getCPtr(hash), hash, SWIGTYPE_p_unsigned_long.getCPtr(scalar), nbits));
+  public static BLST_ERROR pairing_mul_n_aggregate_pk_in_g2(pairing ctx, p2_affine PK, p1_affine sig, p1_affine hash, SWIGTYPE_p_unsigned_long_long scalar, long nbits) {
+    return BLST_ERROR.swigToEnum(blstJNI.pairing_mul_n_aggregate_pk_in_g2(pairing.getCPtr(ctx), ctx, p2_affine.getCPtr(PK), PK, p1_affine.getCPtr(sig), sig, p1_affine.getCPtr(hash), hash, SWIGTYPE_p_unsigned_long_long.getCPtr(scalar), nbits));
   }
 
   public static BLST_ERROR pairing_aggregate_pk_in_g1(pairing ctx, p1_affine PK, p2_affine signature, int hash_or_encode, byte[] msg, byte[] DST, byte[] aug) {
     return BLST_ERROR.swigToEnum(blstJNI.pairing_aggregate_pk_in_g1(pairing.getCPtr(ctx), ctx, p1_affine.getCPtr(PK), PK, p2_affine.getCPtr(signature), signature, hash_or_encode, msg, DST, aug));
   }
 
-  public static BLST_ERROR pairing_mul_n_aggregate_pk_in_g1(pairing ctx, p1_affine PK, p2_affine sig, p2_affine hash, SWIGTYPE_p_unsigned_long scalar, long nbits) {
-    return BLST_ERROR.swigToEnum(blstJNI.pairing_mul_n_aggregate_pk_in_g1(pairing.getCPtr(ctx), ctx, p1_affine.getCPtr(PK), PK, p2_affine.getCPtr(sig), sig, p2_affine.getCPtr(hash), hash, SWIGTYPE_p_unsigned_long.getCPtr(scalar), nbits));
+  public static BLST_ERROR pairing_mul_n_aggregate_pk_in_g1(pairing ctx, p1_affine PK, p2_affine sig, p2_affine hash, SWIGTYPE_p_unsigned_long_long scalar, long nbits) {
+    return BLST_ERROR.swigToEnum(blstJNI.pairing_mul_n_aggregate_pk_in_g1(pairing.getCPtr(ctx), ctx, p1_affine.getCPtr(PK), PK, p2_affine.getCPtr(sig), sig, p2_affine.getCPtr(hash), hash, SWIGTYPE_p_unsigned_long_long.getCPtr(scalar), nbits));
   }
 
   public static BLST_ERROR pairing_merge(pairing ctx, pairing ctx1) {
@@ -301,19 +337,19 @@ public class blst {
     blstJNI.p2_from_jacobian(p2.getCPtr(out), out, p2.getCPtr(in), in);
   }
 
-  public static void sk_to_pk2_in_g1(short[] out, p1_affine out_pk, scalar SK) {
+  public static void sk_to_pk2_in_g1(byte[] out, p1_affine out_pk, scalar SK) {
     blstJNI.sk_to_pk2_in_g1(out, p1_affine.getCPtr(out_pk), out_pk, scalar.getCPtr(SK), SK);
   }
 
-  public static void sign_pk2_in_g1(short[] out, p2_affine out_sig, p2 hash, scalar SK) {
+  public static void sign_pk2_in_g1(byte[] out, p2_affine out_sig, p2 hash, scalar SK) {
     blstJNI.sign_pk2_in_g1(out, p2_affine.getCPtr(out_sig), out_sig, p2.getCPtr(hash), hash, scalar.getCPtr(SK), SK);
   }
 
-  public static void sk_to_pk2_in_g2(short[] out, p2_affine out_pk, scalar SK) {
+  public static void sk_to_pk2_in_g2(byte[] out, p2_affine out_pk, scalar SK) {
     blstJNI.sk_to_pk2_in_g2(out, p2_affine.getCPtr(out_pk), out_pk, scalar.getCPtr(SK), SK);
   }
 
-  public static void sign_pk2_in_g2(short[] out, p1_affine out_sig, p1 hash, scalar SK) {
+  public static void sign_pk2_in_g2(byte[] out, p1_affine out_sig, p1 hash, scalar SK) {
     blstJNI.sign_pk2_in_g2(out, p1_affine.getCPtr(out_sig), out_sig, p1.getCPtr(hash), hash, scalar.getCPtr(SK), SK);
   }
 
