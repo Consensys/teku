@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.p2p.network;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -97,5 +99,10 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   @Override
   public TopicChannel subscribe(final String topic, final TopicHandler topicHandler) {
     return network.subscribe(topic, topicHandler);
+  }
+
+  @Override
+  public Map<String, Collection<NodeId>> getSubscribersByTopic() {
+    return network.getSubscribersByTopic();
   }
 }
