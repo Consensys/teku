@@ -20,6 +20,7 @@ import tech.pegasys.teku.bls.supra.swig.blst;
 import tech.pegasys.teku.bls.supra.swig.p1_affine;
 import tech.pegasys.teku.bls.supra.swig.p2;
 import tech.pegasys.teku.bls.supra.swig.p2_affine;
+import tech.pegasys.teku.bls.supra.swig.pairing;
 
 public class BlstTest {
   private static final Bytes ETH2_DST =
@@ -153,6 +154,43 @@ public class BlstTest {
     assertThat(blstPK.toBytes()).isEqualTo(keyPair.publicKey().toBytesCompressed());
     boolean blstRes = tech.pegasys.teku.bls.supra.BLS12381.verify(blstPK, msg, blstSignature);
     assertThat(blstRes).isTrue();
+  }
+
+  @Test
+  void testPairing() {
+
+    Bytes msg = Bytes32.ZERO; //.fromHexString("123456");
+    KeyPair keyPair = KeyPair.random(1);
+    Signature signature = BLS12381.sign(keyPair.secretKey(), msg);
+    ECP2 ecp2 = HashToCurve.hashToG2(msg);
+    Signature msgHash = new Signature(new G2Point(ecp2));
+    boolean res = BLS12381.verify(keyPair.publicKey(), msg, signature);
+    assertThat(res).isTrue();
+
+    SecretKey blstSK = SecretKey.fromBytes(keyPair.secretKey().toBytes().slice(48 - 32));
+    p2 p2 = tech.pegasys.teku.bls.supra.HashToCurve.hashToG2(msg);
+    p2_affine p2Aff = new p2_affine();
+    blst.p2_to_affine(p2Aff, p2);
+    tech.pegasys.teku.bls.supra.Signature blstMsgHash = new tech.pegasys.teku.bls.supra.Signature(
+        p2Aff);
+    tech.pegasys.teku.bls.supra.Signature blstSignature = tech.pegasys.teku.bls.supra.BLS12381
+        .sign(blstSK, msg);
+    PublicKey blstPK = PublicKey.fromBytes(keyPair.publicKey().toBytesCompressed());
+
+    pairing ctx = new pairing();
+    blst.pairing_init(ctx);
+    BLST_ERROR error = blst.pairing_aggregate_pk_in_g1(
+        ctx,
+        blstPK.ecPoint,
+        blstSignature.ec2Point,
+        1,
+        Bytes.wrap(Bytes.wrap(msg), Bytes.wrap(new byte[1])).toArrayUnsafe(),
+        tech.pegasys.teku.bls.supra.HashToCurve.ETH2_DST.toArrayUnsafe(),
+        new byte[0]);
+    blst.pairing_commit(ctx);
+    int r = blst.pairing_finalverify(ctx, null);
+
+    System.out.println(r);
   }
 
   static long[] toLongsB48(Bytes b) {

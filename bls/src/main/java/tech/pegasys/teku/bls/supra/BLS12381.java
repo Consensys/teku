@@ -2,6 +2,8 @@ package tech.pegasys.teku.bls.supra;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.bls.mikuli.G2Point;
+import tech.pegasys.teku.bls.mikuli.GTPoint;
 import tech.pegasys.teku.bls.supra.swig.BLST_ERROR;
 import tech.pegasys.teku.bls.supra.swig.blst;
 import tech.pegasys.teku.bls.supra.swig.p2;
@@ -48,5 +50,28 @@ public class BLS12381 {
     blst.p2_to_affine(res, sum);
     sum.delete();
     return new Signature(res);
+  }
+
+  public static BatchSemiAggregate prepareBatchVerify(
+      int index, List<tech.pegasys.teku.bls.mikuli.PublicKey> publicKeys, Bytes message, tech.pegasys.teku.bls.mikuli.Signature signature) {
+    return null;
+  }
+
+  public static final class BatchSemiAggregate {
+    private final G2Point sigPoint;
+    private final GTPoint msgPubKeyPairing;
+
+    private BatchSemiAggregate(G2Point sigPoint, GTPoint msgPubKeyPairing) {
+      this.sigPoint = sigPoint;
+      this.msgPubKeyPairing = msgPubKeyPairing;
+    }
+
+    private G2Point getSigPoint() {
+      return sigPoint;
+    }
+
+    private GTPoint getMsgPubKeyPairing() {
+      return msgPubKeyPairing;
+    }
   }
 }
