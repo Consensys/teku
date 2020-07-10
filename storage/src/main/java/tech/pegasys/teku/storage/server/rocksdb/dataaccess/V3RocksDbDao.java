@@ -141,21 +141,25 @@ public class V3RocksDbDao
   }
 
   @Override
+  @MustBeClosed
   public HotUpdater hotUpdater() {
     return new V3Updater(db);
   }
 
   @Override
+  @MustBeClosed
   public FinalizedUpdater finalizedUpdater() {
     return new V3Updater(db);
   }
 
   @Override
+  @MustBeClosed
   public Eth1Updater eth1Updater() {
     return new V3Updater(db);
   }
 
   @Override
+  @MustBeClosed
   public ProtoArrayUpdater protoArrayUpdater() {
     return new V3Updater(db);
   }

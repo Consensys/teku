@@ -102,16 +102,19 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
   }
 
   @Override
+  @MustBeClosed
   public HotUpdater hotUpdater() {
     return new V4HotUpdater(db);
   }
 
   @Override
+  @MustBeClosed
   public Eth1Updater eth1Updater() {
     return new V4HotUpdater(db);
   }
 
   @Override
+  @MustBeClosed
   public ProtoArrayUpdater protoArrayUpdater() {
     return new V4HotUpdater(db);
   }
