@@ -29,6 +29,47 @@ import tech.pegasys.teku.util.async.SafeFuture.Interruptor;
 
 public class SafeFutureTest {
 
+  private static class TestAsyncExec {
+    SafeFuture<Integer> fut = new SafeFuture<>();
+    boolean executed = false;
+
+    SafeFuture<Integer> exec() {
+      executed = true;
+      return fut;
+    }
+  }
+
+  private static class InterruptTest {
+    SafeFuture<Integer> interruptorFut1 = new SafeFuture<>();
+    SafeFuture<Integer> interruptorFut2 = new SafeFuture<>();
+    Interruptor interruptor1 =
+        SafeFuture.createInterruptor(interruptorFut1, IllegalStateException::new);
+    Interruptor interruptor2 =
+        SafeFuture.createInterruptor(interruptorFut2, IllegalArgumentException::new);
+    SafeFuture<Integer> fut0 = new SafeFuture<>();
+    TestAsyncExec exec1 = new TestAsyncExec();
+    TestAsyncExec exec2 = new TestAsyncExec();
+
+    SafeFuture<Integer> intFut =
+        fut0.orInterrupt(interruptor1, interruptor2)
+            .thenCompose(__ -> exec1.exec())
+            .orInterrupt(interruptor1, interruptor2)
+            .thenCompose(__ -> exec2.exec())
+            .orInterrupt(interruptor1, interruptor2);
+
+    public InterruptTest() {
+      assertThat(hasDependents(interruptorFut1)).isTrue();
+      assertThat(hasDependents(interruptorFut2)).isTrue();
+      assertThat(hasDependents(fut0)).isTrue();
+    }
+
+    public void assertReleased() {
+      assertThat(hasDependents(interruptorFut1)).isFalse();
+      assertThat(hasDependents(interruptorFut2)).isFalse();
+      assertThat(hasDependents(fut0)).isFalse();
+    }
+  }
+
   @AfterEach
   public void tearDown() {
     // Reset the thread uncaught exception handler
@@ -504,7 +545,7 @@ public class SafeFutureTest {
   }
 
   private static boolean hasDependents(CompletableFuture<?> fut) {
-    return fut.toString().toLowerCase().contains("dependents");
+    return fut.getNumberOfDependents() > 0;
   }
 
   @Test
@@ -616,49 +657,8 @@ public class SafeFutureTest {
 
   @Test
   public void interruptTest3() throws Exception {
-    class AsyncExec {
-      SafeFuture<Integer> fut = new SafeFuture<>();
-      boolean executed = false;
-
-      SafeFuture<Integer> exec() {
-        executed = true;
-        return fut;
-      }
-    }
-
-    class Test {
-      SafeFuture<Integer> interruptorFut1 = new SafeFuture<>();
-      SafeFuture<Integer> interruptorFut2 = new SafeFuture<>();
-      Interruptor interruptor1 =
-          SafeFuture.createInterruptor(interruptorFut1, IllegalStateException::new);
-      Interruptor interruptor2 =
-          SafeFuture.createInterruptor(interruptorFut2, IllegalArgumentException::new);
-      SafeFuture<Integer> fut0 = new SafeFuture<>();
-      AsyncExec exec1 = new AsyncExec();
-      AsyncExec exec2 = new AsyncExec();
-
-      SafeFuture<Integer> intFut =
-          fut0.orInterrupt(interruptor1, interruptor2)
-              .thenCompose(__ -> exec1.exec())
-              .orInterrupt(interruptor1, interruptor2)
-              .thenCompose(__ -> exec2.exec())
-              .orInterrupt(interruptor1, interruptor2);
-
-      public Test() {
-        assertThat(hasDependents(interruptorFut1)).isTrue();
-        assertThat(hasDependents(interruptorFut2)).isTrue();
-        assertThat(hasDependents(fut0)).isTrue();
-      }
-
-      public void assertReleased() {
-        assertThat(hasDependents(interruptorFut1)).isFalse();
-        assertThat(hasDependents(interruptorFut2)).isFalse();
-        assertThat(hasDependents(fut0)).isFalse();
-      }
-    }
-
     {
-      Test test = new Test();
+      InterruptTest test = new InterruptTest();
 
       test.fut0.complete(111);
       test.exec1.fut.complete(111);
@@ -673,7 +673,7 @@ public class SafeFutureTest {
     }
 
     {
-      Test test = new Test();
+      InterruptTest test = new InterruptTest();
 
       test.interruptorFut2.complete(0);
 
@@ -685,7 +685,7 @@ public class SafeFutureTest {
     }
 
     {
-      Test test = new Test();
+      InterruptTest test = new InterruptTest();
 
       test.fut0.complete(111);
       test.interruptorFut1.complete(0);
