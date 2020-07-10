@@ -99,17 +99,6 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   /**
-   * Create {@link Interruptor} with default exception supplier which creates {@link
-   * InterruptedException}
-   *
-   * @see #createInterruptor(CompletableFuture, Supplier)
-   */
-  public static Interruptor createInterruptor(CompletableFuture<?> interruptFuture) {
-    return createInterruptor(
-        interruptFuture, () -> new InterruptedException("SafeFuture Interruptor triggered"));
-  }
-
-  /**
    * Creates an {@link Interruptor} instance from the interrupting future and exception supplier for
    * the case if interruption is triggered.
    *
