@@ -22,19 +22,19 @@ import org.apache.tuweni.bytes.Bytes;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SigningRequestBody {
 
-  private final Bytes signingRoot;
+  private final Bytes data;
 
   @JsonCreator
-  public SigningRequestBody(@JsonProperty("signingRoot") final String signingRoot) {
-    this.signingRoot = Bytes.fromHexString(signingRoot);
+  public SigningRequestBody(@JsonProperty("data") final String data) {
+    this.data = Bytes.fromHexString(data);
   }
 
-  public Bytes signingRoot() {
-    return signingRoot;
+  public Bytes data() {
+    return data;
   }
 
-  @JsonGetter("signingRoot")
-  public String getSigningRoot() {
-    return signingRoot.toHexString();
+  @JsonGetter("data")
+  public String getdata() {
+    return data.toHexString();
   }
 }
