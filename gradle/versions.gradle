@@ -137,5 +137,9 @@ dependencyManagement {
     dependency 'tech.pegasys.discovery:discovery:0.3.7'
 
     dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.1'
+
+
+    // Not used directly but specified to force upgrade of transitive dependencies
+    dependency 'org.apache.httpcomponents:httpclient:4.5.3'
   }
 }
