@@ -568,7 +568,7 @@ public class SafeFutureTest {
   }
 
   @Test
-  public void orTest2() throws Exception {
+  public void or_completeNormally() throws Exception {
     SafeFuture<Integer> fut0 = new SafeFuture<>();
     SafeFuture<Integer> fut1 = new SafeFuture<>();
 
@@ -587,7 +587,7 @@ public class SafeFutureTest {
   }
 
   @Test
-  public void orTest3() {
+  public void or_completeExceptionally() {
     SafeFuture<Integer> fut0 = new SafeFuture<>();
     SafeFuture<Integer> fut1 = new SafeFuture<>();
 
@@ -606,7 +606,7 @@ public class SafeFutureTest {
   }
 
   @Test
-  public void interruptTest1() throws Exception {
+  public void orInterrupt_simpleCompleteWithoutInterruption() throws Exception {
     SafeFuture<Integer> interruptorFut = new SafeFuture<>();
     Interruptor interruptor =
         SafeFuture.createInterruptor(interruptorFut, IllegalStateException::new);
@@ -628,7 +628,7 @@ public class SafeFutureTest {
   }
 
   @Test
-  public void interruptTest2() throws Exception {
+  public void orInterrupt_triggerOneOfTwoInterruptors() {
     SafeFuture<Integer> interruptorFut1 = new SafeFuture<>();
     SafeFuture<Integer> interruptorFut2 = new SafeFuture<>();
     Interruptor interruptor1 =
@@ -656,46 +656,46 @@ public class SafeFutureTest {
   }
 
   @Test
-  public void interruptTest3() throws Exception {
-    {
-      InterruptTest test = new InterruptTest();
+  public void orInterrupt_complexAllCompleteThenInterrupt() {
+    InterruptTest test = new InterruptTest();
 
-      test.fut0.complete(111);
-      test.exec1.fut.complete(111);
-      test.exec2.fut.complete(111);
+    test.fut0.complete(111);
+    test.exec1.fut.complete(111);
+    test.exec2.fut.complete(111);
 
-      test.interruptorFut1.complete(0);
+    test.interruptorFut1.complete(0);
 
-      test.assertReleased();
-      assertThat(test.intFut).isCompletedWithValue(111);
-      assertThat(test.exec1.executed).isTrue();
-      assertThat(test.exec2.executed).isTrue();
-    }
+    test.assertReleased();
+    assertThat(test.intFut).isCompletedWithValue(111);
+    assertThat(test.exec1.executed).isTrue();
+    assertThat(test.exec2.executed).isTrue();
+  }
 
-    {
-      InterruptTest test = new InterruptTest();
+  @Test
+  public void orInterrupt_complexInterruptImmediately() throws Exception {
+    InterruptTest test = new InterruptTest();
 
-      test.interruptorFut2.complete(0);
+    test.interruptorFut2.complete(0);
 
-      test.assertReleased();
-      assertThat(test.intFut).isCompletedExceptionally();
-      assertThatThrownBy(() -> test.intFut.get()).hasRootCause(new IllegalArgumentException());
-      assertThat(test.exec1.executed).isFalse();
-      assertThat(test.exec2.executed).isFalse();
-    }
+    test.assertReleased();
+    assertThat(test.intFut).isCompletedExceptionally();
+    assertThatThrownBy(() -> test.intFut.get()).hasRootCause(new IllegalArgumentException());
+    assertThat(test.exec1.executed).isFalse();
+    assertThat(test.exec2.executed).isFalse();
+  }
 
-    {
-      InterruptTest test = new InterruptTest();
+  @Test
+  public void orInterrupt_complexInterruptInTheMiddle() throws Exception {
+    InterruptTest test = new InterruptTest();
 
-      test.fut0.complete(111);
-      test.interruptorFut1.complete(0);
+    test.fut0.complete(111);
+    test.interruptorFut1.complete(0);
 
-      test.assertReleased();
-      assertThat(test.intFut).isCompletedExceptionally();
-      assertThatThrownBy(() -> test.intFut.get()).hasRootCause(new IllegalStateException());
-      assertThat(test.exec1.executed).isTrue();
-      assertThat(test.exec2.executed).isFalse();
-    }
+    test.assertReleased();
+    assertThat(test.intFut).isCompletedExceptionally();
+    assertThatThrownBy(() -> test.intFut.get()).hasRootCause(new IllegalStateException());
+    assertThat(test.exec1.executed).isTrue();
+    assertThat(test.exec2.executed).isFalse();
   }
 
   private List<Throwable> collectUncaughtExceptions() {
