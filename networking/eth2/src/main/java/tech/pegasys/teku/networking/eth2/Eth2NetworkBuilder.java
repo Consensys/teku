@@ -27,8 +27,8 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.networking.eth2.gossip.AttestationSubnetScorer;
-import tech.pegasys.teku.networking.eth2.gossip.AttestationSubnetScorer.AttestationSubnetTopicProvider;
+import tech.pegasys.teku.networking.eth2.gossip.AttestationSubnetTopicProvider;
+import tech.pegasys.teku.networking.eth2.gossip.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
@@ -138,7 +138,7 @@ public class Eth2NetworkBuilder {
         p2pNetwork,
         new Eth2PeerSelectionStrategy(
             config.getTargetPeerRange(),
-            () -> AttestationSubnetScorer.create(p2pNetwork, subnetTopicProvider),
+            network -> PeerSubnetSubscriptions.create(network, subnetTopicProvider),
             reputationManager),
         config);
   }

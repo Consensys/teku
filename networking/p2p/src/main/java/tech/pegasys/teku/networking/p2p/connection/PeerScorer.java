@@ -31,15 +31,4 @@ public interface PeerScorer {
   default int scoreCandidatePeer(final DiscoveryPeer candidate) {
     return scoreCandidatePeer(candidate.getPersistentSubnets());
   }
-
-  interface PeerScorerFactory {
-
-    /**
-     * Creates a new PeerScorer which may cache data from the time of creation to improve
-     * performance when used to evaluate multiple peers.
-     *
-     * @return the new PeerScorer
-     */
-    PeerScorer create();
-  }
 }

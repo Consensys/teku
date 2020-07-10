@@ -42,10 +42,12 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.network.p2p.connection.StubPeerScorer;
+import tech.pegasys.teku.networking.eth2.gossip.AttestationSubnetTopicProvider;
+import tech.pegasys.teku.networking.eth2.gossip.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
+import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
 import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
@@ -175,6 +177,8 @@ public class Eth2NetworkFactory {
                 metricsSystem,
                 StubTimeProvider.withTimeInSeconds(1000),
                 Constants.REPUTATION_MANAGER_CAPACITY);
+        final AttestationSubnetTopicProvider subnetTopicProvider =
+            new TopicNames(recentChainData, gossipEncoding);
         final DiscoveryNetwork<?> network =
             DiscoveryNetwork.create(
                 metricsSystem,
@@ -187,7 +191,10 @@ public class Eth2NetworkFactory {
                     new ArrayList<>(rpcMethods),
                     peerHandlers),
                 new Eth2PeerSelectionStrategy(
-                    config.getTargetPeerRange(), StubPeerScorer::new, reputationManager),
+                    config.getTargetPeerRange(),
+                    gossipNetwork ->
+                        PeerSubnetSubscriptions.create(gossipNetwork, subnetTopicProvider),
+                    reputationManager),
                 config);
 
         return new ActiveEth2Network(

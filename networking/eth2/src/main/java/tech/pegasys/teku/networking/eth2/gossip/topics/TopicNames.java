@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import tech.pegasys.teku.networking.eth2.gossip.AttestationSubnetScorer.AttestationSubnetTopicProvider;
+import tech.pegasys.teku.networking.eth2.gossip.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.client.RecentChainData;
