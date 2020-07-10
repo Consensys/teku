@@ -120,11 +120,7 @@ public class StableSubnetSubscriber {
     return subnetSubscription;
   }
 
-  /**
-   * Unsubscribe from a random subnet
-   *
-   * @return
-   */
+  /** Unsubscribe from a random subnet */
   private void unsubscribeFromRandomSubnet() {
     SubnetSubscription subnetSubscription =
         getRandomSetElement(subnetSubscriptions)

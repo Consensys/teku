@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.Date;
+import java.time.Instant;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -520,11 +520,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   @Override
-  public void onTick(Date date) {
+  public void onTick(Instant now) {
     if (recentChainData.isPreGenesis()) {
       return;
     }
-    final UnsignedLong currentTime = UnsignedLong.valueOf(date.getTime() / 1000);
+    final UnsignedLong currentTime = UnsignedLong.valueOf(now.getEpochSecond());
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     on_tick(transaction, currentTime);

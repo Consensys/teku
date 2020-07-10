@@ -21,7 +21,7 @@ public abstract class SSZAbstractCollection<C> implements SSZMutableCollection<C
 
   protected final Class<? extends C> classInfo;
 
-  public SSZAbstractCollection(Class<? extends C> classInfo) {
+  protected SSZAbstractCollection(Class<? extends C> classInfo) {
     this.classInfo = classInfo;
   }
 

@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -69,7 +68,8 @@ public class LibP2PGossipNetwork implements tech.pegasys.teku.networking.p2p.gos
             () -> {
               final Map<String, Collection<NodeId>> result = new HashMap<>();
               final MultiSet<PeerHandler, String> peerTopics = gossip.getRouter().getPeerTopics();
-              for (Entry<? extends PeerHandler, ? extends List<String>> peerTopic : peerTopics) {
+              for (Map.Entry<? extends PeerHandler, ? extends List<String>> peerTopic :
+                  peerTopics) {
                 final LibP2PNodeId nodeId = new LibP2PNodeId(peerTopic.getKey().getPeerId());
                 peerTopic
                     .getValue()

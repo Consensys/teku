@@ -27,7 +27,7 @@ import tech.pegasys.teku.util.async.SafeFuture;
 public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork<T> {
   private final P2PNetwork<?> network;
 
-  public DelegatingP2PNetwork(final P2PNetwork<?> network) {
+  protected DelegatingP2PNetwork(final P2PNetwork<?> network) {
     this.network = network;
   }
 

@@ -42,7 +42,7 @@ public class Bytes4 {
    *
    * @param value The bytes value pad.
    * @return A {@link Bytes4} that exposes the left-padded bytes of {@code value}.
-   * @throws IllegalArgumentException if {@code value.size() &gt; 4}.
+   * @throws IllegalArgumentException if {@code value.size() > 4}.
    */
   public static Bytes4 leftPad(Bytes value) {
     checkNotNull(value);
@@ -60,7 +60,7 @@ public class Bytes4 {
    *
    * @param value The bytes value pad.
    * @return A {@link Bytes4} that exposes the right-padded bytes of {@code value}.
-   * @throws IllegalArgumentException if {@code value.size() &gt; 4}.
+   * @throws IllegalArgumentException if {@code value.size() > 4}.
    */
   public static Bytes4 rightPad(Bytes value) {
     checkNotNull(value);

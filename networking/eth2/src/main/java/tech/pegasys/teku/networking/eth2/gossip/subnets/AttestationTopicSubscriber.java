@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
@@ -94,10 +93,10 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
   public synchronized void onSlot(final UnsignedLong slot) {
     boolean shouldUpdateENR = false;
 
-    final Iterator<Entry<Integer, UnsignedLong>> iterator =
+    final Iterator<Map.Entry<Integer, UnsignedLong>> iterator =
         subnetIdToUnsubscribeSlot.entrySet().iterator();
     while (iterator.hasNext()) {
-      final Entry<Integer, UnsignedLong> entry = iterator.next();
+      final Map.Entry<Integer, UnsignedLong> entry = iterator.next();
       if (entry.getValue().compareTo(slot) < 0) {
         iterator.remove();
         int subnetId = entry.getKey();
