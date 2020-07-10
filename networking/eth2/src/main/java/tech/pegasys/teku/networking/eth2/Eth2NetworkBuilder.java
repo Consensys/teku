@@ -35,6 +35,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubsc
 import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
 import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
+import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
@@ -135,8 +136,10 @@ public class Eth2NetworkBuilder {
         metricsSystem,
         asyncRunner,
         p2pNetwork,
-        reputationManager,
-        () -> AttestationSubnetScorer.create(p2pNetwork, subnetTopicProvider),
+        new Eth2PeerSelectionStrategy(
+            config.getTargetPeerRange(),
+            () -> AttestationSubnetScorer.create(p2pNetwork, subnetTopicProvider),
+            reputationManager),
         config);
   }
 
