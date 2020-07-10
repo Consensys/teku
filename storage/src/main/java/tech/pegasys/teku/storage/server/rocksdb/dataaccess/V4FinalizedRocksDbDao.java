@@ -75,6 +75,7 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
   }
 
   @Override
+  @MustBeClosed
   public FinalizedUpdater finalizedUpdater() {
     return new V4FinalizedRocksDbDao.V4FinalizedUpdater(db, stateStorageFrequency);
   }
