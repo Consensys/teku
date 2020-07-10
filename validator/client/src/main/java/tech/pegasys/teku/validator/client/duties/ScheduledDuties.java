@@ -99,7 +99,7 @@ public class ScheduledDuties {
 
   private void discardDutiesBeforeSlot(
       final NavigableMap<UnsignedLong, ? extends Duty> duties, final UnsignedLong slot) {
-    duties.subMap(UnsignedLong.ZERO, slot).clear();
+    duties.subMap(UnsignedLong.ZERO, true, slot, false).clear();
   }
 
   public int countDuties() {

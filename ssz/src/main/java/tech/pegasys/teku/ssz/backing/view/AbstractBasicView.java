@@ -24,7 +24,7 @@ public abstract class AbstractBasicView<C, V extends AbstractBasicView<C, V>>
   private final BasicViewType<V> type;
   private final C value;
 
-  public AbstractBasicView(C value, BasicViewType<V> type) {
+  protected AbstractBasicView(C value, BasicViewType<V> type) {
     this.type = type;
     this.value = value;
   }

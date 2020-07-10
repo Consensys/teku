@@ -17,7 +17,6 @@ import com.google.common.collect.Maps;
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -46,7 +45,8 @@ public class Eth1DataCache {
   }
 
   public void onEth1Block(final Bytes32 blockHash, final UnsignedLong blockTimestamp) {
-    final Entry<UnsignedLong, Eth1Data> previousBlock = eth1ChainCache.floorEntry(blockTimestamp);
+    final Map.Entry<UnsignedLong, Eth1Data> previousBlock =
+        eth1ChainCache.floorEntry(blockTimestamp);
     if (previousBlock == null) {
       // This block is either before any deposits so will never be voted for
       // or before the cache period so would be immediately pruned anyway.
