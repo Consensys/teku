@@ -388,6 +388,9 @@ public class SafeFuture<T> extends CompletableFuture<T> {
    *     (normally or exceptionally)
    * @see #createInterruptor(CompletableFuture, Supplier)
    */
+  // The result of anyOf() future is ignored since it is used just to handle completion
+  // of any future. All possible outcomes are propagated to the returned future instance
+  @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<T> orInterrupt(Interruptor... interruptors) {
     CompletableFuture<?>[] allFuts = new CompletableFuture<?>[interruptors.length + 1];
     allFuts[0] = this;
@@ -412,8 +415,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
                   }
                 }
               }
-            })
-        .exceptionally(e -> null); // all exceptions are propagated to ret
+            });
     return ret;
   }
 
