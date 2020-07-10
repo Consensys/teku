@@ -128,6 +128,7 @@ public class RocksDbInstance implements RocksDbAccessor {
   }
 
   @Override
+  @MustBeClosed
   public synchronized RocksDbTransaction startTransaction() {
     assertOpen();
     Transaction tx = new Transaction(db, defaultHandle, columnHandles, openTransactions::remove);
