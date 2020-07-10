@@ -82,6 +82,7 @@ public class ExternalMessageSignerService implements MessageSignerService {
               HttpRequest.newBuilder()
                   .uri(uri)
                   .timeout(timeout)
+                  .header("Content-Type", "application/json")
                   .POST(BodyPublishers.ofString(requestBody))
                   .build();
           return HttpClient.newHttpClient()
