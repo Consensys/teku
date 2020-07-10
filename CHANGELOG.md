@@ -15,6 +15,7 @@ we recommend most users use the latest `master` branch of Teku.
 ### Additions and Improvements
 
  - added a metric `beacon_peer_count` that tracks the same counter used for `/network/peer_count` and console `Peers:` output.
+ - External signing API now uses the data field instead of signingRoot field when making signing requests. Eth2Signer has been updated with this change. 
 
 ### Bug Fixes
 
