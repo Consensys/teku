@@ -27,8 +27,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -36,7 +34,6 @@ import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 
 /** Utility class to read/write SSZ serialized blocks */
 public class BlockIO {
-  private static final Logger LOG = LogManager.getLogger();
 
   public static class Reader
       implements AutoCloseable, Supplier<SignedBeaconBlock>, Iterable<SignedBeaconBlock> {
@@ -70,14 +67,14 @@ public class BlockIO {
       return Utils.fromSupplier(this);
     }
 
+    @SuppressWarnings("EmptyCatch")
     public List<SignedBeaconBlock> readAll(int limit) {
       try {
         return StreamSupport.stream(spliterator(), false).limit(limit).collect(Collectors.toList());
       } finally {
         try {
           close();
-        } catch (Exception e) {
-          LOG.trace("Failed to close reader", e);
+        } catch (Exception ignored) {
         }
       }
     }
