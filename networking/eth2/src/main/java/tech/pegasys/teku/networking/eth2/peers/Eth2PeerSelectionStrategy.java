@@ -24,7 +24,6 @@ import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.eth2.gossip.PeerSubnetSubscriptions;
-import tech.pegasys.teku.networking.p2p.connection.PeerScorer;
 import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
