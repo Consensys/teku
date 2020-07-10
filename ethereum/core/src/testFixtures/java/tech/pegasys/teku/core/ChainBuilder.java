@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
@@ -140,11 +139,11 @@ public class ChainBuilder {
   }
 
   public SignedBlockAndState getGenesis() {
-    return Optional.ofNullable(blocks.firstEntry()).map(Entry::getValue).orElse(null);
+    return Optional.ofNullable(blocks.firstEntry()).map(Map.Entry::getValue).orElse(null);
   }
 
   public SignedBlockAndState getLatestBlockAndState() {
-    return Optional.ofNullable(blocks.lastEntry()).map(Entry::getValue).orElse(null);
+    return Optional.ofNullable(blocks.lastEntry()).map(Map.Entry::getValue).orElse(null);
   }
 
   public SignedBlockAndState getBlockAndStateAtSlot(final long slot) {
@@ -176,7 +175,7 @@ public class ChainBuilder {
   }
 
   public SignedBlockAndState getLatestBlockAndStateAtSlot(final UnsignedLong slot) {
-    return Optional.ofNullable(blocks.floorEntry(slot)).map(Entry::getValue).orElse(null);
+    return Optional.ofNullable(blocks.floorEntry(slot)).map(Map.Entry::getValue).orElse(null);
   }
 
   public SignedBlockAndState getLatestBlockAndStateAtEpochBoundary(final long epoch) {

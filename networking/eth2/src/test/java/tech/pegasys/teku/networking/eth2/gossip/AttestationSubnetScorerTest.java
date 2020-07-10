@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -115,7 +114,7 @@ class AttestationSubnetScorerTest {
       final PeerScorer scorer, final Map.Entry<NodeId, Integer>... expected) {
     final Map<NodeId, Integer> actual =
         Stream.of(expected)
-            .map(Entry::getKey)
+            .map(Map.Entry::getKey)
             .collect(Collectors.toMap(Function.identity(), scorer::scoreExistingPeer));
     assertThat(actual).contains(expected);
   }
@@ -125,7 +124,7 @@ class AttestationSubnetScorerTest {
       final PeerScorer scorer, final Map.Entry<Bitvector, Integer>... expected) {
     final Map<Bitvector, Integer> actual =
         Stream.of(expected)
-            .map(Entry::getKey)
+            .map(Map.Entry::getKey)
             .collect(Collectors.toMap(Function.identity(), scorer::scoreCandidatePeer));
     assertThat(actual).contains(expected);
   }

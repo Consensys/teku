@@ -34,6 +34,8 @@ public final class LimitedMap {
   }
 
   /**
+   * Creates a limited map.
+   *
    * @param initialCapacity The initial size to allocate for the map.
    * @param maxSize The maximum number of elements to keep in the map.
    * @param mode A mode that determines which element is evicted when the map exceeds its max size.

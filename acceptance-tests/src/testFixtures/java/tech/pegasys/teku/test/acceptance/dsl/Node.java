@@ -32,7 +32,7 @@ public abstract class Node {
   protected final NodeContainer container;
   protected final String nodeAlias;
 
-  public Node(final Network network, final String dockerImageName, final Logger log) {
+  protected Node(final Network network, final String dockerImageName, final Logger log) {
     this.nodeAlias =
         getClass().getSimpleName().toLowerCase(Locale.US) + NODE_UNIQUIFIER.incrementAndGet();
     this.container =

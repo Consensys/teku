@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.client;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
-import static com.google.common.primitives.UnsignedLong.valueOf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -102,14 +101,14 @@ public class StableSubnetSubscriberTest {
         new StableSubnetSubscriber(
             validatorApiChannel, new Random(), Constants.ATTESTATION_SUBNET_COUNT + 2);
 
-    UnsignedLong slot = valueOf(15);
+    UnsignedLong slot = UnsignedLong.valueOf(15);
     stableSubnetSubscriber.onSlot(slot);
 
     ArgumentCaptor<Set<SubnetSubscription>> subnetSubcriptions = ArgumentCaptor.forClass(Set.class);
     verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubcriptions.capture());
     assertThat(subnetSubcriptions.getValue()).hasSize(Constants.ATTESTATION_SUBNET_COUNT);
     assertSubnetsAreDistinct(subnetSubcriptions.getValue());
-    assertUnsubscribeSlotsAreInBound(subnetSubcriptions.getValue(), valueOf(15));
+    assertUnsubscribeSlotsAreInBound(subnetSubcriptions.getValue(), UnsignedLong.valueOf(15));
   }
 
   @Test
@@ -127,7 +126,7 @@ public class StableSubnetSubscriberTest {
     assertThat(subnetSubcriptions.getValue()).hasSize(Constants.ATTESTATION_SUBNET_COUNT);
 
     stableSubnetSubscriber.updateValidatorCount(Constants.ATTESTATION_SUBNET_COUNT);
-    stableSubnetSubscriber.onSlot(valueOf(2));
+    stableSubnetSubscriber.onSlot(UnsignedLong.valueOf(2));
 
     verifyNoMoreInteractions(validatorApiChannel);
   }
@@ -139,7 +138,7 @@ public class StableSubnetSubscriberTest {
     StableSubnetSubscriber stableSubnetSubscriber =
         new StableSubnetSubscriber(validatorApiChannel, new Random(), 1);
 
-    stableSubnetSubscriber.onSlot(valueOf(0));
+    stableSubnetSubscriber.onSlot(UnsignedLong.valueOf(0));
 
     ArgumentCaptor<Set<SubnetSubscription>> firstSubscriptionUpdate =
         ArgumentCaptor.forClass(Set.class);
@@ -189,10 +188,11 @@ public class StableSubnetSubscriberTest {
       Set<SubnetSubscription> subnetSubscriptions, UnsignedLong currentSlot) {
     UnsignedLong lowerBound =
         currentSlot.plus(
-            valueOf(Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION * Constants.SLOTS_PER_EPOCH));
+            UnsignedLong.valueOf(
+                Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION * Constants.SLOTS_PER_EPOCH));
     UnsignedLong upperBound =
         currentSlot.plus(
-            valueOf(
+            UnsignedLong.valueOf(
                 2 * Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION * Constants.SLOTS_PER_EPOCH));
     subnetSubscriptions.forEach(
         subnetSubscription -> {

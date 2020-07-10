@@ -14,7 +14,7 @@
 package tech.pegasys.teku.ssz.backing.view;
 
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
 import tech.pegasys.teku.ssz.backing.ContainerViewWriteRef;
 import tech.pegasys.teku.ssz.backing.ViewRead;
@@ -56,7 +56,7 @@ public class ContainerViewWriteImpl extends AbstractCompositeViewWrite<ViewRead,
 
   @Override
   protected TreeUpdates packChanges(
-      List<Entry<Integer, ViewRead>> newChildValues, TreeNode original) {
+      List<Map.Entry<Integer, ViewRead>> newChildValues, TreeNode original) {
     throw new UnsupportedOperationException("Packed values are not supported");
   }
 }
