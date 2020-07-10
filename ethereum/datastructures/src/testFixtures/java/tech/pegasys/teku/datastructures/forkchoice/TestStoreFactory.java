@@ -209,8 +209,8 @@ public class TestStoreFactory {
     }
 
     @Override
-    public BeaconState getCheckpointState(final Checkpoint checkpoint) {
-      return checkpoint_states.get(checkpoint);
+    public Optional<BeaconState> getCheckpointState(final Checkpoint checkpoint) {
+      return Optional.ofNullable(checkpoint_states.get(checkpoint));
     }
 
     @Override

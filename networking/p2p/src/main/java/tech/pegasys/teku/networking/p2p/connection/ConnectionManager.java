@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.networking.p2p.connection;
 
+import static java.util.stream.Collectors.toList;
+
 import java.time.Duration;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import org.apache.logging.log4j.LogManager;
@@ -29,10 +33,11 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
-import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.util.async.Cancellable;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class ConnectionManager extends Service {
@@ -43,29 +48,27 @@ public class ConnectionManager extends Service {
   private final P2PNetwork<? extends Peer> network;
   private final Set<PeerAddress> staticPeers;
   private final DiscoveryService discoveryService;
-  private final TargetPeerRange targetPeerCountRange;
-  private final ReputationManager reputationManager;
+  private final PeerSelectionStrategy peerSelectionStrategy;
   private final Counter attemptedConnectionCounter;
   private final Counter successfulConnectionCounter;
   private final Counter failedConnectionCounter;
+  private final Collection<Predicate<DiscoveryPeer>> peerPredicates = new CopyOnWriteArrayList<>();
 
   private volatile long peerConnectedSubscriptionId;
-  private final NewPeerFilter newPeerFilter = new NewPeerFilter();
+  private volatile Cancellable periodicPeerSearch;
 
   public ConnectionManager(
       final MetricsSystem metricsSystem,
       final DiscoveryService discoveryService,
-      final ReputationManager reputationManager,
       final AsyncRunner asyncRunner,
       final P2PNetwork<? extends Peer> network,
-      final List<PeerAddress> peerAddresses,
-      final TargetPeerRange targetPeerCountRange) {
-    this.reputationManager = reputationManager;
+      final PeerSelectionStrategy peerSelectionStrategy,
+      final List<PeerAddress> peerAddresses) {
     this.asyncRunner = asyncRunner;
     this.network = network;
     this.staticPeers = new HashSet<>(peerAddresses);
     this.discoveryService = discoveryService;
-    this.targetPeerCountRange = targetPeerCountRange;
+    this.peerSelectionStrategy = peerSelectionStrategy;
 
     final LabelledMetric<Counter> connectionAttemptCounter =
         metricsSystem.createLabelledCounter(
@@ -80,47 +83,49 @@ public class ConnectionManager extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
+    LOG.trace("Starting discovery manager");
     synchronized (this) {
       staticPeers.forEach(this::createPersistentConnection);
     }
+    periodicPeerSearch =
+        asyncRunner.runWithFixedDelay(
+            this::searchForPeers,
+            DISCOVERY_INTERVAL.toMillis(),
+            TimeUnit.MILLISECONDS,
+            error -> LOG.error("Error while searching for peers", error));
     connectToKnownPeers();
-    searchForPeers().reportExceptions();
+    searchForPeers();
     peerConnectedSubscriptionId = network.subscribeConnect(this::onPeerConnected);
     return SafeFuture.COMPLETE;
   }
 
   private void connectToKnownPeers() {
-    final int maxAttempts = targetPeerCountRange.getPeersToAdd(network.getPeerCount());
-    discoveryService
-        .streamKnownPeers()
-        .filter(newPeerFilter::isPeerValid)
-        .map(network::createPeerAddress)
-        .filter(reputationManager::isConnectionInitiationAllowed)
-        .filter(peerAddress -> !network.isConnected(peerAddress))
-        .limit(maxAttempts)
+    peerSelectionStrategy
+        .selectPeersToConnect(
+            network,
+            () -> discoveryService.streamKnownPeers().filter(this::isPeerValid).collect(toList()))
         .forEach(this::attemptConnection);
   }
 
-  private SafeFuture<Void> searchForPeers() {
+  private void searchForPeers() {
     if (!isRunning()) {
-      return SafeFuture.COMPLETE;
+      LOG.trace("Not running so not searching for peers");
+      return;
     }
-    return SafeFuture.of(discoveryService.searchForPeers())
+    LOG.trace("Searching for peers");
+    discoveryService
+        .searchForPeers()
         .orTimeout(10, TimeUnit.SECONDS)
-        .exceptionally(
+        .finish(
+            this::connectToKnownPeers,
             error -> {
               LOG.debug("Discovery failed", error);
-              return null;
-            })
-        .thenCompose(
-            __ -> {
               connectToKnownPeers();
-              return asyncRunner.runAfterDelay(
-                  this::searchForPeers, DISCOVERY_INTERVAL.toMillis(), TimeUnit.MILLISECONDS);
             });
   }
 
   private void attemptConnection(final PeerAddress discoveryPeer) {
+    LOG.trace("Attempting to connect to {}", discoveryPeer.getId());
     attemptedConnectionCounter.inc();
     network
         .connect(discoveryPeer)
@@ -136,17 +141,19 @@ public class ConnectionManager extends Service {
   }
 
   private void onPeerConnected(final Peer peer) {
-    final int peersToDrop = targetPeerCountRange.getPeersToDrop(network.getPeerCount());
-    network
-        .streamPeers()
-        .filter(candidate -> !staticPeers.contains(candidate.getAddress()))
-        .limit(peersToDrop)
+    peerSelectionStrategy
+        .selectPeersToDisconnect(
+            network, candidate -> !staticPeers.contains(candidate.getAddress()))
         .forEach(peerToDrop -> peerToDrop.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS));
   }
 
   @Override
   protected SafeFuture<?> doStop() {
     network.unsubscribeConnect(peerConnectedSubscriptionId);
+    final Cancellable peerSearchTask = this.periodicPeerSearch;
+    if (peerSearchTask != null) {
+      peerSearchTask.cancel();
+    }
     return SafeFuture.COMPLETE;
   }
 
@@ -175,7 +182,7 @@ public class ConnectionManager extends Service {
               LOG.debug("Connection to peer {} was successful", peer.getId());
               successfulConnectionCounter.inc();
               peer.subscribeDisconnect(
-                  () -> {
+                  (reason, locallyInitiated) -> {
                     LOG.debug(
                         "Peer {} disconnected. Will try to reconnect in {} sec",
                         peerAddress,
@@ -205,18 +212,11 @@ public class ConnectionManager extends Service {
   }
 
   public void addPeerPredicate(final Predicate<DiscoveryPeer> predicate) {
-    newPeerFilter.addPeerPredicate(predicate);
+    peerPredicates.add(predicate);
   }
 
-  public static class NewPeerFilter {
-    private final Set<Predicate<DiscoveryPeer>> peerPredicates = new HashSet<>();
-
-    void addPeerPredicate(final Predicate<DiscoveryPeer> predicate) {
-      peerPredicates.add(predicate);
-    }
-
-    boolean isPeerValid(DiscoveryPeer peer) {
-      return peerPredicates.stream().allMatch(predicate -> predicate.test(peer));
-    }
+  private boolean isPeerValid(DiscoveryPeer peer) {
+    return !peer.getNodeAddress().getAddress().isAnyLocalAddress()
+        && peerPredicates.stream().allMatch(predicate -> predicate.test(peer));
   }
 }

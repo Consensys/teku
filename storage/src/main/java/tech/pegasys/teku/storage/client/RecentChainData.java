@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -37,11 +38,14 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
+import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -57,12 +61,14 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   protected final EventBus eventBus;
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
+  protected final ProtoArrayStorageChannel protoArrayStorageChannel;
   private final MetricsSystem metricsSystem;
   private final ReorgEventChannel reorgEventChannel;
 
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
   private final SafeFuture<Void> storeInitializedFuture = new SafeFuture<>();
   private final SafeFuture<Void> bestBlockInitialized = new SafeFuture<>();
+  private final Counter reorgCounter;
 
   private volatile UpdatableStore store;
   private volatile Optional<ProtoArrayForkChoiceStrategy> forkChoiceStrategy;
@@ -73,6 +79,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
       final StorageUpdateChannel storageUpdateChannel,
+      final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ReorgEventChannel reorgEventChannel,
       final EventBus eventBus) {
@@ -81,7 +88,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.reorgEventChannel = reorgEventChannel;
     this.eventBus = eventBus;
     this.storageUpdateChannel = storageUpdateChannel;
+    this.protoArrayStorageChannel = protoArrayStorageChannel;
     this.finalizedCheckpointChannel = finalizedCheckpointChannel;
+    reorgCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "reorgs_total",
+            "Total occurrences of reorganizations of the chain");
   }
 
   public void subscribeStoreInitialized(Runnable runnable) {
@@ -93,16 +106,17 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public void initializeFromGenesis(final BeaconState genesisState) {
+    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisState);
     final UpdatableStore store =
-        StoreBuilder.buildForkChoiceStore(metricsSystem, blockProvider, genesisState);
+        StoreBuilder.buildForkChoiceStore(metricsSystem, blockProvider, genesis);
     final boolean result = setStore(store);
     if (!result) {
       throw new IllegalStateException(
           "Failed to set genesis state: store has already been initialized");
     }
 
-    storageUpdateChannel.onGenesis(store);
-    eventBus.post(store);
+    storageUpdateChannel.onGenesis(genesis);
+    eventBus.post(genesis);
 
     // The genesis state is by definition finalized so just get the root from there.
     Bytes32 headBlockRoot = store.getFinalizedCheckpoint().getRoot();
@@ -134,7 +148,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.store = store;
     this.store.startMetrics();
     this.genesisTime = this.store.getGenesisTime();
-    forkChoiceStrategy = Optional.of(ProtoArrayForkChoiceStrategy.create(this.store));
+    forkChoiceStrategy =
+        Optional.of(ProtoArrayForkChoiceStrategy.initialize(this.store, protoArrayStorageChannel));
     storeInitializedFuture.complete(null);
     return true;
   }
@@ -166,8 +181,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   /**
    * Update Best Block
    *
-   * @param root
-   * @param slot
+   * @param root the new best block root
+   * @param slot the new best slot
    */
   public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
     synchronized (this) {
@@ -192,6 +207,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       if (originalBestRoot
           .map(original -> hasReorgedFrom(original, originalBestSlot))
           .orElse(false)) {
+        reorgCounter.inc();
         reorgEventChannel.reorgOccurred(root, newChainHead.getSlot());
       }
     }

@@ -15,6 +15,7 @@ package tech.pegasys.teku.services.powchain;
 
 import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
+import java.util.function.Consumer;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
@@ -55,11 +56,33 @@ public class DepositTransactionSender {
   public SafeFuture<TransactionReceipt> sendDepositTransaction(
       BLSKeyPair validatorKeyPair,
       final BLSPublicKey withdrawalPublicKey,
-      final UnsignedLong amountInGwei) {
+      final UnsignedLong amountInGwei,
+      final Consumer<String> commandStdOutput,
+      final Consumer<String> commandErrorOutput) {
+    commandStdOutput.accept(
+        String.format(
+            "%nSending deposit for Validator Key [%s].%n",
+            validatorKeyPair.getPublicKey().toString()));
+
     final DepositData depositData =
         depositGenerator.createDepositData(validatorKeyPair, amountInGwei, withdrawalPublicKey);
 
-    return sendDepositTransaction(depositData);
+    final SafeFuture<TransactionReceipt> safeFuture = sendDepositTransaction(depositData);
+
+    safeFuture.finish(
+        transactionReceipt ->
+            commandStdOutput.accept(
+                String.format(
+                    "Transaction for Validator Key [%s] Completed. Transaction Hash: [%s]%n",
+                    validatorKeyPair.getPublicKey().toString(),
+                    transactionReceipt.getTransactionHash())),
+        exception ->
+            commandErrorOutput.accept(
+                String.format(
+                    "Transaction for Validator Key [%s] Failed: Message: [%s]%n",
+                    validatorKeyPair.getPublicKey().toString(), exception.getMessage())));
+
+    return safeFuture;
   }
 
   private SafeFuture<TransactionReceipt> sendDepositTransaction(final DepositData depositData) {

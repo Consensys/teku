@@ -27,11 +27,15 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.networking.eth2.gossip.AttestationSubnetScorer;
+import tech.pegasys.teku.networking.eth2.gossip.AttestationSubnetScorer.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
+import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
 import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
+import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
@@ -99,12 +103,13 @@ public class Eth2NetworkBuilder {
     rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);
 
-    // Build core network and inject eth2 handlers
-    final DiscoveryNetwork<?> network = buildNetwork();
-
     final GossipEncoding gossipEncoding =
         eth2Config.isSnappyCompressionEnabled() ? GossipEncoding.SSZ_SNAPPY : GossipEncoding.SSZ;
+    // Build core network and inject eth2 handlers
+    final DiscoveryNetwork<?> network = buildNetwork(gossipEncoding);
+
     return new ActiveEth2Network(
+        metricsSystem,
         network,
         eth2PeerManager,
         eventBus,
@@ -119,15 +124,22 @@ public class Eth2NetworkBuilder {
         verifiedBlockAttestationsSubscriptionProvider);
   }
 
-  protected DiscoveryNetwork<?> buildNetwork() {
+  protected DiscoveryNetwork<?> buildNetwork(final GossipEncoding gossipEncoding) {
     final ReputationManager reputationManager =
         new ReputationManager(metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY);
+    final LibP2PNetwork p2pNetwork =
+        new LibP2PNetwork(
+            asyncRunner, config, reputationManager, metricsSystem, rpcMethods, peerHandlers);
+    final AttestationSubnetTopicProvider subnetTopicProvider =
+        new TopicNames(recentChainData, gossipEncoding);
     return DiscoveryNetwork.create(
         metricsSystem,
         asyncRunner,
-        new LibP2PNetwork(
-            asyncRunner, config, reputationManager, metricsSystem, rpcMethods, peerHandlers),
-        reputationManager,
+        p2pNetwork,
+        new Eth2PeerSelectionStrategy(
+            config.getTargetPeerRange(),
+            () -> AttestationSubnetScorer.create(p2pNetwork, subnetTopicProvider),
+            reputationManager),
         config);
   }
 

@@ -175,6 +175,7 @@ public class SlotProcessor {
   private void processSlotStart(final UnsignedLong nodeEpoch) {
     onTickSlotStart = nodeSlot.getValue();
     if (nodeSlot.getValue().equals(compute_start_slot_at_epoch(nodeEpoch))) {
+      forkChoice.save();
       eventLog.epochEvent(
           nodeEpoch,
           recentChainData.getStore().getJustifiedCheckpoint().getEpoch(),

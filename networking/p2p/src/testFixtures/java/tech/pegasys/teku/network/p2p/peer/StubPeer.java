@@ -18,8 +18,8 @@ import javax.naming.OperationNotSupportedException;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler;
-import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedSubscriber;
@@ -32,7 +32,7 @@ import tech.pegasys.teku.util.events.Subscribers;
 public class StubPeer implements Peer {
 
   private final PeerAddress peerAddress;
-  private Subscribers<PeerDisconnectedSubscriber> disconnectedSubscribers =
+  private final Subscribers<PeerDisconnectedSubscriber> disconnectedSubscribers =
       Subscribers.create(false);
   private boolean connected = true;
   private Optional<DisconnectReason> disconnectReason = Optional.empty();
@@ -56,15 +56,18 @@ public class StubPeer implements Peer {
   }
 
   @Override
-  public void disconnectImmediately() {
-    disconnectedSubscribers.forEach(PeerDisconnectedSubscriber::onDisconnected);
+  public void disconnectImmediately(
+      final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
+    disconnectedSubscribers.forEach(
+        subscriber -> subscriber.onDisconnected(reason, locallyInitiated));
     connected = false;
   }
 
   @Override
   public void disconnectCleanly(final DisconnectReason reason) {
     disconnectReason = Optional.of(reason);
-    disconnectedSubscribers.forEach(PeerDisconnectedSubscriber::onDisconnected);
+    disconnectedSubscribers.forEach(
+        subscriber -> subscriber.onDisconnected(Optional.of(reason), true));
     connected = false;
   }
 
@@ -96,5 +99,10 @@ public class StubPeer implements Peer {
   @Override
   public boolean connectionInitiatedRemotely() {
     return false;
+  }
+
+  @Override
+  public String toString() {
+    return "StubPeer(" + peerAddress.getId().toBase58() + ")";
   }
 }

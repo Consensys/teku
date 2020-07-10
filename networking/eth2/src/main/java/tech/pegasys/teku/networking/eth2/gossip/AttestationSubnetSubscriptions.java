@@ -23,10 +23,12 @@ import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.SingleAttestationTopicHandler;
+import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class AttestationSubnetSubscriptions implements AutoCloseable {
   private final GossipNetwork gossipNetwork;
@@ -48,6 +50,25 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
     this.recentChainData = recentChainData;
     this.attestationValidator = attestationValidator;
     this.gossipedAttestationConsumer = gossipedAttestationConsumer;
+  }
+
+  public SafeFuture<?> gossip(final Attestation attestation) {
+    return computeSubnetForAttestation(attestation)
+        .map(
+            subnetId -> {
+              final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
+              final String topic =
+                  TopicNames.getAttestationSubnetTopic(
+                      forkInfo.getForkDigest(), subnetId, gossipEncoding);
+              return gossipNetwork.gossip(topic, gossipEncoding.encode(attestation));
+            })
+        .orElseGet(
+            () ->
+                SafeFuture.failedFuture(
+                    new IllegalStateException(
+                        "Unable to calculate the subnet ID for attestation in slot "
+                            + attestation.getData().getSlot()
+                            + " because the state was not available")));
   }
 
   public synchronized Optional<TopicChannel> getChannel(final Attestation attestation) {

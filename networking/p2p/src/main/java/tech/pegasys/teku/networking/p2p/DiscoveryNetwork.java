@@ -33,7 +33,7 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.logging.StatusLogger;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
-import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
+import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.discovery.discv5.DiscV5Service;
@@ -50,8 +50,8 @@ import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
-  private static final String ATTESTATION_SUBNET_ENR_FIELD = "attnets";
-  private static final String ETH2_ENR_FIELD = "eth2";
+  public static final String ATTESTATION_SUBNET_ENR_FIELD = "attnets";
+  public static final String ETH2_ENR_FIELD = "eth2";
   private static final Logger LOG = LogManager.getLogger();
 
   private final P2PNetwork<P> p2pNetwork;
@@ -84,20 +84,19 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
       final MetricsSystem metricsSystem,
       final AsyncRunner asyncRunner,
       final P2PNetwork<P> p2pNetwork,
-      final ReputationManager reputationManager,
+      final PeerSelectionStrategy peerSelectionStrategy,
       final NetworkConfig p2pConfig) {
     final DiscoveryService discoveryService = createDiscoveryService(p2pConfig);
     final ConnectionManager connectionManager =
         new ConnectionManager(
             metricsSystem,
             discoveryService,
-            reputationManager,
             asyncRunner,
             p2pNetwork,
+            peerSelectionStrategy,
             p2pConfig.getStaticPeers().stream()
                 .map(p2pNetwork::createPeerAddress)
-                .collect(toList()),
-            p2pConfig.getTargetPeerRange());
+                .collect(toList()));
     return new DiscoveryNetwork<>(p2pNetwork, discoveryService, connectionManager);
   }
 
@@ -186,13 +185,10 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     return enrForkId
         .map(EnrForkId::getForkDigest)
         .flatMap(
-            forkDigest ->
+            localForkDigest ->
                 peer.getEnrForkId()
-                    .map(
-                        peerEnrForkId ->
-                            SimpleOffsetSerializer.deserialize(peerEnrForkId, EnrForkId.class)
-                                .getForkDigest()
-                                .equals(forkDigest)))
+                    .map(EnrForkId::getForkDigest)
+                    .map(peerForkDigest -> peerForkDigest.equals(localForkDigest)))
         .orElse(false);
   }
 
