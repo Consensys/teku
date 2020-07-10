@@ -89,8 +89,8 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   /**
-   * Creates a completed {@link SafeFuture} instance if none of the supplied interruptors are completed,
-   * else creates an exceptionally completed {@link SafeFuture} instance
+   * Creates a completed {@link SafeFuture} instance if none of the supplied interruptors are
+   * completed, else creates an exceptionally completed {@link SafeFuture} instance
    *
    * @see #orInterrupt(Interruptor...)
    */
