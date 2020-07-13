@@ -23,8 +23,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.networking.p2p.connection.PeerScorer;
-import tech.pegasys.teku.networking.p2p.connection.PeerScorer.PeerScorerFactory;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
@@ -37,27 +36,32 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
   private static final Logger LOG = LogManager.getLogger();
 
   private final TargetPeerRange targetPeerCountRange;
-  private final PeerScorerFactory peerScorerFactory;
+  private final PeerSubnetSubscriptions.Factory peerSubnetSubscriptionsFactory;
   private final ReputationManager reputationManager;
 
   public Eth2PeerSelectionStrategy(
       final TargetPeerRange targetPeerCountRange,
-      final PeerScorerFactory peerScorerFactory,
+      final PeerSubnetSubscriptions.Factory peerSubnetSubscriptionsFactory,
       final ReputationManager reputationManager) {
     this.targetPeerCountRange = targetPeerCountRange;
-    this.peerScorerFactory = peerScorerFactory;
+    this.peerSubnetSubscriptionsFactory = peerSubnetSubscriptionsFactory;
     this.reputationManager = reputationManager;
   }
 
   @Override
   public List<PeerAddress> selectPeersToConnect(
       final P2PNetwork<?> network, final Supplier<List<DiscoveryPeer>> candidates) {
-    final int maxAttempts = targetPeerCountRange.getPeersToAdd(network.getPeerCount());
+    final PeerSubnetSubscriptions peerSubnetSubscriptions =
+        peerSubnetSubscriptionsFactory.create(network);
+    final int peersRequiredForPeerCount =
+        targetPeerCountRange.getPeersToAdd(network.getPeerCount());
+    final int peersRequiredForSubnets = peerSubnetSubscriptions.getSubscribersRequired();
+    final int maxAttempts = Math.max(peersRequiredForPeerCount, peersRequiredForSubnets);
     LOG.trace("Connecting to up to {} known peers", maxAttempts);
     if (maxAttempts == 0) {
       return emptyList();
     }
-    final PeerScorer peerScorer = peerScorerFactory.create();
+    final PeerScorer peerScorer = peerSubnetSubscriptions.createScorer();
     return candidates.get().stream()
         .sorted(
             Comparator.comparing((Function<DiscoveryPeer, Integer>) peerScorer::scoreCandidatePeer)
@@ -76,7 +80,7 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     if (peersToDrop == 0) {
       return emptyList();
     }
-    final PeerScorer peerScorer = peerScorerFactory.create();
+    final PeerScorer peerScorer = peerSubnetSubscriptionsFactory.create(network).createScorer();
     return network
         .streamPeers()
         .filter(canBeDisconnected)
