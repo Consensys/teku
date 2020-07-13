@@ -29,9 +29,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
-import tech.pegasys.teku.network.p2p.connection.StubPeerScorer;
 import tech.pegasys.teku.network.p2p.peer.StubPeer;
-import tech.pegasys.teku.networking.p2p.connection.PeerScorer.PeerScorerFactory;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -48,19 +47,23 @@ class Eth2PeerSelectionStrategyTest {
   private static final PeerAddress PEER2 = new PeerAddress(new MockNodeId(2));
   private static final PeerAddress PEER3 = new PeerAddress(new MockNodeId(3));
   private static final PeerAddress PEER4 = new PeerAddress(new MockNodeId(4));
-  private static final DiscoveryPeer DISCOVERY_PEER1 = createDiscoveryPeer(PEER1);
-  private static final DiscoveryPeer DISCOVERY_PEER2 = createDiscoveryPeer(PEER2);
-  private static final DiscoveryPeer DISCOVERY_PEER3 = createDiscoveryPeer(PEER3);
+  private static final DiscoveryPeer DISCOVERY_PEER1 = createDiscoveryPeer(PEER1, 1);
+  private static final DiscoveryPeer DISCOVERY_PEER2 = createDiscoveryPeer(PEER2, 2);
+  private static final DiscoveryPeer DISCOVERY_PEER3 = createDiscoveryPeer(PEER3, 3);
 
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> network = mock(P2PNetwork.class);
 
   private final StubPeerScorer peerScorer = new StubPeerScorer();
-  private final PeerScorerFactory peerScorerFactory = () -> peerScorer;
+  private final PeerSubnetSubscriptions peerSubnetSubscriptions =
+      mock(PeerSubnetSubscriptions.class);
+  private final PeerSubnetSubscriptions.Factory peerSubnetSubscriptionsFactory =
+      network -> peerSubnetSubscriptions;
   private final ReputationManager reputationManager = mock(ReputationManager.class);
 
   @BeforeEach
   void setUp() {
+    when(peerSubnetSubscriptions.createScorer()).thenReturn(peerScorer);
     when(reputationManager.isConnectionInitiationAllowed(any())).thenReturn(true);
     when(network.createPeerAddress(any(DiscoveryPeer.class)))
         .thenAnswer(
@@ -89,6 +92,22 @@ class Eth2PeerSelectionStrategyTest {
             strategy.selectPeersToConnect(
                 network, () -> List.of(DISCOVERY_PEER1, DISCOVERY_PEER2, DISCOVERY_PEER3)))
         .containsExactly(PEER1, PEER2);
+  }
+
+  @Test
+  void selectPeersToConnect_shouldConnectToNewPeersWhenSubnetsNeedsMoreSubscribers() {
+    final Eth2PeerSelectionStrategy strategy = createStrategy(1, 2);
+    when(network.getPeerCount()).thenReturn(2); // At upper bound of peers
+    when(peerSubnetSubscriptions.getSubscribersRequired()).thenReturn(2);
+    peerScorer.setScore(DISCOVERY_PEER1.getPersistentSubnets(), 0);
+    peerScorer.setScore(DISCOVERY_PEER2.getPersistentSubnets(), 200);
+    peerScorer.setScore(DISCOVERY_PEER3.getPersistentSubnets(), 150);
+
+    // Connect to additional peers to try to fill subnets even though it goes over the target
+    assertThat(
+            strategy.selectPeersToConnect(
+                network, () -> List.of(DISCOVERY_PEER1, DISCOVERY_PEER2, DISCOVERY_PEER3)))
+        .containsExactlyInAnyOrder(PEER2, PEER3);
   }
 
   @Test
@@ -161,7 +180,7 @@ class Eth2PeerSelectionStrategyTest {
       final int peerCountLowerBound, final int peerCountUpperBound) {
     return new Eth2PeerSelectionStrategy(
         new TargetPeerRange(peerCountLowerBound, peerCountUpperBound),
-        peerScorerFactory,
+        peerSubnetSubscriptionsFactory,
         reputationManager);
   }
 

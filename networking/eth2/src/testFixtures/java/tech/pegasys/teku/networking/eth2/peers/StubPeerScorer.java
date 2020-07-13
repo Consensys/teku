@@ -11,17 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.network.p2p.connection;
+package tech.pegasys.teku.networking.eth2.peers;
 
 import java.util.HashMap;
 import java.util.Map;
-import tech.pegasys.teku.networking.p2p.connection.PeerScorer;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 
 public class StubPeerScorer implements PeerScorer {
-  private Map<NodeId, Integer> peerScores = new HashMap<>();
-  private Map<Bitvector, Integer> candidateScores = new HashMap<>();
+  private final Map<NodeId, Integer> peerScores = new HashMap<>();
+  private final Map<Bitvector, Integer> candidateScores = new HashMap<>();
 
   public void setScore(final NodeId peerId, final int score) {
     peerScores.put(peerId, score);

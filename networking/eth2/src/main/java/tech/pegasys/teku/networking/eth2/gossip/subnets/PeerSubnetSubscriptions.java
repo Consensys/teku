@@ -11,81 +11,68 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip;
+package tech.pegasys.teku.networking.eth2.gossip.subnets;
+
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.IntUnaryOperator;
 import java.util.stream.IntStream;
-import tech.pegasys.teku.networking.p2p.connection.PeerScorer;
+import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.util.config.Constants;
 
-public class AttestationSubnetScorer implements PeerScorer {
-  private static final int MAX_SUBNET_SCORE = 1000;
+public class PeerSubnetSubscriptions {
+
+  static final int TARGET_SUBSCRIBER_COUNT = 2;
   private final Map<Integer, Integer> subscriberCountBySubnetId;
   private final Map<NodeId, Bitvector> subscriptionsByPeer;
 
-  private AttestationSubnetScorer(
+  private PeerSubnetSubscriptions(
       final Map<Integer, Integer> subscriberCountBySubnetId,
       final Map<NodeId, Bitvector> subscriptionsByPeer) {
+
     this.subscriberCountBySubnetId = subscriberCountBySubnetId;
     this.subscriptionsByPeer = subscriptionsByPeer;
   }
 
-  public static AttestationSubnetScorer create(
-      final GossipNetwork gossipNetwork, final AttestationSubnetTopicProvider topicProvider) {
-    final AttestationSubnetScorer.Builder builder = new AttestationSubnetScorer.Builder();
-    final Map<String, Collection<NodeId>> allSubscriptions = gossipNetwork.getSubscribersByTopic();
-    IntStream.range(0, Constants.ATTESTATION_SUBNET_COUNT)
+  public static PeerSubnetSubscriptions create(
+      final GossipNetwork network, final AttestationSubnetTopicProvider topicProvider) {
+    final PeerSubnetSubscriptions.Builder builder = new PeerSubnetSubscriptions.Builder();
+    final Map<String, Collection<NodeId>> subscribersByTopic = network.getSubscribersByTopic();
+    streamSubnetIds()
         .forEach(
             subnetId ->
-                allSubscriptions
+                subscribersByTopic
                     .getOrDefault(topicProvider.getTopicForSubnet(subnetId), Collections.emptySet())
                     .forEach(subscriber -> builder.addSubscriber(subnetId, subscriber)));
     return builder.build();
   }
 
-  @Override
-  public int scoreExistingPeer(final NodeId peerId) {
-    final Bitvector subscriptions = subscriptionsByPeer.get(peerId);
-    return subscriptions != null ? score(subscriptions, this::scoreSubnetForExistingPeer) : 0;
+  public int getSubscriberCountForSubnet(final int subnetId) {
+    return subscriberCountBySubnetId.getOrDefault(subnetId, 0);
   }
 
-  @Override
-  public int scoreCandidatePeer(final Bitvector subscriptions) {
-    return score(subscriptions, this::scoreSubnetForCandidatePeer);
+  public Bitvector getSubscriptionsForPeer(final NodeId peerId) {
+    return subscriptionsByPeer.getOrDefault(peerId, new Bitvector(ATTESTATION_SUBNET_COUNT));
   }
 
-  private int score(
-      final Bitvector subnetSubscriptions, final IntUnaryOperator subscriberCountToScore) {
-    return subnetSubscriptions
-        .streamAllSetBits()
-        .map(
-            subnetId -> {
-              int subscriberCount = subscriberCountBySubnetId.getOrDefault(subnetId, 0);
-              return subscriberCountToScore.applyAsInt(subscriberCount);
-            })
-        .sum();
+  public PeerScorer createScorer() {
+    return AttestationSubnetScorer.create(this);
   }
 
-  private int scoreSubnetForExistingPeer(final int subscriberCount) {
-    // The peer we're scoring is already included in the subscriberCount
-    return scoreSubnetForCandidatePeer(Math.max(0, subscriberCount - 1));
+  public int getSubscribersRequired() {
+    return TARGET_SUBSCRIBER_COUNT
+        - streamSubnetIds().map(this::getSubscriberCountForSubnet).min().orElse(0);
   }
 
-  private int scoreSubnetForCandidatePeer(final int numberOfOtherSubscribers) {
-    final int value = numberOfOtherSubscribers + 1;
-    return MAX_SUBNET_SCORE / (value * value);
-  }
-
-  public interface AttestationSubnetTopicProvider {
-    String getTopicForSubnet(int subnetId);
+  private static IntStream streamSubnetIds() {
+    return IntStream.range(0, ATTESTATION_SUBNET_COUNT);
   }
 
   @VisibleForTesting
@@ -103,8 +90,20 @@ public class AttestationSubnetScorer implements PeerScorer {
       return this;
     }
 
-    public AttestationSubnetScorer build() {
-      return new AttestationSubnetScorer(subscriberCountBySubnetId, subscriptionsByPeer);
+    public PeerSubnetSubscriptions build() {
+      return new PeerSubnetSubscriptions(subscriberCountBySubnetId, subscriptionsByPeer);
     }
+  }
+
+  public interface Factory {
+
+    /**
+     * Creates a new PeerSubnetSubscriptions which reports the subscriptions from the supplied
+     * network at time of creation.
+     *
+     * @param gossipNetwork the network to load subscriptions from
+     * @return the new PeerSubnetSubscriptions
+     */
+    PeerSubnetSubscriptions create(GossipNetwork gossipNetwork);
   }
 }
