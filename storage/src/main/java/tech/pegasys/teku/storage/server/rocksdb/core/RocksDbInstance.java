@@ -18,7 +18,6 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -129,6 +128,7 @@ public class RocksDbInstance implements RocksDbAccessor {
   }
 
   @Override
+  @MustBeClosed
   public synchronized RocksDbTransaction startTransaction() {
     assertOpen();
     Transaction tx = new Transaction(db, defaultHandle, columnHandles, openTransactions::remove);
@@ -228,7 +228,7 @@ public class RocksDbInstance implements RocksDbAccessor {
       applyUpdate(
           () -> {
             final ColumnFamilyHandle handle = columnHandles.get(column);
-            for (Entry<K, V> kvEntry : data.entrySet()) {
+            for (Map.Entry<K, V> kvEntry : data.entrySet()) {
               final byte[] key = column.getKeySerializer().serialize(kvEntry.getKey());
               final byte[] value = column.getValueSerializer().serialize(kvEntry.getValue());
               try {

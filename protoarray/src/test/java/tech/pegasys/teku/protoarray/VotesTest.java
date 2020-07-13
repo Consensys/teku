@@ -15,7 +15,6 @@ package tech.pegasys.teku.protoarray;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
-import static com.google.common.primitives.UnsignedLong.valueOf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.createProtoArrayForkChoiceStrategy;
 import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.createStoreToManipulateVotes;
@@ -37,7 +36,7 @@ public class VotesTest {
     ProtoArrayForkChoiceStrategy forkChoice =
         createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
 
-    List<UnsignedLong> balances = new ArrayList<>(List.of(valueOf(1), valueOf(1)));
+    List<UnsignedLong> balances = new ArrayList<>(List.of(unsigned(1), unsigned(1)));
 
     // Ensure that the head starts at the finalized block.
     assertThat(forkChoice.findHead(store, ONE, getHash(0), ONE, balances)).isEqualTo(getHash(0));
@@ -76,7 +75,7 @@ public class VotesTest {
     //          0
     //         / \
     //        2   1 <- +vote
-    forkChoice.processAttestation(store, valueOf(0), getHash(1), valueOf(2));
+    forkChoice.processAttestation(store, unsigned(0), getHash(1), unsigned(2));
 
     // Ensure that the head is now 1, because 1 has a vote.
     //
@@ -90,7 +89,7 @@ public class VotesTest {
     //           0
     //          / \
     // +vote-> 2   1
-    forkChoice.processAttestation(store, valueOf(1), getHash(2), valueOf(2));
+    forkChoice.processAttestation(store, unsigned(1), getHash(2), unsigned(2));
 
     // Ensure that the head is 2 since 1 and 2 both have a vote
     //
@@ -124,7 +123,7 @@ public class VotesTest {
     //        2   1 <- -vote
     //            |
     //            3 <- +vote
-    forkChoice.processAttestation(store, valueOf(0), getHash(3), valueOf(3));
+    forkChoice.processAttestation(store, unsigned(0), getHash(3), unsigned(3));
 
     // Ensure that the head is still 2
     //
@@ -143,7 +142,7 @@ public class VotesTest {
     // -vote-> 2   1 <- +vote
     //             |
     //             3
-    forkChoice.processAttestation(store, valueOf(1), getHash(1), valueOf(3));
+    forkChoice.processAttestation(store, unsigned(1), getHash(1), unsigned(3));
 
     // Ensure that the head is now 3
     //
@@ -187,7 +186,7 @@ public class VotesTest {
     //            4
     //           /
     //          5 <- justified epoch = 2
-    forkChoice.processBlock(ZERO, getHash(5), getHash(4), Bytes32.ZERO, valueOf(2), valueOf(2));
+    forkChoice.processBlock(ZERO, getHash(5), getHash(4), Bytes32.ZERO, unsigned(2), unsigned(2));
 
     // Ensure that 5 is filtered out and the head stays at 4.
     //
@@ -213,7 +212,7 @@ public class VotesTest {
     //            4
     //           / \
     //          5   6 <- justified epoch = 0
-    forkChoice.processBlock(ZERO, getHash(6), getHash(4), Bytes32.ZERO, valueOf(1), valueOf(1));
+    forkChoice.processBlock(ZERO, getHash(6), getHash(4), Bytes32.ZERO, unsigned(1), unsigned(1));
 
     // Move both votes to 5.
     //
@@ -226,8 +225,8 @@ public class VotesTest {
     //             4
     //            / \
     // +2 vote-> 5   6
-    forkChoice.processAttestation(store, valueOf(0), getHash(5), valueOf(4));
-    forkChoice.processAttestation(store, valueOf(1), getHash(5), valueOf(4));
+    forkChoice.processAttestation(store, unsigned(0), getHash(5), unsigned(4));
+    forkChoice.processAttestation(store, unsigned(1), getHash(5), unsigned(4));
 
     // Add blocks 7, 8 and 9. Adding these blocks helps test the `best_descendant`
     // functionality.
@@ -247,9 +246,9 @@ public class VotesTest {
     //          8
     //         /
     //         9
-    forkChoice.processBlock(ZERO, getHash(7), getHash(5), Bytes32.ZERO, valueOf(2), valueOf(2));
-    forkChoice.processBlock(ZERO, getHash(8), getHash(7), Bytes32.ZERO, valueOf(2), valueOf(2));
-    forkChoice.processBlock(ZERO, getHash(9), getHash(8), Bytes32.ZERO, valueOf(2), valueOf(2));
+    forkChoice.processBlock(ZERO, getHash(7), getHash(5), Bytes32.ZERO, unsigned(2), unsigned(2));
+    forkChoice.processBlock(ZERO, getHash(8), getHash(7), Bytes32.ZERO, unsigned(2), unsigned(2));
+    forkChoice.processBlock(ZERO, getHash(9), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(2));
 
     // Ensure that 6 is the head, even though 5 has all the votes. This is testing to ensure
     // that 5 is filtered out due to a differing justified epoch.
@@ -291,7 +290,7 @@ public class VotesTest {
     //          8
     //         /
     // head-> 9
-    assertThat(forkChoice.findHead(store, valueOf(2), getHash(5), valueOf(2), balances))
+    assertThat(forkChoice.findHead(store, unsigned(2), getHash(5), unsigned(2), balances))
         .isEqualTo(getHash(9));
 
     // Move both votes to block 9
@@ -310,8 +309,8 @@ public class VotesTest {
     //          8
     //         /
     //        9 <- +2 votes
-    forkChoice.processAttestation(store, valueOf(0), getHash(9), valueOf(5));
-    forkChoice.processAttestation(store, valueOf(1), getHash(9), valueOf(5));
+    forkChoice.processAttestation(store, unsigned(0), getHash(9), unsigned(5));
+    forkChoice.processAttestation(store, unsigned(1), getHash(9), unsigned(5));
 
     // Add block 10
     //
@@ -330,14 +329,14 @@ public class VotesTest {
     //          8
     //         / \
     //        9  10
-    forkChoice.processBlock(ZERO, getHash(10), getHash(8), Bytes32.ZERO, valueOf(2), valueOf(2));
+    forkChoice.processBlock(ZERO, getHash(10), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(2));
 
     // Double-check the head is still 9
-    assertThat(forkChoice.findHead(store, valueOf(2), getHash(5), valueOf(2), balances))
+    assertThat(forkChoice.findHead(store, unsigned(2), getHash(5), unsigned(2), balances))
         .isEqualTo(getHash(9));
 
     // Introduce 2 more validators into the system
-    balances.addAll(List.of(valueOf(1), valueOf(1)));
+    balances.addAll(List.of(unsigned(1), unsigned(1)));
 
     // Have the two new validators vote for 10
     //
@@ -356,8 +355,8 @@ public class VotesTest {
     //          8
     //         / \
     //        9  10 <- +2 votes
-    forkChoice.processAttestation(store, valueOf(2), getHash(10), valueOf(5));
-    forkChoice.processAttestation(store, valueOf(3), getHash(10), valueOf(5));
+    forkChoice.processAttestation(store, unsigned(2), getHash(10), unsigned(5));
+    forkChoice.processAttestation(store, unsigned(3), getHash(10), unsigned(5));
 
     // Check the head is now 10. (due to lexicographical ordering
     // (when blocks have the same amount of votes))
@@ -377,11 +376,11 @@ public class VotesTest {
     //          8
     //         / \
     //        9  10 <- head
-    assertThat(forkChoice.findHead(store, valueOf(2), getHash(5), valueOf(2), balances))
+    assertThat(forkChoice.findHead(store, unsigned(2), getHash(5), unsigned(2), balances))
         .isEqualTo(getHash(10));
 
     // Set the balances of the last two validators to zero
-    balances = new ArrayList<>(List.of(valueOf(1), valueOf(1), valueOf(0), valueOf(0)));
+    balances = new ArrayList<>(List.of(unsigned(1), unsigned(1), unsigned(0), unsigned(0)));
 
     // Check the head is 9 again.
     //
@@ -392,7 +391,7 @@ public class VotesTest {
     //          8
     //         / \
     // head-> 9  10
-    assertThat(forkChoice.findHead(store, valueOf(2), getHash(5), valueOf(2), balances))
+    assertThat(forkChoice.findHead(store, unsigned(2), getHash(5), unsigned(2), balances))
         .isEqualTo(getHash(9));
 
     // Set the balances of the last two validators back to 1
@@ -407,7 +406,7 @@ public class VotesTest {
     //          8
     //         / \
     //        9  10 <- head
-    assertThat(forkChoice.findHead(store, valueOf(2), getHash(5), valueOf(2), balances))
+    assertThat(forkChoice.findHead(store, unsigned(2), getHash(5), unsigned(2), balances))
         .isEqualTo(getHash(10));
 
     // Remove the last two validators
@@ -423,7 +422,7 @@ public class VotesTest {
     //          8
     //         / \
     // head-> 9  10
-    assertThat(forkChoice.findHead(store, valueOf(2), getHash(5), valueOf(2), balances))
+    assertThat(forkChoice.findHead(store, unsigned(2), getHash(5), unsigned(2), balances))
         .isEqualTo(getHash(9));
 
     // Ensure that pruning below the prune threshold does not prune.
@@ -432,7 +431,7 @@ public class VotesTest {
     assertThat(forkChoice.size()).isEqualTo(11);
 
     // Run find-head, ensure the no-op prune didn't change the head.
-    assertThat(forkChoice.findHead(store, valueOf(2), getHash(5), valueOf(2), balances))
+    assertThat(forkChoice.findHead(store, unsigned(2), getHash(5), unsigned(2), balances))
         .isEqualTo(getHash(9));
 
     // Ensure that pruning above the prune threshold does prune.
@@ -458,7 +457,7 @@ public class VotesTest {
     assertThat(forkChoice.size()).isEqualTo(6);
 
     // Run find-head, ensure the prune didn't change the head.
-    assertThat(forkChoice.findHead(store, valueOf(2), getHash(5), valueOf(2), balances))
+    assertThat(forkChoice.findHead(store, unsigned(2), getHash(5), unsigned(2), balances))
         .isEqualTo(getHash(9));
 
     // Add block 11
@@ -472,7 +471,7 @@ public class VotesTest {
     //        9  10
     //        |
     //        11
-    forkChoice.processBlock(ZERO, getHash(11), getHash(9), Bytes32.ZERO, valueOf(2), valueOf(2));
+    forkChoice.processBlock(ZERO, getHash(11), getHash(9), Bytes32.ZERO, unsigned(2), unsigned(2));
 
     // Ensure the head is now 11
     //
@@ -485,7 +484,11 @@ public class VotesTest {
     //        9  10
     //        |
     // head-> 11
-    assertThat(forkChoice.findHead(store, valueOf(2), getHash(5), valueOf(2), balances))
+    assertThat(forkChoice.findHead(store, unsigned(2), getHash(5), unsigned(2), balances))
         .isEqualTo(getHash(11));
+  }
+
+  private UnsignedLong unsigned(final int i) {
+    return UnsignedLong.valueOf(i);
   }
 }

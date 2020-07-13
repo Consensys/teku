@@ -87,7 +87,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
             .orElseThrow(
                 () -> new IllegalArgumentException("Finalized Checkpoint state can not be found."));
 
-    depositNavigableMap.headMap(finalizedState.getEth1_deposit_index()).clear();
+    depositNavigableMap.headMap(finalizedState.getEth1_deposit_index(), false).clear();
   }
 
   @Override
@@ -152,7 +152,8 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
    */
   private List<Deposit> getDepositsWithProof(
       UnsignedLong fromDepositIndex, UnsignedLong toDepositIndex, UnsignedLong eth1DepositCount) {
-    return depositNavigableMap.subMap(fromDepositIndex, toDepositIndex).values().stream()
+    return depositNavigableMap.subMap(fromDepositIndex, true, toDepositIndex, false).values()
+        .stream()
         .map(
             deposit ->
                 new DepositWithIndex(

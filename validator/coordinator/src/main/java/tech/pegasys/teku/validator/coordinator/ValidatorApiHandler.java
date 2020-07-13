@@ -51,7 +51,6 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
@@ -297,17 +296,18 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final Integer validatorIndex) {
     final List<UnsignedLong> proposerSlots =
         proposalSlotsByValidatorIndex.getOrDefault(validatorIndex, emptyList());
-    final CommitteeAssignment committeeAssignment =
-        CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex)
-            .orElseThrow();
-    return ValidatorDuties.withDuties(
-        key,
-        validatorIndex,
-        Math.toIntExact(committeeAssignment.getCommitteeIndex().longValue()),
-        committeeAssignment.getCommittee().indexOf(validatorIndex),
-        getAggregatorModulo(committeeAssignment.getCommittee().size()),
-        proposerSlots,
-        committeeAssignment.getSlot());
+    return CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex)
+        .map(
+            committeeAssignment ->
+                ValidatorDuties.withDuties(
+                    key,
+                    validatorIndex,
+                    Math.toIntExact(committeeAssignment.getCommitteeIndex().longValue()),
+                    committeeAssignment.getCommittee().indexOf(validatorIndex),
+                    getAggregatorModulo(committeeAssignment.getCommittee().size()),
+                    proposerSlots,
+                    committeeAssignment.getSlot()))
+        .orElseGet(() -> ValidatorDuties.noDuties(key));
   }
 
   private Map<Integer, List<UnsignedLong>> getBeaconProposalSlotsByValidatorIndex(

@@ -18,7 +18,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.NavigableMap;
-import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import org.apache.logging.log4j.LogManager;
@@ -108,11 +107,12 @@ public class DutyScheduler implements ValidatorTimingChannel {
   }
 
   private void removePriorEpochs(final UnsignedLong epochNumber) {
-    final SortedMap<UnsignedLong, DutyQueue> toRemove = dutiesByEpoch.headMap(epochNumber);
+    final NavigableMap<UnsignedLong, DutyQueue> toRemove =
+        dutiesByEpoch.headMap(epochNumber, false);
     removeEpochs(toRemove);
   }
 
-  private void removeEpochs(final SortedMap<UnsignedLong, DutyQueue> toRemove) {
+  private void removeEpochs(final NavigableMap<UnsignedLong, DutyQueue> toRemove) {
     toRemove.values().forEach(DutyQueue::cancel);
     toRemove.clear();
   }

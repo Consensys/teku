@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.gossip;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
-import static com.google.common.primitives.UnsignedLong.valueOf;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
@@ -56,7 +55,7 @@ class AttestationTopicSubscriberTest {
   @Test
   public void shouldSubscribeToSubnet() {
     final int committeeId = 10;
-    final int subnetId = computeSubnetForCommittee(state, ONE, valueOf(committeeId));
+    final int subnetId = computeSubnetForCommittee(state, ONE, UnsignedLong.valueOf(committeeId));
     subscriber.subscribeToCommitteeForAggregation(committeeId, ONE);
 
     verify(eth2Network).subscribeToAttestationSubnetId(subnetId);
@@ -66,7 +65,8 @@ class AttestationTopicSubscriberTest {
   public void shouldUnsubscribeFromSubnetWhenPastSlot() {
     final int committeeId = 12;
     final UnsignedLong aggregationSlot = UnsignedLong.valueOf(10);
-    final int subnetId = computeSubnetForCommittee(state, aggregationSlot, valueOf(committeeId));
+    final int subnetId =
+        computeSubnetForCommittee(state, aggregationSlot, UnsignedLong.valueOf(committeeId));
 
     subscriber.subscribeToCommitteeForAggregation(committeeId, aggregationSlot);
     subscriber.onSlot(aggregationSlot.plus(ONE));
@@ -90,10 +90,11 @@ class AttestationTopicSubscriberTest {
     final int committeeId = 3;
     final UnsignedLong firstSlot = UnsignedLong.valueOf(10);
     final UnsignedLong secondSlot = UnsignedLong.valueOf(18);
-    final int subnetId = computeSubnetForCommittee(state, firstSlot, valueOf(committeeId));
+    final int subnetId =
+        computeSubnetForCommittee(state, firstSlot, UnsignedLong.valueOf(committeeId));
     // Sanity check second subscription is for the same subnet ID.
     assertThat(subnetId)
-        .isEqualTo(computeSubnetForCommittee(state, secondSlot, valueOf(committeeId)));
+        .isEqualTo(computeSubnetForCommittee(state, secondSlot, UnsignedLong.valueOf(committeeId)));
 
     subscriber.subscribeToCommitteeForAggregation(committeeId, firstSlot);
     subscriber.subscribeToCommitteeForAggregation(committeeId, secondSlot);
@@ -110,9 +111,10 @@ class AttestationTopicSubscriberTest {
     final int committeeId = 3;
     final UnsignedLong firstSlot = UnsignedLong.valueOf(10);
     final UnsignedLong secondSlot = UnsignedLong.valueOf(18);
-    final int subnetId = computeSubnetForCommittee(state, firstSlot, valueOf(committeeId));
+    final int subnetId =
+        computeSubnetForCommittee(state, firstSlot, UnsignedLong.valueOf(committeeId));
     // Sanity check the two subscriptions are for the same subnet
-    assertThat(computeSubnetForCommittee(state, secondSlot, valueOf(committeeId)))
+    assertThat(computeSubnetForCommittee(state, secondSlot, UnsignedLong.valueOf(committeeId)))
         .isEqualTo(subnetId);
 
     subscriber.subscribeToCommitteeForAggregation(committeeId, secondSlot);
@@ -142,7 +144,7 @@ class AttestationTopicSubscriberTest {
 
   @Test
   public void shouldUpdateENRWhenNewSubnetIsSubscribedDueToPersistentSubscriptions() {
-    UnsignedLong someSlot = valueOf(15);
+    UnsignedLong someSlot = UnsignedLong.valueOf(15);
     Set<SubnetSubscription> subnetSubscription = Set.of(new SubnetSubscription(2, someSlot));
 
     subscriber.subscribeToCommitteeForAggregation(1, someSlot);
@@ -185,7 +187,8 @@ class AttestationTopicSubscriberTest {
     final int committeeId = 3;
     final UnsignedLong firstSlot = UnsignedLong.valueOf(10);
     final UnsignedLong secondSlot = UnsignedLong.valueOf(15);
-    final int subnetId = computeSubnetForCommittee(state, secondSlot, valueOf(committeeId));
+    final int subnetId =
+        computeSubnetForCommittee(state, secondSlot, UnsignedLong.valueOf(committeeId));
     subscriber.subscribeToCommitteeForAggregation(committeeId, secondSlot);
     Set<SubnetSubscription> subnetSubscriptions =
         Set.of(new SubnetSubscription(subnetId, firstSlot));

@@ -44,9 +44,8 @@ import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.teku.network.p2p.connection.StubPeerScorer;
+import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
-import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
@@ -63,8 +62,6 @@ class DiscoveryNetworkTest {
 
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> p2pNetwork = mock(P2PNetwork.class);
-
-  private final ReputationManager reputationManager = mock(ReputationManager.class);
 
   private final DiscoveryService discoveryService = mock(DiscoveryService.class);
   private final ConnectionManager connectionManager = mock(ConnectionManager.class);
@@ -144,23 +141,24 @@ class DiscoveryNetworkTest {
 
   @Test
   public void shouldNotEnableDiscoveryWhenDiscoveryIsDisabled() {
+    final NetworkConfig networkConfig =
+        new NetworkConfig(
+            null,
+            "127.0.0.1",
+            Optional.empty(),
+            0,
+            OptionalInt.empty(),
+            Collections.emptyList(),
+            false,
+            Collections.emptyList(),
+            new TargetPeerRange(20, 30));
     final DiscoveryNetwork<Peer> network =
         DiscoveryNetwork.create(
             new NoOpMetricsSystem(),
             DelayedExecutorAsyncRunner.create(),
             p2pNetwork,
-            reputationManager,
-            StubPeerScorer::new,
-            new NetworkConfig(
-                null,
-                "127.0.0.1",
-                Optional.empty(),
-                0,
-                OptionalInt.empty(),
-                Collections.emptyList(),
-                false,
-                Collections.emptyList(),
-                new TargetPeerRange(20, 30)));
+            new SimplePeerSelectionStrategy(networkConfig.getTargetPeerRange()),
+            networkConfig);
     assertThat(network.getEnr()).isEmpty();
   }
 
