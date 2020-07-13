@@ -307,8 +307,12 @@ public class ProtoArray {
                   // The best child leads to a viable head, but the child doesn't.
                   // No change.
                 } else if (child.getWeight().equals(bestChild.getWeight())) {
-                  // Tie-breaker of equal weights by root.
-                  if (child
+                  // Tie-break by longest chain
+                  if (child.getLongestDescendantChain() > bestChild.getLongestDescendantChain()) {
+                    changeToChild(parent, childIndex);
+                  }
+                  // Then tie-break by root
+                  else if (child
                           .getBlockRoot()
                           .toHexString()
                           .compareTo(bestChild.getBlockRoot().toHexString())
@@ -348,6 +352,7 @@ public class ProtoArray {
     ProtoNode child = nodes.get(childIndex);
     parent.setBestChildIndex(Optional.of(childIndex));
     parent.setBestDescendantIndex(Optional.of(child.getBestDescendantIndex().orElse(childIndex)));
+    parent.updateLongestDescendantChain(child.getLongestDescendantChain() + 1);
   }
 
   /**
@@ -358,6 +363,7 @@ public class ProtoArray {
   private void changeToNone(ProtoNode parent) {
     parent.setBestChildIndex(Optional.empty());
     parent.setBestDescendantIndex(Optional.empty());
+    parent.clearLongestDescendantChain();
   }
 
   /**
