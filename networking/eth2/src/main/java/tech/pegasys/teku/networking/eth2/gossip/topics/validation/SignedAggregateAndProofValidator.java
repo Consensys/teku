@@ -104,11 +104,15 @@ public class SignedAggregateAndProofValidator {
       return SAVE_FOR_FUTURE;
     }
     final BeaconState state = maybeState.get();
-    final BLSPublicKey aggregatorPublicKey =
+    final Optional<BLSPublicKey> aggregatorPublicKey =
         ValidatorsUtil.getValidatorPubKey(state, aggregateAndProof.getIndex());
+    if (aggregatorPublicKey.isEmpty()) {
+      LOG.trace("Rejecting aggregate with invalid index");
+      return REJECT;
+    }
 
     if (!isSelectionProofValid(
-        aggregateSlot, state, aggregatorPublicKey, aggregateAndProof.getSelection_proof())) {
+        aggregateSlot, state, aggregatorPublicKey.get(), aggregateAndProof.getSelection_proof())) {
       LOG.trace("Rejecting aggregate with incorrect selection proof");
       return REJECT;
     }
@@ -129,7 +133,7 @@ public class SignedAggregateAndProofValidator {
       return REJECT;
     }
 
-    if (!isSignatureValid(signedAggregate, state, aggregatorPublicKey)) {
+    if (!isSignatureValid(signedAggregate, state, aggregatorPublicKey.get())) {
       LOG.trace("Rejecting aggregate with invalid signature");
       return REJECT;
     }
