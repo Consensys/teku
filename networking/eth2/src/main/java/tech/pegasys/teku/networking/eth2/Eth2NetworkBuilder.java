@@ -21,6 +21,7 @@ import com.google.common.eventbus.EventBus;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
@@ -138,7 +139,8 @@ public class Eth2NetworkBuilder {
         new Eth2PeerSelectionStrategy(
             config.getTargetPeerRange(),
             network -> PeerSubnetSubscriptions.create(network, subnetTopicProvider),
-            reputationManager),
+            reputationManager,
+            Collections::shuffle),
         config);
   }
 
