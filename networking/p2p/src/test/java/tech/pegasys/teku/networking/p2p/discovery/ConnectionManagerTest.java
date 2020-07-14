@@ -30,7 +30,6 @@ import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -70,7 +69,7 @@ class ConnectionManagerTest {
   @BeforeEach
   public void setUp() {
     when(discoveryService.searchForPeers()).thenReturn(new SafeFuture<>());
-    when(peerSelectionStrategy.selectPeersToConnect(eq(network), any()))
+    when(peerSelectionStrategy.selectPeersToConnect(eq(network), any(), any()))
         .thenAnswer(
             invocation -> {
               final Supplier<List<DiscoveryPeer>> candidateSupplier = invocation.getArgument(1);
@@ -311,7 +310,7 @@ class ConnectionManagerTest {
   public void shouldUsePeerSelectionStrategyToSelectPeersToConnectTo() {
     when(network.connect(any(PeerAddress.class))).thenReturn(new SafeFuture<>());
     when(discoveryService.streamKnownPeers()).thenReturn(Stream.empty());
-    when(peerSelectionStrategy.selectPeersToConnect(eq(network), any()))
+    when(peerSelectionStrategy.selectPeersToConnect(eq(network), any(), any()))
         .thenReturn(List.of(PEER1, PEER3));
 
     final ConnectionManager manager = createManager();
@@ -340,32 +339,6 @@ class ConnectionManagerTest {
 
     assertThat(peer2.isConnected()).isTrue();
     assertThat(peer1.isConnected()).isFalse();
-  }
-
-  @SuppressWarnings("unchecked")
-  @Test
-  public void shouldNotAllowStaticPeersToBeDisconnected() {
-    final StubPeer peer1 = new StubPeer(new MockNodeId(1));
-    final StubPeer peer2 = new StubPeer(new MockNodeId(2));
-    final ConnectionManager manager = createManager(PEER1, PEER2);
-    when(network.connect(PEER1)).thenReturn(SafeFuture.completedFuture(peer1));
-    when(network.connect(PEER2)).thenReturn(SafeFuture.completedFuture(peer2));
-    manager.start().join();
-
-    final PeerConnectedSubscriber<Peer> peerConnectedSubscriber = getPeerConnectedSubscriber();
-
-    when(network.streamPeers()).thenReturn(Stream.of(peer2, peer1));
-    when(network.getPeerCount()).thenReturn(2);
-    peerConnectedSubscriber.onConnected(peer1);
-
-    final ArgumentCaptor<Predicate<Peer>> canDisconnectCaptor =
-        ArgumentCaptor.forClass(Predicate.class);
-    verify(peerSelectionStrategy)
-        .selectPeersToDisconnect(eq(network), canDisconnectCaptor.capture());
-    final Predicate<Peer> canDisconnect = canDisconnectCaptor.getValue();
-
-    assertThat(canDisconnect).rejects(peer1, peer2); // Can't disconnect statics peers
-    assertThat(canDisconnect).accepts(new StubPeer(new MockNodeId(3))); // Can disconnect others
   }
 
   @Test

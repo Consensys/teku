@@ -29,6 +29,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.networking.p2p.connection.PeerSources.PeerSource;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
@@ -52,6 +53,7 @@ public class ConnectionManager extends Service {
   private final Counter attemptedConnectionCounter;
   private final Counter successfulConnectionCounter;
   private final Counter failedConnectionCounter;
+  private final PeerSources peerSources = new PeerSources();
   private final Collection<Predicate<DiscoveryPeer>> peerPredicates = new CopyOnWriteArrayList<>();
 
   private volatile long peerConnectedSubscriptionId;
@@ -103,6 +105,7 @@ public class ConnectionManager extends Service {
     peerSelectionStrategy
         .selectPeersToConnect(
             network,
+            peerSources,
             () -> discoveryService.streamKnownPeers().filter(this::isPeerValid).collect(toList()))
         .forEach(this::attemptConnection);
   }
@@ -124,26 +127,28 @@ public class ConnectionManager extends Service {
             });
   }
 
-  private void attemptConnection(final PeerAddress discoveryPeer) {
-    LOG.trace("Attempting to connect to {}", discoveryPeer.getId());
+  private void attemptConnection(final PeerAddress peerAddress) {
+    LOG.trace("Attempting to connect to {}", peerAddress.getId());
     attemptedConnectionCounter.inc();
     network
-        .connect(discoveryPeer)
+        .connect(peerAddress)
         .finish(
             peer -> {
               LOG.trace("Successfully connected to peer {}", peer.getId());
               successfulConnectionCounter.inc();
+              peer.subscribeDisconnect(
+                  (reason, locallyInitiated) -> peerSources.forgetPeer(peer.getId()));
             },
             error -> {
-              LOG.trace(() -> "Failed to connect to peer: " + discoveryPeer.getId(), error);
+              LOG.trace(() -> "Failed to connect to peer: " + peerAddress.getId(), error);
               failedConnectionCounter.inc();
+              peerSources.forgetPeer(peerAddress.getId());
             });
   }
 
   private void onPeerConnected(final Peer peer) {
     peerSelectionStrategy
-        .selectPeersToDisconnect(
-            network, candidate -> !staticPeers.contains(candidate.getAddress()))
+        .selectPeersToDisconnect(network, peerSources)
         .forEach(peerToDrop -> peerToDrop.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS));
   }
 
@@ -174,6 +179,7 @@ public class ConnectionManager extends Service {
       return new SafeFuture<>();
     }
     LOG.debug("Connecting to peer {}", peerAddress);
+    peerSources.recordPeerSource(peerAddress.getId(), PeerSource.STATIC_PEER);
     attemptedConnectionCounter.inc();
     return network
         .connect(peerAddress)

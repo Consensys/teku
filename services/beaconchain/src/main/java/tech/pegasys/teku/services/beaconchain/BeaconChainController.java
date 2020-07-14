@@ -377,7 +377,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               config.getP2pStaticPeers(),
               config.isP2pDiscoveryEnabled(),
               config.getP2pDiscoveryBootnodes(),
-              new TargetPeerRange(config.getP2pPeerLowerBound(), config.getP2pPeerUpperBound()),
+              new TargetPeerRange(
+                  config.getP2pPeerLowerBound(),
+                  config.getP2pPeerUpperBound(),
+                  config.getMinimumRandomlySelectedPeerCount()),
               GossipConfig.DEFAULT_CONFIG,
               new WireLogsConfig(
                   config.isLogWireCipher(),

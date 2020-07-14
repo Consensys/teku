@@ -15,16 +15,24 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.networking.p2p.connection.PeerSources.PeerSource.RANDOMLY_SELECTED;
+import static tech.pegasys.teku.networking.p2p.connection.PeerSources.PeerSource.SELECTED_BY_SCORE;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
+import tech.pegasys.teku.networking.p2p.connection.PeerSources;
+import tech.pegasys.teku.networking.p2p.connection.PeerSources.PeerSource;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -38,54 +46,149 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
   private final TargetPeerRange targetPeerCountRange;
   private final PeerSubnetSubscriptions.Factory peerSubnetSubscriptionsFactory;
   private final ReputationManager reputationManager;
+  private final Shuffler shuffler;
 
   public Eth2PeerSelectionStrategy(
       final TargetPeerRange targetPeerCountRange,
       final PeerSubnetSubscriptions.Factory peerSubnetSubscriptionsFactory,
-      final ReputationManager reputationManager) {
+      final ReputationManager reputationManager,
+      final Shuffler shuffler) {
     this.targetPeerCountRange = targetPeerCountRange;
     this.peerSubnetSubscriptionsFactory = peerSubnetSubscriptionsFactory;
     this.reputationManager = reputationManager;
+    this.shuffler = shuffler;
   }
 
   @Override
   public List<PeerAddress> selectPeersToConnect(
-      final P2PNetwork<?> network, final Supplier<List<DiscoveryPeer>> candidates) {
+      final P2PNetwork<?> network,
+      final PeerSources peerSources,
+      final Supplier<List<DiscoveryPeer>> candidates) {
     final PeerSubnetSubscriptions peerSubnetSubscriptions =
         peerSubnetSubscriptionsFactory.create(network);
     final int peersRequiredForPeerCount =
         targetPeerCountRange.getPeersToAdd(network.getPeerCount());
+    final int randomlySelectedPeerCount = getCurrentRandomlySelectedPeerCount(network, peerSources);
+    final int randomlySelectedPeersToAdd =
+        targetPeerCountRange.getRandomlySelectedPeersToAdd(randomlySelectedPeerCount);
+
     final int peersRequiredForSubnets = peerSubnetSubscriptions.getSubscribersRequired();
-    final int maxAttempts = Math.max(peersRequiredForPeerCount, peersRequiredForSubnets);
-    LOG.trace("Connecting to up to {} known peers", maxAttempts);
-    if (maxAttempts == 0) {
+    final int scoreBasedPeersToAdd =
+        Math.max(peersRequiredForPeerCount - randomlySelectedPeerCount, peersRequiredForSubnets);
+    LOG.trace(
+        "Connecting to up to {} known peers", scoreBasedPeersToAdd + randomlySelectedPeersToAdd);
+    if (scoreBasedPeersToAdd == 0 && randomlySelectedPeersToAdd == 0) {
       return emptyList();
     }
+
+    final List<DiscoveryPeer> allCandidatePeers = new ArrayList<>(candidates.get());
+    final List<PeerAddress> selectedPeers = new ArrayList<>();
+
+    if (randomlySelectedPeersToAdd > 0) {
+      selectedPeers.addAll(
+          selectAndRemoveRandomPeers(
+              network, peerSources, randomlySelectedPeersToAdd, allCandidatePeers));
+    }
+
+    if (scoreBasedPeersToAdd > 0) {
+      selectedPeers.addAll(
+          selectPeersByScore(
+              network, peerSubnetSubscriptions, scoreBasedPeersToAdd, allCandidatePeers));
+    }
+    return selectedPeers;
+  }
+
+  private List<PeerAddress> selectAndRemoveRandomPeers(
+      final P2PNetwork<?> network,
+      final PeerSources peerSources,
+      final int randomlySelectedPeersToAdd,
+      final List<DiscoveryPeer> allCandidatePeers) {
+    final List<PeerAddress> selectedPeers = new ArrayList<>();
+    shuffler.shuffle(allCandidatePeers);
+    while (!allCandidatePeers.isEmpty() && selectedPeers.size() < randomlySelectedPeersToAdd) {
+      final DiscoveryPeer candidate = allCandidatePeers.remove(0);
+      checkCandidate(candidate, network)
+          .ifPresent(
+              peerAddress -> {
+                peerSources.recordPeerSource(peerAddress.getId(), RANDOMLY_SELECTED);
+                selectedPeers.add(peerAddress);
+              });
+    }
+    return selectedPeers;
+  }
+
+  private List<PeerAddress> selectPeersByScore(
+      final P2PNetwork<?> network,
+      final PeerSubnetSubscriptions peerSubnetSubscriptions,
+      final int scoreBasedPeersToAdd,
+      final List<DiscoveryPeer> allCandidatePeers) {
+    final List<PeerAddress> selectedPeers = new ArrayList<>();
     final PeerScorer peerScorer = peerSubnetSubscriptions.createScorer();
-    return candidates.get().stream()
+    allCandidatePeers.stream()
         .sorted(
             Comparator.comparing((Function<DiscoveryPeer, Integer>) peerScorer::scoreCandidatePeer)
                 .reversed())
-        .map(network::createPeerAddress)
+        .flatMap(candidate -> checkCandidate(candidate, network).stream())
+        .limit(scoreBasedPeersToAdd)
+        .forEach(selectedPeers::add);
+    return selectedPeers;
+  }
+
+  private int getCurrentRandomlySelectedPeerCount(
+      final P2PNetwork<?> network, final PeerSources peerSources) {
+    return (int)
+        network
+            .streamPeers()
+            .filter(peer -> peerSources.getSource(peer.getId()) == RANDOMLY_SELECTED)
+            .count();
+  }
+
+  private Optional<PeerAddress> checkCandidate(
+      final DiscoveryPeer candidate, final P2PNetwork<?> network) {
+    return Optional.of(network.createPeerAddress(candidate))
         .filter(reputationManager::isConnectionInitiationAllowed)
-        .filter(peerAddress -> !network.isConnected(peerAddress))
-        .limit(maxAttempts)
-        .collect(toList());
+        .filter(peerAddress -> !network.isConnected(peerAddress));
   }
 
   @Override
   public List<Peer> selectPeersToDisconnect(
-      final P2PNetwork<?> network, final Predicate<Peer> canBeDisconnected) {
-    final int peersToDrop = targetPeerCountRange.getPeersToDrop(network.getPeerCount());
+      final P2PNetwork<?> network, final PeerSources peerSources) {
+
+    final Map<PeerSource, List<Peer>> peersBySource =
+        network
+            .streamPeers()
+            .collect(Collectors.groupingBy(peer -> peerSources.getSource(peer.getId())));
+
+    final List<Peer> randomlySelectedPeers =
+        peersBySource.getOrDefault(RANDOMLY_SELECTED, new ArrayList<>());
+    final int randomlySelectedPeerCount = randomlySelectedPeers.size();
+
+    final int currentPeerCount = network.getPeerCount();
+    final int peersToDrop = targetPeerCountRange.getPeersToDrop(currentPeerCount);
     if (peersToDrop == 0) {
       return emptyList();
     }
     final PeerScorer peerScorer = peerSubnetSubscriptionsFactory.create(network).createScorer();
-    return network
-        .streamPeers()
-        .filter(canBeDisconnected)
+    final int randomlySelectedPeersToDrop =
+        targetPeerCountRange.getRandomlySelectedPeersToDrop(
+            randomlySelectedPeerCount, currentPeerCount);
+    shuffler.shuffle(randomlySelectedPeers);
+    final List<Peer> randomlySelectedPeersBeingDropped =
+        randomlySelectedPeers.subList(
+            0, Math.min(randomlySelectedPeersToDrop, randomlySelectedPeers.size()));
+    // Peers from the randomly selected pool that have been chosen are now left to justify
+    // themselves based on their score alone.
+    randomlySelectedPeersBeingDropped.forEach(peer -> peerSources.forgetPeer(peer.getId()));
+    return Stream.concat(
+            randomlySelectedPeersBeingDropped.stream(),
+            peersBySource.getOrDefault(SELECTED_BY_SCORE, emptyList()).stream())
         .sorted(Comparator.comparing(peerScorer::scoreExistingPeer))
         .limit(peersToDrop)
         .collect(toList());
+  }
+
+  @FunctionalInterface
+  public interface Shuffler {
+    void shuffle(List<?> list);
   }
 }
