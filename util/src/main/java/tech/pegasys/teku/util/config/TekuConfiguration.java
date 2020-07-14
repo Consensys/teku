@@ -279,6 +279,10 @@ public class TekuConfiguration {
     return p2pPeerUpperBound;
   }
 
+  public int getMinimumRandomlySelectedPeerCount() {
+    return Math.min(1, p2pPeerLowerBound * 2 / 10);
+  }
+
   public List<String> getP2pStaticPeers() {
     return p2pStaticPeers;
   }
