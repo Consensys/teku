@@ -244,7 +244,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   public boolean contains(Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
-      return protoArray.getIndices().containsKey(blockRoot);
+      return protoArray.contains(blockRoot);
     } finally {
       protoArrayLock.readLock().unlock();
     }

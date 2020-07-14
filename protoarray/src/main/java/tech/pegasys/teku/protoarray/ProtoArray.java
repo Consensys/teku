@@ -50,6 +50,10 @@ public class ProtoArray {
     return indices;
   }
 
+  public boolean contains(final Bytes32 blockRoot) {
+    return indices.containsKey(blockRoot);
+  }
+
   public List<ProtoNode> getNodes() {
     return nodes;
   }
@@ -308,7 +312,8 @@ public class ProtoArray {
                   // No change.
                 } else if (child.getWeight().equals(bestChild.getWeight())) {
                   // Tie-break by longest chain
-                  if (child.getLongestDescendantChain() > bestChild.getLongestDescendantChain()) {
+                  if (child.getBestDescendantChainHeight()
+                      > bestChild.getBestDescendantChainHeight()) {
                     changeToChild(parent, childIndex);
                   }
                   // Then tie-break by root
@@ -352,7 +357,7 @@ public class ProtoArray {
     ProtoNode child = nodes.get(childIndex);
     parent.setBestChildIndex(Optional.of(childIndex));
     parent.setBestDescendantIndex(Optional.of(child.getBestDescendantIndex().orElse(childIndex)));
-    parent.updateLongestDescendantChain(child.getLongestDescendantChain() + 1);
+    parent.setBestDescendantChainHeight(child.getBestDescendantChainHeight() + 1);
   }
 
   /**
@@ -363,7 +368,7 @@ public class ProtoArray {
   private void changeToNone(ProtoNode parent) {
     parent.setBestChildIndex(Optional.empty());
     parent.setBestDescendantIndex(Optional.empty());
-    parent.clearLongestDescendantChain();
+    parent.setBestDescendantChainHeight(0);
   }
 
   /**

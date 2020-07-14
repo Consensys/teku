@@ -32,7 +32,7 @@ public class ProtoNode {
   private final UnsignedLong finalizedEpoch;
 
   private UnsignedLong weight;
-  private int longestDescendantChain = 0;
+  private int bestDescendantChainHeight = 0;
   private Optional<Integer> parentIndex;
   private Optional<Integer> bestChildIndex;
   private Optional<Integer> bestDescendantIndex;
@@ -81,8 +81,8 @@ public class ProtoNode {
     return weight;
   }
 
-  public int getLongestDescendantChain() {
-    return longestDescendantChain;
+  public int getBestDescendantChainHeight() {
+    return bestDescendantChainHeight;
   }
 
   public UnsignedLong getBlockSlot() {
@@ -121,14 +121,14 @@ public class ProtoNode {
     this.bestChildIndex = bestChildIndex;
   }
 
-  public void clearLongestDescendantChain() {
-    longestDescendantChain = 0;
-  }
-
-  public void updateLongestDescendantChain(int descendantChainLength) {
-    if (descendantChainLength > this.longestDescendantChain) {
-      longestDescendantChain = descendantChainLength;
-    }
+  /**
+   * The height (number of blocks) in the best descendant chain
+   *
+   * @param descendantChainLength The number of blocks in the best chain descending from this node
+   *     (defined by bestDescendantIndex)
+   */
+  public void setBestDescendantChainHeight(int descendantChainLength) {
+    bestDescendantChainHeight = descendantChainLength;
   }
 
   public Optional<Integer> getBestDescendantIndex() {
