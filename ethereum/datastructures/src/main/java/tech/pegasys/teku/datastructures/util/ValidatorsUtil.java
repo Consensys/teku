@@ -70,10 +70,16 @@ public class ValidatorsUtil {
         && validator.getActivation_epoch().equals(Constants.FAR_FUTURE_EPOCH);
   }
 
-  public static BLSPublicKey getValidatorPubKey(BeaconState state, UnsignedLong validatorIndex) {
-    return BeaconStateCache.getTransitionCaches(state)
-        .getValidatorsPubKeys()
-        .get(validatorIndex, i -> state.getValidators().get(i.intValue()).getPubkey());
+  public static Optional<BLSPublicKey> getValidatorPubKey(
+      BeaconState state, UnsignedLong validatorIndex) {
+    if (state.getValidators().size() <= validatorIndex.longValue()
+        || validatorIndex.longValue() < 0) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        BeaconStateCache.getTransitionCaches(state)
+            .getValidatorsPubKeys()
+            .get(validatorIndex, i -> state.getValidators().get(i.intValue()).getPubkey()));
   }
 
   /**
