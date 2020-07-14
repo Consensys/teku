@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.services.timer;
 
-import java.time.Instant;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;

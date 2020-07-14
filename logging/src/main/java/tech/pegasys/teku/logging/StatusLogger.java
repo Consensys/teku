@@ -107,13 +107,8 @@ public class StatusLogger {
 
   public void timeUntilGenesis(final long timeToGenesis) {
     log.info(
-            "{} until genesis time is reached",
-            () -> DurationFormatUtils.formatDurationWords(
-                    timeToGenesis * 1000,
-                    true,
-                    true
-            )
-    );
+        "{} until genesis time is reached",
+        () -> DurationFormatUtils.formatDurationWords(timeToGenesis * 1000, true, true));
   }
 
   public void loadingGenesisFile(final String genesisFile) {
