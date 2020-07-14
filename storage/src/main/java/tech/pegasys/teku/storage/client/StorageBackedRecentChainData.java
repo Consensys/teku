@@ -33,6 +33,7 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class StorageBackedRecentChainData extends RecentChainData {
   private final BlockProvider blockProvider;
+  private final StorageQueryChannel storageQueryChannel;
 
   public StorageBackedRecentChainData(
       final MetricsSystem metricsSystem,
@@ -50,6 +51,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
         finalizedCheckpointChannel,
         reorgEventChannel,
         eventBus);
+    this.storageQueryChannel = storageQueryChannel;
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
     eventBus.register(this);
   }
@@ -122,7 +124,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
   }
 
   private SafeFuture<Optional<StoreBuilder>> requestInitialStore() {
-    return storageUpdateChannel
+    return storageQueryChannel
         .onStoreRequest()
         .orTimeout(Constants.STORAGE_REQUEST_TIMEOUT, TimeUnit.SECONDS);
   }
