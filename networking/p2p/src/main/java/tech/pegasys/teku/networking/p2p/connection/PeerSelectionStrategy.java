@@ -22,7 +22,7 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 
 public interface PeerSelectionStrategy {
   List<PeerAddress> selectPeersToConnect(
-      P2PNetwork<?> network, PeerSources peerSources, Supplier<List<DiscoveryPeer>> candidates);
+      P2PNetwork<?> network, PeerPools peerPools, Supplier<List<DiscoveryPeer>> candidates);
 
-  List<Peer> selectPeersToDisconnect(P2PNetwork<?> network, PeerSources peerSources);
+  List<Peer> selectPeersToDisconnect(P2PNetwork<?> network, PeerPools peerPools);
 }

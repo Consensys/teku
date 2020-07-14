@@ -34,8 +34,8 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.network.p2p.peer.StubPeer;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy.Shuffler;
-import tech.pegasys.teku.networking.p2p.connection.PeerSources;
-import tech.pegasys.teku.networking.p2p.connection.PeerSources.PeerSource;
+import tech.pegasys.teku.networking.p2p.connection.PeerPools;
+import tech.pegasys.teku.networking.p2p.connection.PeerPools.PeerPool;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -59,7 +59,7 @@ class Eth2PeerSelectionStrategyTest {
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> network = mock(P2PNetwork.class);
 
-  private final PeerSources peerSources = new PeerSources();
+  private final PeerPools peerPools = new PeerPools();
   private final StubPeerScorer peerScorer = new StubPeerScorer();
   private final PeerSubnetSubscriptions peerSubnetSubscriptions =
       mock(PeerSubnetSubscriptions.class);
@@ -89,7 +89,7 @@ class Eth2PeerSelectionStrategyTest {
 
     assertThat(
             strategy.selectPeersToConnect(
-                network, peerSources, () -> List.of(DISCOVERY_PEER1, DISCOVERY_PEER2)))
+                network, peerPools, () -> List.of(DISCOVERY_PEER1, DISCOVERY_PEER2)))
         .containsExactly(PEER2);
   }
 
@@ -100,7 +100,7 @@ class Eth2PeerSelectionStrategyTest {
     assertThat(
             strategy.selectPeersToConnect(
                 network,
-                peerSources,
+                peerPools,
                 () -> List.of(DISCOVERY_PEER1, DISCOVERY_PEER2, DISCOVERY_PEER3)))
         .containsExactly(PEER1, PEER2);
   }
@@ -118,7 +118,7 @@ class Eth2PeerSelectionStrategyTest {
     assertThat(
             strategy.selectPeersToConnect(
                 network,
-                peerSources,
+                peerPools,
                 () -> List.of(DISCOVERY_PEER1, DISCOVERY_PEER2, DISCOVERY_PEER3)))
         .containsExactlyInAnyOrder(PEER2, PEER3);
   }
@@ -139,7 +139,7 @@ class Eth2PeerSelectionStrategyTest {
     assertThat(
             strategy.selectPeersToConnect(
                 network,
-                peerSources,
+                peerPools,
                 () -> List.of(discoveryPeer1, discoveryPeer2, discoveryPeer3, discoveryPeer4)))
         .containsExactlyInAnyOrder(PEER2, PEER4);
   }
@@ -153,7 +153,7 @@ class Eth2PeerSelectionStrategyTest {
     assertThat(
             strategy.selectPeersToConnect(
                 network,
-                peerSources,
+                peerPools,
                 () -> List.of(DISCOVERY_PEER1, DISCOVERY_PEER2, DISCOVERY_PEER3)))
         .containsExactly(PEER2);
   }
@@ -165,11 +165,11 @@ class Eth2PeerSelectionStrategyTest {
     assertThat(
             strategy.selectPeersToConnect(
                 network,
-                peerSources,
+                peerPools,
                 () -> List.of(DISCOVERY_PEER1, DISCOVERY_PEER2, DISCOVERY_PEER3)))
         .containsExactly(PEER3, PEER1);
-    assertThat(peerSources.getSource(PEER3.getId())).isEqualTo(PeerSource.RANDOMLY_SELECTED);
-    assertThat(peerSources.getSource(PEER1.getId())).isEqualTo(PeerSource.RANDOMLY_SELECTED);
+    assertThat(peerPools.getPool(PEER3.getId())).isEqualTo(PeerPool.RANDOMLY_SELECTED);
+    assertThat(peerPools.getPool(PEER1.getId())).isEqualTo(PeerPool.RANDOMLY_SELECTED);
   }
 
   @Test
@@ -179,13 +179,13 @@ class Eth2PeerSelectionStrategyTest {
     assertThat(
             strategy.selectPeersToConnect(
                 network,
-                peerSources,
+                peerPools,
                 () -> List.of(DISCOVERY_PEER1, DISCOVERY_PEER2, DISCOVERY_PEER3)))
         .containsExactly(PEER3, PEER1, PEER2);
 
-    assertThat(peerSources.getSource(PEER1.getId())).isEqualTo(PeerSource.RANDOMLY_SELECTED);
-    assertThat(peerSources.getSource(PEER2.getId())).isEqualTo(PeerSource.SELECTED_BY_SCORE);
-    assertThat(peerSources.getSource(PEER3.getId())).isEqualTo(PeerSource.RANDOMLY_SELECTED);
+    assertThat(peerPools.getPool(PEER1.getId())).isEqualTo(PeerPool.RANDOMLY_SELECTED);
+    assertThat(peerPools.getPool(PEER2.getId())).isEqualTo(PeerPool.SCORE_BASED);
+    assertThat(peerPools.getPool(PEER3.getId())).isEqualTo(PeerPool.RANDOMLY_SELECTED);
   }
 
   @Test
@@ -201,7 +201,7 @@ class Eth2PeerSelectionStrategyTest {
     when(network.getPeerCount()).thenReturn(3);
     when(network.streamPeers()).thenReturn(Stream.of(peer1, peer2, peer3));
 
-    assertThat(strategy.selectPeersToDisconnect(network, peerSources))
+    assertThat(strategy.selectPeersToDisconnect(network, peerPools))
         .containsExactlyInAnyOrder(peer1, peer3);
   }
 
@@ -214,8 +214,8 @@ class Eth2PeerSelectionStrategyTest {
     when(network.getPeerCount()).thenReturn(3);
     when(network.streamPeers()).thenReturn(Stream.of(peer1, peer2, peer3));
 
-    peerSources.recordPeerSource(peer2.getId(), PeerSource.STATIC_PEER);
-    assertThat(strategy.selectPeersToDisconnect(network, peerSources))
+    peerPools.addPeerToPool(peer2.getId(), PeerPool.STATIC);
+    assertThat(strategy.selectPeersToDisconnect(network, peerPools))
         .containsExactlyInAnyOrder(peer1, peer3);
   }
 
@@ -228,12 +228,12 @@ class Eth2PeerSelectionStrategyTest {
     when(network.getPeerCount()).thenReturn(3);
     when(network.streamPeers()).thenReturn(Stream.of(peer1, peer2, peer3));
 
-    peerSources.recordPeerSource(peer2.getId(), PeerSource.RANDOMLY_SELECTED);
+    peerPools.addPeerToPool(peer2.getId(), PeerPool.RANDOMLY_SELECTED);
     peerScorer.setScore(peer1.getId(), 100);
     peerScorer.setScore(peer2.getId(), 0);
     peerScorer.setScore(peer3.getId(), 50);
     // peer2 has the lowest score but is safe because it's in the randomly selected pool
-    assertThat(strategy.selectPeersToDisconnect(network, peerSources))
+    assertThat(strategy.selectPeersToDisconnect(network, peerPools))
         .containsExactlyInAnyOrder(peer3);
   }
 
@@ -246,8 +246,8 @@ class Eth2PeerSelectionStrategyTest {
     when(network.getPeerCount()).thenReturn(3);
     when(network.streamPeers()).thenReturn(Stream.of(peer1, peer2, peer3));
 
-    peerSources.recordPeerSource(peer1.getId(), PeerSource.RANDOMLY_SELECTED);
-    peerSources.recordPeerSource(peer2.getId(), PeerSource.RANDOMLY_SELECTED);
+    peerPools.addPeerToPool(peer1.getId(), PeerPool.RANDOMLY_SELECTED);
+    peerPools.addPeerToPool(peer2.getId(), PeerPool.RANDOMLY_SELECTED);
 
     peerScorer.setScore(peer1.getId(), 100);
     peerScorer.setScore(peer2.getId(), 200);
@@ -255,9 +255,9 @@ class Eth2PeerSelectionStrategyTest {
     withShuffleOrder(peer2, peer1, peer3);
 
     // Peer2 was dropped from the random pool but had a better score than peer3 so was kept
-    assertThat(strategy.selectPeersToDisconnect(network, peerSources))
+    assertThat(strategy.selectPeersToDisconnect(network, peerPools))
         .containsExactlyInAnyOrder(peer3);
-    assertThat(peerSources.getSource(peer2.getId())).isEqualTo(PeerSource.SELECTED_BY_SCORE);
+    assertThat(peerPools.getPool(peer2.getId())).isEqualTo(PeerPool.SCORE_BASED);
   }
 
   @Test
@@ -269,8 +269,8 @@ class Eth2PeerSelectionStrategyTest {
     when(network.getPeerCount()).thenReturn(3);
     when(network.streamPeers()).thenReturn(Stream.of(peer1, peer2, peer3));
 
-    peerSources.recordPeerSource(peer1.getId(), PeerSource.RANDOMLY_SELECTED);
-    peerSources.recordPeerSource(peer2.getId(), PeerSource.RANDOMLY_SELECTED);
+    peerPools.addPeerToPool(peer1.getId(), PeerPool.RANDOMLY_SELECTED);
+    peerPools.addPeerToPool(peer2.getId(), PeerPool.RANDOMLY_SELECTED);
 
     peerScorer.setScore(peer1.getId(), 100);
     peerScorer.setScore(peer2.getId(), 50);
@@ -278,7 +278,7 @@ class Eth2PeerSelectionStrategyTest {
     withShuffleOrder(peer2, peer1, peer3);
 
     // Peer2 was dropped from the random pool and had the worst score so got dropped
-    assertThat(strategy.selectPeersToDisconnect(network, peerSources))
+    assertThat(strategy.selectPeersToDisconnect(network, peerPools))
         .containsExactlyInAnyOrder(peer2);
   }
 

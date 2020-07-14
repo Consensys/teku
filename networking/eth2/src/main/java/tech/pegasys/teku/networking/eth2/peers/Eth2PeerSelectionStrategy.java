@@ -16,8 +16,8 @@ package tech.pegasys.teku.networking.eth2.peers;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.networking.p2p.connection.PeerSources.PeerSource.RANDOMLY_SELECTED;
-import static tech.pegasys.teku.networking.p2p.connection.PeerSources.PeerSource.SELECTED_BY_SCORE;
+import static tech.pegasys.teku.networking.p2p.connection.PeerPools.PeerPool.RANDOMLY_SELECTED;
+import static tech.pegasys.teku.networking.p2p.connection.PeerPools.PeerPool.SCORE_BASED;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -31,9 +31,9 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
+import tech.pegasys.teku.networking.p2p.connection.PeerPools;
+import tech.pegasys.teku.networking.p2p.connection.PeerPools.PeerPool;
 import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
-import tech.pegasys.teku.networking.p2p.connection.PeerSources;
-import tech.pegasys.teku.networking.p2p.connection.PeerSources.PeerSource;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -63,22 +63,22 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
   @Override
   public List<PeerAddress> selectPeersToConnect(
       final P2PNetwork<?> network,
-      final PeerSources peerSources,
+      final PeerPools peerPools,
       final Supplier<List<DiscoveryPeer>> candidates) {
     final PeerSubnetSubscriptions peerSubnetSubscriptions =
         peerSubnetSubscriptionsFactory.create(network);
     final int peersRequiredForPeerCount =
         targetPeerCountRange.getPeersToAdd(network.getPeerCount());
-    final int randomlySelectedPeerCount = getCurrentRandomlySelectedPeerCount(network, peerSources);
+    final int randomlySelectedPeerCount = getCurrentRandomlySelectedPeerCount(network, peerPools);
     final int randomlySelectedPeersToAdd =
         targetPeerCountRange.getRandomlySelectedPeersToAdd(randomlySelectedPeerCount);
 
     final int peersRequiredForSubnets = peerSubnetSubscriptions.getSubscribersRequired();
     final int scoreBasedPeersToAdd =
         Math.max(peersRequiredForPeerCount - randomlySelectedPeerCount, peersRequiredForSubnets);
-    LOG.trace(
-        "Connecting to up to {} known peers", scoreBasedPeersToAdd + randomlySelectedPeersToAdd);
-    if (scoreBasedPeersToAdd == 0 && randomlySelectedPeersToAdd == 0) {
+    final int maxPeersToAdd = scoreBasedPeersToAdd + randomlySelectedPeersToAdd;
+    LOG.trace("Connecting to up to {} known peers", maxPeersToAdd);
+    if (maxPeersToAdd == 0) {
       return emptyList();
     }
 
@@ -86,9 +86,13 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     final List<PeerAddress> selectedPeers = new ArrayList<>();
 
     if (randomlySelectedPeersToAdd > 0) {
-      selectedPeers.addAll(
-          selectAndRemoveRandomPeers(
-              network, peerSources, randomlySelectedPeersToAdd, allCandidatePeers));
+      final List<PeerAddress> randomlySelectedPeers =
+          selectRandomPeers(network, randomlySelectedPeersToAdd, allCandidatePeers);
+      randomlySelectedPeers.forEach(
+          peerAddress -> {
+            peerPools.addPeerToPool(peerAddress.getId(), RANDOMLY_SELECTED);
+            selectedPeers.add(peerAddress);
+          });
     }
 
     if (scoreBasedPeersToAdd > 0) {
@@ -99,23 +103,15 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     return unmodifiableList(selectedPeers); // Unmodifiable to make errorprone happy
   }
 
-  private List<PeerAddress> selectAndRemoveRandomPeers(
+  private List<PeerAddress> selectRandomPeers(
       final P2PNetwork<?> network,
-      final PeerSources peerSources,
       final int randomlySelectedPeersToAdd,
       final List<DiscoveryPeer> allCandidatePeers) {
-    final List<PeerAddress> selectedPeers = new ArrayList<>();
     shuffler.shuffle(allCandidatePeers);
-    while (!allCandidatePeers.isEmpty() && selectedPeers.size() < randomlySelectedPeersToAdd) {
-      final DiscoveryPeer candidate = allCandidatePeers.remove(0);
-      checkCandidate(candidate, network)
-          .ifPresent(
-              peerAddress -> {
-                peerSources.recordPeerSource(peerAddress.getId(), RANDOMLY_SELECTED);
-                selectedPeers.add(peerAddress);
-              });
-    }
-    return selectedPeers;
+    return allCandidatePeers.stream()
+        .flatMap(candidate -> checkCandidate(candidate, network).stream())
+        .limit(randomlySelectedPeersToAdd)
+        .collect(toList());
   }
 
   private List<PeerAddress> selectPeersByScore(
@@ -123,24 +119,22 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
       final PeerSubnetSubscriptions peerSubnetSubscriptions,
       final int scoreBasedPeersToAdd,
       final List<DiscoveryPeer> allCandidatePeers) {
-    final List<PeerAddress> selectedPeers = new ArrayList<>();
     final PeerScorer peerScorer = peerSubnetSubscriptions.createScorer();
-    allCandidatePeers.stream()
+    return allCandidatePeers.stream()
         .sorted(
             Comparator.comparing((Function<DiscoveryPeer, Integer>) peerScorer::scoreCandidatePeer)
                 .reversed())
         .flatMap(candidate -> checkCandidate(candidate, network).stream())
         .limit(scoreBasedPeersToAdd)
-        .forEach(selectedPeers::add);
-    return selectedPeers;
+        .collect(toList());
   }
 
   private int getCurrentRandomlySelectedPeerCount(
-      final P2PNetwork<?> network, final PeerSources peerSources) {
+      final P2PNetwork<?> network, final PeerPools peerPools) {
     return (int)
         network
             .streamPeers()
-            .filter(peer -> peerSources.getSource(peer.getId()) == RANDOMLY_SELECTED)
+            .filter(peer -> peerPools.getPool(peer.getId()) == RANDOMLY_SELECTED)
             .count();
   }
 
@@ -153,12 +147,12 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
 
   @Override
   public List<Peer> selectPeersToDisconnect(
-      final P2PNetwork<?> network, final PeerSources peerSources) {
+      final P2PNetwork<?> network, final PeerPools peerPools) {
 
-    final Map<PeerSource, List<Peer>> peersBySource =
+    final Map<PeerPool, List<Peer>> peersBySource =
         network
             .streamPeers()
-            .collect(Collectors.groupingBy(peer -> peerSources.getSource(peer.getId())));
+            .collect(Collectors.groupingBy(peer -> peerPools.getPool(peer.getId())));
 
     final List<Peer> randomlySelectedPeers =
         peersBySource.getOrDefault(RANDOMLY_SELECTED, new ArrayList<>());
@@ -177,12 +171,14 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     final List<Peer> randomlySelectedPeersBeingDropped =
         randomlySelectedPeers.subList(
             0, Math.min(randomlySelectedPeersToDrop, randomlySelectedPeers.size()));
-    // Peers from the randomly selected pool that have been chosen are now left to justify
-    // themselves based on their score alone.
-    randomlySelectedPeersBeingDropped.forEach(peer -> peerSources.forgetPeer(peer.getId()));
+    // Peers from the randomly selected pool that have been chosen are moved have their special
+    // randomly selected status revoked, leaving them in the default pool where they are considered
+    // for disconnection based on their score
+    randomlySelectedPeersBeingDropped.forEach(
+        peer -> peerPools.addPeerToPool(peer.getId(), SCORE_BASED));
     return Stream.concat(
             randomlySelectedPeersBeingDropped.stream(),
-            peersBySource.getOrDefault(SELECTED_BY_SCORE, emptyList()).stream())
+            peersBySource.getOrDefault(SCORE_BASED, emptyList()).stream())
         .sorted(Comparator.comparing(peerScorer::scoreExistingPeer))
         .limit(peersToDrop)
         .collect(toList());
