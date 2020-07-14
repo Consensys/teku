@@ -40,7 +40,7 @@ public class ProtoArrayTest {
     ProtoArrayChainBuilder forkA = builder;
     ProtoArrayChainBuilder forkB = builder.fork();
 
-    // Advance forks and check that longer chain is chosen as head
+    // Advance forks to different heights
     forkA.advanceToSlot(7);
     forkB.advanceToSlot(10);
 
@@ -71,7 +71,7 @@ public class ProtoArrayTest {
     ProtoArrayChainBuilder forkA = builder;
     ProtoArrayChainBuilder forkB = builder.fork();
 
-    // Advance forks and check that longer chain is chosen as head
+    // Advance forks to different heights
     forkA.advanceToSlot(7);
     forkB.advanceToSlot(10);
 
@@ -81,6 +81,7 @@ public class ProtoArrayTest {
         protoArray.getIndices().get(forkA.getBlockAtSlot(6).hash_tree_root());
     deltas.set(forkABlock6Index, 10L);
 
+    // We should choose the head from the shorter, weightier chain
     protoArray.applyScoreChanges(deltas, GENESIS_EPOCH, GENESIS_EPOCH);
     final BeaconBlock expectedHead = forkA.getBlockAtSlot(7);
     Bytes32 head = protoArray.findHead(genesisRoot);
@@ -99,11 +100,11 @@ public class ProtoArrayTest {
     ProtoArrayChainBuilder forkA = builder;
     ProtoArrayChainBuilder forkB = builder.fork();
 
-    // Advance forks
+    // Advance forks to different heights
     forkA.advanceToSlot(7);
     forkB.advanceToSlot(10);
 
-    // Use justified root that is incompatible with forkB
+    // Select a justified root that is incompatible with forkB
     final Bytes32 justifiedRoot = forkA.getBlockAtSlot(6).hash_tree_root();
 
     protoArray.applyScoreChanges(getEmptyScoreDeltas(protoArray), GENESIS_EPOCH, GENESIS_EPOCH);
