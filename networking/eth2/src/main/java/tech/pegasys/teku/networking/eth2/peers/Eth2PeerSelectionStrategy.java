@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.networking.p2p.connection.PeerSources.PeerSource.RANDOMLY_SELECTED;
 import static tech.pegasys.teku.networking.p2p.connection.PeerSources.PeerSource.SELECTED_BY_SCORE;
@@ -95,7 +96,7 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
           selectPeersByScore(
               network, peerSubnetSubscriptions, scoreBasedPeersToAdd, allCandidatePeers));
     }
-    return selectedPeers;
+    return unmodifiableList(selectedPeers); // Unmodifiable to make errorprone happy
   }
 
   private List<PeerAddress> selectAndRemoveRandomPeers(
