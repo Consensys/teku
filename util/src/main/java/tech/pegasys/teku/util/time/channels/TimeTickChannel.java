@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.util.time.channels;
 
-import java.time.Instant;
-
 public interface TimeTickChannel {
-  void onTick(Instant event);
+  void onTick();
 }
