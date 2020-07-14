@@ -15,8 +15,8 @@ package tech.pegasys.teku.core.fuzz;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.io.InputStream;
-import org.apache.commons.compress.utils.IOUtils;
+import com.google.common.io.Resources;
+import java.net.URL;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.BlockProcessorUtil;
@@ -44,9 +44,8 @@ public class FuzzRegressionTest {
   }
 
   private <T> T load(final String resource, final Class<T> type) throws Exception {
-    try (final InputStream in = FuzzRegressionTest.class.getResourceAsStream(resource)) {
-      final Bytes data = Bytes.wrap(IOUtils.toByteArray(in));
-      return SimpleOffsetSerializer.deserialize(data, type);
-    }
+    final URL resourceUrl = FuzzRegressionTest.class.getResource(resource);
+    final Bytes data = Bytes.wrap(Resources.toByteArray(resourceUrl));
+    return SimpleOffsetSerializer.deserialize(data, type);
   }
 }
