@@ -86,13 +86,9 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     final List<PeerAddress> selectedPeers = new ArrayList<>();
 
     if (randomlySelectedPeersToAdd > 0) {
-      final List<PeerAddress> randomlySelectedPeers =
-          selectRandomPeers(network, randomlySelectedPeersToAdd, allCandidatePeers);
-      randomlySelectedPeers.forEach(
-          peerAddress -> {
-            peerPools.addPeerToPool(peerAddress.getId(), RANDOMLY_SELECTED);
-            selectedPeers.add(peerAddress);
-          });
+      selectedPeers.addAll(
+          selectAndRemoveRandomPeers(
+              network, peerPools, randomlySelectedPeersToAdd, allCandidatePeers));
     }
 
     if (scoreBasedPeersToAdd > 0) {
@@ -103,15 +99,23 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     return unmodifiableList(selectedPeers); // Unmodifiable to make errorprone happy
   }
 
-  private List<PeerAddress> selectRandomPeers(
+  private List<PeerAddress> selectAndRemoveRandomPeers(
       final P2PNetwork<?> network,
+      final PeerPools peerPools,
       final int randomlySelectedPeersToAdd,
       final List<DiscoveryPeer> allCandidatePeers) {
+    final List<PeerAddress> selectedPeers = new ArrayList<>();
     shuffler.shuffle(allCandidatePeers);
-    return allCandidatePeers.stream()
-        .flatMap(candidate -> checkCandidate(candidate, network).stream())
-        .limit(randomlySelectedPeersToAdd)
-        .collect(toList());
+    while (!allCandidatePeers.isEmpty() && selectedPeers.size() < randomlySelectedPeersToAdd) {
+      final DiscoveryPeer candidate = allCandidatePeers.remove(0);
+      checkCandidate(candidate, network)
+          .ifPresent(
+              peerAddress -> {
+                peerPools.addPeerToPool(peerAddress.getId(), RANDOMLY_SELECTED);
+                selectedPeers.add(peerAddress);
+              });
+    }
+    return selectedPeers;
   }
 
   private List<PeerAddress> selectPeersByScore(
