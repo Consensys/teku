@@ -133,7 +133,7 @@ class StoreTest {
 
     final Checkpoint checkpoint = new Checkpoint(UnsignedLong.ONE, futureRoot);
     assertThatThrownBy(() -> store.getCheckpointState(checkpoint))
-        .isInstanceOf(InvalidCheckpointException.class);
+        .hasCauseInstanceOf(InvalidCheckpointException.class);
   }
 
   public void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction)
