@@ -19,6 +19,7 @@ import static tech.pegasys.teku.logging.LoggingConfigurator.STATUS_LOGGER_NAME;
 import java.nio.file.Path;
 import java.util.List;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -107,7 +108,7 @@ public class StatusLogger {
   public void timeUntilGenesis(final long timeToGenesis) {
     log.info(
         "{} until genesis time is reached",
-        () -> DateFormatUtils.format(timeToGenesis * 1000, "hh:mm:ss"));
+        () -> DurationFormatUtils.formatDurationWords(timeToGenesis * 1000, true, true));
   }
 
   public void loadingGenesisFile(final String genesisFile) {

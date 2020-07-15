@@ -151,7 +151,7 @@ class DiscoveryNetworkTest {
             Collections.emptyList(),
             false,
             Collections.emptyList(),
-            new TargetPeerRange(20, 30));
+            new TargetPeerRange(20, 30, 0));
     final DiscoveryNetwork<Peer> network =
         DiscoveryNetwork.create(
             new NoOpMetricsSystem(),

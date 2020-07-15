@@ -13,30 +13,13 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import tech.pegasys.teku.networking.eth2.gossip.AttestationSubnetScorer.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class TopicNames implements AttestationSubnetTopicProvider {
-
-  private final RecentChainData recentChainData;
-  private final GossipEncoding gossipEncoding;
-
-  public TopicNames(final RecentChainData recentChainData, final GossipEncoding gossipEncoding) {
-    this.recentChainData = recentChainData;
-    this.gossipEncoding = gossipEncoding;
-  }
-
-  @Override
-  public String getTopicForSubnet(final int subnetId) {
-    final Bytes4 forkDigest = recentChainData.getHeadForkInfo().orElseThrow().getForkDigest();
-    return getAttestationSubnetTopic(forkDigest, subnetId, gossipEncoding);
-  }
+public class TopicNames {
 
   public static String getTopic(
       final Bytes4 forkDigest, final String topicName, final GossipEncoding gossipEncoding) {
-
     return "/eth2/"
         + forkDigest.toUnprefixedHexString()
         + "/"

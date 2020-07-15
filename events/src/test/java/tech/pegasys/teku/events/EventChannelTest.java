@@ -153,6 +153,7 @@ class EventChannelTest {
     assertThat(toString).contains(DirectEventDeliverer.class.getName());
   }
 
+  @SuppressWarnings("EqualsWithItself")
   @Test
   public void publisherShouldNotBeEqualToAnything() {
     // Mostly we just want it to not throw exceptions when equals is called.
@@ -162,7 +163,8 @@ class EventChannelTest {
     assertThat(publisher).isNotEqualTo(null);
     assertThat(publisher)
         .isNotEqualTo(EventChannel.create(Runnable.class, metricsSystem).getPublisher());
-    assertThat(publisher).isNotEqualTo(publisher);
+    // Specifically call equals as .isEqualTo first checks reference equality
+    assertThat(publisher.equals(publisher)).isFalse();
   }
 
   @Test

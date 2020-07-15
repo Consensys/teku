@@ -30,7 +30,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.ArrayUtils;
 import picocli.CommandLine;
 import picocli.CommandLine.IDefaultValueProvider;
 import picocli.CommandLine.Model.ArgSpec;
@@ -76,25 +75,21 @@ public class YamlConfigFileDefaultProvider implements IDefaultValueProvider {
     } catch (final JsonParseException e) {
       throwParameterException(
           e,
-          "Unable to read yaml configuration. Invalid yaml file [%s]: %s",
-          configFile,
-          e.getMessage());
+          String.format(
+              "Unable to read yaml configuration. Invalid yaml file [%s]: %s",
+              configFile, e.getMessage()));
     } catch (final IOException e) {
       throwParameterException(
           e,
-          "Unexpected IO error while reading yaml configuration file [%s]: %s",
-          configFile,
-          e.getMessage());
+          String.format(
+              "Unexpected IO error while reading yaml configuration file [%s]: %s",
+              configFile, e.getMessage()));
     }
     return Collections.emptyMap(); // unreachable
   }
 
-  private void throwParameterException(
-      final Throwable cause, final String message, Object... messageArgs) {
-    throw new ParameterException(
-        commandLine,
-        ArrayUtils.isEmpty(messageArgs) ? message : String.format(message, messageArgs),
-        cause);
+  private void throwParameterException(final Throwable cause, final String message) {
+    throw new ParameterException(commandLine, message, cause);
   }
 
   private void checkUnknownOptions(final Map<String, Object> result) {

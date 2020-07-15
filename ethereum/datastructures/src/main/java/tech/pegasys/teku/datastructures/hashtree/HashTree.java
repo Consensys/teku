@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -191,7 +190,7 @@ public class HashTree {
 
       // Save child / parent mappings
       final Map<Bytes32, Set<Bytes32>> parentToChildLookup = new HashMap<>();
-      for (Entry<Bytes32, Bytes32> childToParent : childToParentMap.entrySet()) {
+      for (Map.Entry<Bytes32, Bytes32> childToParent : childToParentMap.entrySet()) {
         final Set<Bytes32> childSet =
             parentToChildLookup.computeIfAbsent(childToParent.getValue(), (key) -> new HashSet<>());
         childSet.add(childToParent.getKey());

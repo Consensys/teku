@@ -470,7 +470,6 @@ public class BeaconStateUtil {
    *
    * @param state
    * @param index
-   * @return
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#initiate_validator_exit</a>
    */
@@ -519,7 +518,6 @@ public class BeaconStateUtil {
    * @param state
    * @param slashed_index
    * @param whistleblower_index
-   * @return
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#slash_validator/a>
    */
