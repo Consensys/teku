@@ -121,8 +121,8 @@ public class LengthBoundCalculator {
     final long maxSize = reflectionInfo.getBitlistElementMaxSizes().get(variableFieldCount);
     fieldLengthBounds =
         new LengthBounds(
-            Bitlist.getSerializedSize(Math.toIntExact(0)),
-            Bitlist.getSerializedSize(Math.toIntExact(maxSize)));
+            Bitlist.sszSerializationLength(Math.toIntExact(0)),
+            Bitlist.sszSerializationLength(Math.toIntExact(maxSize)));
     return fieldLengthBounds;
   }
 
