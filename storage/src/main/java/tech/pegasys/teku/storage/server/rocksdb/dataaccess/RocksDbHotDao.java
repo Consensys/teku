@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.rocksdb.dataaccess;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -24,6 +25,7 @@ import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.storage.api.schema.SlotAndBlockRoot;
 
 /**
  * Provides an abstract "data access object" interface for working with hot data (non-finalized)
@@ -45,6 +47,10 @@ public interface RocksDbHotDao extends AutoCloseable {
   Optional<SignedBeaconBlock> getHotBlock(final Bytes32 root);
 
   Map<Bytes32, SignedBeaconBlock> getHotBlocks();
+
+  List<Bytes32> getStateRootsBeforeSlot(final UnsignedLong slot);
+
+  Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot);
 
   @MustBeClosed
   Stream<SignedBeaconBlock> streamHotBlocks();
@@ -70,6 +76,10 @@ public interface RocksDbHotDao extends AutoCloseable {
     void addVotes(final Map<UnsignedLong, VoteTracker> states);
 
     void addHotBlocks(final Map<Bytes32, SignedBeaconBlock> blocks);
+
+    void addHotStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot);
+
+    void pruneHotStateRoots(final List<Bytes32> stateRoots);
 
     void deleteHotBlock(final Bytes32 blockRoot);
 

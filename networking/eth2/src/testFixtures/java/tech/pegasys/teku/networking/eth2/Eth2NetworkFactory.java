@@ -25,6 +25,7 @@ import io.libp2p.core.crypto.KeyKt;
 import java.net.BindException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -193,7 +194,8 @@ public class Eth2NetworkFactory {
                     config.getTargetPeerRange(),
                     gossipNetwork ->
                         PeerSubnetSubscriptions.create(gossipNetwork, subnetTopicProvider),
-                    reputationManager),
+                    reputationManager,
+                    Collections::shuffle),
                 config);
 
         return new ActiveEth2Network(
@@ -229,7 +231,7 @@ public class Eth2NetworkFactory {
           peerAddresses,
           false,
           emptyList(),
-          new TargetPeerRange(20, 30),
+          new TargetPeerRange(20, 30, 0),
           GossipConfig.DEFAULT_CONFIG,
           new WireLogsConfig(false, false, true, false));
     }
