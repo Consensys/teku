@@ -62,19 +62,17 @@ public class LengthBoundCalculator {
         bitvectorCount++;
 
       } else if (isPrimitive(fieldType)) {
-        final int fixedLength = getPrimitiveLength(fieldType);
-        fieldLengthBounds = new LengthBounds(fixedLength, fixedLength);
+        fieldLengthBounds = new LengthBounds(getPrimitiveLength(fieldType));
 
       } else {
-        throw lengthNotImplemented(fieldType);
+        throw new IllegalArgumentException(
+            "Don't know how to calculate length for " + fieldType.getSimpleName());
       }
 
       if (isVariable(fieldType)) {
         variableFieldCount++;
         // The fixed parts includes an offset in place of the variable length value
-        lengthBounds =
-            lengthBounds.add(
-                BYTES_PER_LENGTH_OFFSET.intValue(), BYTES_PER_LENGTH_OFFSET.intValue());
+        lengthBounds = lengthBounds.add(new LengthBounds(BYTES_PER_LENGTH_OFFSET.longValue()));
       }
       lengthBounds = lengthBounds.add(fieldLengthBounds);
     }
@@ -134,11 +132,6 @@ public class LengthBoundCalculator {
       return new LengthBounds(primitiveLength, primitiveLength);
     }
     return calculateLengthBounds(listElementType);
-  }
-
-  private static RuntimeException lengthNotImplemented(final Class<?> fieldType) {
-    return new IllegalArgumentException(
-        "Don't know how to calculate length for " + fieldType.getSimpleName());
   }
 
   private static int getPrimitiveLength(final Class<?> classInfo) {

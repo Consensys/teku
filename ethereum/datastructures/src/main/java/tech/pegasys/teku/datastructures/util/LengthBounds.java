@@ -21,6 +21,10 @@ public class LengthBounds {
   private final long min;
   private final long max;
 
+  public LengthBounds(final long fixedSize) {
+    this(fixedSize, fixedSize);
+  }
+
   public LengthBounds(final long min, final long max) {
     this.min = min;
     this.max = max;
@@ -35,11 +39,7 @@ public class LengthBounds {
   }
 
   public LengthBounds add(final LengthBounds other) {
-    return add(other.min, other.max);
-  }
-
-  public LengthBounds add(final long min, final long max) {
-    return new LengthBounds(this.min + min, this.max + max);
+    return new LengthBounds(this.min + other.min, this.max + other.max);
   }
 
   @Override
