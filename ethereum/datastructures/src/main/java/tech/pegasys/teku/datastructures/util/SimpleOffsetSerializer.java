@@ -349,6 +349,8 @@ public class SimpleOffsetSerializer {
       throws InstantiationException, InvocationTargetException, IllegalAccessException {
 
     int variableObjectCounter = 0;
+    int bitlistCounter = 0;
+    int sszListCounter = 0;
     for (Integer variableFieldIndex : variableFieldIndices) {
       Class fieldClass = reflectionInformation.getFields()[variableFieldIndex].getType();
 
@@ -358,10 +360,9 @@ public class SimpleOffsetSerializer {
               : currentObjectStartByte + offsets.get(variableObjectCounter + 1);
       Object fieldObject = null;
       if (fieldClass == SSZList.class) {
-        Class listElementType =
-            reflectionInformation.getListElementTypes().get(variableObjectCounter);
+        Class listElementType = reflectionInformation.getListElementTypes().get(sszListCounter);
         Long listElementMaxSize =
-            reflectionInformation.getListElementMaxSizes().get(variableObjectCounter);
+            reflectionInformation.getListElementMaxSizes().get(sszListCounter);
         SSZMutableList newSSZList = SSZList.createMutable(listElementType, listElementMaxSize);
         if (!isVariable(listElementType)) {
           // If SSZList element is fixed size
@@ -373,15 +374,13 @@ public class SimpleOffsetSerializer {
           deserializeVariableElementList(
               reader, bytesPointer, listElementType, currentObjectEndByte, newSSZList);
         }
+        sszListCounter++;
         fieldObject = newSSZList;
       } else if (fieldClass == Bitlist.class) {
         fieldObject =
             deserializeBitlist(
-                reflectionInformation,
-                reader,
-                bytesPointer,
-                variableObjectCounter,
-                currentObjectEndByte);
+                reflectionInformation, reader, bytesPointer, bitlistCounter, currentObjectEndByte);
+        bitlistCounter++;
 
       } else if (isContainer(fieldClass)) {
         fieldObject = deserializeContainer(fieldClass, reader, bytesPointer, currentObjectEndByte);

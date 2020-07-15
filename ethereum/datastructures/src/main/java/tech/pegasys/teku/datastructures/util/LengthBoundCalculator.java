@@ -38,7 +38,8 @@ public class LengthBoundCalculator {
   static <T> LengthBounds calculateLengthBounds(final Class<T> type) {
     final ReflectionInformation reflectionInfo = getRequiredReflectionInfo(type);
     LengthBounds lengthBounds = LengthBounds.ZERO;
-    int variableFieldCount = 0;
+    int sszListCount = 0;
+    int bitlistCount = 0;
     int vectorCount = 0;
     int bitvectorCount = 0;
     for (Field field : reflectionInfo.getFields()) {
@@ -48,10 +49,12 @@ public class LengthBoundCalculator {
         fieldLengthBounds = calculateLengthBounds(fieldType);
 
       } else if (fieldType == Bitlist.class) {
-        fieldLengthBounds = calculateBitlistLength(reflectionInfo, variableFieldCount);
+        fieldLengthBounds = calculateBitlistLength(reflectionInfo, bitlistCount);
+        bitlistCount++;
 
       } else if (fieldType == SSZList.class) {
-        fieldLengthBounds = calculateSszListLength(reflectionInfo, variableFieldCount);
+        fieldLengthBounds = calculateSszListLength(reflectionInfo, sszListCount);
+        sszListCount++;
 
       } else if (isVector(fieldType)) {
         fieldLengthBounds = calculateSszVectorLength(reflectionInfo, vectorCount);
@@ -70,7 +73,6 @@ public class LengthBoundCalculator {
       }
 
       if (isVariable(fieldType)) {
-        variableFieldCount++;
         // The fixed parts includes an offset in place of the variable length value
         lengthBounds = lengthBounds.add(new LengthBounds(BYTES_PER_LENGTH_OFFSET.longValue()));
       }
@@ -151,7 +153,8 @@ public class LengthBoundCalculator {
       case "boolean":
         return BOOLEAN_SIZE;
       default:
-        throw new IllegalArgumentException("Unable to deserialize " + classInfo.getSimpleName());
+        throw new IllegalArgumentException(
+            "Unknown length for primitive " + classInfo.getSimpleName());
     }
   }
 }
