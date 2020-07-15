@@ -19,6 +19,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
 import io.libp2p.core.P2PChannel;
+import io.libp2p.core.Stream;
 import io.libp2p.core.StreamPromise;
 import io.libp2p.core.multistream.Multistream;
 import io.libp2p.core.multistream.ProtocolBinding;
@@ -88,7 +89,11 @@ public class RpcHandler implements ProtocolBinding<Controller> {
                     .thenWaitFor(rpcStream -> rpcStream.writeBytes(initialPayload))
                     .orInterrupt(closeInterruptor, timeoutInterruptor)
                     // closing the stream in case of any errors or interruption
-                    .whenException(err -> streamPromise.getStream().join().close()));
+                    .whenException(err -> closeStreamAbruptly(streamPromise.getStream().join())));
+  }
+
+  private void closeStreamAbruptly(Stream stream) {
+    SafeFuture.of(stream.close()).reportExceptions();
   }
 
   @NotNull
