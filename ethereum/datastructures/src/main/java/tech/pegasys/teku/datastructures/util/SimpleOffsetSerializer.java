@@ -14,6 +14,7 @@
 package tech.pegasys.teku.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.util.config.Constants.BYTES_PER_LENGTH_OFFSET;
 
 import com.google.common.primitives.UnsignedLong;
@@ -79,7 +80,10 @@ import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class SimpleOffsetSerializer {
 
+  private static final int UNSIGNED_LONG_SIZE = 8;
+  private static final int BOOLEAN_SIZE = 1;
   public static HashMap<Class, ReflectionInformation> classReflectionInfo = new HashMap<>();
+  public static HashMap<Class, LengthBounds> classLengthBounds = new HashMap<>();
 
   public static void setConstants() {
     List<Class> classes =
@@ -120,6 +124,10 @@ public class SimpleOffsetSerializer {
 
     for (Class classItem : classes) {
       classReflectionInfo.put(classItem, new ReflectionInformation(classItem));
+    }
+
+    for (Class classItem : classes) {
+      classLengthBounds.put(classItem, calculateLengthBounds(classItem));
     }
   }
 
@@ -218,6 +226,116 @@ public class SimpleOffsetSerializer {
             return result;
           });
     }
+  }
+
+  public static <T> LengthBounds getLengthBounds(final Class<T> type) {
+    return checkNotNull(classLengthBounds.get(type), "Length bounds unknown for type %s", type);
+  }
+
+  private static <T> LengthBounds calculateLengthBounds(final Class<T> type) {
+    final ReflectionInformation reflectionInfo = getRequiredReflectionInfo(type);
+    LengthBounds lengthBounds = LengthBounds.ZERO;
+    int variableFieldCount = 0;
+    int vectorCount = 0;
+    int bitvectorCount = 0;
+    for (Field field : reflectionInfo.getFields()) {
+      final Class<?> fieldType = field.getType();
+      final LengthBounds fieldLengthBounds;
+      if (getOptionalReflectionInfo(fieldType).isPresent()) {
+        fieldLengthBounds = calculateLengthBounds(fieldType);
+
+      } else if (fieldType == Bitlist.class) {
+        fieldLengthBounds = calculateBitlistLength(reflectionInfo, variableFieldCount);
+
+      } else if (fieldType == SSZList.class) {
+        fieldLengthBounds = calculateSszListLength(reflectionInfo, variableFieldCount);
+
+      } else if (fieldType == SSZVector.class) {
+        fieldLengthBounds = calculateSszVectorLength(reflectionInfo, vectorCount);
+        vectorCount++;
+
+      } else if (fieldType == Bitvector.class) {
+        fieldLengthBounds = calculateBitvectorLength(reflectionInfo, bitvectorCount);
+        bitvectorCount++;
+
+      } else if (isPrimitive(fieldType)) {
+        final int fixedLength = getPrimitiveLength(fieldType);
+        fieldLengthBounds = new LengthBounds(fixedLength, fixedLength);
+
+      } else {
+        throw lengthNotImplemented(fieldType);
+      }
+
+      if (isVariable(fieldType)) {
+        variableFieldCount++;
+        // The fixed parts includes an offset in place of the variable length value
+        lengthBounds =
+            lengthBounds.add(
+                BYTES_PER_LENGTH_OFFSET.intValue(), BYTES_PER_LENGTH_OFFSET.intValue());
+      }
+      lengthBounds = lengthBounds.add(fieldLengthBounds);
+    }
+    return lengthBounds;
+  }
+
+  private static LengthBounds calculateBitvectorLength(
+      final ReflectionInformation reflectionInfo, final int bitvectorCount) {
+    final LengthBounds fieldLengthBounds;
+    final Integer size = reflectionInfo.getBitvectorSizes().get(bitvectorCount);
+    final int serializationLength = Bitvector.sszSerializationLength(size);
+    fieldLengthBounds = new LengthBounds(serializationLength, serializationLength);
+    return fieldLengthBounds;
+  }
+
+  private static LengthBounds calculateSszVectorLength(
+      final ReflectionInformation reflectionInfo, final int vectorCount) {
+    final LengthBounds fieldLengthBounds;
+    final Class elementType = reflectionInfo.getVectorElementTypes().get(vectorCount);
+    final int vectorLength = reflectionInfo.getVectorLengths().get(vectorCount);
+    final LengthBounds elementLengthBounds = getElementLengthBounds(elementType);
+    fieldLengthBounds =
+        new LengthBounds(
+            vectorLength * elementLengthBounds.getMin(),
+            vectorLength * elementLengthBounds.getMax());
+    return fieldLengthBounds;
+  }
+
+  private static LengthBounds calculateSszListLength(
+      final ReflectionInformation reflectionInfo, final int variableFieldCount) {
+    final LengthBounds fieldLengthBounds;
+    final Class listElementType = reflectionInfo.getListElementTypes().get(variableFieldCount);
+    final long listElementMaxSize = reflectionInfo.getListElementMaxSizes().get(variableFieldCount);
+    final LengthBounds elementLengthBounds = getElementLengthBounds(listElementType);
+    final long variableFieldOffsetsLength =
+        isVariable(listElementType) ? BYTES_PER_LENGTH_OFFSET.intValue() * listElementMaxSize : 0;
+    fieldLengthBounds =
+        new LengthBounds(
+            0, elementLengthBounds.getMax() * listElementMaxSize + variableFieldOffsetsLength);
+    return fieldLengthBounds;
+  }
+
+  private static LengthBounds calculateBitlistLength(
+      final ReflectionInformation reflectionInfo, final int variableFieldCount) {
+    final LengthBounds fieldLengthBounds;
+    final long maxSize = reflectionInfo.getBitlistElementMaxSizes().get(variableFieldCount);
+    fieldLengthBounds =
+        new LengthBounds(
+            Bitlist.getSerializedSize(Math.toIntExact(0)),
+            Bitlist.getSerializedSize(Math.toIntExact(maxSize)));
+    return fieldLengthBounds;
+  }
+
+  private static LengthBounds getElementLengthBounds(final Class<?> listElementType) {
+    if (isPrimitive(listElementType)) {
+      final int primitiveLength = getPrimitiveLength(listElementType);
+      return new LengthBounds(primitiveLength, primitiveLength);
+    }
+    return calculateLengthBounds(listElementType);
+  }
+
+  private static RuntimeException lengthNotImplemented(final Class<?> fieldType) {
+    return new IllegalArgumentException(
+        "Don't know how to calculate length for " + fieldType.getSimpleName());
   }
 
   private static void assertAllDataRead(SSZReader reader) {
@@ -478,25 +596,46 @@ public class SimpleOffsetSerializer {
       Class classInfo, SSZReader reader, MutableInt bytePointer) {
     switch (classInfo.getSimpleName()) {
       case "UnsignedLong":
-        bytePointer.add(8);
+        bytePointer.add(UNSIGNED_LONG_SIZE);
         return UnsignedLong.fromLongBits(reader.readUInt64());
       case "ArrayWrappingBytes32":
       case "Bytes32":
-        bytePointer.add(32);
-        return Bytes32.wrap(reader.readFixedBytes(32));
+        bytePointer.add(Bytes32.SIZE);
+        return Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
       case "Bytes4":
-        bytePointer.add(4);
-        return new Bytes4(reader.readFixedBytes(4));
+        bytePointer.add(Bytes4.SIZE);
+        return new Bytes4(reader.readFixedBytes(Bytes4.SIZE));
       case "BLSSignature":
-        bytePointer.add(96);
-        return BLSSignature.fromBytes(reader.readFixedBytes(96));
+        bytePointer.add(BLSSignature.BLS_SIGNATURE_SIZE);
+        return BLSSignature.fromBytes(reader.readFixedBytes(BLSSignature.BLS_SIGNATURE_SIZE));
       case "BLSPublicKey":
-        bytePointer.add(48);
-        return BLSPublicKey.fromBytes(reader.readFixedBytes(48));
+        bytePointer.add(BLSPublicKey.BLS_PUBKEY_SIZE);
+        return BLSPublicKey.fromBytes(reader.readFixedBytes(BLSPublicKey.BLS_PUBKEY_SIZE));
       case "Boolean":
       case "boolean":
-        bytePointer.add(1);
+        bytePointer.add(BOOLEAN_SIZE);
         return reader.readBoolean();
+      default:
+        throw new IllegalArgumentException("Unable to deserialize " + classInfo.getSimpleName());
+    }
+  }
+
+  private static int getPrimitiveLength(Class classInfo) {
+    switch (classInfo.getSimpleName()) {
+      case "UnsignedLong":
+        return UNSIGNED_LONG_SIZE;
+      case "ArrayWrappingBytes32":
+      case "Bytes32":
+        return Bytes32.SIZE;
+      case "Bytes4":
+        return Bytes4.SIZE;
+      case "BLSSignature":
+        return BLSSignature.BLS_SIGNATURE_SIZE;
+      case "BLSPublicKey":
+        return BLSPublicKey.BLS_PUBKEY_SIZE;
+      case "Boolean":
+      case "boolean":
+        return BOOLEAN_SIZE;
       default:
         throw new IllegalArgumentException("Unable to deserialize " + classInfo.getSimpleName());
     }
