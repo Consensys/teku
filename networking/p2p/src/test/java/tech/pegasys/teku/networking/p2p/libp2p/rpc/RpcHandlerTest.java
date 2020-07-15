@@ -105,6 +105,7 @@ public class RpcHandlerTest {
 
     verify(connection).muxerSession();
     verify(controller, never()).getRpcStream();
+    verify(stream).close();
 
     assertThatThrownBy(future::get).hasRootCauseInstanceOf(PeerDisconnectedException.class);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
@@ -122,6 +123,7 @@ public class RpcHandlerTest {
     verify(connection).muxerSession();
     verify(controller).getRpcStream();
     verify(rpcStream).writeBytes(any());
+    verify(stream).close();
 
     assertThatThrownBy(future::get).hasRootCauseInstanceOf(PeerDisconnectedException.class);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
@@ -152,5 +154,6 @@ public class RpcHandlerTest {
 
     assertThatThrownBy(future::get).hasRootCauseInstanceOf(StreamTimeoutException.class);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
+    verify(stream).close();
   }
 }
