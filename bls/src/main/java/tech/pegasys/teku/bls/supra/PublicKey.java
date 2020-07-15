@@ -2,8 +2,10 @@ package tech.pegasys.teku.bls.supra;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.supra.swig.blst;
+import tech.pegasys.teku.bls.supra.swig.p1;
 import tech.pegasys.teku.bls.supra.swig.p1_affine;
 
 public class PublicKey {
@@ -18,6 +20,21 @@ public class PublicKey {
     p1_affine ecPoint = new p1_affine();
     blst.p1_uncompress(ecPoint, compressed.toArrayUnsafe());
     return new PublicKey(ecPoint);
+  }
+
+  public static PublicKey aggregate(List<PublicKey> publicKeys) {
+    checkArgument(publicKeys.size() > 0);
+
+    p1 sum = new p1();
+    blst.p1_from_affine(sum, publicKeys.get(0).ecPoint);
+    for (int i = 1; i < publicKeys.size(); i++) {
+      blst.p1_add_affine(sum, sum, publicKeys.get(i).ecPoint);
+    }
+    p1_affine res = new p1_affine();
+    blst.p1_to_affine(res, sum);
+    sum.delete();
+
+    return new PublicKey(res);
   }
 
   public final p1_affine ecPoint;

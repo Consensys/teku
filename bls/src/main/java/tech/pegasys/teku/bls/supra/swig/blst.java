@@ -241,16 +241,16 @@ public class blst {
     return BLST_ERROR.swigToEnum(blstJNI.pairing_aggregate_pk_in_g2(pairing.getCPtr(ctx), ctx, p2_affine.getCPtr(PK), PK, p1_affine.getCPtr(signature), signature, hash_or_encode, msg, DST, aug));
   }
 
-  public static BLST_ERROR pairing_mul_n_aggregate_pk_in_g2(pairing ctx, p2_affine PK, p1_affine sig, p1_affine hash, SWIGTYPE_p_unsigned_long_long scalar, long nbits) {
-    return BLST_ERROR.swigToEnum(blstJNI.pairing_mul_n_aggregate_pk_in_g2(pairing.getCPtr(ctx), ctx, p2_affine.getCPtr(PK), PK, p1_affine.getCPtr(sig), sig, p1_affine.getCPtr(hash), hash, SWIGTYPE_p_unsigned_long_long.getCPtr(scalar), nbits));
+  public static BLST_ERROR pairing_mul_n_aggregate_pk_in_g2(pairing ctx, p2_affine PK, p1_affine sig, p1_affine hash, java.math.BigInteger scalar, long nbits) {
+    return BLST_ERROR.swigToEnum(blstJNI.pairing_mul_n_aggregate_pk_in_g2(pairing.getCPtr(ctx), ctx, p2_affine.getCPtr(PK), PK, p1_affine.getCPtr(sig), sig, p1_affine.getCPtr(hash), hash, scalar, nbits));
   }
 
   public static BLST_ERROR pairing_aggregate_pk_in_g1(pairing ctx, p1_affine PK, p2_affine signature, int hash_or_encode, byte[] msg, byte[] DST, byte[] aug) {
     return BLST_ERROR.swigToEnum(blstJNI.pairing_aggregate_pk_in_g1(pairing.getCPtr(ctx), ctx, p1_affine.getCPtr(PK), PK, p2_affine.getCPtr(signature), signature, hash_or_encode, msg, DST, aug));
   }
 
-  public static BLST_ERROR pairing_mul_n_aggregate_pk_in_g1(pairing ctx, p1_affine PK, p2_affine sig, p2_affine hash, SWIGTYPE_p_unsigned_long_long scalar, long nbits) {
-    return BLST_ERROR.swigToEnum(blstJNI.pairing_mul_n_aggregate_pk_in_g1(pairing.getCPtr(ctx), ctx, p1_affine.getCPtr(PK), PK, p2_affine.getCPtr(sig), sig, p2_affine.getCPtr(hash), hash, SWIGTYPE_p_unsigned_long_long.getCPtr(scalar), nbits));
+  public static BLST_ERROR pairing_mul_n_aggregate_pk_in_g1(pairing ctx, p1_affine PK, p2_affine sig, p2_affine hash, java.math.BigInteger scalar, long nbits) {
+    return BLST_ERROR.swigToEnum(blstJNI.pairing_mul_n_aggregate_pk_in_g1(pairing.getCPtr(ctx), ctx, p1_affine.getCPtr(PK), PK, p2_affine.getCPtr(sig), sig, p2_affine.getCPtr(hash), hash, scalar, nbits));
   }
 
   public static BLST_ERROR pairing_merge(pairing ctx, pairing ctx1) {

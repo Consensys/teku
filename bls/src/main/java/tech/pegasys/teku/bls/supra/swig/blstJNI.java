@@ -122,9 +122,9 @@ public class blstJNI {
   public final static native void pairing_init(long jarg1, pairing jarg1_);
   public final static native void pairing_commit(long jarg1, pairing jarg1_);
   public final static native int pairing_aggregate_pk_in_g2(long jarg1, pairing jarg1_, long jarg2, p2_affine jarg2_, long jarg3, p1_affine jarg3_, int jarg4, byte[] jarg5, byte[] jarg7, byte[] jarg9);
-  public final static native int pairing_mul_n_aggregate_pk_in_g2(long jarg1, pairing jarg1_, long jarg2, p2_affine jarg2_, long jarg3, p1_affine jarg3_, long jarg4, p1_affine jarg4_, long jarg5, long jarg6);
+  public final static native int pairing_mul_n_aggregate_pk_in_g2(long jarg1, pairing jarg1_, long jarg2, p2_affine jarg2_, long jarg3, p1_affine jarg3_, long jarg4, p1_affine jarg4_, java.math.BigInteger jarg5, long jarg6);
   public final static native int pairing_aggregate_pk_in_g1(long jarg1, pairing jarg1_, long jarg2, p1_affine jarg2_, long jarg3, p2_affine jarg3_, int jarg4, byte[] jarg5, byte[] jarg7, byte[] jarg9);
-  public final static native int pairing_mul_n_aggregate_pk_in_g1(long jarg1, pairing jarg1_, long jarg2, p1_affine jarg2_, long jarg3, p2_affine jarg3_, long jarg4, p2_affine jarg4_, long jarg5, long jarg6);
+  public final static native int pairing_mul_n_aggregate_pk_in_g1(long jarg1, pairing jarg1_, long jarg2, p1_affine jarg2_, long jarg3, p2_affine jarg3_, long jarg4, p2_affine jarg4_, java.math.BigInteger jarg5, long jarg6);
   public final static native int pairing_merge(long jarg1, pairing jarg1_, long jarg2, pairing jarg2_);
   public final static native int pairing_finalverify(long jarg1, pairing jarg1_, long jarg2, fp12 jarg2_);
   public final static native int aggregate_in_g1(long jarg1, p1 jarg1_, long jarg2, p1 jarg2_, long jarg3);

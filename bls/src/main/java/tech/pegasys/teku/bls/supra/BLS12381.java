@@ -1,21 +1,31 @@
 package tech.pegasys.teku.bls.supra;
 
+import java.math.BigInteger;
 import java.util.List;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.mikuli.G2Point;
-import tech.pegasys.teku.bls.mikuli.GTPoint;
 import tech.pegasys.teku.bls.supra.swig.BLST_ERROR;
 import tech.pegasys.teku.bls.supra.swig.blst;
 import tech.pegasys.teku.bls.supra.swig.p2;
 import tech.pegasys.teku.bls.supra.swig.p2_affine;
+import tech.pegasys.teku.bls.supra.swig.pairing;
 
 public class BLS12381 {
 
   private static String G1GeneratorCompressed =
       "0x97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb";
 
-  static {
+  private static final int BATCH_RANDOM_BYTES = 8;
 
+  private static Random getRND() {
+    // Milagro RAND has some issues with generating 'small' random numbers
+    // and is not thread safe
+    // Using non-secure random due to the JDK Linux secure random issue:
+    // https://bugs.java.com/bugdatabase/view_bug.do?bug_id=6521844
+    // A potential attack here has a very limited application and is not feasible
+    // Thus using non-secure random doesn't significantly mitigate the security
+    return ThreadLocalRandom.current();
   }
 
   public static Signature sign(SecretKey secretKey, Bytes message) {
@@ -53,25 +63,58 @@ public class BLS12381 {
   }
 
   public static BatchSemiAggregate prepareBatchVerify(
-      int index, List<tech.pegasys.teku.bls.mikuli.PublicKey> publicKeys, Bytes message, tech.pegasys.teku.bls.mikuli.Signature signature) {
-    return null;
+      int index, List<PublicKey> publicKeys, Bytes message, Signature signature) {
+
+    PublicKey aggrPubKey = PublicKey.aggregate(publicKeys);
+    p2 p2 = HashToCurve.hashToG2(message);
+    p2_affine p2Affine = new p2_affine();
+    blst.p2_to_affine(p2Affine, p2);
+
+    pairing ctx = new pairing();
+    blst.pairing_init(ctx);
+    BLST_ERROR ret = blst.pairing_mul_n_aggregate_pk_in_g1(
+        ctx,
+        aggrPubKey.ecPoint,
+        signature.ec2Point,
+        p2Affine,
+        nextBatchRandomMultiplier(),
+        BATCH_RANDOM_BYTES * 8);
+
+    if (ret != BLST_ERROR.BLST_SUCCESS) throw new IllegalArgumentException("Error: " + ret);
+    blst.pairing_commit(ctx);
+
+    return new BatchSemiAggregate(ctx);
   }
 
+  public static boolean completeBatchVerify(List<BatchSemiAggregate> preparedList) {
+    if (preparedList.isEmpty()) {
+      return true;
+    }
+    pairing ctx0 = preparedList.get(0).getCtx();
+    for (int i = 1; i < preparedList.size(); i++) {
+      blst.pairing_merge(ctx0, preparedList.get(i).getCtx());
+    }
+
+    int boolRes = blst.pairing_finalverify(ctx0, null);
+    return boolRes != 0;
+  }
+
+    private static BigInteger nextBatchRandomMultiplier() {
+    byte[] scalarBytes = new byte[BATCH_RANDOM_BYTES];
+    getRND().nextBytes(scalarBytes);
+    return new BigInteger(1, scalarBytes);
+  }
+
+
   public static final class BatchSemiAggregate {
-    private final G2Point sigPoint;
-    private final GTPoint msgPubKeyPairing;
+    private final pairing ctx;
 
-    private BatchSemiAggregate(G2Point sigPoint, GTPoint msgPubKeyPairing) {
-      this.sigPoint = sigPoint;
-      this.msgPubKeyPairing = msgPubKeyPairing;
+    private BatchSemiAggregate(pairing ctx) {
+      this.ctx = ctx;
     }
 
-    private G2Point getSigPoint() {
-      return sigPoint;
-    }
-
-    private GTPoint getMsgPubKeyPairing() {
-      return msgPubKeyPairing;
+    private pairing getCtx() {
+      return ctx;
     }
   }
 }

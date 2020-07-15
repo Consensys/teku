@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -15,6 +16,7 @@ import tech.pegasys.teku.bls.mikuli.BLS12381;
 import tech.pegasys.teku.bls.mikuli.G2Point;
 import tech.pegasys.teku.bls.mikuli.KeyPair;
 import tech.pegasys.teku.bls.mikuli.Signature;
+import tech.pegasys.teku.bls.supra.BLS12381.BatchSemiAggregate;
 import tech.pegasys.teku.bls.supra.swig.BLST_ERROR;
 import tech.pegasys.teku.bls.supra.swig.blst;
 import tech.pegasys.teku.bls.supra.swig.p1_affine;
@@ -153,6 +155,24 @@ public class BlstTest {
     PublicKey blstPK = PublicKey.fromBytes(keyPair.publicKey().toBytesCompressed());
     assertThat(blstPK.toBytes()).isEqualTo(keyPair.publicKey().toBytesCompressed());
     boolean blstRes = tech.pegasys.teku.bls.supra.BLS12381.verify(blstPK, msg, blstSignature);
+    assertThat(blstRes).isTrue();
+  }
+
+  @Test
+  void testBatchVerify() {
+    Bytes msg = Bytes32.ZERO; //.fromHexString("123456");
+    KeyPair keyPair = KeyPair.random(1);
+
+    PublicKey blstPK = PublicKey.fromBytes(keyPair.publicKey().toBytesCompressed());
+    SecretKey blstSK = SecretKey.fromBytes(keyPair.secretKey().toBytes().slice(48 - 32));
+
+    tech.pegasys.teku.bls.supra.Signature blstSignature = tech.pegasys.teku.bls.supra.BLS12381
+        .sign(blstSK, msg);
+
+    BatchSemiAggregate semiAggregate = tech.pegasys.teku.bls.supra.BLS12381
+        .prepareBatchVerify(0, List.of(blstPK), msg, blstSignature);
+
+    boolean blstRes = tech.pegasys.teku.bls.supra.BLS12381.completeBatchVerify(List.of(semiAggregate));
     assertThat(blstRes).isTrue();
   }
 
