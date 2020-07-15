@@ -62,11 +62,6 @@ import tech.pegasys.teku.util.collections.LimitedMap;
 class Store implements UpdatableStore {
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final SafeFuture<Optional<SignedBeaconBlock>> EMPTY_BLOCK_FUTURE =
-      SafeFuture.completedFuture(Optional.empty());
-  private static final SafeFuture<Optional<SignedBlockAndState>> EMPTY_BLOCK_AND_STATE_FUTURE =
-      SafeFuture.completedFuture(Optional.empty());
-
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock readLock = lock.readLock();
   private final Counter stateRequestCachedCounter;
@@ -381,7 +376,7 @@ class Store implements UpdatableStore {
   @Override
   public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(final Bytes32 blockRoot) {
     if (!containsBlock(blockRoot)) {
-      return EMPTY_BLOCK_FUTURE;
+      return EmptyStoreResults.EMPTY_BLOCK_FUTURE;
     }
     final Optional<SignedBeaconBlock> inMemoryBlock = getBlockIfAvailable(blockRoot);
     if (inMemoryBlock.isPresent()) {
@@ -484,7 +479,7 @@ class Store implements UpdatableStore {
       final Bytes32 blockRoot, final Consumer<SignedBlockAndState> cacheHandler) {
     if (!containsBlock(blockRoot)) {
       // If we don't have the corresponding block, we can't possibly regenerate the state
-      return EMPTY_BLOCK_AND_STATE_FUTURE;
+      return EmptyStoreResults.EMPTY_BLOCK_AND_STATE_FUTURE;
     }
 
     // Accumulate blocks hashes until we find our base state to build from
@@ -518,7 +513,7 @@ class Store implements UpdatableStore {
       final SignedBlockAndState finalized = getLatestFinalizedBlockAndState();
       if (!treeBuilder.contains(finalized.getRoot())) {
         // We must have finalized a new block while processing and moved past our target root
-        return EMPTY_BLOCK_AND_STATE_FUTURE;
+        return EmptyStoreResults.EMPTY_BLOCK_AND_STATE_FUTURE;
       }
       baseBlockRoot.set(finalized.getRoot());
       baseState.set(finalized.getState());
@@ -548,7 +543,7 @@ class Store implements UpdatableStore {
                                 return Optional.of(result);
                               });
                     })
-                .orElse(EMPTY_BLOCK_AND_STATE_FUTURE));
+                .orElse(EmptyStoreResults.EMPTY_BLOCK_AND_STATE_FUTURE));
   }
 
   private void cacheBlockAndState(final SignedBlockAndState blockAndState) {

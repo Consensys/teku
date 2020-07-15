@@ -193,7 +193,8 @@ public class PeerSync {
     if (stopped.get()) {
       throw new CancellationException("Peer sync was cancelled");
     }
-    final BlockImportResult result = blockImporter.importBlock(block);
+    // TODO - don't join here
+    final BlockImportResult result = blockImporter.importBlock(block).join();
     LOG.trace("Block import result for block at {}: {}", block.getMessage().getSlot(), result);
     if (!result.isSuccessful()) {
       this.blockImportFailureResult.inc();

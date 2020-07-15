@@ -85,7 +85,8 @@ public class PeerSyncTest {
     // By default set up block import to succeed
     final BlockProcessingRecord processingRecord = mock(BlockProcessingRecord.class);
     final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
-    final BlockImportResult result = BlockImportResult.successful(processingRecord);
+    final SafeFuture<BlockImportResult> result =
+        SafeFuture.completedFuture(BlockImportResult.successful(processingRecord));
     when(processingRecord.getBlock()).thenReturn(block);
     when(blockImporter.importBlock(any())).thenReturn(result);
     peerSync = new PeerSync(asyncRunner, storageClient, blockImporter, new NoOpMetricsSystem());
@@ -130,7 +131,8 @@ public class PeerSyncTest {
         responseListenerArgumentCaptor.getValue();
 
     // Importing the returned block fails
-    when(blockImporter.importBlock(BLOCK)).thenReturn(importResult.get());
+    when(blockImporter.importBlock(BLOCK))
+        .thenReturn(SafeFuture.completedFuture(importResult.get()));
     // Probably want to have a specific exception type to indicate bad data.
     try {
       responseListener.onResponse(BLOCK);
