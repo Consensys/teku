@@ -110,10 +110,14 @@ public class Bitlist {
   @SuppressWarnings("NarrowingCompoundAssignment")
   public Bytes serialize() {
     int len = size;
-    byte[] array = new byte[(len / 8) + 1];
+    byte[] array = new byte[sszSerializationLength(len)];
     IntStream.range(0, len).forEach(i -> array[i / 8] |= ((data.get(i) ? 1 : 0) << (i % 8)));
     array[len / 8] |= 1 << (len % 8);
     return Bytes.wrap(array);
+  }
+
+  public static int sszSerializationLength(final int size) {
+    return (size / 8) + 1;
   }
 
   public static Bitlist fromBytes(Bytes bytes, long maxSize) {

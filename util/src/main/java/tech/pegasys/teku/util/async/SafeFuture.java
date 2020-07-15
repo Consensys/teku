@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.util.async;
 
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
@@ -85,6 +86,39 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     } catch (final Throwable e) {
       return SafeFuture.failedFuture(e);
     }
+  }
+
+  /**
+   * Creates a completed {@link SafeFuture} instance if none of the supplied interruptors are
+   * completed, else creates an exceptionally completed {@link SafeFuture} instance
+   *
+   * @see #orInterrupt(Interruptor...)
+   */
+  public static SafeFuture<Void> notInterrupted(Interruptor... interruptors) {
+    SafeFuture<Void> delayedFuture = new SafeFuture<>();
+    SafeFuture<Void> ret = delayedFuture.orInterrupt(interruptors);
+    delayedFuture.complete(null);
+    return ret;
+  }
+
+  /**
+   * Creates an {@link Interruptor} instance from the interrupting future and exception supplier for
+   * the case if interruption is triggered.
+   *
+   * <p>The key feature of {@link Interruptor} and {@link #orInterrupt(Interruptor...)} method is
+   * that {@code interruptFuture} doesn't hold the reference to dependent futures after they
+   * complete. It's desired to consider this for long living interrupting futures to avoid memory
+   * leaks
+   *
+   * @param interruptFuture the future which triggers interruption when completes (normally or
+   *     exceptionally)
+   * @param exceptionSupplier creates a desired exception if interruption is triggered
+   * @see #notInterrupted(Interruptor...)
+   * @see #orInterrupt(Interruptor...)
+   */
+  public static Interruptor createInterruptor(
+      CompletableFuture<?> interruptFuture, Supplier<Exception> exceptionSupplier) {
+    return new Interruptor(interruptFuture, exceptionSupplier);
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -331,5 +365,110 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   @Override
   public SafeFuture<T> orTimeout(final long timeout, final TimeUnit unit) {
     return (SafeFuture<T>) super.orTimeout(timeout, unit);
+  }
+
+  /**
+   * Returns the future which completes with the same result or exception The consumer is invoked if
+   * this future completes exceptionally
+   */
+  public SafeFuture<T> whenException(final Consumer<Throwable> action) {
+    return (SafeFuture<T>)
+        super.whenComplete(
+            (r, t) -> {
+              if (t != null) {
+                action.accept(t);
+              }
+            });
+  }
+
+  /**
+   * Returns the future which completes with the same result or exception as this one. The resulting
+   * future becomes complete when `waitForStage` completes. If the `waitForStage` completes
+   * exceptionally the resulting future also completes exceptionally with the same exception
+   */
+  public SafeFuture<T> thenWaitFor(Function<T, CompletionStage<?>> waitForStage) {
+    return thenCompose(t -> waitForStage.apply(t).thenApply(__ -> t));
+  }
+
+  @SafeVarargs
+  @SuppressWarnings("unchecked")
+  public final SafeFuture<T> or(SafeFuture<T>... others) {
+    SafeFuture<T>[] futures = Arrays.copyOf(others, others.length + 1);
+    futures[others.length] = this;
+    return anyOf(futures).thenApply(o -> (T) o);
+  }
+
+  /**
+   * Derives a {@link SafeFuture} which yields the same result as this {@link SafeFuture} if no
+   * {@link Interruptor} was triggered before this future is done.
+   *
+   * <p>If any of supplied {@link Interruptor}s is triggered the returned {@link SafeFuture} is
+   * completed exceptionally. The exception thrown depends on which specific Interruptor was
+   * triggered
+   *
+   * <p>The key feature of this method is that {@code interruptFuture} contained in Interruptor
+   * doesn't hold the reference to dependent futures after they complete. It's desired to consider
+   * this for long living interrupting futures to avoid memory leaks
+   *
+   * @param interruptors a set of interruptors which futures trigger interruption if complete
+   *     (normally or exceptionally)
+   * @see #createInterruptor(CompletableFuture, Supplier)
+   */
+  // The result of anyOf() future is ignored since it is used just to handle completion
+  // of any future. All possible outcomes are propagated to the returned future instance
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public SafeFuture<T> orInterrupt(Interruptor... interruptors) {
+    CompletableFuture<?>[] allFuts = new CompletableFuture<?>[interruptors.length + 1];
+    allFuts[0] = this;
+    for (int i = 0; i < interruptors.length; i++) {
+      allFuts[i + 1] = interruptors[i].interruptFuture;
+    }
+    SafeFuture<T> ret = new SafeFuture<>();
+    anyOf(allFuts)
+        .whenComplete(
+            (res, err) -> {
+              if (this.isDone()) {
+                this.propagateTo(ret);
+              } else {
+                for (Interruptor interruptor : interruptors) {
+                  if (interruptor.interruptFuture.isDone()) {
+                    try {
+                      interruptor.getInterruptFuture().get();
+                      ret.completeExceptionally(interruptor.getExceptionSupplier().get());
+                    } catch (Exception e) {
+                      ret.completeExceptionally(e);
+                    }
+                  }
+                }
+              }
+            });
+    return ret;
+  }
+
+  /**
+   * Class containing an interrupting Future and exception supplier which produces exception if
+   * interrupting Future is triggered
+   *
+   * @see #createInterruptor(CompletableFuture, Supplier)
+   * @see #orInterrupt(Interruptor...)
+   * @see #notInterrupted(Interruptor...)
+   */
+  public static class Interruptor {
+    private final CompletableFuture<?> interruptFuture;
+    private final Supplier<Exception> exceptionSupplier;
+
+    private Interruptor(
+        CompletableFuture<?> interruptFuture, Supplier<Exception> exceptionSupplier) {
+      this.interruptFuture = interruptFuture;
+      this.exceptionSupplier = exceptionSupplier;
+    }
+
+    private CompletableFuture<?> getInterruptFuture() {
+      return interruptFuture;
+    }
+
+    private Supplier<Exception> getExceptionSupplier() {
+      return exceptionSupplier;
+    }
   }
 }

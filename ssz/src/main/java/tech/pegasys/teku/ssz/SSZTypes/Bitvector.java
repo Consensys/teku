@@ -111,7 +111,7 @@ public class Bitvector {
     return new Bitvector(bitset, size);
   }
 
-  private static int sszSerializationLength(final int size) {
+  public static int sszSerializationLength(final int size) {
     return (size + 7) / 8;
   }
 

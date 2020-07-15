@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
 
 public class Bytes4 {
+  public static final int SIZE = 4;
 
   private Bytes bytes;
 
