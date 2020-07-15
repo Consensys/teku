@@ -18,6 +18,7 @@ import static tech.pegasys.teku.util.async.FutureUtil.ignoreFuture;
 import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
 import io.libp2p.core.P2PChannel;
+import io.libp2p.core.StreamPromise;
 import io.libp2p.core.multistream.Multistream;
 import io.libp2p.core.multistream.ProtocolBinding;
 import io.libp2p.core.multistream.ProtocolDescriptor;
@@ -70,17 +71,23 @@ public class RpcHandler implements ProtocolBinding<Controller> {
                     "Timed out waiting to initialize stream for method " + rpcMethod.getId()));
 
     return SafeFuture.notInterrupted(closeInterruptor)
-        .thenCompose(
+        .thenApply(
             __ ->
-                connection
-                    .muxerSession()
-                    .createStream(Multistream.create(this).toStreamHandler())
-                    .getController())
+                connection.muxerSession().createStream(Multistream.create(this).toStreamHandler()))
+        // waiting for a stream or interrupt
+        .thenWaitFor(StreamPromise::getStream)
         .orInterrupt(closeInterruptor, timeoutInterruptor)
-        .thenPeek(ctr -> ctr.setRequestHandler(handler))
-        .thenApply(Controller::getRpcStream)
-        .thenCompose(rpcStream -> rpcStream.writeBytes(initialPayload).thenApply(__ -> rpcStream))
-        .orInterrupt(closeInterruptor, timeoutInterruptor);
+        .thenCompose(
+            streamPromise ->
+                // waiting for controller, writing initial payload or interrupt
+                SafeFuture.of(streamPromise.getController())
+                    .orInterrupt(closeInterruptor, timeoutInterruptor)
+                    .thenPeek(ctr -> ctr.setRequestHandler(handler))
+                    .thenApply(Controller::getRpcStream)
+                    .thenWaitFor(rpcStream -> rpcStream.writeBytes(initialPayload))
+                    .orInterrupt(closeInterruptor, timeoutInterruptor)
+                    // closing the stream in case of any errors or interruption
+                    .whenException(err -> streamPromise.getStream().join().close()));
   }
 
   @NotNull

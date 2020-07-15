@@ -364,7 +364,29 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return (SafeFuture<T>) super.orTimeout(timeout, unit);
   }
 
-  @SafeVarargs
+  /**
+   * Returns the future which completes with the same result or exception
+   * The consumer is invoked if this future completes exceptionally
+   */
+  public SafeFuture<T> whenException(final Consumer<Throwable> action) {
+    return (SafeFuture<T>) super.whenComplete((r, t) -> {
+      if (t != null) {
+        action.accept(t);
+      }
+    });
+  }
+
+  /**
+   * Returns the future which completes with the same result or exception as this one.
+   * The resulting future becomes complete when `waitForStage` completes.
+   * If the `waitForStage` completes exceptionally the resulting future also completes
+   * exceptionally with the same exception
+   */
+  public SafeFuture<T> thenWaitFor(Function<T, CompletionStage<?>> waitForStage) {
+    return thenCompose(t -> waitForStage.apply(t).thenApply(__ -> t));
+  }
+
+    @SafeVarargs
   @SuppressWarnings("unchecked")
   public final SafeFuture<T> or(SafeFuture<T>... others) {
     SafeFuture<T>[] futures = Arrays.copyOf(others, others.length + 1);
