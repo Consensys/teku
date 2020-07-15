@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
@@ -69,6 +70,61 @@ class StoreTest {
               .isNotNull();
           assertThat(result.hash_tree_root())
               .isEqualTo(blockAndState.getBlock().getMessage().getState_root());
+        });
+  }
+
+  @Test
+  public void retrieveSignedBlock_withLimitedCache() throws Exception {
+    processChainWithLimitedCache(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getRoot();
+          final SignedBeaconBlock expectedBlock = blockAndState.getBlock();
+          SafeFuture<Optional<SignedBeaconBlock>> result = store.retrieveSignedBlock(root);
+          assertThat(result).isCompleted();
+          assertThat(result)
+              .withFailMessage("Expected block %s to be available", expectedBlock.getSlot())
+              .isCompletedWithValue(Optional.of(expectedBlock));
+        });
+  }
+
+  @Test
+  public void retrieveBlock_withLimitedCache() throws StateTransitionException {
+    processChainWithLimitedCache(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getRoot();
+          final BeaconBlock expectedBlock = blockAndState.getBlock().getMessage();
+          SafeFuture<Optional<BeaconBlock>> result = store.retrieveBlock(root);
+          assertThat(result).isCompleted();
+          assertThat(result)
+              .withFailMessage("Expected block %s to be available", expectedBlock.getSlot())
+              .isCompletedWithValue(Optional.of(expectedBlock));
+        });
+  }
+
+  @Test
+  public void retrieveBlockAndState_withLimitedCache() throws StateTransitionException {
+    processChainWithLimitedCache(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getRoot();
+          SafeFuture<Optional<SignedBlockAndState>> result = store.retrieveBlockAndState(root);
+          assertThat(result).isCompleted();
+          assertThat(result)
+              .withFailMessage(
+                  "Expected block and state at %s to be available", blockAndState.getSlot())
+              .isCompletedWithValue(Optional.of(blockAndState));
+        });
+  }
+
+  @Test
+  public void retrieveBlockState_withLimitedCache() throws StateTransitionException {
+    processChainWithLimitedCache(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getRoot();
+          SafeFuture<Optional<BeaconState>> result = store.retrieveBlockState(root);
+          assertThat(result).isCompleted();
+          assertThat(result)
+              .withFailMessage("Expected state at %s to be available", blockAndState.getSlot())
+              .isCompletedWithValue(Optional.of(blockAndState.getState()));
         });
   }
 
@@ -246,9 +302,11 @@ class StoreTest {
 
     // Process chain in order
     blocks.forEach(b -> chainProcessor.accept(store, b));
+    blocks.forEach(b -> chainProcessor.accept(store, b));
 
     // Request states in reverse order
     Collections.reverse(blocks);
+    blocks.forEach(b -> chainProcessor.accept(store, b));
     blocks.forEach(b -> chainProcessor.accept(store, b));
   }
 
@@ -275,9 +333,11 @@ class StoreTest {
     }
 
     allCheckpoints.forEach(c -> chainProcessor.accept(store, c));
+    allCheckpoints.forEach(c -> chainProcessor.accept(store, c));
 
     // Process in reverse order
     Collections.reverse(allCheckpoints);
+    allCheckpoints.forEach(c -> chainProcessor.accept(store, c));
     allCheckpoints.forEach(c -> chainProcessor.accept(store, c));
   }
 
