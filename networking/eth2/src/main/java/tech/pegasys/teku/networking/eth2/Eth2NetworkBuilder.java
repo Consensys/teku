@@ -21,18 +21,18 @@ import com.google.common.eventbus.EventBus;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.networking.eth2.gossip.AttestationSubnetScorer;
-import tech.pegasys.teku.networking.eth2.gossip.AttestationSubnetScorer.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
-import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
 import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
@@ -131,15 +131,16 @@ public class Eth2NetworkBuilder {
         new LibP2PNetwork(
             asyncRunner, config, reputationManager, metricsSystem, rpcMethods, peerHandlers);
     final AttestationSubnetTopicProvider subnetTopicProvider =
-        new TopicNames(recentChainData, gossipEncoding);
+        new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
     return DiscoveryNetwork.create(
         metricsSystem,
         asyncRunner,
         p2pNetwork,
         new Eth2PeerSelectionStrategy(
             config.getTargetPeerRange(),
-            () -> AttestationSubnetScorer.create(p2pNetwork, subnetTopicProvider),
-            reputationManager),
+            network -> PeerSubnetSubscriptions.create(network, subnetTopicProvider),
+            reputationManager,
+            Collections::shuffle),
         config);
   }
 

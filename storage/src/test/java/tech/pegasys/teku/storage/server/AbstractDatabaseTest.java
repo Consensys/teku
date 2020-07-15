@@ -52,6 +52,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.storage.api.schema.SlotAndBlockRoot;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -479,6 +480,57 @@ public abstract class AbstractDatabaseTest {
   public void testShouldRecordFinalizedBlocksAndStatesInBatchUpdate()
       throws StateTransitionException {
     testShouldRecordFinalizedBlocksAndStates(StateStorageMode.ARCHIVE, true);
+  }
+
+  @Test
+  public void slotAndBlock_shouldStoreAndRetrieve() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(
+            dataStructureUtil.randomUnsignedLong(), dataStructureUtil.randomBytes32());
+
+    database.addHotStateRoot(stateRoot, slotAndBlockRoot);
+
+    final Optional<SlotAndBlockRoot> fromStorage =
+        database.getSlotAndBlockRootFromStateRoot(stateRoot);
+
+    assertThat(fromStorage.isPresent()).isTrue();
+    assertThat(fromStorage.get()).isEqualTo(slotAndBlockRoot);
+  }
+
+  @Test
+  public void slotAndBlock_shouldGetStateRootsBeforeSlot() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final Bytes32 zeroStateRoot = insertRandomSlotAndBlock(0L, dataStructureUtil);
+    final Bytes32 oneStateRoot = insertRandomSlotAndBlock(1L, dataStructureUtil);
+    insertRandomSlotAndBlock(2L, dataStructureUtil);
+    insertRandomSlotAndBlock(3L, dataStructureUtil);
+
+    assertThat(database.getStateRootsBeforeSlot(UnsignedLong.valueOf(2L)))
+        .containsExactlyInAnyOrder(zeroStateRoot, oneStateRoot);
+  }
+
+  @Test
+  public void slotAndBlock_shouldPurgeToSlot() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    insertRandomSlotAndBlock(0L, dataStructureUtil);
+    insertRandomSlotAndBlock(1L, dataStructureUtil);
+    final Bytes32 twoStateRoot = insertRandomSlotAndBlock(2L, dataStructureUtil);
+    final Bytes32 threeStateRoot = insertRandomSlotAndBlock(3L, dataStructureUtil);
+
+    database.pruneHotStateRoots(database.getStateRootsBeforeSlot(UnsignedLong.valueOf(2L)));
+    assertThat(database.getStateRootsBeforeSlot(UnsignedLong.valueOf(10L)))
+        .containsExactlyInAnyOrder(twoStateRoot, threeStateRoot);
+  }
+
+  protected Bytes32 insertRandomSlotAndBlock(
+      final long slot, final DataStructureUtil dataStructureUtil) {
+    final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(UnsignedLong.valueOf(slot), dataStructureUtil.randomBytes32());
+    database.addHotStateRoot(stateRoot, slotAndBlockRoot);
+    return stateRoot;
   }
 
   public void testShouldRecordFinalizedBlocksAndStates(

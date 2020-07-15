@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.p2p.connection;
+package tech.pegasys.teku.networking.eth2.peers;
 
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -30,16 +30,5 @@ public interface PeerScorer {
 
   default int scoreCandidatePeer(final DiscoveryPeer candidate) {
     return scoreCandidatePeer(candidate.getPersistentSubnets());
-  }
-
-  interface PeerScorerFactory {
-
-    /**
-     * Creates a new PeerScorer which may cache data from the time of creation to improve
-     * performance when used to evaluate multiple peers.
-     *
-     * @return the new PeerScorer
-     */
-    PeerScorer create();
   }
 }

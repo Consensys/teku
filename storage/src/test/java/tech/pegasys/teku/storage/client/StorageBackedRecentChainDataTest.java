@@ -59,7 +59,7 @@ public class StorageBackedRecentChainDataTest {
   public void storageBackedClient_storeInitializeViaGetStoreRequest()
       throws ExecutionException, InterruptedException {
     SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
-    when(storageUpdateChannel.onStoreRequest()).thenReturn(storeRequestFuture);
+    when(storageQueryChannel.onStoreRequest()).thenReturn(storeRequestFuture);
 
     final EventBus eventBus = new EventBus();
     final SafeFuture<RecentChainData> client =
@@ -74,7 +74,7 @@ public class StorageBackedRecentChainDataTest {
             eventBus);
 
     // We should have posted a request to get the store from storage
-    verify(storageUpdateChannel).onStoreRequest();
+    verify(storageQueryChannel).onStoreRequest();
 
     // Client shouldn't be initialized yet
     assertThat(client).isNotDone();
@@ -96,7 +96,7 @@ public class StorageBackedRecentChainDataTest {
   public void storageBackedClient_storeInitializeViaNewGenesisState()
       throws ExecutionException, InterruptedException {
     SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
-    when(storageUpdateChannel.onStoreRequest()).thenReturn(storeRequestFuture);
+    when(storageQueryChannel.onStoreRequest()).thenReturn(storeRequestFuture);
 
     final EventBus eventBus = new EventBus();
     final SafeFuture<RecentChainData> client =
@@ -111,7 +111,7 @@ public class StorageBackedRecentChainDataTest {
             eventBus);
 
     // We should have posted a request to get the store from storage
-    verify(storageUpdateChannel).onStoreRequest();
+    verify(storageQueryChannel).onStoreRequest();
     // Client shouldn't be initialized yet
     assertThat(client).isNotDone();
 
@@ -137,7 +137,7 @@ public class StorageBackedRecentChainDataTest {
   public void storageBackedClient_storeInitializeViaGetStoreRequestAfterTimeout()
       throws ExecutionException, InterruptedException {
     SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
-    when(storageUpdateChannel.onStoreRequest())
+    when(storageQueryChannel.onStoreRequest())
         .thenReturn(SafeFuture.failedFuture(new TimeoutException()))
         .thenReturn(storeRequestFuture);
 
@@ -154,7 +154,7 @@ public class StorageBackedRecentChainDataTest {
             eventBus);
 
     // We should have posted a request to get the store from storage
-    verify(storageUpdateChannel).onStoreRequest();
+    verify(storageQueryChannel).onStoreRequest();
 
     // Client shouldn't be initialized yet
     assertThat(client).isNotDone();

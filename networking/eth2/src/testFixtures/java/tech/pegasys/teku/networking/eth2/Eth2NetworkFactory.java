@@ -25,6 +25,7 @@ import io.libp2p.core.crypto.KeyKt;
 import java.net.BindException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -42,8 +43,9 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.network.p2p.connection.StubPeerScorer;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
@@ -175,6 +177,8 @@ public class Eth2NetworkFactory {
                 metricsSystem,
                 StubTimeProvider.withTimeInSeconds(1000),
                 Constants.REPUTATION_MANAGER_CAPACITY);
+        final AttestationSubnetTopicProvider subnetTopicProvider =
+            new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
         final DiscoveryNetwork<?> network =
             DiscoveryNetwork.create(
                 metricsSystem,
@@ -187,7 +191,11 @@ public class Eth2NetworkFactory {
                     new ArrayList<>(rpcMethods),
                     peerHandlers),
                 new Eth2PeerSelectionStrategy(
-                    config.getTargetPeerRange(), StubPeerScorer::new, reputationManager),
+                    config.getTargetPeerRange(),
+                    gossipNetwork ->
+                        PeerSubnetSubscriptions.create(gossipNetwork, subnetTopicProvider),
+                    reputationManager,
+                    Collections::shuffle),
                 config);
 
         return new ActiveEth2Network(
@@ -223,7 +231,7 @@ public class Eth2NetworkFactory {
           peerAddresses,
           false,
           emptyList(),
-          new TargetPeerRange(20, 30),
+          new TargetPeerRange(20, 30, 0),
           GossipConfig.DEFAULT_CONFIG,
           new WireLogsConfig(false, false, true, false));
     }

@@ -71,6 +71,6 @@ class NetworkConfigTest {
         emptyList(),
         false,
         emptyList(),
-        new TargetPeerRange(20, 30));
+        new TargetPeerRange(20, 30, 0));
   }
 }
