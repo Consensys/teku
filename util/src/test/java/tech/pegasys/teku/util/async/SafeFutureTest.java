@@ -25,8 +25,50 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.util.async.SafeFuture.Interruptor;
 
 public class SafeFutureTest {
+
+  private static class TestAsyncExec {
+    SafeFuture<Integer> fut = new SafeFuture<>();
+    boolean executed = false;
+
+    SafeFuture<Integer> exec() {
+      executed = true;
+      return fut;
+    }
+  }
+
+  private static class InterruptTest {
+    SafeFuture<Integer> interruptorFut1 = new SafeFuture<>();
+    SafeFuture<Integer> interruptorFut2 = new SafeFuture<>();
+    Interruptor interruptor1 =
+        SafeFuture.createInterruptor(interruptorFut1, IllegalStateException::new);
+    Interruptor interruptor2 =
+        SafeFuture.createInterruptor(interruptorFut2, IllegalArgumentException::new);
+    SafeFuture<Integer> fut0 = new SafeFuture<>();
+    TestAsyncExec exec1 = new TestAsyncExec();
+    TestAsyncExec exec2 = new TestAsyncExec();
+
+    SafeFuture<Integer> intFut =
+        fut0.orInterrupt(interruptor1, interruptor2)
+            .thenCompose(__ -> exec1.exec())
+            .orInterrupt(interruptor1, interruptor2)
+            .thenCompose(__ -> exec2.exec())
+            .orInterrupt(interruptor1, interruptor2);
+
+    public InterruptTest() {
+      assertThat(hasDependents(interruptorFut1)).isTrue();
+      assertThat(hasDependents(interruptorFut2)).isTrue();
+      assertThat(hasDependents(fut0)).isTrue();
+    }
+
+    public void assertReleased() {
+      assertThat(hasDependents(interruptorFut1)).isFalse();
+      assertThat(hasDependents(interruptorFut2)).isFalse();
+      assertThat(hasDependents(fut0)).isFalse();
+    }
+  }
 
   @AfterEach
   public void tearDown() {
@@ -500,6 +542,171 @@ public class SafeFutureTest {
 
     future2.complete(null);
     assertThat(result).isCompleted();
+  }
+
+  private static boolean hasDependents(CompletableFuture<?> fut) {
+    return fut.getNumberOfDependents() > 0;
+  }
+
+  @Test
+  public void orTest1() throws Exception {
+    SafeFuture<Integer> fut0 = new SafeFuture<>();
+    SafeFuture<Integer> fut1 = new SafeFuture<>();
+
+    assertThat(hasDependents(fut0)).isFalse();
+
+    SafeFuture<Integer> orFut = fut0.or(fut1);
+
+    assertThat(hasDependents(fut0)).isTrue();
+    assertThat(hasDependents(fut1)).isTrue();
+
+    fut1.complete(12);
+
+    assertThat(hasDependents(fut0)).isFalse();
+    assertThat(hasDependents(fut1)).isFalse();
+    assertThat(orFut.get()).isEqualTo(12);
+  }
+
+  @Test
+  public void or_completeNormally() throws Exception {
+    SafeFuture<Integer> fut0 = new SafeFuture<>();
+    SafeFuture<Integer> fut1 = new SafeFuture<>();
+
+    assertThat(hasDependents(fut0)).isFalse();
+
+    SafeFuture<Integer> orFut = fut0.or(fut1);
+
+    assertThat(hasDependents(fut0)).isTrue();
+    assertThat(hasDependents(fut1)).isTrue();
+
+    fut0.complete(12);
+
+    assertThat(hasDependents(fut0)).isFalse();
+    assertThat(hasDependents(fut1)).isFalse();
+    assertThat(orFut.get()).isEqualTo(12);
+  }
+
+  @Test
+  public void or_completeExceptionally() {
+    SafeFuture<Integer> fut0 = new SafeFuture<>();
+    SafeFuture<Integer> fut1 = new SafeFuture<>();
+
+    assertThat(hasDependents(fut0)).isFalse();
+
+    SafeFuture<Integer> orFut = fut0.or(fut1);
+
+    assertThat(hasDependents(fut0)).isTrue();
+    assertThat(hasDependents(fut1)).isTrue();
+
+    fut1.completeExceptionally(new IllegalStateException());
+
+    assertThat(hasDependents(fut0)).isFalse();
+    assertThat(hasDependents(fut1)).isFalse();
+    assertThat(orFut).isCompletedExceptionally();
+  }
+
+  @Test
+  public void orInterrupt_simpleCompleteWithoutInterruption() throws Exception {
+    SafeFuture<Integer> interruptorFut = new SafeFuture<>();
+    Interruptor interruptor =
+        SafeFuture.createInterruptor(interruptorFut, IllegalStateException::new);
+    SafeFuture<Integer> fut0 = new SafeFuture<>();
+
+    assertThat(hasDependents(interruptorFut)).isFalse();
+    assertThat(hasDependents(fut0)).isFalse();
+
+    SafeFuture<Integer> intFut = fut0.orInterrupt(interruptor);
+
+    assertThat(hasDependents(interruptorFut)).isTrue();
+    assertThat(hasDependents(fut0)).isTrue();
+
+    fut0.complete(12);
+
+    assertThat(hasDependents(interruptorFut)).isFalse();
+    assertThat(hasDependents(fut0)).isFalse();
+    assertThat(intFut.get()).isEqualTo(12);
+  }
+
+  @Test
+  public void orInterrupt_triggerOneOfTwoInterruptors() {
+    SafeFuture<Integer> interruptorFut1 = new SafeFuture<>();
+    SafeFuture<Integer> interruptorFut2 = new SafeFuture<>();
+    Interruptor interruptor1 =
+        SafeFuture.createInterruptor(interruptorFut1, IllegalStateException::new);
+    Interruptor interruptor2 =
+        SafeFuture.createInterruptor(interruptorFut2, IllegalStateException::new);
+    SafeFuture<Integer> fut0 = new SafeFuture<>();
+
+    assertThat(hasDependents(interruptorFut1)).isFalse();
+    assertThat(hasDependents(interruptorFut2)).isFalse();
+    assertThat(hasDependents(fut0)).isFalse();
+
+    SafeFuture<Integer> intFut = fut0.orInterrupt(interruptor1, interruptor2);
+
+    assertThat(hasDependents(interruptorFut1)).isTrue();
+    assertThat(hasDependents(interruptorFut2)).isTrue();
+    assertThat(hasDependents(fut0)).isTrue();
+
+    interruptorFut2.complete(0);
+
+    assertThat(hasDependents(interruptorFut1)).isFalse();
+    assertThat(hasDependents(interruptorFut2)).isFalse();
+    assertThat(hasDependents(fut0)).isFalse();
+    assertThat(intFut).isCompletedExceptionally();
+  }
+
+  @Test
+  public void orInterrupt_complexAllCompleteThenInterrupt() {
+    InterruptTest test = new InterruptTest();
+
+    test.fut0.complete(111);
+    test.exec1.fut.complete(111);
+    test.exec2.fut.complete(111);
+
+    test.interruptorFut1.complete(0);
+
+    test.assertReleased();
+    assertThat(test.intFut).isCompletedWithValue(111);
+    assertThat(test.exec1.executed).isTrue();
+    assertThat(test.exec2.executed).isTrue();
+  }
+
+  @Test
+  public void orInterrupt_complexInterruptImmediately() throws Exception {
+    InterruptTest test = new InterruptTest();
+
+    test.interruptorFut2.complete(0);
+
+    test.assertReleased();
+    assertThat(test.intFut).isCompletedExceptionally();
+    assertThatThrownBy(() -> test.intFut.get()).hasRootCause(new IllegalArgumentException());
+    assertThat(test.exec1.executed).isFalse();
+    assertThat(test.exec2.executed).isFalse();
+  }
+
+  @Test
+  public void orInterrupt_complexInterruptInTheMiddle() {
+    InterruptTest test = new InterruptTest();
+
+    test.fut0.complete(111);
+    test.interruptorFut1.complete(0);
+
+    test.assertReleased();
+    assertThat(test.intFut).isCompletedExceptionally();
+    assertThatThrownBy(() -> test.intFut.get()).hasRootCause(new IllegalStateException());
+    assertThat(test.exec1.executed).isTrue();
+    assertThat(test.exec2.executed).isFalse();
+  }
+
+  @Test
+  public void notInterrupted_shouldThrowIfInterrupted() {
+    SafeFuture<Void> interruptorFut = new SafeFuture<>();
+    Interruptor interruptor =
+        SafeFuture.createInterruptor(interruptorFut, () -> new RuntimeException("test"));
+    interruptorFut.complete(null);
+    SafeFuture<String> future = SafeFuture.notInterrupted(interruptor).thenApply(__ -> "aaa");
+
+    assertThatThrownBy(future::get).hasMessageContaining("test");
   }
 
   private List<Throwable> collectUncaughtExceptions() {

@@ -13,18 +13,17 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
+import io.libp2p.core.PeerId;
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.PubsubSubscription;
 import io.libp2p.core.pubsub.Topic;
-import io.libp2p.etc.types.MultiSet;
-import io.libp2p.etc.util.P2PService.PeerHandler;
 import io.libp2p.pubsub.gossip.Gossip;
 import io.netty.buffer.Unpooled;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -62,22 +61,15 @@ public class LibP2PGossipNetwork implements tech.pegasys.teku.networking.p2p.gos
 
   @Override
   public Map<String, Collection<NodeId>> getSubscribersByTopic() {
-    return gossip
-        .getRouter()
-        .submitOnEventThread(
-            () -> {
-              final Map<String, Collection<NodeId>> result = new HashMap<>();
-              final MultiSet<PeerHandler, String> peerTopics = gossip.getRouter().getPeerTopics();
-              for (Map.Entry<? extends PeerHandler, ? extends List<String>> peerTopic :
-                  peerTopics) {
-                final LibP2PNodeId nodeId = new LibP2PNodeId(peerTopic.getKey().getPeerId());
-                peerTopic
-                    .getValue()
-                    .forEach(
-                        topic -> result.computeIfAbsent(topic, __ -> new HashSet<>()).add(nodeId));
-              }
-              return result;
-            })
-        .join();
+    Map<PeerId, Set<Topic>> peerTopics = gossip.getPeerTopics().join();
+    final Map<String, Collection<NodeId>> result = new HashMap<>();
+    for (Map.Entry<PeerId, Set<Topic>> peerTopic : peerTopics.entrySet()) {
+      final LibP2PNodeId nodeId = new LibP2PNodeId(peerTopic.getKey());
+      peerTopic
+          .getValue()
+          .forEach(
+              topic -> result.computeIfAbsent(topic.getTopic(), __ -> new HashSet<>()).add(nodeId));
+    }
+    return result;
   }
 }
