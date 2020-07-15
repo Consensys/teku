@@ -18,17 +18,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -44,8 +36,7 @@ import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.async.SafeFuture;
 
-class StoreTest {
-  private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+class StoreTest extends AbstractStoreTest {
 
   @Test
   public void getSignedBlock_withLimitedCache() throws StateTransitionException {
@@ -139,6 +130,19 @@ class StoreTest {
                   "Expected checkpoint state for checkpoint %s", checkpointState.getCheckpoint())
               .isNotEmpty();
           assertThat(result).contains(checkpointState.getState());
+        });
+  }
+
+  @Test
+  public void retrieveCheckpointState_withLimitedCache() throws StateTransitionException {
+    processCheckpointsWithLimitedCache(
+        (store, checkpointState) -> {
+          SafeFuture<Optional<BeaconState>> result =
+              store.retrieveCheckpointState(checkpointState.getCheckpoint());
+          assertThat(result)
+              .withFailMessage(
+                  "Expected checkpoint state for checkpoint %s", checkpointState.getCheckpoint())
+              .isCompletedWithValue(Optional.of(checkpointState.getState()));
         });
   }
 
@@ -282,116 +286,5 @@ class StoreTest {
     // Check time
     assertThat(store.getTime()).isEqualTo(initialTime.plus(UnsignedLong.ONE));
     assertThat(store.getGenesisTime()).isEqualTo(genesisTime.plus(UnsignedLong.ONE));
-  }
-
-  void processChainWithLimitedCache(BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor)
-      throws StateTransitionException {
-    final int cacheSize = 10;
-    final int cacheMultiplier = 3;
-
-    // Create a new store with a small state cache
-    final StorePruningOptions pruningOptions =
-        StorePruningOptions.create(cacheSize, cacheSize, cacheSize);
-
-    final Store store = createGenesisStore(pruningOptions);
-    final List<SignedBlockAndState> blocks =
-        chainBuilder.generateBlocksUpToSlot(cacheMultiplier * cacheSize);
-
-    // Generate enough blocks to exceed our cache limit
-    addBlocks(store, blocks);
-
-    // Process chain in order
-    blocks.forEach(b -> chainProcessor.accept(store, b));
-    blocks.forEach(b -> chainProcessor.accept(store, b));
-
-    // Request states in reverse order
-    Collections.reverse(blocks);
-    blocks.forEach(b -> chainProcessor.accept(store, b));
-    blocks.forEach(b -> chainProcessor.accept(store, b));
-  }
-
-  void processCheckpointsWithLimitedCache(
-      BiConsumer<UpdatableStore, CheckpointState> chainProcessor) throws StateTransitionException {
-    final int cacheSize = 3;
-    final int epochsToProcess = cacheSize * 3;
-
-    // Create a new store with a small state cache
-    final StorePruningOptions pruningOptions =
-        StorePruningOptions.create(cacheSize, cacheSize, cacheSize);
-
-    final Store store = createGenesisStore(pruningOptions);
-    while (chainBuilder.getLatestEpoch().longValue() < epochsToProcess) {
-      SignedBlockAndState block = chainBuilder.generateNextBlock();
-      addBlock(store, block);
-    }
-    // Save checkpoints for each epoch
-    final List<CheckpointState> allCheckpoints = new ArrayList<>();
-    for (int i = 0; i <= chainBuilder.getLatestEpoch().intValue(); i++) {
-      Checkpoint checkpoint = chainBuilder.getCurrentCheckpointForEpoch(i);
-      BeaconState state = chainBuilder.getBlockAndState(checkpoint.getRoot()).get().getState();
-      allCheckpoints.add(new CheckpointState(checkpoint, state));
-    }
-
-    allCheckpoints.forEach(c -> chainProcessor.accept(store, c));
-    allCheckpoints.forEach(c -> chainProcessor.accept(store, c));
-
-    // Process in reverse order
-    Collections.reverse(allCheckpoints);
-    allCheckpoints.forEach(c -> chainProcessor.accept(store, c));
-    allCheckpoints.forEach(c -> chainProcessor.accept(store, c));
-  }
-
-  private void addBlock(final Store store, final SignedBlockAndState block) {
-    addBlocks(store, List.of(block));
-  }
-
-  private void addBlocks(final Store store, final List<SignedBlockAndState> blocks) {
-    final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
-    blocks.forEach(tx::putBlockAndState);
-    assertThat(tx.commit()).isCompletedWithValue(null);
-  }
-
-  private Store createGenesisStore(final StorePruningOptions pruningOptions) {
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
-    return new Store(
-        new StubMetricsSystem(),
-        blockProviderFromChainBuilder(),
-        genesis.getState().getGenesis_time(),
-        genesis.getState().getGenesis_time(),
-        genesisCheckpoint,
-        genesisCheckpoint,
-        genesisCheckpoint,
-        Map.of(genesis.getRoot(), genesis.getParentRoot()),
-        genesis,
-        Collections.emptyMap(),
-        pruningOptions);
-  }
-
-  private BlockProvider blockProviderFromChainBuilder() {
-    return (roots) ->
-        SafeFuture.completedFuture(
-            roots.stream()
-                .map(chainBuilder::getBlock)
-                .flatMap(Optional::stream)
-                .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity())));
-  }
-
-  private static class CheckpointState {
-    private final Checkpoint checkpoint;
-    private final BeaconState state;
-
-    private CheckpointState(Checkpoint checkpoint, BeaconState state) {
-      this.checkpoint = checkpoint;
-      this.state = state;
-    }
-
-    public Checkpoint getCheckpoint() {
-      return checkpoint;
-    }
-
-    public BeaconState getState() {
-      return state;
-    }
   }
 }
