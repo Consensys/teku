@@ -29,7 +29,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLS;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
@@ -115,10 +114,10 @@ public class BlockValidator {
     final Bytes signing_root = compute_signing_root(block.getMessage(), domain);
     final BLSSignature signature = block.getSignature();
 
-    BLSPublicKey proposerPubkey =
-        ValidatorsUtil.getValidatorPubKey(postState, block.getMessage().getProposer_index());
-
-    boolean signatureValid = BLS.verify(proposerPubkey, signing_root, signature);
+    boolean signatureValid =
+        ValidatorsUtil.getValidatorPubKey(postState, block.getMessage().getProposer_index())
+            .map(publicKey -> BLS.verify(publicKey, signing_root, signature))
+            .orElse(false);
 
     return signatureValid && receivedValidBlockInfoSet.add(new SlotAndProposer(block));
   }

@@ -18,12 +18,17 @@ import com.google.common.base.Preconditions;
 public class TargetPeerRange {
   private final int addPeersWhenLessThan;
   private final int dropPeersWhenGreaterThan;
+  private final int minimumRandomlySelectedPeerCount;
 
-  public TargetPeerRange(final int addPeersWhenLessThan, final int dropPeersWhenGreaterThan) {
+  public TargetPeerRange(
+      final int addPeersWhenLessThan,
+      final int dropPeersWhenGreaterThan,
+      final int minimumRandomlySelectedPeerCount) {
     Preconditions.checkArgument(
         addPeersWhenLessThan <= dropPeersWhenGreaterThan, "Invalid target peer count range");
     this.addPeersWhenLessThan = addPeersWhenLessThan;
     this.dropPeersWhenGreaterThan = dropPeersWhenGreaterThan;
+    this.minimumRandomlySelectedPeerCount = minimumRandomlySelectedPeerCount;
   }
 
   public int getPeersToAdd(final int currentPeerCount) {
@@ -35,6 +40,24 @@ public class TargetPeerRange {
   public int getPeersToDrop(final int currentPeerCount) {
     return currentPeerCount > dropPeersWhenGreaterThan
         ? currentPeerCount - dropPeersWhenGreaterThan
+        : 0;
+  }
+
+  public int getRandomlySelectedPeersToAdd(final int currentRandomlySelectedPeerCount) {
+    return currentRandomlySelectedPeerCount < minimumRandomlySelectedPeerCount
+        ? minimumRandomlySelectedPeerCount - currentRandomlySelectedPeerCount
+        : 0;
+  }
+
+  public int getRandomlySelectedPeersToDrop(
+      final int currentRandomlySelectedPeerCount, final int currentTotalPeerCount) {
+    final int totalPeersToDrop = getPeersToDrop(currentTotalPeerCount);
+    if (totalPeersToDrop == 0) {
+      return 0;
+    }
+    return currentRandomlySelectedPeerCount > minimumRandomlySelectedPeerCount
+        ? Math.min(
+            currentRandomlySelectedPeerCount - minimumRandomlySelectedPeerCount, totalPeersToDrop)
         : 0;
   }
 }

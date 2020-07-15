@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -377,7 +376,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               config.getP2pStaticPeers(),
               config.isP2pDiscoveryEnabled(),
               config.getP2pDiscoveryBootnodes(),
-              new TargetPeerRange(config.getP2pPeerLowerBound(), config.getP2pPeerUpperBound()),
+              new TargetPeerRange(
+                  config.getP2pPeerLowerBound(),
+                  config.getP2pPeerUpperBound(),
+                  config.getMinimumRandomlySelectedPeerCount()),
               GossipConfig.DEFAULT_CONFIG,
               new WireLogsConfig(
                   config.isLogWireCipher(),
@@ -506,7 +508,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void onStoreInitialized() {
     UnsignedLong genesisTime = recentChainData.getGenesisTime();
-    UnsignedLong currentTime = UnsignedLong.valueOf(System.currentTimeMillis() / 1000);
+    UnsignedLong currentTime = timeProvider.getTimeInSeconds();
     UnsignedLong currentSlot = ZERO;
     if (currentTime.compareTo(genesisTime) >= 0) {
       UnsignedLong deltaTime = currentTime.minus(genesisTime);
@@ -520,12 +522,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   @Override
-  public void onTick(Instant now) {
+  public void onTick() {
     if (recentChainData.isPreGenesis()) {
       return;
     }
-    final UnsignedLong currentTime = UnsignedLong.valueOf(now.getEpochSecond());
-
+    final UnsignedLong currentTime = timeProvider.getTimeInSeconds();
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     on_tick(transaction, currentTime);
     transaction.commit().join();
