@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.storage.api.schema.SlotAndBlockRoot;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.store.StoreBuilder;
@@ -74,6 +76,14 @@ public interface Database extends AutoCloseable {
    */
   @MustBeClosed
   Stream<SignedBeaconBlock> streamFinalizedBlocks(UnsignedLong startSlot, UnsignedLong endSlot);
+
+  List<Bytes32> getStateRootsBeforeSlot(final UnsignedLong slot);
+
+  void addHotStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot);
+
+  Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot);
+
+  void pruneHotStateRoots(final List<Bytes32> stateRoots);
 
   Optional<BeaconState> getLatestAvailableFinalizedState(UnsignedLong maxSlot);
 

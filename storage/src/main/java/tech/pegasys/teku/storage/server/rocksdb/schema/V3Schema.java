@@ -19,6 +19,7 @@ import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSeri
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.PROTO_ARRAY_SNAPSHOT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.SIGNED_BLOCK_SERIALIZER;
+import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.SLOT_AND_BLOCK_ROOT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.STATE_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.UNSIGNED_LONG_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.VOTES_SERIALIZER;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.storage.api.schema.SlotAndBlockRoot;
 
 public interface V3Schema extends Schema {
 
@@ -51,6 +53,8 @@ public interface V3Schema extends Schema {
       RocksDbColumn.create(6, UNSIGNED_LONG_SERIALIZER, VOTES_SERIALIZER);
   RocksDbColumn<UnsignedLong, DepositsFromBlockEvent> DEPOSITS_FROM_BLOCK_EVENTS =
       RocksDbColumn.create(7, UNSIGNED_LONG_SERIALIZER, DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER);
+  RocksDbColumn<Bytes32, SlotAndBlockRoot> STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT =
+      RocksDbColumn.create(8, BYTES32_SERIALIZER, SLOT_AND_BLOCK_ROOT_SERIALIZER);
 
   // Variables
   RocksDbVariable<UnsignedLong> GENESIS_TIME = RocksDbVariable.create(1, UNSIGNED_LONG_SERIALIZER);
