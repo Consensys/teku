@@ -5,23 +5,52 @@ we recommend most users use the latest `master` branch of Teku.
 
 ## Upcoming Breaking Changes
 
- - Anyone using `/node/version` should switch to use
+- Anyone using `/node/version` should switch to use
    the new `/v1/node/version` endpoint, as `/node/version` will be removed in a future release.
 
 ## 0.12.1
 
 ### Breaking Changes
+
+- External signing API now uses the data field instead of signingRoot field when making signing requests. Update Eth2Signer to ensure it is compatible with this change. 
+
  
 ### Additions and Improvements
 
- - added a metric `beacon_peer_count` that tracks the same counter used for `/network/peer_count` and console `Peers:` output.
- - External signing API now uses the data field instead of signingRoot field when making signing requests. Eth2Signer has been updated with this change. 
+- Further reduced memory usage during periods of non-finalization. Checkpoint states can now be dropped from memory and regenerated on demand.
+- Added additional metrics:
+  - `beacon_peer_count` tracks the number of connected peers which have completed chain validation
+  - `network_peer_chain_validation_attempts` tracks the number and status of peer chain validations
+  - `network_peer_connection_attempt_count` tracks the number and status of outbound peer requests made
+  - `network_peer_reputation_cache_size` reports the size of the peer reputation cache
+  - `beacon_block_import_total` tracks the number of blocks imported
+  - `beacon_reorgs_total` tracks the number of times a different fork is chosen as the new chain head
+  - `beacon_published_attestation_total` tracks the total number of attestations sent to the gossip network
+- External signing API now uses the data field instead of signingRoot field when making signing requests. Eth2Signer has been updated with this change.
+- Enforced the 256 byte limit for Req/Resp error messages
+- Blocks by range requests which exceed the maximum block request count are now rejected rather than partially processed as required by the P2P specification
+- Improved tracking of peer reputation to avoid reattempting connections to peers we have previously rejected
+- ForkChoice data is now persistent to disk, improving startup times especially during long periods of non-finalization
+- Reduced the maximum number of blocks held in memory to reduce memory consumption during periods of non-finalization
+- Increased the defaults for the target peer count range
+- Actively manage peers to ensure we have at least some peers on each of the attestation subnets
+- Maintain a minimum number of randomly selected peers, created via outbound connections to provide Sybil resistance
+- Updated dependencies to latest versions
+
 
 ### Bug Fixes
 
-### Known Issues
-
-- Validator may produce attestations in the incorrect slot or committee resulting in `Produced invalid attestation` messages ([#2179](https://github.com/PegaSysEng/teku/issues/2179))
+- Fixed issue where the validator produced attestations in the incorrect slot or committee resulting in `Produce invalid attestation` messages
+- Fixed an issue where attestations were not published to gossip when the node was not subscribed to the attestation subnet
+- Fixed a number of unhandled exceptions in discv5
+- Fixed an issue where discv5 may return node responses with a total greater than 5
+- Fixed `Trying to reuse disposable LengthPrefixedPayloadDecoder` exception
+- Fixed an issue where peers were not disconnected when the initial status exchange failed
+- Fixed `NullPointerException` when validating attestations which became too old during validation
+- Updated the `EXPOSE` ports listed in the Dockerfile to match the new defaults
+- Fixed time until genesis log message to handle time zones correctly 
+- Fixed `NoSuchElementException` when running a validator that was not in active status
+- Fixed `IndexOutOfBoundsException` when validating an `IndexedAttestation` which included invalid validator indices
 
 ## 0.12.0
 
