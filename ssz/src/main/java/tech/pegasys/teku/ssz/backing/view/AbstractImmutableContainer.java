@@ -28,16 +28,17 @@ import tech.pegasys.teku.ssz.backing.type.ContainerViewType;
 /** Handy base class for immutable containers */
 public abstract class AbstractImmutableContainer extends ContainerViewReadImpl {
 
-  public AbstractImmutableContainer(ContainerViewType<? extends AbstractImmutableContainer> type) {
+  protected AbstractImmutableContainer(
+      ContainerViewType<? extends AbstractImmutableContainer> type) {
     this(type, type.getDefaultTree());
   }
 
-  public AbstractImmutableContainer(
+  protected AbstractImmutableContainer(
       ContainerViewType<? extends AbstractImmutableContainer> type, TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public AbstractImmutableContainer(
+  protected AbstractImmutableContainer(
       ContainerViewType<? extends AbstractImmutableContainer> type, ViewRead... memberValues) {
     super(type, createBackingTree(type, memberValues), createCache(memberValues));
     checkArgument(

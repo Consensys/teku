@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -138,7 +137,7 @@ public abstract class AbstractCompositeViewWrite<
       return backingImmutableView;
     } else {
       IntCache<ChildReadType> cache = backingImmutableView.transferCache();
-      List<Entry<Integer, ChildReadType>> changesList =
+      List<Map.Entry<Integer, ChildReadType>> changesList =
           Stream.concat(
                   childrenChanges.entrySet().stream(),
                   childrenRefsChanged.stream()
@@ -148,7 +147,7 @@ public abstract class AbstractCompositeViewWrite<
                                   idx,
                                   (ChildReadType)
                                       ((ViewWrite) childrenRefs.get(idx)).commitChanges())))
-              .sorted(Entry.comparingByKey())
+              .sorted(Map.Entry.comparingByKey())
               .collect(Collectors.toList());
       // pre-fill the read cache with changed values
       changesList.forEach(e -> cache.invalidateWithNewValue(e.getKey(), e.getValue()));
@@ -161,7 +160,7 @@ public abstract class AbstractCompositeViewWrite<
 
   /** Converts a set of changed view with their indexes to the {@link TreeUpdates} instance */
   protected TreeUpdates changesToNewNodes(
-      List<Entry<Integer, ChildReadType>> newChildValues, TreeNode original) {
+      List<Map.Entry<Integer, ChildReadType>> newChildValues, TreeNode original) {
     CompositeViewType type = getType();
     int elementsPerChunk = type.getElementsPerChunk();
     if (elementsPerChunk == 1) {
@@ -181,7 +180,7 @@ public abstract class AbstractCompositeViewWrite<
    * which support packed values (i.e. several child views per backing tree node)
    */
   protected abstract TreeUpdates packChanges(
-      List<Entry<Integer, ChildReadType>> newChildValues, TreeNode original);
+      List<Map.Entry<Integer, ChildReadType>> newChildValues, TreeNode original);
 
   /**
    * Should be implemented by subclasses to create respectful immutable view with backing tree and

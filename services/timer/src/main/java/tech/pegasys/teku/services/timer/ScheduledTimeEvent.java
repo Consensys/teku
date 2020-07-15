@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.services.timer;
 
-import java.util.Date;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
@@ -38,6 +37,6 @@ public class ScheduledTimeEvent implements Job {
   public void execute(JobExecutionContext context) throws JobExecutionException {
     JobDataMap data = context.getJobDetail().getJobDataMap();
     TimeTickChannel timeTickChannel = (TimeTickChannel) data.get(TimerService.TIME_EVENTS_CHANNEL);
-    timeTickChannel.onTick(new Date());
+    timeTickChannel.onTick();
   }
 }

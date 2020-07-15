@@ -14,6 +14,7 @@
 package tech.pegasys.teku.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
@@ -29,7 +30,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -91,10 +91,7 @@ public class AttestationUtil {
 
     return new IndexedAttestation(
         SSZList.createMutable(
-            attesting_indices.stream()
-                .sorted()
-                .map(UnsignedLong::valueOf)
-                .collect(Collectors.toList()),
+            attesting_indices.stream().sorted().map(UnsignedLong::valueOf).collect(toList()),
             MAX_VALIDATORS_PER_COMMITTEE,
             UnsignedLong.class),
         attestation.getData(),
@@ -150,13 +147,17 @@ public class AttestationUtil {
     SSZList<UnsignedLong> indices = indexed_attestation.getAttesting_indices();
 
     List<UnsignedLong> bit_0_indices_sorted =
-        indices.stream().sorted().distinct().collect(Collectors.toList());
+        indices.stream().sorted().distinct().collect(toList());
     if (indices.isEmpty() || !indices.equals(bit_0_indices_sorted)) {
       return AttestationProcessingResult.invalid("Attesting indices are not sorted");
     }
 
     List<BLSPublicKey> pubkeys =
-        indices.stream().map(i -> getValidatorPubKey(state, i)).collect(Collectors.toList());
+        indices.stream().flatMap(i -> getValidatorPubKey(state, i).stream()).collect(toList());
+    if (pubkeys.size() < indices.size()) {
+      return AttestationProcessingResult.invalid(
+          "Attesting indices include non-existent validator");
+    }
 
     BLSSignature signature = indexed_attestation.getSignature();
     Bytes domain =

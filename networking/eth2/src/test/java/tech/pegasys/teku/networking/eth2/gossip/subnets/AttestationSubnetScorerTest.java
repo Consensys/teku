@@ -11,19 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip;
+package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.networking.p2p.connection.PeerScorer;
+import tech.pegasys.teku.networking.eth2.peers.PeerScorer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
@@ -32,14 +31,16 @@ import tech.pegasys.teku.util.config.Constants;
 class AttestationSubnetScorerTest {
   @Test
   void shouldScoreCandidatePeerWithNoSubnetsAsZero() {
-    final AttestationSubnetScorer scorer = new AttestationSubnetScorer.Builder().build();
+    final AttestationSubnetScorer scorer =
+        AttestationSubnetScorer.create(new PeerSubnetSubscriptions.Builder().build());
     assertThat(scorer.scoreCandidatePeer(new Bitvector(Constants.ATTESTATION_SUBNET_COUNT)))
         .isZero();
   }
 
   @Test
   void shouldScoreExistingPeerWithNoSubnetsAsZero() {
-    final AttestationSubnetScorer scorer = new AttestationSubnetScorer.Builder().build();
+    final AttestationSubnetScorer scorer =
+        AttestationSubnetScorer.create(new PeerSubnetSubscriptions.Builder().build());
     assertThat(scorer.scoreExistingPeer(new MockNodeId(1))).isZero();
   }
 
@@ -51,24 +52,25 @@ class AttestationSubnetScorerTest {
     final MockNodeId node4 = new MockNodeId(3);
     final MockNodeId node5 = new MockNodeId(4);
     final AttestationSubnetScorer scorer =
-        new AttestationSubnetScorer.Builder()
-            // Subnet 1
-            .addSubscriber(1, node1)
-            .addSubscriber(1, node2)
-            .addSubscriber(1, node3)
-            .addSubscriber(1, node4)
+        AttestationSubnetScorer.create(
+            new PeerSubnetSubscriptions.Builder()
+                // Subnet 1
+                .addSubscriber(1, node1)
+                .addSubscriber(1, node2)
+                .addSubscriber(1, node3)
+                .addSubscriber(1, node4)
 
-            // Subnet 2
-            .addSubscriber(2, node1)
-            .addSubscriber(2, node2)
+                // Subnet 2
+                .addSubscriber(2, node1)
+                .addSubscriber(2, node2)
 
-            // Subnet 3
-            .addSubscriber(3, node3)
+                // Subnet 3
+                .addSubscriber(3, node3)
 
-            // Subnet 4
-            .addSubscriber(4, node1)
-            .addSubscriber(4, node4)
-            .build();
+                // Subnet 4
+                .addSubscriber(4, node1)
+                .addSubscriber(4, node4)
+                .build());
 
     assertExistingPeerScores(
         scorer,
@@ -85,20 +87,21 @@ class AttestationSubnetScorerTest {
     final MockNodeId node2 = new MockNodeId(1);
     final MockNodeId node3 = new MockNodeId(2);
     final AttestationSubnetScorer scorer =
-        new AttestationSubnetScorer.Builder()
-            // Subnet 1
-            .addSubscriber(1, node1)
-            .addSubscriber(1, node2)
-            .addSubscriber(1, node3)
+        AttestationSubnetScorer.create(
+            new PeerSubnetSubscriptions.Builder()
+                // Subnet 1
+                .addSubscriber(1, node1)
+                .addSubscriber(1, node2)
+                .addSubscriber(1, node3)
 
-            // Subnet 2
-            .addSubscriber(2, node2)
+                // Subnet 2
+                .addSubscriber(2, node2)
 
-            // No subscribers for subnet 3
+                // No subscribers for subnet 3
 
-            // Subnet 4
-            .addSubscriber(4, node3)
-            .build();
+                // Subnet 4
+                .addSubscriber(4, node3)
+                .build());
 
     assertCandidatePeerScores(
         scorer,
@@ -115,7 +118,7 @@ class AttestationSubnetScorerTest {
       final PeerScorer scorer, final Map.Entry<NodeId, Integer>... expected) {
     final Map<NodeId, Integer> actual =
         Stream.of(expected)
-            .map(Entry::getKey)
+            .map(Map.Entry::getKey)
             .collect(Collectors.toMap(Function.identity(), scorer::scoreExistingPeer));
     assertThat(actual).contains(expected);
   }
@@ -125,7 +128,7 @@ class AttestationSubnetScorerTest {
       final PeerScorer scorer, final Map.Entry<Bitvector, Integer>... expected) {
     final Map<Bitvector, Integer> actual =
         Stream.of(expected)
-            .map(Entry::getKey)
+            .map(Map.Entry::getKey)
             .collect(Collectors.toMap(Function.identity(), scorer::scoreCandidatePeer));
     assertThat(actual).contains(expected);
   }

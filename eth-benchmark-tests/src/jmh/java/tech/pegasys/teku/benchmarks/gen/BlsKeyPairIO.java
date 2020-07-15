@@ -66,6 +66,7 @@ public class BlsKeyPairIO {
       return Utils.fromSupplier(this);
     }
 
+    @SuppressWarnings("EmptyCatch")
     public List<BLSKeyPair> readAll(int limit) {
       try {
         return StreamSupport.stream(withLimit(limit).spliterator(), false)
@@ -73,7 +74,7 @@ public class BlsKeyPairIO {
       } finally {
         try {
           close();
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
       }
     }

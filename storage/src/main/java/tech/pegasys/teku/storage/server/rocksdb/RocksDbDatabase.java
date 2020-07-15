@@ -22,6 +22,7 @@ import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.storage.api.schema.SlotAndBlockRoot;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.server.Database;
@@ -250,6 +252,32 @@ public class RocksDbDatabase implements Database {
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UnsignedLong startSlot, final UnsignedLong endSlot) {
     return finalizedDao.streamFinalizedBlocks(startSlot, endSlot);
+  }
+
+  @Override
+  public List<Bytes32> getStateRootsBeforeSlot(final UnsignedLong slot) {
+    return hotDao.getStateRootsBeforeSlot(slot);
+  }
+
+  @Override
+  public void addHotStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
+    try (final HotUpdater updater = hotDao.hotUpdater()) {
+      updater.addHotStateRoot(stateRoot, slotAndBlockRoot);
+      updater.commit();
+    }
+  }
+
+  @Override
+  public Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot) {
+    return hotDao.getSlotAndBlockRootFromStateRoot(stateRoot);
+  }
+
+  @Override
+  public void pruneHotStateRoots(final List<Bytes32> stateRoots) {
+    try (final HotUpdater updater = hotDao.hotUpdater()) {
+      updater.pruneHotStateRoots(stateRoots);
+      updater.commit();
+    }
   }
 
   @Override
