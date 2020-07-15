@@ -106,7 +106,7 @@ public class StateGenerator {
         blockTree, blockProvider, chainStateGenerator, stateCache, blockBatchSize);
   }
 
-  public SafeFuture<BeaconState> regenerateStateForBlock(final Bytes32 blockRoot) {
+  public SafeFuture<SignedBlockAndState> regenerateStateForBlock(final Bytes32 blockRoot) {
     LOG.debug("Regenerate state for block {}", blockRoot);
     return chainStateGenerator.generateTargetState(blockRoot);
   }
@@ -187,6 +187,7 @@ public class StateGenerator {
                       final List<Bytes32> remainingRoots = blockRoots.subList(i, blockRoots.size());
                       return chainStateGenerator
                           .generateTargetState(parentRoot)
+                          .thenApply(SignedBlockAndState::getState)
                           .thenApply(parentState -> new BlockRootAndState(parentRoot, parentState))
                           .thenCompose(
                               (lastState) ->
