@@ -91,7 +91,7 @@ public class LengthBoundCalculator {
   private static LengthBounds calculateSszVectorLength(
       final ReflectionInformation reflectionInfo, final int vectorCount) {
     final LengthBounds fieldLengthBounds;
-    final Class elementType = reflectionInfo.getVectorElementTypes().get(vectorCount);
+    final Class<?> elementType = reflectionInfo.getVectorElementTypes().get(vectorCount);
     final int vectorLength = reflectionInfo.getVectorLengths().get(vectorCount);
     final LengthBounds elementLengthBounds = getElementLengthBounds(elementType);
     fieldLengthBounds =
@@ -104,7 +104,7 @@ public class LengthBoundCalculator {
   private static LengthBounds calculateSszListLength(
       final ReflectionInformation reflectionInfo, final int variableFieldCount) {
     final LengthBounds fieldLengthBounds;
-    final Class listElementType = reflectionInfo.getListElementTypes().get(variableFieldCount);
+    final Class<?> listElementType = reflectionInfo.getListElementTypes().get(variableFieldCount);
     final long listElementMaxSize = reflectionInfo.getListElementMaxSizes().get(variableFieldCount);
     final LengthBounds elementLengthBounds = getElementLengthBounds(listElementType);
     final long variableFieldOffsetsLength =
