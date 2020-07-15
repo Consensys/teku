@@ -160,6 +160,9 @@ public class Constants {
   public static final int VALID_VALIDATOR_SET_SIZE = 10000;
   public static final int NETWORKING_FAILURE_REPEAT_INTERVAL = 3; // in sec
 
+  // Fuzzing specific
+  public static boolean FUZZING_ENABLED = false;
+
   static {
     setConstants("minimal");
   }
