@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.p2p.libp2p.rpc;
 
 import static tech.pegasys.teku.util.async.FutureUtil.ignoreFuture;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
 import io.libp2p.core.P2PChannel;
@@ -182,7 +183,8 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       }
     }
 
-    private void close() {
+    @VisibleForTesting
+    void close() {
       if (rpcRequestHandler != null) {
         try {
           rpcRequestHandler.complete(nodeId, rpcStream);
