@@ -39,12 +39,13 @@ public abstract class AbstractStoreTest {
   protected final StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
   protected final ChainBuilder chainBuilder = ChainBuilder.createDefault();
 
-  void processChainWithLimitedCache(BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor)
+  protected void processChainWithLimitedCache(
+      BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor)
       throws StateTransitionException {
     final int cacheSize = 10;
     final int cacheMultiplier = 3;
 
-    // Create a new store with a small state cache
+    // Create a new store with a small cache
     final StorePruningOptions pruningOptions =
         StorePruningOptions.create(cacheSize, cacheSize, cacheSize);
 
@@ -65,12 +66,12 @@ public abstract class AbstractStoreTest {
     blocks.forEach(b -> chainProcessor.accept(store, b));
   }
 
-  void processCheckpointsWithLimitedCache(
+  protected void processCheckpointsWithLimitedCache(
       BiConsumer<UpdatableStore, CheckpointState> chainProcessor) throws StateTransitionException {
     final int cacheSize = 3;
     final int epochsToProcess = cacheSize * 3;
 
-    // Create a new store with a small state cache
+    // Create a new store with a small cache
     final StorePruningOptions pruningOptions =
         StorePruningOptions.create(cacheSize, cacheSize, cacheSize);
 
@@ -79,13 +80,14 @@ public abstract class AbstractStoreTest {
       SignedBlockAndState block = chainBuilder.generateNextBlock();
       addBlock(store, block);
     }
-    // Save checkpoints for each epoch
+    // Collect checkpoints for each epoch
     final List<CheckpointState> allCheckpoints = new ArrayList<>();
     for (int i = 0; i <= chainBuilder.getLatestEpoch().intValue(); i++) {
       Checkpoint checkpoint = chainBuilder.getCurrentCheckpointForEpoch(i);
       BeaconState state = chainBuilder.getBlockAndState(checkpoint.getRoot()).get().getState();
       allCheckpoints.add(new CheckpointState(checkpoint, state));
     }
+    assertThat(allCheckpoints.size()).isEqualTo(epochsToProcess + 1);
 
     allCheckpoints.forEach(c -> chainProcessor.accept(store, c));
     allCheckpoints.forEach(c -> chainProcessor.accept(store, c));
