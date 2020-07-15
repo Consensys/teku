@@ -95,7 +95,10 @@ public class SafeFuture<T> extends CompletableFuture<T> {
    * @see #orInterrupt(Interruptor...)
    */
   public static SafeFuture<Void> notInterrupted(Interruptor... interruptors) {
-    return SafeFuture.<Void>completedFuture(null).orInterrupt(interruptors);
+    SafeFuture<Void> delayedFuture = new SafeFuture<>();
+    SafeFuture<Void> ret = delayedFuture.orInterrupt(interruptors);
+    delayedFuture.complete(null);
+    return ret;
   }
 
   /**

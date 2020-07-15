@@ -685,7 +685,7 @@ public class SafeFutureTest {
   }
 
   @Test
-  public void orInterrupt_complexInterruptInTheMiddle() throws Exception {
+  public void orInterrupt_complexInterruptInTheMiddle() {
     InterruptTest test = new InterruptTest();
 
     test.fut0.complete(111);
@@ -696,6 +696,17 @@ public class SafeFutureTest {
     assertThatThrownBy(() -> test.intFut.get()).hasRootCause(new IllegalStateException());
     assertThat(test.exec1.executed).isTrue();
     assertThat(test.exec2.executed).isFalse();
+  }
+
+  @Test
+  public void notInterrupted_shouldThrowIfInterrupted() {
+    SafeFuture<Void> interruptorFut = new SafeFuture<>();
+    Interruptor interruptor =
+        SafeFuture.createInterruptor(interruptorFut, () -> new RuntimeException("test"));
+    interruptorFut.complete(null);
+    SafeFuture<String> future = SafeFuture.notInterrupted(interruptor).thenApply(__ -> "aaa");
+
+    assertThatThrownBy(future::get).hasMessageContaining("test");
   }
 
   private List<Throwable> collectUncaughtExceptions() {
