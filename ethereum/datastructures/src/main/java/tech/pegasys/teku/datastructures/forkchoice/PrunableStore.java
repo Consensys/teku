@@ -15,8 +15,12 @@ package tech.pegasys.teku.datastructures.forkchoice;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public interface PrunableStore extends ReadOnlyStore {
   /**
@@ -34,4 +38,16 @@ public interface PrunableStore extends ReadOnlyStore {
    * @return The block if available.
    */
   Optional<SignedBeaconBlock> getBlockIfAvailable(final Bytes32 blockRoot);
+
+  default SafeFuture<Optional<BeaconBlock>> retrieveBlock(Bytes32 blockRoot) {
+    return retrieveSignedBlock(blockRoot).thenApply(res -> res.map(SignedBeaconBlock::getMessage));
+  }
+
+  SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(Bytes32 blockRoot);
+
+  SafeFuture<Optional<SignedBlockAndState>> retrieveBlockAndState(Bytes32 blockRoot);
+
+  SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot);
+
+  SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint);
 }
