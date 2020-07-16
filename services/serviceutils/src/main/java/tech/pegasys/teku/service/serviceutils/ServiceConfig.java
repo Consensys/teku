@@ -67,7 +67,7 @@ public class ServiceConfig {
   public AsyncRunner createAsyncRunner(final String name) {
     // We use a bunch of blocking calls so need to ensure the thread pool is reasonably large
     // as many threads may be blocked.
-    return createAsyncRunner(name, Math.max(Runtime.getRuntime().availableProcessors(), 10));
+    return createAsyncRunner(name, Math.max(Runtime.getRuntime().availableProcessors(), 5));
   }
 
   public AsyncRunner createAsyncRunner(final String name, final int maxThreads) {
