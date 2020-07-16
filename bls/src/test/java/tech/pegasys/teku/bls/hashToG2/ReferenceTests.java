@@ -134,7 +134,7 @@ class ReferenceTests {
           "src",
           "test",
           "resources",
-          "BLS12381G2_XMD:SHA-256_SSWU_RO_.json");
+          "BLS12381G2_XMD-SHA-256_SSWU_RO_.json");
 
   @ParameterizedTest(name = "{index}. Filename={0} Test={1}")
   @MethodSource({
