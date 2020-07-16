@@ -80,7 +80,7 @@ public class SingleAttestationTopicHandlerTest {
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(ACCEPT);
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
-    final ValidationResult result = topicHandler.handleMessage(serialized);
+    final ValidationResult result = topicHandler.handleMessage(serialized).join();
     assertThat(result).isEqualTo(ValidationResult.Valid);
     verify(gossipedAttestationConsumer).forward(attestation);
   }
@@ -95,7 +95,7 @@ public class SingleAttestationTopicHandlerTest {
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(IGNORE);
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
-    final ValidationResult result = topicHandler.handleMessage(serialized);
+    final ValidationResult result = topicHandler.handleMessage(serialized).join();
     assertThat(result).isEqualTo(ValidationResult.Ignore);
     verify(gossipedAttestationConsumer, never()).forward(attestation);
   }
@@ -110,7 +110,7 @@ public class SingleAttestationTopicHandlerTest {
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(SAVE_FOR_FUTURE);
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
-    final ValidationResult result = topicHandler.handleMessage(serialized);
+    final ValidationResult result = topicHandler.handleMessage(serialized).join();
     assertThat(result).isEqualTo(ValidationResult.Ignore);
     verify(gossipedAttestationConsumer).forward(attestation);
   }
@@ -125,7 +125,7 @@ public class SingleAttestationTopicHandlerTest {
     when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(REJECT);
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
-    final ValidationResult result = topicHandler.handleMessage(serialized);
+    final ValidationResult result = topicHandler.handleMessage(serialized).join();
     assertThat(result).isEqualTo(ValidationResult.Invalid);
     verify(gossipedAttestationConsumer, never()).forward(attestation);
   }
@@ -134,7 +134,7 @@ public class SingleAttestationTopicHandlerTest {
   public void handleMessage_invalidAttestation_invalidSSZ() {
     final Bytes serialized = Bytes.fromHexString("0x3456");
 
-    final ValidationResult result = topicHandler.handleMessage(serialized);
+    final ValidationResult result = topicHandler.handleMessage(serialized).join();
     assertThat(result).isEqualTo(ValidationResult.Invalid);
   }
 

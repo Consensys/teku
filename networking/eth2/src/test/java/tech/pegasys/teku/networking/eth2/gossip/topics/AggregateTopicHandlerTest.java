@@ -51,7 +51,9 @@ public class AggregateTopicHandlerTest {
     when(validator.validate(aggregate)).thenReturn(InternalValidationResult.ACCEPT);
 
     final ValidationResult result =
-        topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
+        topicHandler
+            .handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()))
+            .join();
     assertThat(result).isEqualTo(ValidationResult.Valid);
     verify(attestationConsumer).forward(aggregate);
   }
@@ -64,7 +66,9 @@ public class AggregateTopicHandlerTest {
     when(validator.validate(aggregate)).thenReturn(InternalValidationResult.SAVE_FOR_FUTURE);
 
     final ValidationResult result =
-        topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
+        topicHandler
+            .handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()))
+            .join();
     assertThat(result).isEqualTo(ValidationResult.Ignore);
     verify(attestationConsumer).forward(aggregate);
   }
@@ -77,7 +81,9 @@ public class AggregateTopicHandlerTest {
     when(validator.validate(aggregate)).thenReturn(InternalValidationResult.IGNORE);
 
     final ValidationResult result =
-        topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
+        topicHandler
+            .handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()))
+            .join();
     assertThat(result).isEqualTo(ValidationResult.Ignore);
     verify(attestationConsumer, never()).forward(aggregate);
   }
@@ -90,7 +96,9 @@ public class AggregateTopicHandlerTest {
     when(validator.validate(aggregate)).thenReturn(InternalValidationResult.REJECT);
 
     final ValidationResult result =
-        topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
+        topicHandler
+            .handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()))
+            .join();
     assertThat(result).isEqualTo(ValidationResult.Invalid);
     verify(attestationConsumer, never()).forward(aggregate);
   }

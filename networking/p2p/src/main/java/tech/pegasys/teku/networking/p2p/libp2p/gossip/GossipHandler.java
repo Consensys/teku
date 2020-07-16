@@ -74,8 +74,7 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
     }
     LOG.trace("Received message for topic {}: {} bytes", topic, bytes.size());
 
-    final ValidationResult result = handler.handleMessage(bytes);
-    return SafeFuture.completedFuture(result);
+    return handler.handleMessage(bytes);
   }
 
   public void gossip(Bytes bytes) {
