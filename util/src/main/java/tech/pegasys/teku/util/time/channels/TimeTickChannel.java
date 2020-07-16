@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.util.time.channels;
 
-import tech.pegasys.teku.util.channels.VoidChannelInterface;
+import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
 
-public interface TimeTickChannel extends VoidChannelInterface {
+public interface TimeTickChannel extends VoidReturningChannelInterface {
   void onTick();
 }

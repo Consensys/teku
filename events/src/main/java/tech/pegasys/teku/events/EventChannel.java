@@ -29,7 +29,7 @@ import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.channels.VoidChannelInterface;
+import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
 
 public class EventChannel<T> {
 
@@ -106,10 +106,10 @@ public class EventChannel<T> {
     final boolean hasReturnValues =
         Stream.of(channelInterface.getMethods())
             .anyMatch(method -> hasAllowedAsyncReturnValue(method.getReturnType()));
-    if (hasReturnValues && VoidChannelInterface.class.isAssignableFrom(channelInterface)) {
+    if (hasReturnValues && VoidReturningChannelInterface.class.isAssignableFrom(channelInterface)) {
       throw new IllegalArgumentException(
           "Channel interface extends "
-              + VoidChannelInterface.class.getSimpleName()
+              + VoidReturningChannelInterface.class.getSimpleName()
               + " but has non-void return types");
     }
 

@@ -17,9 +17,9 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.util.channels.VoidChannelInterface;
+import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
 
-public interface Eth1EventsChannel extends VoidChannelInterface {
+public interface Eth1EventsChannel extends VoidReturningChannelInterface {
   void onDepositsFromBlock(DepositsFromBlockEvent event);
 
   void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event);

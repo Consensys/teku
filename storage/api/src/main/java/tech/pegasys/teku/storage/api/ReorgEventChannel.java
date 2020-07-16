@@ -15,9 +15,9 @@ package tech.pegasys.teku.storage.api;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.util.channels.VoidChannelInterface;
+import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
 
-public interface ReorgEventChannel extends VoidChannelInterface {
+public interface ReorgEventChannel extends VoidReturningChannelInterface {
 
   /**
    * Called each time the chain switches forks.

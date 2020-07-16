@@ -13,4 +13,9 @@
 
 package tech.pegasys.teku.util.channels;
 
-public interface VoidChannelInterface extends ChannelInterface {}
+/**
+ * Marker interface event channel interfaces which only have {@code void} return types.
+ *
+ * <p>Any methods of interfaces that extend this one must return {@code void}.
+ */
+public interface VoidReturningChannelInterface extends ChannelInterface {}

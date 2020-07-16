@@ -21,7 +21,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.util.channels.VoidChannelInterface;
+import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
 
 class EventChannelsTest {
   private final EventChannels channels =
@@ -93,11 +93,11 @@ class EventChannelsTest {
     verifyNoMoreInteractions(runnableSubscriber);
   }
 
-  private interface SimpleConsumer extends VoidChannelInterface {
+  private interface SimpleConsumer extends VoidReturningChannelInterface {
     void accept(int value);
   }
 
-  private interface SimpleChannel extends VoidChannelInterface {
+  private interface SimpleChannel extends VoidReturningChannelInterface {
     void run();
   }
 }
