@@ -31,7 +31,7 @@ import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
 
-public class EventChannel<T> {
+class EventChannel<T> {
 
   private final Class<T> channelInterface;
   private final EventDeliverer<T> invoker;
@@ -47,19 +47,19 @@ public class EventChannel<T> {
     this.allowMultipleSubscribers = allowMultipleSubscribers;
   }
 
-  public static <T> EventChannel<T> create(
+  static <T> EventChannel<T> create(
       final Class<T> channelInterface, final MetricsSystem metricsSystem) {
     return create(channelInterface, LOGGING_EXCEPTION_HANDLER, metricsSystem);
   }
 
-  public static <T> EventChannel<T> create(
+  static <T> EventChannel<T> create(
       final Class<T> channelInterface,
       final ChannelExceptionHandler exceptionHandler,
       final MetricsSystem metricsSystem) {
     return create(channelInterface, new DirectEventDeliverer<>(exceptionHandler, metricsSystem));
   }
 
-  public static <T> EventChannel<T> createAsync(
+  static <T> EventChannel<T> createAsync(
       final Class<T> channelInterface,
       final ChannelExceptionHandler exceptionHandler,
       final MetricsSystem metricsSystem) {
@@ -129,7 +129,7 @@ public class EventChannel<T> {
         && returnType.isAssignableFrom(SafeFuture.class);
   }
 
-  public T getPublisher(final Optional<AsyncRunner> responseRunner) {
+  T getPublisher(final Optional<AsyncRunner> responseRunner) {
     @SuppressWarnings("unchecked")
     final T publisher =
         (T)
@@ -140,7 +140,7 @@ public class EventChannel<T> {
     return publisher;
   }
 
-  public void subscribe(final T listener) {
+  void subscribe(final T listener) {
     subscribeMultithreaded(listener, 1);
   }
 
@@ -156,7 +156,7 @@ public class EventChannel<T> {
    * @param listener the listener to notify of events
    * @param requestedParallelism the number of threads to use to process events
    */
-  public void subscribeMultithreaded(final T listener, final int requestedParallelism) {
+  void subscribeMultithreaded(final T listener, final int requestedParallelism) {
     checkArgument(requestedParallelism > 0, "Number of threads must be at least 1");
     if (!hasSubscriber.compareAndSet(false, true) && !allowMultipleSubscribers) {
       throw new IllegalStateException("Only one subscriber is supported by this event channel");
