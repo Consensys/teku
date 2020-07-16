@@ -51,14 +51,21 @@ class ScheduledExecutorAsyncRunner implements AsyncRunner {
                 .setNameFormat(name + "-async-scheduler-%d")
                 .setDaemon(true)
                 .build());
+    // ThreadPoolExecutor has a weird API. maximumThreadCount only applies if you use a
+    // SynchronousQueue but then tasks are rejected once max threads are reached instead of being
+    // queued. So we use a blocking queue to ensure there is some limit on the queue size but that
+    // means that the maximum number of threads is ignored and only the core thread pool size is
+    // used. So, we set maximum and core thread pool to the same value and allow core threads to
+    // time out and exit if they are unused.
     final ThreadPoolExecutor workerPool =
         new ThreadPoolExecutor(
-            1,
+            maxThreads,
             maxThreads,
             60,
             TimeUnit.SECONDS,
             new ArrayBlockingQueue<>(QUEUE_CAPACITY),
             new ThreadFactoryBuilder().setNameFormat(name + "-async-%d").setDaemon(true).build());
+    workerPool.allowCoreThreadTimeOut(true);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.EXECUTOR,
