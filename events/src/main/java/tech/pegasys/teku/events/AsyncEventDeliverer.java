@@ -67,7 +67,9 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
     enqueueDelivery(
         subscriber,
         method,
-        () -> super.<X>deliverToWithResponse(subscriber, method, args).propagateTo(result));
+        () ->
+            super.<X>deliverToWithResponse(subscriber, method, args)
+                .propagateToAsync(result, executor));
     return result;
   }
 
