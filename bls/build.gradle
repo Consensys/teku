@@ -10,5 +10,5 @@ dependencies {
   implementation 'net.java.dev.jna:jna:5.5.0'
 
   testImplementation project(':logging')
-  testImplementation 'com.googlecode.json-simple:json-simple'
+//  testImplementation 'com.googlecode.json-simple:json-simple'
 }
