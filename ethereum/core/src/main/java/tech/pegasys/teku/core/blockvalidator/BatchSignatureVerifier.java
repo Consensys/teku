@@ -74,10 +74,6 @@ public class BatchSignatureVerifier implements BLSSignatureVerifier {
    * instance methods would fail with exception
    */
   public synchronized boolean batchVerify() {
-    if (BLSConstants.VERIFICATION_DISABLED) {
-      LOG.warn("Skipping bls verification.");
-      return true;
-    }
     if (complete) throw new IllegalStateException("Reuse of disposable instance");
     List<BatchSemiAggregate> batchSemiAggregates =
         toVerify.stream()
