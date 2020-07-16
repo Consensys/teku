@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
@@ -36,16 +37,13 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
       synchronizedMap(new IdentityHashMap<>());
   private final AtomicBoolean stopped = new AtomicBoolean(false);
   private final ExecutorService executor;
-  private final ExecutorService responseExecutor;
 
   public AsyncEventDeliverer(
       final ExecutorService executor,
-      final ExecutorService responseExecutor,
       final ChannelExceptionHandler exceptionHandler,
       final MetricsSystem metricsSystem) {
     super(exceptionHandler, metricsSystem);
     this.executor = executor;
-    this.responseExecutor = responseExecutor;
   }
 
   @Override
@@ -65,14 +63,17 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
 
   @Override
   protected <X> SafeFuture<X> deliverToWithResponse(
-      final T subscriber, final Method method, final Object[] args) {
+      final T subscriber,
+      final Method method,
+      final Object[] args,
+      final AsyncRunner responseRunner) {
     final SafeFuture<X> result = new SafeFuture<>();
     enqueueDelivery(
         subscriber,
         method,
         () ->
-            super.<X>deliverToWithResponse(subscriber, method, args)
-                .propagateToAsync(result, responseExecutor));
+            super.<X>deliverToWithResponse(subscriber, method, args, responseRunner)
+                .propagateToAsync(result, responseRunner));
     return result;
   }
 

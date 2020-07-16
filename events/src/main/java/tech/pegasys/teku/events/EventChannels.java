@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.events;
 
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
@@ -44,12 +45,12 @@ public class EventChannels {
   }
 
   public <T extends VoidChannelInterface> T getPublisher(final Class<T> channelInterface) {
-    return getChannel(channelInterface).getPublisher();
+    return getChannel(channelInterface).getPublisher(Optional.empty());
   }
 
   public <T extends ChannelInterface> T getPublisher(
-      final Class<T> channelInterface, final AsyncRunner responseThreads) {
-    return getChannel(channelInterface).getPublisher();
+      final Class<T> channelInterface, final AsyncRunner responseRunner) {
+    return getChannel(channelInterface).getPublisher(Optional.of(responseRunner));
   }
 
   public <T extends ChannelInterface> EventChannels subscribe(

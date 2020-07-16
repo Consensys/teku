@@ -16,7 +16,6 @@ package tech.pegasys.teku.util.async;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -216,16 +215,11 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     propagateResult(this, target);
   }
 
-  public void propagateToAsync(final SafeFuture<T> target, final Executor executor) {
-    whenCompleteAsync(
-        (result, error) -> {
-          if (error != null) {
-            target.completeExceptionally(error);
-          } else {
-            target.complete(result);
-          }
-        },
-        executor);
+  public void propagateToAsync(final SafeFuture<T> target, final AsyncRunner asyncRunner) {
+    finish(
+        result -> asyncRunner.runAsync(() -> target.complete(result)).reportExceptions(),
+        error ->
+            asyncRunner.runAsync(() -> target.completeExceptionally(error)).reportExceptions());
   }
 
   /**

@@ -20,28 +20,29 @@ import static tech.pegasys.teku.events.LoggingChannelExceptionHandler.LOGGING_EX
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.channels.VoidChannelInterface;
 
 public class EventChannel<T> {
 
-  private final T publisher;
+  private final Class<T> channelInterface;
   private final EventDeliverer<T> invoker;
   private final boolean allowMultipleSubscribers;
   private final AtomicBoolean hasSubscriber = new AtomicBoolean(false);
 
   private EventChannel(
-      final T publisher, final EventDeliverer<T> invoker, final boolean allowMultipleSubscribers) {
-    this.publisher = publisher;
+      final Class<T> channelInterface,
+      final EventDeliverer<T> invoker,
+      final boolean allowMultipleSubscribers) {
+    this.channelInterface = channelInterface;
     this.invoker = invoker;
     this.allowMultipleSubscribers = allowMultipleSubscribers;
   }
@@ -69,7 +70,6 @@ public class EventChannel<T> {
                 .setDaemon(true)
                 .setNameFormat(channelInterface.getSimpleName() + "-%d")
                 .build()),
-        new ThreadPoolExecutor(1, 10, 30, TimeUnit.SECONDS, new SynchronousQueue<>()),
         exceptionHandler,
         metricsSystem);
   }
@@ -77,21 +77,17 @@ public class EventChannel<T> {
   static <T> EventChannel<T> createAsync(
       final Class<T> channelInterface,
       final ExecutorService executor,
-      final ExecutorService responseExecutor,
       final MetricsSystem metricsSystem) {
-    return createAsync(
-        channelInterface, executor, responseExecutor, LOGGING_EXCEPTION_HANDLER, metricsSystem);
+    return createAsync(channelInterface, executor, LOGGING_EXCEPTION_HANDLER, metricsSystem);
   }
 
   static <T> EventChannel<T> createAsync(
       final Class<T> channelInterface,
       final ExecutorService executor,
-      final ExecutorService responseExecutor,
       final ChannelExceptionHandler exceptionHandler,
       final MetricsSystem metricsSystem) {
     return create(
-        channelInterface,
-        new AsyncEventDeliverer<>(executor, responseExecutor, exceptionHandler, metricsSystem));
+        channelInterface, new AsyncEventDeliverer<>(executor, exceptionHandler, metricsSystem));
   }
 
   private static <T> EventChannel<T> create(
@@ -110,21 +106,14 @@ public class EventChannel<T> {
     final boolean hasReturnValues =
         Stream.of(channelInterface.getMethods())
             .anyMatch(method -> hasAllowedAsyncReturnValue(method.getReturnType()));
-    if (hasReturnValues && channelInterface.isInstance(VoidChannelInterface.class)) {
+    if (hasReturnValues && VoidChannelInterface.class.isAssignableFrom(channelInterface)) {
       throw new IllegalArgumentException(
           "Channel interface extends "
               + VoidChannelInterface.class.getSimpleName()
               + " but has non-void return types");
     }
-    @SuppressWarnings("unchecked")
-    final T publisher =
-        (T)
-            Proxy.newProxyInstance(
-                channelInterface.getClassLoader(),
-                new Class<?>[] {channelInterface},
-                eventDeliverer);
 
-    return new EventChannel<>(publisher, eventDeliverer, !hasReturnValues);
+    return new EventChannel<>(channelInterface, eventDeliverer, !hasReturnValues);
   }
 
   private static boolean isReturnTypeAllowed(final Method method) {
@@ -140,7 +129,14 @@ public class EventChannel<T> {
         && returnType.isAssignableFrom(SafeFuture.class);
   }
 
-  public T getPublisher() {
+  public T getPublisher(final Optional<AsyncRunner> responseRunner) {
+    @SuppressWarnings("unchecked")
+    final T publisher =
+        (T)
+            Proxy.newProxyInstance(
+                channelInterface.getClassLoader(),
+                new Class<?>[] {channelInterface},
+                (proxy, method, args) -> invoker.invoke(proxy, method, args, responseRunner));
     return publisher;
   }
 
