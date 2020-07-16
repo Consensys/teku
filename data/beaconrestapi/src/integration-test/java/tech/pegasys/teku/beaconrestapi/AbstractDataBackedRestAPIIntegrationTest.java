@@ -208,7 +208,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   protected void assertNotFound(final Response response) throws IOException {
     assertThat(response.code()).isEqualTo(SC_NOT_FOUND);
-    assertThat(response.body().string()).isEmpty();
   }
 
   protected void assertForbidden(final Response response) throws IOException {
