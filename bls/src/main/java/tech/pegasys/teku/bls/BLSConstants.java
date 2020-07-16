@@ -20,4 +20,8 @@ public class BLSConstants {
   public static void disableBLSVerification() {
     VERIFICATION_ENABLED = false;
   }
+
+  public static void enableBLSVerification() {
+    VERIFICATION_ENABLED = true;
+  }
 }
