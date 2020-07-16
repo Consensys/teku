@@ -22,7 +22,7 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.bls.mikuli.BLS12381.BatchSemiAggregate;
+import tech.pegasys.teku.bls.BatchSemiAggregate;
 
 /**
  * Implementation which doesn't perform any actual validations on {@link #verify(List, Bytes,

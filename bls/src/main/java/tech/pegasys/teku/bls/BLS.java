@@ -17,15 +17,17 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Streams;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.mikuli.BLS12381;
-import tech.pegasys.teku.bls.mikuli.BLS12381.BatchSemiAggregate;
-import tech.pegasys.teku.bls.mikuli.PublicKey;
+import tech.pegasys.teku.bls.impl.BLS12381;
+import tech.pegasys.teku.bls.impl.PublicKey;
+import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
+import tech.pegasys.teku.bls.impl.mikuli.MikuliBLS12381;
 
 /**
  * Implements the standard BLS functions used in Eth2 as defined in
@@ -36,6 +38,8 @@ import tech.pegasys.teku.bls.mikuli.PublicKey;
  * by this one conforming to the specification or standard.
  */
 public class BLS {
+
+  static BLS12381 BlsImpl = MikuliBLS12381.INSTANCE;
 
   /*
    * The following are the methods used directly in the Ethereum 2.0 specifications. These strictly adhere to the standard.
@@ -51,7 +55,7 @@ public class BLS {
    * @return The Signature, not null
    */
   public static BLSSignature sign(BLSSecretKey secretKey, Bytes message) {
-    return new BLSSignature(BLS12381.sign(secretKey.getSecretKey(), message));
+    return new BLSSignature(secretKey.getSecretKey().sign(message));
   }
 
   /**
@@ -65,7 +69,7 @@ public class BLS {
    * @return True if the verification is successful, false otherwise.
    */
   public static boolean verify(BLSPublicKey publicKey, Bytes message, BLSSignature signature) {
-    return BLS12381.coreVerify(publicKey.getPublicKey(), message, signature.getSignature());
+    return signature.getSignature().verify(publicKey.getPublicKey(), message);
   }
 
   /**
@@ -83,7 +87,8 @@ public class BLS {
   public static BLSSignature aggregate(List<BLSSignature> signatures) {
     checkArgument(signatures.size() > 0, "Aggregating zero signatures is invalid.");
     return new BLSSignature(
-        BLS12381.aggregate(signatures.stream().map(BLSSignature::getSignature)));
+        BlsImpl.aggregateSignatures(
+            signatures.stream().map(BLSSignature::getSignature).collect(Collectors.toList())));
   }
 
   /**
@@ -110,9 +115,13 @@ public class BLS {
     if (publicKeys.isEmpty()) return false;
     // Check that there are no duplicate messages
     if (new HashSet<>(messages).size() != messages.size()) return false;
-    List<PublicKey> publicKeyObjects =
-        publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
-    return BLS12381.coreAggregateVerify(publicKeyObjects, messages, signature.getSignature());
+    List<PublicKeyMessagePair> publicKeyMessagePairs =
+        Streams.zip(
+                publicKeys.stream(),
+                messages.stream(),
+                (pk, msg) -> new PublicKeyMessagePair(pk.getPublicKey(), msg))
+            .collect(Collectors.toList());
+    return signature.getSignature().verify(publicKeyMessagePairs);
   }
 
   /**
@@ -133,7 +142,7 @@ public class BLS {
     if (publicKeys.isEmpty()) return false;
     List<PublicKey> publicKeyObjects =
         publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
-    return BLS12381.fastAggregateVerify(publicKeyObjects, message, signature.getSignature());
+    return signature.getSignature().verify(publicKeyObjects, message);
   }
 
   /*
@@ -267,7 +276,7 @@ public class BLS {
    */
   public static BatchSemiAggregate prepareBatchVerify(
       int index, List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
-    return BLS12381.prepareBatchVerify(
+    return BlsImpl.prepareBatchVerify(
         index,
         publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
         message,
@@ -289,14 +298,7 @@ public class BLS {
       List<BLSPublicKey> publicKeys2,
       Bytes message2,
       BLSSignature signature2) {
-    return BLS12381.prepareBatchVerify2(
-        index,
-        publicKeys1.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
-        message1,
-        signature1.getSignature(),
-        publicKeys2.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
-        message2,
-        signature2.getSignature());
+    throw new UnsupportedOperationException();
   }
 
   /**
@@ -307,6 +309,6 @@ public class BLS {
    * @return True if the verification is successful, false otherwise
    */
   public static boolean completeBatchVerify(List<BatchSemiAggregate> preparedSignatures) {
-    return BLS12381.completeBatchVerify(preparedSignatures);
+    return BlsImpl.completeBatchVerify(preparedSignatures);
   }
 }

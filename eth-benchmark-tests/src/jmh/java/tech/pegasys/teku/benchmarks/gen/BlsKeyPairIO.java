@@ -131,7 +131,7 @@ public class BlsKeyPairIO {
         writer
             .append(blsKeyPair.getSecretKey().getSecretKey().toBytes().toHexString())
             .append(':')
-            .append(blsKeyPair.getPublicKey().getPublicKey().g1Point().toBytes().toHexString())
+            .append(blsKeyPair.getPublicKey().getPublicKey().toBytesCompressed().toHexString())
             .append('\n');
       }
     }
