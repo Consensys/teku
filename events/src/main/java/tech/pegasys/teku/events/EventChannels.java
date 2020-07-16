@@ -17,6 +17,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.util.channels.ChannelInterface;
+import tech.pegasys.teku.util.channels.VoidChannelInterface;
 
 public class EventChannels {
 
@@ -40,11 +43,17 @@ public class EventChannels {
     this.eventChannelFactory = eventChannelFactory;
   }
 
-  public <T> T getPublisher(final Class<T> channelInterface) {
+  public <T extends VoidChannelInterface> T getPublisher(final Class<T> channelInterface) {
     return getChannel(channelInterface).getPublisher();
   }
 
-  public <T> EventChannels subscribe(final Class<T> channelInterface, final T subscriber) {
+  public <T extends ChannelInterface> T getPublisher(
+      final Class<T> channelInterface, final AsyncRunner responseThreads) {
+    return getChannel(channelInterface).getPublisher();
+  }
+
+  public <T extends ChannelInterface> EventChannels subscribe(
+      final Class<T> channelInterface, final T subscriber) {
     return subscribeMultithreaded(channelInterface, subscriber, 1);
   }
 
@@ -61,14 +70,14 @@ public class EventChannels {
    * @param subscriber the subscriber to notify of events
    * @param requestedParallelism the number of threads to use to process events
    */
-  public <T> EventChannels subscribeMultithreaded(
+  public <T extends ChannelInterface> EventChannels subscribeMultithreaded(
       final Class<T> channelInterface, final T subscriber, final int requestedParallelism) {
     getChannel(channelInterface).subscribeMultithreaded(subscriber, requestedParallelism);
     return this;
   }
 
   @SuppressWarnings("unchecked")
-  private <T> EventChannel<T> getChannel(final Class<T> channelInterface) {
+  private <T extends ChannelInterface> EventChannel<T> getChannel(final Class<T> channelInterface) {
     return (EventChannel<T>) channels.computeIfAbsent(channelInterface, eventChannelFactory);
   }
 

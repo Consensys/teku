@@ -14,7 +14,8 @@
 package tech.pegasys.teku.util.time.channels;
 
 import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.teku.util.channels.VoidChannelInterface;
 
-public interface SlotEventsChannel {
+public interface SlotEventsChannel extends VoidChannelInterface {
   void onSlot(UnsignedLong slot);
 }

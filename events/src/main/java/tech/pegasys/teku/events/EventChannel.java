@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.channels.VoidChannelInterface;
 
 public class EventChannel<T> {
 
@@ -109,6 +110,12 @@ public class EventChannel<T> {
     final boolean hasReturnValues =
         Stream.of(channelInterface.getMethods())
             .anyMatch(method -> hasAllowedAsyncReturnValue(method.getReturnType()));
+    if (hasReturnValues && channelInterface.isInstance(VoidChannelInterface.class)) {
+      throw new IllegalArgumentException(
+          "Channel interface extends "
+              + VoidChannelInterface.class.getSimpleName()
+              + " but has non-void return types");
+    }
     @SuppressWarnings("unchecked")
     final T publisher =
         (T)

@@ -14,8 +14,9 @@
 package tech.pegasys.teku.validator.api;
 
 import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.teku.util.channels.VoidChannelInterface;
 
-public interface ValidatorTimingChannel {
+public interface ValidatorTimingChannel extends VoidChannelInterface {
   void onSlot(UnsignedLong slot);
 
   void onChainReorg(final UnsignedLong newSlot);

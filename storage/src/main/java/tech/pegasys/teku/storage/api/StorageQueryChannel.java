@@ -22,8 +22,9 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.channels.ChannelInterface;
 
-public interface StorageQueryChannel {
+public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<Optional<StoreBuilder>> onStoreRequest();
 
