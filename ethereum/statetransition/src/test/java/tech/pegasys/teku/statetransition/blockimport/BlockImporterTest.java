@@ -87,7 +87,7 @@ public class BlockImporterTest {
     final SignedBeaconBlock block = otherChain.createBlockAtSlot(UnsignedLong.ONE);
     localChain.setSlot(block.getSlot());
 
-    final BlockImportResult result = blockImporter.importBlock(block);
+    final BlockImportResult result = blockImporter.importBlock(block).get();
     assertSuccessfulResult(result);
   }
 
@@ -96,8 +96,8 @@ public class BlockImporterTest {
     final SignedBeaconBlock block = otherChain.createBlockAtSlot(UnsignedLong.ONE);
     localChain.setSlot(block.getSlot());
 
-    assertThat(blockImporter.importBlock(block).isSuccessful()).isTrue();
-    BlockImportResult result = blockImporter.importBlock(block);
+    assertThat(blockImporter.importBlock(block).get().isSuccessful()).isTrue();
+    BlockImportResult result = blockImporter.importBlock(block).get();
     assertSuccessfulResult(result);
   }
 
@@ -171,7 +171,7 @@ public class BlockImporterTest {
     tx.commit().join();
 
     // Known blocks should report as successfully imported
-    final BlockImportResult result = blockImporter.importBlock(blocks.get(blocks.size() - 1));
+    final BlockImportResult result = blockImporter.importBlock(blocks.get(blocks.size() - 1)).get();
     assertSuccessfulResult(result);
   }
 
@@ -197,7 +197,7 @@ public class BlockImporterTest {
     tx.commit().join();
 
     // Import a block prior to the latest finalized block
-    final BlockImportResult result = blockImporter.importBlock(blocks.get(1));
+    final BlockImportResult result = blockImporter.importBlock(blocks.get(1)).get();
     assertImportFailed(result, FailureReason.UNKNOWN_PARENT);
   }
 
@@ -206,7 +206,7 @@ public class BlockImporterTest {
     // First import a valid block at slot 1
     final SignedBeaconBlock block = otherChain.createAndImportBlockAtSlot(UnsignedLong.ONE);
     localChain.setSlot(block.getSlot());
-    assertSuccessfulResult(blockImporter.importBlock(block));
+    assertSuccessfulResult(blockImporter.importBlock(block).get());
 
     // Now create an alternate block 1 with the real block one as the parent block
     final BeaconBlock invalidAncestryUnsignedBlock =
@@ -226,7 +226,7 @@ public class BlockImporterTest {
                     invalidAncestryUnsignedBlock, otherStorage.getHeadForkInfo().orElseThrow())
                 .join());
 
-    final BlockImportResult result = blockImporter.importBlock(invalidAncestryBlock);
+    final BlockImportResult result = blockImporter.importBlock(invalidAncestryBlock).get();
     assertThat(result.isSuccessful()).isFalse();
     assertThat(result.getFailureReason())
         .isEqualTo(BlockImportResult.FAILED_INVALID_ANCESTRY.getFailureReason());
@@ -243,7 +243,7 @@ public class BlockImporterTest {
   public void importBlock_fromFuture() throws Exception {
     final SignedBeaconBlock block = otherChain.createBlockAtSlot(UnsignedLong.ONE);
 
-    final BlockImportResult result = blockImporter.importBlock(block);
+    final BlockImportResult result = blockImporter.importBlock(block).get();
     assertImportFailed(result, FailureReason.BLOCK_IS_FROM_FUTURE);
   }
 
@@ -253,7 +253,7 @@ public class BlockImporterTest {
     final SignedBeaconBlock block2 = otherChain.createAndImportBlockAtSlot(UnsignedLong.valueOf(2));
     localChain.setSlot(block2.getSlot());
 
-    final BlockImportResult result = blockImporter.importBlock(block2);
+    final BlockImportResult result = blockImporter.importBlock(block2).get();
     assertImportFailed(result, FailureReason.UNKNOWN_PARENT);
   }
 
@@ -279,7 +279,7 @@ public class BlockImporterTest {
     final SignedBeaconBlock block =
         otherChain.createAndImportBlockAtSlotWithAttestations(currentSlot, List.of(attestation));
 
-    final BlockImportResult result = blockImporter.importBlock(block);
+    final BlockImportResult result = blockImporter.importBlock(block).get();
     assertImportFailed(result, FailureReason.UNKNOWN_PARENT);
   }
 
@@ -289,7 +289,7 @@ public class BlockImporterTest {
     block.getMessage().setState_root(Bytes32.ZERO);
     localChain.setSlot(block.getSlot());
 
-    final BlockImportResult result = blockImporter.importBlock(block);
+    final BlockImportResult result = blockImporter.importBlock(block).get();
     assertImportFailed(result, FailureReason.FAILED_STATE_TRANSITION);
   }
 

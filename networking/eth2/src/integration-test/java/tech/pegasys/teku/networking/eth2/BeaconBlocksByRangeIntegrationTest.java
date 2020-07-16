@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
@@ -116,7 +117,10 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     final SafeFuture<Void> res =
         peer1.requestBlocksByRange(
-            UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add);
+            UnsignedLong.ONE,
+            UnsignedLong.valueOf(10),
+            UnsignedLong.ONE,
+            ResponseStreamListener.from(blocks::add));
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -136,7 +140,10 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     final SafeFuture<Void> res =
         peer1.requestBlocksByRange(
-            UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add);
+            UnsignedLong.ONE,
+            UnsignedLong.valueOf(10),
+            UnsignedLong.ONE,
+            ResponseStreamListener.from(blocks::add));
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -182,7 +189,10 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     waitFor(
         peer1.requestBlocksByRange(
-            UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add));
+            UnsignedLong.ONE,
+            UnsignedLong.valueOf(10),
+            UnsignedLong.ONE,
+            ResponseStreamListener.from(blocks::add)));
     return blocks;
   }
 
