@@ -23,6 +23,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ChunkTooLongException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DecompressFailedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppendedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.LengthOutOfBoundsException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.MessageTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
@@ -59,8 +60,14 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
     }
 
     if (decompressor.isEmpty()) {
-      readLengthPrefixHeader(in)
-          .ifPresent(len -> decompressor = Optional.of(compressor.createDecompressor(len)));
+      final Optional<Integer> maybeLength = readLengthPrefixHeader(in);
+      if (maybeLength.isPresent()) {
+        final int length = maybeLength.get();
+        if (!payloadEncoder.isLengthWithinBounds(length)) {
+          throw new LengthOutOfBoundsException();
+        }
+        decompressor = Optional.of(compressor.createDecompressor(length));
+      }
     }
     if (decompressor.isPresent()) {
       final Optional<ByteBuf> ret;

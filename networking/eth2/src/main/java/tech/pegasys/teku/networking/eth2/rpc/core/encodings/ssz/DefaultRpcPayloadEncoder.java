@@ -22,6 +22,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.util.config.Constants;
 
 public class DefaultRpcPayloadEncoder<T> implements RpcPayloadEncoder<T> {
   private static final Logger LOG = LogManager.getLogger();
@@ -52,5 +53,14 @@ public class DefaultRpcPayloadEncoder<T> implements RpcPayloadEncoder<T> {
       }
       throw new DeserializationFailedException();
     }
+  }
+
+  @Override
+  public boolean isLengthWithinBounds(final long length) {
+    if (clazz.equals(Bytes.class)) {
+      // TODO: This is actually only used for error messages which should be limited to 256 bytes.
+      return length <= Constants.MAX_CHUNK_SIZE;
+    }
+    return SimpleOffsetSerializer.getLengthBounds(clazz).isWithinBounds(length);
   }
 }

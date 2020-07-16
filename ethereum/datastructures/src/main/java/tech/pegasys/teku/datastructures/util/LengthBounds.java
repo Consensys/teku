@@ -38,6 +38,10 @@ public class LengthBounds {
     return max;
   }
 
+  public boolean isWithinBounds(final long length) {
+    return length >= min && length <= max;
+  }
+
   public LengthBounds add(final LengthBounds other) {
     return new LengthBounds(this.min + other.min, this.max + other.max);
   }

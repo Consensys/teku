@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.teku.datastructures.util.LengthBounds;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
@@ -31,6 +32,9 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
 public class BeaconBlocksByRootRequestMessageEncoder
     implements RpcPayloadEncoder<BeaconBlocksByRootRequestMessage> {
   private static final Logger LOG = LogManager.getLogger();
+
+  private static final LengthBounds VALID_LENGTH_BOUNDS =
+      new LengthBounds(Bytes32.SIZE, MAX_REQUEST_BLOCKS * Bytes32.SIZE);
 
   @Override
   public Bytes encode(final BeaconBlocksByRootRequestMessage message) {
@@ -53,5 +57,10 @@ public class BeaconBlocksByRootRequestMessageEncoder
     }
 
     return new BeaconBlocksByRootRequestMessage(blockRoots);
+  }
+
+  @Override
+  public boolean isLengthWithinBounds(final long length) {
+    return VALID_LENGTH_BOUNDS.isWithinBounds(length);
   }
 }
