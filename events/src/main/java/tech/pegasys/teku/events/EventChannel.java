@@ -23,6 +23,9 @@ import java.lang.reflect.Proxy;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -55,11 +58,6 @@ public class EventChannel<T> {
   }
 
   public static <T> EventChannel<T> createAsync(
-      final Class<T> channelInterface, final MetricsSystem metricsSystem) {
-    return createAsync(channelInterface, LOGGING_EXCEPTION_HANDLER, metricsSystem);
-  }
-
-  public static <T> EventChannel<T> createAsync(
       final Class<T> channelInterface,
       final ChannelExceptionHandler exceptionHandler,
       final MetricsSystem metricsSystem) {
@@ -70,6 +68,7 @@ public class EventChannel<T> {
                 .setDaemon(true)
                 .setNameFormat(channelInterface.getSimpleName() + "-%d")
                 .build()),
+        new ThreadPoolExecutor(1, 10, 30, TimeUnit.SECONDS, new SynchronousQueue<>()),
         exceptionHandler,
         metricsSystem);
   }
@@ -77,17 +76,21 @@ public class EventChannel<T> {
   static <T> EventChannel<T> createAsync(
       final Class<T> channelInterface,
       final ExecutorService executor,
+      final ExecutorService responseExecutor,
       final MetricsSystem metricsSystem) {
-    return createAsync(channelInterface, executor, LOGGING_EXCEPTION_HANDLER, metricsSystem);
+    return createAsync(
+        channelInterface, executor, responseExecutor, LOGGING_EXCEPTION_HANDLER, metricsSystem);
   }
 
   static <T> EventChannel<T> createAsync(
       final Class<T> channelInterface,
       final ExecutorService executor,
+      final ExecutorService responseExecutor,
       final ChannelExceptionHandler exceptionHandler,
       final MetricsSystem metricsSystem) {
     return create(
-        channelInterface, new AsyncEventDeliverer<>(executor, exceptionHandler, metricsSystem));
+        channelInterface,
+        new AsyncEventDeliverer<>(executor, responseExecutor, exceptionHandler, metricsSystem));
   }
 
   private static <T> EventChannel<T> create(

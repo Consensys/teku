@@ -36,13 +36,16 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
       synchronizedMap(new IdentityHashMap<>());
   private final AtomicBoolean stopped = new AtomicBoolean(false);
   private final ExecutorService executor;
+  private final ExecutorService responseExecutor;
 
   public AsyncEventDeliverer(
       final ExecutorService executor,
+      final ExecutorService responseExecutor,
       final ChannelExceptionHandler exceptionHandler,
       final MetricsSystem metricsSystem) {
     super(exceptionHandler, metricsSystem);
     this.executor = executor;
+    this.responseExecutor = responseExecutor;
   }
 
   @Override
@@ -69,7 +72,7 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
         method,
         () ->
             super.<X>deliverToWithResponse(subscriber, method, args)
-                .propagateToAsync(result, executor));
+                .propagateToAsync(result, responseExecutor));
     return result;
   }
 

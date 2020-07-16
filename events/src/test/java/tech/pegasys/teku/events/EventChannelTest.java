@@ -172,7 +172,7 @@ class EventChannelTest {
   public void shouldDeliverEventsAsync() throws Exception {
     final ExecutorService executor = mock(ExecutorService.class);
     final EventChannel<EventWithArgument> channel =
-        EventChannel.createAsync(EventWithArgument.class, executor, metricsSystem);
+        EventChannel.createAsync(EventWithArgument.class, executor, executor, metricsSystem);
     final EventWithArgument subscriber = mock(EventWithArgument.class);
     channel.subscribe(subscriber);
 
@@ -207,7 +207,7 @@ class EventChannelTest {
                 .setNameFormat("shoudlDeliverAsyncEventsOnMultipleThreads-%d")
                 .build());
     final EventChannel<WaitOnLatch> channel =
-        EventChannel.createAsync(WaitOnLatch.class, executor, metricsSystem);
+        EventChannel.createAsync(WaitOnLatch.class, executor, executor, metricsSystem);
     final WaitOnLatch subscriber =
         (started, await, completed) -> {
           started.countDown();
@@ -250,8 +250,9 @@ class EventChannelTest {
   @SuppressWarnings("rawtypes")
   public void shouldReturnFutureResultsAsync() throws Exception {
     final ExecutorService executor = mock(ExecutorService.class);
+    final ExecutorService responseExecutor = mock(ExecutorService.class);
     final EventChannel<WithFuture> channel =
-        EventChannel.createAsync(WithFuture.class, executor, metricsSystem);
+        EventChannel.createAsync(WithFuture.class, executor, responseExecutor, metricsSystem);
     final SafeFuture<String> expected = SafeFuture.completedFuture("Yay");
     final WithFuture subscriber = () -> expected;
     channel.subscribe(subscriber);
@@ -263,6 +264,13 @@ class EventChannelTest {
     final ArgumentCaptor<QueueReader> consumerCaptor = ArgumentCaptor.forClass(QueueReader.class);
     verify(executor).execute(consumerCaptor.capture());
     consumerCaptor.getValue().deliverNextEvent();
+    // Should complete the future via the responseExecutor, not immediately
+    assertThat(result).isNotDone();
+
+    // Run the response thread
+    final ArgumentCaptor<Runnable> responseTaskCaptor = ArgumentCaptor.forClass(Runnable.class);
+    verify(responseExecutor).execute(responseTaskCaptor.capture());
+    responseTaskCaptor.getValue().run();
 
     assertThat(result).isCompletedWithValue("Yay");
   }
