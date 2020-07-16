@@ -69,7 +69,7 @@ public class BLS {
    * @return True if the verification is successful, false otherwise.
    */
   public static boolean verify(BLSPublicKey publicKey, Bytes message, BLSSignature signature) {
-    if (!BLSConstants.VERIFICATION_ENABLED) {
+    if (BLSConstants.VERIFICATION_DISABLED) {
       LOG.warn("Skipping bls verification.");
       return true;
     }
@@ -138,7 +138,7 @@ public class BLS {
    */
   public static boolean fastAggregateVerify(
       List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
-    if (!BLSConstants.VERIFICATION_ENABLED) {
+    if (BLSConstants.VERIFICATION_DISABLED) {
       LOG.warn("Skipping bls verification.");
       return true;
     }
@@ -214,7 +214,7 @@ public class BLS {
       List<BLSSignature> signatures,
       boolean doublePairing,
       boolean parallel) {
-    if (!BLSConstants.VERIFICATION_ENABLED) {
+    if (BLSConstants.VERIFICATION_DISABLED) {
       LOG.warn("Skipping bls verification.");
       return true;
     }
@@ -323,7 +323,7 @@ public class BLS {
    * @return True if the verification is successful, false otherwise
    */
   public static boolean completeBatchVerify(List<BatchSemiAggregate> preparedSignatures) {
-    if (!BLSConstants.VERIFICATION_ENABLED) {
+    if (BLSConstants.VERIFICATION_DISABLED) {
       LOG.warn("Skipping bls verification.");
       return true;
     }

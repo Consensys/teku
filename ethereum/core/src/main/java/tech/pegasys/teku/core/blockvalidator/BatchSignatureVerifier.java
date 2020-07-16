@@ -74,7 +74,7 @@ public class BatchSignatureVerifier implements BLSSignatureVerifier {
    * instance methods would fail with exception
    */
   public synchronized boolean batchVerify() {
-    if (!BLSConstants.VERIFICATION_ENABLED) {
+    if (BLSConstants.VERIFICATION_DISABLED) {
       LOG.warn("Skipping bls verification.");
       return true;
     }

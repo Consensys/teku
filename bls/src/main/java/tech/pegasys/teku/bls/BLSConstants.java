@@ -15,13 +15,13 @@ package tech.pegasys.teku.bls;
 
 public class BLSConstants {
 
-  public static boolean VERIFICATION_ENABLED = true;
+  public static boolean VERIFICATION_DISABLED = false;
 
   public static void disableBLSVerification() {
-    VERIFICATION_ENABLED = false;
+    VERIFICATION_DISABLED = true;
   }
 
   public static void enableBLSVerification() {
-    VERIFICATION_ENABLED = true;
+    VERIFICATION_DISABLED = false;
   }
 }
