@@ -44,7 +44,8 @@ public class AsyncResponseProcessorTest {
   @BeforeEach
   public void setup() {
     responseStream
-        .expectMultipleResponses((s) -> requestProcessor.get().accept(s))
+        .expectMultipleResponses(
+            ResponseStreamListener.from((s) -> requestProcessor.get().accept(s)))
         .reportExceptions();
   }
 

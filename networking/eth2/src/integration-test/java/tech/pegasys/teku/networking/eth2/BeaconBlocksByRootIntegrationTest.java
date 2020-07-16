@@ -34,6 +34,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
@@ -112,7 +113,8 @@ public abstract class BeaconBlocksByRootIntegrationTest {
 
     peer1.disconnectImmediately(Optional.empty(), false);
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
-    final SafeFuture<Void> res = peer1.requestBlocksByRoot(List.of(blockHash), blocks::add);
+    final SafeFuture<Void> res =
+        peer1.requestBlocksByRoot(List.of(blockHash), ResponseStreamListener.from(blocks::add));
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -127,7 +129,8 @@ public abstract class BeaconBlocksByRootIntegrationTest {
 
     peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS);
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
-    final SafeFuture<Void> res = peer1.requestBlocksByRoot(List.of(blockHash), blocks::add);
+    final SafeFuture<Void> res =
+        peer1.requestBlocksByRoot(List.of(blockHash), ResponseStreamListener.from(blocks::add));
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -221,7 +224,7 @@ public abstract class BeaconBlocksByRootIntegrationTest {
       throws InterruptedException, java.util.concurrent.ExecutionException,
           java.util.concurrent.TimeoutException, RpcException {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
-    waitFor(peer1.requestBlocksByRoot(blockRoots, blocks::add));
+    waitFor(peer1.requestBlocksByRoot(blockRoots, ResponseStreamListener.from(blocks::add)));
     return blocks;
   }
 

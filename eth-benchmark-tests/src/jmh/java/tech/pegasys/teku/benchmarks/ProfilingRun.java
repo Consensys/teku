@@ -95,7 +95,7 @@ public class ProfilingRun {
           }
           long s = System.currentTimeMillis();
           localChain.setSlot(block.getSlot());
-          BlockImportResult result = blockImporter.importBlock(block);
+          BlockImportResult result = blockImporter.importBlock(block).join();
           System.out.println(
               "Imported block at #"
                   + block.getSlot()
@@ -157,7 +157,7 @@ public class ProfilingRun {
         for (SignedBeaconBlock block : blockReader) {
           long s = System.currentTimeMillis();
           localChain.setSlot(block.getSlot());
-          BlockImportResult result = blockImporter.importBlock(block);
+          BlockImportResult result = blockImporter.importBlock(block).join();
           System.out.println(
               "Imported block at #"
                   + block.getSlot()

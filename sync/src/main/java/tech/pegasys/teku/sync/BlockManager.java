@@ -22,7 +22,6 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
@@ -119,17 +118,23 @@ public class BlockManager extends Service implements SlotEventsChannel {
       return;
     }
 
-    final BlockImportResult result = blockImporter.importBlock(block);
-    if (result.isSuccessful()) {
-      LOG.trace("Imported block: {}", block);
-    } else if (result.getFailureReason() == FailureReason.UNKNOWN_PARENT) {
-      pendingBlocks.add(block);
-    } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
-      futureBlocks.add(block);
-    } else {
-      LOG.trace("Unable to import block for reason {}: {}", result.getFailureReason(), block);
-      dropInvalidBlock(block);
-    }
+    blockImporter
+        .importBlock(block)
+        .thenAccept(
+            result -> {
+              if (result.isSuccessful()) {
+                LOG.trace("Imported block: {}", block);
+              } else if (result.getFailureReason() == FailureReason.UNKNOWN_PARENT) {
+                pendingBlocks.add(block);
+              } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
+                futureBlocks.add(block);
+              } else {
+                LOG.trace(
+                    "Unable to import block for reason {}: {}", result.getFailureReason(), block);
+                dropInvalidBlock(block);
+              }
+            })
+        .reportExceptions();
   }
 
   private boolean shouldImportBlock(final SignedBeaconBlock block) {
