@@ -39,7 +39,6 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 class LengthPrefixedEncodingTest {
 
   private final RpcEncoding encoding = RpcEncoding.SSZ;
-  private static final Bytes ONE_BYTE_LENGTH_PREFIX = Bytes.fromHexString("0x0A");
   private static final Bytes TWO_BYTE_LENGTH_PREFIX = Bytes.fromHexString("0x8002");
   private static final Bytes LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH =
       ProtobufEncoder.encodeVarInt(MAX_CHUNK_SIZE + 1);
