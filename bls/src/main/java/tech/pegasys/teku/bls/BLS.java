@@ -214,6 +214,10 @@ public class BLS {
       List<BLSSignature> signatures,
       boolean doublePairing,
       boolean parallel) {
+    if (!BLSConstants.VERIFICATION_ENABLED) {
+      LOG.warn("Skipping bls verification.");
+      return true;
+    }
     Preconditions.checkArgument(
         publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
         "Different collection sizes");
@@ -319,6 +323,10 @@ public class BLS {
    * @return True if the verification is successful, false otherwise
    */
   public static boolean completeBatchVerify(List<BatchSemiAggregate> preparedSignatures) {
+    if (!BLSConstants.VERIFICATION_ENABLED) {
+      LOG.warn("Skipping bls verification.");
+      return true;
+    }
     return BLS12381.completeBatchVerify(preparedSignatures);
   }
 }
