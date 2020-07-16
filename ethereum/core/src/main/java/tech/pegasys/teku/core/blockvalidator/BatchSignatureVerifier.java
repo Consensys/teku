@@ -74,6 +74,10 @@ public class BatchSignatureVerifier implements BLSSignatureVerifier {
    * instance methods would fail with exception
    */
   public synchronized boolean batchVerify() {
+    if (!BLSConstants.VERIFICATION_ENABLED) {
+      LOG.warn("Skipping bls verification.");
+      return true;
+    }
     if (complete) throw new IllegalStateException("Reuse of disposable instance");
     List<BatchSemiAggregate> batchSemiAggregates =
         toVerify.stream()
@@ -81,10 +85,6 @@ public class BatchSignatureVerifier implements BLSSignatureVerifier {
             .map(job -> BLS.prepareBatchVerify(job.idx, job.publicKeys, job.message, job.signature))
             .collect(Collectors.toList());
     complete = true;
-    if (!BLSConstants.VERIFICATION_ENABLED) {
-      LOG.warn("Skipping bls verification.");
-      return true;
-    }
     return BLS.completeBatchVerify(batchSemiAggregates);
   }
 }
