@@ -63,7 +63,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
       TekuConfiguration.builder()
           .setRestApiPort(0)
           .setRestApiEnabled(true)
-          .setRestApiDocsEnabled(false)
+          .setRestApiDocsEnabled(true)
           .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"))
           .build();
 
@@ -221,9 +221,16 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   }
 
   protected Response getResponse(final String path) throws IOException {
-    final String url = "http://localhost:" + beaconRestApi.getListenPort();
-    final Request request = new Request.Builder().url(url + path).build();
+    return getResponseFromUrl(getUrl(path));
+  }
+
+  protected Response getResponseFromUrl(final String url) throws IOException {
+    final Request request = new Request.Builder().url(url).build();
     return client.newCall(request).execute();
+  }
+
+  protected String getUrl(final String path) {
+    return "http://localhost:" + beaconRestApi.getListenPort() + path;
   }
 
   protected Response getResponse(final String route, Map<String, String> getParams)
