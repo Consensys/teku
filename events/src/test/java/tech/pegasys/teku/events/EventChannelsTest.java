@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.events;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -64,14 +63,6 @@ class EventChannelsTest {
 
     verify(subscriber1).run();
     verify(subscriber2).run();
-  }
-
-  @Test
-  public void shouldReturnSamePublisherForSameChannel() {
-    final SimpleChannel publisher1 = channels.getPublisher(SimpleChannel.class);
-    final SimpleChannel publisher2 = channels.getPublisher(SimpleChannel.class);
-
-    assertThat(publisher1).isSameAs(publisher2);
   }
 
   @Test
