@@ -33,18 +33,12 @@ public class DefaultRpcPayloadEncoder<T> implements RpcPayloadEncoder<T> {
 
   @Override
   public Bytes encode(final T message) {
-    return message instanceof Bytes
-        ? (Bytes) message
-        : SimpleOffsetSerializer.serialize((SimpleOffsetSerializable) message);
+    return SimpleOffsetSerializer.serialize((SimpleOffsetSerializable) message);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   public T decode(final Bytes message) throws RpcException {
     try {
-      if (clazz.equals(Bytes.class)) {
-        return (T) message;
-      }
       return SimpleOffsetSerializer.deserialize(message, clazz);
     } catch (final InvalidSSZTypeException e) {
       if (LOG.isTraceEnabled()) {
@@ -52,5 +46,10 @@ public class DefaultRpcPayloadEncoder<T> implements RpcPayloadEncoder<T> {
       }
       throw new DeserializationFailedException();
     }
+  }
+
+  @Override
+  public boolean isLengthWithinBounds(final long length) {
+    return SimpleOffsetSerializer.getLengthBounds(clazz).isWithinBounds(length);
   }
 }

@@ -43,7 +43,7 @@ public class Constants {
   public static UnsignedLong HYSTERESIS_QUOTIENT;
   public static UnsignedLong HYSTERESIS_DOWNWARD_MULTIPLIER;
   public static UnsignedLong HYSTERESIS_UPWARD_MULTIPLIER;
-  public static int MAX_REQUEST_BLOCKS = 1024;
+  public static final int MAX_REQUEST_BLOCKS = 1024;
 
   // Gwei values
   public static long MIN_DEPOSIT_AMOUNT;

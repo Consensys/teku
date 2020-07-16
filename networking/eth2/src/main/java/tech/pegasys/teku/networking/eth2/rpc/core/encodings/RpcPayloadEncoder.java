@@ -20,4 +20,6 @@ public interface RpcPayloadEncoder<T> {
   Bytes encode(T message);
 
   T decode(Bytes message) throws RpcException;
+
+  boolean isLengthWithinBounds(long length);
 }

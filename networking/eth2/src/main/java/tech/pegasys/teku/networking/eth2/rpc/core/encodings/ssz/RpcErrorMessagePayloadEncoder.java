@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,19 +13,25 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz;
 
-import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.RpcErrorMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcPayloadEncoder;
 
-public class StringSszEncoder implements RpcPayloadEncoder<String> {
+public class RpcErrorMessagePayloadEncoder implements RpcPayloadEncoder<RpcErrorMessage> {
 
   @Override
-  public Bytes encode(final String message) {
-    return Bytes.wrap(message.getBytes(StandardCharsets.UTF_8));
+  public Bytes encode(final RpcErrorMessage message) {
+    return message.getData();
   }
 
   @Override
-  public String decode(final Bytes message) {
-    return new String(message.toArray(), StandardCharsets.UTF_8);
+  public RpcErrorMessage decode(final Bytes message) {
+    return new RpcErrorMessage(message);
+  }
+
+  @Override
+  public boolean isLengthWithinBounds(final long length) {
+    return length <= RpcException.MAXIMUM_ERROR_MESSAGE_LENGTH;
   }
 }
