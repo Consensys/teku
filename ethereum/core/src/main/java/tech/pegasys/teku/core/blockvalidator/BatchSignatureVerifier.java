@@ -17,11 +17,8 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLS;
-import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -38,8 +35,6 @@ import tech.pegasys.teku.bls.mikuli.BLS12381.BatchSemiAggregate;
  * <p>This is thread-safe class.
  */
 public class BatchSignatureVerifier implements BLSSignatureVerifier {
-
-  private static final Logger LOG = LogManager.getLogger();
 
   private static class Job {
     final int idx;
