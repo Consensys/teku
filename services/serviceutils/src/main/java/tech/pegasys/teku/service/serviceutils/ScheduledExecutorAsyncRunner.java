@@ -14,10 +14,10 @@
 package tech.pegasys.teku.service.serviceutils;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,6 +32,7 @@ import tech.pegasys.teku.util.async.SafeFuture;
 
 class ScheduledExecutorAsyncRunner implements AsyncRunner {
   private static final Logger LOG = LogManager.getLogger();
+  private static final int QUEUE_CAPACITY = 500;
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
   private final ScheduledExecutorService scheduler;
   private final ExecutorService workerPool;
@@ -56,7 +57,7 @@ class ScheduledExecutorAsyncRunner implements AsyncRunner {
             maxThreads,
             60,
             TimeUnit.SECONDS,
-            new SynchronousQueue<>(),
+            new ArrayBlockingQueue<>(QUEUE_CAPACITY),
             new ThreadFactoryBuilder().setNameFormat(name + "-async-%d").setDaemon(true).build());
 
     metricsSystem.createIntegerGauge(
