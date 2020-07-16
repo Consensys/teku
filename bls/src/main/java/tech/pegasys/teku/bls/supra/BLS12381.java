@@ -50,18 +50,6 @@ public class BLS12381 {
     return res == BLST_ERROR.BLST_SUCCESS;
   }
 
-  public static Signature aggregate(List<Signature> signatures) {
-    p2 sum = new p2();
-    blst.p2_from_affine(sum, signatures.get(0).ec2Point);
-    for (int i = 1; i < signatures.size(); i++) {
-      blst.p2_add_affine(sum, sum, signatures.get(i).ec2Point);
-    }
-    p2_affine res = new p2_affine();
-    blst.p2_to_affine(res, sum);
-    sum.delete();
-    return new Signature(res);
-  }
-
   public static BatchSemiAggregate prepareBatchVerify(
       int index, List<PublicKey> publicKeys, Bytes message, Signature signature) {
 
@@ -71,16 +59,23 @@ public class BLS12381 {
     blst.p2_to_affine(p2Affine, p2);
 
     pairing ctx = new pairing();
-    blst.pairing_init(ctx);
-    BLST_ERROR ret = blst.pairing_mul_n_aggregate_pk_in_g1(
-        ctx,
-        aggrPubKey.ecPoint,
-        signature.ec2Point,
-        p2Affine,
-        nextBatchRandomMultiplier(),
-        BATCH_RANDOM_BYTES * 8);
-
-    if (ret != BLST_ERROR.BLST_SUCCESS) throw new IllegalArgumentException("Error: " + ret);
+    try {
+      blst.pairing_init(ctx);
+      BLST_ERROR ret = blst.pairing_mul_n_aggregate_pk_in_g1(
+          ctx,
+          aggrPubKey.ecPoint,
+          signature.ec2Point,
+          p2Affine,
+          nextBatchRandomMultiplier(),
+          BATCH_RANDOM_BYTES * 8);
+      if (ret != BLST_ERROR.BLST_SUCCESS) throw new IllegalArgumentException("Error: " + ret);
+    } catch (Exception e) {
+      ctx.delete();
+      throw e;
+    } finally {
+      p2.delete();
+      p2Affine.delete(); // not sure if its copied inside pairing_mul_n_aggregate_pk_in_g1
+    }
     blst.pairing_commit(ctx);
 
     return new BatchSemiAggregate(ctx);
@@ -91,12 +86,16 @@ public class BLS12381 {
       return true;
     }
     pairing ctx0 = preparedList.get(0).getCtx();
+    boolean mergeRes = true;
     for (int i = 1; i < preparedList.size(); i++) {
-      blst.pairing_merge(ctx0, preparedList.get(i).getCtx());
+      BLST_ERROR ret = blst.pairing_merge(ctx0, preparedList.get(i).getCtx());
+      mergeRes &= ret == BLST_ERROR.BLST_SUCCESS;
+      preparedList.get(i).release();
     }
 
     int boolRes = blst.pairing_finalverify(ctx0, null);
-    return boolRes != 0;
+    preparedList.get(0).release();
+    return mergeRes && boolRes != 0;
   }
 
     private static BigInteger nextBatchRandomMultiplier() {
@@ -108,6 +107,7 @@ public class BLS12381 {
 
   public static final class BatchSemiAggregate {
     private final pairing ctx;
+    private boolean released = false;
 
     private BatchSemiAggregate(pairing ctx) {
       this.ctx = ctx;
@@ -115,6 +115,13 @@ public class BLS12381 {
 
     private pairing getCtx() {
       return ctx;
+    }
+
+    private void release() {
+      if (released)
+        throw new IllegalStateException("Attempting to use disposed BatchSemiAggregate");
+      released = true;
+      ctx.delete();
     }
   }
 }
