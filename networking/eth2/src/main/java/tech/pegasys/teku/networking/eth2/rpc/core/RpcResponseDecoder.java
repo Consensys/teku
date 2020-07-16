@@ -20,8 +20,8 @@ import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.RpcErrorMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 
@@ -33,7 +33,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 public class RpcResponseDecoder<T> {
   private Optional<Integer> respCodeMaybe = Optional.empty();
   private Optional<RpcByteBufDecoder<T>> payloadDecoder = Optional.empty();
-  private Optional<RpcByteBufDecoder<Bytes>> errorDecoder = Optional.empty();
+  private Optional<RpcByteBufDecoder<RpcErrorMessage>> errorDecoder = Optional.empty();
   private final Class<T> responseType;
   private final RpcEncoding encoding;
 
@@ -78,7 +78,7 @@ public class RpcResponseDecoder<T> {
       return ret;
     } else {
       if (errorDecoder.isEmpty()) {
-        errorDecoder = Optional.of(encoding.createDecoder(Bytes.class));
+        errorDecoder = Optional.of(encoding.createDecoder(RpcErrorMessage.class));
       }
       Optional<RpcException> rpcException =
           errorDecoder

@@ -86,6 +86,10 @@ public class ChainBuilder {
     return Optional.ofNullable(blocksByHash.get(blockRoot)).map(SignedBlockAndState::getBlock);
   }
 
+  public Optional<SignedBlockAndState> getBlockAndState(final Bytes32 blockRoot) {
+    return Optional.ofNullable(blocksByHash.get(blockRoot));
+  }
+
   /**
    * Create an independent {@code ChainBuilder} with the same history as the current builder. This
    * independent copy can now create a divergent chain.
