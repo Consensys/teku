@@ -11,15 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.protoarray;
+package tech.pegasys.teku.bls;
 
-import java.util.Optional;
-import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.channels.ChannelInterface;
+public class BLSConstants {
 
-public interface ProtoArrayStorageChannel extends ChannelInterface {
+  public static boolean VERIFICATION_DISABLED = false;
 
-  void onProtoArrayUpdate(ProtoArraySnapshot protoArraySnapshot);
+  public static void disableBLSVerification() {
+    VERIFICATION_DISABLED = true;
+  }
 
-  SafeFuture<Optional<ProtoArraySnapshot>> getProtoArraySnapshot();
+  public static void enableBLSVerification() {
+    VERIFICATION_DISABLED = false;
+  }
 }

@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.impl.BLS12381;
 import tech.pegasys.teku.bls.impl.PublicKey;
@@ -38,6 +40,8 @@ import tech.pegasys.teku.bls.impl.mikuli.MikuliBLS12381;
  * by this one conforming to the specification or standard.
  */
 public class BLS {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private static BLS12381 BlsImpl = MikuliBLS12381.INSTANCE;
 
@@ -69,6 +73,10 @@ public class BLS {
    * @return True if the verification is successful, false otherwise.
    */
   public static boolean verify(BLSPublicKey publicKey, Bytes message, BLSSignature signature) {
+    if (BLSConstants.VERIFICATION_DISABLED) {
+      LOG.warn("Skipping bls verification.");
+      return true;
+    }
     return signature.getSignature().verify(publicKey.getPublicKey(), message);
   }
 
@@ -140,6 +148,10 @@ public class BLS {
    */
   public static boolean fastAggregateVerify(
       List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
+    if (BLSConstants.VERIFICATION_DISABLED) {
+      LOG.warn("Skipping bls verification.");
+      return true;
+    }
     if (publicKeys.isEmpty()) return false;
     List<PublicKey> publicKeyObjects =
         publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
@@ -212,6 +224,10 @@ public class BLS {
       List<BLSSignature> signatures,
       boolean doublePairing,
       boolean parallel) {
+    if (BLSConstants.VERIFICATION_DISABLED) {
+      LOG.warn("Skipping bls verification.");
+      return true;
+    }
     Preconditions.checkArgument(
         publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
         "Different collection sizes");
@@ -319,6 +335,10 @@ public class BLS {
    * @return True if the verification is successful, false otherwise
    */
   public static boolean completeBatchVerify(List<BatchSemiAggregate> preparedSignatures) {
+    if (BLSConstants.VERIFICATION_DISABLED) {
+      LOG.warn("Skipping bls verification.");
+      return true;
+    }
     return getBlsImpl().completeBatchVerify(preparedSignatures);
   }
 

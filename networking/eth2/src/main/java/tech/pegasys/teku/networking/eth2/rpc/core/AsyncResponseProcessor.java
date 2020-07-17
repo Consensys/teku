@@ -105,7 +105,7 @@ class AsyncResponseProcessor<TResponse> {
         .runAsync(
             () -> {
               LOG.trace("Send response to response stream: {}", response);
-              responseStream.respond(response);
+              return responseStream.respond(response);
             })
         .exceptionally(
             (err) -> {

@@ -3,4 +3,5 @@ dependencies {
   implementation project(':util')
 
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
+  testImplementation testFixtures(project(':util'))
 }

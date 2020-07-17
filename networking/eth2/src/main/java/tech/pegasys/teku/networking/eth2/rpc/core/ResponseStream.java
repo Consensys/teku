@@ -20,10 +20,5 @@ public interface ResponseStream<O> {
 
   SafeFuture<Void> expectNoResponse();
 
-  SafeFuture<Void> expectMultipleResponses(ResponseListener<O> listener);
-
-  @FunctionalInterface
-  interface ResponseListener<O> {
-    void onResponse(O response);
-  }
+  SafeFuture<Void> expectMultipleResponses(ResponseStreamListener<O> listener);
 }

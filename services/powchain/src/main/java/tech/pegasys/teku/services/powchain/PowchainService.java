@@ -65,7 +65,7 @@ public class PowchainService extends Service {
     final Eth1EventsChannel eth1EventsChannel =
         config.getEventChannels().getPublisher(Eth1EventsChannel.class);
     final Eth1DepositStorageChannel eth1DepositStorageChannel =
-        config.getEventChannels().getPublisher(Eth1DepositStorageChannel.class);
+        config.getEventChannels().getPublisher(Eth1DepositStorageChannel.class, asyncRunner);
     final Eth1BlockFetcher eth1BlockFetcher =
         new Eth1BlockFetcher(
             eth1EventsChannel,

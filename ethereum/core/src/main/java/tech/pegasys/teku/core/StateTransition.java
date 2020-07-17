@@ -72,7 +72,7 @@ public class StateTransition {
       throws StateTransitionException {
     try {
       BlockValidator blockValidator =
-          validateStateRootAndSignatures ? this.blockValidator : BlockValidator.NOP;
+          validateStateRootAndSignatures ? this.blockValidator : BlockValidator.NOOP;
       final BeaconBlock block = signed_block.getMessage();
 
       // Process slots (including those with no blocks) since block

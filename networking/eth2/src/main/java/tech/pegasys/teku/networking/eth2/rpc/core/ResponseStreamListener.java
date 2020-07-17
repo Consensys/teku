@@ -11,15 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.protoarray;
+package tech.pegasys.teku.networking.eth2.rpc.core;
 
-import java.util.Optional;
+import java.util.function.Consumer;
 import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.channels.ChannelInterface;
 
-public interface ProtoArrayStorageChannel extends ChannelInterface {
+@FunctionalInterface
+public interface ResponseStreamListener<O> {
+  static <T> ResponseStreamListener<T> from(Consumer<T> listener) {
+    return (T response) -> SafeFuture.fromRunnable(() -> listener.accept(response));
+  }
 
-  void onProtoArrayUpdate(ProtoArraySnapshot protoArraySnapshot);
-
-  SafeFuture<Optional<ProtoArraySnapshot>> getProtoArraySnapshot();
+  SafeFuture<?> onResponse(O response);
 }

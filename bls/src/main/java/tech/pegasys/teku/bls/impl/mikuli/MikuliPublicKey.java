@@ -169,6 +169,10 @@ public final class MikuliPublicKey implements PublicKey {
         && rawData.get().equals(other.rawData.get())) {
       return true;
     }
-    return point.get().equals(other.point.get());
+    try {
+      return point.get().equals(other.point.get());
+    } catch (final IllegalArgumentException e) {
+      return false;
+    }
   }
 }

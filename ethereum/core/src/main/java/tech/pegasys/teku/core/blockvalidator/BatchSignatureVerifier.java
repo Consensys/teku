@@ -35,6 +35,7 @@ import tech.pegasys.teku.bls.BatchSemiAggregate;
  * <p>This is thread-safe class.
  */
 public class BatchSignatureVerifier implements BLSSignatureVerifier {
+
   private static class Job {
     final int idx;
     final List<BLSPublicKey> publicKeys;
