@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.bls.impl.mikuli;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.milagro.amcl.BLS381.BIG;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.impl.BLS12381;
 import tech.pegasys.teku.bls.impl.PublicKeyTest;
 
@@ -31,5 +35,34 @@ public class MikuliPublicKeyTest extends PublicKeyTest {
   void zeroSecretKeyGivesPointAtInfinity() {
     MikuliPublicKey pubKey = new MikuliPublicKey(new MikuliSecretKey(new Scalar(new BIG(0))));
     assertTrue(pubKey.g1Point().ecpPoint().is_infinity());
+  }
+
+  @Test
+  void succeedsWhenTwoInfinityPublicKeysAreEqual() {
+    // Infinity keys are valid G1 points, so pass the equality test
+    MikuliPublicKey publicKey1 = new MikuliPublicKey(new G1Point());
+    MikuliPublicKey publicKey2 = new MikuliPublicKey(new G1Point());
+    assertEquals(publicKey1, publicKey2);
+  }
+
+  @Test
+  void succeedsIfDeserializationOfInfinityPublicKeyIsCorrect() {
+    BLSPublicKey infinityPublicKey = new BLSPublicKey(new MikuliPublicKey(new G1Point()));
+    byte[] pointBytes = new byte[48];
+    pointBytes[0] = (byte) 0xc0;
+    Bytes infinityBytesSsz =
+        SSZ.encode(
+            writer -> {
+              writer.writeFixedBytes(Bytes.wrap(pointBytes));
+            });
+    BLSPublicKey deserializedPublicKey = BLSPublicKey.fromBytes(infinityBytesSsz);
+    assertEquals(infinityPublicKey, deserializedPublicKey);
+  }
+
+  @Test
+  void succeedsWhenRoundtripSSZReturnsTheInfinityPublicKey() {
+    BLSPublicKey publicKey1 = new BLSPublicKey(new MikuliPublicKey(new G1Point()));
+    BLSPublicKey publicKey2 = BLSPublicKey.fromBytes(publicKey1.toBytes());
+    assertEquals(publicKey1, publicKey2);
   }
 }
