@@ -20,8 +20,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.Cancellable;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.util.time.TimeProvider;
 
 public class Eth1StatusLogger {

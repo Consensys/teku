@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface ResponseStream<O> {
   SafeFuture<O> expectSingleResponse();

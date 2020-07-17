@@ -23,7 +23,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
 class DutyQueueTest {

@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.cli.deposit.GenerateAction.ValidatorKeys;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 class DepositGenerateAndRegisterCommandTest {
   private static final Consumer<Integer> shutdownFunction = status -> {};

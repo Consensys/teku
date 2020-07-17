@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.util.channels.ChannelInterface;
 import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
 

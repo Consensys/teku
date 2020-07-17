@@ -28,6 +28,9 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.Cancellable;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.connection.PeerPools.PeerPool;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -37,9 +40,6 @@ import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.Cancellable;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class ConnectionManager extends Service {
   private static final Logger LOG = LogManager.getLogger();

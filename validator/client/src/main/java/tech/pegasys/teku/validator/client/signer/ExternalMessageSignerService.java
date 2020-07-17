@@ -27,7 +27,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.MessageSignerService;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class ExternalMessageSignerService implements MessageSignerService {
   private static final ObjectMapper MAPPER = new ObjectMapper();

@@ -11,8 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.async;
+package tech.pegasys.teku.infrastructure.async;
 
-public interface ExceptionThrowingSupplier<O> {
-  O get() throws Throwable;
+public interface ExceptionThrowingFunction<I, O> {
+  O apply(I value) throws Throwable;
 }

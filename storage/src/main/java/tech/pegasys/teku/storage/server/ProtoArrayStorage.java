@@ -14,9 +14,9 @@
 package tech.pegasys.teku.storage.server;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class ProtoArrayStorage implements ProtoArrayStorageChannel {
   private final Database database;

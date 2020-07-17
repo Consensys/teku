@@ -19,15 +19,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.pow.Eth1HeadTracker.HeadUpdatedSubscriber;
-import tech.pegasys.teku.util.async.StubAsyncRunner;
 import tech.pegasys.teku.util.config.Constants;
 
 class Eth1HeadTrackerTest {

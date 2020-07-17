@@ -29,13 +29,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.sync.FetchBlockTask.FetchBlockResult;
 import tech.pegasys.teku.sync.FetchBlockTask.FetchBlockResult.Status;
 import tech.pegasys.teku.sync.FetchRecentBlocksService.FetchBlockTaskFactory;
-import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.async.StubAsyncRunner;
 
 public class FetchRecentBlocksServiceTest {
 

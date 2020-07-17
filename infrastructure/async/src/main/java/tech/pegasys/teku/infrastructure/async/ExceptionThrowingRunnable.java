@@ -11,11 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.async;
+package tech.pegasys.teku.infrastructure.async;
 
-public interface Cancellable {
-
-  void cancel();
-
-  boolean isCancelled();
+public interface ExceptionThrowingRunnable {
+  void run() throws Throwable;
 }

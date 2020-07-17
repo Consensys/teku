@@ -3,6 +3,7 @@ dependencies {
   implementation project(':data:metrics')
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
+  implementation project(':infrastructure:async')
   implementation project(':logging')
   implementation project(':pow')
   implementation project(':services:serviceutils')
@@ -23,6 +24,7 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:statetransition'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':data:metrics'))
+  testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':util'))
 
   testImplementation 'org.hyperledger.besu.internal:metrics-core'
@@ -34,6 +36,7 @@ dependencies {
   testFixturesCompileOnly 'org.jetbrains.kotlin:kotlin-stdlib'
 
   testFixturesImplementation project(':ethereum:datastructures')
+  testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation testFixtures(project(':util'))
 
   testFixturesImplementation 'org.hyperledger.besu:plugin-api'

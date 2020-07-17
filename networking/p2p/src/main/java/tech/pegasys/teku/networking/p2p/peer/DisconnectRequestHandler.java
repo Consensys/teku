@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.peer;
 
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface DisconnectRequestHandler {
 

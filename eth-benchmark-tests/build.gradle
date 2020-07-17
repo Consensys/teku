@@ -8,6 +8,7 @@ dependencies {
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
   implementation project(':eth-tests')
+  implementation project(':infrastructure:async')
   implementation project(':storage')
   implementation project(':util')
   implementation project(':data')

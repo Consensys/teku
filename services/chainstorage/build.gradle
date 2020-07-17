@@ -1,4 +1,5 @@
 dependencies {
+  implementation project(':infrastructure:async')
   implementation project(':logging')
   implementation project(':services:serviceutils')
   implementation project(':storage')

@@ -37,8 +37,8 @@ import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class PostDutiesTest {
   private static final List<BLSKeyPair> keyPairs = BLSKeyGenerator.generateKeyPairs(1);

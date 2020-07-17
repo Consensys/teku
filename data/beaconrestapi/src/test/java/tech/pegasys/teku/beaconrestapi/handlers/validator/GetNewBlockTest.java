@@ -41,9 +41,9 @@ import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.beaconrestapi.RestApiConstants;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class GetNewBlockTest {
 

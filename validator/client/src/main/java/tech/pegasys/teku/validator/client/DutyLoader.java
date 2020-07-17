@@ -14,7 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import com.google.common.primitives.UnsignedLong;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
 public interface DutyLoader {

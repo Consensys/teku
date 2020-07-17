@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.async;
+package tech.pegasys.teku.infrastructure.async;
 
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.mock;

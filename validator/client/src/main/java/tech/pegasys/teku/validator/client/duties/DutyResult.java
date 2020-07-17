@@ -24,8 +24,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.logging.ValidatorLogger;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 
 public class DutyResult {
