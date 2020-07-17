@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,14 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.rpc.core;
+package tech.pegasys.teku.bls;
 
-import tech.pegasys.teku.util.async.SafeFuture;
+public class BLSConstants {
 
-public interface ResponseStream<O> {
-  SafeFuture<O> expectSingleResponse();
+  public static boolean VERIFICATION_DISABLED = false;
 
-  SafeFuture<Void> expectNoResponse();
+  public static void disableBLSVerification() {
+    VERIFICATION_DISABLED = true;
+  }
 
-  SafeFuture<Void> expectMultipleResponses(ResponseStreamListener<O> listener);
+  public static void enableBLSVerification() {
+    VERIFICATION_DISABLED = false;
+  }
 }

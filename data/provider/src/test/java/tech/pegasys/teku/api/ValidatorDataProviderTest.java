@@ -325,7 +325,7 @@ public class ValidatorDataProviderTest {
         SafeFuture.completedFuture(
             new SuccessfulBlockImportResult(internalSignedBeaconBlock, Optional.empty()));
 
-    when(blockImporter.importBlockAsync(any())).thenReturn(successImportResult);
+    when(blockImporter.importBlock(any())).thenReturn(successImportResult);
 
     final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
         provider.submitSignedBlock(signedBeaconBlock);
@@ -351,7 +351,7 @@ public class ValidatorDataProviderTest {
                   SafeFuture.completedFuture(
                       new FailedBlockImportResult(failureReason, Optional.empty()));
 
-              when(blockImporter.importBlockAsync(any())).thenReturn(failImportResult);
+              when(blockImporter.importBlock(any())).thenReturn(failImportResult);
 
               final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
                   provider.submitSignedBlock(signedBeaconBlock);
@@ -379,7 +379,7 @@ public class ValidatorDataProviderTest {
         SafeFuture.completedFuture(
             new FailedBlockImportResult(FailureReason.INTERNAL_ERROR, Optional.empty()));
 
-    when(blockImporter.importBlockAsync(any())).thenReturn(failImportResult);
+    when(blockImporter.importBlock(any())).thenReturn(failImportResult);
 
     final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
         provider.submitSignedBlock(signedBeaconBlock);

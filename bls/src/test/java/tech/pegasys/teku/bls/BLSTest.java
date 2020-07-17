@@ -46,6 +46,19 @@ class BLSTest {
   }
 
   @Test
+  void returnsTrueEvenIfBLSSignatureIsWrongWhenBLSVerificationIsDisabled() {
+    BLSConstants.disableBLSVerification();
+    assertTrue(
+        BLS.verify(
+            BLSPublicKey.random(17), Bytes.wrap("Test".getBytes(UTF_8)), BLSSignature.empty()));
+
+    BLSConstants.enableBLSVerification();
+    assertFalse(
+        BLS.verify(
+            BLSPublicKey.random(17), Bytes.wrap("Test".getBytes(UTF_8)), BLSSignature.empty()));
+  }
+
+  @Test
   void succeedsWhenAggregatingASingleSignatureReturnsTheSameSignature() {
     BLSSignature signature = BLSSignature.random(1);
     assertEquals(signature, BLS.aggregate(Collections.singletonList(signature)));

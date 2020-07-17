@@ -46,6 +46,7 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.events.AnchorPoint;
+import tech.pegasys.teku.storage.store.EmptyStoreResults;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -335,11 +336,24 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return Optional.ofNullable(store.getSignedBlock(root));
   }
 
+  /**
+   * @deprecated Use {@link #retrieveBlockState} instead
+   * @param blockRoot The root of the block corresponding to this state
+   * @return
+   */
+  @Deprecated
   public Optional<BeaconState> getBlockState(final Bytes32 blockRoot) {
     if (store == null) {
       return Optional.empty();
     }
     return Optional.ofNullable(store.getBlockState(blockRoot));
+  }
+
+  public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {
+    if (store == null) {
+      return EmptyStoreResults.EMPTY_STATE_FUTURE;
+    }
+    return store.retrieveBlockState(blockRoot);
   }
 
   public Optional<BeaconState> getStateInEffectAtSlot(final UnsignedLong slot) {

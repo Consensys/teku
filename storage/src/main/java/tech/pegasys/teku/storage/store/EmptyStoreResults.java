@@ -11,23 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.blockvalidator;
+package tech.pegasys.teku.storage.store;
 
+import java.util.Optional;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.util.async.SafeFuture;
 
-public class NopBlockValidator implements BlockValidator {
+public abstract class EmptyStoreResults {
 
-  @Override
-  public SafeFuture<BlockValidationResult> validatePreState(
-      BeaconState preState, SignedBeaconBlock block) {
-    return SafeFuture.completedFuture(new BlockValidationResult(true));
-  }
+  public static SafeFuture<Optional<SignedBeaconBlock>> EMPTY_BLOCK_FUTURE =
+      SafeFuture.completedFuture(Optional.empty());
 
-  @Override
-  public SafeFuture<BlockValidationResult> validatePostState(
-      BeaconState postState, SignedBeaconBlock block) {
-    return SafeFuture.completedFuture(new BlockValidationResult(true));
-  }
+  public static SafeFuture<Optional<BeaconState>> EMPTY_STATE_FUTURE =
+      SafeFuture.completedFuture(Optional.empty());
+
+  public static SafeFuture<Optional<SignedBlockAndState>> EMPTY_BLOCK_AND_STATE_FUTURE =
+      SafeFuture.completedFuture(Optional.empty());
 }
