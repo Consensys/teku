@@ -18,36 +18,32 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.util.Collections;
-import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.bls.impl.mikuli.MikuliBLS12381;
-import tech.pegasys.teku.bls.impl.mikuli.MikuliSignature;
 
-class SignatureTest {
+public abstract class SignatureTest {
 
-  public static final int HEX_CHARS_REQUIRED = 96 * 2;
-  BLS12381 bls = MikuliBLS12381.INSTANCE;
+  protected abstract BLS12381 getBls();
 
   @Test
   void succeedsWhenEqualsReturnsTrueForTheSameSignature() {
-    Signature signature = bls.randomSignature(42);
+    Signature signature = getBls().randomSignature(42);
     assertEquals(signature, signature);
     assertEquals(signature.hashCode(), signature.hashCode());
   }
 
   @Test
   void succeedsWhenEqualsReturnsTrueForIdenticalSignatures() {
-    Signature signature = bls.randomSignature(117);
-    Signature copyOfSignature = bls.randomSignature(117);
+    Signature signature = getBls().randomSignature(117);
+    Signature copyOfSignature = getBls().randomSignature(117);
     assertEquals(signature, copyOfSignature);
     assertEquals(signature.hashCode(), copyOfSignature.hashCode());
   }
 
   @Test
   void succeedsWhenEqualsReturnsFalseForDifferentSignatures() {
-    Signature signature1 = bls.randomSignature(1);
-    Signature signature2 = bls.randomSignature(2);
+    Signature signature1 = getBls().randomSignature(1);
+    Signature signature2 = getBls().randomSignature(2);
     assertNotEquals(signature1, signature2);
   }
 
@@ -60,47 +56,14 @@ class SignatureTest {
   }
 
   @Test
-  void succeedsWhenEqualsReturnsTrueForInvalidSignatures() {
-    final Bytes rawData = Bytes.fromHexString("1".repeat(HEX_CHARS_REQUIRED));
-    final MikuliSignature signature1 = MikuliSignature.fromBytes(rawData);
-    final MikuliSignature signature2 = MikuliSignature.fromBytes(rawData);
-    assertEquals(signature1, signature2);
-    assertEquals(signature1.hashCode(), signature2.hashCode());
-  }
-
-  @Test
-  void succeedsWhenEqualsReturnsFalseForDifferentInvalidSignatures() {
-    final MikuliSignature signature1 =
-        MikuliSignature.fromBytes(Bytes.fromHexString("1".repeat(HEX_CHARS_REQUIRED)));
-    final MikuliSignature signature2 =
-        MikuliSignature.fromBytes(Bytes.fromHexString("2".repeat(HEX_CHARS_REQUIRED)));
-    assertNotEquals(signature1, signature2);
-  }
-
-  @Test
-  void succeedsWhenSerializedSignaturesAre192BytesLong() {
-    MikuliSignature signature = MikuliSignature.random(13);
-    assertEquals(signature.toBytesUncompressed().size(), 192);
-  }
-
-  @Test
   void succeedsWhenPassingEmptyListToAggregateSignaturesDoesNotThrowException() {
-    assertDoesNotThrow(() -> MikuliSignature.aggregate(Collections.emptyList()));
-  }
-
-  @Test
-  void roundtripEncodeDecode() {
-    MikuliSignature signature = MikuliSignature.random(257);
-    final MikuliSignature result = MikuliSignature.fromBytes(signature.toBytesUncompressed());
-    assertEquals(signature, result);
-    assertEquals(signature.hashCode(), result.hashCode());
+    assertDoesNotThrow(() -> getBls().aggregateSignatures(Collections.emptyList()));
   }
 
   @Test
   void roundtripEncodeDecodeCompressed() {
-    MikuliSignature signature = MikuliSignature.random(513);
-    final MikuliSignature result =
-        MikuliSignature.fromBytesCompressed(signature.toBytesCompressed());
+    Signature signature = getBls().randomSignature(513);
+    final Signature result = getBls().signatureFromCompressed(signature.toBytesCompressed());
     assertEquals(signature, result);
     assertEquals(signature.hashCode(), result.hashCode());
   }

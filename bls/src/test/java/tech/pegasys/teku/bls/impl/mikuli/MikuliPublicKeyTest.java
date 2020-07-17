@@ -13,37 +13,23 @@
 
 package tech.pegasys.teku.bls.impl.mikuli;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Collections;
 import org.apache.milagro.amcl.BLS381.BIG;
-import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.impl.BLS12381;
+import tech.pegasys.teku.bls.impl.PublicKeyTest;
 
-public class PublicKeyTest {
+public class MikuliPublicKeyTest extends PublicKeyTest {
+
+  @Override
+  protected BLS12381 getBls() {
+    return MikuliBLS12381.INSTANCE;
+  }
 
   @Test
   void zeroSecretKeyGivesPointAtInfinity() {
     MikuliPublicKey pubKey = new MikuliPublicKey(new MikuliSecretKey(new Scalar(new BIG(0))));
     assertTrue(pubKey.g1Point().ecpPoint().is_infinity());
-  }
-
-  @Test
-  void succeedsWhenPassingEmptyListToAggregatePublicKeysDoesNotThrowException() {
-    assertDoesNotThrow(() -> MikuliPublicKey.aggregate(Collections.emptyList()));
-  }
-
-  @Test
-  public void shouldHaveConsistentHashCodeAndEquals() {
-    final MikuliPublicKey key =
-        MikuliPublicKey.fromBytesCompressed(
-            Bytes.fromHexString(
-                "0x81283b7a20e1ca460ebd9bbd77005d557370cabb1f9a44f530c4c4c66230f675f8df8b4c2818851aa7d77a80ca5a4a5e"));
-    final MikuliPublicKey same = MikuliPublicKey.fromBytesCompressed(key.toBytesCompressed());
-
-    assertEquals(key, same);
-    assertEquals(key.hashCode(), same.hashCode());
   }
 }

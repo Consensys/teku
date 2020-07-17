@@ -13,7 +13,11 @@
 
 package tech.pegasys.teku.bls.impl;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import com.google.common.collect.Streams;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 
 /**
@@ -22,6 +26,14 @@ import org.apache.tuweni.bytes.Bytes;
  * @see Signature#verify(List)
  */
 public class PublicKeyMessagePair {
+
+  public static List<PublicKeyMessagePair> fromLists(
+      List<PublicKey> publicKeys, List<Bytes> messages) {
+    checkArgument(publicKeys.size() == messages.size());
+    return Streams.zip(publicKeys.stream(), messages.stream(), PublicKeyMessagePair::new)
+        .collect(Collectors.toList());
+  }
+
   private final PublicKey publicKey;
   private final Bytes message;
 
