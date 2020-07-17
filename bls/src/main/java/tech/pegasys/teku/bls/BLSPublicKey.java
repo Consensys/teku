@@ -129,12 +129,14 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
   /**
    * Force validation of the given key's contents.
    *
-   * @param blsPublicKey
-   * @return true if the given key is valid
-   * @throws IllegalArgumentException if the key is not valid
+   * @return true if the given key is valid, false otherwise
    */
-  public static boolean isValid(final BLSPublicKey blsPublicKey) {
-    blsPublicKey.getPublicKey().g1Point();
+  public boolean isValid() {
+    try {
+      publicKey.g1Point();
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
     return true;
   }
 
