@@ -65,11 +65,11 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
         bytes,
         reader ->
             new BLSPublicKey(
-                BLS.BlsImpl.publicKeyFromCompressed(reader.readFixedBytes(BLS_PUBKEY_SIZE))));
+                BLS.getBlsImpl().publicKeyFromCompressed(reader.readFixedBytes(BLS_PUBKEY_SIZE))));
   }
 
   public static BLSPublicKey fromBytesCompressed(Bytes bytes) {
-    return new BLSPublicKey(BLS.BlsImpl.publicKeyFromCompressed(bytes));
+    return new BLSPublicKey(BLS.getBlsImpl().publicKeyFromCompressed(bytes));
   }
 
   private final PublicKey publicKey;
@@ -129,8 +129,12 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
    * @throws IllegalArgumentException if the key is not valid
    */
   public static boolean isValid(final BLSPublicKey blsPublicKey) {
-    blsPublicKey.getPublicKey();
-    return true;
+    try {
+      blsPublicKey.getPublicKey().forceValidation();
+      return true;
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
   }
 
   @Override
@@ -153,11 +157,11 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
     }
 
     BLSPublicKey other = (BLSPublicKey) obj;
-    return Objects.equals(this.toBytesCompressed(), other.toBytesCompressed());
+    return Objects.equals(this.getPublicKey(), other.getPublicKey());
   }
 
   @Override
   public int hashCode() {
-    return toBytesCompressed().hashCode();
+    return Objects.hash(publicKey);
   }
 }

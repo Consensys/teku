@@ -14,7 +14,6 @@
 package tech.pegasys.teku.bls;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.isNull;
 
 import java.util.List;
@@ -49,9 +48,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
    * @return the signature
    */
   public static BLSSignature random(int entropy) {
-    BLSKeyPair keyPair = BLSKeyPair.random(entropy);
-    byte[] message = "Hello, world!".getBytes(UTF_8);
-    return BLS.sign(keyPair.getSecretKey(), Bytes.wrap(message));
+    return new BLSSignature(BLS.getBlsImpl().randomSignature(entropy));
   }
 
   /**
@@ -82,7 +79,8 @@ public class BLSSignature implements SimpleOffsetSerializable {
         bytes,
         reader ->
             new BLSSignature(
-                BLS.BlsImpl.signatureFromCompressed(reader.readFixedBytes(BLS_SIGNATURE_SIZE))));
+                BLS.getBlsImpl()
+                    .signatureFromCompressed(reader.readFixedBytes(BLS_SIGNATURE_SIZE))));
   }
 
   private final Signature signature;
@@ -128,7 +126,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
 
   @Override
   public int hashCode() {
-    return toBytes().hashCode();
+    return signature.hashCode();
   }
 
   @Override
@@ -143,6 +141,6 @@ public class BLSSignature implements SimpleOffsetSerializable {
       return false;
     }
     BLSSignature other = (BLSSignature) obj;
-    return Objects.equals(this.toBytes(), other.toBytes());
+    return Objects.equals(this.signature, other.signature);
   }
 }

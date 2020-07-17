@@ -14,6 +14,7 @@
 package tech.pegasys.teku.bls;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -34,7 +35,7 @@ class BLSPublicKeyTest {
   void isValidReturnsFalseForInvalidKey() {
     BLSPublicKey publicKey = BLSPublicKey.random(1);
     BLSPublicKey invalidPublicKey = BLSPublicKey.fromBytes(publicKey.toBytes().shiftLeft(1));
-    assertThrows(IllegalArgumentException.class, () -> BLSPublicKey.isValid(invalidPublicKey));
+    assertFalse(BLSPublicKey.isValid(invalidPublicKey));
   }
 
   @Test

@@ -222,7 +222,7 @@ class BLS12381Test {
                           messages.get(l.get(0)),
                           signatures.get(l.get(0)));
                     } else {
-                      return MikuliBLS12381.prepareBatchVerify2(
+                      return MikuliBLS12381.INSTANCE.prepareBatchVerify2(
                           l.get(0),
                           pubKeys.get(l.get(0)),
                           messages.get(l.get(0)),
@@ -262,7 +262,7 @@ class BLS12381Test {
                           messages.get(l.get(0)),
                           signatures.get(l.get(0)));
                     } else {
-                      return MikuliBLS12381.prepareBatchVerify2(
+                      return MikuliBLS12381.INSTANCE.prepareBatchVerify2(
                           l.get(0),
                           pubKeys.get(l.get(0)),
                           messages.get(l.get(0)),

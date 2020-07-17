@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.bls.impl;
 
+/** KeyPair represents a public and private key. */
 public class KeyPair {
   private final SecretKey secretKey;
   private final PublicKey publicKey;

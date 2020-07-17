@@ -28,7 +28,7 @@ public final class BLSKeyPair {
    * @return a random key pair
    */
   public static BLSKeyPair random(final SecureRandom srng) {
-    return new BLSKeyPair(BLS.BlsImpl.generateKeyPair(srng));
+    return new BLSKeyPair(BLS.getBlsImpl().generateKeyPair(srng));
   }
 
   /**
@@ -39,7 +39,7 @@ public final class BLSKeyPair {
    * @return a keypair generated from a seed
    */
   public static BLSKeyPair random(int seed) {
-    return new BLSKeyPair(BLS.BlsImpl.generateKeyPair(seed));
+    return new BLSKeyPair(BLS.getBlsImpl().generateKeyPair(seed));
   }
 
   private final BLSPublicKey publicKey;

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.bls.impl.mikuli;
+package tech.pegasys.teku.bls.impl;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -21,30 +21,33 @@ import java.util.Collections;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.impl.mikuli.MikuliBLS12381;
+import tech.pegasys.teku.bls.impl.mikuli.MikuliSignature;
 
 class SignatureTest {
 
   public static final int HEX_CHARS_REQUIRED = 96 * 2;
+  BLS12381 bls = MikuliBLS12381.INSTANCE;
 
   @Test
   void succeedsWhenEqualsReturnsTrueForTheSameSignature() {
-    MikuliSignature signature = MikuliSignature.random(42);
+    Signature signature = bls.randomSignature(42);
     assertEquals(signature, signature);
     assertEquals(signature.hashCode(), signature.hashCode());
   }
 
   @Test
   void succeedsWhenEqualsReturnsTrueForIdenticalSignatures() {
-    MikuliSignature signature = MikuliSignature.random(117);
-    MikuliSignature copyOfSignature = new MikuliSignature(signature);
+    Signature signature = bls.randomSignature(117);
+    Signature copyOfSignature = bls.randomSignature(117);
     assertEquals(signature, copyOfSignature);
     assertEquals(signature.hashCode(), copyOfSignature.hashCode());
   }
 
   @Test
   void succeedsWhenEqualsReturnsFalseForDifferentSignatures() {
-    MikuliSignature signature1 = MikuliSignature.random(1);
-    MikuliSignature signature2 = MikuliSignature.random(2);
+    Signature signature1 = bls.randomSignature(1);
+    Signature signature2 = bls.randomSignature(2);
     assertNotEquals(signature1, signature2);
   }
 
@@ -77,7 +80,7 @@ class SignatureTest {
   @Test
   void succeedsWhenSerializedSignaturesAre192BytesLong() {
     MikuliSignature signature = MikuliSignature.random(13);
-    assertEquals(signature.toBytes().size(), 192);
+    assertEquals(signature.toBytesUncompressed().size(), 192);
   }
 
   @Test
@@ -88,7 +91,7 @@ class SignatureTest {
   @Test
   void roundtripEncodeDecode() {
     MikuliSignature signature = MikuliSignature.random(257);
-    final MikuliSignature result = MikuliSignature.fromBytes(signature.toBytes());
+    final MikuliSignature result = MikuliSignature.fromBytes(signature.toBytesUncompressed());
     assertEquals(signature, result);
     assertEquals(signature.hashCode(), result.hashCode());
   }

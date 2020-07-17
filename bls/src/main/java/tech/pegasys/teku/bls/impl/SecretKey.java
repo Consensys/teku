@@ -15,13 +15,33 @@ package tech.pegasys.teku.bls.impl;
 
 import org.apache.tuweni.bytes.Bytes;
 
+/** This class represents a BLS12-381 private key. */
 public interface SecretKey {
 
+  /**
+   * Returns byte secret key representation
+   *
+   * @return 48 bytes
+   */
   Bytes toBytes();
 
+  /** Creates a public key corresponding to this secret key */
   PublicKey derivePublicKey();
 
+  /**
+   * Generates a Signature from this private key and message.
+   *
+   * @param message The message to sign, not null
+   * @return The Signature, not null
+   */
   Signature sign(Bytes message);
 
+  /** Overwrites the key with zeros so that it is no longer in memory */
   void destroy();
+
+  /** Implementation must override */
+  int hashCode();
+
+  /** Implementation must override */
+  boolean equals(Object obj);
 }

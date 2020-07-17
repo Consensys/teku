@@ -101,71 +101,6 @@ public final class MikuliBLS12381 implements BLS12381 {
   }
 
   /**
-   * https://ethresear.ch/t/fast-verification-of-multiple-bls-signatures/5407
-   *
-   * <p>For above batch verification method pre-calculates and returns two values: <code>S * r
-   * </code> and <code>e(M * r, P)</code>
-   *
-   * @return the pair of values above in an opaque instance
-   */
-  @Override
-  public BatchSemiAggregate prepareBatchVerify(
-      int index, List<? extends PublicKey> publicKeys, Bytes message, Signature signature) {
-    G2Point sigG2Point;
-    G2Point msgG2Point;
-
-    List<MikuliPublicKey> mikuliPublicKeys =
-        publicKeys.stream().map(pk -> (MikuliPublicKey) pk).collect(Collectors.toList());
-    MikuliSignature mikuliSignature = (MikuliSignature) signature;
-
-    if (index == 0) {
-      // optimization: we may omit multiplication of a single component (i.e. multiplier is 1)
-      // let it be the component with index 0
-      sigG2Point = mikuliSignature.g2Point();
-      msgG2Point = G2Point.hashToG2(message);
-    } else {
-      Scalar randomMult = nextBatchRandomMultiplier();
-      sigG2Point = mikuliSignature.g2Point().mul(randomMult);
-      msgG2Point = G2Point.hashToG2(message).mul(randomMult);
-    }
-
-    GTPoint pair =
-        AtePairing.pairNoExp(MikuliPublicKey.aggregate(mikuliPublicKeys).g1Point(), msgG2Point);
-
-    return new MukuliBatchSemiAggregate(sigG2Point, pair);
-  }
-
-  /**
-   * https://ethresear.ch/t/fast-verification-of-multiple-bls-signatures/5407
-   *
-   * <p>Does the final job of batch verification: calculates the final product and sum, does final
-   * pairing and exponentiation
-   *
-   * @param preparedList the list of instances returned by {@link #prepareBatchVerify(int, List,
-   *     Bytes, Signature)} or {@link #prepareBatchVerify2(int, List, Bytes, MikuliSignature, List,
-   *     Bytes, MikuliSignature)} or mixed from both
-   * @return True if the verification is successful, false otherwise
-   */
-  @Override
-  public boolean completeBatchVerify(List<? extends BatchSemiAggregate> preparedList) {
-    if (preparedList.isEmpty()) {
-      return true;
-    }
-    G2Point sigSum = null;
-    GTPoint pairProd = null;
-    for (BatchSemiAggregate semiSig : preparedList) {
-      MukuliBatchSemiAggregate mSemiSig = (MukuliBatchSemiAggregate) semiSig;
-      sigSum = sigSum == null ? mSemiSig.getSigPoint() : sigSum.add(mSemiSig.getSigPoint());
-      pairProd =
-          pairProd == null
-              ? mSemiSig.getMsgPubKeyPairing()
-              : pairProd.mul(mSemiSig.getMsgPubKeyPairing());
-    }
-    GTPoint sigPair = AtePairing.pairNoExp(Util.g1Generator, sigSum);
-    return AtePairing.fexp(sigPair).equals(AtePairing.fexp(pairProd));
-  }
-
-  /**
    * Generates a Signature from a private key and message.
    *
    * @param secretKey The secret key, not null
@@ -276,6 +211,60 @@ public final class MikuliBLS12381 implements BLS12381 {
   /**
    * https://ethresear.ch/t/fast-verification-of-multiple-bls-signatures/5407
    *
+   * <p>For above batch verification method pre-calculates and returns two values: <code>S * r
+   * </code> and <code>e(M * r, P)</code>
+   *
+   * @return the pair of values above in an opaque instance
+   */
+  @Override
+  public BatchSemiAggregate prepareBatchVerify(
+      int index, List<? extends PublicKey> publicKeys, Bytes message, Signature signature) {
+    G2Point sigG2Point;
+    G2Point msgG2Point;
+
+    List<MikuliPublicKey> mikuliPublicKeys =
+        publicKeys.stream().map(pk -> (MikuliPublicKey) pk).collect(Collectors.toList());
+    MikuliSignature mikuliSignature = (MikuliSignature) signature;
+
+    if (index == 0) {
+      // optimization: we may omit multiplication of a single component (i.e. multiplier is 1)
+      // let it be the component with index 0
+      sigG2Point = mikuliSignature.g2Point();
+      msgG2Point = G2Point.hashToG2(message);
+    } else {
+      Scalar randomMult = nextBatchRandomMultiplier();
+      sigG2Point = mikuliSignature.g2Point().mul(randomMult);
+      msgG2Point = G2Point.hashToG2(message).mul(randomMult);
+    }
+
+    GTPoint pair =
+        AtePairing.pairNoExp(MikuliPublicKey.aggregate(mikuliPublicKeys).g1Point(), msgG2Point);
+
+    return new MukuliBatchSemiAggregate(sigG2Point, pair);
+  }
+
+  @Override
+  public BatchSemiAggregate prepareBatchVerify2(
+      int index,
+      List<? extends PublicKey> publicKeys1,
+      Bytes message1,
+      Signature signature1,
+      List<? extends PublicKey> publicKeys2,
+      Bytes message2,
+      Signature signature2) {
+    return prepareBatchVerify2(
+        index,
+        publicKeys1.stream().map(pk -> (MikuliPublicKey) pk).collect(Collectors.toList()),
+        message1,
+        (MikuliSignature) signature1,
+        publicKeys2.stream().map(pk -> (MikuliPublicKey) pk).collect(Collectors.toList()),
+        message2,
+        (MikuliSignature) signature2);
+  }
+
+  /**
+   * https://ethresear.ch/t/fast-verification-of-multiple-bls-signatures/5407
+   *
    * <p>Slightly more efficient variant of {@link #prepareBatchVerify(int, List, Bytes, Signature)}
    * when 2 signatures are aggregated with a faster ate2 pairing
    *
@@ -284,7 +273,7 @@ public final class MikuliBLS12381 implements BLS12381 {
    *
    * @return the pair of values above in an opaque instance
    */
-  public static MukuliBatchSemiAggregate prepareBatchVerify2(
+  private static MukuliBatchSemiAggregate prepareBatchVerify2(
       int index,
       List<MikuliPublicKey> publicKeys1,
       Bytes message1,
@@ -316,6 +305,36 @@ public final class MikuliBLS12381 implements BLS12381 {
         AtePairing.pair2NoExp(publicKey1.g1Point(), msgG2Point1, publicKey2.g1Point(), msgG2Point2);
 
     return new MukuliBatchSemiAggregate(sigG2Point1.add(sigG2Point2), pair2);
+  }
+
+  /**
+   * https://ethresear.ch/t/fast-verification-of-multiple-bls-signatures/5407
+   *
+   * <p>Does the final job of batch verification: calculates the final product and sum, does final
+   * pairing and exponentiation
+   *
+   * @param preparedList the list of instances returned by {@link #prepareBatchVerify(int, List,
+   *     Bytes, Signature)} or {@link #prepareBatchVerify2(int, List, Bytes, MikuliSignature, List,
+   *     Bytes, MikuliSignature)} or mixed from both
+   * @return True if the verification is successful, false otherwise
+   */
+  @Override
+  public boolean completeBatchVerify(List<? extends BatchSemiAggregate> preparedList) {
+    if (preparedList.isEmpty()) {
+      return true;
+    }
+    G2Point sigSum = null;
+    GTPoint pairProd = null;
+    for (BatchSemiAggregate semiSig : preparedList) {
+      MukuliBatchSemiAggregate mSemiSig = (MukuliBatchSemiAggregate) semiSig;
+      sigSum = sigSum == null ? mSemiSig.getSigPoint() : sigSum.add(mSemiSig.getSigPoint());
+      pairProd =
+          pairProd == null
+              ? mSemiSig.getMsgPubKeyPairing()
+              : pairProd.mul(mSemiSig.getMsgPubKeyPairing());
+    }
+    GTPoint sigPair = AtePairing.pairNoExp(Util.g1Generator, sigSum);
+    return AtePairing.fexp(sigPair).equals(AtePairing.fexp(pairProd));
   }
 
   private static Scalar nextBatchRandomMultiplier() {

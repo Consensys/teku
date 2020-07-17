@@ -39,7 +39,7 @@ import tech.pegasys.teku.bls.impl.mikuli.MikuliBLS12381;
  */
 public class BLS {
 
-  static BLS12381 BlsImpl = MikuliBLS12381.INSTANCE;
+  private static BLS12381 BlsImpl = MikuliBLS12381.INSTANCE;
 
   /*
    * The following are the methods used directly in the Ethereum 2.0 specifications. These strictly adhere to the standard.
@@ -87,8 +87,9 @@ public class BLS {
   public static BLSSignature aggregate(List<BLSSignature> signatures) {
     checkArgument(signatures.size() > 0, "Aggregating zero signatures is invalid.");
     return new BLSSignature(
-        BlsImpl.aggregateSignatures(
-            signatures.stream().map(BLSSignature::getSignature).collect(Collectors.toList())));
+        getBlsImpl()
+            .aggregateSignatures(
+                signatures.stream().map(BLSSignature::getSignature).collect(Collectors.toList())));
   }
 
   /**
@@ -276,11 +277,12 @@ public class BLS {
    */
   public static BatchSemiAggregate prepareBatchVerify(
       int index, List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
-    return BlsImpl.prepareBatchVerify(
-        index,
-        publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
-        message,
-        signature.getSignature());
+    return getBlsImpl()
+        .prepareBatchVerify(
+            index,
+            publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
+            message,
+            signature.getSignature());
   }
 
   /**
@@ -298,7 +300,15 @@ public class BLS {
       List<BLSPublicKey> publicKeys2,
       Bytes message2,
       BLSSignature signature2) {
-    throw new UnsupportedOperationException();
+    return getBlsImpl()
+        .prepareBatchVerify2(
+            index,
+            publicKeys1.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
+            message1,
+            signature1.getSignature(),
+            publicKeys2.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
+            message2,
+            signature2.getSignature());
   }
 
   /**
@@ -309,6 +319,10 @@ public class BLS {
    * @return True if the verification is successful, false otherwise
    */
   public static boolean completeBatchVerify(List<BatchSemiAggregate> preparedSignatures) {
-    return BlsImpl.completeBatchVerify(preparedSignatures);
+    return getBlsImpl().completeBatchVerify(preparedSignatures);
+  }
+
+  static BLS12381 getBlsImpl() {
+    return BlsImpl;
   }
 }

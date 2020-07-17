@@ -130,11 +130,16 @@ public final class MikuliPublicKey implements PublicKey {
    */
   public Bytes toBytesCompressed() {
     Bytes data = rawData.get();
-    return (data.size() == COMPRESSED_PK_SIZE) ? data : point.get().toBytesCompressed();
+    return data.size() == COMPRESSED_PK_SIZE ? data : point.get().toBytesCompressed();
   }
 
   public G1Point g1Point() {
     return point.get();
+  }
+
+  @Override
+  public void forceValidation() throws IllegalArgumentException {
+    g1Point();
   }
 
   @Override

@@ -67,10 +67,10 @@ public class BLSPubKey {
       if (BLSPublicKey.isValid(blsPublicKey)) {
         return new BLSPubKey(blsPublicKey);
       } else {
-        return null;
+        throw new PublicKeyException("Invalid public key: " + value);
       }
     } catch (IllegalArgumentException ex) {
-      throw new PublicKeyException(ex.getMessage());
+      throw new PublicKeyException("Invalid public key: " + value, ex);
     }
   }
 

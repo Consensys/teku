@@ -15,11 +15,38 @@ package tech.pegasys.teku.bls.impl;
 
 import org.apache.tuweni.bytes.Bytes;
 
+/** This class represents a BLS12-381 public key. */
 public interface PublicKey {
 
+  /**
+   * Public key serialization
+   *
+   * @return byte array of length 48 representation of the public key
+   */
   Bytes toBytesCompressed();
 
+  /**
+   * Verifies the given BLS signature against the message bytes using this public key.
+   *
+   * @param message The message data to verify, not null
+   * @param signature The signature, not null
+   * @return True if the verification is successful, false otherwise.
+   */
   default boolean verifySignature(Signature signature, Bytes message) {
     return signature.verify(this, message);
   }
+
+  /**
+   * The implementation may be lazy in regards to deserialization of the public key bytes. That
+   * method forces immediate deserialization and validation
+   *
+   * @throws IllegalArgumentException if the public key bytes are invalid
+   */
+  void forceValidation() throws IllegalArgumentException;
+
+  /** Implementation must override */
+  int hashCode();
+
+  /** Implementation must override */
+  boolean equals(Object obj);
 }

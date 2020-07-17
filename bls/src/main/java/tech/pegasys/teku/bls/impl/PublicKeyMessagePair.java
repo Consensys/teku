@@ -13,8 +13,14 @@
 
 package tech.pegasys.teku.bls.impl;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 
+/**
+ * Tuple of {@link PublicKey} and message {@link Bytes} used for batch verification
+ *
+ * @see Signature#verify(List)
+ */
 public class PublicKeyMessagePair {
   private final PublicKey publicKey;
   private final Bytes message;
