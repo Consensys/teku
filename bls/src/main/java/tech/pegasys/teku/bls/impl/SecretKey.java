@@ -40,8 +40,10 @@ public interface SecretKey {
   void destroy();
 
   /** Implementation must override */
+  @Override
   int hashCode();
 
   /** Implementation must override */
+  @Override
   boolean equals(Object obj);
 }

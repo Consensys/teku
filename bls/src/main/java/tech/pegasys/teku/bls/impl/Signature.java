@@ -69,8 +69,10 @@ public interface Signature {
   }
 
   /** Implementation must override */
+  @Override
   int hashCode();
 
   /** Implementation must override */
+  @Override
   boolean equals(Object obj);
 }

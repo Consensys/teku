@@ -45,8 +45,10 @@ public interface PublicKey {
   void forceValidation() throws IllegalArgumentException;
 
   /** Implementation must override */
+  @Override
   int hashCode();
 
   /** Implementation must override */
+  @Override
   boolean equals(Object obj);
 }

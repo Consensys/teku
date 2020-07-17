@@ -128,6 +128,7 @@ public final class MikuliPublicKey implements PublicKey {
    *
    * @return byte array representation of the public key
    */
+  @Override
   public Bytes toBytesCompressed() {
     Bytes data = rawData.get();
     return data.size() == COMPRESSED_PK_SIZE ? data : point.get().toBytesCompressed();

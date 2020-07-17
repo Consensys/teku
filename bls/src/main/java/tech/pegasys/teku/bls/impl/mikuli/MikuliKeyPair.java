@@ -73,10 +73,12 @@ public final class MikuliKeyPair extends KeyPair {
     this(new MikuliSecretKey(secretKey));
   }
 
+  @Override
   public MikuliPublicKey getPublicKey() {
     return (MikuliPublicKey) super.getPublicKey();
   }
 
+  @Override
   public MikuliSecretKey getSecretKey() {
     return (MikuliSecretKey) super.getSecretKey();
   }
