@@ -27,6 +27,7 @@ import static tech.pegasys.teku.util.async.SafeFutureAssert.assertThatSafeFuture
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -36,9 +37,11 @@ import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.Cancellable;
 import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.async.SafeFutureAssert;
 
 class ScheduledExecutorAsyncRunnerTest {
 
@@ -183,5 +186,19 @@ class ScheduledExecutorAsyncRunnerTest {
     assertThat(scheduledActions).hasSize(3);
     scheduledActions.get(2).run();
     assertThat(exception.get()).hasMessageContaining("Ups");
+  }
+
+  @Test
+  void shouldReportRejectionFromWorkerPoolForDelayedActions() {
+    final RejectedExecutionException exception = new RejectedExecutionException("Too lazy");
+    doThrow(exception).when(workerPool).execute(any());
+
+    final SafeFuture<Void> result = asyncRunner.runAfterDelay(() -> {}, 100, TimeUnit.MILLISECONDS);
+
+    final ArgumentCaptor<Runnable> taskCaptor = ArgumentCaptor.forClass(Runnable.class);
+    verify(scheduler).schedule(taskCaptor.capture(), eq(100L), eq(TimeUnit.MILLISECONDS));
+    taskCaptor.getValue().run();
+
+    SafeFutureAssert.assertThatSafeFuture(result).isCompletedExceptionallyWith(exception);
   }
 }

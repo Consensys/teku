@@ -17,11 +17,11 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -88,15 +88,43 @@ class ScheduledExecutorAsyncRunner implements AsyncRunner {
 
   @Override
   public <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action) {
-    return runTask(action, workerPool::execute);
+    if (shutdown.get()) {
+      LOG.debug("Ignoring async task because shutdown is in progress");
+      return new SafeFuture<>();
+    }
+    final SafeFuture<U> result = new SafeFuture<>();
+    try {
+      workerPool.execute(createRunnableForAction(action, result));
+    } catch (final Throwable t) {
+      handleExecutorError(result, t);
+    }
+    return result;
   }
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
   public <U> SafeFuture<U> runAfterDelay(
       final Supplier<SafeFuture<U>> action, final long delayAmount, final TimeUnit delayUnit) {
-    return runTask(
-        action, task -> scheduler.schedule(() -> workerPool.execute(task), delayAmount, delayUnit));
+    if (shutdown.get()) {
+      LOG.debug("Ignoring async task because shutdown is in progress");
+      return new SafeFuture<>();
+    }
+    final SafeFuture<U> result = new SafeFuture<>();
+    try {
+      scheduler.schedule(
+          () -> {
+            try {
+              workerPool.execute(createRunnableForAction(action, result));
+            } catch (final Throwable t) {
+              handleExecutorError(result, t);
+            }
+          },
+          delayAmount,
+          delayUnit);
+    } catch (final Throwable t) {
+      handleExecutorError(result, t);
+    }
+    return result;
   }
 
   @Override
@@ -107,18 +135,16 @@ class ScheduledExecutorAsyncRunner implements AsyncRunner {
     workerPool.shutdownNow();
   }
 
-  private <U> SafeFuture<U> runTask(
-      final Supplier<SafeFuture<U>> action, final Consumer<Runnable> executor) {
-    if (shutdown.get()) {
-      LOG.debug("Ignoring async task because shutdown is in progress");
-      return new SafeFuture<>();
-    }
-    final SafeFuture<U> result = new SafeFuture<>();
-    try {
-      executor.accept(() -> SafeFuture.ofComposed(action::get).propagateTo(result));
-    } catch (final Throwable t) {
+  private <U> void handleExecutorError(final SafeFuture<U> result, final Throwable t) {
+    if (t instanceof RejectedExecutionException && shutdown.get()) {
+      LOG.trace("Ignoring RejectedExecutionException because shutdown is in progress", t);
+    } else {
       result.completeExceptionally(t);
     }
-    return result;
+  }
+
+  private <U> Runnable createRunnableForAction(
+      final Supplier<SafeFuture<U>> action, final SafeFuture<U> result) {
+    return () -> SafeFuture.ofComposed(action::get).propagateTo(result);
   }
 }
