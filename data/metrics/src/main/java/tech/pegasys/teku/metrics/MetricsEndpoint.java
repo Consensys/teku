@@ -14,7 +14,7 @@
 package tech.pegasys.teku.metrics;
 
 import static java.util.stream.Collectors.toSet;
-import static tech.pegasys.teku.util.async.SafeFuture.reportExceptions;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.reportExceptions;
 
 import com.google.common.collect.ImmutableMap;
 import io.vertx.core.Vertx;

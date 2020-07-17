@@ -15,10 +15,10 @@ package tech.pegasys.teku.sync.util;
 
 import static com.google.common.primitives.UnsignedLong.ZERO;
 
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncStatus;
 import tech.pegasys.teku.sync.SyncingStatus;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class NoopSyncService implements SyncService {
 

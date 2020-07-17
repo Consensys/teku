@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util;
+package tech.pegasys.teku.infrastructure.async;
 
 import java.time.Duration;
 import java.util.concurrent.ExecutionException;

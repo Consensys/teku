@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.service.serviceutils;
 
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class NoopService extends Service {
 

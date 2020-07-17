@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.client.Validator;
 
 public class ScheduledDuties {

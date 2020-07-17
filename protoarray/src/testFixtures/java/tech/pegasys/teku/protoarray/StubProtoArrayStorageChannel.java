@@ -14,7 +14,7 @@
 package tech.pegasys.teku.protoarray;
 
 import java.util.Optional;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class StubProtoArrayStorageChannel implements ProtoArrayStorageChannel {
   @Override

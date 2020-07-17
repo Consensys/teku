@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.util.channels;
 
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+
 /**
  * Marker interface that must be extended by any interfaces used with event channels.
  *
  * <p>Any methods of interfaces that extend this one must return either {@code void} or {@link
- * tech.pegasys.teku.util.async.SafeFuture}.
+ * SafeFuture}.
  */
 public interface ChannelInterface {}

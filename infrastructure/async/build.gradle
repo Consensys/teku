@@ -1,0 +1,9 @@
+dependencies {
+  implementation 'com.google.guava:guava'
+
+  testImplementation 'org.apache.logging.log4j:log4j-core'
+
+  testFixturesApi 'com.google.guava:guava'
+  testFixturesImplementation 'org.apache.logging.log4j:log4j-core'
+  testFixturesImplementation 'org.awaitility:awaitility'
+}

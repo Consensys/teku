@@ -29,9 +29,9 @@ import io.netty.buffer.Unpooled;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.MockMessageApi;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class GossipHandlerTest {
   private final Topic topic = new Topic("Testing");

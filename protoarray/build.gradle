@@ -2,10 +2,12 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-crypto'
     implementation 'org.apache.tuweni:tuweni-ssz'
     implementation project(':ethereum:datastructures')
+    implementation project(':infrastructure:async')
     implementation project(':util')
 
     testFixturesApi 'org.apache.tuweni:tuweni-bytes'
     testFixturesImplementation project(':ethereum:datastructures')
     testFixturesImplementation testFixtures(project(':ethereum:datastructures'))
+    testFixturesImplementation project(':infrastructure:async')
 
 }

@@ -14,7 +14,7 @@
 package tech.pegasys.teku.compatibility.multiclient;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.util.Waiter.waitFor;
+import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;

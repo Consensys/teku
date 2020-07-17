@@ -16,8 +16,8 @@ package tech.pegasys.teku.pow;
 import com.google.common.primitives.UnsignedLong;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.util.time.TimeProvider;
 
 public class ErrorTrackingEth1Provider implements Eth1Provider {

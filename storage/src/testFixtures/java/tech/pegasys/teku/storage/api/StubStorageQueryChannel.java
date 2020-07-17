@@ -21,8 +21,8 @@ import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.store.StoreBuilder;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class StubStorageQueryChannel implements StorageQueryChannel {
 
