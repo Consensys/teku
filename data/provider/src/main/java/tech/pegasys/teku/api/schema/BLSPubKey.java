@@ -62,15 +62,11 @@ public class BLSPubKey {
   }
 
   public static BLSPubKey fromHexString(String value) {
-    try {
-      BLSPublicKey blsPublicKey = BLSPublicKey.fromBytes(Bytes.fromHexString(value));
-      if (BLSPublicKey.isValid(blsPublicKey)) {
-        return new BLSPubKey(blsPublicKey);
-      } else {
-        return null;
-      }
-    } catch (IllegalArgumentException ex) {
-      throw new PublicKeyException(ex.getMessage());
+    BLSPublicKey blsPublicKey = BLSPublicKey.fromBytes(Bytes.fromHexString(value));
+    if (blsPublicKey.isValid()) {
+      return new BLSPubKey(blsPublicKey);
+    } else {
+      throw new PublicKeyException("Public key is invalid.");
     }
   }
 
