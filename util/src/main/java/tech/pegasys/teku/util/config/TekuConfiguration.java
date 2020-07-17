@@ -28,9 +28,10 @@ import org.apache.logging.log4j.status.StatusLogger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.metrics.MetricsConfig;
 
 /** Configuration of an instance of Teku. */
-public class TekuConfiguration {
+public class TekuConfiguration implements MetricsConfig {
   // Network
   private final String constants;
   private final String initialState;
@@ -416,22 +417,27 @@ public class TekuConfiguration {
     return transitionRecordDirectory;
   }
 
+  @Override
   public boolean isMetricsEnabled() {
     return metricsEnabled;
   }
 
+  @Override
   public int getMetricsPort() {
     return metricsPort;
   }
 
+  @Override
   public String getMetricsInterface() {
     return metricsInterface;
   }
 
+  @Override
   public List<String> getMetricsCategories() {
     return metricsCategories;
   }
 
+  @Override
   public List<String> getMetricsHostAllowlist() {
     return metricsHostAllowlist;
   }
