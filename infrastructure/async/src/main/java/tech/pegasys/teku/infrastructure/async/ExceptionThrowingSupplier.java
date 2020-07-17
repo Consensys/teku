@@ -11,10 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.async;
+package tech.pegasys.teku.infrastructure.async;
 
-import java.util.concurrent.CompletionStage;
-
-public interface ExceptionThrowingFutureSupplier<O> {
-  CompletionStage<O> get() throws Throwable;
+public interface ExceptionThrowingSupplier<O> {
+  O get() throws Throwable;
 }

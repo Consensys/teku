@@ -18,12 +18,12 @@ import java.math.BigInteger;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChannel {
 

@@ -19,8 +19,8 @@ import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public abstract class AbstractHandler implements Handler {
 

@@ -16,7 +16,7 @@ package tech.pegasys.teku.service.serviceutils;
 import java.util.Collection;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 
 public class AsyncRunnerFactory {
   private final Collection<AsyncRunner> asyncRunners = new CopyOnWriteArrayList<>();

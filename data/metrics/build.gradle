@@ -1,4 +1,5 @@
 dependencies {
+    implementation project(':infrastructure:async')
     implementation project(':util')
 
     api 'org.hyperledger.besu:plugin-api'

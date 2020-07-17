@@ -14,7 +14,7 @@
 package tech.pegasys.teku.validator.client.duties;
 
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.util.async.SafeFuture.failedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -29,8 +29,8 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;

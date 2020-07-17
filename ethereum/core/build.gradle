@@ -3,6 +3,7 @@ dependencies {
   implementation project(':data')
   implementation project(':data:metrics')
   implementation project(':ethereum:datastructures')
+  implementation project(':infrastructure:async')
   implementation project(':protoarray')
   implementation project(':ssz')
   implementation project(':util')
@@ -23,6 +24,7 @@ dependencies {
   testFixturesImplementation testFixtures(project(':bls'))
   testFixturesImplementation project(':ethereum:datastructures')
   testFixturesImplementation testFixtures(project(':ethereum:datastructures'))
+  testFixturesImplementation project(':infrastructure:async')
   testFixturesImplementation project(':ssz')
   testFixturesImplementation project(':util')
 

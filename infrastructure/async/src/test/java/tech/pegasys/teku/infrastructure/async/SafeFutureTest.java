@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.async;
+package tech.pegasys.teku.infrastructure.async;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.util.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.util.async.SafeFuture.Interruptor;
+import tech.pegasys.teku.infrastructure.async.SafeFuture.Interruptor;
 
 public class SafeFutureTest {
 
@@ -438,6 +438,33 @@ public class SafeFutureTest {
     source.propagateTo(target);
     final RuntimeException exception = new RuntimeException("Oh no!");
     source.completeExceptionally(exception);
+    assertThatSafeFuture(target).isCompletedExceptionallyWith(exception);
+  }
+
+  @Test
+  public void propagateToAsync_propagatesSuccessfulResult() {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    final SafeFuture<String> target = new SafeFuture<>();
+    final SafeFuture<String> source = new SafeFuture<>();
+    source.propagateToAsync(target, asyncRunner);
+    source.complete("Yay");
+    assertThat(target).isNotDone();
+
+    asyncRunner.executeQueuedActions();
+    assertThat(target).isCompletedWithValue("Yay");
+  }
+
+  @Test
+  public void propagateToAsync_propagatesExceptionalResult() {
+    final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+    final SafeFuture<String> target = new SafeFuture<>();
+    final SafeFuture<String> source = new SafeFuture<>();
+    source.propagateToAsync(target, asyncRunner);
+    final RuntimeException exception = new RuntimeException("Oh no!");
+    source.completeExceptionally(exception);
+    assertThat(target).isNotDone();
+
+    asyncRunner.executeQueuedActions();
     assertThatSafeFuture(target).isCompletedExceptionallyWith(exception);
   }
 
