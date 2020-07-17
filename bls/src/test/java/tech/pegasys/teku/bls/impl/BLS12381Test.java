@@ -57,7 +57,7 @@ public abstract class BLS12381Test {
   private final int aggrIndex;
   private final int invalidIndex;
 
-  public BLS12381Test() {
+  protected BLS12381Test() {
     aggrIndex = pubKeys.size();
     pubKeys.add(aggrSigPubkeys);
     messages.add(aggrSigMsg);
