@@ -49,7 +49,7 @@ class BlockProcessorUtilTest {
   void processDepositAddsNewValidatorWhenPubkeyIsNotFoundInRegistry()
       throws BlockProcessingException {
     // Create a deposit
-    DepositData depositInput = dataStructureUtil.newDepositList(1).get(0);
+    DepositData depositInput = dataStructureUtil.randomDepositData();
     BLSPublicKey pubkey = depositInput.getPubkey();
     Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
     UnsignedLong amount = depositInput.getAmount();
@@ -103,7 +103,7 @@ class BlockProcessorUtilTest {
   void processDepositTopsUpValidatorBalanceWhenPubkeyIsFoundInRegistry()
       throws BlockProcessingException {
     // Create a deposit
-    DepositData depositInput = dataStructureUtil.newDepositList(1).get(0);
+    DepositData depositInput = dataStructureUtil.randomDepositData();
     BLSPublicKey pubkey = depositInput.getPubkey();
     Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
     UnsignedLong amount = depositInput.getAmount();
