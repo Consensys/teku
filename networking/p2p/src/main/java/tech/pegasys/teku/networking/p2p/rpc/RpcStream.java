@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.p2p.rpc;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface RpcStream {
 

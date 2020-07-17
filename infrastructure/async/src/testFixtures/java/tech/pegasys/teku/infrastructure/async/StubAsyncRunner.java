@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.async;
+package tech.pegasys.teku.infrastructure.async;
 
-import static tech.pegasys.teku.util.async.SafeFuture.propagateResult;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.propagateResult;
 
 import java.util.ArrayList;
 import java.util.List;

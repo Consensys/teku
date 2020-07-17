@@ -26,8 +26,8 @@ import org.web3j.protocol.core.Response;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
 public class Web3jEth1Provider implements Eth1Provider {

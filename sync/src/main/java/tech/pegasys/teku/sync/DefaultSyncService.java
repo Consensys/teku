@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.sync;
 
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class DefaultSyncService extends Service implements SyncService {
 

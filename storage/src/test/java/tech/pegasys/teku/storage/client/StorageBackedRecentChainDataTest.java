@@ -29,6 +29,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -40,8 +42,6 @@ import tech.pegasys.teku.storage.api.StubReorgEventChannel;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
-import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.async.StubAsyncRunner;
 
 public class StorageBackedRecentChainDataTest {
 

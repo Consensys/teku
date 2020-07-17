@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import java.util.function.Consumer;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 @FunctionalInterface
 public interface ResponseStreamListener<O> {

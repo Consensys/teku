@@ -19,9 +19,9 @@ import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.network.p2p.DiscoveryNetworkFactory;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
-import tech.pegasys.teku.util.Waiter;
 
 public class DiscoveryNetworkIntegrationTest {
   private final DiscoveryNetworkFactory discoveryNetworkFactory = new DiscoveryNetworkFactory();

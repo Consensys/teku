@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.storage.api;
 
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.channels.ChannelInterface;
 
 public interface Eth1DepositStorageChannel extends ChannelInterface {

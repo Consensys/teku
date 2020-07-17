@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
-import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.events.Subscribers;
 

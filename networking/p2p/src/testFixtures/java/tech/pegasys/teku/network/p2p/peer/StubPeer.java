@@ -16,6 +16,7 @@ package tech.pegasys.teku.network.p2p.peer;
 import java.util.Optional;
 import javax.naming.OperationNotSupportedException;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
@@ -26,7 +27,6 @@ import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedSubscriber;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.events.Subscribers;
 
 public class StubPeer implements Peer {

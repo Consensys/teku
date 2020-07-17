@@ -44,6 +44,8 @@ import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
@@ -54,8 +56,6 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 class DiscoveryNetworkTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

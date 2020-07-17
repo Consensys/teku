@@ -31,6 +31,8 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkBuilder;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.InitialStatusSubscriber;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager.PeerValidatorFactory;
@@ -45,8 +47,6 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.async.StubAsyncRunner;
 
 public class Eth2PeerManagerTest {
 

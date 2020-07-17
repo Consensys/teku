@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
@@ -38,7 +38,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class GetNewBlockDataBackedIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 

@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
-import tech.pegasys.teku.util.Waiter;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 
 public abstract class Node {
   private static final AtomicInteger NODE_UNIQUIFIER = new AtomicInteger();

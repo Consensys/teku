@@ -28,8 +28,8 @@ import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.logging.ValidatorLogger;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -63,7 +63,7 @@ public class AggregationDuty implements Duty {
    * @param proof the validator's slot signature proving it is the aggregator
    * @param attestationCommitteeIndex the committee index to aggregate
    * @param unsignedAttestationFuture the future returned by {@link
-   *     AttestationProductionDuty#addValidator(Validator, int, int)} which completes with the
+   *     AttestationProductionDuty#addValidator(Validator, int, int, int)} which completes with the
    *     unsigned attestation for this committee and slot.
    */
   public void addValidator(

@@ -26,8 +26,8 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.util.DepositGenerator;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.pow.contract.DepositContract;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Eth1Address;
 
 public class DepositTransactionSender {

@@ -19,9 +19,9 @@ import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.events.Subscribers;
 
 abstract class EventDeliverer<T> {

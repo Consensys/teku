@@ -31,9 +31,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.logging.StatusLogger;
-import tech.pegasys.teku.util.Waiter;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 class TekuDefaultExceptionHandlerTest {
 

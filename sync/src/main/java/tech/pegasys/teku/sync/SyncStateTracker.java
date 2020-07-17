@@ -17,11 +17,11 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class SyncStateTracker extends Service {
   private static final Logger LOG = LogManager.getLogger();

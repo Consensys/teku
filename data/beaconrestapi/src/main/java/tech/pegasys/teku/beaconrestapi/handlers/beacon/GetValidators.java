@@ -49,9 +49,9 @@ import tech.pegasys.teku.api.schema.BeaconValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class GetValidators extends AbstractHandler implements Handler {
   public static final String ROUTE = "/beacon/validators";

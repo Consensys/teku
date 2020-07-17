@@ -36,10 +36,10 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class GetStateRootTest {

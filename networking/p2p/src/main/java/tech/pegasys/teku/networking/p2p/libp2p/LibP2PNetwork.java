@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p;
 
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.reportExceptions;
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
-import static tech.pegasys.teku.util.async.SafeFuture.failedFuture;
-import static tech.pegasys.teku.util.async.SafeFuture.reportExceptions;
 
 import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Host;
@@ -56,6 +56,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.crypto.Hash;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
@@ -71,8 +73,6 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.cli.VersionProvider;
 
 public class LibP2PNetwork implements P2PNetwork<Peer> {
