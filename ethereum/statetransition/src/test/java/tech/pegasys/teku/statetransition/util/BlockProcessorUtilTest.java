@@ -194,8 +194,7 @@ class BlockProcessorUtilTest {
     int originalValidatorRegistrySize = beaconState.getValidators().size();
     int originalValidatorBalancesSize = beaconState.getBalances().size();
 
-    // Attempt to process deposit with above data. We expect this to fail, but not to throw and
-    // exception.
+    // Attempt to process deposit with above data. We expect to fail, but not throw an exception.
     beaconState =
         beaconState.updated(state -> BlockProcessorUtil.process_deposits(state, deposits));
 
