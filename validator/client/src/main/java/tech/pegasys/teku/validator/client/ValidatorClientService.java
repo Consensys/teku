@@ -48,7 +48,8 @@ public class ValidatorClientService extends Service {
     final AsyncRunner asyncRunner = config.createAsyncRunner("validator");
     final ValidatorApiChannel validatorApiChannel =
         new MetricRecordingValidatorApiChannel(
-            metricsSystem, config.getEventChannels().getPublisher(ValidatorApiChannel.class));
+            metricsSystem,
+            config.getEventChannels().getPublisher(ValidatorApiChannel.class, asyncRunner));
     final RetryingDutyLoader dutyLoader =
         createDutyLoader(metricsSystem, validatorApiChannel, asyncRunner, validators);
     final StableSubnetSubscriber stableSubnetSubscriber =

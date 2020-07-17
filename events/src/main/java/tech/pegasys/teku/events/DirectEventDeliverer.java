@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.async.SafeFuture;
 
 class DirectEventDeliverer<T> extends EventDeliverer<T> {
@@ -59,7 +60,10 @@ class DirectEventDeliverer<T> extends EventDeliverer<T> {
 
   @Override
   protected <X> SafeFuture<X> deliverToWithResponse(
-      final T subscriber, final Method method, final Object[] args) {
+      final T subscriber,
+      final Method method,
+      final Object[] args,
+      final AsyncRunner responseRunner) {
     return executeMethod(subscriber, method, args);
   }
 

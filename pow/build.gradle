@@ -13,4 +13,6 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-units'
 
   testImplementation testFixtures(project(':util'))
+
+  testFixturesImplementation project(':util')
 }

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.events;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -21,6 +20,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
 
 class EventChannelsTest {
   private final EventChannels channels =
@@ -28,10 +28,10 @@ class EventChannelsTest {
 
   @Test
   public void shouldBeAbleToGetPublisherBeforeSubscriber() {
-    final Runnable publisher = channels.getPublisher(Runnable.class);
+    final SimpleChannel publisher = channels.getPublisher(SimpleChannel.class);
 
-    final Runnable subscriber = mock(Runnable.class);
-    channels.subscribe(Runnable.class, subscriber);
+    final SimpleChannel subscriber = mock(SimpleChannel.class);
+    channels.subscribe(SimpleChannel.class, subscriber);
 
     publisher.run();
 
@@ -40,10 +40,10 @@ class EventChannelsTest {
 
   @Test
   public void shouldBeAbleToSubscribeBeforePublisherIsCreated() {
-    final Runnable subscriber = mock(Runnable.class);
-    channels.subscribe(Runnable.class, subscriber);
+    final SimpleChannel subscriber = mock(SimpleChannel.class);
+    channels.subscribe(SimpleChannel.class, subscriber);
 
-    final Runnable publisher = channels.getPublisher(Runnable.class);
+    final SimpleChannel publisher = channels.getPublisher(SimpleChannel.class);
 
     publisher.run();
 
@@ -52,12 +52,12 @@ class EventChannelsTest {
 
   @Test
   public void shouldBeAbleToAddMultipleSubscribers() {
-    final Runnable subscriber1 = mock(Runnable.class);
-    final Runnable subscriber2 = mock(Runnable.class);
+    final SimpleChannel subscriber1 = mock(SimpleChannel.class);
+    final SimpleChannel subscriber2 = mock(SimpleChannel.class);
 
-    channels.subscribe(Runnable.class, subscriber1);
-    final Runnable publisher = channels.getPublisher(Runnable.class);
-    channels.subscribe(Runnable.class, subscriber2);
+    channels.subscribe(SimpleChannel.class, subscriber1);
+    final SimpleChannel publisher = channels.getPublisher(SimpleChannel.class);
+    channels.subscribe(SimpleChannel.class, subscriber2);
 
     publisher.run();
 
@@ -66,21 +66,13 @@ class EventChannelsTest {
   }
 
   @Test
-  public void shouldReturnSamePublisherForSameChannel() {
-    final Runnable publisher1 = channels.getPublisher(Runnable.class);
-    final Runnable publisher2 = channels.getPublisher(Runnable.class);
-
-    assertThat(publisher1).isSameAs(publisher2);
-  }
-
-  @Test
   public void shouldKeepDifferentChannelsSeparate() {
-    final Runnable runnableSubscriber = mock(Runnable.class);
+    final SimpleChannel runnableSubscriber = mock(SimpleChannel.class);
     final SimpleConsumer consumerSubscriber = mock(SimpleConsumer.class);
-    channels.subscribe(Runnable.class, runnableSubscriber);
+    channels.subscribe(SimpleChannel.class, runnableSubscriber);
     channels.subscribe(SimpleConsumer.class, consumerSubscriber);
 
-    final Runnable runnablePublisher = channels.getPublisher(Runnable.class);
+    final SimpleChannel runnablePublisher = channels.getPublisher(SimpleChannel.class);
     final SimpleConsumer consumerPublisher = channels.getPublisher(SimpleConsumer.class);
 
     runnablePublisher.run();
@@ -92,7 +84,11 @@ class EventChannelsTest {
     verifyNoMoreInteractions(runnableSubscriber);
   }
 
-  private interface SimpleConsumer {
+  private interface SimpleConsumer extends VoidReturningChannelInterface {
     void accept(int value);
+  }
+
+  private interface SimpleChannel extends VoidReturningChannelInterface {
+    void run();
   }
 }
