@@ -24,7 +24,7 @@ import tech.pegasys.teku.bls.impl.SecretKey;
 import tech.pegasys.teku.bls.impl.Signature;
 
 /** This class represents a BLS12-381 private key. */
-public final class MikuliSecretKey implements SecretKey {
+public class MikuliSecretKey implements SecretKey {
 
   /**
    * Create a private key from a byte array

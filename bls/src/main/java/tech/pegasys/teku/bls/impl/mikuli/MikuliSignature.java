@@ -29,7 +29,7 @@ import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
 import tech.pegasys.teku.bls.impl.Signature;
 
 /** This class represents a Signature on G2 */
-public final class MikuliSignature implements Signature {
+public class MikuliSignature implements Signature {
 
   private static final int COMPRESSED_SIG_SIZE = 96;
   private static final int UNCOMPRESSED_SIG_SIZE = 192;

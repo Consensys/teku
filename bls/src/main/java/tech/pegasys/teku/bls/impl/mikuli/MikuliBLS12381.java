@@ -52,7 +52,7 @@ import tech.pegasys.teku.bls.impl.Signature;
  * <p>Apache Milagro can be included using the gradle dependency
  * 'org.miracl.milagro.amcl:milagro-crypto-java'.
  */
-public final class MikuliBLS12381 implements BLS12381 {
+public class MikuliBLS12381 implements BLS12381 {
 
   public static final MikuliBLS12381 INSTANCE = new MikuliBLS12381();
   private static final long MAX_BATCH_VERIFY_RANDOM_MULTIPLIER = Long.MAX_VALUE;
@@ -79,7 +79,7 @@ public final class MikuliBLS12381 implements BLS12381 {
   }
 
   @Override
-  public Signature signatureFromCompressed(Bytes compressedSignatureBytes) {
+  public MikuliSignature signatureFromCompressed(Bytes compressedSignatureBytes) {
     return MikuliSignature.fromBytesCompressed(compressedSignatureBytes);
   }
 
@@ -95,7 +95,7 @@ public final class MikuliBLS12381 implements BLS12381 {
   }
 
   @Override
-  public Signature aggregateSignatures(List<? extends Signature> signatures) {
+  public MikuliSignature aggregateSignatures(List<? extends Signature> signatures) {
     return MikuliSignature.aggregate(
         signatures.stream().map(sig -> (MikuliSignature) sig).collect(Collectors.toList()));
   }
