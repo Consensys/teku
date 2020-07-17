@@ -89,6 +89,7 @@ class BLSPublicKeyTest {
             Bytes.fromHexString(
                 "0xb51aa9cdb40ed3e7e5a9b3323550fe323ecd5c7f5cb3d8b47af55a061811bc7da0397986cad0d565c0bdbbe99af24355"));
     assertNotEquals(invalidPublicKey.hashCode(), validPublicKey.hashCode());
+    assertEquals(invalidPublicKey.hashCode(), invalidPublicKey.hashCode());
   }
 
   @Test
