@@ -501,6 +501,21 @@ public final class DataStructureUtil {
     return new VoluntaryExit(randomUnsignedLong(), randomUnsignedLong());
   }
 
+  public List<DepositData> newDepositList(int numDeposits) {
+    final DepositGenerator depositGenerator = new DepositGenerator();
+    List<DepositData> depositData = new ArrayList<>();
+
+    for (int i = 0; i < numDeposits; i++) {
+      BLSKeyPair keypair = BLSKeyPair.random(i);
+      depositData.add(
+          depositGenerator.createDepositData(
+              keypair,
+              UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
+              keypair.getPublicKey()));
+    }
+    return depositData;
+  }
+
   public SSZList<DepositWithIndex> newDeposits(int numDeposits) {
     SSZMutableList<DepositWithIndex> deposits =
         SSZList.createMutable(DepositWithIndex.class, Constants.MAX_DEPOSITS);
