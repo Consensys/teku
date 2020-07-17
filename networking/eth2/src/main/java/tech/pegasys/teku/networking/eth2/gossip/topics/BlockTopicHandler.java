@@ -92,6 +92,6 @@ public class BlockTopicHandler extends Eth2TopicHandler.SimpleEth2TopicHandler<S
 
   @Override
   protected SafeFuture<InternalValidationResult> validateData(final SignedBeaconBlock block) {
-    return SafeFuture.completedFuture(blockValidator.validate(block));
+    return blockValidator.validate(block);
   }
 }
