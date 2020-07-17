@@ -215,6 +215,13 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     propagateResult(this, target);
   }
 
+  public void propagateToAsync(final SafeFuture<T> target, final AsyncRunner asyncRunner) {
+    finish(
+        result -> asyncRunner.runAsync(() -> target.complete(result)).reportExceptions(),
+        error ->
+            asyncRunner.runAsync(() -> target.completeExceptionally(error)).reportExceptions());
+  }
+
   /**
    * Completes the {@code target} exceptionally if and only if this future is completed
    * exceptionally

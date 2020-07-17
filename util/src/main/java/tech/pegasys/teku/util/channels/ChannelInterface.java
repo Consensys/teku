@@ -11,15 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.protoarray;
+package tech.pegasys.teku.util.channels;
 
-import java.util.Optional;
-import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.channels.ChannelInterface;
-
-public interface ProtoArrayStorageChannel extends ChannelInterface {
-
-  void onProtoArrayUpdate(ProtoArraySnapshot protoArraySnapshot);
-
-  SafeFuture<Optional<ProtoArraySnapshot>> getProtoArraySnapshot();
-}
+/**
+ * Marker interface that must be extended by any interfaces used with event channels.
+ *
+ * <p>Any methods of interfaces that extend this one must return either {@code void} or {@link
+ * tech.pegasys.teku.util.async.SafeFuture}.
+ */
+public interface ChannelInterface {}
