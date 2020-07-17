@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.p2p.gossip;
 
 import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface TopicHandler {
 
