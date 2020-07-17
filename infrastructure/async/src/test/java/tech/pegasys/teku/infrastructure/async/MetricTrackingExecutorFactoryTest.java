@@ -14,12 +14,14 @@
 package tech.pegasys.teku.infrastructure.async;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
@@ -77,6 +79,21 @@ class MetricTrackingExecutorFactoryTest {
 
     task2.allowCompletion();
     task3.allowCompletion();
+  }
+
+  @Test
+  void shouldRejectTasksOnceQueueIsFull() {
+    final Task task1 = new Task();
+    final Task task2 = new Task();
+    final Task task3 = new Task();
+    final Task task4 = new Task();
+    final ExecutorService executorService = newCachedThreadPool(1, 2);
+    executorService.execute(task1);
+    executorService.execute(task2);
+    executorService.execute(task3);
+
+    assertThatThrownBy(() -> executorService.execute(task4))
+        .isInstanceOf(RejectedExecutionException.class);
   }
 
   private ExecutorService newCachedThreadPool(final int maxThreads, final int maxQueueSize) {
