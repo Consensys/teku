@@ -96,6 +96,6 @@ public class AggregateAttestationTopicHandler
   @Override
   protected SafeFuture<InternalValidationResult> validateData(
       final ValidateableAttestation validateableAttestation) {
-    return SafeFuture.of(() -> validator.validate(validateableAttestation));
+    return validator.validate(validateableAttestation);
   }
 }

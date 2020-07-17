@@ -141,7 +141,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     BlockValidator blockValidator = new BlockValidator(recentChainData, new StateTransition());
     AttestationValidator attestationValidator = new AttestationValidator(recentChainData);
     SignedAggregateAndProofValidator aggregateValidator =
-        new SignedAggregateAndProofValidator(attestationValidator, recentChainData);
+        new SignedAggregateAndProofValidator(attestationValidator);
     final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
     VoluntaryExitValidator exitValidator =
         new VoluntaryExitValidator(

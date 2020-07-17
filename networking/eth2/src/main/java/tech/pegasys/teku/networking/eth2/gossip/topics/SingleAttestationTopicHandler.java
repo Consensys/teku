@@ -97,6 +97,6 @@ public class SingleAttestationTopicHandler
   @Override
   protected SafeFuture<InternalValidationResult> validateData(
       final ValidateableAttestation attestation) {
-    return SafeFuture.completedFuture(validator.validate(attestation, subnetId));
+    return validator.validate(attestation, subnetId);
   }
 }

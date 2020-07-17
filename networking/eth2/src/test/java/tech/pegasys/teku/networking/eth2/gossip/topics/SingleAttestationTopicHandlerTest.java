@@ -42,6 +42,7 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class SingleAttestationTopicHandlerTest {
 
@@ -77,7 +78,8 @@ public class SingleAttestationTopicHandlerTest {
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromAttestation(
             attestationGenerator.validAttestation(blockAndState));
-    when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(ACCEPT);
+    when(attestationValidator.validate(attestation, SUBNET_ID))
+        .thenReturn(SafeFuture.completedFuture(ACCEPT));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
     final ValidationResult result = topicHandler.handleMessage(serialized).join();
@@ -92,7 +94,8 @@ public class SingleAttestationTopicHandlerTest {
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromAttestation(
             attestationGenerator.validAttestation(blockAndState));
-    when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(IGNORE);
+    when(attestationValidator.validate(attestation, SUBNET_ID))
+        .thenReturn(SafeFuture.completedFuture(IGNORE));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
     final ValidationResult result = topicHandler.handleMessage(serialized).join();
@@ -107,7 +110,8 @@ public class SingleAttestationTopicHandlerTest {
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromAttestation(
             attestationGenerator.validAttestation(blockAndState));
-    when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(SAVE_FOR_FUTURE);
+    when(attestationValidator.validate(attestation, SUBNET_ID))
+        .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
     final ValidationResult result = topicHandler.handleMessage(serialized).join();
@@ -122,7 +126,8 @@ public class SingleAttestationTopicHandlerTest {
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromAttestation(
             attestationGenerator.validAttestation(blockAndState));
-    when(attestationValidator.validate(attestation, SUBNET_ID)).thenReturn(REJECT);
+    when(attestationValidator.validate(attestation, SUBNET_ID))
+        .thenReturn(SafeFuture.completedFuture(REJECT));
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
     final ValidationResult result = topicHandler.handleMessage(serialized).join();

@@ -28,6 +28,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.util.async.SafeFuture;
 
 public class AggregateTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -48,7 +49,8 @@ public class AggregateTopicHandlerTest {
     final ValidateableAttestation aggregate =
         ValidateableAttestation.fromSignedAggregate(
             dataStructureUtil.randomSignedAggregateAndProof());
-    when(validator.validate(aggregate)).thenReturn(InternalValidationResult.ACCEPT);
+    when(validator.validate(aggregate))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     final ValidationResult result =
         topicHandler
@@ -63,7 +65,8 @@ public class AggregateTopicHandlerTest {
     final ValidateableAttestation aggregate =
         ValidateableAttestation.fromSignedAggregate(
             dataStructureUtil.randomSignedAggregateAndProof());
-    when(validator.validate(aggregate)).thenReturn(InternalValidationResult.SAVE_FOR_FUTURE);
+    when(validator.validate(aggregate))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
     final ValidationResult result =
         topicHandler
@@ -78,7 +81,8 @@ public class AggregateTopicHandlerTest {
     final ValidateableAttestation aggregate =
         ValidateableAttestation.fromSignedAggregate(
             dataStructureUtil.randomSignedAggregateAndProof());
-    when(validator.validate(aggregate)).thenReturn(InternalValidationResult.IGNORE);
+    when(validator.validate(aggregate))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
 
     final ValidationResult result =
         topicHandler
@@ -93,7 +97,8 @@ public class AggregateTopicHandlerTest {
     final ValidateableAttestation aggregate =
         ValidateableAttestation.fromSignedAggregate(
             dataStructureUtil.randomSignedAggregateAndProof());
-    when(validator.validate(aggregate)).thenReturn(InternalValidationResult.REJECT);
+    when(validator.validate(aggregate))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
 
     final ValidationResult result =
         topicHandler
