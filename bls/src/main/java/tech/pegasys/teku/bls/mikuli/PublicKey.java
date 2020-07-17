@@ -143,7 +143,12 @@ public final class PublicKey {
 
   @Override
   public int hashCode() {
-    return point.get().hashCode();
+    try {
+      return point.get().hashCode();
+    } catch (final IllegalArgumentException e) {
+      // Invalid point so only equal if it has the same raw data, hence use that hashCode.
+      return rawData.hashCode();
+    }
   }
 
   @Override
