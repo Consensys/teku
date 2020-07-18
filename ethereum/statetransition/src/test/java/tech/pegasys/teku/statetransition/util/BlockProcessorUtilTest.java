@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
@@ -54,49 +53,25 @@ class BlockProcessorUtilTest {
     Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
     UnsignedLong amount = depositInput.getAmount();
 
-    // Add the deposit to a Merkle tree so that we can get the root to put into the state
-    MerkleTree depositMerkleTree = new OptimizedMerkleTree(Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
-    depositMerkleTree.add(depositInput.hash_tree_root());
+    BeaconState preState = createBeaconState();
 
-    // Create the state and insert the Merkle root of the deposit data
-    BeaconState beaconState =
-        createBeaconState()
-            .updated(
-                state ->
-                    state.setEth1_data(
-                        new Eth1Data(
-                            depositMerkleTree.getRoot(), UnsignedLong.valueOf(1), Bytes32.ZERO)));
+    int originalValidatorRegistrySize = preState.getValidators().size();
+    int originalValidatorBalancesSize = preState.getBalances().size();
 
-    SSZMutableList<DepositWithIndex> deposits =
-        SSZList.createMutable(DepositWithIndex.class, Constants.MAX_DEPOSITS);
-    deposits.add(
-        new DepositWithIndex(depositMerkleTree.getProof(0), depositInput, UnsignedLong.valueOf(0)));
+    BeaconState postState = processDepositHelper(preState, depositInput);
 
-    int originalValidatorRegistrySize = beaconState.getValidators().size();
-    int originalValidatorBalancesSize = beaconState.getBalances().size();
-
-    // Attempt to process deposit with above data.
-    beaconState =
-        beaconState.updated(state -> BlockProcessorUtil.process_deposits(state, deposits));
-
-    assertTrue(
-        beaconState.getValidators().size() == (originalValidatorRegistrySize + 1),
+    assertEquals(
+        postState.getValidators().size(),
+        originalValidatorRegistrySize + 1,
         "No validator was added to the validator registry.");
-    assertTrue(
-        beaconState.getBalances().size() == (originalValidatorBalancesSize + 1),
+    assertEquals(
+        postState.getBalances().size(),
+        originalValidatorBalancesSize + 1,
         "No balance was added to the validator balances.");
     assertEquals(
-        Validator.create(
-            pubkey,
-            withdrawalCredentials,
-            UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
-            false,
-            Constants.FAR_FUTURE_EPOCH,
-            Constants.FAR_FUTURE_EPOCH,
-            Constants.FAR_FUTURE_EPOCH,
-            Constants.FAR_FUTURE_EPOCH),
-        beaconState.getValidators().get(originalValidatorRegistrySize));
-    assertEquals(amount, beaconState.getBalances().get(originalValidatorBalancesSize));
+        makeValidator(pubkey, withdrawalCredentials),
+        postState.getValidators().get(originalValidatorRegistrySize));
+    assertEquals(amount, postState.getBalances().get(originalValidatorBalancesSize));
   }
 
   @Test
@@ -108,56 +83,31 @@ class BlockProcessorUtilTest {
     Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
     UnsignedLong amount = depositInput.getAmount();
 
-    // Add the deposit to a Merkle tree so that we can get the root to put into the state
-    MerkleTree depositMerkleTree = new OptimizedMerkleTree(Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
-    depositMerkleTree.add(depositInput.hash_tree_root());
+    Validator knownValidator = makeValidator(pubkey, withdrawalCredentials);
 
-    Validator knownValidator =
-        Validator.create(
-            pubkey,
-            withdrawalCredentials,
-            UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
-            false,
-            Constants.FAR_FUTURE_EPOCH,
-            Constants.FAR_FUTURE_EPOCH,
-            Constants.FAR_FUTURE_EPOCH,
-            Constants.FAR_FUTURE_EPOCH);
+    BeaconState preState = createBeaconState(amount, knownValidator);
 
-    BeaconState beaconState =
-        createBeaconState(amount, knownValidator)
-            .updated(
-                state ->
-                    state.setEth1_data(
-                        new Eth1Data(
-                            depositMerkleTree.getRoot(), UnsignedLong.valueOf(1), Bytes32.ZERO)));
+    int originalValidatorRegistrySize = preState.getValidators().size();
+    int originalValidatorBalancesSize = preState.getBalances().size();
 
-    int originalValidatorRegistrySize = beaconState.getValidators().size();
-    int originalValidatorBalancesSize = beaconState.getBalances().size();
+    BeaconState postState = processDepositHelper(preState, depositInput);
 
-    SSZMutableList<DepositWithIndex> deposits =
-        SSZList.createMutable(DepositWithIndex.class, Constants.MAX_DEPOSITS);
-    deposits.add(
-        new DepositWithIndex(depositMerkleTree.getProof(0), depositInput, UnsignedLong.valueOf(0)));
-
-    // Attempt to process deposit with above data.
-    beaconState =
-        beaconState.updated(state -> BlockProcessorUtil.process_deposits(state, deposits));
-
-    assertTrue(
-        beaconState.getValidators().size() == originalValidatorRegistrySize,
-        "A new validator was added to the validator registry, but should not have been.");
-    assertTrue(
-        beaconState.getBalances().size() == originalValidatorBalancesSize,
-        "A new balance was added to the validator balances, but should not have been.");
     assertEquals(
-        knownValidator, beaconState.getValidators().get(originalValidatorRegistrySize - 1));
+        postState.getValidators().size(),
+        originalValidatorRegistrySize,
+        "A new validator was added to the validator registry, but should not have been.");
+    assertEquals(
+        postState.getBalances().size(),
+        originalValidatorBalancesSize,
+        "A new balance was added to the validator balances, but should not have been.");
+    assertEquals(knownValidator, postState.getValidators().get(originalValidatorRegistrySize - 1));
     assertEquals(
         amount.times(UnsignedLong.valueOf(2L)),
-        beaconState.getBalances().get(originalValidatorBalancesSize - 1));
+        postState.getBalances().get(originalValidatorBalancesSize - 1));
   }
 
   @Test
-  void processDepositHandlesDepositWithInvalidPublicKey() throws BlockProcessingException {
+  void processDepositIgnoresDepositWithInvalidPublicKey() throws BlockProcessingException {
     // The following deposit uses a "rogue" public key that is not in the G1 group
     BLSPublicKey pubkey =
         BLSPublicKey.fromBytesCompressed(
@@ -173,37 +123,25 @@ class BlockProcessorUtilTest {
     DepositData depositInput =
         new DepositData(new DepositMessage(pubkey, withdrawalCredentials, amount), signature);
 
-    // Add the deposit to a Merkle tree so that we can get the root to put into the state
-    MerkleTree depositMerkleTree = new OptimizedMerkleTree(Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
-    depositMerkleTree.add(depositInput.hash_tree_root());
+    BeaconState preState = createBeaconState();
 
-    // Create the state and insert the Merkle root of the deposit data
-    BeaconState beaconState =
-        createBeaconState()
-            .updated(
-                state ->
-                    state.setEth1_data(
-                        new Eth1Data(
-                            depositMerkleTree.getRoot(), UnsignedLong.valueOf(1), Bytes32.ZERO)));
+    int originalValidatorRegistrySize = preState.getValidators().size();
+    int originalValidatorBalancesSize = preState.getBalances().size();
 
-    SSZMutableList<DepositWithIndex> deposits =
-        SSZList.createMutable(DepositWithIndex.class, Constants.MAX_DEPOSITS);
-    deposits.add(
-        new DepositWithIndex(depositMerkleTree.getProof(0), depositInput, UnsignedLong.valueOf(0)));
+    BeaconState postState = processDepositHelper(preState, depositInput);
 
-    int originalValidatorRegistrySize = beaconState.getValidators().size();
-    int originalValidatorBalancesSize = beaconState.getBalances().size();
-
-    // Attempt to process deposit with above data. We expect to fail, but not throw an exception.
-    beaconState =
-        beaconState.updated(state -> BlockProcessorUtil.process_deposits(state, deposits));
-
-    assertTrue(
-        beaconState.getValidators().size() == originalValidatorRegistrySize,
+    assertEquals(
+        postState.getValidators().size(),
+        originalValidatorRegistrySize,
         "The validator was added to the validator registry.");
-    assertTrue(
-        beaconState.getBalances().size() == originalValidatorBalancesSize,
+    assertEquals(
+        postState.getBalances().size(),
+        originalValidatorBalancesSize,
         "The balance was added to the validator balances.");
+    assertEquals(
+        preState.getBalances().hash_tree_root(),
+        postState.getBalances().hash_tree_root(),
+        "The balances list has changed.");
   }
 
   private BeaconState createBeaconState() {
@@ -251,5 +189,40 @@ class BlockProcessorUtilTest {
               beaconState.getValidators().addAll(validatorList);
               beaconState.getBalances().addAll(balanceList);
             });
+  }
+
+  private BeaconState processDepositHelper(BeaconState beaconState, DepositData depositData)
+      throws BlockProcessingException {
+
+    // Add the deposit to a Merkle tree so that we can get the root to put into the state Eth1 data
+    MerkleTree depositMerkleTree = new OptimizedMerkleTree(Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
+    depositMerkleTree.add(depositData.hash_tree_root());
+
+    beaconState =
+        beaconState.updated(
+            state ->
+                state.setEth1_data(
+                    new Eth1Data(
+                        depositMerkleTree.getRoot(), UnsignedLong.valueOf(1), Bytes32.ZERO)));
+
+    SSZMutableList<DepositWithIndex> deposits =
+        SSZList.createMutable(DepositWithIndex.class, Constants.MAX_DEPOSITS);
+    deposits.add(
+        new DepositWithIndex(depositMerkleTree.getProof(0), depositData, UnsignedLong.valueOf(0)));
+
+    // Attempt to process deposit with above data.
+    return beaconState.updated(state -> BlockProcessorUtil.process_deposits(state, deposits));
+  }
+
+  private Validator makeValidator(BLSPublicKey pubkey, Bytes32 withdrawalCredentials) {
+    return Validator.create(
+        pubkey,
+        withdrawalCredentials,
+        UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
+        false,
+        Constants.FAR_FUTURE_EPOCH,
+        Constants.FAR_FUTURE_EPOCH,
+        Constants.FAR_FUTURE_EPOCH,
+        Constants.FAR_FUTURE_EPOCH);
   }
 }
