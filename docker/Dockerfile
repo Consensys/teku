@@ -1,4 +1,4 @@
-FROM openjdk:11.0.2-jre-slim-stretch
+FROM openjdk:14-slim-buster
 
 RUN adduser --disabled-password --gecos "" --home /opt/teku teku && \
     chown teku:teku /opt/teku
