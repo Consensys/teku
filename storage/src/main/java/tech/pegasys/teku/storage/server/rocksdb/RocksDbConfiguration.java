@@ -65,7 +65,8 @@ public class RocksDbConfiguration {
   @JsonProperty(value = "writeBufferCapacity", access = Access.WRITE_ONLY)
   private long writeBufferCapacity = DEFAULT_WRITE_BUFFER_CAPACITY;
 
-  @JsonProperty(value = "optimizeForSmallDb", access = Access.WRITE_ONLY)
+  // Safe to change but written to file as we need different defaults for hot and finalized
+  @JsonProperty(value = "optimizeForSmallDb")
   private boolean optimizeForSmallDb = DEFAULT_OPTIMISE_FOR_SMALL_DB;
 
   /* ---------------     Fixed Properties     ------------ */
