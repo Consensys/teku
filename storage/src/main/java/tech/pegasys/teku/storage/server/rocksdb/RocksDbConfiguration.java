@@ -42,18 +42,19 @@ import org.rocksdb.CompressionType;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RocksDbConfiguration {
   public static final int DEFAULT_MAX_OPEN_FILES = 1024;
-  public static final int DEFAULT_MAX_BACKGROUND_COMPACTIONS = 4;
-  public static final int DEFAULT_BACKGROUND_THREAD_COUNT = 4;
+  public static final int DEFAULT_MAX_BACKGROUND_JOBS = 6;
+  public static final int DEFAULT_BACKGROUND_THREAD_COUNT = 6;
   public static final long DEFAULT_CACHE_CAPACITY = 8 << 20;
   public static final long DEFAULT_WRITE_BUFFER_CAPACITY = 128 << 20;
+  private static final boolean DEFAULT_OPTIMISE_FOR_SMALL_DB = false;
 
   /* --------------- Safe to Change Properties ------------ */
 
   @JsonProperty(value = "maxOpenFiles", access = Access.WRITE_ONLY)
   private int maxOpenFiles = DEFAULT_MAX_OPEN_FILES;
 
-  @JsonProperty(value = "maxBackgroundCompactions", access = Access.WRITE_ONLY)
-  private int maxBackgroundCompactions = DEFAULT_MAX_BACKGROUND_COMPACTIONS;
+  @JsonProperty(value = "maxBackgroundJobs", access = Access.WRITE_ONLY)
+  private int maxBackgroundJobs = DEFAULT_MAX_BACKGROUND_JOBS;
 
   @JsonProperty(value = "backgroundThreadCount", access = Access.WRITE_ONLY)
   private int backgroundThreadCount = DEFAULT_BACKGROUND_THREAD_COUNT;
@@ -63,6 +64,9 @@ public class RocksDbConfiguration {
 
   @JsonProperty(value = "writeBufferCapacity", access = Access.WRITE_ONLY)
   private long writeBufferCapacity = DEFAULT_WRITE_BUFFER_CAPACITY;
+
+  @JsonProperty(value = "optimizeForSmallDb", access = Access.WRITE_ONLY)
+  private boolean optimizeForSmallDb = DEFAULT_OPTIMISE_FOR_SMALL_DB;
 
   /* ---------------     Fixed Properties     ------------ */
 
@@ -79,7 +83,9 @@ public class RocksDbConfiguration {
   }
 
   public static RocksDbConfiguration v5HotDefaults() {
-    return new RocksDbConfiguration();
+    final RocksDbConfiguration config = new RocksDbConfiguration();
+    config.optimizeForSmallDb = true;
+    return config;
   }
 
   public static RocksDbConfiguration v5ArchiveDefaults() {
@@ -99,8 +105,8 @@ public class RocksDbConfiguration {
     return maxOpenFiles;
   }
 
-  public int getMaxBackgroundCompactions() {
-    return maxBackgroundCompactions;
+  public int getMaxBackgroundJobs() {
+    return maxBackgroundJobs;
   }
 
   public int getBackgroundThreadCount() {
@@ -123,11 +129,15 @@ public class RocksDbConfiguration {
     return bottomMostCompressionType;
   }
 
+  public boolean optimizeForSmallDb() {
+    return optimizeForSmallDb;
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("maxOpenFiles", maxOpenFiles)
-        .add("maxBackgroundCompactions", maxBackgroundCompactions)
+        .add("maxBackgroundCompactions", maxBackgroundJobs)
         .add("backgroundThreadCount", backgroundThreadCount)
         .add("cacheCapacity", cacheCapacity)
         .add("writeBufferCapacity", writeBufferCapacity)
