@@ -76,4 +76,16 @@ public class Validator {
     this.exit_epoch = validator.getExit_epoch();
     this.withdrawable_epoch = validator.getWithdrawable_epoch();
   }
+
+  public tech.pegasys.teku.datastructures.state.Validator asInternalValidator() {
+    return tech.pegasys.teku.datastructures.state.Validator.create(
+        pubkey.asBLSPublicKey(),
+        withdrawal_credentials,
+        effective_balance,
+        slashed,
+        activation_eligibility_epoch,
+        activation_epoch,
+        exit_epoch,
+        withdrawable_epoch);
+  }
 }
