@@ -368,15 +368,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store.retrieveBlockState(rootAtSlot.get());
   }
 
-  /**
-   * @deprecated Use {@link #retrieveStateInEffectAtSlot}
-   * @param slot The slot being queried
-   * @return The state of the most recent block as of {@code slot} @Deprecated
-   */
-  public Optional<BeaconState> getStateInEffectAtSlot(final UnsignedLong slot) {
-    return getBlockRootBySlot(slot).map(blockRoot -> store.getBlockState(blockRoot));
-  }
-
   public Optional<Bytes32> getBlockRootBySlot(final UnsignedLong slot) {
     return chainHead.flatMap(head -> getBlockRootBySlot(slot, head.getRoot()));
   }

@@ -97,17 +97,20 @@ class RecentChainDataTest {
   }
 
   @Test
-  void getStateInEffectAtSlot_returnEmptyWhenStoreNotSet() {
-    assertThat(preGenesisStorageClient.getStateInEffectAtSlot(UnsignedLong.ZERO)).isEmpty();
+  void retrieveStateInEffectAtSlot_returnEmptyWhenStoreNotSet() {
+    assertThat(preGenesisStorageClient.retrieveStateInEffectAtSlot(UnsignedLong.ZERO).join())
+        .isEmpty();
   }
 
   @Test
-  public void getStateInEffectAtSlot_returnGenesisStateWhenItIsTheBestState() {
-    assertThat(storageClient.getStateInEffectAtSlot(genesis.getSlot())).contains(genesisState);
+  public void retrieveStateInEffectAtSlot_returnGenesisStateWhenItIsTheBestState() {
+    assertThat(storageClient.retrieveStateInEffectAtSlot(genesis.getSlot()).join())
+        .contains(genesisState);
   }
 
   @Test
-  public void getStateInEffectAtSlot_returnStateFromLastBlockWhenSlotsAreEmpty() throws Exception {
+  public void retrieveStateInEffectAtSlot_returnStateFromLastBlockWhenSlotsAreEmpty()
+      throws Exception {
     // Request block for an empty slot immediately after genesis
     final UnsignedLong requestedSlot = genesisBlock.getSlot().plus(ONE);
     final UnsignedLong bestSlot = requestedSlot.plus(ONE);
@@ -115,18 +118,19 @@ class RecentChainDataTest {
     final SignedBlockAndState bestBlock = chainBuilder.generateBlockAtSlot(bestSlot);
     updateBestBlock(storageClient, bestBlock);
 
-    assertThat(storageClient.getStateInEffectAtSlot(requestedSlot)).contains(genesisState);
+    assertThat(storageClient.retrieveStateInEffectAtSlot(requestedSlot).join())
+        .contains(genesisState);
   }
 
   @Test
-  public void getStateInEffectAtSlot_returnStateFromLastBlockWhenHeadSlotIsEmpty() {
-    assertThat(storageClient.getStateInEffectAtSlot(ONE)).contains(genesisState);
+  public void retrieveStateInEffectAtSlot_returnStateFromLastBlockWhenHeadSlotIsEmpty() {
+    assertThat(storageClient.retrieveStateInEffectAtSlot(ONE).join()).contains(genesisState);
   }
 
   @Test
-  public void getStateInEffectAtSlot_returnHeadState() throws Exception {
+  public void retrieveStateInEffectAtSlot_returnHeadState() throws Exception {
     final SignedBlockAndState bestBlock = addNewBestBlock(storageClient);
-    assertThat(storageClient.getStateInEffectAtSlot(bestBlock.getSlot()))
+    assertThat(storageClient.retrieveStateInEffectAtSlot(bestBlock.getSlot()).join())
         .contains(bestBlock.getState());
   }
 
