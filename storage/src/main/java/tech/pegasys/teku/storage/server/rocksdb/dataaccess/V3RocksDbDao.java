@@ -246,8 +246,16 @@ public class V3RocksDbDao
     }
 
     @Override
-    public void addHotStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
-      transaction.put(V3Schema.STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT, stateRoot, slotAndBlockRoot);
+    public void addHotStateRoots(
+        final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap) {
+      stateRootToSlotAndBlockRootMap
+          .keySet()
+          .forEach(
+              stateRoot ->
+                  transaction.put(
+                      V3Schema.STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT,
+                      stateRoot,
+                      stateRootToSlotAndBlockRootMap.get(stateRoot)));
     }
 
     @Override

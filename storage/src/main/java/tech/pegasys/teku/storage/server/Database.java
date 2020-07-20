@@ -79,7 +79,7 @@ public interface Database extends AutoCloseable {
 
   List<Bytes32> getStateRootsBeforeSlot(final UnsignedLong slot);
 
-  void addHotStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot);
+  void addHotStateRoots(final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap);
 
   Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot);
 

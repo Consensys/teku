@@ -40,6 +40,7 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -96,6 +97,9 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected OkHttpClient client;
   protected final ObjectMapper objectMapper = new ObjectMapper();
 
+  protected ForkChoice forkChoice = mock(ForkChoice.class);
+  protected StateTransition stateTransition = new StateTransition();
+
   private void setupStorage(final StateStorageMode storageMode) {
     setupStorage(InMemoryStorageSystem.createEmptyV3StorageSystem(storageMode));
   }
@@ -107,9 +111,12 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     chainUpdater = new ChainUpdater(recentChainData, chainBuilder);
   }
 
+  private void setupForkChoice() {
+    forkChoice = new ForkChoice(recentChainData, stateTransition);
+  }
+
   private void setupAndStartRestAPI(TekuConfiguration config) {
-    blockImporter =
-        new BlockImporter(recentChainData, mock(ForkChoice.class), storageSystem.eventBus());
+    blockImporter = new BlockImporter(recentChainData, forkChoice, storageSystem.eventBus());
     combinedChainDataClient = storageSystem.combinedChainDataClient();
     dataProvider =
         new DataProvider(
@@ -131,6 +138,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected void startPreForkChoiceRestAPI() {
     // Initialize genesis
     setupStorage(StateStorageMode.ARCHIVE);
+    forkChoice = mock(ForkChoice.class);
     chainUpdater.initializeGenesis();
     // Restart storage system without running fork choice
     storageSystem = storageSystem.restarted(StateStorageMode.ARCHIVE);
@@ -141,12 +149,14 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   protected void startPreGenesisRestAPI() {
     setupStorage(StateStorageMode.ARCHIVE);
+    setupForkChoice();
     // Start API
     setupAndStartRestAPI();
   }
 
   protected void startPreGenesisRestAPIWithConfig(TekuConfiguration config) {
     setupStorage(StateStorageMode.ARCHIVE);
+    setupForkChoice();
     // Start API
     setupAndStartRestAPI(config);
   }
@@ -158,6 +168,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected void startRestAPIAtGenesis(final StateStorageMode storageMode) {
     // Initialize genesis
     setupStorage(storageMode);
+    setupForkChoice();
     chainUpdater.initializeGenesis();
     // Start API
     setupAndStartRestAPI();
