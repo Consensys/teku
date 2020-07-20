@@ -13,7 +13,11 @@
 
 package tech.pegasys.teku.networking.p2p.connection;
 
+import static tech.pegasys.teku.networking.p2p.peer.DisconnectReason.NO_PING_RESPONSES;
+import static tech.pegasys.teku.networking.p2p.peer.DisconnectReason.TOO_MANY_PEERS;
+
 import com.google.common.primitives.UnsignedLong;
+import java.util.EnumSet;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -71,6 +75,9 @@ public class ReputationManager {
   }
 
   private static class Reputation {
+    private static final EnumSet<DisconnectReason> LOCAL_TEMPORARY_DISCONNECT_REASONS =
+        EnumSet.of(TOO_MANY_PEERS, NO_PING_RESPONSES);
+
     private volatile Optional<UnsignedLong> lastInitiationFailure = Optional.empty();
     private volatile boolean unsuitable = false;
 
@@ -106,7 +113,7 @@ public class ReputationManager {
     private boolean isLocallyConsideredUnsuitable(
         final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
       return locallyInitiated
-          && reason.map(r -> r != DisconnectReason.TOO_MANY_PEERS).orElse(false);
+          && reason.map(r -> !LOCAL_TEMPORARY_DISCONNECT_REASONS.contains(r)).orElse(false);
     }
   }
 }
