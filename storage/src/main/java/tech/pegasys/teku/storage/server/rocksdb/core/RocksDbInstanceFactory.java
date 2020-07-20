@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import org.rocksdb.BlockBasedTableConfig;
+import org.rocksdb.Cache;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
@@ -55,9 +56,12 @@ public class RocksDbInstanceFactory {
     final TransactionDBOptions txOptions = new TransactionDBOptions();
     final RocksDbStats rocksDbStats = new RocksDbStats(metricsSystem, metricCategory);
     final DBOptions dbOptions = createDBOptions(configuration, rocksDbStats.getStats());
-    final ColumnFamilyOptions columnFamilyOptions = createColumnFamilyOptions(configuration);
+    final LRUCache blockCache = new LRUCache(configuration.getCacheCapacity());
+    final ColumnFamilyOptions columnFamilyOptions =
+        createColumnFamilyOptions(configuration, blockCache);
     final List<AutoCloseable> resources =
-        new ArrayList<>(List.of(txOptions, dbOptions, columnFamilyOptions, rocksDbStats));
+        new ArrayList<>(
+            List.of(txOptions, dbOptions, columnFamilyOptions, rocksDbStats, blockCache));
 
     List<ColumnFamilyDescriptor> columnDescriptors =
         createColumnFamilyDescriptors(schema, columnFamilyOptions);
@@ -92,7 +96,7 @@ public class RocksDbInstanceFactory {
       final ColumnFamilyHandle defaultHandle = getDefaultHandle(columnHandles);
       resources.add(db);
 
-      rocksDbStats.registerMetrics();
+      rocksDbStats.registerMetrics(db);
 
       return new RocksDbInstance(db, defaultHandle, columnHandlesMap, resources);
     } catch (RocksDBException e) {
@@ -117,25 +121,30 @@ public class RocksDbInstanceFactory {
 
   private static DBOptions createDBOptions(
       final RocksDbConfiguration configuration, final Statistics stats) {
-    return new DBOptions()
-        .setCreateIfMissing(true)
-        .setBytesPerSync(1048576L)
-        .setWalBytesPerSync(1048576L)
-        .setMaxBackgroundFlushes(2)
-        .setDbWriteBufferSize(configuration.getWriteBufferCapacity())
-        .setMaxOpenFiles(configuration.getMaxOpenFiles())
-        .setMaxBackgroundCompactions(configuration.getMaxBackgroundCompactions())
-        .setCreateMissingColumnFamilies(true)
-        .setEnv(Env.getDefault().setBackgroundThreads(configuration.getBackgroundThreadCount()))
-        .setStatistics(stats);
+    final DBOptions options =
+        new DBOptions()
+            .setCreateIfMissing(true)
+            .setBytesPerSync(1048576L)
+            .setWalBytesPerSync(1048576L)
+            .setIncreaseParallelism(Runtime.getRuntime().availableProcessors())
+            .setMaxBackgroundJobs(configuration.getMaxBackgroundJobs())
+            .setDbWriteBufferSize(configuration.getWriteBufferCapacity())
+            .setMaxOpenFiles(configuration.getMaxOpenFiles())
+            .setCreateMissingColumnFamilies(true)
+            .setEnv(Env.getDefault().setBackgroundThreads(configuration.getBackgroundThreadCount()))
+            .setStatistics(stats);
+    if (configuration.optimizeForSmallDb()) {
+      options.optimizeForSmallDb();
+    }
+    return options;
   }
 
   private static ColumnFamilyOptions createColumnFamilyOptions(
-      final RocksDbConfiguration configuration) {
+      final RocksDbConfiguration configuration, final Cache cache) {
     return new ColumnFamilyOptions()
         .setCompressionType(configuration.getCompressionType())
         .setBottommostCompressionType(configuration.getBottomMostCompressionType())
-        .setTableFormatConfig(createBlockBasedTableConfig(configuration));
+        .setTableFormatConfig(createBlockBasedTableConfig(cache));
   }
 
   private static List<ColumnFamilyDescriptor> createColumnFamilyDescriptors(
@@ -150,9 +159,10 @@ public class RocksDbInstanceFactory {
     return columnDescriptors;
   }
 
-  private static BlockBasedTableConfig createBlockBasedTableConfig(
-      final RocksDbConfiguration config) {
-    final LRUCache cache = new LRUCache(config.getCacheCapacity());
-    return new BlockBasedTableConfig().setBlockCache(cache);
+  private static BlockBasedTableConfig createBlockBasedTableConfig(final Cache cache) {
+    return new BlockBasedTableConfig()
+        .setBlockCache(cache)
+        .setCacheIndexAndFilterBlocks(true)
+        .setFormatVersion(4); // Use the latest format version (only applies to new tables)
   }
 }
