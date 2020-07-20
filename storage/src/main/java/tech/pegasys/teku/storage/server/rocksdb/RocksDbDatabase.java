@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.metrics.TekuMetricCategory.STORAGE_HOT_DB;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -338,12 +339,37 @@ public class RocksDbDatabase implements Database {
     try (final HotUpdater updater = hotDao.hotUpdater()) {
       // Store new hot data
       update.getGenesisTime().ifPresent(updater::setGenesisTime);
-      update.getFinalizedCheckpoint().ifPresent(updater::setFinalizedCheckpoint);
+      update
+          .getFinalizedCheckpoint()
+          .ifPresent(
+              checkpoint -> {
+                updater.setFinalizedCheckpoint(checkpoint);
+                UnsignedLong finalizedSlot =
+                    checkpoint.getEpochStartSlot().plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
+                updater.pruneHotStateRoots(hotDao.getStateRootsBeforeSlot(finalizedSlot));
+              });
+
       update.getJustifiedCheckpoint().ifPresent(updater::setJustifiedCheckpoint);
       update.getBestJustifiedCheckpoint().ifPresent(updater::setBestJustifiedCheckpoint);
       update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
 
       updater.addHotBlocks(update.getHotBlocks());
+
+      final Map<Bytes32, SlotAndBlockRoot> hotBlockMap = new HashMap<>();
+      update
+          .getHotBlocks()
+          .values()
+          .forEach(
+              block ->
+                  hotBlockMap.put(
+                      block.getStateRoot(),
+                      new SlotAndBlockRoot(block.getSlot(), block.getRoot())));
+      if (!hotBlockMap.isEmpty()) {
+        updater.addHotStateRoots(hotBlockMap);
+      }
+      if (update.getStateRootsToBlockRoots().size() > 0) {
+        updater.addHotStateRoots(update.getStateRootsToBlockRoots());
+      }
       updater.addVotes(update.getVotes());
 
       // Delete finalized data from hot db

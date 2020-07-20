@@ -19,6 +19,7 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -30,8 +31,9 @@ class CombinedChainDataClientTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
+  private final StateTransition stateTransition = mock(StateTransition.class);
   private final CombinedChainDataClient client =
-      new CombinedChainDataClient(recentChainData, historicalChainData);
+      new CombinedChainDataClient(recentChainData, historicalChainData, stateTransition);
 
   @Test
   public void getCommitteesFromStateWithCache_shouldReturnCommitteeAssignments() {

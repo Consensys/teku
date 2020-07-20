@@ -24,6 +24,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.api.schema.SlotAndBlockRoot;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.server.state.FinalizedStateCache;
@@ -118,6 +119,12 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   public SafeFuture<Map<Bytes32, SignedBeaconBlock>> getHotBlocksByRoot(
       final Set<Bytes32> blockRoots) {
     return SafeFuture.of(() -> database.getHotBlocks(blockRoots));
+  }
+
+  @Override
+  public SafeFuture<Optional<SlotAndBlockRoot>> getSlotAndBlockRootByStateRoot(
+      final Bytes32 stateRoot) {
+    return SafeFuture.of(() -> database.getSlotAndBlockRootFromStateRoot(stateRoot));
   }
 
   @Override

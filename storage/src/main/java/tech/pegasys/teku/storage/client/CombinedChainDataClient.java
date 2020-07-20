@@ -28,6 +28,9 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.exceptions.EpochProcessingException;
+import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -36,6 +39,7 @@ import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
+import tech.pegasys.teku.storage.api.schema.SlotAndBlockRoot;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class CombinedChainDataClient {
@@ -48,11 +52,22 @@ public class CombinedChainDataClient {
 
   private final RecentChainData recentChainData;
   private final StorageQueryChannel historicalChainData;
+  private final StateTransition stateTransition;
 
   public CombinedChainDataClient(
       final RecentChainData recentChainData, final StorageQueryChannel historicalChainData) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
+    this.stateTransition = new StateTransition();
+  }
+
+  public CombinedChainDataClient(
+      final RecentChainData recentChainData,
+      final StorageQueryChannel historicalChainData,
+      final StateTransition stateTransition) {
+    this.recentChainData = recentChainData;
+    this.historicalChainData = historicalChainData;
+    this.stateTransition = stateTransition;
   }
 
   /**
@@ -185,6 +200,45 @@ public class CombinedChainDataClient {
     }
 
     return historicalChainData.getFinalizedStateByBlockRoot(blockRoot);
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateByStateRoot(final Bytes32 stateRoot) {
+    final UpdatableStore store = getStore();
+    if (store == null) {
+      LOG.trace("No state at stateRoot {} because the store is not set", stateRoot);
+      return STATE_NOT_AVAILABLE;
+    }
+    return historicalChainData
+        .getSlotAndBlockRootByStateRoot(stateRoot)
+        .thenCompose(
+            maybeSlotAndBlockRoot -> {
+              if (maybeSlotAndBlockRoot.isEmpty()) {
+                return STATE_NOT_AVAILABLE;
+              }
+              return getStateFromSlotAndBlock(maybeSlotAndBlockRoot.get());
+            });
+  }
+
+  private SafeFuture<Optional<BeaconState>> getStateFromSlotAndBlock(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return getStateByBlockRoot(slotAndBlockRoot.getBlockRoot())
+        .thenApply(
+            maybeState ->
+                maybeState.map(
+                    preState -> regenerateBeaconState(preState, slotAndBlockRoot.getSlot())));
+  }
+
+  private BeaconState regenerateBeaconState(final BeaconState preState, final UnsignedLong slot) {
+    if (preState.getSlot().equals(slot)) {
+      return preState;
+    }
+    try {
+      final BeaconState desiredState = stateTransition.process_slots(preState, slot);
+      return desiredState;
+    } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
+      LOG.warn("State Transition error", e);
+      throw new IllegalStateException();
+    }
   }
 
   public Optional<BeaconState> getHeadStateFromStore() {

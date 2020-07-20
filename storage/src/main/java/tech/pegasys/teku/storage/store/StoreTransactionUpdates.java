@@ -28,6 +28,7 @@ import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
+import tech.pegasys.teku.storage.api.schema.SlotAndBlockRoot;
 import tech.pegasys.teku.storage.events.FinalizedChainData;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.store.Store.Transaction;
@@ -38,6 +39,7 @@ class StoreTransactionUpdates {
   private final Optional<FinalizedChainData> finalizedChainData;
   private final Map<Bytes32, SignedBeaconBlock> hotBlocks;
   private final Map<Bytes32, BeaconState> hotStates;
+  private final Map<Bytes32, SlotAndBlockRoot> stateRootsToBlockRoots;
   private final Set<Bytes32> prunedHotBlockRoots;
   private final Optional<HashTree> updatedBlockTree;
 
@@ -47,19 +49,23 @@ class StoreTransactionUpdates {
       final Map<Bytes32, SignedBeaconBlock> hotBlocks,
       final Map<Bytes32, BeaconState> hotStates,
       final Set<Bytes32> prunedHotBlockRoots,
-      final Optional<HashTree> updatedBlockTree) {
+      final Optional<HashTree> updatedBlockTree,
+      final Map<Bytes32, SlotAndBlockRoot> stateRootsToBlockRoots) {
     this.tx = tx;
     this.finalizedChainData = finalizedChainData;
     this.hotBlocks = hotBlocks;
     this.hotStates = hotStates;
     this.prunedHotBlockRoots = prunedHotBlockRoots;
     this.updatedBlockTree = updatedBlockTree;
+    this.stateRootsToBlockRoots = stateRootsToBlockRoots;
   }
 
   public static StoreTransactionUpdates calculate(final Store baseStore, final Transaction tx) {
     // Save copy of tx data that may be pruned
     final Map<Bytes32, SignedBeaconBlock> hotBlocks = new HashMap<>(tx.blocks);
     final Map<Bytes32, BeaconState> hotStates = new HashMap<>(tx.block_states);
+    final Map<Bytes32, SlotAndBlockRoot> stateRootsToBlockRoots =
+        new HashMap<>(tx.stateRootsToBlockRoots);
 
     // If a new checkpoint has been finalized, calculated what to finalize and what to prune
     final CheckpointAndBlock prevFinalizedCheckpoint = baseStore.getFinalizedCheckpointAndBlock();
@@ -117,7 +123,13 @@ class StoreTransactionUpdates {
     }
 
     return new StoreTransactionUpdates(
-        tx, finalizedChainData, hotBlocks, hotStates, prunedHotBlockRoots, updatedBlockTree);
+        tx,
+        finalizedChainData,
+        hotBlocks,
+        hotStates,
+        prunedHotBlockRoots,
+        updatedBlockTree,
+        stateRootsToBlockRoots);
   }
 
   private static Map<Bytes32, Bytes32> collectFinalizedRoots(
@@ -173,7 +185,8 @@ class StoreTransactionUpdates {
         tx.best_justified_checkpoint,
         hotBlocks,
         prunedHotBlockRoots,
-        tx.votes);
+        tx.votes,
+        stateRootsToBlockRoots);
   }
 
   public void applyToStore(final Store store) {

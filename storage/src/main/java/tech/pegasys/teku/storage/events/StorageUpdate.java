@@ -23,6 +23,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.storage.api.schema.SlotAndBlockRoot;
 
 public class StorageUpdate {
 
@@ -30,6 +31,7 @@ public class StorageUpdate {
   private final Optional<FinalizedChainData> finalizedChainData;
   private final Optional<Checkpoint> justifiedCheckpoint;
   private final Optional<Checkpoint> bestJustifiedCheckpoint;
+  private final Map<Bytes32, SlotAndBlockRoot> stateRootsToBlockRoots;
   private final Map<Bytes32, SignedBeaconBlock> hotBlocks;
   private final Map<UnsignedLong, VoteTracker> votes;
   private final Set<Bytes32> deletedHotBlocks;
@@ -41,7 +43,8 @@ public class StorageUpdate {
       final Optional<Checkpoint> bestJustifiedCheckpoint,
       final Map<Bytes32, SignedBeaconBlock> hotBlocks,
       final Set<Bytes32> deletedHotBlocks,
-      final Map<UnsignedLong, VoteTracker> votes) {
+      final Map<UnsignedLong, VoteTracker> votes,
+      final Map<Bytes32, SlotAndBlockRoot> stateRootsToBlockRoots) {
     this.genesisTime = genesisTime;
     this.finalizedChainData = finalizedChainData;
     this.justifiedCheckpoint = justifiedCheckpoint;
@@ -49,6 +52,7 @@ public class StorageUpdate {
     this.hotBlocks = hotBlocks;
     this.deletedHotBlocks = deletedHotBlocks;
     this.votes = votes;
+    this.stateRootsToBlockRoots = stateRootsToBlockRoots;
   }
 
   public boolean isEmpty() {
@@ -105,5 +109,9 @@ public class StorageUpdate {
 
   public Map<UnsignedLong, VoteTracker> getVotes() {
     return votes;
+  }
+
+  public Map<Bytes32, SlotAndBlockRoot> getStateRootsToBlockRoots() {
+    return stateRootsToBlockRoots;
   }
 }

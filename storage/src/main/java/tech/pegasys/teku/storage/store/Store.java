@@ -55,6 +55,7 @@ import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.api.schema.SlotAndBlockRoot;
 import tech.pegasys.teku.util.collections.ConcurrentLimitedMap;
 import tech.pegasys.teku.util.collections.LimitStrategy;
 import tech.pegasys.teku.util.collections.LimitedMap;
@@ -623,6 +624,7 @@ class Store implements UpdatableStore {
     Optional<Checkpoint> justified_checkpoint = Optional.empty();
     Optional<Checkpoint> finalized_checkpoint = Optional.empty();
     Optional<Checkpoint> best_justified_checkpoint = Optional.empty();
+    Map<Bytes32, SlotAndBlockRoot> stateRootsToBlockRoots = new HashMap<>();
     Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
     Map<Bytes32, BeaconState> block_states = new HashMap<>();
     Map<UnsignedLong, VoteTracker> votes = new ConcurrentHashMap<>();
@@ -638,6 +640,12 @@ class Store implements UpdatableStore {
     public void putBlockAndState(SignedBeaconBlock block, BeaconState state) {
       blocks.put(block.getRoot(), block);
       block_states.put(block.getRoot(), state);
+    }
+
+    @Override
+    public void putStateRootToBlockRoot(
+        final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
+      stateRootsToBlockRoots.put(stateRoot, slotAndBlockRoot);
     }
 
     @Override

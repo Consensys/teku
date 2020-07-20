@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -207,6 +208,17 @@ public class ForkChoiceUtil {
       Optional<BeaconState> maybePreState,
       final StateTransition st,
       final ForkChoiceStrategy forkChoiceStrategy) {
+    return on_block(store, signed_block, maybePreState, st, forkChoiceStrategy, interimState -> {});
+  }
+
+  @CheckReturnValue
+  public static BlockImportResult on_block(
+      final MutableStore store,
+      final SignedBeaconBlock signed_block,
+      Optional<BeaconState> maybePreState,
+      final StateTransition st,
+      final ForkChoiceStrategy forkChoiceStrategy,
+      final Consumer<BeaconState> interimStateListener) {
     final BeaconBlock block = signed_block.getMessage();
 
     // Return early if precondition checks fail;
@@ -222,7 +234,7 @@ public class ForkChoiceUtil {
 
     // Check the block is valid and compute the post-state
     try {
-      state = st.initiate(preState, signed_block, true);
+      state = st.initiate(preState, signed_block, true, interimStateListener);
     } catch (StateTransitionException e) {
       return BlockImportResult.failedStateTransition(e);
     }

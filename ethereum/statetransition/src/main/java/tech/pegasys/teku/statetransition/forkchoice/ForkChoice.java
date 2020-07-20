@@ -28,6 +28,7 @@ import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
+import tech.pegasys.teku.storage.api.schema.SlotAndBlockRoot;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
@@ -76,7 +77,18 @@ public class ForkChoice {
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
     StoreTransaction transaction = recentChainData.startStoreTransaction();
     final BlockImportResult result =
-        on_block(transaction, block, preState, stateTransition, forkChoiceStrategy);
+        on_block(
+            transaction,
+            block,
+            preState,
+            stateTransition,
+            forkChoiceStrategy,
+            interimState ->
+                transaction.putStateRootToBlockRoot(
+                    interimState.hash_tree_root(),
+                    new SlotAndBlockRoot(
+                        interimState.getSlot(),
+                        interimState.getLatest_block_header().hash_tree_root())));
 
     if (!result.isSuccessful()) {
       return result;

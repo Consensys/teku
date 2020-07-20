@@ -20,12 +20,19 @@ import static tech.pegasys.teku.beaconrestapi.handlers.beacon.GetState.ROUTE;
 
 import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import okhttp3.Response;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.BeaconState;
+import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
+import tech.pegasys.teku.core.exceptions.EpochProcessingException;
+import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 
 public class GetStateWithDataIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
@@ -56,7 +63,44 @@ public class GetStateWithDataIntegrationTest extends AbstractDataBackedRestAPIIn
     assertThat(result.slot).isEqualTo(SEVEN);
   }
 
+  @Test
+  void shouldGetStateByStateRoot() throws Exception {
+    List<SignedBeaconBlock> data = createBlocksAtSlotsAndMapToApiResult(NINE);
+    final Bytes32 stateRoot = data.get(0).message.state_root;
+
+    final Response response = getByStateRoot(stateRoot);
+    final String responseBody = response.body().string();
+    final BeaconState result = jsonProvider.jsonToObject(responseBody, BeaconState.class);
+    assertThat(result.slot).isEqualTo(NINE);
+  }
+
+  @Test
+  public void shouldGetStateByStateRootForMissedSlot() throws Exception {
+    createBlocksAtSlotsAndMapToApiResult(SIX, NINE, TEN);
+    final Bytes32 stateRoot = GetStateRootFromSlot(SIX, SEVEN);
+
+    final Response response = getByStateRoot(stateRoot);
+    assertThat(response.code()).isEqualTo(SC_OK);
+    final String responseBody = response.body().string();
+    final BeaconState result = jsonProvider.jsonToObject(responseBody, BeaconState.class);
+    assertThat(result.slot).isEqualTo(SEVEN);
+  }
+
+  private Bytes32 GetStateRootFromSlot(final UnsignedLong populatedSlot, UnsignedLong slot)
+      throws ExecutionException, InterruptedException, EpochProcessingException,
+          SlotProcessingException {
+    Optional<tech.pegasys.teku.datastructures.state.BeaconState> beaconStateOptional =
+        combinedChainDataClient.getLatestStateAtSlot(populatedSlot).get();
+    tech.pegasys.teku.datastructures.state.BeaconState missingSlotState =
+        stateTransition.process_slots(beaconStateOptional.get(), slot);
+    return missingSlotState.hash_tree_root();
+  }
+
   private Response getBySlot(final UnsignedLong slot) throws IOException {
     return getResponse(ROUTE, Map.of(SLOT, slot.toString()));
+  }
+
+  private Response getByStateRoot(final Bytes32 stateRoot) throws IOException {
+    return getResponse(ROUTE, Map.of("stateRoot", stateRoot.toHexString().toLowerCase()));
   }
 }
