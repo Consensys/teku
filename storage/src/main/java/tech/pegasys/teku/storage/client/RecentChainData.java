@@ -186,20 +186,24 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * @param slot the new best slot
    */
   public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
-    synchronized (this) {
-      final SignedBeaconBlock newBestBlock = store.getSignedBlock(root);
-      final BeaconState newBestState = store.getBlockState(root);
-      if (newBestBlock == null || newBestState == null) {
-        LOG.warn(
-            "Unable to update best block (slot={}, root={}). Corresponding {} unavailable",
-            slot,
-            root,
-            newBestBlock == null ? "block" : "state");
-        return;
-      }
-      final SignedBlockAndStateAndSlot newChainHead =
-          new SignedBlockAndStateAndSlot(newBestBlock, newBestState, slot);
+    store
+        .retrieveBlockAndState(root)
+        .thenApply(
+            headBlockAndState ->
+                headBlockAndState
+                    .map(head -> SignedBlockAndStateAndSlot.create(head, slot))
+                    .orElseThrow(
+                        () ->
+                            new IllegalStateException(
+                                String.format(
+                                    "Unable to update best block as of slot %s.  Block is unavailable: %s.",
+                                    slot, root))))
+        .thenAccept(this::updateChainHead)
+        .reportExceptions();
+  }
 
+  private void updateChainHead(SignedBlockAndStateAndSlot newChainHead) {
+    synchronized (this) {
       final Optional<Bytes32> originalBestRoot = chainHead.map(SignedBlockAndState::getRoot);
       final UnsignedLong originalBestSlot =
           chainHead.map(SignedBlockAndStateAndSlot::getHeadSlot).orElse(UnsignedLong.ZERO);
@@ -209,7 +213,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
           .map(original -> hasReorgedFrom(original, originalBestSlot))
           .orElse(false)) {
         reorgCounter.inc();
-        reorgEventChannel.reorgOccurred(root, newChainHead.getSlot());
+        reorgEventChannel.reorgOccurred(newChainHead.getRoot(), newChainHead.getSlot());
       }
     }
 
@@ -395,6 +399,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         SignedBeaconBlock block, BeaconState state, UnsignedLong headSlot) {
       super(block, state);
       this.headSlot = headSlot;
+    }
+
+    public static SignedBlockAndStateAndSlot create(
+        SignedBlockAndState blockAndState, UnsignedLong slot) {
+      return new SignedBlockAndStateAndSlot(
+          blockAndState.getBlock(), blockAndState.getState(), slot);
     }
 
     public UnsignedLong getHeadSlot() {
