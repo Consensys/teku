@@ -605,13 +605,14 @@ class RecentChainDataTest {
     for (SignedBlockAndState expectedBlock : expectedBlocks) {
       assertThat(storageClient.getSignedBlockByRoot(expectedBlock.getRoot()))
           .contains(expectedBlock.getBlock());
-      assertThat(storageClient.getBlockState(expectedBlock.getRoot()))
-          .contains(expectedBlock.getState());
+      assertThat(storageClient.retrieveBlockState(expectedBlock.getRoot()))
+          .isCompletedWithValue(Optional.of(expectedBlock.getState()));
     }
     // Check pruned blocks
     for (Bytes32 prunedBlock : prunedBlocks) {
       assertThat(storageClient.getSignedBlockByRoot(prunedBlock)).isEmpty();
-      assertThat(storageClient.getBlockState(prunedBlock)).isEmpty();
+      assertThat(storageClient.retrieveBlockState(prunedBlock))
+          .isCompletedWithValue(Optional.empty());
     }
   }
 
