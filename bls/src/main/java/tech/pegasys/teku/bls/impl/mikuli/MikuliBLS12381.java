@@ -67,6 +67,9 @@ public class MikuliBLS12381 implements BLS12381 {
     return ThreadLocalRandom.current();
   }
 
+  private MikuliBLS12381() {
+  }
+
   @Override
   public KeyPair generateKeyPair(Random random) {
     MikuliKeyPair mikuliKeyPair = MikuliKeyPair.random(random);
