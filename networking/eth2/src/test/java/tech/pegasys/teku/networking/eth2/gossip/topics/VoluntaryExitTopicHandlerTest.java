@@ -68,7 +68,7 @@ public class VoluntaryExitTopicHandlerTest {
         exitGenerator.withEpoch(recentChainData.getBestState().orElseThrow(), 3, 3);
     when(validator.validate(exit)).thenReturn(ACCEPT);
     Bytes serialized = gossipEncoding.encode(exit);
-    final ValidationResult result = topicHandler.handleMessage(serialized);
+    final ValidationResult result = topicHandler.handleMessage(serialized).join();
     assertThat(result).isEqualTo(ValidationResult.Valid);
     verify(consumer).forward(exit);
   }
@@ -79,7 +79,7 @@ public class VoluntaryExitTopicHandlerTest {
         exitGenerator.withEpoch(recentChainData.getBestState().orElseThrow(), 3, 3);
     when(validator.validate(exit)).thenReturn(IGNORE);
     Bytes serialized = gossipEncoding.encode(exit);
-    final ValidationResult result = topicHandler.handleMessage(serialized);
+    final ValidationResult result = topicHandler.handleMessage(serialized).join();
     assertThat(result).isEqualTo(ValidationResult.Ignore);
     verifyNoInteractions(consumer);
   }
@@ -88,7 +88,7 @@ public class VoluntaryExitTopicHandlerTest {
   public void handleMessage_invalidSSZ() {
     Bytes serialized = Bytes.fromHexString("0x1234");
 
-    final ValidationResult result = topicHandler.handleMessage(serialized);
+    final ValidationResult result = topicHandler.handleMessage(serialized).join();
     assertThat(result).isEqualTo(ValidationResult.Invalid);
     verifyNoInteractions(consumer);
   }
