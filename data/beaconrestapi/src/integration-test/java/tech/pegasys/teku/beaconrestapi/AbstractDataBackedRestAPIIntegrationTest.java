@@ -98,17 +98,19 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final ObjectMapper objectMapper = new ObjectMapper();
 
   protected final StateTransition stateTransition = new StateTransition();
-  protected final ForkChoice forkChoice = new ForkChoice(recentChainData, stateTransition);
+  protected ForkChoice forkChoice;
 
-  private void setupStorage(final StateStorageMode storageMode) {
-    setupStorage(InMemoryStorageSystem.createEmptyV3StorageSystem(storageMode));
+
+  private void setupStorage(final StateStorageMode storageMode, final boolean useMockForkChoice) {
+    setupStorage(InMemoryStorageSystem.createEmptyV3StorageSystem(storageMode), useMockForkChoice);
   }
 
-  private void setupStorage(final StorageSystem storageSystem) {
+  private void setupStorage(final StorageSystem storageSystem, final boolean useMockForkChoice) {
     this.storageSystem = storageSystem;
     recentChainData = storageSystem.recentChainData();
     chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
     chainUpdater = new ChainUpdater(recentChainData, chainBuilder);
+    this.forkChoice = useMockForkChoice ? mock(ForkChoice.class) : new ForkChoice(recentChainData, stateTransition);
   }
 
   private void setupAndStartRestAPI(TekuConfiguration config) {
@@ -133,23 +135,23 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   protected void startPreForkChoiceRestAPI() {
     // Initialize genesis
-    setupStorage(StateStorageMode.ARCHIVE);
+    setupStorage(StateStorageMode.ARCHIVE, true);
     chainUpdater.initializeGenesis();
     // Restart storage system without running fork choice
     storageSystem = storageSystem.restarted(StateStorageMode.ARCHIVE);
-    setupStorage(storageSystem);
+    setupStorage(storageSystem, true);
     // Start API
     setupAndStartRestAPI();
   }
 
   protected void startPreGenesisRestAPI() {
-    setupStorage(StateStorageMode.ARCHIVE);
+    setupStorage(StateStorageMode.ARCHIVE, false);
     // Start API
     setupAndStartRestAPI();
   }
 
   protected void startPreGenesisRestAPIWithConfig(TekuConfiguration config) {
-    setupStorage(StateStorageMode.ARCHIVE);
+    setupStorage(StateStorageMode.ARCHIVE, false);
     // Start API
     setupAndStartRestAPI(config);
   }
@@ -160,7 +162,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   protected void startRestAPIAtGenesis(final StateStorageMode storageMode) {
     // Initialize genesis
-    setupStorage(storageMode);
+    setupStorage(storageMode, false);
     chainUpdater.initializeGenesis();
     // Start API
     setupAndStartRestAPI();
