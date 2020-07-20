@@ -144,10 +144,6 @@ public class CombinedChainDataClient {
     return finalizedEpoch.compareTo(epoch) >= 0;
   }
 
-  public Optional<BeaconState> getNonfinalizedBlockState(final Bytes32 blockRoot) {
-    return recentChainData.getBlockState(blockRoot);
-  }
-
   /**
    * Returns the latest state at the given slot on the current chain.
    *
