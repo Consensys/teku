@@ -78,6 +78,14 @@ public final class MikuliPublicKey implements PublicKey {
     return new MikuliPublicKey(bytes);
   }
 
+  static MikuliPublicKey fromPublicKey(PublicKey publicKey) {
+    if (publicKey instanceof MikuliPublicKey) {
+      return (MikuliPublicKey) publicKey;
+    } else {
+      return fromBytesCompressed(publicKey.toBytesCompressed());
+    }
+  }
+
   // Sometimes we are dealing with random, invalid signature points, e.g. when testing.
   // Let's only interpret the raw data into a point when necessary to do so.
   // And vice versa while aggregating we are dealing with points only so let's
