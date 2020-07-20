@@ -80,14 +80,22 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   }
 
   @Override
-  public synchronized void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {
-    BeaconState finalizedState =
-        recentChainData
-            .getBlockState(checkpoint.getRoot())
-            .orElseThrow(
-                () -> new IllegalArgumentException("Finalized Checkpoint state can not be found."));
+  public void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {
+    recentChainData
+        .retrieveBlockState(checkpoint.getRoot())
+        .thenAccept(
+            finalizedState -> {
+              if (finalizedState.isEmpty()) {
+                throw new IllegalStateException("Finalized Checkpoint state cannot be found.");
+              }
+              final UnsignedLong depositIndex = finalizedState.get().getEth1_deposit_index();
+              pruneDeposits(depositIndex);
+            })
+        .reportExceptions();
+  }
 
-    depositNavigableMap.headMap(finalizedState.getEth1_deposit_index(), false).clear();
+  private synchronized void pruneDeposits(final UnsignedLong fromIndex) {
+    depositNavigableMap.headMap(fromIndex, false).clear();
   }
 
   @Override
