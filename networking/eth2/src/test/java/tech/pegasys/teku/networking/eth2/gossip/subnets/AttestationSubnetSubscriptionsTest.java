@@ -73,8 +73,8 @@ public class AttestationSubnetSubscriptionsTest {
     int subnetId = computeSubnetId(attestation);
     assertThat(computeSubnetId(attestation2)).isNotEqualTo(subnetId); // Sanity check
     subnetSubscriptions.subscribeToSubnetId(subnetId);
-    assertThat(subnetSubscriptions.getChannel(attestation)).isNotEqualTo(Optional.empty());
-    assertThat(subnetSubscriptions.getChannel(attestation2)).isEqualTo(Optional.empty());
+    assertThat(subnetSubscriptions.getChannel(attestation).join()).isNotEqualTo(Optional.empty());
+    assertThat(subnetSubscriptions.getChannel(attestation2).join()).isEqualTo(Optional.empty());
   }
 
   @Test
@@ -82,7 +82,7 @@ public class AttestationSubnetSubscriptionsTest {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     int subnetId = computeSubnetId(attestation);
     subnetSubscriptions.subscribeToSubnetId(subnetId);
-    assertThat(subnetSubscriptions.getChannel(attestation)).isNotEqualTo(Optional.empty());
+    assertThat(subnetSubscriptions.getChannel(attestation).join()).isNotEqualTo(Optional.empty());
   }
 
   @Test
@@ -110,8 +110,10 @@ public class AttestationSubnetSubscriptionsTest {
     verify(gossipNetwork)
         .subscribe(argThat(i -> i.contains("beacon_attestation_" + subnetId2)), any());
 
-    assertThat(subnetSubscriptions.getChannel(attestation1)).isEqualTo(Optional.of(topicChannel1));
-    assertThat(subnetSubscriptions.getChannel(attestation2)).isEqualTo(Optional.of(topicChannel2));
+    assertThat(subnetSubscriptions.getChannel(attestation1).join())
+        .isEqualTo(Optional.of(topicChannel1));
+    assertThat(subnetSubscriptions.getChannel(attestation2).join())
+        .isEqualTo(Optional.of(topicChannel2));
   }
 
   @Test
@@ -126,7 +128,8 @@ public class AttestationSubnetSubscriptionsTest {
 
     verify(gossipNetwork).subscribe(any(), any());
 
-    assertThat(subnetSubscriptions.getChannel(attestation)).isEqualTo(Optional.of(topicChannel));
+    assertThat(subnetSubscriptions.getChannel(attestation).join())
+        .isEqualTo(Optional.of(topicChannel));
 
     subnetSubscriptions.unsubscribeFromSubnetId(subnetId);
 
