@@ -52,4 +52,9 @@ public class PendingAttestation {
     this.inclusion_delay = pendingAttestation.getInclusion_delay();
     this.proposer_index = pendingAttestation.getProposer_index();
   }
+
+  public tech.pegasys.teku.datastructures.state.PendingAttestation asInternalPendingAttestation() {
+    return new tech.pegasys.teku.datastructures.state.PendingAttestation(
+        aggregation_bits, data.asInternalAttestationData(), inclusion_delay, proposer_index);
+  }
 }
