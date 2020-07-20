@@ -86,7 +86,8 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
         .thenAccept(
             finalizedState -> {
               if (finalizedState.isEmpty()) {
-                throw new IllegalStateException("Finalized Checkpoint state cannot be found.");
+                LOG.error("Finalized checkpoint state not found.");
+                return;
               }
               final UnsignedLong depositIndex = finalizedState.get().getEth1_deposit_index();
               pruneDeposits(depositIndex);
