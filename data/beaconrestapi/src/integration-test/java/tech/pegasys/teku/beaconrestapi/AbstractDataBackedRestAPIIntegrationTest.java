@@ -97,8 +97,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected OkHttpClient client;
   protected final ObjectMapper objectMapper = new ObjectMapper();
 
-  protected ForkChoice forkChoice = mock(ForkChoice.class);
-  protected StateTransition stateTransition = new StateTransition();
+  protected final StateTransition stateTransition = new StateTransition();
+  protected final ForkChoice forkChoice = new ForkChoice(recentChainData, stateTransition);
 
   private void setupStorage(final StateStorageMode storageMode) {
     setupStorage(InMemoryStorageSystem.createEmptyV3StorageSystem(storageMode));
@@ -109,10 +109,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     recentChainData = storageSystem.recentChainData();
     chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
     chainUpdater = new ChainUpdater(recentChainData, chainBuilder);
-  }
-
-  private void setupForkChoice() {
-    forkChoice = new ForkChoice(recentChainData, stateTransition);
   }
 
   private void setupAndStartRestAPI(TekuConfiguration config) {
@@ -138,7 +134,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected void startPreForkChoiceRestAPI() {
     // Initialize genesis
     setupStorage(StateStorageMode.ARCHIVE);
-    forkChoice = mock(ForkChoice.class);
     chainUpdater.initializeGenesis();
     // Restart storage system without running fork choice
     storageSystem = storageSystem.restarted(StateStorageMode.ARCHIVE);
@@ -149,14 +144,12 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   protected void startPreGenesisRestAPI() {
     setupStorage(StateStorageMode.ARCHIVE);
-    setupForkChoice();
     // Start API
     setupAndStartRestAPI();
   }
 
   protected void startPreGenesisRestAPIWithConfig(TekuConfiguration config) {
     setupStorage(StateStorageMode.ARCHIVE);
-    setupForkChoice();
     // Start API
     setupAndStartRestAPI(config);
   }
@@ -168,7 +161,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected void startRestAPIAtGenesis(final StateStorageMode storageMode) {
     // Initialize genesis
     setupStorage(storageMode);
-    setupForkChoice();
     chainUpdater.initializeGenesis();
     // Start API
     setupAndStartRestAPI();
