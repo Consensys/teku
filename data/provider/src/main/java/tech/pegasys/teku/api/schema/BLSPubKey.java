@@ -81,4 +81,8 @@ public class BLSPubKey {
   public static BLSPubKey empty() {
     return new BLSPubKey(Bytes.wrap(new byte[SIZE]));
   }
+
+  public BLSPublicKey asBLSPublicKey() {
+    return BLSPublicKey.fromBytes(bytes);
+  }
 }
