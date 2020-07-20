@@ -266,7 +266,7 @@ public class PeerSyncTest {
 
     final ResponseStreamListener<SignedBeaconBlock> responseListener1 =
         responseListenerArgumentCaptor.getValue();
-    final int lastReceivedBlockSlot = peerHeadSlot.intValue() - 2;
+    final int lastReceivedBlockSlot = peerHeadSlot.intValue() - secondRequestSize.intValue();
     List<SignedBeaconBlock> blocks =
         respondWithBlocksAtSlots(responseListener1, 1, lastReceivedBlockSlot);
     for (SignedBeaconBlock block : blocks) {
@@ -277,7 +277,7 @@ public class PeerSyncTest {
     requestFuture1.complete(null);
 
     asyncRunner.executeQueuedActions();
-    final UnsignedLong nextSlotStart = startSlot.plus(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
+    final UnsignedLong nextSlotStart = UnsignedLong.valueOf(lastReceivedBlockSlot + 1);
     verify(peer)
         .requestBlocksByRange(
             eq(nextSlotStart),

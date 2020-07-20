@@ -119,18 +119,23 @@ public class PeerSync {
               final SafeFuture<Void> readyForNextRequest =
                   asyncRunner.getDelayedFuture(
                       NEXT_REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-              return peer.requestBlocksByRange(startSlot, count, STEP, this::blockResponseListener)
-                  .thenApply((res) -> readyForNextRequest);
+              final PeerSyncBlockRequest request =
+                  new PeerSyncBlockRequest(
+                      readyForNextRequest, startSlot.plus(count), this::blockResponseListener);
+              return peer.requestBlocksByRange(startSlot, count, STEP, request)
+                  .thenApply((res) -> request);
             })
         .thenCompose(
-            (readyForNextRequest) -> {
-              LOG.trace(
-                  "Completed request for {} blocks starting at {} from peer {}",
+            (blockRequest) -> {
+              final UnsignedLong nextSlot = blockRequest.getActualEndSlot().plus(UnsignedLong.ONE);
+              LOG.info(
+                  "Completed request for {} blocks starting at {} from peer {}. Actually got {} blocks. Next request starts from {}",
                   count,
                   startSlot,
-                  peer.getId());
-              final UnsignedLong nextSlot = startSlot.plus(count);
-              return executeSync(peer, status, nextSlot, readyForNextRequest);
+                  peer.getId(),
+                  blockRequest.getReturnedBlockCount(),
+                  nextSlot);
+              return executeSync(peer, status, nextSlot, blockRequest.getReadyForNextRequest());
             })
         .exceptionally(err -> handleFailedRequestToPeer(peer, err));
   }
