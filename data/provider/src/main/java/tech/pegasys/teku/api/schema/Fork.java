@@ -46,4 +46,9 @@ public class Fork {
     this.current_version = fork.getCurrent_version();
     this.epoch = fork.getEpoch();
   }
+
+  public tech.pegasys.teku.datastructures.state.Fork asInternalFork() {
+    return new tech.pegasys.teku.datastructures.state.Fork(
+        previous_version, current_version, epoch);
+  }
 }

@@ -260,9 +260,10 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public void addHotStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
+  public void addHotStateRoots(
+      final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap) {
     try (final HotUpdater updater = hotDao.hotUpdater()) {
-      updater.addHotStateRoot(stateRoot, slotAndBlockRoot);
+      updater.addHotStateRoots(stateRootToSlotAndBlockRootMap);
       updater.commit();
     }
   }
