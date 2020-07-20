@@ -216,7 +216,6 @@ public class MikuliSignature implements Signature {
    *
    * @return byte array representation of the signature, not null
    */
-  @Override
   public Bytes toBytesUncompressed() {
     return (rawData.size() == UNCOMPRESSED_SIG_SIZE) ? rawData : point.get().toBytes();
   }

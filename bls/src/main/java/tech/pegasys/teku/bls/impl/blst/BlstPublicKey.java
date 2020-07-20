@@ -3,12 +3,14 @@ package tech.pegasys.teku.bls.impl.blst;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.blst.swig.blst;
 import tech.pegasys.teku.bls.impl.blst.swig.p1;
 import tech.pegasys.teku.bls.impl.blst.swig.p1_affine;
 
-public class BlstPublicKey {
+public class BlstPublicKey implements PublicKey {
   private static final int COMPRESSED_PK_SIZE = 48;
   private static final int UNCOMPRESSED_PK_LENGTH = 49;
 
@@ -37,15 +39,39 @@ public class BlstPublicKey {
     return new BlstPublicKey(res);
   }
 
-  public final p1_affine ecPoint;
+  final p1_affine ecPoint;
 
   public BlstPublicKey(p1_affine ecPoint) {
     this.ecPoint = ecPoint;
   }
 
-  public Bytes toBytes() {
+  @Override
+  public void forceValidation() throws IllegalArgumentException {
+    // already validated
+  }
+
+  @Override
+  public Bytes toBytesCompressed() {
     byte[] res = new byte[COMPRESSED_PK_SIZE];
     blst.p1_affine_compress(res, ecPoint);
     return Bytes.wrap(res);
+  }
+
+  @Override
+  public int hashCode() {
+    return toBytesCompressed().hashCode();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    BlstPublicKey that = (BlstPublicKey) o;
+    return Objects.equals(toBytesCompressed(), that.toBytesCompressed());
   }
 }

@@ -2,25 +2,31 @@ package tech.pegasys.teku.bls.impl.blst;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.bls.impl.PublicKey;
+import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
+import tech.pegasys.teku.bls.impl.Signature;
 import tech.pegasys.teku.bls.impl.blst.swig.blst;
-import tech.pegasys.teku.bls.impl.blst.swig.p1_affine;
 import tech.pegasys.teku.bls.impl.blst.swig.p2;
 import tech.pegasys.teku.bls.impl.blst.swig.p2_affine;
 
-public class BlstSignature {
+public class BlstSignature implements Signature {
   private static final int COMPRESSED_SIG_SIZE = 96;
   private static final int UNCOMPRESSED_SIG_SIZE = 192;
 
-  public static BlstPublicKey fromBytes(Bytes compressed) {
+  public static BlstSignature fromBytes(Bytes compressed) {
     checkArgument(
         compressed.size() == COMPRESSED_SIG_SIZE,
         "Expected " + COMPRESSED_SIG_SIZE + " bytes of input but got %s",
         compressed.size());
-    p1_affine ecPoint = new p1_affine();
-    blst.p1_uncompress(ecPoint, compressed.toArrayUnsafe());
-    return new BlstPublicKey(ecPoint);
+    p2_affine ec2Point = new p2_affine();
+    blst.p2_uncompress(ec2Point, compressed.toArrayUnsafe());
+    return new BlstSignature(ec2Point);
   }
 
   public static BlstSignature aggregate(List<BlstSignature> signatures) {
@@ -35,15 +41,62 @@ public class BlstSignature {
     return new BlstSignature(res);
   }
 
-  public final p2_affine ec2Point;
+  final p2_affine ec2Point;
 
   public BlstSignature(p2_affine ec2Point) {
     this.ec2Point = ec2Point;
   }
 
-  public Bytes toBytes() {
+  @Override
+  public Bytes toBytesCompressed() {
     byte[] res = new byte[96];
     blst.p2_affine_compress(res, ec2Point);
     return Bytes.wrap(res);
+  }
+
+  @Override
+  public boolean verify(List<PublicKeyMessagePair> keysToMessages) {
+
+    List<BlstBatchSemiAggregate> semiAggregates = new ArrayList<>();
+    for (int i = 0; i < keysToMessages.size(); i++) {
+      BlstPublicKey publicKey = (BlstPublicKey) keysToMessages.get(i).getPublicKey();
+      Bytes message = keysToMessages.get(i).getMessage();
+      BlstBatchSemiAggregate semiAggregate = BlstBLS12381.INSTANCE
+          .prepareBatchVerify(i, Collections.singletonList(publicKey), message, this);
+      semiAggregates.add(semiAggregate);
+    }
+
+    return BlstBLS12381.INSTANCE.completeBatchVerify(semiAggregates);
+  }
+
+  @Override
+  public boolean verify(List<PublicKey> publicKeys, Bytes message) {
+    return verify(
+        BlstPublicKey.aggregate(
+            publicKeys.stream().map(k -> (BlstPublicKey) k).collect(Collectors.toList())),
+        message);
+  }
+
+  @Override
+  public boolean verify(PublicKey publicKey, Bytes message) {
+    return BlstBLS12381.verify((BlstPublicKey) publicKey, message, this);
+  }
+
+  @Override
+  public int hashCode() {
+    return toBytesCompressed().hashCode();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
+    BlstSignature that = (BlstSignature) o;
+    return Objects.equals(toBytesCompressed(), that.toBytesCompressed());
   }
 }
