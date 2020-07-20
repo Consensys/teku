@@ -179,12 +179,16 @@ public class CombinedChainDataClient {
       LOG.trace("No state at blockRoot {} because the store is not set", blockRoot);
       return STATE_NOT_AVAILABLE;
     }
-    final BeaconState state = store.getBlockState(blockRoot);
-    if (state != null) {
-      return completedFuture(Optional.of(state));
-    }
 
-    return historicalChainData.getFinalizedStateByBlockRoot(blockRoot);
+    return store
+        .retrieveBlockState(blockRoot)
+        .thenCompose(
+            maybeState -> {
+              if (maybeState.isPresent()) {
+                return completedFuture(maybeState);
+              }
+              return historicalChainData.getFinalizedStateByBlockRoot(blockRoot);
+            });
   }
 
   public Optional<BeaconState> getHeadStateFromStore() {
