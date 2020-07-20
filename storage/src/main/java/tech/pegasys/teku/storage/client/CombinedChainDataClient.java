@@ -160,16 +160,20 @@ public class CombinedChainDataClient {
     }
 
     if (isRecentData(slot)) {
-      final Optional<BeaconState> recentState = recentChainData.getStateInEffectAtSlot(slot);
-      if (recentState.isPresent()) {
-        LOG.trace("State at slot {} was from recent chain data", slot);
-        return completedFuture(recentState);
-      }
+      return recentChainData
+          .retrieveStateInEffectAtSlot(slot)
+          .thenCompose(
+              recentState -> {
+                if (recentState.isPresent()) {
+                  return completedFuture(recentState);
+                }
+                // Fall-through to historical query in case state has moved into historical range
+                // during
+                // processing
+                return historicalChainData.getLatestFinalizedStateAtSlot(slot);
+              });
     }
 
-    // Fall-through to historical query in case state has moved into historical range during
-    // processing
-    LOG.trace("Getting state at slot {} from historical chain data", slot);
     return historicalChainData.getLatestFinalizedStateAtSlot(slot);
   }
 
