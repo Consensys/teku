@@ -100,7 +100,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final StateTransition stateTransition = new StateTransition();
   protected ForkChoice forkChoice;
 
-
   private void setupStorage(final StateStorageMode storageMode, final boolean useMockForkChoice) {
     setupStorage(InMemoryStorageSystem.createEmptyV3StorageSystem(storageMode), useMockForkChoice);
   }
@@ -110,7 +109,10 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     recentChainData = storageSystem.recentChainData();
     chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
     chainUpdater = new ChainUpdater(recentChainData, chainBuilder);
-    this.forkChoice = useMockForkChoice ? mock(ForkChoice.class) : new ForkChoice(recentChainData, stateTransition);
+    this.forkChoice =
+        useMockForkChoice
+            ? mock(ForkChoice.class)
+            : new ForkChoice(recentChainData, stateTransition);
   }
 
   private void setupAndStartRestAPI(TekuConfiguration config) {
