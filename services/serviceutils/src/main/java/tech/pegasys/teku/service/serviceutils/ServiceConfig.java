@@ -71,6 +71,6 @@ public class ServiceConfig {
   }
 
   public AsyncRunner createAsyncRunner(final String name, final int maxThreads) {
-    return asyncRunnerFactory.create(name, maxThreads, metricsSystem);
+    return asyncRunnerFactory.create(name, maxThreads);
   }
 }
