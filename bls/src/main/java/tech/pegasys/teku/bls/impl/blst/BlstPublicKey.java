@@ -1,28 +1,28 @@
-package tech.pegasys.teku.bls.supra;
+package tech.pegasys.teku.bls.impl.blst;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.supra.swig.blst;
-import tech.pegasys.teku.bls.supra.swig.p1;
-import tech.pegasys.teku.bls.supra.swig.p1_affine;
+import tech.pegasys.teku.bls.impl.blst.swig.blst;
+import tech.pegasys.teku.bls.impl.blst.swig.p1;
+import tech.pegasys.teku.bls.impl.blst.swig.p1_affine;
 
-public class PublicKey {
+public class BlstPublicKey {
   private static final int COMPRESSED_PK_SIZE = 48;
   private static final int UNCOMPRESSED_PK_LENGTH = 49;
 
-  public static PublicKey fromBytes(Bytes compressed) {
+  public static BlstPublicKey fromBytes(Bytes compressed) {
     checkArgument(
         compressed.size() == COMPRESSED_PK_SIZE,
         "Expected " + COMPRESSED_PK_SIZE + " bytes of input but got %s",
         compressed.size());
     p1_affine ecPoint = new p1_affine();
     blst.p1_uncompress(ecPoint, compressed.toArrayUnsafe());
-    return new PublicKey(ecPoint);
+    return new BlstPublicKey(ecPoint);
   }
 
-  public static PublicKey aggregate(List<PublicKey> publicKeys) {
+  public static BlstPublicKey aggregate(List<BlstPublicKey> publicKeys) {
     checkArgument(publicKeys.size() > 0);
 
     p1 sum = new p1();
@@ -34,12 +34,12 @@ public class PublicKey {
     blst.p1_to_affine(res, sum);
     sum.delete();
 
-    return new PublicKey(res);
+    return new BlstPublicKey(res);
   }
 
   public final p1_affine ecPoint;
 
-  public PublicKey(p1_affine ecPoint) {
+  public BlstPublicKey(p1_affine ecPoint) {
     this.ecPoint = ecPoint;
   }
 

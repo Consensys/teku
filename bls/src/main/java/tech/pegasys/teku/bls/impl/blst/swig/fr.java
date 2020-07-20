@@ -6,18 +6,18 @@
  * the SWIG interface file instead.
  * ----------------------------------------------------------------------------- */
 
-package tech.pegasys.teku.bls.supra.swig;
+package tech.pegasys.teku.bls.impl.blst.swig;
 
-public class scalar {
+public class fr {
   private transient long swigCPtr;
   protected transient boolean swigCMemOwn;
 
-  protected scalar(long cPtr, boolean cMemoryOwn) {
+  protected fr(long cPtr, boolean cMemoryOwn) {
     swigCMemOwn = cMemoryOwn;
     swigCPtr = cPtr;
   }
 
-  protected static long getCPtr(scalar obj) {
+  protected static long getCPtr(fr obj) {
     return (obj == null) ? 0 : obj.swigCPtr;
   }
 
@@ -30,23 +30,23 @@ public class scalar {
     if (swigCPtr != 0) {
       if (swigCMemOwn) {
         swigCMemOwn = false;
-        blstJNI.delete_scalar(swigCPtr);
+        blstJNI.delete_fr(swigCPtr);
       }
       swigCPtr = 0;
     }
   }
 
   public void setL(SWIGTYPE_p_unsigned_long_long value) {
-    blstJNI.scalar_l_set(swigCPtr, this, SWIGTYPE_p_unsigned_long_long.getCPtr(value));
+    blstJNI.fr_l_set(swigCPtr, this, SWIGTYPE_p_unsigned_long_long.getCPtr(value));
   }
 
   public SWIGTYPE_p_unsigned_long_long getL() {
-    long cPtr = blstJNI.scalar_l_get(swigCPtr, this);
+    long cPtr = blstJNI.fr_l_get(swigCPtr, this);
     return (cPtr == 0) ? null : new SWIGTYPE_p_unsigned_long_long(cPtr, false);
   }
 
-  public scalar() {
-    this(blstJNI.new_scalar(), true);
+  public fr() {
+    this(blstJNI.new_fr(), true);
   }
 
 }

@@ -1,17 +1,17 @@
-package tech.pegasys.teku.bls.supra;
+package tech.pegasys.teku.bls.impl.blst;
 
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.supra.swig.BLST_ERROR;
-import tech.pegasys.teku.bls.supra.swig.blst;
-import tech.pegasys.teku.bls.supra.swig.p2;
-import tech.pegasys.teku.bls.supra.swig.p2_affine;
-import tech.pegasys.teku.bls.supra.swig.pairing;
+import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
+import tech.pegasys.teku.bls.impl.blst.swig.blst;
+import tech.pegasys.teku.bls.impl.blst.swig.p2;
+import tech.pegasys.teku.bls.impl.blst.swig.p2_affine;
+import tech.pegasys.teku.bls.impl.blst.swig.pairing;
 
-public class BLS12381 {
+public class BlstBLS12381 {
 
   private static String G1GeneratorCompressed =
       "0x97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb";
@@ -28,7 +28,7 @@ public class BLS12381 {
     return ThreadLocalRandom.current();
   }
 
-  public static Signature sign(SecretKey secretKey, Bytes message) {
+  public static BlstSignature sign(BlstSecretKey secretKey, Bytes message) {
     p2 p2Signature = new p2();
     p2 hash = HashToCurve.hashToG2(message);
     blst.sign_pk_in_g1(p2Signature, hash, secretKey.scalarVal);
@@ -36,10 +36,10 @@ public class BLS12381 {
     blst.p2_to_affine(p2SignatureAffine, p2Signature);
     p2Signature.delete();
     hash.delete();
-    return new Signature(p2SignatureAffine);
+    return new BlstSignature(p2SignatureAffine);
   }
 
-  public static boolean verify(PublicKey publicKey, Bytes message, Signature signature) {
+  public static boolean verify(BlstPublicKey publicKey, Bytes message, BlstSignature signature) {
     BLST_ERROR res = blst.core_verify_pk_in_g1(
         publicKey.ecPoint,
         signature.ec2Point,
@@ -51,9 +51,9 @@ public class BLS12381 {
   }
 
   public static BatchSemiAggregate prepareBatchVerify(
-      int index, List<PublicKey> publicKeys, Bytes message, Signature signature) {
+      int index, List<BlstPublicKey> publicKeys, Bytes message, BlstSignature signature) {
 
-    PublicKey aggrPubKey = PublicKey.aggregate(publicKeys);
+    BlstPublicKey aggrPubKey = BlstPublicKey.aggregate(publicKeys);
     p2 p2 = HashToCurve.hashToG2(message);
     p2_affine p2Affine = new p2_affine();
     blst.p2_to_affine(p2Affine, p2);

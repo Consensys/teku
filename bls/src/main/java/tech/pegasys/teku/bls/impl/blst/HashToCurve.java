@@ -1,8 +1,8 @@
-package tech.pegasys.teku.bls.supra;
+package tech.pegasys.teku.bls.impl.blst;
 
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.supra.swig.blst;
-import tech.pegasys.teku.bls.supra.swig.p2;
+import tech.pegasys.teku.bls.impl.blst.swig.blst;
+import tech.pegasys.teku.bls.impl.blst.swig.p2;
 
 class HashToCurve {
   // The ciphersuite defined in the Eth2 specification which also serves as domain separation tag

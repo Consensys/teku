@@ -6,7 +6,7 @@
  * the SWIG interface file instead.
  * ----------------------------------------------------------------------------- */
 
-package tech.pegasys.teku.bls.supra.swig;
+package tech.pegasys.teku.bls.impl.blst.swig;
 
 public class blstJNI {
   public final static native int BLST_SUCCESS_get();

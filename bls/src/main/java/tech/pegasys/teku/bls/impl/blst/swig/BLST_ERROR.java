@@ -6,7 +6,7 @@
  * the SWIG interface file instead.
  * ----------------------------------------------------------------------------- */
 
-package tech.pegasys.teku.bls.supra.swig;
+package tech.pegasys.teku.bls.impl.blst.swig;
 
 public final class BLST_ERROR {
   public final static BLST_ERROR BLST_SUCCESS = new BLST_ERROR("BLST_SUCCESS", blstJNI.BLST_SUCCESS_get());

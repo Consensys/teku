@@ -6,18 +6,18 @@
  * the SWIG interface file instead.
  * ----------------------------------------------------------------------------- */
 
-package tech.pegasys.teku.bls.supra.swig;
+package tech.pegasys.teku.bls.impl.blst.swig;
 
-public class fp2 {
+public class p1 {
   private transient long swigCPtr;
   protected transient boolean swigCMemOwn;
 
-  protected fp2(long cPtr, boolean cMemoryOwn) {
+  protected p1(long cPtr, boolean cMemoryOwn) {
     swigCMemOwn = cMemoryOwn;
     swigCPtr = cPtr;
   }
 
-  protected static long getCPtr(fp2 obj) {
+  protected static long getCPtr(p1 obj) {
     return (obj == null) ? 0 : obj.swigCPtr;
   }
 
@@ -30,23 +30,41 @@ public class fp2 {
     if (swigCPtr != 0) {
       if (swigCMemOwn) {
         swigCMemOwn = false;
-        blstJNI.delete_fp2(swigCPtr);
+        blstJNI.delete_p1(swigCPtr);
       }
       swigCPtr = 0;
     }
   }
 
-  public void setFp(fp value) {
-    blstJNI.fp2_fp_set(swigCPtr, this, fp.getCPtr(value), value);
+  public void setX(fp value) {
+    blstJNI.p1_x_set(swigCPtr, this, fp.getCPtr(value), value);
   }
 
-  public fp getFp() {
-    long cPtr = blstJNI.fp2_fp_get(swigCPtr, this);
+  public fp getX() {
+    long cPtr = blstJNI.p1_x_get(swigCPtr, this);
     return (cPtr == 0) ? null : new fp(cPtr, false);
   }
 
-  public fp2() {
-    this(blstJNI.new_fp2(), true);
+  public void setY(fp value) {
+    blstJNI.p1_y_set(swigCPtr, this, fp.getCPtr(value), value);
+  }
+
+  public fp getY() {
+    long cPtr = blstJNI.p1_y_get(swigCPtr, this);
+    return (cPtr == 0) ? null : new fp(cPtr, false);
+  }
+
+  public void setZ(fp value) {
+    blstJNI.p1_z_set(swigCPtr, this, fp.getCPtr(value), value);
+  }
+
+  public fp getZ() {
+    long cPtr = blstJNI.p1_z_get(swigCPtr, this);
+    return (cPtr == 0) ? null : new fp(cPtr, false);
+  }
+
+  public p1() {
+    this(blstJNI.new_p1(), true);
   }
 
 }

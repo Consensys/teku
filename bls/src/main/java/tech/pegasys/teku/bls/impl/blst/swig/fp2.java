@@ -6,18 +6,18 @@
  * the SWIG interface file instead.
  * ----------------------------------------------------------------------------- */
 
-package tech.pegasys.teku.bls.supra.swig;
+package tech.pegasys.teku.bls.impl.blst.swig;
 
-public class fp6 {
+public class fp2 {
   private transient long swigCPtr;
   protected transient boolean swigCMemOwn;
 
-  protected fp6(long cPtr, boolean cMemoryOwn) {
+  protected fp2(long cPtr, boolean cMemoryOwn) {
     swigCMemOwn = cMemoryOwn;
     swigCPtr = cPtr;
   }
 
-  protected static long getCPtr(fp6 obj) {
+  protected static long getCPtr(fp2 obj) {
     return (obj == null) ? 0 : obj.swigCPtr;
   }
 
@@ -30,23 +30,23 @@ public class fp6 {
     if (swigCPtr != 0) {
       if (swigCMemOwn) {
         swigCMemOwn = false;
-        blstJNI.delete_fp6(swigCPtr);
+        blstJNI.delete_fp2(swigCPtr);
       }
       swigCPtr = 0;
     }
   }
 
-  public void setFp2(fp2 value) {
-    blstJNI.fp6_fp2_set(swigCPtr, this, fp2.getCPtr(value), value);
+  public void setFp(fp value) {
+    blstJNI.fp2_fp_set(swigCPtr, this, fp.getCPtr(value), value);
   }
 
-  public fp2 getFp2() {
-    long cPtr = blstJNI.fp6_fp2_get(swigCPtr, this);
-    return (cPtr == 0) ? null : new fp2(cPtr, false);
+  public fp getFp() {
+    long cPtr = blstJNI.fp2_fp_get(swigCPtr, this);
+    return (cPtr == 0) ? null : new fp(cPtr, false);
   }
 
-  public fp6() {
-    this(blstJNI.new_fp6(), true);
+  public fp2() {
+    this(blstJNI.new_fp2(), true);
   }
 
 }

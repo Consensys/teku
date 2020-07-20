@@ -1,4 +1,4 @@
-package tech.pegasys.teku.bls.supra;
+package tech.pegasys.teku.bls.impl.blst;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -10,10 +10,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.bls.supra.BLS12381.BatchSemiAggregate;
-import tech.pegasys.teku.bls.supra.swig.BLST_ERROR;
-import tech.pegasys.teku.bls.supra.swig.blst;
-import tech.pegasys.teku.bls.supra.swig.p1_affine;
+import tech.pegasys.teku.bls.impl.blst.BlstBLS12381.BatchSemiAggregate;
+import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
+import tech.pegasys.teku.bls.impl.blst.swig.blst;
+import tech.pegasys.teku.bls.impl.blst.swig.p1_affine;
 
 public class BlstTest {
   private static final SecureRandom random = new SecureRandom(new byte[] {1});
@@ -55,15 +55,15 @@ public class BlstTest {
   void testBatchVerifySingleSig() {
     Bytes msg = Bytes32.ZERO; //.fromHexString("123456");
 
-    SecretKey blstSK = SecretKey.generateNew(random);
-    PublicKey blstPK = blstSK.toPublicKey();
+    BlstSecretKey blstSK = BlstSecretKey.generateNew(random);
+    BlstPublicKey blstPK = blstSK.toPublicKey();
 
-    Signature blstSignature = BLS12381.sign(blstSK, msg);
+    BlstSignature blstSignature = BlstBLS12381.sign(blstSK, msg);
 
     BatchSemiAggregate semiAggregate =
-        BLS12381.prepareBatchVerify(0, List.of(blstPK), msg, blstSignature);
+        BlstBLS12381.prepareBatchVerify(0, List.of(blstPK), msg, blstSignature);
 
-    boolean blstRes = BLS12381.completeBatchVerify(List.of(semiAggregate));
+    boolean blstRes = BlstBLS12381.completeBatchVerify(List.of(semiAggregate));
     assertThat(blstRes).isTrue();
   }
 
@@ -71,22 +71,22 @@ public class BlstTest {
   void testBatchVerifyCoupleSigs() {
     Bytes msg1 = Bytes32.fromHexString("123456");
 
-    SecretKey blstSK1 = SecretKey.generateNew(random);
-    PublicKey blstPK1 = blstSK1.toPublicKey();
-    Signature blstSignature1 = BLS12381.sign(blstSK1, msg1);
+    BlstSecretKey blstSK1 = BlstSecretKey.generateNew(random);
+    BlstPublicKey blstPK1 = blstSK1.toPublicKey();
+    BlstSignature blstSignature1 = BlstBLS12381.sign(blstSK1, msg1);
 
     Bytes msg2 = Bytes32.fromHexString("654321");
 
-    SecretKey blstSK2 = SecretKey.generateNew(random);
-    PublicKey blstPK2 = blstSK2.toPublicKey();
-    Signature blstSignature2 = BLS12381.sign(blstSK2, msg2);
+    BlstSecretKey blstSK2 = BlstSecretKey.generateNew(random);
+    BlstPublicKey blstPK2 = blstSK2.toPublicKey();
+    BlstSignature blstSignature2 = BlstBLS12381.sign(blstSK2, msg2);
 
     BatchSemiAggregate semiAggregate1 =
-        BLS12381.prepareBatchVerify(0, List.of(blstPK1), msg1, blstSignature1);
+        BlstBLS12381.prepareBatchVerify(0, List.of(blstPK1), msg1, blstSignature1);
     BatchSemiAggregate semiAggregate2 =
-        BLS12381.prepareBatchVerify(1, List.of(blstPK2), msg2, blstSignature2);
+        BlstBLS12381.prepareBatchVerify(1, List.of(blstPK2), msg2, blstSignature2);
 
-    boolean blstRes = BLS12381.completeBatchVerify(List.of(semiAggregate1, semiAggregate2));
+    boolean blstRes = BlstBLS12381.completeBatchVerify(List.of(semiAggregate1, semiAggregate2));
     assertThat(blstRes).isTrue();
   }
 }
