@@ -87,7 +87,10 @@ public class Generator {
                   currentSlot, AttestationGenerator.groupAndAggregateAttestations(attestations));
           writer.accept(block);
           final BeaconState postState =
-              localStorage.getBlockState(block.getMessage().hash_tree_root()).orElseThrow();
+              localStorage
+                  .retrieveBlockState(block.getMessage().hash_tree_root())
+                  .join()
+                  .orElseThrow();
 
           attestations =
               UnsignedLong.ONE.equals(currentSlot)
@@ -106,7 +109,7 @@ public class Generator {
         }
 
         Optional<BeaconState> bestState =
-            localStorage.getBlockState(localStorage.getBestBlockRoot().orElse(null));
+            localStorage.retrieveBlockState(localStorage.getBestBlockRoot().orElse(null)).join();
         System.out.println("Epoch done: " + bestState);
       }
     }
