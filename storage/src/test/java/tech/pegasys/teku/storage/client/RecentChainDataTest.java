@@ -16,8 +16,12 @@ package tech.pegasys.teku.storage.client;
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.storage.store.MockStoreHelper.mockChainData;
+import static tech.pegasys.teku.storage.store.MockStoreHelper.mockGenesis;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -40,11 +44,13 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel.ReorgEvent;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.EventSink;
 import tech.pegasys.teku.util.config.Constants;
@@ -57,7 +63,7 @@ class RecentChainDataTest {
       InMemoryStorageSystem.createEmptyLatestStorageSystem(StateStorageMode.PRUNE);
 
   private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
-  private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+  private SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final BeaconState genesisState = genesis.getState();
   private final BeaconBlock genesisBlock = genesis.getBlock().getMessage();
 
@@ -304,6 +310,41 @@ class RecentChainDataTest {
         preGenesisStorageSystem.reorgEventChannel().getReorgEvents().get(0);
     assertThat(reorgEvent.getBestBlockRoot()).isEqualTo(latestForkBlockAndState.getRoot());
     assertThat(reorgEvent.getBestSlot()).isEqualTo(latestForkBlockAndState.getSlot());
+  }
+
+  @Test
+  public void updateBestBlock_ignoreStaleUpdate() throws Exception {
+    final UpdatableStore store = mock(UpdatableStore.class);
+    final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(1));
+
+    // Set up mock store with genesis data and a small chain
+    genesis = chainBuilder.generateGenesis();
+    List<SignedBlockAndState> chain = chainBuilder.generateBlocksUpToSlot(3);
+    mockGenesis(store, genesis);
+    mockChainData(store, chain);
+
+    // Set store and update best block to genesis
+    assertThat(preGenesisStorageClient.getBestBlockAndState()).isEmpty();
+    preGenesisStorageClient.setStore(store);
+    preGenesisStorageClient.updateBestBlock(genesis.getRoot(), genesis.getSlot());
+    assertThat(preGenesisStorageClient.getBestBlockAndState()).contains(genesis.toUnsigned());
+
+    // Update best block, but delay the resolution of the future
+    final SignedBlockAndState chainHeadA = chain.get(0);
+    final SafeFuture<Optional<SignedBlockAndState>> chainHeadAFuture = new SafeFuture<>();
+    when(store.retrieveBlockAndState(chainHeadA.getRoot())).thenReturn(chainHeadAFuture);
+    preGenesisStorageClient.updateBestBlock(chainHeadA.getRoot(), chainHeadA.getSlot());
+    // We should still be at genesis while we wait on the future to resolve
+    assertThat(preGenesisStorageClient.getBestBlockAndState()).contains(genesis.toUnsigned());
+
+    // Now start another update
+    final SignedBlockAndState chainHeadB = chain.get(1);
+    preGenesisStorageClient.updateBestBlock(chainHeadB.getRoot(), chainHeadB.getSlot());
+    assertThat(preGenesisStorageClient.getBestBlockAndState()).contains(chainHeadB.toUnsigned());
+
+    // Resolve the earlier update - which should be ignored since we've already moved on
+    chainHeadAFuture.complete(Optional.of(chainHeadA));
+    assertThat(preGenesisStorageClient.getBestBlockAndState()).contains(chainHeadB.toUnsigned());
   }
 
   @Test

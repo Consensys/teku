@@ -186,6 +186,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * @param slot the new best slot
    */
   public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
+    final Optional<SignedBlockAndStateAndSlot> originalChainHead = chainHead;
     store
         .retrieveBlockAndState(root)
         .thenApply(
@@ -198,15 +199,23 @@ public abstract class RecentChainData implements StoreUpdateHandler {
                                 String.format(
                                     "Unable to update best block as of slot %s.  Block is unavailable: %s.",
                                     slot, root))))
-        .thenAccept(this::updateChainHead)
+        .thenAccept(headBlock -> updateChainHead(originalChainHead, headBlock))
         .reportExceptions();
   }
 
-  private void updateChainHead(SignedBlockAndStateAndSlot newChainHead) {
+  private void updateChainHead(
+      final Optional<SignedBlockAndStateAndSlot> originalHead,
+      final SignedBlockAndStateAndSlot newChainHead) {
     synchronized (this) {
-      final Optional<Bytes32> originalBestRoot = chainHead.map(SignedBlockAndState::getRoot);
+      if (!chainHead.equals(originalHead)) {
+        // The chain head has been updated while we were waiting for the newChainHead
+        // Skip this update to avoid accidentally regressing the chain head
+        LOG.debug("Skipping best block update to avoid potential rollback of the best block.");
+        return;
+      }
+      final Optional<Bytes32> originalBestRoot = originalHead.map(SignedBlockAndState::getRoot);
       final UnsignedLong originalBestSlot =
-          chainHead.map(SignedBlockAndStateAndSlot::getHeadSlot).orElse(UnsignedLong.ZERO);
+          originalHead.map(SignedBlockAndStateAndSlot::getHeadSlot).orElse(UnsignedLong.ZERO);
 
       this.chainHead = Optional.of(newChainHead);
       if (originalBestRoot
