@@ -490,7 +490,7 @@ public abstract class AbstractDatabaseTest {
         new SlotAndBlockRoot(
             dataStructureUtil.randomUnsignedLong(), dataStructureUtil.randomBytes32());
 
-    database.addHotStateRoot(stateRoot, slotAndBlockRoot);
+    database.addHotStateRoots(Map.of(stateRoot, slotAndBlockRoot));
 
     final Optional<SlotAndBlockRoot> fromStorage =
         database.getSlotAndBlockRootFromStateRoot(stateRoot);
@@ -529,7 +529,7 @@ public abstract class AbstractDatabaseTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(UnsignedLong.valueOf(slot), dataStructureUtil.randomBytes32());
-    database.addHotStateRoot(stateRoot, slotAndBlockRoot);
+    database.addHotStateRoots(Map.of(stateRoot, slotAndBlockRoot));
     return stateRoot;
   }
 

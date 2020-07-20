@@ -15,16 +15,22 @@ package tech.pegasys.teku.service.serviceutils;
 
 import java.util.Collection;
 import java.util.concurrent.CopyOnWriteArrayList;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
+import tech.pegasys.teku.infrastructure.async.ScheduledExecutorAsyncRunner;
 
 public class AsyncRunnerFactory {
   private final Collection<AsyncRunner> asyncRunners = new CopyOnWriteArrayList<>();
 
-  public AsyncRunner create(
-      final String name, final int maxThreads, final MetricsSystem metricsSystem) {
+  private final MetricTrackingExecutorFactory executorFactory;
+
+  public AsyncRunnerFactory(final MetricTrackingExecutorFactory executorFactory) {
+    this.executorFactory = executorFactory;
+  }
+
+  public AsyncRunner create(final String name, final int maxThreads) {
     final AsyncRunner asyncRunner =
-        ScheduledExecutorAsyncRunner.create(name, maxThreads, metricsSystem);
+        ScheduledExecutorAsyncRunner.create(name, maxThreads, executorFactory);
     asyncRunners.add(asyncRunner);
     return asyncRunner;
   }

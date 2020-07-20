@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p.rpc;
 
-import static tech.pegasys.teku.util.async.FutureUtil.ignoreFuture;
+import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
@@ -34,6 +34,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture.Interruptor;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.Controller;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -43,9 +46,6 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamTimeoutException;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.async.SafeFuture.Interruptor;
 
 public class RpcHandler implements ProtocolBinding<Controller> {
   private static final Duration TIMEOUT = Duration.ofSeconds(5);

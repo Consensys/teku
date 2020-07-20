@@ -46,4 +46,9 @@ public class Eth1Data {
     this.deposit_count = deposit_count;
     this.block_hash = block_hash;
   }
+
+  public tech.pegasys.teku.datastructures.blocks.Eth1Data asInternalEth1Data() {
+    return new tech.pegasys.teku.datastructures.blocks.Eth1Data(
+        deposit_root, deposit_count, block_hash);
+  }
 }

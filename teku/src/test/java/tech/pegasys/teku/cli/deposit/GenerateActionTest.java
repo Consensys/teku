@@ -19,8 +19,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
-import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
 
 import java.io.File;
 import java.io.FilenameFilter;

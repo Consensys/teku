@@ -22,7 +22,7 @@ import java.util.concurrent.CancellationException;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
 class DutyQueue {

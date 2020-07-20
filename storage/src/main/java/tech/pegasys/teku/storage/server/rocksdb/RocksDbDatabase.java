@@ -39,6 +39,7 @@ import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
@@ -62,7 +63,6 @@ import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
 import tech.pegasys.teku.storage.store.StoreBuilder;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class RocksDbDatabase implements Database {
@@ -260,9 +260,10 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public void addHotStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
+  public void addHotStateRoots(
+      final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap) {
     try (final HotUpdater updater = hotDao.hotUpdater()) {
-      updater.addHotStateRoot(stateRoot, slotAndBlockRoot);
+      updater.addHotStateRoots(stateRootToSlotAndBlockRootMap);
       updater.commit();
     }
   }

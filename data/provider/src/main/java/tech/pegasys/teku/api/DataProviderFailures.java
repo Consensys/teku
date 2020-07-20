@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.api;
 
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class DataProviderFailures {
   private static final SafeFuture<?> CHAIN_UNAVAILABLE =

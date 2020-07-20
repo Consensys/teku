@@ -4,6 +4,7 @@ dependencies {
   implementation project(':data:metrics')
   implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
+  implementation project(':infrastructure:async')
   implementation project(':logging')
   implementation project(':pow')
   implementation project(':protoarray')
@@ -29,6 +30,7 @@ dependencies {
   testFixturesApi testFixtures(project(':storage'))
 
   testFixturesImplementation project(':ethereum:core')
+  testFixturesImplementation project(':infrastructure:async')
   testFixturesImplementation testFixtures(project(':protoarray'))
   testFixturesImplementation testFixtures(project(':ethereum:core'))
   testFixturesImplementation testFixtures(project(':ethereum:datastructures'))

@@ -31,8 +31,8 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.services.powchain.DepositTransactionSender;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Eth1Address;
 
 public class RegisterAction implements AutoCloseable {

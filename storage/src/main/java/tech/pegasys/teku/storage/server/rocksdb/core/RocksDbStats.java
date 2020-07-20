@@ -18,11 +18,15 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import org.rocksdb.HistogramData;
 import org.rocksdb.HistogramType;
+import org.rocksdb.RocksDB;
+import org.rocksdb.RocksDBException;
 import org.rocksdb.Statistics;
 import org.rocksdb.TickerType;
 
@@ -31,6 +35,7 @@ import org.rocksdb.TickerType;
  * https://github.com/hyperledger/besu/blob/3d867532deb893fd267fcd5d4e6bf0d42a76e59b/metrics/rocksdb/src/main/java/org/hyperledger/besu/metrics/rocksdb/RocksDBStats.java#L137
  */
 public class RocksDbStats implements AutoCloseable {
+  private static final Logger LOG = LogManager.getLogger();
 
   static final List<String> LABELS = Collections.singletonList("quantile");
   static final List<String> LABEL_50 = Collections.singletonList("0.5");
@@ -185,7 +190,18 @@ public class RocksDbStats implements AutoCloseable {
     return stats;
   }
 
-  public void registerMetrics() {
+  public void registerMetrics(final RocksDB database) {
+    metricsSystem.createLongGauge(
+        category,
+        "estimated_table_readers_memory",
+        "Estimated memory used by index and filter blocks",
+        () -> getLongProperty(database, "rocksdb.estimate-table-readers-mem"));
+    metricsSystem.createLongGauge(
+        category,
+        "current_size_all_mem_tables",
+        "Current size of all RocksDB mem tables combined",
+        () -> getLongProperty(database, "rocksdb.cur-size-all-mem-tables"));
+
     for (final TickerType ticker : TICKERS) {
       final String promCounterName = ticker.name().toLowerCase();
       metricsSystem.createLongGauge(
@@ -200,6 +216,15 @@ public class RocksDbStats implements AutoCloseable {
         ((PrometheusMetricsSystem) metricsSystem)
             .addCollector(category, histogramToCollector(category, stats, histogram));
       }
+    }
+  }
+
+  private long getLongProperty(final RocksDB database, final String name) {
+    try {
+      return database.getLongProperty(name);
+    } catch (RocksDBException e) {
+      LOG.warn("Failed to load " + name + " property for RocksDB metrics");
+      return 0;
     }
   }
 

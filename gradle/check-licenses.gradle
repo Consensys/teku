@@ -136,14 +136,15 @@ downloadLicenses {
   ]
 
   licenses = [
-      (group('teku'))            : apache,
-      (group('teku.ethereum'))   : apache,
-      (group('teku.services'))   : apache,
-      (group('teku.consensus'))  : apache,
-      (group('teku.data'))       : apache,
-      (group('teku.storage'))    : apache,
-      (group('teku.validator'))  : apache,
-      (group('teku.networking')) : apache,
+      (group('teku'))                : apache,
+      (group('teku.ethereum'))       : apache,
+      (group('teku.services'))       : apache,
+      (group('teku.consensus'))      : apache,
+      (group('teku.data'))           : apache,
+      (group('teku.infrastructure')) : apache,
+      (group('teku.storage'))        : apache,
+      (group('teku.validator'))      : apache,
+      (group('teku.networking'))     : apache,
 
       // https://checkerframework.org/manual/#license
       // The more permissive MIT License applies to code that you might want
