@@ -226,7 +226,7 @@ public class MikuliBLS12381 implements BLS12381 {
 
     List<MikuliPublicKey> mikuliPublicKeys =
         publicKeys.stream().map(MikuliPublicKey::fromPublicKey).collect(Collectors.toList());
-    MikuliSignature mikuliSignature = (MikuliSignature) signature;
+    MikuliSignature mikuliSignature = MikuliSignature.fromSignature(signature);
 
     if (index == 0) {
       // optimization: we may omit multiplication of a single component (i.e. multiplier is 1)
@@ -258,10 +258,10 @@ public class MikuliBLS12381 implements BLS12381 {
         index,
         publicKeys1.stream().map(MikuliPublicKey::fromPublicKey).collect(Collectors.toList()),
         message1,
-        (MikuliSignature) signature1,
+        MikuliSignature.fromSignature(signature1),
         publicKeys2.stream().map(MikuliPublicKey::fromPublicKey).collect(Collectors.toList()),
         message2,
-        (MikuliSignature) signature2);
+        MikuliSignature.fromSignature(signature2));
   }
 
   /**
