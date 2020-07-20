@@ -46,6 +46,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
 import tech.pegasys.teku.util.collections.LimitStrategy;
 import tech.pegasys.teku.util.config.Constants;
@@ -59,8 +60,11 @@ public class SignedAggregateAndProofValidator {
       ConcurrentLimitedSet.create(
           VALID_AGGREGATE_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
   private final AttestationValidator attestationValidator;
+  private final RecentChainData recentChainData;
 
-  public SignedAggregateAndProofValidator(final AttestationValidator attestationValidator) {
+  public SignedAggregateAndProofValidator(
+      final RecentChainData recentChainData, final AttestationValidator attestationValidator) {
+    this.recentChainData = recentChainData;
     this.attestationValidator = attestationValidator;
   }
 
@@ -87,10 +91,8 @@ public class SignedAggregateAndProofValidator {
       return SafeFuture.completedFuture(IGNORE);
     }
 
-    final AttestationValidator.StateProvider stateProvider =
-        attestationValidator.createStateProvider();
     return attestationValidator
-        .singleOrAggregateAttestationChecks(aggregate, OptionalInt.empty(), stateProvider)
+        .singleOrAggregateAttestationChecks(aggregate, OptionalInt.empty())
         .thenCompose(
             aggregateInternalValidationResult -> {
               if (aggregateInternalValidationResult == REJECT
@@ -99,8 +101,8 @@ public class SignedAggregateAndProofValidator {
                 return SafeFuture.completedFuture(aggregateInternalValidationResult);
               }
 
-              return stateProvider
-                  .get(aggregate.getData().getBeacon_block_root())
+              return recentChainData
+                  .retrieveBlockState(aggregate.getData().getBeacon_block_root())
                   .thenApply(
                       maybeState -> {
                         if (maybeState.isEmpty()) {

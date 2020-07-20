@@ -17,7 +17,6 @@ import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -110,7 +109,7 @@ class SignedAggregateAndProofValidatorTest {
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
 
   private final SignedAggregateAndProofValidator validator =
-      new SignedAggregateAndProofValidator(attestationValidator);
+      new SignedAggregateAndProofValidator(recentChainData, attestationValidator);
   private SignedBlockAndState bestBlock;
 
   @BeforeAll
@@ -127,8 +126,6 @@ class SignedAggregateAndProofValidatorTest {
   public void setUp() {
     chainUpdater.initializeGenesis(false);
     bestBlock = chainUpdater.addNewBestBlock();
-    when(attestationValidator.createStateProvider())
-        .thenReturn(AttestationValidator.createStateProvider(recentChainData));
   }
 
   @Test
@@ -145,7 +142,7 @@ class SignedAggregateAndProofValidatorTest {
     final SignedAggregateAndProof aggregate =
         generator.validAggregateAndProof(recentChainData.getBestBlockAndState().orElseThrow());
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            eq(aggregate.getMessage().getAggregate()), eq(OptionalInt.empty()), any()))
+            eq(aggregate.getMessage().getAggregate()), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(REJECT));
 
     assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregate)))
@@ -157,7 +154,7 @@ class SignedAggregateAndProofValidatorTest {
     final SignedAggregateAndProof aggregate =
         generator.validAggregateAndProof(recentChainData.getBestBlockAndState().orElseThrow());
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            eq(aggregate.getMessage().getAggregate()), eq(OptionalInt.empty()), any()))
+            eq(aggregate.getMessage().getAggregate()), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(IGNORE));
 
     assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregate)))
@@ -169,7 +166,7 @@ class SignedAggregateAndProofValidatorTest {
     final SignedAggregateAndProof aggregate =
         generator.validAggregateAndProof(recentChainData.getBestBlockAndState().orElseThrow());
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            eq(aggregate.getMessage().getAggregate()), eq(OptionalInt.empty()), any()))
+            eq(aggregate.getMessage().getAggregate()), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE));
 
     assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregate)))
@@ -181,7 +178,7 @@ class SignedAggregateAndProofValidatorTest {
     final SignedBlockAndState target = bestBlock;
     final SignedAggregateAndProof aggregate = generator.validAggregateAndProof(target.toUnsigned());
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            eq(aggregate.getMessage().getAggregate()), eq(OptionalInt.empty()), any()))
+            eq(aggregate.getMessage().getAggregate()), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE));
 
     assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregate)))
@@ -198,7 +195,7 @@ class SignedAggregateAndProofValidatorTest {
             .selectionProof(dataStructureUtil.randomSignature())
             .generate();
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            eq(aggregate.getMessage().getAggregate()), eq(OptionalInt.empty()), any()))
+            eq(aggregate.getMessage().getAggregate()), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(SAVE_FOR_FUTURE));
 
     assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregate)))
@@ -452,7 +449,7 @@ class SignedAggregateAndProofValidatorTest {
 
   private void whenAttestationIsValid(final SignedAggregateAndProof aggregate) {
     when(attestationValidator.singleOrAggregateAttestationChecks(
-            eq(aggregate.getMessage().getAggregate()), eq(OptionalInt.empty()), any()))
+            eq(aggregate.getMessage().getAggregate()), eq(OptionalInt.empty())))
         .thenReturn(SafeFuture.completedFuture(ACCEPT));
   }
 

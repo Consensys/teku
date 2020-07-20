@@ -27,18 +27,11 @@ import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SL
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.VALID_ATTESTATION_SET_SIZE;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
@@ -73,8 +66,7 @@ public class AttestationValidator {
       return SafeFuture.completedFuture(internalValidationResult);
     }
 
-    return singleOrAggregateAttestationChecks(
-            attestation, OptionalInt.of(receivedOnSubnetId), createStateProvider())
+    return singleOrAggregateAttestationChecks(attestation, OptionalInt.of(receivedOnSubnetId))
         .thenApply(
             result -> {
               if (result != ACCEPT) {
@@ -110,9 +102,7 @@ public class AttestationValidator {
   }
 
   SafeFuture<InternalValidationResult> singleOrAggregateAttestationChecks(
-      final Attestation attestation,
-      final OptionalInt receivedOnSubnetId,
-      final StateProvider stateProvider) {
+      final Attestation attestation, final OptionalInt receivedOnSubnetId) {
     // attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (within a
     // MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot +
     // ATTESTATION_PROPAGATION_SLOT_RANGE >= current_slot >= attestation.data.slot (a client MAY
@@ -130,8 +120,8 @@ public class AttestationValidator {
     // The block being voted for (attestation.data.beacon_block_root) passes validation.
     // It must pass validation to be in the store.
     // If it's not in the store, it may not have been processed yet so save for future.
-    return stateProvider
-        .get(attestation.getData().getBeacon_block_root())
+    return recentChainData
+        .retrieveBlockState(attestation.getData().getBeacon_block_root())
         .thenApply(
             maybeState -> {
               if (maybeState.isEmpty()) {
@@ -229,23 +219,6 @@ public class AttestationValidator {
     return secondsToMillis(lastAllowedTime).plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY);
   }
 
-  StateProvider createStateProvider() {
-    return createStateProvider(recentChainData);
-  }
-
-  @VisibleForTesting
-  static StateProvider createStateProvider(final RecentChainData recentChainData) {
-    LoadingCache<Bytes32, SafeFuture<Optional<BeaconState>>> cache =
-        CacheBuilder.newBuilder().build(CacheLoader.from(recentChainData::retrieveBlockState));
-    return (root) -> {
-      try {
-        return cache.get(root);
-      } catch (ExecutionException e) {
-        return SafeFuture.failedFuture(e);
-      }
-    };
-  }
-
   private static class ValidatorAndTargetEpoch {
     private final UnsignedLong targetEpoch;
     // Validator is identified via committee index and position to avoid resolving the actual
@@ -280,11 +253,5 @@ public class AttestationValidator {
     public int hashCode() {
       return Objects.hash(targetEpoch, committeeIndex, committeePosition);
     }
-  }
-
-  @FunctionalInterface
-  public interface StateProvider {
-
-    SafeFuture<Optional<BeaconState>> get(Bytes32 blockRoot);
   }
 }
