@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
@@ -48,10 +49,13 @@ public class AggregateTopicHandlerTest {
     final ValidateableAttestation aggregate =
         ValidateableAttestation.fromSignedAggregate(
             dataStructureUtil.randomSignedAggregateAndProof());
-    when(validator.validate(aggregate)).thenReturn(InternalValidationResult.ACCEPT);
+    when(validator.validate(aggregate))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     final ValidationResult result =
-        topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
+        topicHandler
+            .handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()))
+            .join();
     assertThat(result).isEqualTo(ValidationResult.Valid);
     verify(attestationConsumer).forward(aggregate);
   }
@@ -61,10 +65,13 @@ public class AggregateTopicHandlerTest {
     final ValidateableAttestation aggregate =
         ValidateableAttestation.fromSignedAggregate(
             dataStructureUtil.randomSignedAggregateAndProof());
-    when(validator.validate(aggregate)).thenReturn(InternalValidationResult.SAVE_FOR_FUTURE);
+    when(validator.validate(aggregate))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
     final ValidationResult result =
-        topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
+        topicHandler
+            .handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()))
+            .join();
     assertThat(result).isEqualTo(ValidationResult.Ignore);
     verify(attestationConsumer).forward(aggregate);
   }
@@ -74,10 +81,13 @@ public class AggregateTopicHandlerTest {
     final ValidateableAttestation aggregate =
         ValidateableAttestation.fromSignedAggregate(
             dataStructureUtil.randomSignedAggregateAndProof());
-    when(validator.validate(aggregate)).thenReturn(InternalValidationResult.IGNORE);
+    when(validator.validate(aggregate))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
 
     final ValidationResult result =
-        topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
+        topicHandler
+            .handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()))
+            .join();
     assertThat(result).isEqualTo(ValidationResult.Ignore);
     verify(attestationConsumer, never()).forward(aggregate);
   }
@@ -87,10 +97,13 @@ public class AggregateTopicHandlerTest {
     final ValidateableAttestation aggregate =
         ValidateableAttestation.fromSignedAggregate(
             dataStructureUtil.randomSignedAggregateAndProof());
-    when(validator.validate(aggregate)).thenReturn(InternalValidationResult.REJECT);
+    when(validator.validate(aggregate))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
 
     final ValidationResult result =
-        topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
+        topicHandler
+            .handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()))
+            .join();
     assertThat(result).isEqualTo(ValidationResult.Invalid);
     verify(attestationConsumer, never()).forward(aggregate);
   }

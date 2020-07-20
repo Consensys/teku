@@ -30,13 +30,13 @@ import static tech.pegasys.teku.util.config.Constants.VALID_ATTESTATION_SET_SIZE
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
 import tech.pegasys.teku.util.collections.LimitStrategy;
@@ -58,21 +58,23 @@ public class AttestationValidator {
     this.recentChainData = recentChainData;
   }
 
-  public InternalValidationResult validate(
+  public SafeFuture<InternalValidationResult> validate(
       final ValidateableAttestation validateableAttestation, final int receivedOnSubnetId) {
     Attestation attestation = validateableAttestation.getAttestation();
-    InternalValidationResult internalValidationResult = singleAttestationChecks(attestation);
+    final InternalValidationResult internalValidationResult = singleAttestationChecks(attestation);
     if (internalValidationResult != ACCEPT) {
-      return internalValidationResult;
+      return SafeFuture.completedFuture(internalValidationResult);
     }
 
-    internalValidationResult =
-        singleOrAggregateAttestationChecks(attestation, OptionalInt.of(receivedOnSubnetId));
-    if (internalValidationResult != ACCEPT) {
-      return internalValidationResult;
-    }
+    return singleOrAggregateAttestationChecks(attestation, OptionalInt.of(receivedOnSubnetId))
+        .thenApply(
+            result -> {
+              if (result != ACCEPT) {
+                return result;
+              }
 
-    return addAndCheckFirstValidAttestation(attestation);
+              return addAndCheckFirstValidAttestation(attestation);
+            });
   }
 
   private InternalValidationResult addAndCheckFirstValidAttestation(final Attestation attestation) {
@@ -99,7 +101,7 @@ public class AttestationValidator {
     return ACCEPT;
   }
 
-  InternalValidationResult singleOrAggregateAttestationChecks(
+  SafeFuture<InternalValidationResult> singleOrAggregateAttestationChecks(
       final Attestation attestation, final OptionalInt receivedOnSubnetId) {
     // attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (within a
     // MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot +
@@ -109,42 +111,48 @@ public class AttestationValidator {
     final UnsignedLong currentTimeMillis = secondsToMillis(recentChainData.getStore().getTime());
     if (isCurrentTimeAfterAttestationPropagationSlotRange(currentTimeMillis, attestation)
         || isFromFarFuture(attestation, currentTimeMillis)) {
-      return IGNORE;
+      return SafeFuture.completedFuture(IGNORE);
     }
     if (isCurrentTimeBeforeMinimumAttestationBroadcastTime(attestation, currentTimeMillis)) {
-      return SAVE_FOR_FUTURE;
+      return SafeFuture.completedFuture(SAVE_FOR_FUTURE);
     }
 
     // The block being voted for (attestation.data.beacon_block_root) passes validation.
     // It must pass validation to be in the store.
     // If it's not in the store, it may not have been processed yet so save for future.
-    final Optional<BeaconState> maybeState =
-        recentChainData.getBlockState(attestation.getData().getBeacon_block_root());
-    if (maybeState.isEmpty()) {
-      return SAVE_FOR_FUTURE;
-    }
+    return recentChainData
+        .retrieveBlockState(attestation.getData().getBeacon_block_root())
+        .thenApply(
+            maybeState -> {
+              if (maybeState.isEmpty()) {
+                return SAVE_FOR_FUTURE;
+              }
 
-    final BeaconState state = maybeState.get();
+              final BeaconState state = maybeState.get();
 
-    // The attestation's committee index (attestation.data.index) is for the correct subnet.
-    if (receivedOnSubnetId.isPresent()
-        && computeSubnetForAttestation(state, attestation) != receivedOnSubnetId.getAsInt()) {
-      return REJECT;
-    }
+              // The attestation's committee index (attestation.data.index) is for the correct
+              // subnet.
+              if (receivedOnSubnetId.isPresent()
+                  && computeSubnetForAttestation(state, attestation)
+                      != receivedOnSubnetId.getAsInt()) {
+                return REJECT;
+              }
 
-    final List<Integer> committee =
-        get_beacon_committee(
-            state, attestation.getData().getSlot(), attestation.getData().getIndex());
-    if (committee.size() != attestation.getAggregation_bits().getCurrentSize()) {
-      return REJECT;
-    }
+              final List<Integer> committee =
+                  get_beacon_committee(
+                      state, attestation.getData().getSlot(), attestation.getData().getIndex());
+              if (committee.size() != attestation.getAggregation_bits().getCurrentSize()) {
+                return REJECT;
+              }
 
-    // The signature of attestation is valid.
-    final IndexedAttestation indexedAttestation = get_indexed_attestation(state, attestation);
-    if (!is_valid_indexed_attestation(state, indexedAttestation).isSuccessful()) {
-      return REJECT;
-    }
-    return ACCEPT;
+              // The signature of attestation is valid.
+              final IndexedAttestation indexedAttestation =
+                  get_indexed_attestation(state, attestation);
+              if (!is_valid_indexed_attestation(state, indexedAttestation).isSuccessful()) {
+                return REJECT;
+              }
+              return ACCEPT;
+            });
   }
 
   private ValidatorAndTargetEpoch getValidatorAndTargetEpoch(final Attestation attestation) {
