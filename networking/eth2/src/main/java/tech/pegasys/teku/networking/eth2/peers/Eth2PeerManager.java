@@ -169,7 +169,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     Eth2Peer eth2Peer = eth2PeerFactory.create(peer, rpcMethods);
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), eth2Peer) == null;
     if (!wasAdded) {
-      LOG.warn("Duplicate peer connection detected. Ignoring peer.");
+      LOG.debug("Duplicate peer connection detected for peer {}. Ignoring peer.", peer.getId());
       return;
     }
 
