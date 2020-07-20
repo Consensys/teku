@@ -30,14 +30,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStream.ResponseListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppendedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ServerErrorException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.util.Waiter;
-import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.async.StubAsyncRunner;
 
 public abstract class Eth2OutgoingRequestHandlerTest
     extends AbstractRequestHandlerTest<
@@ -47,8 +46,8 @@ public abstract class Eth2OutgoingRequestHandlerTest
   private final StubAsyncRunner timeoutRunner = new StubAsyncRunner();
 
   private final List<SignedBeaconBlock> blocks = new ArrayList<>();
-  private final AtomicReference<ResponseListener<SignedBeaconBlock>> responseListener =
-      new AtomicReference<>(blocks::add);
+  private final AtomicReference<ResponseStreamListener<SignedBeaconBlock>> responseListener =
+      new AtomicReference<>(ResponseStreamListener.from(blocks::add));
   private final int maxChunks = 3;
 
   private RpcEncoder rpcEncoder;

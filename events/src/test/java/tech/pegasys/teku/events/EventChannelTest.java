@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -35,11 +36,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import tech.pegasys.teku.events.AsyncEventDeliverer.QueueReader;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 
 class EventChannelTest {
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private final ChannelExceptionHandler exceptionHandler = mock(ChannelExceptionHandler.class);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private ExecutorService executor;
 
   @AfterEach
@@ -73,7 +76,7 @@ class EventChannelTest {
     final Runnable subscriber = mock(Runnable.class);
     channel.subscribe(subscriber);
 
-    channel.getPublisher().run();
+    channel.getPublisher(Optional.empty()).run();
 
     verify(subscriber).run();
   }
@@ -86,7 +89,7 @@ class EventChannelTest {
     channel.subscribe(subscriber1);
     channel.subscribe(subscriber2);
 
-    channel.getPublisher().run();
+    channel.getPublisher(Optional.empty()).run();
 
     verify(subscriber1).run();
     verify(subscriber2).run();
@@ -99,11 +102,11 @@ class EventChannelTest {
     final MultipleMethods subscriber = mock(MultipleMethods.class);
     channel.subscribe(subscriber);
 
-    channel.getPublisher().method2();
+    channel.getPublisher(Optional.empty()).method2();
     verify(subscriber).method2();
     verifyNoMoreInteractions(subscriber);
 
-    channel.getPublisher().method1();
+    channel.getPublisher(Optional.empty()).method1();
     verify(subscriber).method1();
     verifyNoMoreInteractions(subscriber);
   }
@@ -115,7 +118,8 @@ class EventChannelTest {
     final WithFuture subscriber = () -> expected;
     channel.subscribe(subscriber);
 
-    final SafeFuture<String> result = channel.getPublisher().getFutureString();
+    final SafeFuture<String> result =
+        channel.getPublisher(Optional.of(asyncRunner)).getFutureString();
     assertThat(result).isNotDone();
 
     expected.complete("Yay");
@@ -139,7 +143,7 @@ class EventChannelTest {
     doThrow(exception).when(subscriber).run();
 
     channel.subscribe(subscriber);
-    channel.getPublisher().run();
+    channel.getPublisher(Optional.empty()).run();
 
     verify(exceptionHandler)
         .handleException(exception, subscriber, Runnable.class.getMethod("run"), null);
@@ -148,7 +152,7 @@ class EventChannelTest {
   @Test
   public void shouldNotProxyToString() {
     final EventChannel<Runnable> channel = EventChannel.create(Runnable.class, metricsSystem);
-    final Runnable publisher = channel.getPublisher();
+    final Runnable publisher = channel.getPublisher(Optional.empty());
     final String toString = publisher.toString();
     assertThat(toString).contains(DirectEventDeliverer.class.getName());
   }
@@ -158,11 +162,12 @@ class EventChannelTest {
   public void publisherShouldNotBeEqualToAnything() {
     // Mostly we just want it to not throw exceptions when equals is called.
     final EventChannel<Runnable> channel = EventChannel.create(Runnable.class, metricsSystem);
-    final Runnable publisher = channel.getPublisher();
+    final Runnable publisher = channel.getPublisher(Optional.empty());
     assertThat(publisher).isNotEqualTo("Foo");
     assertThat(publisher).isNotEqualTo(null);
     assertThat(publisher)
-        .isNotEqualTo(EventChannel.create(Runnable.class, metricsSystem).getPublisher());
+        .isNotEqualTo(
+            EventChannel.create(Runnable.class, metricsSystem).getPublisher(Optional.empty()));
     // Specifically call equals as .isEqualTo first checks reference equality
     assertThat(publisher.equals(publisher)).isFalse();
   }
@@ -177,9 +182,9 @@ class EventChannelTest {
     channel.subscribe(subscriber);
 
     // Publish a sequence of events
-    channel.getPublisher().method1("Event1");
-    channel.getPublisher().method2("Event2");
-    channel.getPublisher().method1("Event3");
+    channel.getPublisher(Optional.empty()).method1("Event1");
+    channel.getPublisher(Optional.empty()).method2("Event2");
+    channel.getPublisher(Optional.empty()).method1("Event3");
 
     verifyNoInteractions(subscriber);
 
@@ -228,8 +233,8 @@ class EventChannelTest {
     final CountDownLatch completed2 = new CountDownLatch(1);
 
     // Publish two events
-    channel.getPublisher().waitFor(started1, await1, completed1);
-    channel.getPublisher().waitFor(started2, await2, completed2);
+    channel.getPublisher(Optional.empty()).waitFor(started1, await1, completed1);
+    channel.getPublisher(Optional.empty()).waitFor(started2, await2, completed2);
 
     // Both events should start being processed
     waitForCountDownLatchComplete(started1);
@@ -256,13 +261,19 @@ class EventChannelTest {
     final WithFuture subscriber = () -> expected;
     channel.subscribe(subscriber);
 
-    final SafeFuture<String> result = channel.getPublisher().getFutureString();
+    final SafeFuture<String> result =
+        channel.getPublisher(Optional.of(asyncRunner)).getFutureString();
     assertThat(result).isNotDone(); // Hasn't been delivered to the subscriber yet
 
     // Now actually run the consuming thread
     final ArgumentCaptor<QueueReader> consumerCaptor = ArgumentCaptor.forClass(QueueReader.class);
     verify(executor).execute(consumerCaptor.capture());
     consumerCaptor.getValue().deliverNextEvent();
+    // Should complete the future via the responseExecutor, not immediately
+    assertThat(result).isNotDone();
+
+    // Run the response thread
+    asyncRunner.executeQueuedActions();
 
     assertThat(result).isCompletedWithValue("Yay");
   }

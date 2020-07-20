@@ -1,5 +1,6 @@
 dependencies {
   implementation project(':bls')
+  implementation project(':infrastructure:async')
   implementation project(':ssz')
   implementation project(':util')
   implementation project(':events')
@@ -13,4 +14,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-units'
 
   testImplementation testFixtures(project(':util'))
+  testImplementation testFixtures(project(':infrastructure:async'))
+
+  testFixturesImplementation project(':util')
 }

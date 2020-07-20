@@ -54,11 +54,11 @@ public interface ReadOnlyStore {
 
   Optional<SignedBlockAndState> getBlockAndState(Bytes32 blockRoot);
 
+  BeaconState getBlockState(Bytes32 blockRoot);
+
   boolean containsBlock(Bytes32 blockRoot);
 
   Set<Bytes32> getBlockRoots();
-
-  BeaconState getBlockState(Bytes32 blockRoot);
 
   Optional<BeaconState> getCheckpointState(Checkpoint checkpoint);
 

@@ -13,17 +13,18 @@
 
 package tech.pegasys.teku.events;
 
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.events.Subscribers;
 
-abstract class EventDeliverer<T> implements InvocationHandler {
+abstract class EventDeliverer<T> {
   private final Subscribers<T> subscribers = Subscribers.create(true);
   private final LabelledMetric<Counter> publishedEventCounter;
 
@@ -40,8 +41,12 @@ abstract class EventDeliverer<T> implements InvocationHandler {
     subscribers.subscribe(subscriber);
   }
 
-  @Override
-  public Object invoke(final Object proxy, final Method method, final Object[] args) {
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public Object invoke(
+      final Object proxy,
+      final Method method,
+      final Object[] args,
+      final Optional<AsyncRunner> responseRunner) {
     if (method.getDeclaringClass().equals(Object.class)) {
       try {
         return method.invoke(this, args);
@@ -57,7 +62,8 @@ abstract class EventDeliverer<T> implements InvocationHandler {
       final SafeFuture<T> result = new SafeFuture<>();
       subscribers.forEach(
           subscriber -> {
-            final SafeFuture<T> response = deliverToWithResponse(subscriber, method, args);
+            final SafeFuture<T> response =
+                deliverToWithResponse(subscriber, method, args, responseRunner.orElseThrow());
             response.propagateTo(result);
           });
       return result;
@@ -67,7 +73,7 @@ abstract class EventDeliverer<T> implements InvocationHandler {
   protected abstract void deliverTo(T subscriber, Method method, Object[] args);
 
   protected abstract <X> SafeFuture<X> deliverToWithResponse(
-      T subscriber, Method method, Object[] args);
+      T subscriber, Method method, Object[] args, AsyncRunner responseRunner);
 
   public void stop() {}
 }

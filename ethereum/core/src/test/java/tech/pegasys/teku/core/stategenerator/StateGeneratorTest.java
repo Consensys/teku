@@ -41,7 +41,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class StateGeneratorTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
@@ -203,7 +203,7 @@ public class StateGeneratorTest {
   public void regenerateStateForBlock_failOnMissingBlocks() throws StateTransitionException {
     testGeneratorWithMissingBlock(
         (generator, missingBlock) -> {
-          SafeFuture<BeaconState> result =
+          SafeFuture<SignedBlockAndState> result =
               generator.regenerateStateForBlock(missingBlock.getRoot());
           assertThatThrownBy(result::get)
               .hasCauseInstanceOf(IllegalStateException.class)
@@ -219,8 +219,9 @@ public class StateGeneratorTest {
         (generator, missingBlock) -> {
           SignedBlockAndState target =
               chainBuilder.getBlockAndStateAtSlot(missingBlock.getSlot().minus(UnsignedLong.ONE));
-          SafeFuture<BeaconState> result = generator.regenerateStateForBlock(target.getRoot());
-          assertThat(result).isCompletedWithValue(target.getState());
+          SafeFuture<SignedBlockAndState> result =
+              generator.regenerateStateForBlock(target.getRoot());
+          assertThat(result).isCompletedWithValue(target);
         });
   }
 
@@ -369,9 +370,9 @@ public class StateGeneratorTest {
     try {
       // Test generating each expected state 1 by 1
       for (SignedBlockAndState descendant : descendantBlocksAndStates) {
-        final BeaconState stateResult =
+        final SignedBlockAndState result =
             generator.regenerateStateForBlock(descendant.getRoot()).get();
-        assertThat(stateResult)
+        assertThat(result.getState())
             .isEqualToIgnoringGivenFields(
                 descendant.getState(), "transitionCaches", "childrenViewCache", "backingNode");
       }

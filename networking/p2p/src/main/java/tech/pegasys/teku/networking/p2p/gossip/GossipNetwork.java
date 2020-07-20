@@ -16,8 +16,8 @@ package tech.pegasys.teku.networking.p2p.gossip;
 import java.util.Collection;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public interface GossipNetwork {
   SafeFuture<?> gossip(String topic, Bytes data);

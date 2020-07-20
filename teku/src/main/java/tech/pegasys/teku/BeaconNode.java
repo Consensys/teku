@@ -25,13 +25,15 @@ import java.util.concurrent.Executors;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.data.recorder.SSZTransitionRecorder;
 import tech.pegasys.teku.events.EventChannels;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.logging.LoggingConfiguration;
 import tech.pegasys.teku.logging.LoggingConfigurator;
 import tech.pegasys.teku.metrics.MetricsEndpoint;
 import tech.pegasys.teku.service.serviceutils.AsyncRunnerFactory;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.ServiceController;
-import tech.pegasys.teku.util.async.AsyncRunner;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.TekuConfiguration;
@@ -44,7 +46,7 @@ public class BeaconNode {
       Executors.newCachedThreadPool(
           new ThreadFactoryBuilder().setDaemon(true).setNameFormat("events-%d").build());
 
-  private final AsyncRunnerFactory asyncRunnerFactory = new AsyncRunnerFactory();
+  private final AsyncRunnerFactory asyncRunnerFactory;
   private final ServiceController serviceController;
   private final EventChannels eventChannels;
   private final MetricsEndpoint metricsEndpoint;
@@ -68,6 +70,7 @@ public class BeaconNode {
     this.eventChannels = new EventChannels(subscriberExceptionHandler, metricsSystem);
     final EventBus eventBus = new AsyncEventBus(threadPool, subscriberExceptionHandler);
 
+    asyncRunnerFactory = new AsyncRunnerFactory(new MetricTrackingExecutorFactory(metricsSystem));
     final ServiceConfig serviceConfig =
         new ServiceConfig(
             asyncRunnerFactory,
@@ -91,7 +94,7 @@ public class BeaconNode {
   }
 
   public void start() {
-    metricsEndpoint.start();
+    metricsEndpoint.start().join();
     serviceController.start().join();
   }
 
@@ -105,7 +108,7 @@ public class BeaconNode {
 
     // Stop services. This includes closing the database.
     serviceController.stop().reportExceptions();
-    metricsEndpoint.stop();
+    SafeFuture.of(metricsEndpoint.stop()).reportExceptions();
     vertx.close();
   }
 }

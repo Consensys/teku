@@ -26,13 +26,13 @@ import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordBuilder;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 import org.ethereum.beacon.discovery.schema.NodeStatus;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrUtil;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class DiscV5Service extends Service implements DiscoveryService {
 

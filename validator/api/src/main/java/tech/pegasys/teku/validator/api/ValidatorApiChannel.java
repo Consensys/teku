@@ -28,9 +28,10 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.util.channels.ChannelInterface;
 
-public interface ValidatorApiChannel {
+public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<Optional<ForkInfo>> getForkInfo();
 
   SafeFuture<Optional<List<ValidatorDuties>>> getDuties(

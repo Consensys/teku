@@ -31,11 +31,11 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRang
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.util.Waiter;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public abstract class Eth2IncomingRequestHandlerTest
     extends AbstractRequestHandlerTest<

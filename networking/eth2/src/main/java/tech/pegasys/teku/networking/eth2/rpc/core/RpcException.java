@@ -24,8 +24,10 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 
 public class RpcException extends Exception {
-
   private static final Logger LOG = LogManager.getLogger();
+
+  public static final int MAXIMUM_ERROR_MESSAGE_LENGTH = 256;
+
   // Server errors
   public static class ServerErrorException extends RpcException {
     public ServerErrorException() {
@@ -72,6 +74,12 @@ public class RpcException extends Exception {
     }
   }
 
+  public static class LengthOutOfBoundsException extends RpcException {
+    public LengthOutOfBoundsException() {
+      super(INVALID_REQUEST_CODE, "Chunk length is not within bounds for expected type");
+    }
+  }
+
   private final byte responseCode;
   private final String errorMessage;
 
@@ -81,33 +89,26 @@ public class RpcException extends Exception {
     this.errorMessage = errorMessage;
   }
 
-  public RpcException(final byte responseCode, final Bytes errorMessageBytes) {
+  public RpcException(final byte responseCode, final RpcErrorMessage errorMessage) {
     this.responseCode = responseCode;
-    String err;
-    try {
-      err = new String(errorMessageBytes.toArray(), StandardCharsets.UTF_8);
-    } catch (IllegalArgumentException ex) {
-      err = errorMessageBytes.toHexString().toLowerCase();
-      LOG.trace("Error message could not be read as UTF-8: {} ", err);
-    }
-    this.errorMessage = err;
+    this.errorMessage = errorMessage.toString();
   }
 
   public byte getResponseCode() {
     return responseCode;
   }
 
-  public String getErrorMessage() {
+  public String getErrorMessageString() {
     return errorMessage;
   }
 
-  public Bytes getErrorMessageBytes() {
+  public RpcErrorMessage getErrorMessage() {
     Bytes bytes = Bytes.wrap(errorMessage.getBytes(UTF_8));
-    if (bytes.size() > 256) {
-      LOG.debug("Message {} was longer than 256 bytes", errorMessage);
-      return bytes.slice(0, 256);
+    if (bytes.size() > MAXIMUM_ERROR_MESSAGE_LENGTH) {
+      LOG.debug("Message {} was longer than {} bytes", errorMessage, MAXIMUM_ERROR_MESSAGE_LENGTH);
+      return new RpcErrorMessage(bytes.slice(0, MAXIMUM_ERROR_MESSAGE_LENGTH));
     }
-    return bytes;
+    return new RpcErrorMessage(bytes);
   }
 
   @Override
@@ -125,5 +126,27 @@ public class RpcException extends Exception {
   @Override
   public int hashCode() {
     return Objects.hash(responseCode, errorMessage);
+  }
+
+  public static class RpcErrorMessage {
+    private final Bytes data;
+
+    public RpcErrorMessage(final Bytes data) {
+      this.data = data;
+    }
+
+    public Bytes getData() {
+      return data;
+    }
+
+    @Override
+    public String toString() {
+      try {
+        return new String(data.toArray(), StandardCharsets.UTF_8);
+      } catch (IllegalArgumentException ex) {
+        LOG.trace("Error message could not be read as UTF-8: {} ", data);
+        return data.toHexString().toLowerCase();
+      }
+    }
   }
 }

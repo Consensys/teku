@@ -183,7 +183,8 @@ public class BeaconChainUtil {
     final SignedBeaconBlock block =
         createBlockAndStateAtSlot(slot, true, attestations, deposits, exits, eth1Data).getBlock();
     setSlot(slot);
-    final BlockImportResult importResult = forkChoice.onBlock(block);
+    final Optional<BeaconState> preState = recentChainData.getBlockState(block.getParent_root());
+    final BlockImportResult importResult = forkChoice.onBlock(block, preState);
     if (!importResult.isSuccessful()) {
       throw new IllegalStateException(
           "Produced an invalid block ( reason "

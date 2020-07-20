@@ -16,7 +16,7 @@ package tech.pegasys.teku.service.serviceutils;
 import com.google.common.eventbus.EventBus;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.events.EventChannels;
-import tech.pegasys.teku.util.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.util.time.TimeProvider;
 
@@ -65,10 +65,12 @@ public class ServiceConfig {
   }
 
   public AsyncRunner createAsyncRunner(final String name) {
-    return createAsyncRunner(name, Math.max(Runtime.getRuntime().availableProcessors(), 2));
+    // We use a bunch of blocking calls so need to ensure the thread pool is reasonably large
+    // as many threads may be blocked.
+    return createAsyncRunner(name, Math.max(Runtime.getRuntime().availableProcessors(), 5));
   }
 
   public AsyncRunner createAsyncRunner(final String name, final int maxThreads) {
-    return asyncRunnerFactory.create(name, maxThreads, metricsSystem);
+    return asyncRunnerFactory.create(name, maxThreads);
   }
 }

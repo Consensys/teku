@@ -27,7 +27,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.teku.beaconrestapi.handlers.beacon.GetBlock.NO_PARAMETERS;
 import static tech.pegasys.teku.beaconrestapi.handlers.beacon.GetBlock.NO_VALID_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.handlers.beacon.GetBlock.TOO_MANY_PARAMETERS;
-import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
@@ -44,8 +44,8 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class GetBlockTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

@@ -46,6 +46,8 @@ import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.events.EventChannels;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.Eth2Config;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkBuilder;
@@ -84,8 +86,6 @@ import tech.pegasys.teku.sync.SyncManager;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncStateTracker;
 import tech.pegasys.teku.sync.util.NoopSyncService;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.TekuConfiguration;
@@ -178,10 +178,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return StorageBackedRecentChainData.create(
             metricsSystem,
             asyncRunner,
-            eventChannels.getPublisher(StorageQueryChannel.class),
-            eventChannels.getPublisher(StorageUpdateChannel.class),
-            eventChannels.getPublisher(ProtoArrayStorageChannel.class),
-            eventChannels.getPublisher(FinalizedCheckpointChannel.class),
+            eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner),
+            eventChannels.getPublisher(StorageUpdateChannel.class, asyncRunner),
+            eventChannels.getPublisher(ProtoArrayStorageChannel.class, asyncRunner),
+            eventChannels.getPublisher(FinalizedCheckpointChannel.class, asyncRunner),
             eventChannels.getPublisher(ReorgEventChannel.class),
             eventBus)
         .thenAccept(
@@ -254,7 +254,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initCombinedChainDataClient()");
     combinedChainDataClient =
         new CombinedChainDataClient(
-            recentChainData, eventChannels.getPublisher(StorageQueryChannel.class));
+            recentChainData, eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner));
   }
 
   private void initStateTransition() {
@@ -407,7 +407,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                   attestationManager::subscribeToProcessedAttestations)
               .verifiedBlockAttestationsProvider(
                   blockImporter::subscribeToVerifiedBlockAttestations)
-              .historicalChainData(eventChannels.getPublisher(StorageQueryChannel.class))
+              .historicalChainData(
+                  eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner))
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
               .asyncRunner(networkAsyncRunner)
@@ -456,7 +457,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             combinedChainDataClient,
             p2pNetwork,
             syncService,
-            eventChannels.getPublisher(ValidatorApiChannel.class),
+            eventChannels.getPublisher(ValidatorApiChannel.class, asyncRunner),
             blockImporter);
     if (config.isRestApiEnabled()) {
       beaconRestAPI = Optional.of(new BeaconRestApi(dataProvider, config));

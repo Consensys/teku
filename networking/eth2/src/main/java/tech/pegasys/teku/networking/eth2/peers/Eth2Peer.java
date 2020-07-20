@@ -36,19 +36,19 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcMethod;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStream;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStream.ResponseListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamImpl;
+import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class Eth2Peer extends DelegatingPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -148,7 +148,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public SafeFuture<Void> requestBlocksByRoot(
-      final List<Bytes32> blockRoots, final ResponseListener<SignedBeaconBlock> listener)
+      final List<Bytes32> blockRoots, final ResponseStreamListener<SignedBeaconBlock> listener)
       throws RpcException {
     if (blockRoots.size() > MAX_REQUEST_BLOCKS) {
       throw new RpcException(
@@ -177,7 +177,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
       final UnsignedLong startSlot,
       final UnsignedLong count,
       final UnsignedLong step,
-      final ResponseListener<SignedBeaconBlock> listener) {
+      final ResponseStreamListener<SignedBeaconBlock> listener) {
     final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> blocksByRange =
         rpcMethods.beaconBlocksByRange();
     return requestStream(
@@ -217,9 +217,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   private <I extends RpcRequest, O> SafeFuture<Void> requestStream(
-      final Eth2RpcMethod<I, O> method,
-      final I request,
-      final ResponseStream.ResponseListener<O> listener) {
+      final Eth2RpcMethod<I, O> method, final I request, final ResponseStreamListener<O> listener) {
     final Eth2OutgoingRequestHandler<I, O> handler =
         method.createOutgoingRequestHandler(request.getMaximumRequestChunks());
     SafeFuture<Void> respFuture = handler.getResponseStream().expectMultipleResponses(listener);

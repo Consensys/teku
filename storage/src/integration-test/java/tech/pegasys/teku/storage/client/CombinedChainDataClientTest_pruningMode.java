@@ -24,7 +24,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class CombinedChainDataClientTest_pruningMode extends AbstractCombinedChainDataClientTest {

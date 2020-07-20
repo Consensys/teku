@@ -18,32 +18,25 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
-import tech.pegasys.teku.util.async.SafeFuture;
 
-class StoreTest {
-  private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+class StoreTest extends AbstractStoreTest {
 
   @Test
   public void getSignedBlock_withLimitedCache() throws StateTransitionException {
@@ -68,6 +61,88 @@ class StoreTest {
               .isNotNull();
           assertThat(result.hash_tree_root())
               .isEqualTo(blockAndState.getBlock().getMessage().getState_root());
+        });
+  }
+
+  @Test
+  public void retrieveSignedBlock_withLimitedCache() throws Exception {
+    processChainWithLimitedCache(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getRoot();
+          final SignedBeaconBlock expectedBlock = blockAndState.getBlock();
+          SafeFuture<Optional<SignedBeaconBlock>> result = store.retrieveSignedBlock(root);
+          assertThat(result).isCompleted();
+          assertThat(result)
+              .withFailMessage("Expected block %s to be available", expectedBlock.getSlot())
+              .isCompletedWithValue(Optional.of(expectedBlock));
+        });
+  }
+
+  @Test
+  public void retrieveBlock_withLimitedCache() throws StateTransitionException {
+    processChainWithLimitedCache(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getRoot();
+          final BeaconBlock expectedBlock = blockAndState.getBlock().getMessage();
+          SafeFuture<Optional<BeaconBlock>> result = store.retrieveBlock(root);
+          assertThat(result).isCompleted();
+          assertThat(result)
+              .withFailMessage("Expected block %s to be available", expectedBlock.getSlot())
+              .isCompletedWithValue(Optional.of(expectedBlock));
+        });
+  }
+
+  @Test
+  public void retrieveBlockAndState_withLimitedCache() throws StateTransitionException {
+    processChainWithLimitedCache(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getRoot();
+          SafeFuture<Optional<SignedBlockAndState>> result = store.retrieveBlockAndState(root);
+          assertThat(result).isCompleted();
+          assertThat(result)
+              .withFailMessage(
+                  "Expected block and state at %s to be available", blockAndState.getSlot())
+              .isCompletedWithValue(Optional.of(blockAndState));
+        });
+  }
+
+  @Test
+  public void retrieveBlockState_withLimitedCache() throws StateTransitionException {
+    processChainWithLimitedCache(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getRoot();
+          SafeFuture<Optional<BeaconState>> result = store.retrieveBlockState(root);
+          assertThat(result).isCompleted();
+          assertThat(result)
+              .withFailMessage("Expected state at %s to be available", blockAndState.getSlot())
+              .isCompletedWithValue(Optional.of(blockAndState.getState()));
+        });
+  }
+
+  @Test
+  public void getCheckpointState_withLimitedCache() throws StateTransitionException {
+    processCheckpointsWithLimitedCache(
+        (store, checkpointState) -> {
+          final Optional<BeaconState> result =
+              store.getCheckpointState(checkpointState.getCheckpoint());
+          assertThat(result)
+              .withFailMessage(
+                  "Expected checkpoint state for checkpoint %s", checkpointState.getCheckpoint())
+              .isNotEmpty();
+          assertThat(result).contains(checkpointState.getState());
+        });
+  }
+
+  @Test
+  public void retrieveCheckpointState_withLimitedCache() throws StateTransitionException {
+    processCheckpointsWithLimitedCache(
+        (store, checkpointState) -> {
+          SafeFuture<Optional<BeaconState>> result =
+              store.retrieveCheckpointState(checkpointState.getCheckpoint());
+          assertThat(result)
+              .withFailMessage(
+                  "Expected checkpoint state for checkpoint %s", checkpointState.getCheckpoint())
+              .isCompletedWithValue(Optional.of(checkpointState.getState()));
         });
   }
 
@@ -118,7 +193,7 @@ class StoreTest {
 
     final Checkpoint checkpoint = new Checkpoint(UnsignedLong.ONE, futureRoot);
     assertThatThrownBy(() -> store.getCheckpointState(checkpoint))
-        .isInstanceOf(InvalidCheckpointException.class);
+        .hasCauseInstanceOf(InvalidCheckpointException.class);
   }
 
   public void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction)
@@ -211,61 +286,5 @@ class StoreTest {
     // Check time
     assertThat(store.getTime()).isEqualTo(initialTime.plus(UnsignedLong.ONE));
     assertThat(store.getGenesisTime()).isEqualTo(genesisTime.plus(UnsignedLong.ONE));
-  }
-
-  void processChainWithLimitedCache(BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor)
-      throws StateTransitionException {
-    final int cacheSize = 10;
-    final int cacheMultiplier = 3;
-
-    // Create a new store with a small state cache
-    final StorePruningOptions pruningOptions =
-        StorePruningOptions.create(cacheSize, cacheSize, cacheSize);
-
-    final Store store = createGenesisStore(pruningOptions);
-    final List<SignedBlockAndState> blocks =
-        chainBuilder.generateBlocksUpToSlot(cacheMultiplier * cacheSize);
-
-    // Generate enough blocks to exceed our cache limit
-    addBlocks(store, blocks);
-
-    // Process chain in order
-    blocks.forEach(b -> chainProcessor.accept(store, b));
-
-    // Request states in reverse order
-    Collections.reverse(blocks);
-    blocks.forEach(b -> chainProcessor.accept(store, b));
-  }
-
-  private void addBlocks(final Store store, final List<SignedBlockAndState> blocks) {
-    final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
-    blocks.forEach(tx::putBlockAndState);
-    assertThat(tx.commit()).isCompletedWithValue(null);
-  }
-
-  private Store createGenesisStore(final StorePruningOptions pruningOptions) {
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-    final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
-    return new Store(
-        new StubMetricsSystem(),
-        blockProviderFromChainBuilder(),
-        genesis.getState().getGenesis_time(),
-        genesis.getState().getGenesis_time(),
-        genesisCheckpoint,
-        genesisCheckpoint,
-        genesisCheckpoint,
-        Map.of(genesis.getRoot(), genesis.getParentRoot()),
-        genesis,
-        Collections.emptyMap(),
-        pruningOptions);
-  }
-
-  private BlockProvider blockProviderFromChainBuilder() {
-    return (roots) ->
-        SafeFuture.completedFuture(
-            roots.stream()
-                .map(chainBuilder::getBlock)
-                .flatMap(Optional::stream)
-                .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity())));
   }
 }

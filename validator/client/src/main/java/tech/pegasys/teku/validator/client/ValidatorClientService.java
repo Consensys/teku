@@ -18,10 +18,10 @@ import java.util.Random;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.events.EventChannels;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.validator.anticorruption.ValidatorAnticorruptionLayer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -48,7 +48,8 @@ public class ValidatorClientService extends Service {
     final AsyncRunner asyncRunner = config.createAsyncRunner("validator");
     final ValidatorApiChannel validatorApiChannel =
         new MetricRecordingValidatorApiChannel(
-            metricsSystem, config.getEventChannels().getPublisher(ValidatorApiChannel.class));
+            metricsSystem,
+            config.getEventChannels().getPublisher(ValidatorApiChannel.class, asyncRunner));
     final RetryingDutyLoader dutyLoader =
         createDutyLoader(metricsSystem, validatorApiChannel, asyncRunner, validators);
     final StableSubnetSubscriber stableSubnetSubscriber =

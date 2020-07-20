@@ -3,6 +3,7 @@ dependencies {
     implementation project(':data:provider')
     implementation project(':ethereum:datastructures')
     implementation project(':ethereum:statetransition')
+    implementation project(':infrastructure:async')
     implementation project(':logging')
     implementation project(':networking:eth2')
     implementation project(':services:serviceutils')
@@ -32,6 +33,7 @@ dependencies {
     integrationTestImplementation testFixtures(project(':ethereum:core'))
 
     integrationTestImplementation 'com.squareup.okhttp3:okhttp'
+    integrationTestImplementation 'org.jsoup:jsoup'
     integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
 }
 

@@ -27,11 +27,11 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class LibP2PGossipNetwork implements tech.pegasys.teku.networking.p2p.gossip.GossipNetwork {
   private static final Logger LOG = LogManager.getLogger();

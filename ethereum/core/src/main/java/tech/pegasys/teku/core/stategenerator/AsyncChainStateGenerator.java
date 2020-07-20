@@ -25,9 +25,10 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 class AsyncChainStateGenerator {
   private static final Logger LOG = LogManager.getLogger();
@@ -57,28 +58,28 @@ class AsyncChainStateGenerator {
         blockTree, blockProvider, stateProvider, DEFAULT_BLOCK_BATCH_SIZE);
   }
 
-  public SafeFuture<BeaconState> generateTargetState(final Bytes32 targetRoot) {
+  public SafeFuture<SignedBlockAndState> generateTargetState(final Bytes32 targetRoot) {
     if (!blockTree.contains(targetRoot)) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException("Target root is unknown: " + targetRoot));
     }
 
-    final SafeFuture<BeaconState> lastState = new SafeFuture<>();
+    final SafeFuture<SignedBlockAndState> lastBlockAndState = new SafeFuture<>();
     generateStates(
             targetRoot,
             (block, state) -> {
               if (block.getRoot().equals(targetRoot)) {
-                lastState.complete(state);
+                lastBlockAndState.complete(new SignedBlockAndState(block, state));
               }
             })
         .finish(
             // Make sure future is completed
             () ->
-                lastState.completeExceptionally(
+                lastBlockAndState.completeExceptionally(
                     new IllegalStateException("Failed to generate state for " + targetRoot)),
-            lastState::completeExceptionally);
+            lastBlockAndState::completeExceptionally);
 
-    return lastState;
+    return lastBlockAndState;
   }
 
   public SafeFuture<?> generateStates(final Bytes32 targetRoot, final StateHandler handler) {

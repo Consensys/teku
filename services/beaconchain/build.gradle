@@ -6,6 +6,7 @@ dependencies {
   implementation project(':ethereum:core')
   implementation project(':ethereum:statetransition')
   implementation project(':ethereum:datastructures')
+  implementation project(':infrastructure:async')
   implementation project(':networking:p2p')
   implementation project(':networking:eth2')
   implementation project(':logging')

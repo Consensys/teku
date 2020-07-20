@@ -3,6 +3,7 @@ dependencies {
   api project(':util')
 
   implementation project(':bls')
+  implementation project(':infrastructure:async')
   implementation project(':logging')
   implementation project(':pow')
   implementation project(':util')

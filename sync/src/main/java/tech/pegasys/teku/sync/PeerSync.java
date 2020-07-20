@@ -27,17 +27,16 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class PeerSync {
   private static final Duration NEXT_REQUEST_TIMEOUT = Duration.ofSeconds(3);
@@ -189,18 +188,23 @@ public class PeerSync {
         : diff;
   }
 
-  private void blockResponseListener(final SignedBeaconBlock block) {
+  private SafeFuture<?> blockResponseListener(final SignedBeaconBlock block) {
     if (stopped.get()) {
       throw new CancellationException("Peer sync was cancelled");
     }
-    final BlockImportResult result = blockImporter.importBlock(block);
-    LOG.trace("Block import result for block at {}: {}", block.getMessage().getSlot(), result);
-    if (!result.isSuccessful()) {
-      this.blockImportFailureResult.inc();
-      throw new FailedBlockImportException(block, result);
-    } else {
-      this.blockImportSuccessResult.inc();
-    }
+    return blockImporter
+        .importBlock(block)
+        .thenAccept(
+            (result) -> {
+              LOG.trace(
+                  "Block import result for block at {}: {}", block.getMessage().getSlot(), result);
+              if (!result.isSuccessful()) {
+                this.blockImportFailureResult.inc();
+                throw new FailedBlockImportException(block, result);
+              } else {
+                this.blockImportSuccessResult.inc();
+              }
+            });
   }
 
   private void disconnectFromPeer(Eth2Peer peer) {

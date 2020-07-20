@@ -20,9 +20,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.RpcErrorMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.BeaconBlocksByRootRequestMessageEncoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.DefaultRpcPayloadEncoder;
-import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.StringSszEncoder;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ssz.RpcErrorMessagePayloadEncoder;
 
 public class RpcPayloadEncoders {
 
@@ -40,7 +41,7 @@ public class RpcPayloadEncoders {
     return RpcPayloadEncoders.builder()
         .withEncoder(
             BeaconBlocksByRootRequestMessage.class, new BeaconBlocksByRootRequestMessageEncoder())
-        .withEncoder(String.class, new StringSszEncoder())
+        .withEncoder(RpcErrorMessage.class, new RpcErrorMessagePayloadEncoder())
         .defaultEncoderProvider(DefaultRpcPayloadEncoder::new)
         .build();
   }
@@ -56,7 +57,7 @@ public class RpcPayloadEncoders {
   }
 
   public static class Builder {
-    private Map<Class<?>, RpcPayloadEncoder<?>> encoders = new HashMap<>();
+    private final Map<Class<?>, RpcPayloadEncoder<?>> encoders = new HashMap<>();
     private Function<Class<?>, RpcPayloadEncoder<?>> defaultEncoderProvider;
 
     private Builder() {}

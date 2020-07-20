@@ -195,6 +195,7 @@ public class ForkChoiceUtil {
   /**
    * @param store
    * @param signed_block
+   * @param maybePreState
    * @param st
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_block</a>
@@ -203,17 +204,18 @@ public class ForkChoiceUtil {
   public static BlockImportResult on_block(
       final MutableStore store,
       final SignedBeaconBlock signed_block,
+      Optional<BeaconState> maybePreState,
       final StateTransition st,
       final ForkChoiceStrategy forkChoiceStrategy) {
     final BeaconBlock block = signed_block.getMessage();
-    final BeaconState preState = store.getBlockState(block.getParent_root());
 
     // Return early if precondition checks fail;
     final Optional<BlockImportResult> maybeFailure =
-        checkOnBlockConditions(block, preState, store, forkChoiceStrategy);
+        checkOnBlockConditions(block, maybePreState.orElse(null), store, forkChoiceStrategy);
     if (maybeFailure.isPresent()) {
       return maybeFailure.get();
     }
+    final BeaconState preState = maybePreState.orElseThrow();
 
     // Make a copy of the state to avoid mutability issues
     BeaconState state;

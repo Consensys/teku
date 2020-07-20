@@ -77,7 +77,7 @@ public interface RocksDbHotDao extends AutoCloseable {
 
     void addHotBlocks(final Map<Bytes32, SignedBeaconBlock> blocks);
 
-    void addHotStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot);
+    void addHotStateRoots(final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap);
 
     void pruneHotStateRoots(final List<Bytes32> stateRoots);
 

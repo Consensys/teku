@@ -16,6 +16,7 @@ dependencyManagement {
     dependency 'com.google.code.gson:gson:2.8.6'
 
     dependency 'com.googlecode.json-simple:json-simple:1.1.1'
+    dependency 'org.jsoup:jsoup:1.13.1'
 
     dependency 'com.squareup.okhttp3:okhttp:4.7.2'
 
@@ -41,7 +42,7 @@ dependencyManagement {
       entry 'swagger-models'
       entry 'swagger-annotations'
     }
-    dependency 'org.webjars:swagger-ui:3.28.0'
+    dependency 'org.webjars:swagger-ui:3.24.3'
     dependency 'io.github.classgraph:classgraph:4.8.87'
 
     dependencySet(group: 'io.netty', version: '4.1.51.Final') {

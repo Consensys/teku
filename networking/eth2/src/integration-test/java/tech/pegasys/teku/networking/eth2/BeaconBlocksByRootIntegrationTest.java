@@ -18,7 +18,7 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.util.Waiter.waitFor;
+import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +33,9 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
@@ -42,7 +44,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public abstract class BeaconBlocksByRootIntegrationTest {
@@ -112,7 +113,8 @@ public abstract class BeaconBlocksByRootIntegrationTest {
 
     peer1.disconnectImmediately(Optional.empty(), false);
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
-    final SafeFuture<Void> res = peer1.requestBlocksByRoot(List.of(blockHash), blocks::add);
+    final SafeFuture<Void> res =
+        peer1.requestBlocksByRoot(List.of(blockHash), ResponseStreamListener.from(blocks::add));
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -127,7 +129,8 @@ public abstract class BeaconBlocksByRootIntegrationTest {
 
     peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS);
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
-    final SafeFuture<Void> res = peer1.requestBlocksByRoot(List.of(blockHash), blocks::add);
+    final SafeFuture<Void> res =
+        peer1.requestBlocksByRoot(List.of(blockHash), ResponseStreamListener.from(blocks::add));
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -221,7 +224,7 @@ public abstract class BeaconBlocksByRootIntegrationTest {
       throws InterruptedException, java.util.concurrent.ExecutionException,
           java.util.concurrent.TimeoutException, RpcException {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
-    waitFor(peer1.requestBlocksByRoot(blockRoots, blocks::add));
+    waitFor(peer1.requestBlocksByRoot(blockRoots, ResponseStreamListener.from(blocks::add)));
     return blocks;
   }
 

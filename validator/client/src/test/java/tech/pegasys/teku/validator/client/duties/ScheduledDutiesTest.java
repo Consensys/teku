@@ -19,12 +19,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.util.async.FutureUtil.ignoreFuture;
+import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.client.Validator;
 
 class ScheduledDutiesTest {
