@@ -65,7 +65,7 @@ public class ProposerSlashingTopicHandlerTest {
     final ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(validator.validate(slashing)).thenReturn(ACCEPT);
     Bytes serialized = gossipEncoding.encode(slashing);
-    final ValidationResult result = topicHandler.handleMessage(serialized);
+    final ValidationResult result = topicHandler.handleMessage(serialized).join();
     assertThat(result).isEqualTo(ValidationResult.Valid);
     verify(consumer).forward(slashing);
   }
@@ -75,7 +75,7 @@ public class ProposerSlashingTopicHandlerTest {
     final ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(validator.validate(slashing)).thenReturn(IGNORE);
     Bytes serialized = gossipEncoding.encode(slashing);
-    final ValidationResult result = topicHandler.handleMessage(serialized);
+    final ValidationResult result = topicHandler.handleMessage(serialized).join();
     assertThat(result).isEqualTo(ValidationResult.Ignore);
     verifyNoInteractions(consumer);
   }
@@ -85,7 +85,7 @@ public class ProposerSlashingTopicHandlerTest {
     final ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(validator.validate(slashing)).thenReturn(REJECT);
     Bytes serialized = gossipEncoding.encode(slashing);
-    final ValidationResult result = topicHandler.handleMessage(serialized);
+    final ValidationResult result = topicHandler.handleMessage(serialized).join();
     assertThat(result).isEqualTo(ValidationResult.Invalid);
     verifyNoInteractions(consumer);
   }
@@ -94,7 +94,7 @@ public class ProposerSlashingTopicHandlerTest {
   public void handleMessage_invalidSSZ() {
     Bytes serialized = Bytes.fromHexString("0x1234");
 
-    final ValidationResult result = topicHandler.handleMessage(serialized);
+    final ValidationResult result = topicHandler.handleMessage(serialized).join();
     assertThat(result).isEqualTo(ValidationResult.Invalid);
     verifyNoInteractions(consumer);
   }
