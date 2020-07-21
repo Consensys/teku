@@ -11,15 +11,27 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.schema;
+package tech.pegasys.teku.bls.impl;
 
-public class PublicKeyException extends RuntimeException {
+/** KeyPair represents a public and private key. */
+public class KeyPair {
+  private final SecretKey secretKey;
+  private final PublicKey publicKey;
 
-  public PublicKeyException(String message, Throwable cause) {
-    super(message, cause);
+  public KeyPair(SecretKey secretKey, PublicKey publicKey) {
+    this.secretKey = secretKey;
+    this.publicKey = publicKey;
   }
 
-  public PublicKeyException(String err) {
-    super(err);
+  public KeyPair(SecretKey secretKey) {
+    this(secretKey, secretKey.derivePublicKey());
+  }
+
+  public SecretKey getSecretKey() {
+    return secretKey;
+  }
+
+  public PublicKey getPublicKey() {
+    return publicKey;
   }
 }

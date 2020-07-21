@@ -18,8 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.teku.bls.mikuli.Scalar;
-import tech.pegasys.teku.bls.mikuli.SecretKey;
+import tech.pegasys.teku.bls.impl.SecretKey;
 
 public final class BLSSecretKey {
 
@@ -29,7 +28,7 @@ public final class BLSSecretKey {
         "Expected 32 or 48 bytes but received %s.",
         bytes.size());
     final Bytes keyBytes = bytes.size() == 32 ? Bytes48.leftPad(bytes) : bytes;
-    return new BLSSecretKey(SecretKey.fromBytes(keyBytes));
+    return new BLSSecretKey(BLS.getBlsImpl().secretKeyFromBytes(keyBytes));
   }
 
   private SecretKey secretKey;
@@ -58,13 +57,9 @@ public final class BLSSecretKey {
     return bytes;
   }
 
-  public Scalar getScalarValue() {
-    return secretKey.getScalarValue();
-  }
-
   /** Overwrites the key with zeros so that it is no longer in memory */
   public void destroy() {
-    secretKey.getScalarValue().destroy();
+    secretKey.destroy();
   }
 
   @Override
