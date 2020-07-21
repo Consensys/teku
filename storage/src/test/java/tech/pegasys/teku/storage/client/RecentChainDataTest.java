@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.storage.store.MockStoreHelper.mockChainData;
 import static tech.pegasys.teku.storage.store.MockStoreHelper.mockGenesis;
 
@@ -104,14 +105,15 @@ class RecentChainDataTest {
 
   @Test
   void retrieveStateInEffectAtSlot_returnEmptyWhenStoreNotSet() {
-    assertThat(preGenesisStorageClient.retrieveStateInEffectAtSlot(UnsignedLong.ZERO).join())
-        .isEmpty();
+    final SafeFuture<Optional<BeaconState>> result =
+        preGenesisStorageClient.retrieveStateInEffectAtSlot(UnsignedLong.ZERO);
+    assertThatSafeFuture(result).isCompletedWithEmptyOptional();
   }
 
   @Test
   public void retrieveStateInEffectAtSlot_returnGenesisStateWhenItIsTheBestState() {
-    assertThat(storageClient.retrieveStateInEffectAtSlot(genesis.getSlot()).join())
-        .contains(genesisState);
+    assertThat(storageClient.retrieveStateInEffectAtSlot(genesis.getSlot()))
+        .isCompletedWithValue(Optional.of(genesisState));
   }
 
   @Test
@@ -124,20 +126,21 @@ class RecentChainDataTest {
     final SignedBlockAndState bestBlock = chainBuilder.generateBlockAtSlot(bestSlot);
     updateBestBlock(storageClient, bestBlock);
 
-    assertThat(storageClient.retrieveStateInEffectAtSlot(requestedSlot).join())
-        .contains(genesisState);
+    assertThat(storageClient.retrieveStateInEffectAtSlot(requestedSlot))
+        .isCompletedWithValue(Optional.of(genesisState));
   }
 
   @Test
   public void retrieveStateInEffectAtSlot_returnStateFromLastBlockWhenHeadSlotIsEmpty() {
-    assertThat(storageClient.retrieveStateInEffectAtSlot(ONE).join()).contains(genesisState);
+    assertThat(storageClient.retrieveStateInEffectAtSlot(ONE))
+        .isCompletedWithValue(Optional.of(genesisState));
   }
 
   @Test
   public void retrieveStateInEffectAtSlot_returnHeadState() throws Exception {
     final SignedBlockAndState bestBlock = addNewBestBlock(storageClient);
-    assertThat(storageClient.retrieveStateInEffectAtSlot(bestBlock.getSlot()).join())
-        .contains(bestBlock.getState());
+    assertThat(storageClient.retrieveStateInEffectAtSlot(bestBlock.getSlot()))
+        .isCompletedWithValue(Optional.of(bestBlock.getState()));
   }
 
   @Test

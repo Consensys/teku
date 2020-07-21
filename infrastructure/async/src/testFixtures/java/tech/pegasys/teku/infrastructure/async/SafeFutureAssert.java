@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import org.assertj.core.api.AbstractCompletableFutureAssert;
 import org.assertj.core.api.Assertions;
@@ -41,5 +44,17 @@ public class SafeFutureAssert<T> extends AbstractCompletableFutureAssert<SafeFut
         .isInstanceOf(CompletionException.class)
         .extracting(Throwable::getCause)
         .isInstanceOf(exceptionType);
+  }
+
+  public void isCompletedWithEmptyOptional() {
+    isCompleted();
+    assertThat(actual.join()).isEqualTo(Optional.empty());
+  }
+
+  public void isCompletedWithNonEmptyOptional() {
+    isCompleted();
+    T result = actual.join();
+    assertThat(result).isInstanceOf(Optional.class);
+    assertThat(result).isNotEqualTo(Optional.empty());
   }
 }
