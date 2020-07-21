@@ -22,8 +22,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.schema.BeaconChainHead;
@@ -34,7 +32,6 @@ import tech.pegasys.teku.api.schema.Committee;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -43,7 +40,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ChainDataProvider {
-  private static final Logger LOG = LogManager.getLogger();
   private final CombinedChainDataClient combinedChainDataClient;
 
   private final RecentChainData recentChainData;
@@ -147,15 +143,9 @@ public class ChainDataProvider {
       return chainUnavailable();
     }
 
-    return SafeFuture.of(
-        () ->
-            combinedChainDataClient
-                .getBlockAndStateInEffectAtSlot(slot)
-                .thenApply(
-                    maybeBlockAndState ->
-                        maybeBlockAndState.map(
-                            beaconBlockAndState ->
-                                getStateForMissedSlot(beaconBlockAndState, slot))));
+    return combinedChainDataClient
+        .getStateAtSlotExact(slot)
+        .thenApply(stateInternal -> stateInternal.map(BeaconState::new));
   }
 
   public SafeFuture<Optional<Bytes32>> getStateRootAtSlot(final UnsignedLong slot) {
@@ -166,11 +156,11 @@ public class ChainDataProvider {
     return SafeFuture.of(
         () ->
             combinedChainDataClient
-                .getBlockAndStateInEffectAtSlot(slot)
-                .thenApply(
-                    maybeBlockAndState ->
-                        maybeBlockAndState.map(
-                            blockAndState -> getStateRootForMissedSlot(blockAndState, slot))));
+                .getStateAtSlotExact(slot)
+                .thenApplyChecked(
+                    maybeState ->
+                        maybeState.map(
+                            tech.pegasys.teku.datastructures.state.BeaconState::hash_tree_root)));
   }
 
   public SafeFuture<Optional<BeaconValidators>> getValidatorsByValidatorsRequest(
@@ -216,28 +206,5 @@ public class ChainDataProvider {
       throw new ChainDataUnavailableException();
     }
     return recentChainData.getBestBlockAndState().map(BeaconChainHead::new);
-  }
-
-  private BeaconState getStateForMissedSlot(
-      BeaconBlockAndState beaconBlockAndState, UnsignedLong slot) {
-    try {
-      return new BeaconState(
-          combinedChainDataClient.regenerateBeaconState(beaconBlockAndState.getState(), slot));
-    } catch (IllegalStateException ex) {
-      LOG.trace("Illegal state exception", ex);
-      return null;
-    }
-  }
-
-  private Bytes32 getStateRootForMissedSlot(
-      BeaconBlockAndState beaconBlockAndState, UnsignedLong slot) {
-    try {
-      return combinedChainDataClient
-          .regenerateBeaconState(beaconBlockAndState.getState(), slot)
-          .hash_tree_root();
-    } catch (IllegalStateException ex) {
-      LOG.trace("Illegal state exception", ex);
-      return null;
-    }
   }
 }

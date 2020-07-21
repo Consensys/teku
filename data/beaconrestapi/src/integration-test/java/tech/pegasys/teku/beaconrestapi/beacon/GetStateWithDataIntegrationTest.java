@@ -68,16 +68,7 @@ public class GetStateWithDataIntegrationTest extends AbstractDataBackedRestAPIIn
   private tech.pegasys.teku.datastructures.state.BeaconState getInternalState(
       final UnsignedLong slot) {
     try {
-      return combinedChainDataClient
-          .getBlockAndStateInEffectAtSlot(slot)
-          .thenApply(
-              maybeBlockAndState ->
-                  maybeBlockAndState.map(
-                      blockAndState ->
-                          combinedChainDataClient.regenerateBeaconState(
-                              blockAndState.getState(), slot)))
-          .get()
-          .get();
+      return combinedChainDataClient.getStateAtSlotExact(slot).get().get();
     } catch (Exception e) {
       return null;
     }

@@ -80,17 +80,7 @@ public class GetStateRootIntegrationTest extends AbstractDataBackedRestAPIIntegr
 
   private Bytes32 getStateRootAtSlot(final UnsignedLong slot) {
     try {
-      return combinedChainDataClient
-          .getBlockAndStateInEffectAtSlot(slot)
-          .thenApply(
-              maybeBlockAndState ->
-                  maybeBlockAndState.map(
-                      blockAndState ->
-                          combinedChainDataClient
-                              .regenerateBeaconState(blockAndState.getState(), slot)
-                              .hash_tree_root()))
-          .get()
-          .get();
+      return combinedChainDataClient.getStateAtSlotExact(slot).get().get().hash_tree_root();
     } catch (Exception e) {
       return null;
     }
