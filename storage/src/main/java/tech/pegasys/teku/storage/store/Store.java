@@ -51,7 +51,6 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
-import tech.pegasys.teku.datastructures.hashtree.HashTree.Builder;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
@@ -816,7 +815,7 @@ class Store implements UpdatableStore {
 
       Store.this.lock.readLock().lock();
       try {
-        final Builder treeBuilder = Store.this.blockTree.updater();
+        final HashTree.Builder treeBuilder = Store.this.blockTree.updater();
         this.blocks.values().forEach(treeBuilder::block);
         return treeBuilder.build().breadthFirstStream().collect(Collectors.toList());
       } finally {
