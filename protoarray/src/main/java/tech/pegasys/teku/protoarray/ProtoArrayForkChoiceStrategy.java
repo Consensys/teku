@@ -21,7 +21,6 @@ import static java.lang.Math.toIntExact;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,12 +32,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.datastructures.forkchoice.PrunableStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
@@ -62,8 +63,8 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   // Public
-  public static ProtoArrayForkChoiceStrategy initialize(
-      ReadOnlyStore store, ProtoArrayStorageChannel storageChannel) {
+  public static SafeFuture<ProtoArrayForkChoiceStrategy> initialize(
+      PrunableStore store, ProtoArrayStorageChannel storageChannel) {
     ProtoArray protoArray =
         storageChannel
             .getProtoArraySnapshot()
@@ -77,9 +78,9 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
                     new ArrayList<>(),
                     new HashMap<>()));
 
-    processBlocksInStoreAtStartup(store, protoArray);
-
-    return new ProtoArrayForkChoiceStrategy(protoArray, new ArrayList<>(), storageChannel);
+    return processBlocksInStoreAtStartup(store, protoArray)
+        .thenApply(
+            __ -> new ProtoArrayForkChoiceStrategy(protoArray, new ArrayList<>(), storageChannel));
   }
 
   @Override
@@ -144,27 +145,38 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   // Internal
-  private static void processBlocksInStoreAtStartup(ReadOnlyStore store, ProtoArray protoArray) {
+  private static SafeFuture<Void> processBlocksInStoreAtStartup(
+      PrunableStore store, ProtoArray protoArray) {
     List<Bytes32> alreadyIncludedBlockRoots =
         protoArray.getNodes().stream().map(ProtoNode::getBlockRoot).collect(Collectors.toList());
 
-    store.getBlockRoots().stream()
-        .filter(root -> !alreadyIncludedBlockRoots.contains(root))
-        .map(store::getBlock)
-        .sorted(Comparator.comparing(BeaconBlock::getSlot))
-        .forEach(block -> processBlockAtStartup(store, protoArray, block));
+    SafeFuture<Void> future = SafeFuture.completedFuture(null);
+    for (Bytes32 blockRoot : store.getOrderedBlockRoots()) {
+      if (alreadyIncludedBlockRoots.contains(blockRoot)) {
+        continue;
+      }
+      future =
+          future.thenCompose(
+              __ ->
+                  store
+                      .retrieveBlockAndState(blockRoot)
+                      .thenAccept(
+                          blockAndState ->
+                              blockAndState.ifPresent(b -> processBlockAtStartup(protoArray, b))));
+    }
+    return future;
   }
 
   private static void processBlockAtStartup(
-      final ReadOnlyStore store, final ProtoArray protoArray, final BeaconBlock block) {
-    Bytes32 blockRoot = block.hash_tree_root();
+      final ProtoArray protoArray, final SignedBlockAndState blockAndState) {
+    final BeaconState state = blockAndState.getState();
     protoArray.onBlock(
-        block.getSlot(),
-        blockRoot,
-        block.getParent_root(),
-        block.getState_root(),
-        store.getBlockState(block.hash_tree_root()).getCurrent_justified_checkpoint().getEpoch(),
-        store.getBlockState(block.hash_tree_root()).getFinalized_checkpoint().getEpoch());
+        blockAndState.getSlot(),
+        blockAndState.getRoot(),
+        blockAndState.getParentRoot(),
+        blockAndState.getStateRoot(),
+        state.getCurrent_justified_checkpoint().getEpoch(),
+        state.getFinalized_checkpoint().getEpoch());
   }
 
   void processAttestation(

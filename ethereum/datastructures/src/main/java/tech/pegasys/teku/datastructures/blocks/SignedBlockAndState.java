@@ -49,6 +49,10 @@ public class SignedBlockAndState {
     return block.getParent_root();
   }
 
+  public Bytes32 getStateRoot() {
+    return state.hash_tree_root();
+  }
+
   public UnsignedLong getSlot() {
     return getBlock().getSlot();
   }
