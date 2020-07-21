@@ -14,6 +14,8 @@
 package tech.pegasys.teku.bls.impl.noop;
 
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
@@ -22,6 +24,7 @@ import tech.pegasys.teku.bls.impl.mikuli.MikuliPublicKey;
 import tech.pegasys.teku.bls.impl.mikuli.MikuliSignature;
 
 public class NoopSignature extends MikuliSignature {
+  private static final Logger LOG = LogManager.getLogger();
 
   public NoopSignature(MikuliSignature signature) {
     super(signature);
@@ -29,16 +32,19 @@ public class NoopSignature extends MikuliSignature {
 
   @Override
   public boolean verify(List<PublicKeyMessagePair> keysToMessages) {
+    LOG.warn("BLS verification is disabled");
     return true;
   }
 
   @Override
   public boolean verify(List<PublicKey> publicKeys, Bytes message) {
+    LOG.warn("BLS verification is disabled");
     return true;
   }
 
   @Override
   public boolean verify(MikuliPublicKey publicKey, G2Point hashInG2) {
+    LOG.warn("BLS verification is disabled");
     return true;
   }
 }
