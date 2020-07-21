@@ -31,7 +31,7 @@ class CombinedChainDataClientTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
-  private final StateTransition stateTransition = mock(StateTransition.class);
+  private final StateTransition stateTransition = new StateTransition();
   private final CombinedChainDataClient client =
       new CombinedChainDataClient(recentChainData, historicalChainData, stateTransition);
 

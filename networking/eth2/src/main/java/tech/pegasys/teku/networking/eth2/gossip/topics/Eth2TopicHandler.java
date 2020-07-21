@@ -13,32 +13,81 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
+import com.google.common.base.Throwables;
 import io.libp2p.core.pubsub.ValidationResult;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
-public interface Eth2TopicHandler<T extends SimpleOffsetSerializable> extends TopicHandler {
+public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable, TWrapped>
+    implements TopicHandler {
+  private static final Logger LOG = LogManager.getLogger();
 
   @Override
-  ValidationResult handleMessage(final Bytes bytes);
+  public SafeFuture<ValidationResult> handleMessage(final Bytes bytes) {
+    return SafeFuture.of(() -> deserialize(bytes))
+        .thenApply(this::wrapMessage)
+        .thenCompose(
+            wrapped ->
+                validateData(wrapped)
+                    .thenApply(
+                        internalValidation -> {
+                          processMessage(wrapped, internalValidation);
+                          return internalValidation.getGossipSubValidationResult();
+                        }))
+        .exceptionally(this::handleMessageProcessingError);
+  }
 
-  default T deserialize(Bytes bytes) throws DecodingException {
+  protected abstract TWrapped wrapMessage(T deserialized);
+
+  protected abstract SafeFuture<InternalValidationResult> validateData(TWrapped message);
+
+  protected abstract void processMessage(
+      final TWrapped message, InternalValidationResult internalValidationResult);
+
+  protected ValidationResult handleMessageProcessingError(Throwable err) {
+    if (Throwables.getRootCause(err) instanceof DecodingException) {
+      LOG.trace("Received malformed gossip message on {}", getTopic());
+    } else {
+      LOG.warn("Encountered exception while processing message for topic {}", getTopic(), err);
+    }
+    return ValidationResult.Invalid;
+  }
+
+  public T deserialize(Bytes bytes) throws DecodingException {
     return getGossipEncoding().decode(bytes, getValueType());
   }
 
-  default String getTopic() {
+  public String getTopic() {
     return TopicNames.getTopic(getForkDigest(), getTopicName(), getGossipEncoding());
   }
 
-  Bytes4 getForkDigest();
+  public abstract Bytes4 getForkDigest();
 
-  GossipEncoding getGossipEncoding();
+  public abstract GossipEncoding getGossipEncoding();
 
-  String getTopicName();
+  public abstract String getTopicName();
 
-  Class<T> getValueType();
+  public abstract Class<T> getValueType();
+
+  public abstract static class SimpleEth2TopicHandler<T extends SimpleOffsetSerializable>
+      extends Eth2TopicHandler<T, T> {
+
+    @Override
+    public T deserialize(Bytes bytes) throws DecodingException {
+      return getGossipEncoding().decode(bytes, getValueType());
+    }
+
+    @Override
+    protected T wrapMessage(T deserialized) {
+      return deserialized;
+    }
+  }
 }

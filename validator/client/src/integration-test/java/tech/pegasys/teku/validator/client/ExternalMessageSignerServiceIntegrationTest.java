@@ -24,6 +24,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,7 +61,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
     this.client = client;
     signingServiceUri = new URL("http://127.0.0.1:" + client.getLocalPort());
 
-    final Bytes privateKey = Bytes.fromHexString(PRIVATE_KEY);
+    final Bytes32 privateKey = Bytes32.fromHexString(PRIVATE_KEY);
     keyPair = new BLSKeyPair(BLSSecretKey.fromBytes(privateKey));
     expectedSignature = BLS.sign(keyPair.getSecretKey(), SIGNING_ROOT);
 

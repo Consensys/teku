@@ -120,7 +120,8 @@ class BlockFactoryTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final Bytes32 bestBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final BeaconBlock previousBlock = recentChainData.getBlockByRoot(bestBlockRoot).orElseThrow();
-    final BeaconState previousState = recentChainData.getBlockState(bestBlockRoot).orElseThrow();
+    final BeaconState previousState =
+        recentChainData.retrieveBlockState(bestBlockRoot).join().orElseThrow();
     final BeaconBlock block =
         blockFactory.createUnsignedBlock(
             previousState, previousBlock, newSlot, randaoReveal, Optional.empty());

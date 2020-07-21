@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.bls.mikuli;
 
-import static tech.pegasys.teku.bls.hashToG2.HashToCurve.hashToG2;
+import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve.hashToG2;
 
 import java.util.concurrent.TimeUnit;
 import org.apache.milagro.amcl.BLS381.BIG;
@@ -33,9 +33,13 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-import tech.pegasys.teku.bls.BLS;
-import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.impl.mikuli.G1Point;
+import tech.pegasys.teku.bls.impl.mikuli.G2Point;
+import tech.pegasys.teku.bls.impl.mikuli.GTPoint;
+import tech.pegasys.teku.bls.impl.mikuli.MikuliBLS12381;
+import tech.pegasys.teku.bls.impl.mikuli.MikuliKeyPair;
+import tech.pegasys.teku.bls.impl.mikuli.MikuliSignature;
+import tech.pegasys.teku.bls.impl.mikuli.Scalar;
 
 @Fork(1)
 @BenchmarkMode(Mode.AverageTime)
@@ -61,10 +65,10 @@ public class BLSPrimitivesBenchmark {
     MAX_BATCH_VERIFY_RANDOM_MULTIPLIER = b;
   }
 
-  BLSKeyPair keyPair = BLSKeyPair.random(123);
+  MikuliKeyPair keyPair = MikuliKeyPair.random(123);
   Bytes32 message = Bytes32.random();
-  BLSSignature signature = BLS.sign(keyPair.getSecretKey(), message);
-  FP12 gtPoint = PAIR.ate(signature.getSignature().g2Point().getPoint(), g1Generator.getPoint());
+  MikuliSignature signature = MikuliBLS12381.sign(keyPair.getSecretKey(), message);
+  FP12 gtPoint = PAIR.ate(signature.g2Point().getPoint(), g1Generator.getPoint());
 
   @Benchmark
   public void gtProduct(Blackhole bh) {
@@ -80,13 +84,13 @@ public class BLSPrimitivesBenchmark {
 
   @Benchmark
   public void g2Mul32(Blackhole bh) {
-    G2Point r = signature.getSignature().g2Point().mul(new Scalar(Big32));
+    G2Point r = signature.g2Point().mul(new Scalar(Big32));
     bh.consume(r);
   }
 
   @Benchmark
   public void g2Mul64(Blackhole bh) {
-    G2Point r = signature.getSignature().g2Point().mul(new Scalar(Big64));
+    G2Point r = signature.g2Point().mul(new Scalar(Big64));
     bh.consume(r);
   }
 
@@ -104,14 +108,14 @@ public class BLSPrimitivesBenchmark {
 
   @Benchmark
   public void ate1(Blackhole bh) {
-    FP12 ate = PAIR.ate(signature.getSignature().g2Point().getPoint(), g1Generator.getPoint());
+    FP12 ate = PAIR.ate(signature.g2Point().getPoint(), g1Generator.getPoint());
     bh.consume(ate);
   }
 
   @Benchmark
   public void ate1x2Mul(Blackhole bh) {
-    FP12 ate1 = PAIR.ate(signature.getSignature().g2Point().getPoint(), g1Generator.getPoint());
-    FP12 ate2 = PAIR.ate(signature.getSignature().g2Point().getPoint(), g1Generator.getPoint());
+    FP12 ate1 = PAIR.ate(signature.g2Point().getPoint(), g1Generator.getPoint());
+    FP12 ate2 = PAIR.ate(signature.g2Point().getPoint(), g1Generator.getPoint());
     ate1.mul(ate2);
     bh.consume(ate1);
   }
@@ -120,9 +124,9 @@ public class BLSPrimitivesBenchmark {
   public void ate2(Blackhole bh) {
     FP12 ate =
         PAIR.ate2(
-            signature.getSignature().g2Point().getPoint(),
+            signature.g2Point().getPoint(),
             g1Generator.getPoint(),
-            signature.getSignature().g2Point().getPoint(),
+            signature.g2Point().getPoint(),
             g1Generator.getPoint());
     bh.consume(ate);
   }

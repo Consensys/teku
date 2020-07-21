@@ -143,6 +143,14 @@ public class CombinedChainDataClient {
                     .orElseGet(() -> SafeFuture.completedFuture(Optional.empty())));
   }
 
+  public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(final UnsignedLong slot) {
+    return getBlockAndStateInEffectAtSlot(slot)
+        .thenApplyChecked(
+            maybeBlockAndState ->
+                maybeBlockAndState.flatMap(
+                    blockAndState -> regenerateBeaconState(blockAndState.getState(), slot)));
+  }
+
   private SafeFuture<Optional<BeaconBlockAndState>> getStateForBlock(final BeaconBlock block) {
     return getStateByBlockRoot(block.hash_tree_root())
         .thenApply(maybeState -> maybeState.map(state -> new BeaconBlockAndState(block, state)));
@@ -157,10 +165,6 @@ public class CombinedChainDataClient {
   public boolean isFinalizedEpoch(final UnsignedLong epoch) {
     final UnsignedLong finalizedEpoch = recentChainData.getFinalizedEpoch();
     return finalizedEpoch.compareTo(epoch) >= 0;
-  }
-
-  public Optional<BeaconState> getNonfinalizedBlockState(final Bytes32 blockRoot) {
-    return recentChainData.getBlockState(blockRoot);
   }
 
   /**
@@ -202,42 +206,19 @@ public class CombinedChainDataClient {
     return historicalChainData.getFinalizedStateByBlockRoot(blockRoot);
   }
 
-  public SafeFuture<Optional<BeaconState>> getStateByStateRoot(final Bytes32 stateRoot) {
-    final UpdatableStore store = getStore();
-    if (store == null) {
-      LOG.trace("No state at stateRoot {} because the store is not set", stateRoot);
-      return STATE_NOT_AVAILABLE;
-    }
-    return historicalChainData
-        .getSlotAndBlockRootByStateRoot(stateRoot)
-        .thenCompose(
-            maybeSlotAndBlockRoot -> {
-              if (maybeSlotAndBlockRoot.isEmpty()) {
-                return STATE_NOT_AVAILABLE;
-              }
-              return getStateFromSlotAndBlock(maybeSlotAndBlockRoot.get());
-            });
-  }
-
-  private SafeFuture<Optional<BeaconState>> getStateFromSlotAndBlock(
-      final SlotAndBlockRoot slotAndBlockRoot) {
-    return getStateByBlockRoot(slotAndBlockRoot.getBlockRoot())
-        .thenApply(
-            maybeState ->
-                maybeState.map(
-                    preState -> regenerateBeaconState(preState, slotAndBlockRoot.getSlot())));
-  }
-
-  private BeaconState regenerateBeaconState(final BeaconState preState, final UnsignedLong slot) {
+  private Optional<BeaconState> regenerateBeaconState(
+      final BeaconState preState, final UnsignedLong slot) {
     if (preState.getSlot().equals(slot)) {
-      return preState;
+      return Optional.of(preState);
+    } else if (slot.compareTo(getBestSlot()) > 0) {
+      LOG.debug("Attempted to wind forward to a future state: {}", slot.toString());
+      return Optional.empty();
     }
     try {
-      final BeaconState desiredState = stateTransition.process_slots(preState, slot);
-      return desiredState;
+      return Optional.of(stateTransition.process_slots(preState, slot));
     } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
-      LOG.warn("State Transition error", e);
-      throw new IllegalStateException();
+      LOG.debug("State Transition error", e);
+      return Optional.empty();
     }
   }
 

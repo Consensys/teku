@@ -62,7 +62,7 @@ public class BlockTopicHandlerTest {
     Bytes serialized = gossipEncoding.encode(block);
     beaconChainUtil.setSlot(nextSlot);
 
-    final ValidationResult result = topicHandler.handleMessage(serialized);
+    final ValidationResult result = topicHandler.handleMessage(serialized).join();
     assertThat(result).isEqualTo(ValidationResult.Valid);
     verify(eventBus).post(new GossipedBlockEvent(block));
   }
@@ -74,7 +74,7 @@ public class BlockTopicHandlerTest {
     Bytes serialized = gossipEncoding.encode(block);
     beaconChainUtil.setSlot(recentChainData.getBestSlot());
 
-    final ValidationResult result = topicHandler.handleMessage(serialized);
+    final ValidationResult result = topicHandler.handleMessage(serialized).join();
     assertThat(result).isEqualTo(ValidationResult.Ignore);
     verify(eventBus).post(new GossipedBlockEvent(block));
   }
@@ -84,7 +84,7 @@ public class BlockTopicHandlerTest {
     SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     Bytes serialized = gossipEncoding.encode(block);
 
-    final ValidationResult result = topicHandler.handleMessage(serialized);
+    final ValidationResult result = topicHandler.handleMessage(serialized).join();
     assertThat(result).isEqualTo(ValidationResult.Ignore);
     verify(eventBus).post(new GossipedBlockEvent(block));
   }
@@ -93,7 +93,7 @@ public class BlockTopicHandlerTest {
   public void handleMessage_invalidBlock_invalidSSZ() {
     Bytes serialized = Bytes.fromHexString("0x1234");
 
-    final ValidationResult result = topicHandler.handleMessage(serialized);
+    final ValidationResult result = topicHandler.handleMessage(serialized).join();
     assertThat(result).isEqualTo(ValidationResult.Invalid);
   }
 
@@ -104,7 +104,7 @@ public class BlockTopicHandlerTest {
     Bytes serialized = gossipEncoding.encode(block);
     beaconChainUtil.setSlot(nextSlot);
 
-    final ValidationResult result = topicHandler.handleMessage(serialized);
+    final ValidationResult result = topicHandler.handleMessage(serialized).join();
     assertThat(result).isEqualTo(ValidationResult.Invalid);
     verify(eventBus, never()).post(new GossipedBlockEvent(block));
   }

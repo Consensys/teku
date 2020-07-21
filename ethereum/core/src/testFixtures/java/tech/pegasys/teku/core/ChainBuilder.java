@@ -100,6 +100,10 @@ public class ChainBuilder {
     return new ChainBuilder(validatorKeys, blocks);
   }
 
+  public List<BLSKeyPair> getValidatorKeys() {
+    return validatorKeys;
+  }
+
   public UnsignedLong getLatestSlot() {
     assertChainIsNotEmpty();
     return getLatestBlockAndState().getBlock().getSlot();
@@ -203,11 +207,16 @@ public class ChainBuilder {
   }
 
   public SignedBlockAndState generateGenesis() {
+    return generateGenesis(true);
+  }
+
+  public SignedBlockAndState generateGenesis(final boolean signDeposits) {
     checkState(blocks.isEmpty(), "Genesis already created");
 
     // Generate genesis state
     final List<DepositData> initialDepositData =
-        new MockStartDepositGenerator(new DepositGenerator(true)).createDeposits(validatorKeys);
+        new MockStartDepositGenerator(new DepositGenerator(signDeposits))
+            .createDeposits(validatorKeys);
     final BeaconState genesisState =
         new MockStartBeaconStateGenerator()
             .createInitialBeaconState(UnsignedLong.ZERO, initialDepositData);

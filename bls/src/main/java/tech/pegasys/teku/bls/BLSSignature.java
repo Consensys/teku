@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.teku.bls.mikuli.Signature;
+import tech.pegasys.teku.bls.impl.Signature;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
 public class BLSSignature implements SimpleOffsetSerializable {
@@ -38,7 +38,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
    * @return a random signature
    */
   static BLSSignature random() {
-    return new BLSSignature(Signature.random(new Random().nextInt()));
+    return random(new Random().nextInt());
   }
 
   /**
@@ -48,7 +48,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
    * @return the signature
    */
   public static BLSSignature random(int entropy) {
-    return new BLSSignature(Signature.random(entropy));
+    return new BLSSignature(BLS.getBlsImpl().randomSignature(entropy));
   }
 
   /**
@@ -79,7 +79,8 @@ public class BLSSignature implements SimpleOffsetSerializable {
         bytes,
         reader ->
             new BLSSignature(
-                Signature.fromBytesCompressed(reader.readFixedBytes(BLS_SIGNATURE_SIZE))));
+                BLS.getBlsImpl()
+                    .signatureFromCompressed(reader.readFixedBytes(BLS_SIGNATURE_SIZE))));
   }
 
   private final Signature signature;
@@ -120,7 +121,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
 
   @Override
   public String toString() {
-    return signature.toString();
+    return toBytes().toString();
   }
 
   @Override

@@ -13,19 +13,18 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
-public class AttesterSlashingTopicHandler implements Eth2TopicHandler<AttesterSlashing> {
+public class AttesterSlashingTopicHandler
+    extends Eth2TopicHandler.SimpleEth2TopicHandler<AttesterSlashing> {
   private static final Logger LOG = LogManager.getLogger();
   public static String TOPIC_NAME = "attester_slashing";
 
@@ -46,29 +45,19 @@ public class AttesterSlashingTopicHandler implements Eth2TopicHandler<AttesterSl
   }
 
   @Override
-  public ValidationResult handleMessage(final Bytes bytes) {
-    try {
-      AttesterSlashing attesterSlashing = deserialize(bytes);
-      final InternalValidationResult internalValidationResult = validateData(attesterSlashing);
-      switch (internalValidationResult) {
-        case REJECT:
-        case IGNORE:
-          LOG.trace("Received invalid message for topic: {}", this::getTopic);
-          break;
-        case ACCEPT:
-          consumer.forward(attesterSlashing);
-          break;
-        default:
-          throw new UnsupportedOperationException(
-              "Unexpected validation result: " + internalValidationResult);
-      }
-      return internalValidationResult.getGossipSubValidationResult();
-    } catch (DecodingException e) {
-      LOG.trace("Received malformed gossip message on {}", getTopic());
-      return ValidationResult.Invalid;
-    } catch (Throwable e) {
-      LOG.warn("Encountered exception while processing message for topic {}", getTopic(), e);
-      return ValidationResult.Invalid;
+  public void processMessage(
+      final AttesterSlashing attesterSlashing, InternalValidationResult internalValidationResult) {
+    switch (internalValidationResult) {
+      case REJECT:
+      case IGNORE:
+        LOG.trace("Received invalid message for topic: {}", this::getTopic);
+        break;
+      case ACCEPT:
+        consumer.forward(attesterSlashing);
+        break;
+      default:
+        throw new UnsupportedOperationException(
+            "Unexpected validation result: " + internalValidationResult);
     }
   }
 
@@ -92,7 +81,9 @@ public class AttesterSlashingTopicHandler implements Eth2TopicHandler<AttesterSl
     return forkDigest;
   }
 
-  protected InternalValidationResult validateData(final AttesterSlashing attesterSlashing) {
-    return validator.validate(attesterSlashing);
+  @Override
+  protected SafeFuture<InternalValidationResult> validateData(
+      final AttesterSlashing attesterSlashing) {
+    return SafeFuture.completedFuture(validator.validate(attesterSlashing));
   }
 }

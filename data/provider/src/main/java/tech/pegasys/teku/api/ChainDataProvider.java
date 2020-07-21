@@ -148,16 +148,13 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlot(final UnsignedLong slot) {
-    return SafeFuture.of(
-        () -> {
-          if (!combinedChainDataClient.isChainDataFullyAvailable()) {
-            return chainUnavailable();
-          }
+    if (!combinedChainDataClient.isChainDataFullyAvailable()) {
+      return chainUnavailable();
+    }
 
-          return combinedChainDataClient
-              .getBlockAndStateInEffectAtSlot(slot)
-              .thenApply(state -> state.map(BeaconState::new));
-        });
+    return combinedChainDataClient
+        .getStateAtSlotExact(slot)
+        .thenApply(stateInternal -> stateInternal.map(BeaconState::new));
   }
 
   public SafeFuture<Optional<Bytes32>> getStateRootAtSlot(final UnsignedLong slot) {
@@ -168,8 +165,11 @@ public class ChainDataProvider {
     return SafeFuture.of(
         () ->
             combinedChainDataClient
-                .getBlockAtSlotExact(slot)
-                .thenApply(block -> block.map(b -> b.getMessage().getState_root())));
+                .getStateAtSlotExact(slot)
+                .thenApplyChecked(
+                    maybeState ->
+                        maybeState.map(
+                            tech.pegasys.teku.datastructures.state.BeaconState::hash_tree_root)));
   }
 
   public SafeFuture<Optional<BeaconValidators>> getValidatorsByValidatorsRequest(

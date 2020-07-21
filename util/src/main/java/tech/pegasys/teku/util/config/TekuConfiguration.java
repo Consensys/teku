@@ -61,7 +61,7 @@ public class TekuConfiguration implements MetricsConfig {
 
   // Validator
   private final String validatorsKeyFile;
-  // TODO: The following two options will eventually be moved to the validator subcommand
+  // TODO (#1918): The following two options will eventually be moved to the validator subcommand
   private final List<String> validatorKeystoreFiles;
   private final List<String> validatorKeystorePasswordFiles;
   private final List<String> validatorExternalSignerPublicKeys;

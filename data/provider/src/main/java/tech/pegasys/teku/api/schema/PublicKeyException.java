@@ -14,6 +14,11 @@
 package tech.pegasys.teku.api.schema;
 
 public class PublicKeyException extends RuntimeException {
+
+  public PublicKeyException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
   public PublicKeyException(String err) {
     super(err);
   }

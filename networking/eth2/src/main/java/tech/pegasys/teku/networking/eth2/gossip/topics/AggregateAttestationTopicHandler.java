@@ -13,20 +13,19 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
-public class AggregateAttestationTopicHandler implements Eth2TopicHandler<SignedAggregateAndProof> {
+public class AggregateAttestationTopicHandler
+    extends Eth2TopicHandler<SignedAggregateAndProof, ValidateableAttestation> {
   private static final Logger LOG = LogManager.getLogger();
   public static String TOPIC_NAME = "beacon_aggregate_and_proof";
 
@@ -47,36 +46,31 @@ public class AggregateAttestationTopicHandler implements Eth2TopicHandler<Signed
   }
 
   @Override
-  public ValidationResult handleMessage(final Bytes bytes) {
-    try {
-      ValidateableAttestation attestation =
-          ValidateableAttestation.fromSignedAggregate(deserialize(bytes));
-      final InternalValidationResult internalValidationResult = validateData(attestation);
-      switch (internalValidationResult) {
-        case REJECT:
-        case IGNORE:
-          LOG.trace("Received invalid message for topic: {}", this::getTopic);
-          break;
-        case SAVE_FOR_FUTURE:
-          LOG.trace("Deferring message for topic: {}", this::getTopic);
-          gossipedAttestationConsumer.forward(attestation);
-          break;
-        case ACCEPT:
-          attestation.markGossiped();
-          gossipedAttestationConsumer.forward(attestation);
-          break;
-        default:
-          throw new UnsupportedOperationException(
-              "Unexpected validation result: " + internalValidationResult);
-      }
-      return internalValidationResult.getGossipSubValidationResult();
-    } catch (DecodingException e) {
-      LOG.trace("Received malformed gossip message on {}", getTopic());
-      return ValidationResult.Invalid;
-    } catch (Throwable e) {
-      LOG.warn("Encountered exception while processing message for topic {}", getTopic(), e);
-      return ValidationResult.Invalid;
+  public void processMessage(
+      final ValidateableAttestation attestation,
+      final InternalValidationResult internalValidationResult) {
+    switch (internalValidationResult) {
+      case REJECT:
+      case IGNORE:
+        LOG.trace("Received invalid message for topic: {}", this::getTopic);
+        break;
+      case SAVE_FOR_FUTURE:
+        LOG.trace("Deferring message for topic: {}", this::getTopic);
+        gossipedAttestationConsumer.forward(attestation);
+        break;
+      case ACCEPT:
+        attestation.markGossiped();
+        gossipedAttestationConsumer.forward(attestation);
+        break;
+      default:
+        throw new UnsupportedOperationException(
+            "Unexpected validation result: " + internalValidationResult);
     }
+  }
+
+  @Override
+  protected ValidateableAttestation wrapMessage(SignedAggregateAndProof deserialized) {
+    return ValidateableAttestation.fromSignedAggregate(deserialized);
   }
 
   @Override
@@ -99,7 +93,8 @@ public class AggregateAttestationTopicHandler implements Eth2TopicHandler<Signed
     return forkDigest;
   }
 
-  protected InternalValidationResult validateData(
+  @Override
+  protected SafeFuture<InternalValidationResult> validateData(
       final ValidateableAttestation validateableAttestation) {
     return validator.validate(validateableAttestation);
   }

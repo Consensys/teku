@@ -109,7 +109,8 @@ public class BlockImporterTest {
     currentSlot = currentSlot.plus(UnsignedLong.ONE);
 
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconState state = recentChainData.getBlockState(block1.getRoot()).orElseThrow();
+    final BeaconState state =
+        recentChainData.retrieveBlockState(block1.getRoot()).join().orElseThrow();
     List<Attestation> attestations =
         attestationGenerator.getAttestationsForSlot(state, block1.getMessage(), currentSlot);
     List<Attestation> aggregatedAttestations =
@@ -128,7 +129,8 @@ public class BlockImporterTest {
     currentSlot = currentSlot.plus(UnsignedLong.ONE);
 
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconState state = recentChainData.getBlockState(block1.getRoot()).orElseThrow();
+    final BeaconState state =
+        recentChainData.retrieveBlockState(block1.getRoot()).join().orElseThrow();
     List<Attestation> attestations =
         attestationGenerator.getAttestationsForSlot(state, block1.getMessage(), currentSlot);
     List<Attestation> aggregatedAttestations =
