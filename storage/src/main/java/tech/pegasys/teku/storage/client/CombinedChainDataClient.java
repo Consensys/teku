@@ -28,6 +28,9 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.exceptions.EpochProcessingException;
+import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -48,11 +51,22 @@ public class CombinedChainDataClient {
 
   private final RecentChainData recentChainData;
   private final StorageQueryChannel historicalChainData;
+  private final StateTransition stateTransition;
 
   public CombinedChainDataClient(
       final RecentChainData recentChainData, final StorageQueryChannel historicalChainData) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
+    this.stateTransition = new StateTransition();
+  }
+
+  public CombinedChainDataClient(
+      final RecentChainData recentChainData,
+      final StorageQueryChannel historicalChainData,
+      final StateTransition stateTransition) {
+    this.recentChainData = recentChainData;
+    this.historicalChainData = historicalChainData;
+    this.stateTransition = stateTransition;
   }
 
   /**
@@ -181,6 +195,21 @@ public class CombinedChainDataClient {
     }
 
     return historicalChainData.getFinalizedStateByBlockRoot(blockRoot);
+  }
+
+  public BeaconState regenerateBeaconState(final BeaconState preState, final UnsignedLong slot) {
+    if (preState.getSlot().equals(slot)) {
+      return preState;
+    } else if (slot.compareTo(getBestSlot()) > 0) {
+      LOG.debug("Attempted to wind forward to a future state: {}", slot.toString());
+      throw new IllegalStateException();
+    }
+    try {
+      return stateTransition.process_slots(preState, slot);
+    } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
+      LOG.warn("State Transition error", e);
+      throw new IllegalStateException();
+    }
   }
 
   public Optional<BeaconState> getHeadStateFromStore() {

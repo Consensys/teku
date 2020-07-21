@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.beacon;
 
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
@@ -38,22 +39,48 @@ public class GetStateWithDataIntegrationTest extends AbstractDataBackedRestAPIIn
   void shouldGetStateBySlot() throws Exception {
     createBlocksAtSlotsAndMapToApiResult(NINE, TEN);
 
-    final Response response = getBySlot(TEN);
-    final String responseBody = response.body().string();
-    final BeaconState result = jsonProvider.jsonToObject(responseBody, BeaconState.class);
-    assertThat(response.code()).isEqualTo(SC_OK);
-    assertThat(result.slot).isEqualTo(TEN);
+    final BeaconState result = getBeaconStateFromResponse(getBySlot(TEN));
+    assertThat(result.asInternalBeaconState()).isEqualTo(getInternalState(TEN));
   }
 
   @Test
-  void shouldGetLastGoodStateBySlot() throws Exception {
-    createBlocksAtSlotsAndMapToApiResult(SEVEN, NINE, TEN);
+  void shouldGetStateIfNoBlockImported() throws Exception {
+    createBlocksAtSlotsAndMapToApiResult(SEVEN, NINE);
+
+    final BeaconState result = getBeaconStateFromResponse(getBySlot(EIGHT));
+    assertThat(result.asInternalBeaconState()).isEqualTo(getInternalState(EIGHT));
+  }
+
+  @Test
+  void shouldReturnNotFoundForFutureSlot() throws Exception {
+    createBlocksAtSlotsAndMapToApiResult(SEVEN);
 
     final Response response = getBySlot(EIGHT);
-    final String responseBody = response.body().string();
-    final BeaconState result = jsonProvider.jsonToObject(responseBody, BeaconState.class);
+    assertThat(response.code()).isEqualTo(SC_NOT_FOUND);
+  }
+
+  private BeaconState getBeaconStateFromResponse(Response response) throws Exception {
     assertThat(response.code()).isEqualTo(SC_OK);
-    assertThat(result.slot).isEqualTo(SEVEN);
+    final String responseBody = response.body().string();
+    return jsonProvider.jsonToObject(responseBody, BeaconState.class);
+  }
+
+  private tech.pegasys.teku.datastructures.state.BeaconState getInternalState(
+      final UnsignedLong slot) {
+    try {
+      return combinedChainDataClient
+          .getBlockAndStateInEffectAtSlot(slot)
+          .thenApply(
+              maybeBlockAndState ->
+                  maybeBlockAndState.map(
+                      blockAndState ->
+                          combinedChainDataClient.regenerateBeaconState(
+                              blockAndState.getState(), slot)))
+          .get()
+          .get();
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   private Response getBySlot(final UnsignedLong slot) throws IOException {
