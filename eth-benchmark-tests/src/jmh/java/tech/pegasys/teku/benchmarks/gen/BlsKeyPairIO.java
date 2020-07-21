@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -103,10 +104,8 @@ public class BlsKeyPairIO {
         BLSPublicKey blsPublicKey =
             BLSPublicKey.fromBytesCompressed(
                 Bytes.fromHexString(parts.substring(delimiterPos + 1)));
-        Bytes privateBytes = Bytes.fromHexString(parts.substring(0, delimiterPos));
-        BLSSecretKey blsSecretKey =
-            BLSSecretKey.fromBytes(
-                Bytes.concatenate(Bytes.wrap(new byte[48 - privateBytes.size()]), privateBytes));
+        Bytes32 privateBytes = Bytes32.fromHexString(parts.substring(0, delimiterPos));
+        BLSSecretKey blsSecretKey = BLSSecretKey.fromBytes(privateBytes);
 
         pairsToRead--;
         return new BLSKeyPair(blsPublicKey, blsSecretKey);

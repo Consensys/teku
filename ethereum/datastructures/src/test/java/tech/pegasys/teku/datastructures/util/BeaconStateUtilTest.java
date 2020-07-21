@@ -311,8 +311,6 @@ class BeaconStateUtilTest {
 
   // *************** START Shuffling Tests ***************
 
-  // TODO: tests for get_shuffling() - the reference tests are out of date.
-
   // The following are just sanity checks. The real testing is against the official test vectors,
   // elsewhere.
 

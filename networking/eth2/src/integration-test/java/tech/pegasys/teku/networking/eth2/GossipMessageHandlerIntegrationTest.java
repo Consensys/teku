@@ -81,7 +81,7 @@ public class GossipMessageHandlerIntegrationTest {
           assertThat(node2.network().getPeerCount()).isEqualTo(2);
           assertThat(node3.network().getPeerCount()).isEqualTo(1);
         });
-    // TODO: debug this - we shouldn't have to wait here
+    // TODO (#1855): debug this - we shouldn't have to wait here
     Thread.sleep(2000);
 
     // Propagate block from network 1
@@ -131,7 +131,7 @@ public class GossipMessageHandlerIntegrationTest {
           assertThat(node3.network().getPeerCount()).isEqualTo(1);
         });
 
-    // TODO: debug this - we shouldn't have to wait here
+    // TODO (#1855): debug this - we shouldn't have to wait here
     Thread.sleep(2000);
 
     // Propagate invalid block from network 1

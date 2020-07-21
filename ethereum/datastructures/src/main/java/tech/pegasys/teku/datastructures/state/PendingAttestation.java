@@ -118,7 +118,8 @@ public class PendingAttestation extends AbstractImmutableContainer
   @Override
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
-    // TODO The below lines are a hack while Tuweni SSZ/SOS is being upgraded. To be uncommented
+    // TODO (#2396): The below lines are a hack while Tuweni SSZ/SOS is being upgraded. To be
+    // uncommented
     // once we shift from Bytes to a real bitlist type.
     // Bytes serialized_aggregation_bits =
     // Bytes.fromHexString("0x01").shiftLeft(aggregation_bits.bitLength()).or(aggregation_bits);

@@ -64,9 +64,9 @@ public class YamlKeysWriter implements KeysWriter {
       final BLSKeyPair validatorKey, final BLSKeyPair withdrawalKey) {
     return String.format(
         "- {privkey: '%s', pubkey: '%s', withdrawalPrivkey: '%s', withdrawalPubkey: '%s'}%n",
-        validatorKey.getSecretKey().getSecretKey().toBytes(),
+        validatorKey.getSecretKey().toBytes(),
         validatorKey.getPublicKey().toBytesCompressed(),
-        withdrawalKey.getSecretKey().getSecretKey().toBytes(),
+        withdrawalKey.getSecretKey().toBytes(),
         withdrawalKey.getPublicKey().toBytesCompressed());
   }
 }
