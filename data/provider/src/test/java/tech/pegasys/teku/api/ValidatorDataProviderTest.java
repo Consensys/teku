@@ -203,31 +203,6 @@ public class ValidatorDataProviderTest {
   }
 
   @Test
-  @Disabled
-  // TODO (#2374): The fix to the PublicKey.equals() method broke this test. Needs fixing.
-  void getValidatorsDutiesByRequest_shouldThrowIllegalArgumentExceptionIfKeyIsNotOnTheCurve() {
-    when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
-    when(combinedChainDataClient.getBestBlockRoot())
-        .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
-    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
-    // modify the bytes to make an invalid key that is the correct length
-    final BLSPubKey invalidPubKey = new BLSPubKey(publicKey.toBytes().shiftLeft(1));
-
-    ValidatorDutiesRequest smallRequest =
-        new ValidatorDutiesRequest(compute_epoch_at_slot(beaconState.slot), List.of(invalidPubKey));
-    when(validatorApiChannel.getDuties(smallRequest.epoch, List.of(publicKey)))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                Optional.of(
-                    List.of(tech.pegasys.teku.validator.api.ValidatorDuties.noDuties(publicKey)))));
-
-    SafeFuture<Optional<List<ValidatorDuties>>> future =
-        provider.getValidatorDutiesByRequest(smallRequest);
-
-    assertThatThrownBy(() -> future.get()).hasCauseInstanceOf(IllegalArgumentException.class);
-  }
-
-  @Test
   void getValidatorDutiesByRequest_shouldIncludeValidatorDuties()
       throws ExecutionException, InterruptedException {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
