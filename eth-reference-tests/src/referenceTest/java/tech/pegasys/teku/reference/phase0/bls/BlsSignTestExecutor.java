@@ -19,6 +19,7 @@ import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -57,7 +58,7 @@ public class BlsSignTestExecutor implements TestExecutor {
     private String message;
 
     public BLSSecretKey getPrivateKey() {
-      return BLSSecretKey.fromBytes(Bytes.fromHexString(privateKey));
+      return BLSSecretKey.fromBytes(Bytes32.fromHexString(privateKey));
     }
 
     public Bytes getMessage() {
