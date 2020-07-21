@@ -315,27 +315,6 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  void getStateBySlot_shouldReturnBeaconStateWhenFound()
-      throws ExecutionException, InterruptedException {
-    final BeaconBlockAndState blockAndState = bestBlock.toUnsigned();
-    final SafeFuture<Optional<BeaconBlockAndState>> safeFuture =
-        completedFuture(Optional.of(blockAndState));
-
-    final ChainDataProvider provider =
-        new ChainDataProvider(recentChainData, mockCombinedChainDataClient);
-    when(mockCombinedChainDataClient.isChainDataFullyAvailable()).thenReturn(true);
-    when(mockCombinedChainDataClient.getBestBlockRoot())
-        .thenReturn(Optional.of(bestBlock.getRoot()));
-    when(mockCombinedChainDataClient.getBlockAndStateInEffectAtSlot(ZERO)).thenReturn(safeFuture);
-
-    final SafeFuture<Optional<BeaconState>> future = provider.getStateAtSlot(ZERO);
-    verify(mockCombinedChainDataClient).getBlockAndStateInEffectAtSlot(ZERO);
-
-    final BeaconState result = future.get().get();
-    assertThat(result).usingRecursiveComparison().isEqualTo(beaconState);
-  }
-
-  @Test
   public void getStateByBlockRoot_shouldThrowWhenStoreNotFound() {
     final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
     final SafeFuture<Optional<BeaconState>> future = provider.getStateByBlockRoot(blockRoot);
