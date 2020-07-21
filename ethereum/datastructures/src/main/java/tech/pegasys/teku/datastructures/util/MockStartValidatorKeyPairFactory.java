@@ -59,8 +59,4 @@ public class MockStartValidatorKeyPairFactory {
       throw new RuntimeException(e);
     }
   }
-
-  private Bytes padLeft(Bytes input, int targetLength) {
-    return Bytes.concatenate(Bytes.wrap(new byte[targetLength - input.size()]), input);
-  }
 }
