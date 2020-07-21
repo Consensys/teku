@@ -11,15 +11,6 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.schema;
+package tech.pegasys.teku.bls;
 
-public class PublicKeyException extends RuntimeException {
-
-  public PublicKeyException(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  public PublicKeyException(String err) {
-    super(err);
-  }
-}
+public interface BatchSemiAggregate {}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright 2019 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,15 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.schema;
+package tech.pegasys.teku.bls.impl.mikuli;
 
-public class PublicKeyException extends RuntimeException {
+/** Group is an interface that defines the necessary mathematical operators */
+interface Group<G> {
 
-  public PublicKeyException(String message, Throwable cause) {
-    super(message, cause);
-  }
+  G add(G g);
 
-  public PublicKeyException(String err) {
-    super(err);
-  }
+  G mul(Scalar scalar);
 }

@@ -22,10 +22,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.mikuli.G1Point;
-import tech.pegasys.teku.bls.mikuli.PublicKey;
 
 class BLSPublicKeyTest {
+  private static final Bytes InfinityPublicKey =
+      Bytes.fromHexString(
+          "0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
 
   @Test
   void isValidReturnsTrueForValidKey() {
@@ -49,8 +50,8 @@ class BLSPublicKeyTest {
   @Test
   void succeedsWhenTwoInfinityPublicKeysAreEqual() {
     // Infinity keys are valid G1 points, so pass the equality test
-    BLSPublicKey publicKey1 = new BLSPublicKey(new PublicKey(new G1Point()));
-    BLSPublicKey publicKey2 = new BLSPublicKey(new PublicKey(new G1Point()));
+    BLSPublicKey publicKey1 = BLSPublicKey.fromBytes(InfinityPublicKey);
+    BLSPublicKey publicKey2 = BLSPublicKey.fromBytes(InfinityPublicKey);
     assertEquals(publicKey1, publicKey2);
   }
 
@@ -103,7 +104,7 @@ class BLSPublicKeyTest {
 
   @Test
   void succeedsIfDeserializationOfInfinityPublicKeyIsCorrect() {
-    BLSPublicKey infinityPublicKey = new BLSPublicKey(new PublicKey(new G1Point()));
+    BLSPublicKey infinityPublicKey = BLSPublicKey.fromBytes(InfinityPublicKey);
     byte[] pointBytes = new byte[48];
     pointBytes[0] = (byte) 0xc0;
     Bytes infinityBytesSsz =
@@ -144,12 +145,11 @@ class BLSPublicKeyTest {
   @Test
   public void succeedsWhenEqualsReturnsTrueForEquivalentPublicKeysCreatedFromDifferentRawBytes() {
     BLSPublicKey publicKey1 = BLSPublicKey.random(1);
-    Bytes expandedBytes = publicKey1.getPublicKey().g1Point().toBytes();
     Bytes compressedBytes = publicKey1.toBytesCompressed();
-    assertNotEquals(expandedBytes, compressedBytes);
 
-    BLSPublicKey publicKey2 = new BLSPublicKey(PublicKey.fromBytesCompressed(expandedBytes));
+    BLSPublicKey publicKey2 = BLSPublicKey.fromBytes(compressedBytes);
     BLSPublicKey publicKey3 = BLSPublicKey.fromBytes(compressedBytes);
+    assertEquals(publicKey1, publicKey2);
     assertEquals(publicKey2, publicKey3);
   }
 
@@ -162,7 +162,7 @@ class BLSPublicKeyTest {
 
   @Test
   void succeedsWhenRoundtripSSZReturnsTheInfinityPublicKey() {
-    BLSPublicKey publicKey1 = new BLSPublicKey(new PublicKey(new G1Point()));
+    BLSPublicKey publicKey1 = BLSPublicKey.fromBytes(InfinityPublicKey);
     BLSPublicKey publicKey2 = BLSPublicKey.fromBytes(publicKey1.toBytes());
     assertEquals(publicKey1, publicKey2);
   }
