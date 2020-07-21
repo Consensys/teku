@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.networking.p2p.connection;
 
-import static tech.pegasys.teku.networking.p2p.peer.DisconnectReason.NO_PING_RESPONSES;
 import static tech.pegasys.teku.networking.p2p.peer.DisconnectReason.TOO_MANY_PEERS;
+import static tech.pegasys.teku.networking.p2p.peer.DisconnectReason.UNRESPONSIVE;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.EnumSet;
@@ -76,7 +76,14 @@ public class ReputationManager {
 
   private static class Reputation {
     private static final EnumSet<DisconnectReason> LOCAL_TEMPORARY_DISCONNECT_REASONS =
-        EnumSet.of(TOO_MANY_PEERS, NO_PING_RESPONSES);
+        EnumSet.of(
+            // We're currently at limit so don't mark peer unsuitable
+            TOO_MANY_PEERS,
+            // Peer may have been unresponsive due to a temporary network issue. In particular
+            // our internet access may have failed and all peers could be unresponsive.
+            // If we consider them all permanently unsuitable we may not be able to rejoin the
+            // network once our internet access is restored.
+            UNRESPONSIVE);
 
     private volatile Optional<UnsignedLong> lastInitiationFailure = Optional.empty();
     private volatile boolean unsuitable = false;
