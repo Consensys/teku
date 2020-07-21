@@ -14,6 +14,9 @@
 package tech.pegasys.teku.util.hashtree;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static tech.pegasys.teku.util.hashtree.HashTreeUtil.is_power_of_two;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +27,25 @@ import org.junit.jupiter.api.Test;
 
 /** Tests around the computation of a hash tree root using SSZ and merkleization. */
 class HashTreeUtilTest {
+
+  @Test
+  void isPowerOfTwoTest() {
+    // Powers of two
+    assertTrue(is_power_of_two(1));
+    assertTrue(is_power_of_two(2));
+    assertTrue(is_power_of_two(512));
+    assertTrue(is_power_of_two(0x040000));
+
+    // Not powers of two
+    assertFalse(is_power_of_two(0));
+    assertFalse(is_power_of_two(42));
+    assertFalse(is_power_of_two(Integer.MAX_VALUE));
+
+    // Negative numbers
+    assertFalse(is_power_of_two(-1));
+    assertFalse(is_power_of_two(-16));
+    assertFalse(is_power_of_two(Integer.MIN_VALUE));
+  }
 
   @Test
   void shouldHashTreeRootCorrectly() {

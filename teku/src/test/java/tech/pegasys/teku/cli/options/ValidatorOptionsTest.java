@@ -17,22 +17,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   @Test
   public void shouldReadFromConfigurationFile() throws MalformedURLException {
     // from config file ("T E K U") UTF8 -> bytes32 -> as hex string
     final Bytes32 graffiti =
         Bytes32.fromHexString("0x542045204b205500000000000000000000000000000000000000000000000000");
-    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey publicKey =
+        BLSPublicKey.fromBytesCompressed(
+            Bytes.fromHexString(
+                "0xad113a7d152dc74ae2b26db65bfb89ed07501c818bf47671c6d34e5a2f7224e4c5525dd4fddaa93aa328da86b7205009"));
     final TekuConfiguration config = getTekuConfigurationFromFile("validatorOptions_config.yaml");
 
     assertThat(config.getValidatorsKeyFile()).isEqualTo("the-unencrypted-file");

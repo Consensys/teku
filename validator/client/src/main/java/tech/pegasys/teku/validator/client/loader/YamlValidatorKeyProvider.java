@@ -28,7 +28,7 @@ import java.util.Map;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.util.config.TekuConfiguration;
@@ -36,7 +36,6 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
 public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final int KEY_LENGTH = 48;
 
   @SuppressWarnings("unchecked")
   @Override
@@ -54,8 +53,7 @@ public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
                   throw new IllegalArgumentException(
                       "Invalid private key supplied.  Please check your validator keys configuration file");
                 }
-                return new BLSKeyPair(
-                    BLSSecretKey.fromBytes(padLeft(Bytes.fromHexString(privKey))));
+                return new BLSKeyPair(BLSSecretKey.fromBytes(Bytes32.fromHexString(privKey)));
               })
           .collect(toList());
     } catch (final JsonMappingException e) {
@@ -63,9 +61,5 @@ public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
     } catch (final IOException e) {
       throw new RuntimeException("Failed to load validator key file", e);
     }
-  }
-
-  private Bytes padLeft(Bytes input) {
-    return Bytes.concatenate(Bytes.wrap(new byte[KEY_LENGTH - input.size()]), input);
   }
 }

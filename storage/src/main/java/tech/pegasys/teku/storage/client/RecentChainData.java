@@ -336,19 +336,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return Optional.ofNullable(store.getSignedBlock(root));
   }
 
-  /**
-   * @deprecated Use {@link #retrieveBlockState} instead
-   * @param blockRoot The root of the block corresponding to this state
-   * @return
-   */
-  @Deprecated
-  public Optional<BeaconState> getBlockState(final Bytes32 blockRoot) {
-    if (store == null) {
-      return Optional.empty();
-    }
-    return Optional.ofNullable(store.getBlockState(blockRoot));
-  }
-
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {
     if (store == null) {
       return EmptyStoreResults.EMPTY_STATE_FUTURE;
@@ -369,7 +356,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return forkChoiceStrategy.flatMap(strategy -> get_ancestor(strategy, headBlockRoot, slot));
   }
 
-  // TODO: These methods should not return zero if null. We should handle this better
+  // TODO (#2398): These methods should not return zero if null. We should handle this better
   public UnsignedLong getFinalizedEpoch() {
     return store == null ? UnsignedLong.ZERO : store.getFinalizedCheckpoint().getEpoch();
   }

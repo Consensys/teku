@@ -292,7 +292,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   private TekuConfiguration tekuConfiguration() {
-    // TODO: validate option dependencies
+    // TODO (#2408): validate option dependencies
     return TekuConfiguration.builder()
         .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
         .setStartupTargetPeerCount(networkOptions.getStartupTargetPeerCount())

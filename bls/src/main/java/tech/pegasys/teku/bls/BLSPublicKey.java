@@ -19,8 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.teku.bls.mikuli.G1Point;
-import tech.pegasys.teku.bls.mikuli.PublicKey;
+import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
 public final class BLSPublicKey implements SimpleOffsetSerializable {
@@ -35,7 +34,7 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
    * @return PublicKey The public key, not null
    */
   public static BLSPublicKey random(int seed) {
-    return new BLSPublicKey(PublicKey.random(seed));
+    return BLSKeyPair.random(seed).getPublicKey();
   }
 
   /**
@@ -66,11 +65,11 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
         bytes,
         reader ->
             new BLSPublicKey(
-                PublicKey.fromBytesCompressed(reader.readFixedBytes(BLS_PUBKEY_SIZE))));
+                BLS.getBlsImpl().publicKeyFromCompressed(reader.readFixedBytes(BLS_PUBKEY_SIZE))));
   }
 
   public static BLSPublicKey fromBytesCompressed(Bytes bytes) {
-    return new BLSPublicKey(PublicKey.fromBytesCompressed(bytes));
+    return new BLSPublicKey(BLS.getBlsImpl().publicKeyFromCompressed(bytes));
   }
 
   private final PublicKey publicKey;
@@ -90,7 +89,7 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
    * @param secretKey A BLSSecretKey
    */
   public BLSPublicKey(BLSSecretKey secretKey) {
-    this.publicKey = new PublicKey(secretKey.getSecretKey());
+    this(secretKey.getSecretKey().derivePublicKey());
   }
 
   /**
@@ -122,10 +121,6 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
     return publicKey;
   }
 
-  public G1Point getPoint() {
-    return publicKey.g1Point();
-  }
-
   /**
    * Force validation of the given key's contents.
    *
@@ -133,16 +128,16 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
    */
   public boolean isValid() {
     try {
-      publicKey.g1Point();
+      getPublicKey().forceValidation();
+      return true;
     } catch (IllegalArgumentException e) {
       return false;
     }
-    return true;
   }
 
   @Override
   public String toString() {
-    return publicKey.toString();
+    return toBytesCompressed().toString();
   }
 
   @Override
