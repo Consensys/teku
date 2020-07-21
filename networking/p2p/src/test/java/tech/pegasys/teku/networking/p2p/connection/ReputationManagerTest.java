@@ -98,6 +98,17 @@ class ReputationManagerTest {
   }
 
   @Test
+  void shouldAllowConnectionToPreviouslyUnresponsivePeersAfterTimePasses() {
+    reputationManager.reportDisconnection(
+        peerAddress, Optional.of(DisconnectReason.UNRESPONSIVE), true);
+
+    timeProvider.advanceTimeBySeconds(MORE_THAN_DISALLOW_PERIOD);
+
+    assertThat(reputationManager.isConnectionInitiationAllowed(new PeerAddress(new MockNodeId(1))))
+        .isTrue();
+  }
+
+  @Test
   void shouldNeverAllowReconnectionForPermanentDisconnectReasons() {
     reputationManager.reportDisconnection(
         peerAddress, Optional.of(DisconnectReason.IRRELEVANT_NETWORK), true);
