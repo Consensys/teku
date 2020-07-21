@@ -17,9 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -27,6 +29,8 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
+import tech.pegasys.teku.util.config.Constants;
 
 public class StoreTransactionTest extends AbstractStoreTest {
 
@@ -165,5 +169,51 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
     SafeFuture<Optional<BeaconState>> result = tx.retrieveCheckpointState(checkpoint);
     assertThat(result).isCompletedWithValue(Optional.of(blockAndState.getState()));
+  }
+
+  @Test
+  public void getOrderedBlockRoots_withNewBlocks() throws StateTransitionException {
+    final Store store = createGenesisStore();
+    final SignedBlockAndState genesis = chainBuilder.getBlockAndStateAtSlot(Constants.GENESIS_SLOT);
+
+    final ChainBuilder fork = chainBuilder.fork();
+    final SignedBlockAndState forkBlock2 = fork.generateBlockAtSlot(2);
+
+    final SignedBlockAndState mainChainBlock1 = chainBuilder.generateBlockAtSlot(1);
+    final SignedBlockAndState mainChainBlock3 = chainBuilder.generateBlockAtSlot(3);
+    final SignedBlockAndState mainChainBlock4 = chainBuilder.generateBlockAtSlot(4);
+
+    addBlocks(store, List.of(mainChainBlock1, mainChainBlock3, mainChainBlock4));
+    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+
+    // Initially we should get existing block hashes
+    assertThat(tx.getOrderedBlockRoots())
+        .containsExactly(
+            genesis.getRoot(),
+            mainChainBlock1.getRoot(),
+            mainChainBlock3.getRoot(),
+            mainChainBlock4.getRoot());
+
+    // Added block should be included
+    tx.putBlockAndState(forkBlock2);
+
+    // Children are ordered based on hash - so check ordering depending on specific hashes
+    if (mainChainBlock1.getRoot().compareTo(forkBlock2.getRoot()) < 0) {
+      assertThat(tx.getOrderedBlockRoots())
+          .containsExactly(
+              genesis.getRoot(),
+              mainChainBlock1.getRoot(),
+              forkBlock2.getRoot(),
+              mainChainBlock3.getRoot(),
+              mainChainBlock4.getRoot());
+    } else {
+      assertThat(tx.getOrderedBlockRoots())
+          .containsExactly(
+              genesis.getRoot(),
+              forkBlock2.getRoot(),
+              mainChainBlock1.getRoot(),
+              mainChainBlock3.getRoot(),
+              mainChainBlock4.getRoot());
+    }
   }
 }
