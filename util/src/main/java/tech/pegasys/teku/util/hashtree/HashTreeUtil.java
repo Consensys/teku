@@ -276,7 +276,8 @@ public final class HashTreeUtil {
    *     Spec v0.5.1</a>
    */
   public static Bytes32 hash_tree_root_bitlist(Bitlist bitlist) {
-    // TODO (#2396): The following lines are a hack and can be fixed once we shift from Bytes to a real
+    // TODO (#2396): The following lines are a hack and can be fixed once we shift from Bytes to a
+    // real
     // bitlist type.
     return mix_in_length(
         merkleize(
@@ -425,7 +426,8 @@ public final class HashTreeUtil {
         throw new UnsupportedOperationException(
             "Use chunk_count(HashTreeUtil.SSZTypes, Bytes) for BASIC SSZ types.");
       case BITLIST:
-        // TODO (#2396): The following lines are a hack and can be fixed once we shift from Bytes to a real
+        // TODO (#2396): The following lines are a hack and can be fixed once we shift from Bytes to
+        // a real
         // bitlist type.
         long chunkCount = (maxSize + 255) / 256;
         return chunkCount > 0 ? chunkCount : 1;

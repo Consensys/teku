@@ -162,7 +162,6 @@ public class ValidatorDataProvider {
     return blockImporter
         .importBlock(signedBeaconBlock.asInternalSignedBeaconBlock())
         .thenApply(
-
             blockImportResult -> {
               int responseCode;
               Bytes32 hashRoot = null;
