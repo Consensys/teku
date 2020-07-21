@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BatchSemiAggregate;
 import tech.pegasys.teku.bls.impl.BLS12381;
 import tech.pegasys.teku.bls.impl.KeyPair;
@@ -86,8 +88,8 @@ public class MikuliBLS12381 implements BLS12381 {
   }
 
   @Override
-  public SecretKey secretKeyFromBytes(Bytes secretKeyBytes) {
-    return MikuliSecretKey.fromBytes(secretKeyBytes);
+  public SecretKey secretKeyFromBytes(Bytes32 secretKeyBytes) {
+    return MikuliSecretKey.fromBytes(Bytes48.leftPad(secretKeyBytes));
   }
 
   @Override
