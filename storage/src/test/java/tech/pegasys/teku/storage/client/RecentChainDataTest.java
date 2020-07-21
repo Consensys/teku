@@ -63,7 +63,7 @@ class RecentChainDataTest {
       InMemoryStorageSystem.createEmptyLatestStorageSystem(StateStorageMode.PRUNE);
 
   private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
-  private SignedBlockAndState genesis = chainBuilder.generateGenesis();
+  private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final BeaconState genesisState = genesis.getState();
   private final BeaconBlock genesisBlock = genesis.getBlock().getMessage();
 
@@ -315,10 +315,8 @@ class RecentChainDataTest {
   @Test
   public void updateBestBlock_ignoreStaleUpdate() throws Exception {
     final UpdatableStore store = mock(UpdatableStore.class);
-    final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(1));
 
     // Set up mock store with genesis data and a small chain
-    genesis = chainBuilder.generateGenesis();
     List<SignedBlockAndState> chain = chainBuilder.generateBlocksUpToSlot(3);
     mockGenesis(store, genesis);
     mockChainData(store, chain);
