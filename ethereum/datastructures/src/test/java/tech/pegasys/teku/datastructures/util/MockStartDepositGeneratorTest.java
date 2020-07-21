@@ -61,7 +61,7 @@ class MockStartDepositGeneratorTest {
     Security.addProvider(new BouncyCastleProvider());
   }
 
-  // TODO: EXPECTED_DEPOSITS data needs to be regenerated for v0.10.0. Disabled until then.
+  // TODO (#2405): EXPECTED_DEPOSITS data needs to be regenerated for v0.10.0. Disabled until then.
   @Disabled
   @Test
   public void shouldGenerateDepositData() {

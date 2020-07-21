@@ -136,7 +136,7 @@ public class SimpleOffsetSerializer {
   }
 
   public static Bytes serialize(SimpleOffsetSerializable value) {
-    // TODO assert sum(fixed_lengths + variable_lengths) < 2**(BYTES_PER_LENGTH_OFFSET *
+    // TODO (#2407): assert sum(fixed_lengths + variable_lengths) < 2**(BYTES_PER_LENGTH_OFFSET *
     // BITS_PER_BYTE)
     // List<UnsignedLong> variable_lengths = new ArrayList<>();
     List<UnsignedLong> variable_offsets = new ArrayList<>();

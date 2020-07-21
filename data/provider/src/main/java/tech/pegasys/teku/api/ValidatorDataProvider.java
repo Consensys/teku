@@ -150,7 +150,7 @@ public class ValidatorDataProvider {
   }
 
   public void submitAttestation(Attestation attestation) {
-    // TODO extra validation for the attestation we're posting?
+    // TODO (#2410): extra validation for the attestation we're posting?
     if (attestation.signature.asInternalBLSSignature().toBytes().isZero()) {
       throw new IllegalArgumentException("Signed attestations must have a non zero signature");
     }
@@ -162,6 +162,7 @@ public class ValidatorDataProvider {
     return blockImporter
         .importBlock(signedBeaconBlock.asInternalSignedBeaconBlock())
         .thenApply(
+
             blockImportResult -> {
               int responseCode;
               Bytes32 hashRoot = null;

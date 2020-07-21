@@ -356,7 +356,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return forkChoiceStrategy.flatMap(strategy -> get_ancestor(strategy, headBlockRoot, slot));
   }
 
-  // TODO: These methods should not return zero if null. We should handle this better
+  // TODO (#2398): These methods should not return zero if null. We should handle this better
   public UnsignedLong getFinalizedEpoch() {
     return store == null ? UnsignedLong.ZERO : store.getFinalizedCheckpoint().getEpoch();
   }
