@@ -349,19 +349,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return Optional.ofNullable(store.getSignedBlock(root));
   }
 
-  /**
-   * @deprecated Use {@link #retrieveBlockState} instead
-   * @param blockRoot The root of the block corresponding to this state
-   * @return
-   */
-  @Deprecated
-  public Optional<BeaconState> getBlockState(final Bytes32 blockRoot) {
-    if (store == null) {
-      return Optional.empty();
-    }
-    return Optional.ofNullable(store.getBlockState(blockRoot));
-  }
-
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {
     if (store == null) {
       return EmptyStoreResults.EMPTY_STATE_FUTURE;
