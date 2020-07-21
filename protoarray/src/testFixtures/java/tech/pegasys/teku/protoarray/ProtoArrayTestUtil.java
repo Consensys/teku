@@ -54,7 +54,7 @@ public class ProtoArrayTestUtil {
   }
 
   public static MutableStore createStoreToManipulateVotes() {
-    return STORE_FACTORY.createMutableGenesisStore();
+    return STORE_FACTORY.createGenesisStore();
   }
 
   public static void assertThatBlockInformationMatches(ProtoNode node1, ProtoNode node2) {

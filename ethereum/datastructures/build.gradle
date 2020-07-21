@@ -21,12 +21,14 @@ dependencies {
 
   testFixturesApi project(':pow')
   testFixturesApi project(':ssz')
+  testFixturesApi project(':infrastructure:async')
 
   testFixturesApi 'org.apache.tuweni:tuweni-bytes'
   testFixturesApi 'com.google.guava:guava'
 
   testFixturesImplementation project(':bls')
   testFixturesImplementation project(':util')
+  testFixturesImplementation project(':infrastructure:async')
 
   test {
     testLogging.showStandardStreams = true

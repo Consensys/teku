@@ -1,0 +1,239 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.datastructures.forkchoice;
+
+import com.google.common.primitives.UnsignedLong;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+
+class TestStoreImpl implements MutablePrunableStore {
+  protected UnsignedLong time;
+  protected UnsignedLong genesis_time;
+  protected Checkpoint justified_checkpoint;
+  protected Checkpoint finalized_checkpoint;
+  protected Checkpoint best_justified_checkpoint;
+  protected Map<Bytes32, SignedBeaconBlock> blocks;
+  protected Map<Bytes32, BeaconState> block_states;
+  protected Map<Checkpoint, BeaconState> checkpoint_states;
+  protected Map<UnsignedLong, VoteTracker> votes;
+
+  TestStoreImpl(
+      final UnsignedLong time,
+      final UnsignedLong genesis_time,
+      final Checkpoint justified_checkpoint,
+      final Checkpoint finalized_checkpoint,
+      final Checkpoint best_justified_checkpoint,
+      final Map<Bytes32, SignedBeaconBlock> blocks,
+      final Map<Bytes32, BeaconState> block_states,
+      final Map<Checkpoint, BeaconState> checkpoint_states,
+      final Map<UnsignedLong, VoteTracker> votes) {
+    this.time = time;
+    this.genesis_time = genesis_time;
+    this.justified_checkpoint = justified_checkpoint;
+    this.finalized_checkpoint = finalized_checkpoint;
+    this.best_justified_checkpoint = best_justified_checkpoint;
+    this.blocks = blocks;
+    this.block_states = block_states;
+    this.checkpoint_states = checkpoint_states;
+    this.votes = votes;
+  }
+
+  // Readonly methods
+  @Override
+  public UnsignedLong getTime() {
+    return time;
+  }
+
+  @Override
+  public UnsignedLong getGenesisTime() {
+    return genesis_time;
+  }
+
+  @Override
+  public Checkpoint getJustifiedCheckpoint() {
+    return justified_checkpoint;
+  }
+
+  @Override
+  public Checkpoint getFinalizedCheckpoint() {
+    return finalized_checkpoint;
+  }
+
+  @Override
+  public CheckpointAndBlock getFinalizedCheckpointAndBlock() {
+    final SignedBeaconBlock block = getSignedBlock(finalized_checkpoint.getRoot());
+    return new CheckpointAndBlock(finalized_checkpoint, block);
+  }
+
+  @Override
+  public UnsignedLong getLatestFinalizedBlockSlot() {
+    return blocks.get(finalized_checkpoint.getRoot()).getSlot();
+  }
+
+  @Override
+  public SignedBlockAndState getLatestFinalizedBlockAndState() {
+    final SignedBeaconBlock block = getSignedBlock(finalized_checkpoint.getRoot());
+    final BeaconState state = getBlockState(finalized_checkpoint.getRoot());
+    return new SignedBlockAndState(block, state);
+  }
+
+  @Override
+  public Checkpoint getBestJustifiedCheckpoint() {
+    return best_justified_checkpoint;
+  }
+
+  @Override
+  public BeaconBlock getBlock(final Bytes32 blockRoot) {
+    return blocks.get(blockRoot).getMessage();
+  }
+
+  @Override
+  public SignedBeaconBlock getSignedBlock(final Bytes32 blockRoot) {
+    return blocks.get(blockRoot);
+  }
+
+  @Override
+  public Optional<SignedBlockAndState> getBlockAndState(final Bytes32 blockRoot) {
+    final SignedBeaconBlock block = getSignedBlock(blockRoot);
+    final BeaconState state = getBlockState(blockRoot);
+    if (block == null || state == null) {
+      return Optional.empty();
+    }
+    return Optional.of(new SignedBlockAndState(block, state));
+  }
+
+  @Override
+  public boolean containsBlock(final Bytes32 blockRoot) {
+    return blocks.containsKey(blockRoot);
+  }
+
+  @Override
+  public Set<Bytes32> getBlockRoots() {
+    return blocks.keySet();
+  }
+
+  @Override
+  public List<Bytes32> getOrderedBlockRoots() {
+    return blocks.values().stream()
+        .sorted(Comparator.comparing(SignedBeaconBlock::getSlot))
+        .map(SignedBeaconBlock::getRoot)
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public BeaconState getBlockState(final Bytes32 blockRoot) {
+    return block_states.get(blockRoot);
+  }
+
+  @Override
+  public Optional<BeaconState> getCheckpointState(final Checkpoint checkpoint) {
+    return Optional.ofNullable(checkpoint_states.get(checkpoint));
+  }
+
+  @Override
+  public Set<UnsignedLong> getVotedValidatorIndices() {
+    return votes.keySet();
+  }
+
+  // Prunable methods
+  @Override
+  public Optional<BeaconState> getBlockStateIfAvailable(Bytes32 blockRoot) {
+    return Optional.ofNullable(getBlockState(blockRoot));
+  }
+
+  @Override
+  public Optional<SignedBeaconBlock> getBlockIfAvailable(Bytes32 blockRoot) {
+    return Optional.ofNullable(getSignedBlock(blockRoot));
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(Bytes32 blockRoot) {
+    return SafeFuture.completedFuture(getBlockIfAvailable(blockRoot));
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedBlockAndState>> retrieveBlockAndState(Bytes32 blockRoot) {
+    return SafeFuture.completedFuture(getBlockAndState(blockRoot));
+  }
+
+  @Override
+  public SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot) {
+    return SafeFuture.completedFuture(getBlockStateIfAvailable(blockRoot));
+  }
+
+  @Override
+  public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint) {
+    return SafeFuture.completedFuture(getCheckpointState(checkpoint));
+  }
+
+  // Mutable methods
+  @Override
+  public void putBlockAndState(final SignedBeaconBlock block, final BeaconState state) {
+    blocks.put(block.getRoot(), block);
+    block_states.put(block.getRoot(), state);
+  }
+
+  @Override
+  public void putBlockAndState(final SignedBlockAndState blockAndState) {
+    blocks.put(blockAndState.getRoot(), blockAndState.getBlock());
+    block_states.put(blockAndState.getRoot(), blockAndState.getState());
+  }
+
+  @Override
+  public void setTime(final UnsignedLong time) {
+    this.time = time;
+  }
+
+  @Override
+  public void setGenesis_time(final UnsignedLong genesis_time) {
+    this.genesis_time = genesis_time;
+  }
+
+  @Override
+  public void setJustifiedCheckpoint(final Checkpoint justified_checkpoint) {
+    this.justified_checkpoint = justified_checkpoint;
+  }
+
+  @Override
+  public void setFinalizedCheckpoint(final Checkpoint finalized_checkpoint) {
+    this.finalized_checkpoint = finalized_checkpoint;
+  }
+
+  @Override
+  public void setBestJustifiedCheckpoint(final Checkpoint best_justified_checkpoint) {
+    this.best_justified_checkpoint = best_justified_checkpoint;
+  }
+
+  @Override
+  public VoteTracker getVote(final UnsignedLong validatorIndex) {
+    VoteTracker vote = votes.get(validatorIndex);
+    if (vote == null) {
+      vote = VoteTracker.Default();
+    }
+    this.votes.put(validatorIndex, vote);
+    return vote;
+  }
+}
