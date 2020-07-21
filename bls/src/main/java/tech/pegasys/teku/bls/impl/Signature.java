@@ -20,12 +20,12 @@ import org.apache.tuweni.bytes.Bytes;
 
 public interface Signature {
 
-//  /**
-//   * Signature uncompressed serialization
-//   *
-//   * @return byte array of size 192
-//   */
-//  Bytes toBytesUncompressed();
+  /**
+   * Signature uncompressed serialization
+   *
+   * @return byte array of size 192
+   */
+  Bytes toBytesUncompressed();
 
   /**
    * Signature serialization to compressed form

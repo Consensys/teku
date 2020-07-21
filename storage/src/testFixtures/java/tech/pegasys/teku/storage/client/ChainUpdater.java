@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.client;
 
+import static com.google.common.base.Preconditions.checkState;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.primitives.UnsignedLong;
@@ -21,6 +22,7 @@ import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
+import tech.pegasys.teku.util.config.Constants;
 
 public class ChainUpdater {
 
@@ -30,6 +32,18 @@ public class ChainUpdater {
   public ChainUpdater(final RecentChainData recentChainData, final ChainBuilder chainBuilder) {
     this.recentChainData = recentChainData;
     this.chainBuilder = chainBuilder;
+  }
+
+  public void setCurrentSlot(final UnsignedLong currentSlot) {
+    checkState(!recentChainData.isPreGenesis(), "Cannot set current slot before genesis");
+    setTime(getSlotTime(currentSlot));
+  }
+
+  public void setTime(final UnsignedLong time) {
+    checkState(!recentChainData.isPreGenesis(), "Cannot set time before genesis");
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    tx.setTime(time);
+    tx.commit().join();
   }
 
   public SignedBlockAndState addNewBestBlock() {
@@ -44,7 +58,11 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState initializeGenesis() {
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+    return initializeGenesis(true);
+  }
+
+  public SignedBlockAndState initializeGenesis(final boolean signDeposits) {
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis(signDeposits);
     recentChainData.initializeFromGenesis(genesis.getState());
     return genesis;
   }
@@ -104,5 +122,16 @@ public class ChainUpdater {
         .getForkChoiceStrategy()
         .orElseThrow()
         .onBlock(block.getBlock().getMessage(), block.getState());
+
+    // Make sure time is consistent with block
+    final UnsignedLong blockTime = getSlotTime(block.getSlot());
+    if (blockTime.compareTo(recentChainData.getStore().getTime()) > 0) {
+      setTime(blockTime);
+    }
+  }
+
+  protected UnsignedLong getSlotTime(final UnsignedLong slot) {
+    final UnsignedLong secPerSlot = UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT);
+    return recentChainData.getGenesisTime().plus(slot.times(secPerSlot));
   }
 }

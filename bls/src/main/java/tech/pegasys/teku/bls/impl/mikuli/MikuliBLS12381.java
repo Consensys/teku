@@ -67,6 +67,8 @@ public class MikuliBLS12381 implements BLS12381 {
     return ThreadLocalRandom.current();
   }
 
+  protected MikuliBLS12381() {}
+
   @Override
   public KeyPair generateKeyPair(Random random) {
     MikuliKeyPair mikuliKeyPair = MikuliKeyPair.random(random);
@@ -91,13 +93,13 @@ public class MikuliBLS12381 implements BLS12381 {
   @Override
   public PublicKey aggregatePublicKeys(List<? extends PublicKey> publicKeys) {
     return MikuliPublicKey.aggregate(
-        publicKeys.stream().map(pk -> (MikuliPublicKey) pk).collect(Collectors.toList()));
+        publicKeys.stream().map(MikuliPublicKey::fromPublicKey).collect(Collectors.toList()));
   }
 
   @Override
   public MikuliSignature aggregateSignatures(List<? extends Signature> signatures) {
     return MikuliSignature.aggregate(
-        signatures.stream().map(sig -> (MikuliSignature) sig).collect(Collectors.toList()));
+        signatures.stream().map(MikuliSignature::fromSignature).collect(Collectors.toList()));
   }
 
   /**
@@ -223,8 +225,8 @@ public class MikuliBLS12381 implements BLS12381 {
     G2Point msgG2Point;
 
     List<MikuliPublicKey> mikuliPublicKeys =
-        publicKeys.stream().map(pk -> (MikuliPublicKey) pk).collect(Collectors.toList());
-    MikuliSignature mikuliSignature = (MikuliSignature) signature;
+        publicKeys.stream().map(MikuliPublicKey::fromPublicKey).collect(Collectors.toList());
+    MikuliSignature mikuliSignature = MikuliSignature.fromSignature(signature);
 
     if (index == 0) {
       // optimization: we may omit multiplication of a single component (i.e. multiplier is 1)
@@ -254,12 +256,12 @@ public class MikuliBLS12381 implements BLS12381 {
       Signature signature2) {
     return prepareBatchVerify2(
         index,
-        publicKeys1.stream().map(pk -> (MikuliPublicKey) pk).collect(Collectors.toList()),
+        publicKeys1.stream().map(MikuliPublicKey::fromPublicKey).collect(Collectors.toList()),
         message1,
-        (MikuliSignature) signature1,
-        publicKeys2.stream().map(pk -> (MikuliPublicKey) pk).collect(Collectors.toList()),
+        MikuliSignature.fromSignature(signature1),
+        publicKeys2.stream().map(MikuliPublicKey::fromPublicKey).collect(Collectors.toList()),
         message2,
-        (MikuliSignature) signature2);
+        MikuliSignature.fromSignature(signature2));
   }
 
   /**

@@ -85,6 +85,14 @@ public class MikuliSignature implements Signature {
     return new MikuliSignature(bytes);
   }
 
+  static MikuliSignature fromSignature(Signature signature) {
+    if (signature instanceof MikuliSignature) {
+      return (MikuliSignature) signature;
+    } else {
+      return MikuliSignature.fromBytesCompressed(signature.toBytesCompressed());
+    }
+  }
+
   /**
    * Create a random signature for testing
    *
@@ -135,7 +143,9 @@ public class MikuliSignature implements Signature {
   @Override
   public boolean verify(List<PublicKeyMessagePair> keysToMessages) {
     return MikuliBLS12381.aggregateVerify(
-        keysToMessages.stream().map(km -> (MikuliPublicKey) km.getPublicKey()).collect(toList()),
+        keysToMessages.stream()
+            .map(km -> MikuliPublicKey.fromPublicKey(km.getPublicKey()))
+            .collect(toList()),
         keysToMessages.stream().map(PublicKeyMessagePair::getMessage).collect(toList()),
         this);
   }
@@ -143,7 +153,7 @@ public class MikuliSignature implements Signature {
   @Override
   public boolean verify(List<PublicKey> publicKeys, Bytes message) {
     return MikuliBLS12381.fastAggregateVerify(
-        publicKeys.stream().map(pk -> (MikuliPublicKey) pk).collect(toList()), message, this);
+        publicKeys.stream().map(MikuliPublicKey::fromPublicKey).collect(toList()), message, this);
   }
 
   private G2Point parseSignatureBytes(Bytes signatureBytes) {
@@ -216,6 +226,7 @@ public class MikuliSignature implements Signature {
    *
    * @return byte array representation of the signature, not null
    */
+  @Override
   public Bytes toBytesUncompressed() {
     return (rawData.size() == UNCOMPRESSED_SIG_SIZE) ? rawData : point.get().toBytes();
   }

@@ -14,6 +14,8 @@
 package tech.pegasys.teku.bls.impl.noop;
 
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BatchSemiAggregate;
 import tech.pegasys.teku.bls.impl.PublicKey;
@@ -23,6 +25,7 @@ import tech.pegasys.teku.bls.impl.mikuli.MikuliSignature;
 
 /** BLS implementation the same as Mikuli which omit signature validations */
 public class NoopBLS12381 extends MikuliBLS12381 {
+  private static final Logger LOG = LogManager.getLogger();
 
   @Override
   public MikuliSignature signatureFromCompressed(Bytes compressedSignatureBytes) {
@@ -54,6 +57,7 @@ public class NoopBLS12381 extends MikuliBLS12381 {
 
   @Override
   public boolean completeBatchVerify(List<? extends BatchSemiAggregate> preparedList) {
+    LOG.warn("BLS verification is disabled");
     return true;
   }
 
