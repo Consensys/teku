@@ -55,6 +55,11 @@ public class BlstSignature implements Signature {
   }
 
   @Override
+  public Bytes toBytesUncompressed() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public boolean verify(List<PublicKeyMessagePair> keysToMessages) {
 
     List<BlstBatchSemiAggregate> semiAggregates = new ArrayList<>();

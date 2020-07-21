@@ -1,5 +1,6 @@
 package tech.pegasys.teku.bls.impl.blst;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Random;
@@ -22,6 +23,14 @@ public class BlstBLS12381 implements BLS12381 {
   public static BlstBLS12381 INSTANCE = new BlstBLS12381();
 
   private static final int BATCH_RANDOM_BYTES = 8;
+
+  static {
+    try {
+      NativeUtils.loadLibraryFromJar("/" + System.mapLibraryName("jblst"));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   private static Random getRND() {
     // Milagro RAND has some issues with generating 'small' random numbers

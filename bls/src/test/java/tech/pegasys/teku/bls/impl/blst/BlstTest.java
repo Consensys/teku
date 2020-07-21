@@ -2,7 +2,6 @@ package tech.pegasys.teku.bls.impl.blst;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.io.File;
 import java.security.SecureRandom;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
@@ -19,13 +18,7 @@ public class BlstTest {
 
   @BeforeAll
   static void setup() {
-    System.out.println(new File(".").getAbsolutePath());
-    System.setProperty(
-        "java.library.path",
-        System.getProperty("java.library.path")
-            + ";"
-            + "./src/main/resources");
-    System.loadLibrary("jblst");
+    BlstBLS12381.INSTANCE.hashCode();
   }
 
   @Test
