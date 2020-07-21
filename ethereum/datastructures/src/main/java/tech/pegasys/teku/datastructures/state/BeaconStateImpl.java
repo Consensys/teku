@@ -308,7 +308,7 @@ public class BeaconStateImpl extends ContainerViewReadImpl
     variablePartsList.add(SimpleOffsetSerializer.serializeFixedCompositeList(getEth1_data_votes()));
     variablePartsList.add(Bytes.EMPTY);
     variablePartsList.add(SimpleOffsetSerializer.serializeFixedCompositeList(getValidators()));
-    // TODO The below lines are a hack while Tuweni SSZ/SOS is being upgraded.
+    // TODO (#2396): The below lines are a hack while Tuweni SSZ/SOS is being upgraded.
     variablePartsList.add(
         Bytes.fromHexString(
             getBalances().stream()

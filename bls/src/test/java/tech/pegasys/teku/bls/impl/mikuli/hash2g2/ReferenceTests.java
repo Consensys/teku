@@ -214,7 +214,7 @@ class ReferenceTests {
   private static final Path pathToFipsTests =
       Paths.get(System.getProperty("user.dir"), "src", "test", "resources", "hashToG2TestVectors");
 
-  @Disabled // TODO re-enable once test vectors for draft 07 are available
+  @Disabled // TODO (#2409): re-enable once test vectors for draft 07 are available
   @ParameterizedTest(name = "{index}. Filename={0} Test={1}")
   @MethodSource({
     "getFipsTestCases",

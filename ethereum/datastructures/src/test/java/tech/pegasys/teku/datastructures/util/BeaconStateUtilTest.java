@@ -267,7 +267,7 @@ class BeaconStateUtilTest {
 
   @Test
   void isPowerOfTwo() {
-    // TODO: Only works with values that fit into an int, need to find out if that matters
+    // TODO (#2406): Only works with values that fit into an int, need to find out if that matters
     // Not powers of two:
     assertThat(is_power_of_two(UnsignedLong.ZERO)).isEqualTo(false);
     assertThat(is_power_of_two(UnsignedLong.valueOf(42L))).isEqualTo(false);
@@ -327,8 +327,6 @@ class BeaconStateUtilTest {
   }
 
   // *************** START Shuffling Tests ***************
-
-  // TODO: tests for get_shuffling() - the reference tests are out of date.
 
   // The following are just sanity checks. The real testing is against the official test vectors,
   // elsewhere.

@@ -92,7 +92,7 @@ public class BlockPropagationIntegrationTest {
           assertThat(node1.network().getPeerCount()).isEqualTo(1);
           assertThat(node2.network().getPeerCount()).isEqualTo(1);
         });
-    // TODO: debug this - we shouldn't have to wait here
+    // TODO (#1855): debug this - we shouldn't have to wait here
     Thread.sleep(2000);
 
     // Update slot so that blocks can be imported

@@ -151,7 +151,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
     return depositNavigableMap.size();
   }
 
-  // TODO: switch the MerkleTree to use UnsignedLongs instead of using toIntExact() here,
+  // TODO (#2395): switch the MerkleTree to use UnsignedLongs instead of using toIntExact() here,
   //  it will result in an overflow at some point
   /**
    * @param fromDepositIndex inclusive
