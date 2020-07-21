@@ -23,6 +23,7 @@ public enum DisconnectReason {
   UNABLE_TO_VERIFY_NETWORK(GoodbyeMessage.REASON_UNABLE_TO_VERIFY_NETWORK, true),
   TOO_MANY_PEERS(GoodbyeMessage.REASON_TOO_MANY_PEERS, false),
   REMOTE_FAULT(GoodbyeMessage.REASON_FAULT_ERROR, false),
+  UNRESPONSIVE(GoodbyeMessage.REASON_FAULT_ERROR, false),
   SHUTTING_DOWN(GoodbyeMessage.REASON_CLIENT_SHUT_DOWN, false);
 
   private final UnsignedLong reasonCode;
