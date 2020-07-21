@@ -46,15 +46,15 @@ public class ForkChoice {
     processHead();
   }
 
-  public synchronized Bytes32 processHead() {
-    return processHead(Optional.empty());
+  public synchronized void processHead() {
+    processHead(Optional.empty());
   }
 
-  public synchronized Bytes32 processHead(UnsignedLong nodeSlot) {
-    return processHead(Optional.of(nodeSlot));
+  public synchronized void processHead(UnsignedLong nodeSlot) {
+    processHead(Optional.of(nodeSlot));
   }
 
-  public synchronized Bytes32 processHead(Optional<UnsignedLong> nodeSlot) {
+  private synchronized void processHead(Optional<UnsignedLong> nodeSlot) {
     StoreTransaction transaction = recentChainData.startStoreTransaction();
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
     Bytes32 headBlockRoot = forkChoiceStrategy.findHead(transaction);
@@ -68,7 +68,6 @@ public class ForkChoice {
                     () ->
                         new IllegalStateException(
                             "Unable to retrieve the slot of fork choice head"))));
-    return headBlockRoot;
   }
 
   public synchronized BlockImportResult onBlock(

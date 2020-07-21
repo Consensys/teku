@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
@@ -49,11 +48,11 @@ class ForkChoiceTest {
   @Test
   void shouldTriggerReorgWhenEmptyHeadSlotFilled() {
     // Run fork choice with an empty slot 1
-    forkChoice.processHead(Optional.of(ONE));
+    forkChoice.processHead(ONE);
 
     // Then rerun with a filled slot 1
     final SignedBlockAndState slot1Block = storageSystem.chainUpdater().advanceChain(ONE);
-    forkChoice.processHead(Optional.of(ONE));
+    forkChoice.processHead(ONE);
 
     final List<ReorgEvent> reorgEvents = storageSystem.reorgEventChannel().getReorgEvents();
     assertThat(reorgEvents).hasSize(1);
