@@ -5,6 +5,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Objects;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.impl.SecretKey;
 import tech.pegasys.teku.bls.impl.Signature;
 import tech.pegasys.teku.bls.impl.blst.swig.blst;
@@ -15,9 +16,9 @@ import tech.pegasys.teku.bls.impl.blst.swig.scalar;
 public class BlstSecretKey implements SecretKey {
 
   public static BlstSecretKey fromBytes(Bytes bytes) {
-    checkArgument(bytes.size() == 32, "Expected 32 bytes but received %s.", bytes.size());
+    checkArgument(bytes.size() == 48, "Expected 48 bytes but received %s.", bytes.size());
     scalar scalarVal = new scalar();
-    blst.scalar_from_bendian(scalarVal, bytes.toArrayUnsafe());
+    blst.scalar_from_bendian(scalarVal, bytes.slice(16).toArrayUnsafe());
     return new BlstSecretKey(scalarVal);
   }
 
@@ -39,7 +40,7 @@ public class BlstSecretKey implements SecretKey {
   public Bytes toBytes() {
     byte[] res = new byte[32];
     blst.bendian_from_scalar(res, scalarVal);
-    return Bytes.wrap(res);
+    return Bytes48.leftPad(Bytes.wrap(res));
   }
 
   @Override
