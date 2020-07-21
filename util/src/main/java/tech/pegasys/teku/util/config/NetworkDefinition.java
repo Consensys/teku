@@ -71,8 +71,7 @@ public class NetworkDefinition {
                   .snappyCompressionEnabled(true)
                   .startupTimeoutSeconds(120)
                   .eth1DepositContractAddress("0x07b39F4fDE4A38bACe212b546dAc87C58DfE3fDC")
-              .build()
-          )
+                  .build())
           .build();
 
   private final String constants;
