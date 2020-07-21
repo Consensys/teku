@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.datastructures.hashtree;
+package tech.pegasys.teku.datastructures.hashtree.traversal;
 
 import java.util.Iterator;
 import java.util.Spliterator;
@@ -20,10 +20,20 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.tuweni.bytes.Bytes32;
 
-public class PreOrderTraversalStream {
-  public static Stream<Bytes32> create(
-      final Bytes32 rootHash, PreOrderTraversalTreeIterator.ChildLookup childLookup) {
+public class OrderedTreeStream {
+  public static Stream<Bytes32> createPreOrderTraversalStream(
+      final Bytes32 rootHash, ChildLookup childLookup) {
     Iterator<Bytes32> iterator = PreOrderTraversalTreeIterator.create(rootHash, childLookup);
+    return iteratorToStream(iterator);
+  }
+
+  public static Stream<Bytes32> createBreadthFirstStream(
+      final Bytes32 rootHash, ChildLookup childLookup) {
+    Iterator<Bytes32> iterator = BreadthFirstTraversalTreeIterator.create(rootHash, childLookup);
+    return iteratorToStream(iterator);
+  }
+
+  private static Stream<Bytes32> iteratorToStream(Iterator<Bytes32> iterator) {
     final Spliterator<Bytes32> split =
         Spliterators.spliteratorUnknownSize(
             iterator,

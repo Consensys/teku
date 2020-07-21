@@ -115,6 +115,76 @@ public class HashTreeTest {
     assertThat(blockTree.contains(baseBlock.getRoot())).isTrue();
   }
 
+  @Test
+  public void preOrderStream() {
+    final HashTree blockTree =
+        HashTree.builder()
+            .rootHash(Bytes32.fromHexString("0x00"))
+            .childAndParentRoots(Bytes32.fromHexString("0x0000"), Bytes32.fromHexString("0x9999"))
+            // Create branch A of length 3
+            .childAndParentRoots(Bytes32.fromHexString("0x001A"), Bytes32.fromHexString("0x0000"))
+            .childAndParentRoots(Bytes32.fromHexString("0x002A"), Bytes32.fromHexString("0x001A"))
+            .childAndParentRoots(Bytes32.fromHexString("0x003A"), Bytes32.fromHexString("0x002A"))
+            // Create branch B of length 3
+            .childAndParentRoots(Bytes32.fromHexString("0x001B"), Bytes32.fromHexString("0x0000"))
+            .childAndParentRoots(Bytes32.fromHexString("0x002B"), Bytes32.fromHexString("0x001B"))
+            .childAndParentRoots(Bytes32.fromHexString("0x003B"), Bytes32.fromHexString("0x002B"))
+            // Create branch C of length 3
+            .childAndParentRoots(Bytes32.fromHexString("0x001C"), Bytes32.fromHexString("0x0000"))
+            .childAndParentRoots(Bytes32.fromHexString("0x002C"), Bytes32.fromHexString("0x001C"))
+            .childAndParentRoots(Bytes32.fromHexString("0x003C"), Bytes32.fromHexString("0x002C"))
+            .build();
+
+    final List<Bytes32> ordered = blockTree.preOrderStream().collect(Collectors.toList());
+    assertThat(ordered)
+        .containsExactly(
+            Bytes32.fromHexString("0x0000"),
+            Bytes32.fromHexString("0x001C"),
+            Bytes32.fromHexString("0x002C"),
+            Bytes32.fromHexString("0x003C"),
+            Bytes32.fromHexString("0x001B"),
+            Bytes32.fromHexString("0x002B"),
+            Bytes32.fromHexString("0x003B"),
+            Bytes32.fromHexString("0x001A"),
+            Bytes32.fromHexString("0x002A"),
+            Bytes32.fromHexString("0x003A"));
+  }
+
+  @Test
+  public void breadthFirstStream() {
+    final HashTree blockTree =
+        HashTree.builder()
+            .rootHash(Bytes32.fromHexString("0x00"))
+            .childAndParentRoots(Bytes32.fromHexString("0x0000"), Bytes32.fromHexString("0x9999"))
+            // Create branch A of length 3
+            .childAndParentRoots(Bytes32.fromHexString("0x001A"), Bytes32.fromHexString("0x0000"))
+            .childAndParentRoots(Bytes32.fromHexString("0x002A"), Bytes32.fromHexString("0x001A"))
+            .childAndParentRoots(Bytes32.fromHexString("0x003A"), Bytes32.fromHexString("0x002A"))
+            // Create branch B of length 3
+            .childAndParentRoots(Bytes32.fromHexString("0x001B"), Bytes32.fromHexString("0x0000"))
+            .childAndParentRoots(Bytes32.fromHexString("0x002B"), Bytes32.fromHexString("0x001B"))
+            .childAndParentRoots(Bytes32.fromHexString("0x003B"), Bytes32.fromHexString("0x002B"))
+            // Create branch C of length 3
+            .childAndParentRoots(Bytes32.fromHexString("0x001C"), Bytes32.fromHexString("0x0000"))
+            .childAndParentRoots(Bytes32.fromHexString("0x002C"), Bytes32.fromHexString("0x001C"))
+            .childAndParentRoots(Bytes32.fromHexString("0x003C"), Bytes32.fromHexString("0x002C"))
+            .build();
+
+    final List<Bytes32> ordered = blockTree.breadthFirstStream().collect(Collectors.toList());
+    assertThat(ordered)
+        .containsExactly(
+            Bytes32.fromHexString("0x0000"),
+            Bytes32.fromHexString("0x001A"),
+            Bytes32.fromHexString("0x001B"),
+            Bytes32.fromHexString("0x001C"),
+            Bytes32.fromHexString("0x002A"),
+            Bytes32.fromHexString("0x002B"),
+            Bytes32.fromHexString("0x002C"),
+            Bytes32.fromHexString("0x003A"),
+            Bytes32.fromHexString("0x003B"),
+            Bytes32.fromHexString("0x003C"));
+  }
+
   private void validateTreeRepresentsChain(
       final HashTree tree, final List<SignedBeaconBlock> chain) {
     validateTreeRepresentsChains(tree, List.of(chain));
