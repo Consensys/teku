@@ -13,9 +13,15 @@
 
 package tech.pegasys.teku.beaconrestapi.beacon;
 
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.Map;
 import okhttp3.Response;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.RestApiConstants;
@@ -37,6 +43,51 @@ public class GetStateRootIntegrationTest extends AbstractDataBackedRestAPIIntegr
 
     final Response response = getBySlot(1);
     assertNoContent(response);
+  }
+
+  @Test
+  public void shouldReturnStateRootIfBlockPresent() throws Exception {
+    startRestAPIAtGenesis();
+    createBlocksAtSlotsAndMapToApiResult(SIX);
+    final Response response = getBySlot(6);
+    assertThat(response.code()).isEqualTo(SC_OK);
+    final Bytes32 expectedRoot = getStateRootAtSlot(SIX);
+    assertThat(getBytes32FromResponseBody(response)).isEqualTo(expectedRoot);
+  }
+
+  @Test
+  public void shouldNotReturnStateRootForFutureSlot() throws Exception {
+    startRestAPIAtGenesis();
+    createBlocksAtSlotsAndMapToApiResult(SIX);
+    final Response response = getBySlot(7);
+    assertThat(response.code()).isEqualTo(SC_NOT_FOUND);
+  }
+
+  @Test
+  public void shouldReturnStateRootIfBlockMissed() throws Exception {
+    startRestAPIAtGenesis();
+    createBlocksAtSlotsAndMapToApiResult(SIX, EIGHT);
+    final Response response = getBySlot(7);
+    assertThat(response.code()).isEqualTo(SC_OK);
+    final Bytes32 expectedRoot = getStateRootAtSlot(SEVEN);
+    assertThat(getBytes32FromResponseBody(response)).isEqualTo(expectedRoot);
+  }
+
+  private Bytes32 getBytes32FromResponseBody(final Response response) throws IOException {
+    final String bytes32String = jsonProvider.jsonToObject(response.body().string(), String.class);
+    return Bytes32.fromHexString(bytes32String);
+  }
+
+  private Bytes32 getStateRootAtSlot(final UnsignedLong slot) {
+    try {
+      return combinedChainDataClient
+          .getStateAtSlotExact(slot)
+          .join()
+          .orElseThrow()
+          .hash_tree_root();
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   private Response getBySlot(final int slot) throws IOException {
