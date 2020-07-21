@@ -53,8 +53,7 @@ public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
                   throw new IllegalArgumentException(
                       "Invalid private key supplied.  Please check your validator keys configuration file");
                 }
-                return new BLSKeyPair(
-                    BLSSecretKey.fromBytes(Bytes32.fromHexString(privKey)));
+                return new BLSKeyPair(BLSSecretKey.fromBytes(Bytes32.fromHexString(privKey)));
               })
           .collect(toList());
     } catch (final JsonMappingException e) {
