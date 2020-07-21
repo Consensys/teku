@@ -55,7 +55,7 @@ public class MikuliPublicKeyTest extends PublicKeyTest {
             writer -> {
               writer.writeFixedBytes(Bytes.wrap(pointBytes));
             });
-    BLSPublicKey deserializedPublicKey = BLSPublicKey.fromBytes(infinityBytesSsz);
+    BLSPublicKey deserializedPublicKey = new BLSPublicKey(MikuliPublicKey.fromBytesCompressed(infinityBytesSsz));
     assertEquals(infinityPublicKey, deserializedPublicKey);
   }
 
