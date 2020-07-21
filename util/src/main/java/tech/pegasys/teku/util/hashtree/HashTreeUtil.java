@@ -14,9 +14,9 @@
 package tech.pegasys.teku.util.hashtree;
 
 import static java.lang.Long.max;
-import static java.lang.Math.toIntExact;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -458,11 +458,8 @@ public final class HashTreeUtil {
             merkle_root, Bytes.ofUnsignedLong(length, LITTLE_ENDIAN), Bytes.wrap(new byte[24])));
   }
 
-  public static boolean is_power_of_two(int value) {
+  @VisibleForTesting
+  static boolean is_power_of_two(int value) {
     return value > 0 && (value & (value - 1)) == 0;
-  }
-
-  public static boolean is_power_of_two(UnsignedLong value) {
-    return is_power_of_two(toIntExact(value.longValue()));
   }
 }
