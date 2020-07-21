@@ -82,7 +82,7 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
     List<Bytes> variablePartsList = new ArrayList<>();
     variablePartsList.addAll(
         List.of(
-            // TODO The below lines are a hack while Tuweni SSZ/SOS is being upgraded.
+            // TODO (#2396): The below lines are a hack while Tuweni SSZ/SOS is being upgraded.
             Bytes.fromHexString(
                 attesting_indices.stream()
                     .map(value -> SSZ.encodeUInt64(value.longValue()).toHexString().substring(2))

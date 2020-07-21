@@ -204,7 +204,7 @@ public class ValidatorDataProviderTest {
 
   @Test
   @Disabled
-  // TODO: The fix to the PublicKey.equals() method broke this test. Needs fixing.
+  // TODO (#2374): The fix to the PublicKey.equals() method broke this test. Needs fixing.
   void getValidatorsDutiesByRequest_shouldThrowIllegalArgumentExceptionIfKeyIsNotOnTheCurve() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
     when(combinedChainDataClient.getBestBlockRoot())

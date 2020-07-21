@@ -85,14 +85,16 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
   @Override
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
-    // TODO The below lines are a hack while Tuweni SSZ/SOS is being upgraded. To be uncommented
+    // TODO (#2396): The below lines are a hack while Tuweni SSZ/SOS is being upgraded. To be
+    // uncommented
     // once we shift from Bitlist to a real bitlist type.
     // Bitlist serialized_aggregation_bits =
     // Bitlist.fromHexString("0x01").shiftLeft(aggregation_bits.bitLength()).or(aggregation_bits);
     // variablePartsList.addAll(List.of(serialized_aggregation_bits));
     variablePartsList.addAll(List.of(aggregation_bits.serialize()));
     variablePartsList.addAll(Collections.nCopies(data.getSSZFieldCount(), Bytes.EMPTY));
-    // TODO The below lines are a hack while Tuweni SSZ/SOS is being upgraded. To be uncommented
+    // TODO (#2396): The below lines are a hack while Tuweni SSZ/SOS is being upgraded. To be
+    // uncommented
     // once we shift from Bitlist to a real bitlist type.
     // Bitlist serialized_custody_bitfield =
     // Bitlist.fromHexString("0x01").shiftLeft(aggregation_bits.bitLength()).or(custody_bitfield);
