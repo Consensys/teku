@@ -62,8 +62,8 @@ public interface ReadOnlyStore {
   Set<Bytes32> getBlockRoots();
 
   /**
-   * @return A list of block roots ordered by slot (earlier roots are sorted towards the beginning
-   *     of the list).
+   * @return A list of block roots ordered to guarantee that parent roots will be sorted earlier
+   *     than child roots
    */
   List<Bytes32> getOrderedBlockRoots();
 
