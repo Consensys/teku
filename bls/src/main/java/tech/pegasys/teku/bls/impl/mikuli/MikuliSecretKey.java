@@ -13,12 +13,12 @@
 
 package tech.pegasys.teku.bls.impl.mikuli;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.milagro.amcl.BLS381.BIG.MODBYTES;
 
 import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.SecretKey;
 import tech.pegasys.teku.bls.impl.Signature;
@@ -33,7 +33,7 @@ public class MikuliSecretKey implements SecretKey {
    * @return a new SecretKey object
    */
   public static MikuliSecretKey fromBytes(byte[] bytes) {
-    return fromBytes(Bytes.wrap(bytes));
+    return fromBytes(Bytes48.wrap(bytes));
   }
 
   /**
@@ -42,9 +42,7 @@ public class MikuliSecretKey implements SecretKey {
    * @param bytes the bytes of the private key
    * @return a new SecretKey object
    */
-  public static MikuliSecretKey fromBytes(Bytes bytes) {
-    checkArgument(
-        bytes.size() == MODBYTES, "Expected %s bytes, received %s.", MODBYTES, bytes.size());
+  public static MikuliSecretKey fromBytes(Bytes48 bytes) {
     return new MikuliSecretKey(new Scalar(BIG.fromBytes(bytes.toArrayUnsafe())));
   }
 
