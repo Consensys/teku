@@ -186,8 +186,7 @@ public class CombinedChainDataClient {
                   return completedFuture(recentState);
                 }
                 // Fall-through to historical query in case state has moved into historical range
-                // during
-                // processing
+                // during processing
                 return historicalChainData.getLatestFinalizedStateAtSlot(slot);
               });
     }

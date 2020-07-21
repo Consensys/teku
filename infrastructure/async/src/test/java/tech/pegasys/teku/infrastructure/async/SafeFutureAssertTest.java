@@ -58,20 +58,20 @@ public class SafeFutureAssertTest {
   public void isCompletedWithNonEmptyOptional_withEmptyOptional() {
     SafeFuture<Optional<?>> result = SafeFuture.completedFuture(Optional.empty());
     assertThatThrownBy(() -> assertThatSafeFuture(result).isCompletedWithNonEmptyOptional())
-      .isInstanceOf(AssertionError.class);
+        .isInstanceOf(AssertionError.class);
   }
 
   @Test
   public void isCompletedWithNonEmptyOptional_withIncompleteFuture() {
     SafeFuture<Optional<?>> result = new SafeFuture<>();
     assertThatThrownBy(() -> assertThatSafeFuture(result).isCompletedWithNonEmptyOptional())
-      .isInstanceOf(AssertionError.class);
+        .isInstanceOf(AssertionError.class);
   }
 
   @Test
   public void isCompletedWithNonEmptyOptional_withNonOptional() {
     SafeFuture<?> result = SafeFuture.completedFuture(12);
     assertThatThrownBy(() -> assertThatSafeFuture(result).isCompletedWithNonEmptyOptional())
-      .isInstanceOf(AssertionError.class);
+        .isInstanceOf(AssertionError.class);
   }
 }
