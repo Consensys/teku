@@ -80,7 +80,11 @@ public class GetStateRootIntegrationTest extends AbstractDataBackedRestAPIIntegr
 
   private Bytes32 getStateRootAtSlot(final UnsignedLong slot) {
     try {
-      return combinedChainDataClient.getStateAtSlotExact(slot).get().get().hash_tree_root();
+      return combinedChainDataClient
+          .getStateAtSlotExact(slot)
+          .join()
+          .orElseThrow()
+          .hash_tree_root();
     } catch (Exception e) {
       return null;
     }

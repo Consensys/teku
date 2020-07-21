@@ -146,7 +146,7 @@ public class CombinedChainDataClient {
     return getBlockAndStateInEffectAtSlot(slot)
         .thenApplyChecked(
             maybeBlockAndState ->
-                maybeBlockAndState.map(
+                maybeBlockAndState.flatMap(
                     blockAndState -> regenerateBeaconState(blockAndState.getState(), slot)));
   }
 
@@ -205,18 +205,19 @@ public class CombinedChainDataClient {
     return historicalChainData.getFinalizedStateByBlockRoot(blockRoot);
   }
 
-  private BeaconState regenerateBeaconState(final BeaconState preState, final UnsignedLong slot) {
+  private Optional<BeaconState> regenerateBeaconState(
+      final BeaconState preState, final UnsignedLong slot) {
     if (preState.getSlot().equals(slot)) {
-      return preState;
+      return Optional.of(preState);
     } else if (slot.compareTo(getBestSlot()) > 0) {
       LOG.debug("Attempted to wind forward to a future state: {}", slot.toString());
-      return null;
+      return Optional.empty();
     }
     try {
-      return stateTransition.process_slots(preState, slot);
+      return Optional.of(stateTransition.process_slots(preState, slot));
     } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
       LOG.debug("State Transition error", e);
-      return null;
+      return Optional.empty();
     }
   }
 
