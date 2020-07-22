@@ -1,0 +1,4 @@
+# remote validator api
+remote-validator-api-enabled: True
+remote-validator-api-port: 1234
+remote-validator-api-interface: "127.0.0.123"

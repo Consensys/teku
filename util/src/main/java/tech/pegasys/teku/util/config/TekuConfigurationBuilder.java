@@ -20,6 +20,7 @@ import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class TekuConfigurationBuilder {
+
   private static final boolean DEFAULT_P2P_SNAPPY_ENABLED = false;
   private String constants;
   private Integer startupTargetPeerCount;
@@ -77,6 +78,9 @@ public class TekuConfigurationBuilder {
   private String restApiInterface;
   private List<String> restApiHostAllowlist;
   private NetworkDefinition network;
+  private String remoteValidatorApiInterface;
+  private int remoteValidatorApiPort;
+  private boolean remoteValidatorApiEnabled;
   private Bytes32 graffiti;
 
   public TekuConfigurationBuilder setConstants(final String constants) {
@@ -369,6 +373,23 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
+  public TekuConfigurationBuilder setRemoteValidatorApiEnabled(
+      final boolean remoteValidatorApiEnabled) {
+    this.remoteValidatorApiEnabled = remoteValidatorApiEnabled;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setRemoteValidatorApiInterface(
+      final String remoteValidatorApiInterface) {
+    this.remoteValidatorApiInterface = remoteValidatorApiInterface;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setRemoteValidatorApiPort(final int remoteValidatorApiPort) {
+    this.remoteValidatorApiPort = remoteValidatorApiPort;
+    return this;
+  }
+
   public TekuConfigurationBuilder setGraffiti(final Bytes32 graffiti) {
     this.graffiti = graffiti;
     return this;
@@ -457,6 +478,9 @@ public class TekuConfigurationBuilder {
         restApiEnabled,
         restApiInterface,
         restApiHostAllowlist,
+        remoteValidatorApiInterface,
+        remoteValidatorApiPort,
+        remoteValidatorApiEnabled,
         graffiti);
   }
 

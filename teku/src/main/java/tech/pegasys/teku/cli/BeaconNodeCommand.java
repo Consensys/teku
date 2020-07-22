@@ -40,6 +40,7 @@ import tech.pegasys.teku.cli.options.MetricsOptions;
 import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.cli.options.OutputOptions;
 import tech.pegasys.teku.cli.options.P2POptions;
+import tech.pegasys.teku.cli.options.RemoteValidatorApiOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.cli.subcommand.DepositCommand;
 import tech.pegasys.teku.cli.subcommand.GenesisCommand;
@@ -149,6 +150,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   @Mixin(name = "REST API")
   private BeaconRestApiOptions beaconRestApiOptions;
+
+  @Mixin(name = "REMOTE VALIDATOR API")
+  private RemoteValidatorApiOptions remoteValidatorApiOptions;
 
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
@@ -351,6 +355,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setRestApiEnabled(beaconRestApiOptions.isRestApiEnabled())
         .setRestApiInterface(beaconRestApiOptions.getRestApiInterface())
         .setRestApiHostAllowlist(beaconRestApiOptions.getRestApiHostAllowlist())
+        .setRemoteValidatorApiEnabled(remoteValidatorApiOptions.isApiEnabled())
+        .setRemoteValidatorApiInterface(remoteValidatorApiOptions.getApiInterface())
+        .setRemoteValidatorApiPort(remoteValidatorApiOptions.getApiPort())
         .build();
   }
 }
