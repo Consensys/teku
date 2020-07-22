@@ -151,7 +151,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
                       .retrieveBlockAndState(blockRoot)
                       .thenAccept(
                           blockAndState ->
-                              blockAndState.ifPresent(b -> processBlockAtStartup(protoArray, b))));
+                              processBlockAtStartup(protoArray, blockAndState.orElseThrow())));
     }
     return future;
   }
