@@ -15,7 +15,7 @@ package tech.pegasys.teku.protoarray;
 
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy.computeDeltas;
+import static tech.pegasys.teku.protoarray.ProtoArrayScoreCalculator.computeDeltas;
 import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.createStoreToManipulateVotes;
 import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.getHash;
 
@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 
-public class ProtoArrayForkChoiceStrategyTest {
+public class ProtoArrayScoreCalculatorTest {
 
   private Map<Bytes32, Integer> indices;
   private List<UnsignedLong> oldBalances;
@@ -47,7 +47,7 @@ public class ProtoArrayForkChoiceStrategyTest {
   }
 
   @Test
-  void zeroHash() {
+  void computeDeltas_zeroHash() {
     int validatorCount = 16;
 
     for (int i = 0; i < validatorCount; i++) {
@@ -65,7 +65,7 @@ public class ProtoArrayForkChoiceStrategyTest {
   }
 
   @Test
-  void allVotedTheSame() {
+  void computeDeltas_allVotedTheSame() {
     final UnsignedLong BALANCE = UnsignedLong.valueOf(42);
     int validatorCount = 16;
 
@@ -94,7 +94,7 @@ public class ProtoArrayForkChoiceStrategyTest {
   }
 
   @Test
-  void differentVotes() {
+  void computeDeltas_differentVotes() {
     final UnsignedLong BALANCE = UnsignedLong.valueOf(42);
     int validatorCount = 16;
 
@@ -115,7 +115,7 @@ public class ProtoArrayForkChoiceStrategyTest {
   }
 
   @Test
-  void movingVotes() {
+  void computeDeltas_movingVotes() {
     final UnsignedLong BALANCE = UnsignedLong.valueOf(42);
     int validatorCount = 16;
 
@@ -151,7 +151,7 @@ public class ProtoArrayForkChoiceStrategyTest {
   }
 
   @Test
-  void moveOutOfTree() {
+  void computeDeltas_moveOutOfTree() {
     final UnsignedLong BALANCE = UnsignedLong.valueOf(42);
 
     // There is only one block.
@@ -181,7 +181,7 @@ public class ProtoArrayForkChoiceStrategyTest {
   }
 
   @Test
-  void changingBalances() {
+  void computeDeltas_changingBalances() {
 
     final UnsignedLong OLD_BALANCE = UnsignedLong.valueOf(42);
     final UnsignedLong NEW_BALANCE = OLD_BALANCE.times(UnsignedLong.valueOf(2));
@@ -218,7 +218,7 @@ public class ProtoArrayForkChoiceStrategyTest {
   }
 
   @Test
-  void validatorAppears() {
+  void computeDeltas_validatorAppears() {
     final UnsignedLong BALANCE = UnsignedLong.valueOf(42);
 
     // There are two blocks.
@@ -251,7 +251,7 @@ public class ProtoArrayForkChoiceStrategyTest {
   }
 
   @Test
-  void validatorDisappears() {
+  void computeDeltas_validatorDisappears() {
     final UnsignedLong BALANCE = UnsignedLong.valueOf(42);
 
     // There are two blocks.
