@@ -21,8 +21,6 @@ import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -36,8 +34,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
-  private static final Logger LOG = LogManager.getLogger();
-
   private final ReadWriteLock protoArrayLock = new ReentrantReadWriteLock();
   private final ReadWriteLock votesLock = new ReentrantReadWriteLock();
   private final ReadWriteLock balancesLock = new ReentrantReadWriteLock();
