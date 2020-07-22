@@ -137,5 +137,7 @@ dependencyManagement {
     dependency 'tech.pegasys.discovery:discovery:0.3.7'
 
     dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.1'
+
+    dependency 'org.apache.derby:derby:10.15.2.0'
   }
 }

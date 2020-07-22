@@ -20,6 +20,7 @@ dependencies {
   implementation 'org.hyperledger.besu.internal:metrics-core'
   implementation 'org.hyperledger.besu:plugin-api'
   implementation 'org.rocksdb:rocksdbjni'
+  implementation 'org.apache.derby:derby'
 
   testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':data:metrics'))
