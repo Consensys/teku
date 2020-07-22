@@ -15,6 +15,8 @@ package tech.pegasys.teku.bls;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
@@ -65,10 +67,7 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
     return SSZ.decode(
         bytes,
         reader ->
-            new BLSPublicKey(
-                BLS.getBlsImpl()
-                    .publicKeyFromCompressed(
-                        Bytes48.wrap(reader.readFixedBytes(BLS_PUBKEY_SIZE)))));
+            new BLSPublicKey(Bytes48.wrap(reader.readFixedBytes(BLS_PUBKEY_SIZE))));
   }
 
   /**
@@ -84,25 +83,17 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
    *    Use {@link BLSPublicKey#fromBytesCompressedValidate(Bytes48)} if need to immediately ensure input validity
    */
   public static BLSPublicKey fromBytesCompressed(Bytes48 bytes) throws IllegalArgumentException {
-    return new BLSPublicKey(BLS.getBlsImpl().publicKeyFromCompressed(bytes));
+    return new BLSPublicKey(bytes);
   }
 
   public static BLSPublicKey fromBytesCompressedValidate(Bytes48 bytes) throws IllegalArgumentException {
-    BLSPublicKey ret = new BLSPublicKey(BLS.getBlsImpl().publicKeyFromCompressed(bytes));
+    BLSPublicKey ret = new BLSPublicKey(bytes);
     ret.getPublicKey().forceValidation();
     return ret;
   }
 
-  private final PublicKey publicKey;
-
-  /**
-   * Copy constructor.
-   *
-   * @param publicKey A BLSPublicKey
-   */
-  public BLSPublicKey(BLSPublicKey publicKey) {
-    this.publicKey = publicKey.getPublicKey();
-  }
+  private final Supplier<PublicKey> publicKey;
+  private final Supplier<Bytes48> bytesCompressed;
 
   /**
    * Construct from a BLSSecretKey object.
@@ -118,8 +109,19 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
    *
    * @param publicKey A Mikuli PublicKey
    */
-  public BLSPublicKey(PublicKey publicKey) {
+  BLSPublicKey(PublicKey publicKey) {
+    this(() -> publicKey, Suppliers.memoize(publicKey::toBytesCompressed));
+  }
+
+  BLSPublicKey(Bytes48 bytesCompressed) {
+    this(
+        Suppliers.memoize(() -> BLS.getBlsImpl().publicKeyFromCompressed(bytesCompressed)),
+        () -> bytesCompressed);
+  }
+
+  private BLSPublicKey(Supplier<PublicKey> publicKey, Supplier<Bytes48> bytesCompressed) {
     this.publicKey = publicKey;
+    this.bytesCompressed = bytesCompressed;
   }
 
   /**
@@ -130,16 +132,16 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
   public Bytes toSSZBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeFixedBytes(publicKey.toBytesCompressed());
+          writer.writeFixedBytes(toBytesCompressed());
         });
   }
 
   public Bytes48 toBytesCompressed() {
-    return publicKey.toBytesCompressed();
+    return bytesCompressed.get();
   }
 
   public PublicKey getPublicKey() {
-    return publicKey;
+    return publicKey.get();
   }
 
   @Override
@@ -167,6 +169,6 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
 
   @Override
   public int hashCode() {
-    return Objects.hash(publicKey);
+    return Objects.hash(getPublicKey());
   }
 }

@@ -20,7 +20,6 @@ import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.impl.BLS12381;
 import tech.pegasys.teku.bls.impl.PublicKeyTest;
 
@@ -47,7 +46,7 @@ public class MikuliPublicKeyTest extends PublicKeyTest {
 
   @Test
   void succeedsIfDeserializationOfInfinityPublicKeyIsCorrect() {
-    BLSPublicKey infinityPublicKey = new BLSPublicKey(new MikuliPublicKey(new G1Point()));
+    MikuliPublicKey infinityPublicKey = new MikuliPublicKey(new G1Point());
     byte[] pointBytes = new byte[48];
     pointBytes[0] = (byte) 0xc0;
     Bytes infinityBytesSsz =
@@ -55,15 +54,14 @@ public class MikuliPublicKeyTest extends PublicKeyTest {
             writer -> {
               writer.writeFixedBytes(Bytes.wrap(pointBytes));
             });
-    BLSPublicKey deserializedPublicKey = new BLSPublicKey(MikuliPublicKey.fromBytesCompressed(infinityBytesSsz));
+    MikuliPublicKey deserializedPublicKey = MikuliPublicKey.fromBytesCompressed(infinityBytesSsz);
     assertEquals(infinityPublicKey, deserializedPublicKey);
   }
 
   @Test
   void succeedsWhenRoundtripSSZReturnsTheInfinityPublicKey() {
-    BLSPublicKey publicKey1 = new BLSPublicKey(new MikuliPublicKey(new G1Point()));
-    BLSPublicKey publicKey2 =
-        new BLSPublicKey(MikuliPublicKey.fromBytesCompressed(publicKey1.toSSZBytes()));
+    MikuliPublicKey publicKey1 = new MikuliPublicKey(new G1Point());
+    MikuliPublicKey publicKey2 = MikuliPublicKey.fromBytesCompressed(publicKey1.toBytesCompressed());
     assertEquals(publicKey1, publicKey2);
   }
 }

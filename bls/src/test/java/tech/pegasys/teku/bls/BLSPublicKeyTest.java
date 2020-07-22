@@ -115,13 +115,6 @@ class BLSPublicKeyTest {
   }
 
   @Test
-  void succeedsWhenEqualsReturnsTrueForIdenticalPublicKeys() {
-    BLSPublicKey publicKey = BLSPublicKey.random(42);
-    BLSPublicKey copyOfPublicKey = new BLSPublicKey(publicKey);
-    assertEquals(publicKey, copyOfPublicKey);
-  }
-
-  @Test
   void succeedsWhenEqualsReturnsFalseForDifferentPublicKeys() {
     BLSPublicKey publicKey1 = BLSPublicKey.random(1);
     BLSPublicKey publicKey2 = BLSPublicKey.random(2);

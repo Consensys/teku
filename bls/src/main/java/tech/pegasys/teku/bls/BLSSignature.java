@@ -16,6 +16,8 @@ package tech.pegasys.teku.bls;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.isNull;
 
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
@@ -67,7 +69,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    return List.of(SSZ.encode(writer -> writer.writeFixedBytes(signature.toBytesCompressed())));
+    return List.of(toSSZBytes());
   }
 
   public static BLSSignature fromSSZBytes(Bytes bytes) {
@@ -78,29 +80,30 @@ public class BLSSignature implements SimpleOffsetSerializable {
     return SSZ.decode(
         bytes,
         reader ->
-            new BLSSignature(
-                BLS.getBlsImpl()
-                    .signatureFromCompressed(reader.readFixedBytes(BLS_SIGNATURE_SIZE))));
+            new BLSSignature(reader.readFixedBytes(BLS_SIGNATURE_SIZE)));
   }
 
-  private final Signature signature;
-
-  /**
-   * Copy constructor.
-   *
-   * @param signature A BLSSignature
-   */
-  public BLSSignature(BLSSignature signature) {
-    this.signature = signature.getSignature();
-  }
+  private final Supplier<Signature> signature;
+  private final Supplier<Bytes> bytesCompressed;
 
   /**
    * Construct from a Mikuli Signature object.
    *
    * @param signature A Mikuli Signature
    */
-  public BLSSignature(Signature signature) {
+  BLSSignature(Signature signature) {
+    this(() -> signature, Suppliers.memoize(signature::toBytesCompressed));
+  }
+
+  BLSSignature(Bytes signatureBytes) {
+    this(
+        Suppliers.memoize(() -> BLS.getBlsImpl().signatureFromCompressed(signatureBytes)),
+        () -> signatureBytes);
+  }
+
+  private BLSSignature(Supplier<Signature> signature, Supplier<Bytes> bytesCompressed) {
     this.signature = signature;
+    this.bytesCompressed = bytesCompressed;
   }
 
   /**
@@ -111,12 +114,12 @@ public class BLSSignature implements SimpleOffsetSerializable {
   public Bytes toSSZBytes() {
     return SSZ.encode(
         writer -> {
-          writer.writeFixedBytes(signature.toBytesCompressed());
+          writer.writeFixedBytes(bytesCompressed.get());
         });
   }
 
   public Signature getSignature() {
-    return signature;
+    return signature.get();
   }
 
   @Override
@@ -126,7 +129,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
 
   @Override
   public int hashCode() {
-    return signature.hashCode();
+    return getSignature().hashCode();
   }
 
   @Override
@@ -141,6 +144,6 @@ public class BLSSignature implements SimpleOffsetSerializable {
       return false;
     }
     BLSSignature other = (BLSSignature) obj;
-    return Objects.equals(this.signature, other.signature);
+    return Objects.equals(this.getSignature(), other.getSignature());
   }
 }

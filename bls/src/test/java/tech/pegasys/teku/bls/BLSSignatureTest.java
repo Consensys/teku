@@ -68,13 +68,6 @@ class BLSSignatureTest {
   }
 
   @Test
-  void succeedsWhenEqualsReturnsTrueForIdenticalSignatures() {
-    BLSSignature signature = BLSSignature.random(17);
-    BLSSignature copyOfSignature = new BLSSignature(signature);
-    assertEquals(signature, copyOfSignature);
-  }
-
-  @Test
   void succeedsWhenEqualsReturnsFalseForDifferentSignatures() {
     BLSSignature signature1 = BLSSignature.random(42);
     BLSSignature signature2 = BLSSignature.random(43);
