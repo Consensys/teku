@@ -138,6 +138,15 @@ public class ChainDataProvider {
         .thenApply(state -> state.map(BeaconState::new));
   }
 
+  public SafeFuture<Optional<BeaconState>> getStateByStateRoot(final Bytes32 stateRoot) {
+    if (!isStoreAvailable()) {
+      return chainUnavailable();
+    }
+    return combinedChainDataClient
+        .getStateByStateRoot(stateRoot)
+        .thenApply(state -> state.map(BeaconState::new));
+  }
+
   public SafeFuture<Optional<BeaconState>> getStateAtSlot(final UnsignedLong slot) {
     if (!combinedChainDataClient.isChainDataFullyAvailable()) {
       return chainUnavailable();

@@ -22,7 +22,6 @@ import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.logging.EventLogger;
@@ -187,16 +186,21 @@ public class SlotProcessor {
 
   private void processSlotAttestation(final UnsignedLong nodeEpoch) {
     onTickSlotAttestation = nodeSlot.getValue();
-    Bytes32 headBlockRoot = this.forkChoice.processHead(onTickSlotAttestation);
-    eventLog.slotEvent(
-        nodeSlot.getValue(),
-        recentChainData.getBestSlot(),
-        headBlockRoot,
-        nodeEpoch,
-        recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
-        recentChainData.getFinalizedRoot(),
-        p2pNetwork.getPeerCount());
-    this.eventBus.post(new BroadcastAttestationEvent(headBlockRoot, nodeSlot.getValue()));
+    this.forkChoice.processHead(onTickSlotAttestation);
+    recentChainData
+        .getBestBlock()
+        .ifPresent(
+            (head) ->
+                eventLog.slotEvent(
+                    nodeSlot.getValue(),
+                    head.getSlot(),
+                    head.getRoot(),
+                    nodeEpoch,
+                    recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
+                    recentChainData.getFinalizedRoot(),
+                    p2pNetwork.getPeerCount()));
+
+    this.eventBus.post(new BroadcastAttestationEvent(nodeSlot.getValue()));
   }
 
   private void processSlotAggregate() {

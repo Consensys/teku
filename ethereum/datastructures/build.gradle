@@ -21,6 +21,7 @@ dependencies {
 
   testFixturesApi project(':pow')
   testFixturesApi project(':ssz')
+  testFixturesApi project(':storage:api')
 
   testFixturesApi 'org.apache.tuweni:tuweni-bytes'
   testFixturesApi 'com.google.guava:guava'

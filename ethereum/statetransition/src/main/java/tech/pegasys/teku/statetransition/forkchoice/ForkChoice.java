@@ -23,6 +23,7 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -46,15 +47,15 @@ public class ForkChoice {
     processHead();
   }
 
-  public synchronized Bytes32 processHead() {
-    return processHead(Optional.empty());
+  public synchronized void processHead() {
+    processHead(Optional.empty());
   }
 
-  public synchronized Bytes32 processHead(UnsignedLong nodeSlot) {
-    return processHead(Optional.of(nodeSlot));
+  public synchronized void processHead(UnsignedLong nodeSlot) {
+    processHead(Optional.of(nodeSlot));
   }
 
-  public synchronized Bytes32 processHead(Optional<UnsignedLong> nodeSlot) {
+  private synchronized void processHead(Optional<UnsignedLong> nodeSlot) {
     StoreTransaction transaction = recentChainData.startStoreTransaction();
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
     Bytes32 headBlockRoot = forkChoiceStrategy.findHead(transaction);
@@ -68,7 +69,6 @@ public class ForkChoice {
                     () ->
                         new IllegalStateException(
                             "Unable to retrieve the slot of fork choice head"))));
-    return headBlockRoot;
   }
 
   public synchronized BlockImportResult onBlock(
@@ -76,7 +76,18 @@ public class ForkChoice {
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
     StoreTransaction transaction = recentChainData.startStoreTransaction();
     final BlockImportResult result =
-        on_block(transaction, block, preState, stateTransition, forkChoiceStrategy);
+        on_block(
+            transaction,
+            block,
+            preState,
+            stateTransition,
+            forkChoiceStrategy,
+            beaconState ->
+                transaction.putStateRoot(
+                    beaconState.hash_tree_root(),
+                    new SlotAndBlockRoot(
+                        beaconState.getSlot(),
+                        beaconState.getLatest_block_header().hash_tree_root())));
 
     if (!result.isSuccessful()) {
       return result;

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -54,25 +55,30 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
 
   public SafeFuture<?> gossip(final Attestation attestation) {
     return computeSubnetForAttestation(attestation)
-        .map(
+        .thenCompose(
             subnetId -> {
+              if (subnetId.isEmpty()) {
+                throw new IllegalStateException(
+                    "Unable to calculate the subnet ID for attestation in slot "
+                        + attestation.getData().getSlot()
+                        + " because the state was not available");
+              }
               final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
               final String topic =
                   TopicNames.getAttestationSubnetTopic(
-                      forkInfo.getForkDigest(), subnetId, gossipEncoding);
+                      forkInfo.getForkDigest(), subnetId.get(), gossipEncoding);
               return gossipNetwork.gossip(topic, gossipEncoding.encode(attestation));
-            })
-        .orElseGet(
-            () ->
-                SafeFuture.failedFuture(
-                    new IllegalStateException(
-                        "Unable to calculate the subnet ID for attestation in slot "
-                            + attestation.getData().getSlot()
-                            + " because the state was not available")));
+            });
   }
 
-  public synchronized Optional<TopicChannel> getChannel(final Attestation attestation) {
-    return computeSubnetForAttestation(attestation).map(subnetIdToTopicChannel::get);
+  @VisibleForTesting
+  SafeFuture<Optional<TopicChannel>> getChannel(final Attestation attestation) {
+    return computeSubnetForAttestation(attestation)
+        .thenApply(subnetId -> subnetId.flatMap(this::getChannelForSubnet));
+  }
+
+  private synchronized Optional<TopicChannel> getChannelForSubnet(final int subnetId) {
+    return Optional.ofNullable(subnetIdToTopicChannel.get(subnetId));
   }
 
   public synchronized void subscribeToSubnetId(final int subnetId) {
@@ -94,10 +100,11 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
     return gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 
-  private Optional<Integer> computeSubnetForAttestation(final Attestation attestation) {
+  private SafeFuture<Optional<Integer>> computeSubnetForAttestation(final Attestation attestation) {
     return recentChainData
-        .getStateInEffectAtSlot(attestation.getData().getSlot())
-        .map(state -> CommitteeUtil.computeSubnetForAttestation(state, attestation));
+        .retrieveStateInEffectAtSlot(attestation.getData().getSlot())
+        .thenApply(
+            state -> state.map(s -> CommitteeUtil.computeSubnetForAttestation(s, attestation)));
   }
 
   @Override

@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
@@ -194,6 +195,11 @@ class TestStoreImpl implements MutablePrunableStore {
   public void putBlockAndState(final SignedBeaconBlock block, final BeaconState state) {
     blocks.put(block.getRoot(), block);
     block_states.put(block.getRoot(), state);
+  }
+
+  @Override
+  public void putStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
+    // NO-OP
   }
 
   @Override
