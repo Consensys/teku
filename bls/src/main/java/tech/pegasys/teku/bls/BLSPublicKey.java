@@ -44,7 +44,7 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
    * @return the empty public key as per the Eth2 spec
    */
   public static BLSPublicKey empty() {
-    return BLSPublicKey.fromBytes(Bytes.wrap(new byte[BLS_PUBKEY_SIZE]));
+    return BLSPublicKey.fromSSZBytes(Bytes.wrap(new byte[BLS_PUBKEY_SIZE]));
   }
 
   @Override
@@ -54,10 +54,10 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
 
   @Override
   public List<Bytes> get_fixed_parts() {
-    return List.of(toBytes());
+    return List.of(toSSZBytes());
   }
 
-  public static BLSPublicKey fromBytes(Bytes bytes) {
+  public static BLSPublicKey fromSSZBytes(Bytes bytes) {
     checkArgument(
         bytes.size() == BLS_PUBKEY_SIZE,
         "Expected " + BLS_PUBKEY_SIZE + " bytes but received %s.",
@@ -127,7 +127,7 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
    *
    * @return the serialization of the compressed form of the signature.
    */
-  public Bytes toBytes() {
+  public Bytes toSSZBytes() {
     return SSZ.encode(
         writer -> {
           writer.writeFixedBytes(publicKey.toBytesCompressed());

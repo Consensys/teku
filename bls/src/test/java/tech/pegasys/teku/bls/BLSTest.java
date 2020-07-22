@@ -142,7 +142,7 @@ class BLSTest {
                   + "00000000000000000000000000000000"
                   + "00000000000000000000000000000000"));
   static final BLSSignature infinityG2 =
-      BLSSignature.fromBytes(
+      BLSSignature.fromSSZBytes(
           Bytes.fromHexString(
               "0x"
                   + "c000000000000000000000000000000000000000000000000000000000000000"

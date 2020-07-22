@@ -87,7 +87,7 @@ public class ValidatorDataProvider {
 
     return validatorApiChannel
         .createUnsignedBlock(
-            slot, tech.pegasys.teku.bls.BLSSignature.fromBytes(randao.getBytes()), graffiti)
+            slot, tech.pegasys.teku.bls.BLSSignature.fromSSZBytes(randao.getBytes()), graffiti)
         .thenApply(maybeBlock -> maybeBlock.map(BeaconBlock::new));
   }
 
@@ -123,7 +123,7 @@ public class ValidatorDataProvider {
             () -> {
               final List<BLSPublicKey> publicKeys =
                   validatorDutiesRequest.pubkeys.stream()
-                      .map(key -> BLSPublicKey.fromBytes(key.toBytes()))
+                      .map(key -> BLSPublicKey.fromSSZBytes(key.toBytes()))
                       .collect(toList());
               return validatorApiChannel.getDuties(validatorDutiesRequest.epoch, publicKeys);
             })
@@ -151,7 +151,7 @@ public class ValidatorDataProvider {
 
   public void submitAttestation(Attestation attestation) {
     // TODO (#2410): extra validation for the attestation we're posting?
-    if (attestation.signature.asInternalBLSSignature().toBytes().isZero()) {
+    if (attestation.signature.asInternalBLSSignature().toSSZBytes().isZero()) {
       throw new IllegalArgumentException("Signed attestations must have a non zero signature");
     }
     validatorApiChannel.sendSignedAttestation(attestation.asInternalAttestation());

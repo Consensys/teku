@@ -67,7 +67,7 @@ class MockStartValidatorKeyPairFactoryTest {
 
     final List<String> actualPublicKeys =
         keyPairs.stream()
-            .map(keyPair -> keyPair.getPublicKey().toBytes().toHexString())
+            .map(keyPair -> keyPair.getPublicKey().toSSZBytes().toHexString())
             .collect(toList());
 
     final List<String> expectedPublicKeys =

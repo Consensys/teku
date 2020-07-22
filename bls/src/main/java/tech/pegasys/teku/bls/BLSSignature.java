@@ -57,7 +57,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
    * @return the empty signature
    */
   public static BLSSignature empty() {
-    return BLSSignature.fromBytes(Bytes.wrap(new byte[BLS_SIGNATURE_SIZE]));
+    return BLSSignature.fromSSZBytes(Bytes.wrap(new byte[BLS_SIGNATURE_SIZE]));
   }
 
   @Override
@@ -70,7 +70,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
     return List.of(SSZ.encode(writer -> writer.writeFixedBytes(signature.toBytesCompressed())));
   }
 
-  public static BLSSignature fromBytes(Bytes bytes) {
+  public static BLSSignature fromSSZBytes(Bytes bytes) {
     checkArgument(
         bytes.size() == BLS_SIGNATURE_SIZE,
         "Expected " + BLS_SIGNATURE_SIZE + " bytes but received %s.",
@@ -108,7 +108,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
    *
    * @return the serialization of the compressed form of the signature.
    */
-  public Bytes toBytes() {
+  public Bytes toSSZBytes() {
     return SSZ.encode(
         writer -> {
           writer.writeFixedBytes(signature.toBytesCompressed());
@@ -121,7 +121,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
 
   @Override
   public String toString() {
-    return toBytes().toString();
+    return toSSZBytes().toString();
   }
 
   @Override

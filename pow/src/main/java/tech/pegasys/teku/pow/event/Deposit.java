@@ -35,7 +35,7 @@ public class Deposit {
     this.merkle_tree_index = UnsignedLong.valueOf(Bytes.wrap(response.index).reverse().toLong());
     this.pubkey = BLSPublicKey.fromBytesCompressed(Bytes48.wrap(response.pubkey));
     this.withdrawal_credentials = Bytes32.wrap(response.withdrawal_credentials);
-    this.signature = BLSSignature.fromBytes(Bytes.wrap(response.signature));
+    this.signature = BLSSignature.fromSSZBytes(Bytes.wrap(response.signature));
     this.amount = UnsignedLong.valueOf(Bytes.wrap(response.amount).reverse().toLong());
   }
 

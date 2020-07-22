@@ -276,7 +276,7 @@ class DiscoveryNetworkTest {
 
   public DiscoveryPeer createDiscoveryPeer(Optional<EnrForkId> maybeForkId) {
     return new DiscoveryPeer(
-        BLSPublicKey.empty().toBytes(),
+        BLSPublicKey.empty().toSSZBytes(),
         InetSocketAddress.createUnresolved("yo", 9999),
         maybeForkId,
         new Bitvector(ATTESTATION_SUBNET_COUNT));

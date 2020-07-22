@@ -35,7 +35,7 @@ public class BLSSignature {
   }
 
   public BLSSignature(tech.pegasys.teku.bls.BLSSignature signature) {
-    this(signature.toBytes());
+    this(signature.toSSZBytes());
   }
 
   @Override
@@ -77,6 +77,6 @@ public class BLSSignature {
   }
 
   public tech.pegasys.teku.bls.BLSSignature asInternalBLSSignature() {
-    return tech.pegasys.teku.bls.BLSSignature.fromBytes(bytes);
+    return tech.pegasys.teku.bls.BLSSignature.fromSSZBytes(bytes);
   }
 }

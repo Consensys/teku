@@ -63,7 +63,7 @@ public class MikuliPublicKeyTest extends PublicKeyTest {
   void succeedsWhenRoundtripSSZReturnsTheInfinityPublicKey() {
     BLSPublicKey publicKey1 = new BLSPublicKey(new MikuliPublicKey(new G1Point()));
     BLSPublicKey publicKey2 =
-        new BLSPublicKey(MikuliPublicKey.fromBytesCompressed(publicKey1.toBytes()));
+        new BLSPublicKey(MikuliPublicKey.fromBytesCompressed(publicKey1.toSSZBytes()));
     assertEquals(publicKey1, publicKey2);
   }
 }

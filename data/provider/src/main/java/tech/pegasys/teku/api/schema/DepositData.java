@@ -37,7 +37,7 @@ public class DepositData {
   public final BLSSignature signature;
 
   public DepositData(tech.pegasys.teku.datastructures.operations.DepositData depositData) {
-    this.pubkey = new BLSPubKey(depositData.getPubkey().toBytes());
+    this.pubkey = new BLSPubKey(depositData.getPubkey().toSSZBytes());
     this.withdrawal_credentials = depositData.getWithdrawal_credentials();
     this.amount = depositData.getAmount();
     this.signature = new BLSSignature(depositData.getSignature());
@@ -56,7 +56,7 @@ public class DepositData {
 
   public tech.pegasys.teku.datastructures.operations.DepositData asInternalDepositData() {
     return new tech.pegasys.teku.datastructures.operations.DepositData(
-        BLSPublicKey.fromBytes(pubkey.toBytes()),
+        BLSPublicKey.fromSSZBytes(pubkey.toBytes()),
         withdrawal_credentials,
         amount,
         signature.asInternalBLSSignature());

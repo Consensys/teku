@@ -52,8 +52,8 @@ class BLSPublicKeyTest {
   @Test
   void succeedsWhenTwoInfinityPublicKeysAreEqual() {
     // Infinity keys are valid G1 points, so pass the equality test
-    BLSPublicKey publicKey1 = BLSPublicKey.fromBytes(InfinityPublicKey);
-    BLSPublicKey publicKey2 = BLSPublicKey.fromBytes(InfinityPublicKey);
+    BLSPublicKey publicKey1 = BLSPublicKey.fromSSZBytes(InfinityPublicKey);
+    BLSPublicKey publicKey2 = BLSPublicKey.fromSSZBytes(InfinityPublicKey);
     assertEquals(publicKey1, publicKey2);
   }
 
@@ -85,12 +85,12 @@ class BLSPublicKeyTest {
     assertEquals(
         "0x000000000000000000000000000000000000000000000000"
             + "000000000000000000000000000000000000000000000000",
-        emptyPublicKey.toBytes().toHexString());
+        emptyPublicKey.toSSZBytes().toHexString());
   }
 
   @Test
   void succeedsIfDeserializationOfInfinityPublicKeyIsCorrect() {
-    BLSPublicKey infinityPublicKey = BLSPublicKey.fromBytes(InfinityPublicKey);
+    BLSPublicKey infinityPublicKey = BLSPublicKey.fromSSZBytes(InfinityPublicKey);
     byte[] pointBytes = new byte[48];
     pointBytes[0] = (byte) 0xc0;
     Bytes infinityBytesSsz =
@@ -98,14 +98,14 @@ class BLSPublicKeyTest {
             writer -> {
               writer.writeFixedBytes(Bytes.wrap(pointBytes));
             });
-    BLSPublicKey deserializedPublicKey = BLSPublicKey.fromBytes(infinityBytesSsz);
+    BLSPublicKey deserializedPublicKey = BLSPublicKey.fromSSZBytes(infinityBytesSsz);
     assertEquals(infinityPublicKey, deserializedPublicKey);
   }
 
   @Test
   void succeedsIfDeserializationThrowsWithTooFewBytes() {
     Bytes tooFewBytes = Bytes.wrap(new byte[51]);
-    assertThrows(IllegalArgumentException.class, () -> BLSPublicKey.fromBytes(tooFewBytes));
+    assertThrows(IllegalArgumentException.class, () -> BLSPublicKey.fromSSZBytes(tooFewBytes));
   }
 
   @Test
@@ -133,8 +133,8 @@ class BLSPublicKeyTest {
     BLSPublicKey publicKey1 = BLSPublicKey.random(1);
     Bytes compressedBytes = publicKey1.toBytesCompressed();
 
-    BLSPublicKey publicKey2 = BLSPublicKey.fromBytes(compressedBytes);
-    BLSPublicKey publicKey3 = BLSPublicKey.fromBytes(compressedBytes);
+    BLSPublicKey publicKey2 = BLSPublicKey.fromSSZBytes(compressedBytes);
+    BLSPublicKey publicKey3 = BLSPublicKey.fromSSZBytes(compressedBytes);
     assertEquals(publicKey1, publicKey2);
     assertEquals(publicKey2, publicKey3);
   }
@@ -142,14 +142,14 @@ class BLSPublicKeyTest {
   @Test
   void succeedsWhenRoundtripSSZReturnsTheSamePublicKey() {
     BLSPublicKey publicKey1 = BLSPublicKey.random(42);
-    BLSPublicKey publicKey2 = BLSPublicKey.fromBytes(publicKey1.toBytes());
+    BLSPublicKey publicKey2 = BLSPublicKey.fromSSZBytes(publicKey1.toSSZBytes());
     assertEquals(publicKey1, publicKey2);
   }
 
   @Test
   void succeedsWhenRoundtripSSZReturnsTheInfinityPublicKey() {
-    BLSPublicKey publicKey1 = BLSPublicKey.fromBytes(InfinityPublicKey);
-    BLSPublicKey publicKey2 = BLSPublicKey.fromBytes(publicKey1.toBytes());
+    BLSPublicKey publicKey1 = BLSPublicKey.fromSSZBytes(InfinityPublicKey);
+    BLSPublicKey publicKey2 = BLSPublicKey.fromSSZBytes(publicKey1.toSSZBytes());
     assertEquals(publicKey1, publicKey2);
   }
 }

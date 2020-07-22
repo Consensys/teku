@@ -37,7 +37,7 @@ public class BLSPubKey {
   }
 
   public BLSPubKey(BLSPublicKey publicKey) {
-    this(publicKey.toBytes());
+    this(publicKey.toSSZBytes());
   }
 
   @Override
@@ -83,6 +83,6 @@ public class BLSPubKey {
   }
 
   public BLSPublicKey asBLSPublicKey() {
-    return BLSPublicKey.fromBytes(bytes);
+    return BLSPublicKey.fromSSZBytes(bytes);
   }
 }

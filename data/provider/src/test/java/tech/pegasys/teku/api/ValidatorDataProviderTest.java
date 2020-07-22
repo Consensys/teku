@@ -161,7 +161,7 @@ public class ValidatorDataProviderTest {
     Attestation attestation = result.join().orElseThrow();
     assertThat(attestation.data.index).isEqualTo(internalAttestation.getData().getIndex());
     assertThat(attestation.signature.toHexString())
-        .isEqualTo(internalAttestation.getAggregate_signature().toBytes().toHexString());
+        .isEqualTo(internalAttestation.getAggregate_signature().toSSZBytes().toHexString());
     assertThat(attestation.data.slot).isEqualTo(internalAttestation.getData().getSlot());
     assertThat(attestation.data.beacon_block_root)
         .isEqualTo(internalAttestation.getData().getBeacon_block_root());
@@ -211,7 +211,7 @@ public class ValidatorDataProviderTest {
         .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
     final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     // modify the bytes to make an invalid key that is the correct length
-    final BLSPubKey invalidPubKey = new BLSPubKey(publicKey.toBytes().shiftLeft(1));
+    final BLSPubKey invalidPubKey = new BLSPubKey(publicKey.toSSZBytes().shiftLeft(1));
 
     ValidatorDutiesRequest smallRequest =
         new ValidatorDutiesRequest(compute_epoch_at_slot(beaconState.slot), List.of(invalidPubKey));

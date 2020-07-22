@@ -43,7 +43,7 @@ class BLSSignatureTest {
         "0x0000000000000000000000000000000000000000000000000000000000000000"
             + "0000000000000000000000000000000000000000000000000000000000000000"
             + "0000000000000000000000000000000000000000000000000000000000000000",
-        emptySignature.toBytes().toHexString());
+        emptySignature.toSSZBytes().toHexString());
   }
 
   @Test
@@ -51,14 +51,14 @@ class BLSSignatureTest {
     BLSSignature emptySignature = BLSSignature.empty();
     Bytes zeroBytes = Bytes.wrap(new byte[96]);
     Bytes emptyBytesSsz = SSZ.encode(writer -> writer.writeFixedBytes(zeroBytes));
-    BLSSignature deserializedSignature = BLSSignature.fromBytes(emptyBytesSsz);
+    BLSSignature deserializedSignature = BLSSignature.fromSSZBytes(emptyBytesSsz);
     assertEquals(emptySignature, deserializedSignature);
   }
 
   @Test
   void succeedsIfDeserializationThrowsWithTooFewBytes() {
     Bytes tooFewBytes = Bytes.wrap(new byte[95]);
-    assertThrows(IllegalArgumentException.class, () -> BLSSignature.fromBytes(tooFewBytes));
+    assertThrows(IllegalArgumentException.class, () -> BLSSignature.fromSSZBytes(tooFewBytes));
   }
 
   @Test
@@ -84,14 +84,14 @@ class BLSSignatureTest {
   @Test
   void succeedsWhenRoundtripSSZReturnsTheSameSignature() {
     BLSSignature signature1 = BLSSignature.random(65);
-    BLSSignature signature2 = BLSSignature.fromBytes(signature1.toBytes());
+    BLSSignature signature2 = BLSSignature.fromSSZBytes(signature1.toSSZBytes());
     assertEquals(signature1, signature2);
   }
 
   @Test
   void succeedsWhenRoundtripSSZReturnsTheEmptySignature() {
     BLSSignature signature1 = BLSSignature.empty();
-    BLSSignature signature2 = BLSSignature.fromBytes(signature1.toBytes());
+    BLSSignature signature2 = BLSSignature.fromSSZBytes(signature1.toSSZBytes());
     assertEquals(signature1, signature2);
   }
 }

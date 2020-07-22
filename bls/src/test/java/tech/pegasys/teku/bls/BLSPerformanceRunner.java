@@ -141,7 +141,7 @@ public class BLSPerformanceRunner {
   void testBLSPubKeyDeserialize(Integer i) {
     Bytes emptyBytesSsz = SSZ.encode(writer -> writer.writeFixedBytes(Bytes.wrap(new byte[48])));
 
-    Long time = executeRun(() -> BLSPublicKey.fromBytes(emptyBytesSsz), i);
+    Long time = executeRun(() -> BLSPublicKey.fromSSZBytes(emptyBytesSsz), i);
     LOG.info("Time for i: {}, time: {}", i, time);
   }
 
@@ -150,7 +150,7 @@ public class BLSPerformanceRunner {
   void testBLSPubKeySerialize(Integer i) {
     BLSPublicKey emptyPublicKey = BLSPublicKey.empty();
 
-    Long time = executeRun(() -> emptyPublicKey.toBytes().toHexString(), i);
+    Long time = executeRun(() -> emptyPublicKey.toSSZBytes().toHexString(), i);
     LOG.info("Time for i: {}, time: {}", i, time);
   }
 
@@ -159,7 +159,7 @@ public class BLSPerformanceRunner {
   void testSignatureSerialize(Integer i) {
     BLSSignature signature1 = BLSSignature.random();
 
-    Long time = executeRun(signature1::toBytes, i);
+    Long time = executeRun(signature1::toSSZBytes, i);
     LOG.info("Time for i: {}, time: {}", i, time);
   }
 
@@ -167,9 +167,9 @@ public class BLSPerformanceRunner {
   @MethodSource("singleAggregationCountOrder4")
   void testSignatureDeserialize(Integer i) {
     BLSSignature signature1 = BLSSignature.random();
-    Bytes bytes = signature1.toBytes();
+    Bytes bytes = signature1.toSSZBytes();
 
-    Long time = executeRun(() -> BLSSignature.fromBytes(bytes), i);
+    Long time = executeRun(() -> BLSSignature.fromSSZBytes(bytes), i);
     LOG.info("Time for i: {}, time: {}", i, time);
   }
 

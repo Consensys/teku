@@ -118,7 +118,7 @@ class BlockProcessorUtilTest {
         Bytes32.fromHexString("0x79e43d39ee55749c55994a7ab2a3cb91460cec544fdbf27eb5717c43f970c1b6");
     UnsignedLong amount = UnsignedLong.valueOf(1000000000L);
     BLSSignature signature =
-        BLSSignature.fromBytes(
+        BLSSignature.fromSSZBytes(
             Bytes.fromHexString(
                 "0xddc1ca509e29c6452441069f26da6e073589b3bd1cace50e3427426af5bfdd566d077d4bdf618e249061b9770471e3d515779aa758b8ccb4b06226a8d5ebc99e19d4c3278e5006b837985bec4e0ce39df92c1f88d1afd0f98dbae360024a390d"));
     DepositData depositInput =
