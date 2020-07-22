@@ -68,8 +68,26 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
                 BLS.getBlsImpl().publicKeyFromCompressed(reader.readFixedBytes(BLS_PUBKEY_SIZE))));
   }
 
-  public static BLSPublicKey fromBytesCompressed(Bytes bytes) {
+  /**
+   * Create a PublicKey from 48-byte compressed format
+   *
+   * @param bytes 48 bytes to read the public key from
+   * @return a public key. Note that implementation may lazily evaluate passed bytes so the method
+   *     may not immediately fail if the supplied bytes are invalid. Use {@link
+   *     BLSPublicKey#fromBytesCompressedValidate(Bytes)} to validate immediately
+   * @throws IllegalArgumentException If the supplied bytes are not a valid public key
+   *    However if implementing class lazily parses bytes the exception might not be thrown on invalid input
+   *    but throw on later usage.
+   *    Use {@link BLSPublicKey#fromBytesCompressedValidate(Bytes)} if need to immediately ensure input validity
+   */
+  public static BLSPublicKey fromBytesCompressed(Bytes bytes) throws IllegalArgumentException {
     return new BLSPublicKey(BLS.getBlsImpl().publicKeyFromCompressed(bytes));
+  }
+
+  public static BLSPublicKey fromBytesCompressedValidate(Bytes bytes) throws IllegalArgumentException {
+    BLSPublicKey ret = new BLSPublicKey(BLS.getBlsImpl().publicKeyFromCompressed(bytes));
+    ret.getPublicKey().forceValidation();
+    return ret;
   }
 
   private final PublicKey publicKey;
@@ -119,20 +137,6 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
 
   public PublicKey getPublicKey() {
     return publicKey;
-  }
-
-  /**
-   * Force validation of the given key's contents.
-   *
-   * @return true if the given key is valid, false otherwise
-   */
-  public boolean isValid() {
-    try {
-      getPublicKey().forceValidation();
-      return true;
-    } catch (IllegalArgumentException e) {
-      return false;
-    }
   }
 
   @Override

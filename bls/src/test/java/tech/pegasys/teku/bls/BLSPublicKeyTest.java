@@ -13,11 +13,10 @@
 
 package tech.pegasys.teku.bls;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
@@ -29,16 +28,18 @@ class BLSPublicKeyTest {
           "0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
 
   @Test
-  void isValidReturnsTrueForValidKey() {
-    BLSPublicKey publicKey = BLSPublicKey.random(1);
-    assertTrue(publicKey.isValid());
+  void fromBytesCompressedValidate_okWhenValidBytes() {
+    BLSPublicKey.fromBytesCompressedValidate(BLSPublicKey.random(1).toBytesCompressed());
   }
 
   @Test
   void isValidReturnsFalseForInvalidKey() {
     BLSPublicKey publicKey = BLSPublicKey.random(1);
-    BLSPublicKey invalidPublicKey = BLSPublicKey.fromBytes(publicKey.toBytes().shiftLeft(1));
-    assertFalse(invalidPublicKey.isValid());
+    assertThatThrownBy(
+            () ->
+                BLSPublicKey.fromBytesCompressedValidate(
+                    publicKey.toBytesCompressed().shiftLeft(1)))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
@@ -57,26 +58,10 @@ class BLSPublicKeyTest {
 
   @Test
   void succeedsWhenInvalidPublicKeyIsInvalid() {
-    BLSPublicKey invalidPublicKey =
-        BLSPublicKey.fromBytesCompressed(
-            Bytes.fromHexString(
-                "0x9378a6e3984e96d2cd50450c76ca14732f1300efa04aecdb805b22e6d6926a85ef409e8f3acf494a1481090bf32ce3bd"));
-    assertFalse(invalidPublicKey.isValid());
-  }
-
-  @Test
-  void succeedsWhenComparingInvalidAndValidPublicKeyFails() {
-    BLSPublicKey invalidPublicKey =
-        BLSPublicKey.fromBytesCompressed(
-            Bytes.fromHexString(
-                "0x9378a6e3984e96d2cd50450c76ca14732f1300efa04aecdb805b22e6d6926a85ef409e8f3acf494a1481090bf32ce3bd"));
-    BLSPublicKey validPublicKey =
-        BLSPublicKey.fromBytesCompressed(
-            Bytes.fromHexString(
-                "0xb51aa9cdb40ed3e7e5a9b3323550fe323ecd5c7f5cb3d8b47af55a061811bc7da0397986cad0d565c0bdbbe99af24355"));
-    assertFalse(invalidPublicKey.isValid());
-    assertTrue(validPublicKey.isValid());
-    assertNotEquals(validPublicKey, invalidPublicKey);
+    Bytes invalidPublicKeyBytes = Bytes.fromHexString(
+        "0x9378a6e3984e96d2cd50450c76ca14732f1300efa04aecdb805b22e6d6926a85ef409e8f3acf494a1481090bf32ce3bd");
+    assertThatThrownBy(() -> BLSPublicKey.fromBytesCompressedValidate(invalidPublicKeyBytes))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
