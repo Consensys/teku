@@ -116,8 +116,7 @@ class TestStoreImpl implements MutablePrunableStore {
     return blocks.get(blockRoot);
   }
 
-  @Override
-  public Optional<SignedBlockAndState> getBlockAndState(final Bytes32 blockRoot) {
+  private Optional<SignedBlockAndState> getBlockAndState(final Bytes32 blockRoot) {
     final SignedBeaconBlock block = getSignedBlock(blockRoot);
     final BeaconState state = getBlockState(blockRoot);
     if (block == null || state == null) {

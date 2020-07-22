@@ -244,7 +244,10 @@ class StoreTest extends AbstractStoreTest {
     // Check that transaction is updated
     chainBuilder
         .streamBlocksAndStates(1, chainBuilder.getLatestSlot().longValue())
-        .forEach(b -> assertThat(tx.getBlockAndState(b.getRoot())).isEqualTo(Optional.of(b)));
+        .forEach(
+            b ->
+                assertThat(tx.retrieveBlockAndState(b.getRoot()))
+                    .isCompletedWithValue(Optional.of(b)));
     // Check checkpoints
     assertThat(tx.getFinalizedCheckpoint()).isEqualTo(checkpoint1);
     assertThat(tx.getJustifiedCheckpoint()).isEqualTo(checkpoint2);
@@ -275,7 +278,10 @@ class StoreTest extends AbstractStoreTest {
     // Check store is updated
     chainBuilder
         .streamBlocksAndStates(checkpoint3.getEpochStartSlot(), chainBuilder.getLatestSlot())
-        .forEach(b -> assertThat(store.getBlockAndState(b.getRoot())).isEqualTo(Optional.of(b)));
+        .forEach(
+            b ->
+                assertThat(store.retrieveBlockAndState(b.getRoot()))
+                    .isCompletedWithValue(Optional.of(b)));
     // Check checkpoints
     assertThat(store.getFinalizedCheckpoint()).isEqualTo(checkpoint1);
     assertThat(store.getJustifiedCheckpoint()).isEqualTo(checkpoint2);
