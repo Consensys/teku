@@ -186,30 +186,43 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * @param slot the new best slot
    */
   public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
+    final Optional<SignedBlockAndStateAndSlot> originalChainHead = chainHead;
+    store
+        .retrieveBlockAndState(root)
+        .thenApply(
+            headBlockAndState ->
+                headBlockAndState
+                    .map(head -> SignedBlockAndStateAndSlot.create(head, slot))
+                    .orElseThrow(
+                        () ->
+                            new IllegalStateException(
+                                String.format(
+                                    "Unable to update best block as of slot %s.  Block is unavailable: %s.",
+                                    slot, root))))
+        .thenAccept(headBlock -> updateChainHead(originalChainHead, headBlock))
+        .reportExceptions();
+  }
+
+  private void updateChainHead(
+      final Optional<SignedBlockAndStateAndSlot> originalHead,
+      final SignedBlockAndStateAndSlot newChainHead) {
     synchronized (this) {
-      final SignedBeaconBlock newBestBlock = store.getSignedBlock(root);
-      final BeaconState newBestState = store.getBlockState(root);
-      if (newBestBlock == null || newBestState == null) {
-        LOG.warn(
-            "Unable to update best block (slot={}, root={}). Corresponding {} unavailable",
-            slot,
-            root,
-            newBestBlock == null ? "block" : "state");
+      if (!chainHead.equals(originalHead)) {
+        // The chain head has been updated while we were waiting for the newChainHead
+        // Skip this update to avoid accidentally regressing the chain head
+        LOG.info("Skipping best block update to avoid potential rollback of the best block.");
         return;
       }
-      final SignedBlockAndStateAndSlot newChainHead =
-          new SignedBlockAndStateAndSlot(newBestBlock, newBestState, slot);
-
-      final Optional<Bytes32> originalBestRoot = chainHead.map(SignedBlockAndState::getRoot);
+      final Optional<Bytes32> originalBestRoot = originalHead.map(SignedBlockAndState::getRoot);
       final UnsignedLong originalBestSlot =
-          chainHead.map(SignedBlockAndStateAndSlot::getHeadSlot).orElse(UnsignedLong.ZERO);
+          originalHead.map(SignedBlockAndStateAndSlot::getHeadSlot).orElse(UnsignedLong.ZERO);
 
       this.chainHead = Optional.of(newChainHead);
       if (originalBestRoot
           .map(original -> hasReorgedFrom(original, originalBestSlot))
           .orElse(false)) {
         reorgCounter.inc();
-        reorgEventChannel.reorgOccurred(root, newChainHead.getSlot());
+        reorgEventChannel.reorgOccurred(newChainHead.getRoot(), newChainHead.getSlot());
       }
     }
 
@@ -343,8 +356,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store.retrieveBlockState(blockRoot);
   }
 
-  public Optional<BeaconState> getStateInEffectAtSlot(final UnsignedLong slot) {
-    return getBlockRootBySlot(slot).map(blockRoot -> store.getBlockState(blockRoot));
+  public SafeFuture<Optional<BeaconState>> retrieveStateInEffectAtSlot(final UnsignedLong slot) {
+    Optional<Bytes32> rootAtSlot = getBlockRootBySlot(slot);
+    if (rootAtSlot.isEmpty()) {
+      return EmptyStoreResults.EMPTY_STATE_FUTURE;
+    }
+    return store.retrieveBlockState(rootAtSlot.get());
   }
 
   public Optional<Bytes32> getBlockRootBySlot(final UnsignedLong slot) {
@@ -382,6 +399,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         SignedBeaconBlock block, BeaconState state, UnsignedLong headSlot) {
       super(block, state);
       this.headSlot = headSlot;
+    }
+
+    public static SignedBlockAndStateAndSlot create(
+        SignedBlockAndState blockAndState, UnsignedLong slot) {
+      return new SignedBlockAndStateAndSlot(
+          blockAndState.getBlock(), blockAndState.getState(), slot);
     }
 
     public UnsignedLong getHeadSlot() {

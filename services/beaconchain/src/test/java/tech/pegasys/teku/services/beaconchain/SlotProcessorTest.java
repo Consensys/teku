@@ -26,7 +26,6 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -141,7 +140,6 @@ public class SlotProcessorTest {
   public void onTick_shouldExitBeforeOtherProcessingIfSyncing() {
     ArgumentCaptor<UnsignedLong> captor = ArgumentCaptor.forClass(UnsignedLong.class);
     when(syncService.isSyncActive()).thenReturn(true);
-    when(forkChoice.processHead()).thenReturn(dataStructureUtil.randomBytes32());
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
     slotProcessor.onTick(beaconState.getGenesis_time());
@@ -207,12 +205,10 @@ public class SlotProcessorTest {
   public void onTick_shouldRunAttestationsDuringProcessing() {
     // skip the slot start
     slotProcessor.setOnTickSlotStart(slotProcessor.getNodeSlot().getValue());
-    final Bytes32 bestRoot = dataStructureUtil.randomBytes32();
     final List<BroadcastAttestationEvent> events =
         EventSink.capture(eventBus, BroadcastAttestationEvent.class);
     when(syncService.isSyncActive()).thenReturn(false);
 
-    when(forkChoice.processHead(slotProcessor.getNodeSlot().getValue())).thenReturn(bestRoot);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
     slotProcessor.onTick(
@@ -221,14 +217,13 @@ public class SlotProcessorTest {
         .slotEvent(
             ZERO,
             recentChainData.getBestSlot(),
-            bestRoot,
+            recentChainData.getBestBlockRoot().get(),
             ZERO,
             recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
             recentChainData.getFinalizedRoot(),
             1);
     assertThat(events)
-        .containsExactly(
-            new BroadcastAttestationEvent(bestRoot, slotProcessor.getNodeSlot().getValue()));
+        .containsExactly(new BroadcastAttestationEvent(slotProcessor.getNodeSlot().getValue()));
   }
 
   @Test
@@ -241,10 +236,8 @@ public class SlotProcessorTest {
     final List<BroadcastAggregatesEvent> events =
         EventSink.capture(eventBus, BroadcastAggregatesEvent.class);
 
-    final Bytes32 bestRoot = dataStructureUtil.randomBytes32();
     when(syncService.isSyncActive()).thenReturn(false);
 
-    when(forkChoice.processHead()).thenReturn(bestRoot);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
     slotProcessor.onTick(

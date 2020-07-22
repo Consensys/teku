@@ -29,6 +29,7 @@ import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.signatures.MessageSignerService;
 import tech.pegasys.teku.core.signatures.TestMessageSignerService;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -262,9 +263,7 @@ public class BeaconChainUtil {
     while (recentChainData.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) < 0) {
 
       BeaconState headState =
-          recentChainData
-              .getStore()
-              .getBlockState(recentChainData.getBestBlockRoot().orElseThrow());
+          recentChainData.getBestBlockAndState().map(BeaconBlockAndState::getState).orElseThrow();
       BeaconBlock headBlock =
           recentChainData.getStore().getBlock(recentChainData.getBestBlockRoot().orElseThrow());
       UnsignedLong slot = recentChainData.getBestSlot();
