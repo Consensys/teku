@@ -19,6 +19,7 @@ import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -31,6 +32,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -347,6 +349,16 @@ class Store implements UpdatableStore {
     readLock.lock();
     try {
       return blockTree.getAllRoots();
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public List<Bytes32> getOrderedBlockRoots() {
+    readLock.lock();
+    try {
+      return blockTree.breadthFirstStream().collect(Collectors.toList());
     } finally {
       readLock.unlock();
     }
@@ -803,6 +815,22 @@ class Store implements UpdatableStore {
     @Override
     public Set<Bytes32> getBlockRoots() {
       return Sets.union(blocks.keySet(), Store.this.getBlockRoots());
+    }
+
+    @Override
+    public List<Bytes32> getOrderedBlockRoots() {
+      if (this.blocks.isEmpty()) {
+        return Store.this.getOrderedBlockRoots();
+      }
+
+      Store.this.lock.readLock().lock();
+      try {
+        final HashTree.Builder treeBuilder = Store.this.blockTree.updater();
+        this.blocks.values().forEach(treeBuilder::block);
+        return treeBuilder.build().breadthFirstStream().collect(Collectors.toList());
+      } finally {
+        Store.this.lock.readLock().unlock();
+      }
     }
 
     @Override

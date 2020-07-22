@@ -29,10 +29,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.hashtree.traversal.OrderedTreeStream;
 
 /** A tree where each node is identified by a Bytes32 hash */
 public class HashTree {
@@ -156,11 +158,23 @@ public class HashTree {
     return preOrderStream(rootHash);
   }
 
+  /** @return A stream of all tree nodes in breadth-first traversal order */
+  public Stream<Bytes32> breadthFirstStream() {
+    return createBreadthFirstStream(rootHash);
+  }
+
   private Stream<Bytes32> preOrderStream(final Bytes32 rootNodeHash) {
     if (!contains(rootNodeHash)) {
       return Stream.empty();
     }
-    return PreOrderTraversalStream.create(rootNodeHash, parentToChildren::get);
+    return OrderedTreeStream.createPreOrderTraversalStream(rootNodeHash, parentToChildren::get);
+  }
+
+  private Stream<Bytes32> createBreadthFirstStream(final Bytes32 rootNodeHash) {
+    if (!contains(rootNodeHash)) {
+      return Stream.empty();
+    }
+    return OrderedTreeStream.createBreadthFirstStream(rootNodeHash, parentToChildren::get);
   }
 
   @Override
@@ -192,13 +206,14 @@ public class HashTree {
       final Map<Bytes32, Set<Bytes32>> parentToChildLookup = new HashMap<>();
       for (Map.Entry<Bytes32, Bytes32> childToParent : childToParentMap.entrySet()) {
         final Set<Bytes32> childSet =
-            parentToChildLookup.computeIfAbsent(childToParent.getValue(), (key) -> new HashSet<>());
+            // Use TreeSet for predictable ordering of children that tests can rely on
+            parentToChildLookup.computeIfAbsent(childToParent.getValue(), (key) -> new TreeSet<>());
         childSet.add(childToParent.getKey());
       }
 
       // Prune child-parent map to contain only hashes that descend from the root
       final Map<Bytes32, Bytes32> prunedChildToParentMap = new HashMap<>();
-      PreOrderTraversalStream.create(rootHash, parentToChildLookup::get)
+      OrderedTreeStream.createPreOrderTraversalStream(rootHash, parentToChildLookup::get)
           .forEach(root -> prunedChildToParentMap.put(root, childToParentMap.get(root)));
       // Prune parent-child lookup
       Sets.difference(childToParentMap.keySet(), prunedChildToParentMap.keySet())
