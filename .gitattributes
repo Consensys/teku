@@ -3,6 +3,7 @@
 *.bat -text
 *.pcap binary
 *.blocks binary
+*.dll binary
 *.dylib binary
 *.so binary
 *.gz binary
