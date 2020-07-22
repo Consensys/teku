@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.impl.PublicKey;
+import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
 import tech.pegasys.teku.bls.impl.blst.swig.blst;
 import tech.pegasys.teku.bls.impl.blst.swig.p1;
 import tech.pegasys.teku.bls.impl.blst.swig.p1_affine;
@@ -20,8 +21,12 @@ public class BlstPublicKey implements PublicKey {
         "Expected " + COMPRESSED_PK_SIZE + " bytes of input but got %s",
         compressed.size());
     p1_affine ecPoint = new p1_affine();
-    blst.p1_uncompress(ecPoint, compressed.toArrayUnsafe());
-    return new BlstPublicKey(ecPoint);
+    if (blst.p1_uncompress(ecPoint, compressed.toArrayUnsafe()) == BLST_ERROR.BLST_SUCCESS) {
+      return new BlstPublicKey(ecPoint);
+    } else {
+      ecPoint.delete();
+      throw new IllegalArgumentException("Invalid PublicKey bytes: " + compressed);
+    }
   }
 
   public static BlstPublicKey aggregate(List<BlstPublicKey> publicKeys) {
@@ -47,7 +52,9 @@ public class BlstPublicKey implements PublicKey {
 
   @Override
   public void forceValidation() throws IllegalArgumentException {
-    // already validated
+    if (blst.p1_affine_on_curve(ecPoint) == 0) {
+      throw new IllegalArgumentException("Invalid PublicKey: " + this);
+    }
   }
 
   @Override
