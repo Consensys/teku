@@ -55,9 +55,6 @@ public abstract class Eth2IncomingRequestHandlerTest
 
     lenient().when(state.getSlot()).thenReturn(UnsignedLong.ONE);
     lenient()
-        .when(combinedChainDataClient.getNonfinalizedBlockState(any()))
-        .thenReturn(Optional.of(state));
-    lenient()
         .when(combinedChainDataClient.getBlockAtSlotExact(any(), any()))
         .thenAnswer(i -> getBlockAtSlot(i.getArgument(0)));
   }

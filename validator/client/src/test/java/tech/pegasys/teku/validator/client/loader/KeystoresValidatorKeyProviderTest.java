@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -36,8 +36,8 @@ class KeystoresValidatorKeyProviderTest {
   private final TekuConfiguration config = mock(TekuConfiguration.class);
   private final KeystoresValidatorKeyProvider keystoresValidatorKeyProvider =
       new KeystoresValidatorKeyProvider();
-  private static final Bytes BLS_PRIVATE_KEY =
-      Bytes.fromHexString("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f", 48);
+  private static final Bytes32 BLS_PRIVATE_KEY =
+      Bytes32.fromHexString("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
   private static final BLSKeyPair EXPECTED_BLS_KEY_PAIR =
       new BLSKeyPair(BLSSecretKey.fromBytes(BLS_PRIVATE_KEY));
 

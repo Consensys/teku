@@ -141,7 +141,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     BlockValidator blockValidator = new BlockValidator(recentChainData, new StateTransition());
     AttestationValidator attestationValidator = new AttestationValidator(recentChainData);
     SignedAggregateAndProofValidator aggregateValidator =
-        new SignedAggregateAndProofValidator(attestationValidator, recentChainData);
+        new SignedAggregateAndProofValidator(recentChainData, attestationValidator);
     final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
     VoluntaryExitValidator exitValidator =
         new VoluntaryExitValidator(
@@ -251,7 +251,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   @Override
   public int getPeerCount() {
-    // TODO - look into keep separate collections for pending peers / validated peers so
+    // TODO (#2403): look into keep separate collections for pending peers / validated peers so
     // we don't have to iterate over the peer list to get this count.
     return Math.toIntExact(streamPeers().count());
   }
