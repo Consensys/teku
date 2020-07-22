@@ -83,12 +83,12 @@ public class ForkChoice {
             preState,
             stateTransition,
             forkChoiceStrategy,
-            interimState ->
-                transaction.putStateRootToBlockRoot(
-                    interimState.hash_tree_root(),
+            beaconState ->
+                transaction.putStateRoot(
+                    beaconState.hash_tree_root(),
                     new SlotAndBlockRoot(
-                        interimState.getSlot(),
-                        interimState.getLatest_block_header().hash_tree_root())));
+                        beaconState.getSlot(),
+                        beaconState.getLatest_block_header().hash_tree_root())));
 
     if (!result.isSuccessful()) {
       return result;

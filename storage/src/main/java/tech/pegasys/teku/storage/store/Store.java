@@ -624,7 +624,7 @@ class Store implements UpdatableStore {
     Optional<Checkpoint> justified_checkpoint = Optional.empty();
     Optional<Checkpoint> finalized_checkpoint = Optional.empty();
     Optional<Checkpoint> best_justified_checkpoint = Optional.empty();
-    Map<Bytes32, SlotAndBlockRoot> stateRootsToBlockRoots = new HashMap<>();
+    Map<Bytes32, SlotAndBlockRoot> stateRoots = new HashMap<>();
     Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
     Map<Bytes32, BeaconState> block_states = new HashMap<>();
     Map<UnsignedLong, VoteTracker> votes = new ConcurrentHashMap<>();
@@ -640,12 +640,14 @@ class Store implements UpdatableStore {
     public void putBlockAndState(SignedBeaconBlock block, BeaconState state) {
       blocks.put(block.getRoot(), block);
       block_states.put(block.getRoot(), state);
+      putStateRoot(
+          state.hash_tree_root(),
+          new SlotAndBlockRoot(block.getSlot(), block.getMessage().hash_tree_root()));
     }
 
     @Override
-    public void putStateRootToBlockRoot(
-        final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
-      stateRootsToBlockRoots.put(stateRoot, slotAndBlockRoot);
+    public void putStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
+      stateRoots.put(stateRoot, slotAndBlockRoot);
     }
 
     @Override

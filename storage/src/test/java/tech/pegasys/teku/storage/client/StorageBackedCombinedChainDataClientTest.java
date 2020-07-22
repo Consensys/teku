@@ -55,14 +55,6 @@ public class StorageBackedCombinedChainDataClientTest {
   }
 
   @Test
-  public void getStateByStateRoot_shouldReturnState()
-      throws ExecutionException, InterruptedException {
-    Optional<BeaconState> result =
-        combinedChainDataClient.getStateByStateRoot(beaconState.hash_tree_root()).get();
-    assertThat(result.get()).isEqualTo(beaconState);
-  }
-
-  @Test
   public void getStateByStateRoot_shouldReturnEmptyIfNotReady()
       throws ExecutionException, InterruptedException {
     RecentChainData recentChainData = mock(RecentChainData.class);

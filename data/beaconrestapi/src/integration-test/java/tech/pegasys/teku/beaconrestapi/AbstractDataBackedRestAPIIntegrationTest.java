@@ -41,9 +41,11 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -93,6 +95,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   protected DataProvider dataProvider;
   protected BeaconRestApi beaconRestApi;
+  private BeaconChainUtil beaconChainUtil;
 
   protected OkHttpClient client;
   protected final ObjectMapper objectMapper = new ObjectMapper();
@@ -109,10 +112,13 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     recentChainData = storageSystem.recentChainData();
     chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
     chainUpdater = new ChainUpdater(recentChainData, chainBuilder);
-    this.forkChoice =
-        useMockForkChoice
-            ? mock(ForkChoice.class)
-            : new ForkChoice(recentChainData, stateTransition);
+    if (useMockForkChoice) {
+      beaconChainUtil = mock(BeaconChainUtil.class);
+      forkChoice = mock(ForkChoice.class);
+    } else {
+      beaconChainUtil = BeaconChainUtil.create(recentChainData, chainBuilder.getValidatorKeys());
+      forkChoice = new ForkChoice(recentChainData, stateTransition);
+    }
   }
 
   private void setupAndStartRestAPI(TekuConfiguration config) {
@@ -182,6 +188,22 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
       final SignedBlockAndState block = chainUpdater.advanceChain(slot);
       chainUpdater.updateBestBlock(block);
       results.add(block);
+    }
+    return results;
+  }
+
+  // by using importBlocksAtSlots instead of createBlocksAtSlots, blocks are created
+  // via the blockImporter, and this will mean forkChoice has been processed.
+  // this is particularly useful if testing for missing state roots (states without blocks)
+  public ArrayList<BeaconBlockAndState> importBlocksAtSlots(UnsignedLong... slots)
+      throws Exception {
+    final ArrayList<BeaconBlockAndState> results = new ArrayList<>();
+    for (UnsignedLong slot : slots) {
+      final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock signedBeaconBlock =
+          beaconChainUtil.createAndImportBlockAtSlot(slot.longValue());
+      results.add(
+          new BeaconBlockAndState(
+              signedBeaconBlock.getMessage(), recentChainData.getBestState().get()));
     }
     return results;
   }

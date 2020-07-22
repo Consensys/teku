@@ -29,7 +29,7 @@ public interface MutableStore extends ReadOnlyStore {
     putBlockAndState(blockAndState.getBlock(), blockAndState.getState());
   }
 
-  void putStateRootToBlockRoot(Bytes32 stateRoot, SlotAndBlockRoot slotAndBlockRoot);
+  void putStateRoot(Bytes32 stateRoot, SlotAndBlockRoot slotAndBlockRoot);
 
   void setTime(UnsignedLong time);
 

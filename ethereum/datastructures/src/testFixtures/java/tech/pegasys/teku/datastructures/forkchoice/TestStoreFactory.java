@@ -105,7 +105,7 @@ public class TestStoreFactory {
     protected Checkpoint justified_checkpoint;
     protected Checkpoint finalized_checkpoint;
     protected Checkpoint best_justified_checkpoint;
-    protected Map<Bytes32, SlotAndBlockRoot> stateRootsToBlockRoots = new HashMap<>();
+    protected Map<Bytes32, SlotAndBlockRoot> state_roots = new HashMap<>();
     protected Map<Bytes32, SignedBeaconBlock> blocks;
     protected Map<Bytes32, BeaconState> block_states;
     protected Map<Checkpoint, BeaconState> checkpoint_states;
@@ -258,9 +258,8 @@ public class TestStoreFactory {
     }
 
     @Override
-    public void putStateRootToBlockRoot(
-        final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
-      stateRootsToBlockRoots.put(stateRoot, slotAndBlockRoot);
+    public void putStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
+      state_roots.put(stateRoot, slotAndBlockRoot);
     }
 
     @Override

@@ -57,6 +57,7 @@ public class StateTransition {
       throws StateTransitionException {
     return initiate(preState, signed_block, true);
   }
+
   /**
    * v0.7.1
    * https://github.com/ethereum/eth2.0-specs/blob/v0.7.1/specs/core/0_beacon-chain.md#beacon-chain-state-transition-function
@@ -78,15 +79,25 @@ public class StateTransition {
       BeaconState preState,
       SignedBeaconBlock signed_block,
       boolean validateStateRootAndSignatures,
-      final Consumer<BeaconState> interimStateListener)
+      final Consumer<BeaconState> beaconStateConsumer)
       throws StateTransitionException {
     try {
       BlockValidator blockValidator =
           validateStateRootAndSignatures ? this.blockValidator : BlockValidator.NOOP;
       final BeaconBlock block = signed_block.getMessage();
 
-      // Process slots (including those with no blocks) since block
-      BeaconState postSlotState = process_slots(preState, block.getSlot(), interimStateListener);
+      // * Process slots (including those with no blocks) since block
+      // * beaconStateConsumer only consumes the missing slots here,
+      //   the new block will be processed when adding to the store.
+      BeaconState postSlotState =
+          process_slots(
+              preState,
+              block.getSlot(),
+              state -> {
+                if (!state.getSlot().equals(block.getSlot())) {
+                  beaconStateConsumer.accept(state);
+                }
+              });
 
       // Process_block
       BeaconState postState = process_block(postSlotState, block);
@@ -173,7 +184,7 @@ public class StateTransition {
   }
 
   public BeaconState process_slots(
-      BeaconState preState, UnsignedLong slot, final Consumer<BeaconState> interimStateListener)
+      BeaconState preState, UnsignedLong slot, final Consumer<BeaconState> beaconStateConsumer)
       throws SlotProcessingException, EpochProcessingException {
     try {
       checkArgument(
@@ -184,7 +195,6 @@ public class StateTransition {
       BeaconState state = preState;
       while (state.getSlot().compareTo(slot) < 0) {
         state = process_slot(state);
-        interimStateListener.accept(state);
         // Process epoch on the start slot of the next epoch
         if (state
             .getSlot()
@@ -194,6 +204,7 @@ public class StateTransition {
           state = EpochProcessor.processEpoch(state);
         }
         state = state.updated(s -> s.setSlot(s.getSlot().plus(UnsignedLong.ONE)));
+        beaconStateConsumer.accept(state);
       }
       return state;
     } catch (IllegalArgumentException e) {

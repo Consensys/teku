@@ -206,6 +206,32 @@ public class CombinedChainDataClient {
     return historicalChainData.getFinalizedStateByBlockRoot(blockRoot);
   }
 
+  public SafeFuture<Optional<BeaconState>> getStateByStateRoot(final Bytes32 stateRoot) {
+    final UpdatableStore store = getStore();
+    if (store == null) {
+      LOG.trace("No state at stateRoot {} because the store is not set", stateRoot);
+      return STATE_NOT_AVAILABLE;
+    }
+    return historicalChainData
+        .getSlotAndBlockRootByStateRoot(stateRoot)
+        .thenCompose(
+            maybeSlotAndBlockRoot -> {
+              if (maybeSlotAndBlockRoot.isEmpty()) {
+                return STATE_NOT_AVAILABLE;
+              }
+              return getStateFromSlotAndBlock(maybeSlotAndBlockRoot.get());
+            });
+  }
+
+  private SafeFuture<Optional<BeaconState>> getStateFromSlotAndBlock(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return getStateByBlockRoot(slotAndBlockRoot.getBlockRoot())
+        .thenApply(
+            maybeState ->
+                maybeState.flatMap(
+                    preState -> regenerateBeaconState(preState, slotAndBlockRoot.getSlot())));
+  }
+
   private Optional<BeaconState> regenerateBeaconState(
       final BeaconState preState, final UnsignedLong slot) {
     if (preState.getSlot().equals(slot)) {

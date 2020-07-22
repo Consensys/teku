@@ -355,20 +355,8 @@ public class RocksDbDatabase implements Database {
 
       updater.addHotBlocks(update.getHotBlocks());
 
-      final Map<Bytes32, SlotAndBlockRoot> hotBlockMap = new HashMap<>();
-      update
-          .getHotBlocks()
-          .values()
-          .forEach(
-              block ->
-                  hotBlockMap.put(
-                      block.getStateRoot(),
-                      new SlotAndBlockRoot(block.getSlot(), block.getRoot())));
-      if (!hotBlockMap.isEmpty()) {
-        updater.addHotStateRoots(hotBlockMap);
-      }
-      if (update.getStateRootsToBlockRoots().size() > 0) {
-        updater.addHotStateRoots(update.getStateRootsToBlockRoots());
+      if (update.getStateRoots().size() > 0) {
+        updater.addHotStateRoots(update.getStateRoots());
       }
       updater.addVotes(update.getVotes());
 
