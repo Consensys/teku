@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.function.Consumer;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -197,6 +198,8 @@ public class ForkChoiceUtil {
    * @param signed_block
    * @param maybePreState
    * @param st
+   * @param forkChoiceStrategy
+   * @param beaconStateConsumer
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_block</a>
    */
@@ -206,7 +209,8 @@ public class ForkChoiceUtil {
       final SignedBeaconBlock signed_block,
       Optional<BeaconState> maybePreState,
       final StateTransition st,
-      final ForkChoiceStrategy forkChoiceStrategy) {
+      final ForkChoiceStrategy forkChoiceStrategy,
+      final Consumer<BeaconState> beaconStateConsumer) {
     final BeaconBlock block = signed_block.getMessage();
 
     // Return early if precondition checks fail;
@@ -222,7 +226,7 @@ public class ForkChoiceUtil {
 
     // Check the block is valid and compute the post-state
     try {
-      state = st.initiate(preState, signed_block, true);
+      state = st.initiate(preState, signed_block, true, beaconStateConsumer);
     } catch (StateTransitionException e) {
       return BlockImportResult.failedStateTransition(e);
     }

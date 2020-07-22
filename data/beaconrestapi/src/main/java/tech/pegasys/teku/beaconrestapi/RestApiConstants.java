@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi;
 
 public class RestApiConstants {
+  public static final String STATE_ROOT = "stateRoot";
   public static final String ROOT = "root";
   public static final String SLOT = "slot";
   public static final String EPOCH = "epoch";
@@ -49,4 +50,5 @@ public class RestApiConstants {
   public static final String SLOT_QUERY_DESCRIPTION =
       "`UnsignedLong` Slot to query in the canonical chain.";
   public static final String ROOT_QUERY_DESCRIPTION = "`Bytes32 Hex` Block root to query.";
+  public static final String STATE_ROOT_QUERY_DESCRIPTION = "`Bytes32 Hex` Block root to query.";
 }
