@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -118,6 +119,12 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   public SafeFuture<Map<Bytes32, SignedBeaconBlock>> getHotBlocksByRoot(
       final Set<Bytes32> blockRoots) {
     return SafeFuture.of(() -> database.getHotBlocks(blockRoots));
+  }
+
+  @Override
+  public SafeFuture<Optional<SlotAndBlockRoot>> getSlotAndBlockRootByStateRoot(
+      final Bytes32 stateRoot) {
+    return SafeFuture.of(() -> database.getSlotAndBlockRootFromStateRoot(stateRoot));
   }
 
   @Override

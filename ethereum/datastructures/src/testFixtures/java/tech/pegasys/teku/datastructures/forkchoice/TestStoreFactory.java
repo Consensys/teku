@@ -25,6 +25,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
@@ -104,6 +105,7 @@ public class TestStoreFactory {
     protected Checkpoint justified_checkpoint;
     protected Checkpoint finalized_checkpoint;
     protected Checkpoint best_justified_checkpoint;
+    protected Map<Bytes32, SlotAndBlockRoot> state_roots = new HashMap<>();
     protected Map<Bytes32, SignedBeaconBlock> blocks;
     protected Map<Bytes32, BeaconState> block_states;
     protected Map<Checkpoint, BeaconState> checkpoint_states;
@@ -253,6 +255,11 @@ public class TestStoreFactory {
     public void putBlockAndState(final SignedBlockAndState blockAndState) {
       blocks.put(blockAndState.getRoot(), blockAndState.getBlock());
       block_states.put(blockAndState.getRoot(), blockAndState.getState());
+    }
+
+    @Override
+    public void putStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
+      state_roots.put(stateRoot, slotAndBlockRoot);
     }
 
     @Override
