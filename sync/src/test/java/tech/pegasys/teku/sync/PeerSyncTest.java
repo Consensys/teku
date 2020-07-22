@@ -418,6 +418,114 @@ public class PeerSyncTest {
     assertThat(syncStatusStartingSlot3).isEqualTo(secondSyncStartingSlot);
   }
 
+  @Test
+  void sync_failSyncIfPeerThrottlesTooAggressively() {
+    final UnsignedLong startSlot = UnsignedLong.ONE;
+    UnsignedLong peerHeadSlot = Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(startSlot);
+
+    final PeerStatus peer_status =
+        PeerStatus.fromStatusMessage(
+            new StatusMessage(
+                Constants.GENESIS_FORK_VERSION,
+                Bytes32.ZERO,
+                PEER_FINALIZED_EPOCH,
+                PEER_HEAD_BLOCK_ROOT,
+                peerHeadSlot));
+
+    when(peer.getStatus()).thenReturn(peer_status);
+    peerSync = new PeerSync(asyncRunner, storageClient, blockImporter, new NoOpMetricsSystem());
+
+    final SafeFuture<Void> requestFuture1 = new SafeFuture<>();
+    final SafeFuture<Void> requestFuture2 = new SafeFuture<>();
+    when(peer.requestBlocksByRange(any(), any(), any(), any()))
+        .thenReturn(requestFuture1)
+        .thenReturn(requestFuture2);
+
+    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
+    assertThat(syncFuture).isNotDone();
+
+    verify(peer)
+        .requestBlocksByRange(
+            eq(startSlot),
+            eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
+            eq(UnsignedLong.ONE),
+            responseListenerArgumentCaptor.capture());
+
+    // Peer only returns a couple of blocks
+    final ResponseStreamListener<SignedBeaconBlock> responseListener1 =
+        responseListenerArgumentCaptor.getValue();
+    final int lastReceivedBlockSlot = 3;
+    List<SignedBeaconBlock> blocks =
+        respondWithBlocksAtSlots(responseListener1, 1, lastReceivedBlockSlot);
+    for (SignedBeaconBlock block : blocks) {
+      verify(blockImporter).importBlock(block);
+    }
+    requestFuture1.complete(null);
+
+    assertThat(syncFuture).isCompletedWithValue(PeerSyncResult.EXCESSIVE_THROTTLING);
+    // We don't disconnect the peer, the SyncManager just excludes the peer as a sync target for a
+    // period
+    verify(peer, never()).disconnectCleanly(any());
+  }
+
+  @Test
+  void sync_continueSyncIfPeerThrottlesAReasonableAmount() {
+    final UnsignedLong startSlot = UnsignedLong.ONE;
+    UnsignedLong peerHeadSlot = UnsignedLong.valueOf(1000000);
+
+    final PeerStatus peer_status =
+        PeerStatus.fromStatusMessage(
+            new StatusMessage(
+                Constants.GENESIS_FORK_VERSION,
+                Bytes32.ZERO,
+                PEER_FINALIZED_EPOCH,
+                PEER_HEAD_BLOCK_ROOT,
+                peerHeadSlot));
+
+    when(peer.getStatus()).thenReturn(peer_status);
+    peerSync = new PeerSync(asyncRunner, storageClient, blockImporter, new NoOpMetricsSystem());
+
+    final SafeFuture<Void> requestFuture1 = new SafeFuture<>();
+    final SafeFuture<Void> requestFuture2 = new SafeFuture<>();
+    when(peer.requestBlocksByRange(any(), any(), any(), any()))
+        .thenReturn(requestFuture1)
+        .thenReturn(requestFuture2);
+
+    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
+    assertThat(syncFuture).isNotDone();
+
+    verify(peer)
+        .requestBlocksByRange(
+            eq(startSlot),
+            eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
+            eq(UnsignedLong.ONE),
+            responseListenerArgumentCaptor.capture());
+
+    // Peer only returns some blocks but not as many as were requested
+    final ResponseStreamListener<SignedBeaconBlock> responseListener1 =
+        responseListenerArgumentCaptor.getValue();
+    final int lastReceivedBlockSlot = 70;
+    List<SignedBeaconBlock> blocks =
+        respondWithBlocksAtSlots(responseListener1, 1, lastReceivedBlockSlot);
+    for (SignedBeaconBlock block : blocks) {
+      verify(blockImporter).importBlock(block);
+    }
+    requestFuture1.complete(null);
+    asyncRunner.executeQueuedActions();
+
+    assertThat(syncFuture).isNotDone();
+
+    // Next request should start after the last received block
+    verify(peer)
+        .requestBlocksByRange(
+            eq(UnsignedLong.valueOf(lastReceivedBlockSlot + 1)),
+            eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
+            eq(UnsignedLong.ONE),
+            any());
+
+    verify(peer, never()).disconnectCleanly(any());
+  }
+
   private List<SignedBeaconBlock> respondWithBlocksAtSlots(
       final ResponseStreamListener<SignedBeaconBlock> responseListener, int... slots) {
     List<SignedBeaconBlock> blocks = new ArrayList<>();

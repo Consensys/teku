@@ -24,7 +24,6 @@ public class PeerSyncBlockRequest implements ResponseStreamListener<SignedBeacon
   private final SafeFuture<Void> readyForNextRequest;
   private final UnsignedLong lastRequestedSlot;
   private final ResponseStreamListener<SignedBeaconBlock> blockResponseListener;
-  private int returnedBlockCount = 0;
   private Optional<UnsignedLong> slotOfLastBlock = Optional.empty();
 
   public PeerSyncBlockRequest(
@@ -39,7 +38,6 @@ public class PeerSyncBlockRequest implements ResponseStreamListener<SignedBeacon
   @Override
   public SafeFuture<?> onResponse(final SignedBeaconBlock response) {
     slotOfLastBlock = Optional.of(response.getSlot());
-    returnedBlockCount++;
     return blockResponseListener.onResponse(response);
   }
 
@@ -51,9 +49,5 @@ public class PeerSyncBlockRequest implements ResponseStreamListener<SignedBeacon
     // The peer must return at least one block if it has it, so if no blocks were returned they
     // must all of have been empty.
     return slotOfLastBlock.orElse(lastRequestedSlot.minus(UnsignedLong.ONE));
-  }
-
-  public int getReturnedBlockCount() {
-    return returnedBlockCount;
   }
 }

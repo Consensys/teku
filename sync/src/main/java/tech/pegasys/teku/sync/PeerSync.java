@@ -41,6 +41,15 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class PeerSync {
   private static final Duration NEXT_REQUEST_TIMEOUT = Duration.ofSeconds(3);
 
+  /**
+   * Peers are allowed to limit the number of blocks they actually return to use. We tolerate this
+   * up to a point, but if the peer is throttling too excessively we would be better syncing from a
+   * different peer. This value sets how many slots we should progress per request. Since some slots
+   * may be empty we check that we're progressing through slots, even if not many blocks are being
+   * returned.
+   */
+  private static final UnsignedLong MIN_SLOTS_TO_PROGRESS_PER_REQUEST = UnsignedLong.valueOf(50);
+
   private static final Logger LOG = LogManager.getLogger();
   private static final UnsignedLong STEP = UnsignedLong.ONE;
 
@@ -128,13 +137,19 @@ public class PeerSync {
         .thenCompose(
             (blockRequest) -> {
               final UnsignedLong nextSlot = blockRequest.getActualEndSlot().plus(UnsignedLong.ONE);
-              LOG.info(
-                  "Completed request for {} blocks starting at {} from peer {}. Actually got {} blocks. Next request starts from {}",
+              LOG.trace(
+                  "Completed request for {} blocks starting at {} from peer {}. Next request starts from {}",
                   count,
                   startSlot,
                   peer.getId(),
-                  blockRequest.getReturnedBlockCount(),
                   nextSlot);
+              if (count.compareTo(MIN_SLOTS_TO_PROGRESS_PER_REQUEST) > 0
+                  && startSlot.plus(MIN_SLOTS_TO_PROGRESS_PER_REQUEST).compareTo(nextSlot) > 0) {
+                LOG.debug(
+                    "Rejecting peer {} as sync target because it excessively throttled returned blocks",
+                    peer.getId());
+                return SafeFuture.completedFuture(PeerSyncResult.EXCESSIVE_THROTTLING);
+              }
               return executeSync(peer, status, nextSlot, blockRequest.getReadyForNextRequest());
             })
         .exceptionally(err -> handleFailedRequestToPeer(peer, err));
