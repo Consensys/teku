@@ -126,7 +126,7 @@ public class SnappyFrameDecoder extends AbstractByteBufDecoder<ByteBuf, Compress
           }
 
           if (inSize < 4 + chunkLength) {
-            // TODO: Don't keep skippable bytes
+            // TODO (#2404): Don't keep skippable bytes
             return Optional.empty();
           }
 

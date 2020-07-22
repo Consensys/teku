@@ -34,6 +34,7 @@ import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
@@ -203,6 +204,30 @@ public class CombinedChainDataClient {
     }
 
     return historicalChainData.getFinalizedStateByBlockRoot(blockRoot);
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateByStateRoot(final Bytes32 stateRoot) {
+    final UpdatableStore store = getStore();
+    if (store == null) {
+      LOG.trace("No state at stateRoot {} because the store is not set", stateRoot);
+      return STATE_NOT_AVAILABLE;
+    }
+    return historicalChainData
+        .getSlotAndBlockRootByStateRoot(stateRoot)
+        .thenCompose(
+            maybeSlotAndBlockRoot ->
+                maybeSlotAndBlockRoot
+                    .map(this::getStateFromSlotAndBlock)
+                    .orElse(STATE_NOT_AVAILABLE));
+  }
+
+  private SafeFuture<Optional<BeaconState>> getStateFromSlotAndBlock(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return getStateByBlockRoot(slotAndBlockRoot.getBlockRoot())
+        .thenApply(
+            maybeState ->
+                maybeState.flatMap(
+                    preState -> regenerateBeaconState(preState, slotAndBlockRoot.getSlot())));
   }
 
   private Optional<BeaconState> regenerateBeaconState(

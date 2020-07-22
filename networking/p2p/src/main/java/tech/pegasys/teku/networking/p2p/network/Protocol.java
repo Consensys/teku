@@ -15,5 +15,5 @@ package tech.pegasys.teku.networking.p2p.network;
 
 import io.libp2p.core.multistream.ProtocolBinding;
 
-// TODO - flesh out this interface and remove dependency on libp2p
+// TODO (#2400): flesh out this interface and remove dependency on libp2p
 public interface Protocol<T> extends ProtocolBinding<T> {}
