@@ -7,6 +7,7 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BatchSemiAggregate;
 import tech.pegasys.teku.bls.impl.BLS12381;
 import tech.pegasys.teku.bls.impl.KeyPair;
@@ -81,7 +82,7 @@ public class BlstBLS12381 implements BLS12381 {
   }
 
   @Override
-  public BlstSecretKey secretKeyFromBytes(Bytes secretKeyBytes) {
+  public BlstSecretKey secretKeyFromBytes(Bytes32 secretKeyBytes) {
     return BlstSecretKey.fromBytes(secretKeyBytes);
   }
 
