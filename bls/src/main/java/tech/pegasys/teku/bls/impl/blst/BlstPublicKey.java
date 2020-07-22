@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
@@ -13,7 +14,7 @@ import tech.pegasys.teku.bls.impl.blst.swig.p1_affine;
 
 public class BlstPublicKey implements PublicKey {
   private static final int COMPRESSED_PK_SIZE = 48;
-  private static final int UNCOMPRESSED_PK_LENGTH = 49;
+  private static final int UNCOMPRESSED_PK_LENGTH = 96;
 
   public static BlstPublicKey fromBytes(Bytes48 compressed) {
     p1_affine ecPoint = new p1_affine();
@@ -48,7 +49,7 @@ public class BlstPublicKey implements PublicKey {
 
   @Override
   public void forceValidation() throws IllegalArgumentException {
-    if (blst.p1_affine_on_curve(ecPoint) == 0) {
+    if (blst.p1_affine_in_g1(ecPoint) == 0) {
       throw new IllegalArgumentException("Invalid PublicKey: " + this);
     }
   }
@@ -58,6 +59,12 @@ public class BlstPublicKey implements PublicKey {
     byte[] res = new byte[COMPRESSED_PK_SIZE];
     blst.p1_affine_compress(res, ecPoint);
     return Bytes48.wrap(res);
+  }
+
+  public Bytes toBytesUncompressed() {
+    byte[] res = new byte[UNCOMPRESSED_PK_LENGTH];
+    blst.p1_affine_serialize(res, ecPoint);
+    return Bytes.wrap(res);
   }
 
   @Override
