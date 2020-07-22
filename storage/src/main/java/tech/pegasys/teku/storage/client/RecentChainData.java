@@ -210,7 +210,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       if (!chainHead.equals(originalHead)) {
         // The chain head has been updated while we were waiting for the newChainHead
         // Skip this update to avoid accidentally regressing the chain head
-        LOG.debug("Skipping best block update to avoid potential rollback of the best block.");
+        LOG.info("Skipping best block update to avoid potential rollback of the best block.");
         return;
       }
       final Optional<Bytes32> originalBestRoot = originalHead.map(SignedBlockAndState::getRoot);
