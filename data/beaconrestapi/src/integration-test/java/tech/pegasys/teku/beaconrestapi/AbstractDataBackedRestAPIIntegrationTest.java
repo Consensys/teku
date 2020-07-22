@@ -112,13 +112,12 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     recentChainData = storageSystem.recentChainData();
     chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
     chainUpdater = new ChainUpdater(recentChainData, chainBuilder);
-    if (useMockForkChoice) {
-      beaconChainUtil = mock(BeaconChainUtil.class);
-      forkChoice = mock(ForkChoice.class);
-    } else {
-      beaconChainUtil = BeaconChainUtil.create(recentChainData, chainBuilder.getValidatorKeys());
-      forkChoice = new ForkChoice(recentChainData, stateTransition);
-    }
+    forkChoice =
+        useMockForkChoice
+            ? mock(ForkChoice.class)
+            : new ForkChoice(recentChainData, stateTransition);
+    beaconChainUtil =
+        BeaconChainUtil.create(recentChainData, chainBuilder.getValidatorKeys(), forkChoice, true);
   }
 
   private void setupAndStartRestAPI(TekuConfiguration config) {
@@ -197,6 +196,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   // this is particularly useful if testing for missing state roots (states without blocks)
   public ArrayList<BeaconBlockAndState> importBlocksAtSlots(UnsignedLong... slots)
       throws Exception {
+    assertThat(beaconChainUtil).isNotNull();
     final ArrayList<BeaconBlockAndState> results = new ArrayList<>();
     for (UnsignedLong slot : slots) {
       final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock signedBeaconBlock =
