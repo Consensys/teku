@@ -18,6 +18,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.util.List;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BatchSemiAggregate;
 
 /**
@@ -74,10 +75,10 @@ public interface BLS12381 {
   /**
    * Create a private key from bytes
    *
-   * @param secretKeyBytes 48 bytes of the private key
+   * @param secretKeyBytes 32 bytes of the private key
    * @return a new SecretKey object
    */
-  SecretKey secretKeyFromBytes(Bytes secretKeyBytes);
+  SecretKey secretKeyFromBytes(Bytes32 secretKeyBytes);
 
   /**
    * Aggregates list of PublicKeys, returns the public key that corresponds to G1 point at infinity

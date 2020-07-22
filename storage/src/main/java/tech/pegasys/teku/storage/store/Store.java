@@ -46,6 +46,7 @@ import tech.pegasys.teku.core.stategenerator.StateGenerator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
@@ -623,6 +624,7 @@ class Store implements UpdatableStore {
     Optional<Checkpoint> justified_checkpoint = Optional.empty();
     Optional<Checkpoint> finalized_checkpoint = Optional.empty();
     Optional<Checkpoint> best_justified_checkpoint = Optional.empty();
+    Map<Bytes32, SlotAndBlockRoot> stateRoots = new HashMap<>();
     Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
     Map<Bytes32, BeaconState> block_states = new HashMap<>();
     Map<UnsignedLong, VoteTracker> votes = new ConcurrentHashMap<>();
@@ -638,6 +640,14 @@ class Store implements UpdatableStore {
     public void putBlockAndState(SignedBeaconBlock block, BeaconState state) {
       blocks.put(block.getRoot(), block);
       block_states.put(block.getRoot(), state);
+      putStateRoot(
+          state.hash_tree_root(),
+          new SlotAndBlockRoot(block.getSlot(), block.getMessage().hash_tree_root()));
+    }
+
+    @Override
+    public void putStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
+      stateRoots.put(stateRoot, slotAndBlockRoot);
     }
 
     @Override

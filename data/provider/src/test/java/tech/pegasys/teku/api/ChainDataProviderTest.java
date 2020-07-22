@@ -69,6 +69,7 @@ public class ChainDataProviderTest {
   private tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock signedBeaconBlock;
   private BeaconState beaconState;
   private Bytes32 blockRoot;
+  private Bytes32 stateRoot;
   private UnsignedLong slot;
   private RecentChainData recentChainData;
   private CombinedChainDataClient mockCombinedChainDataClient = mock(CombinedChainDataClient.class);
@@ -88,6 +89,7 @@ public class ChainDataProviderTest {
     beaconState = new BeaconState(beaconStateInternal);
     combinedChainDataClient = storageSystem.combinedChainDataClient();
     blockRoot = bestBlock.getRoot();
+    stateRoot = beaconStateInternal.hash_tree_root();
   }
 
   @Test
@@ -319,6 +321,29 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
     final SafeFuture<Optional<BeaconState>> future = provider.getStateByBlockRoot(blockRoot);
     assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
+  }
+
+  @Test
+  public void getStateByStateRoot_shouldThrowWhenStoreNotFound() {
+    final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
+    final SafeFuture<Optional<BeaconState>> future = provider.getStateByStateRoot(blockRoot);
+    assertThatThrownBy(future::get).hasCauseInstanceOf(ChainDataUnavailableException.class);
+  }
+
+  @Test
+  public void getStateByStateRoot_shouldReturnEmptyWhenNotFound()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, mockCombinedChainDataClient);
+    final SafeFuture<Optional<tech.pegasys.teku.datastructures.state.BeaconState>>
+        futureBeaconState = completedFuture(Optional.of(beaconStateInternal));
+    when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
+    when(mockCombinedChainDataClient.getStateByStateRoot(stateRoot)).thenReturn(futureBeaconState);
+    final SafeFuture<Optional<BeaconState>> future = provider.getStateByStateRoot(stateRoot);
+    verify(mockCombinedChainDataClient).getStateByStateRoot(stateRoot);
+
+    final BeaconState result = future.get().get();
+    assertThat(result).usingRecursiveComparison().isEqualTo(beaconState);
   }
 
   @Test

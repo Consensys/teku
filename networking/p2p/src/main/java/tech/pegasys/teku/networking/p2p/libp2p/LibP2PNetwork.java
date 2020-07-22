@@ -123,7 +123,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     // temporary flag
     // set true for Lighthouse compatibility
     // set false for Prysm compatibility
-    // TODO remove when all clients adjust the same Noise spec
+    // TODO (#2402):remove when all clients adjust the same Noise spec
     NoiseXXSecureChannel.setRustInteroperability(false);
     final Multiaddr listenAddr =
         MultiaddrUtil.fromInetSocketAddress(
@@ -195,7 +195,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
             .setPublicKey(ByteArrayExtKt.toProtobuf(privKey.publicKey().bytes()))
             .addListenAddrs(ByteArrayExtKt.toProtobuf(advertisedAddr.getBytes()))
             .setObservedAddr(
-                ByteArrayExtKt.toProtobuf( // TODO: Report external IP?
+                ByteArrayExtKt.toProtobuf( // TODO (#1854): Report external IP?
                     advertisedAddr.getBytes()))
             .addAllProtocols(ping.getProtocolDescriptor().getAnnounceProtocols())
             .addAllProtocols(gossip.getProtocolDescriptor().getAnnounceProtocols())

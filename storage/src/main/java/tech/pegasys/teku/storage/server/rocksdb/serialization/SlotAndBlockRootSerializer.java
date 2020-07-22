@@ -17,7 +17,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
-import tech.pegasys.teku.storage.api.schema.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 
 public class SlotAndBlockRootSerializer implements RocksDbSerializer<SlotAndBlockRoot> {
   @Override

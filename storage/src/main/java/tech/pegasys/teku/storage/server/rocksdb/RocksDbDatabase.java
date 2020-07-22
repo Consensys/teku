@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.metrics.TekuMetricCategory.STORAGE_HOT_DB;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.stategenerator.StateGenerator;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -43,7 +45,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
-import tech.pegasys.teku.storage.api.schema.SlotAndBlockRoot;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.server.Database;
@@ -338,12 +339,25 @@ public class RocksDbDatabase implements Database {
     try (final HotUpdater updater = hotDao.hotUpdater()) {
       // Store new hot data
       update.getGenesisTime().ifPresent(updater::setGenesisTime);
-      update.getFinalizedCheckpoint().ifPresent(updater::setFinalizedCheckpoint);
+      update
+          .getFinalizedCheckpoint()
+          .ifPresent(
+              checkpoint -> {
+                updater.setFinalizedCheckpoint(checkpoint);
+                UnsignedLong finalizedSlot =
+                    checkpoint.getEpochStartSlot().plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
+                updater.pruneHotStateRoots(hotDao.getStateRootsBeforeSlot(finalizedSlot));
+              });
+
       update.getJustifiedCheckpoint().ifPresent(updater::setJustifiedCheckpoint);
       update.getBestJustifiedCheckpoint().ifPresent(updater::setBestJustifiedCheckpoint);
       update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
 
       updater.addHotBlocks(update.getHotBlocks());
+
+      if (update.getStateRoots().size() > 0) {
+        updater.addHotStateRoots(update.getStateRoots());
+      }
       updater.addVotes(update.getVotes());
 
       // Delete finalized data from hot db
@@ -380,7 +394,7 @@ public class RocksDbDatabase implements Database {
 
           final StateGenerator stateGenerator =
               StateGenerator.create(blockTree, baseBlock, blockProvider, finalizedStates);
-          // TODO - don't join, create synchronous API for synchronous blockProvider
+          // TODO (#2397) - don't join, create synchronous API for synchronous blockProvider
           stateGenerator
               .regenerateAllStates(
                   (block, state) -> {

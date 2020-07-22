@@ -26,7 +26,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.signers.bls.keystore.KeyStore;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
@@ -51,13 +51,13 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
         .collect(toList());
   }
 
-  private Bytes loadBLSPrivateKey(final Path keystoreFile, final String password) {
+  private Bytes32 loadBLSPrivateKey(final Path keystoreFile, final String password) {
     try {
       final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(keystoreFile);
       if (!KeyStore.validatePassword(password, keyStoreData)) {
         throw new IllegalArgumentException("Invalid keystore password: " + keystoreFile);
       }
-      return KeyStore.decrypt(password, keyStoreData);
+      return Bytes32.wrap(KeyStore.decrypt(password, keyStoreData));
     } catch (final KeyStoreValidationException e) {
       throw new IllegalArgumentException(e.getMessage(), e);
     }

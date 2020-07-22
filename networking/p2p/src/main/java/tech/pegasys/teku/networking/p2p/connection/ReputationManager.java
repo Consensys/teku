@@ -13,7 +13,11 @@
 
 package tech.pegasys.teku.networking.p2p.connection;
 
+import static tech.pegasys.teku.networking.p2p.peer.DisconnectReason.TOO_MANY_PEERS;
+import static tech.pegasys.teku.networking.p2p.peer.DisconnectReason.UNRESPONSIVE;
+
 import com.google.common.primitives.UnsignedLong;
+import java.util.EnumSet;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -71,6 +75,16 @@ public class ReputationManager {
   }
 
   private static class Reputation {
+    private static final EnumSet<DisconnectReason> LOCAL_TEMPORARY_DISCONNECT_REASONS =
+        EnumSet.of(
+            // We're currently at limit so don't mark peer unsuitable
+            TOO_MANY_PEERS,
+            // Peer may have been unresponsive due to a temporary network issue. In particular
+            // our internet access may have failed and all peers could be unresponsive.
+            // If we consider them all permanently unsuitable we may not be able to rejoin the
+            // network once our internet access is restored.
+            UNRESPONSIVE);
+
     private volatile Optional<UnsignedLong> lastInitiationFailure = Optional.empty();
     private volatile boolean unsuitable = false;
 
@@ -106,7 +120,7 @@ public class ReputationManager {
     private boolean isLocallyConsideredUnsuitable(
         final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
       return locallyInitiated
-          && reason.map(r -> r != DisconnectReason.TOO_MANY_PEERS).orElse(false);
+          && reason.map(r -> !LOCAL_TEMPORARY_DISCONNECT_REASONS.contains(r)).orElse(false);
     }
   }
 }
