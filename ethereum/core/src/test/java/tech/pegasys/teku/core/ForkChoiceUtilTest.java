@@ -28,7 +28,7 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.datastructures.forkchoice.PrunableStore;
 import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
@@ -41,9 +41,9 @@ class ForkChoiceUtilTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
   private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-  private final ReadOnlyStore store = new TestStoreFactory().createGenesisStore(genesis.getState());
+  private final PrunableStore store = new TestStoreFactory().createGenesisStore(genesis.getState());
   private final ProtoArrayForkChoiceStrategy forkChoiceStrategy =
-      ProtoArrayForkChoiceStrategy.initialize(store, new StubProtoArrayStorageChannel());
+      ProtoArrayForkChoiceStrategy.initialize(store, new StubProtoArrayStorageChannel()).join();
 
   @Test
   void getAncestors_shouldGetSimpleSequenceOfAncestors() throws Exception {

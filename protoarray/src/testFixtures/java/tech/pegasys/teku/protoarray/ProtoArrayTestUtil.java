@@ -18,6 +18,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.int_to_bytes
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.forkchoice.MutablePrunableStore;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -35,12 +36,12 @@ public class ProtoArrayTestUtil {
       UnsignedLong finalizedBlockSlot,
       UnsignedLong finalizedCheckpointEpoch,
       UnsignedLong justifiedCheckpointEpoch) {
-    MutableStore store = STORE_FACTORY.createEmptyStore();
+    MutablePrunableStore store = STORE_FACTORY.createEmptyStore();
     store.setJustifiedCheckpoint(new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO));
     store.setFinalizedCheckpoint(new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO));
 
     ProtoArrayForkChoiceStrategy forkChoice =
-        ProtoArrayForkChoiceStrategy.initialize(store, new StubProtoArrayStorageChannel());
+        ProtoArrayForkChoiceStrategy.initialize(store, new StubProtoArrayStorageChannel()).join();
 
     forkChoice.processBlock(
         finalizedBlockSlot,
@@ -54,7 +55,7 @@ public class ProtoArrayTestUtil {
   }
 
   public static MutableStore createStoreToManipulateVotes() {
-    return STORE_FACTORY.createMutableGenesisStore();
+    return STORE_FACTORY.createGenesisStore();
   }
 
   public static void assertThatBlockInformationMatches(ProtoNode node1, ProtoNode node2) {

@@ -149,9 +149,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.store = store;
     this.store.startMetrics();
     this.genesisTime = this.store.getGenesisTime();
-    forkChoiceStrategy =
-        Optional.of(ProtoArrayForkChoiceStrategy.initialize(this.store, protoArrayStorageChannel));
-    storeInitializedFuture.complete(null);
+    ProtoArrayForkChoiceStrategy.initialize(this.store, protoArrayStorageChannel)
+        .thenAccept(
+            forkChoiceStrategy -> {
+              this.forkChoiceStrategy = Optional.of(forkChoiceStrategy);
+              storeInitializedFuture.complete(null);
+            })
+        .join();
     return true;
   }
 
