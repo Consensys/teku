@@ -143,8 +143,7 @@ class TestStoreImpl implements MutablePrunableStore {
         .collect(Collectors.toList());
   }
 
-  @Override
-  public BeaconState getBlockState(final Bytes32 blockRoot) {
+  private BeaconState getBlockState(final Bytes32 blockRoot) {
     return block_states.get(blockRoot);
   }
 

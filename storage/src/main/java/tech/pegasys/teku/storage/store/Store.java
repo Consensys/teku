@@ -317,12 +317,6 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public BeaconState getBlockState(Bytes32 blockRoot) {
-    // TODO(#2291) - replace this with retrieveBlockState
-    return retrieveBlockState(blockRoot).join().orElse(null);
-  }
-
-  @Override
   public Optional<BeaconState> getCheckpointState(Checkpoint checkpoint) {
     // TODO(#2291) - replace this with retrieveCheckpointState
     return retrieveCheckpointState(checkpoint).join();
@@ -704,7 +698,7 @@ class Store implements UpdatableStore {
       final Lock writeLock = Store.this.lock.writeLock();
       writeLock.lock();
       try {
-        updates = StoreTransactionUpdates.calculate(Store.this, this);
+        updates = StoreTransactionUpdatesFactory.create(Store.this, this).join();
       } finally {
         writeLock.unlock();
       }
@@ -824,11 +818,6 @@ class Store implements UpdatableStore {
       } finally {
         Store.this.lock.readLock().unlock();
       }
-    }
-
-    @Override
-    public BeaconState getBlockState(final Bytes32 blockRoot) {
-      return either(blockRoot, block_states::get, Store.this::getBlockState);
     }
 
     @Override

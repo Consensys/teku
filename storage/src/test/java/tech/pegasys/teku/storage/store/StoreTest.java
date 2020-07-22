@@ -50,20 +50,6 @@ class StoreTest extends AbstractStoreTest {
   }
 
   @Test
-  public void getBlockState_withLimitedCache() {
-    processChainWithLimitedCache(
-        (store, blockAndState) -> {
-          final BeaconState result = store.getBlockState(blockAndState.getRoot());
-          assertThat(result)
-              .withFailMessage(
-                  "Expected state for block %s to be available", blockAndState.getSlot())
-              .isNotNull();
-          assertThat(result.hash_tree_root())
-              .isEqualTo(blockAndState.getBlock().getMessage().getState_root());
-        });
-  }
-
-  @Test
   public void retrieveSignedBlock_withLimitedCache() throws Exception {
     processChainWithLimitedCache(
         (store, blockAndState) -> {
