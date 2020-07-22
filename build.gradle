@@ -276,7 +276,9 @@ application {
       "-Dlog4j.shutdownHookEnabled=false",
       "-XX:+HeapDumpOnOutOfMemoryError",
       // run `jcmd <PID> VM.native_memory` to check JVM native memory consumption
-      "-XX:NativeMemoryTracking=summary"
+      "-XX:NativeMemoryTracking=summary",
+      // 32Mb for Netty Direct ByteBuf
+      "-Dio.netty.maxDirectMemory=33554432"
   ]
 }
 
