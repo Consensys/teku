@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 
 class BLSTest {
@@ -135,7 +136,7 @@ class BLSTest {
 
   static final BLSPublicKey infinityG1 =
       BLSPublicKey.fromBytesCompressed(
-          Bytes.fromHexString(
+          Bytes48.fromHexString(
               "0x"
                   + "c0000000000000000000000000000000"
                   + "00000000000000000000000000000000"

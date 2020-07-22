@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BatchSemiAggregate;
 
 /**
@@ -66,7 +67,7 @@ public interface BLS12381 {
    *    but throw on later usage.
    *    Use {@link PublicKey#forceValidation()} if need to immediately ensure input validity
    */
-  PublicKey publicKeyFromCompressed(Bytes compressedPublicKeyBytes) throws IllegalArgumentException;
+  PublicKey publicKeyFromCompressed(Bytes48 compressedPublicKeyBytes) throws IllegalArgumentException;
 
   /**
    * Decode a signature from its <em>compressed</em> form serialized representation.

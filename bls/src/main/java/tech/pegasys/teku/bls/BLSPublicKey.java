@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
@@ -65,7 +66,9 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
         bytes,
         reader ->
             new BLSPublicKey(
-                BLS.getBlsImpl().publicKeyFromCompressed(reader.readFixedBytes(BLS_PUBKEY_SIZE))));
+                BLS.getBlsImpl()
+                    .publicKeyFromCompressed(
+                        Bytes48.wrap(reader.readFixedBytes(BLS_PUBKEY_SIZE)))));
   }
 
   /**
@@ -74,17 +77,17 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
    * @param bytes 48 bytes to read the public key from
    * @return a public key. Note that implementation may lazily evaluate passed bytes so the method
    *     may not immediately fail if the supplied bytes are invalid. Use {@link
-   *     BLSPublicKey#fromBytesCompressedValidate(Bytes)} to validate immediately
+   *     BLSPublicKey#fromBytesCompressedValidate(Bytes48)} to validate immediately
    * @throws IllegalArgumentException If the supplied bytes are not a valid public key
    *    However if implementing class lazily parses bytes the exception might not be thrown on invalid input
    *    but throw on later usage.
-   *    Use {@link BLSPublicKey#fromBytesCompressedValidate(Bytes)} if need to immediately ensure input validity
+   *    Use {@link BLSPublicKey#fromBytesCompressedValidate(Bytes48)} if need to immediately ensure input validity
    */
-  public static BLSPublicKey fromBytesCompressed(Bytes bytes) throws IllegalArgumentException {
+  public static BLSPublicKey fromBytesCompressed(Bytes48 bytes) throws IllegalArgumentException {
     return new BLSPublicKey(BLS.getBlsImpl().publicKeyFromCompressed(bytes));
   }
 
-  public static BLSPublicKey fromBytesCompressedValidate(Bytes bytes) throws IllegalArgumentException {
+  public static BLSPublicKey fromBytesCompressedValidate(Bytes48 bytes) throws IllegalArgumentException {
     BLSPublicKey ret = new BLSPublicKey(BLS.getBlsImpl().publicKeyFromCompressed(bytes));
     ret.getPublicKey().forceValidation();
     return ret;
@@ -131,7 +134,7 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
         });
   }
 
-  public Bytes toBytesCompressed() {
+  public Bytes48 toBytesCompressed() {
     return publicKey.toBytesCompressed();
   }
 

@@ -4,7 +4,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
 import tech.pegasys.teku.bls.impl.blst.swig.blst;
@@ -15,11 +15,7 @@ public class BlstPublicKey implements PublicKey {
   private static final int COMPRESSED_PK_SIZE = 48;
   private static final int UNCOMPRESSED_PK_LENGTH = 49;
 
-  public static BlstPublicKey fromBytes(Bytes compressed) {
-    checkArgument(
-        compressed.size() == COMPRESSED_PK_SIZE,
-        "Expected " + COMPRESSED_PK_SIZE + " bytes of input but got %s",
-        compressed.size());
+  public static BlstPublicKey fromBytes(Bytes48 compressed) {
     p1_affine ecPoint = new p1_affine();
     if (blst.p1_uncompress(ecPoint, compressed.toArrayUnsafe()) == BLST_ERROR.BLST_SUCCESS) {
       return new BlstPublicKey(ecPoint);
@@ -58,10 +54,10 @@ public class BlstPublicKey implements PublicKey {
   }
 
   @Override
-  public Bytes toBytesCompressed() {
+  public Bytes48 toBytesCompressed() {
     byte[] res = new byte[COMPRESSED_PK_SIZE];
     blst.p1_affine_compress(res, ecPoint);
-    return Bytes.wrap(res);
+    return Bytes48.wrap(res);
   }
 
   @Override

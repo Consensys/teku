@@ -18,6 +18,7 @@ import static org.apache.milagro.amcl.BLS381.BIG.MODBYTES;
 import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.SecretKey;
@@ -57,10 +58,10 @@ public class MikuliSecretKey implements SecretKey {
   }
 
   @Override
-  public Bytes toBytes() {
+  public Bytes32 toBytes() {
     byte[] bytea = new byte[MODBYTES];
     scalarValue.value().toBytes(bytea);
-    return Bytes.wrap(bytea);
+    return Bytes32.wrap(bytea, 16);
   }
 
   @Override

@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +39,7 @@ class BLSPublicKeyTest {
     assertThatThrownBy(
             () ->
                 BLSPublicKey.fromBytesCompressedValidate(
-                    publicKey.toBytesCompressed().shiftLeft(1)))
+                    Bytes48.wrap(publicKey.toBytesCompressed().shiftLeft(1))))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -58,7 +59,7 @@ class BLSPublicKeyTest {
 
   @Test
   void succeedsWhenInvalidPublicKeyIsInvalid() {
-    Bytes invalidPublicKeyBytes = Bytes.fromHexString(
+    Bytes48 invalidPublicKeyBytes = Bytes48.fromHexString(
         "0x9378a6e3984e96d2cd50450c76ca14732f1300efa04aecdb805b22e6d6926a85ef409e8f3acf494a1481090bf32ce3bd");
     assertThatThrownBy(() -> BLSPublicKey.fromBytesCompressedValidate(invalidPublicKeyBytes))
         .isInstanceOf(IllegalArgumentException.class);
@@ -68,11 +69,11 @@ class BLSPublicKeyTest {
   void succeedsWhenInvalidPublicReturnsHashCode() {
     BLSPublicKey invalidPublicKey =
         BLSPublicKey.fromBytesCompressed(
-            Bytes.fromHexString(
+            Bytes48.fromHexString(
                 "0x9378a6e3984e96d2cd50450c76ca14732f1300efa04aecdb805b22e6d6926a85ef409e8f3acf494a1481090bf32ce3bd"));
     BLSPublicKey validPublicKey =
         BLSPublicKey.fromBytesCompressed(
-            Bytes.fromHexString(
+            Bytes48.fromHexString(
                 "0xb51aa9cdb40ed3e7e5a9b3323550fe323ecd5c7f5cb3d8b47af55a061811bc7da0397986cad0d565c0bdbbe99af24355"));
     assertNotEquals(invalidPublicKey.hashCode(), validPublicKey.hashCode());
     assertEquals(invalidPublicKey.hashCode(), invalidPublicKey.hashCode());

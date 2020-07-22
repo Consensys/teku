@@ -4,7 +4,6 @@ import java.util.Objects;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.impl.SecretKey;
 import tech.pegasys.teku.bls.impl.Signature;
 import tech.pegasys.teku.bls.impl.blst.swig.blst;
@@ -35,10 +34,10 @@ public class BlstSecretKey implements SecretKey {
   }
 
   @Override
-  public Bytes toBytes() {
+  public Bytes32 toBytes() {
     byte[] res = new byte[32];
     blst.bendian_from_scalar(res, scalarVal);
-    return Bytes48.leftPad(Bytes.wrap(res));
+    return Bytes32.wrap(res);
   }
 
   @Override

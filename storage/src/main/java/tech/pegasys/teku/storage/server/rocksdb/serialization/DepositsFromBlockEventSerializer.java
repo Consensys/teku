@@ -19,6 +19,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -71,7 +72,8 @@ public class DepositsFromBlockEventSerializer implements RocksDbSerializer<Depos
         data,
         reader -> {
           final BLSPublicKey publicKey =
-              BLSPublicKey.fromBytesCompressed(reader.readFixedBytes(BLSPublicKey.BLS_PUBKEY_SIZE));
+              BLSPublicKey.fromBytesCompressed(
+                  Bytes48.wrap(reader.readFixedBytes(BLSPublicKey.BLS_PUBKEY_SIZE)));
           final Bytes32 withdrawalCredentials = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final BLSSignature signature =
               BLSSignature.fromBytes(reader.readFixedBytes(BLSSignature.BLS_SIGNATURE_SIZE));
