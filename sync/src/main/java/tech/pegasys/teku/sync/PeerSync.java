@@ -41,6 +41,15 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class PeerSync {
   private static final Duration NEXT_REQUEST_TIMEOUT = Duration.ofSeconds(3);
 
+  /**
+   * Peers are allowed to limit the number of blocks they actually return to use. We tolerate this
+   * up to a point, but if the peer is throttling too excessively we would be better syncing from a
+   * different peer. This value sets how many slots we should progress per request. Since some slots
+   * may be empty we check that we're progressing through slots, even if not many blocks are being
+   * returned.
+   */
+  private static final UnsignedLong MIN_SLOTS_TO_PROGRESS_PER_REQUEST = UnsignedLong.valueOf(50);
+
   private static final Logger LOG = LogManager.getLogger();
   private static final UnsignedLong STEP = UnsignedLong.ONE;
 
@@ -119,18 +128,29 @@ public class PeerSync {
               final SafeFuture<Void> readyForNextRequest =
                   asyncRunner.getDelayedFuture(
                       NEXT_REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-              return peer.requestBlocksByRange(startSlot, count, STEP, this::blockResponseListener)
-                  .thenApply((res) -> readyForNextRequest);
+              final PeerSyncBlockRequest request =
+                  new PeerSyncBlockRequest(
+                      readyForNextRequest, startSlot.plus(count), this::blockResponseListener);
+              return peer.requestBlocksByRange(startSlot, count, STEP, request)
+                  .thenApply((res) -> request);
             })
         .thenCompose(
-            (readyForNextRequest) -> {
+            (blockRequest) -> {
+              final UnsignedLong nextSlot = blockRequest.getActualEndSlot().plus(UnsignedLong.ONE);
               LOG.trace(
-                  "Completed request for {} blocks starting at {} from peer {}",
-                  count,
+                  "Completed request starting at {} for {} slots from peer {}. Next request starts from {}",
                   startSlot,
-                  peer.getId());
-              final UnsignedLong nextSlot = startSlot.plus(count);
-              return executeSync(peer, status, nextSlot, readyForNextRequest);
+                  count,
+                  peer.getId(),
+                  nextSlot);
+              if (count.compareTo(MIN_SLOTS_TO_PROGRESS_PER_REQUEST) > 0
+                  && startSlot.plus(MIN_SLOTS_TO_PROGRESS_PER_REQUEST).compareTo(nextSlot) > 0) {
+                LOG.debug(
+                    "Rejecting peer {} as sync target because it excessively throttled returned blocks",
+                    peer.getId());
+                return SafeFuture.completedFuture(PeerSyncResult.EXCESSIVE_THROTTLING);
+              }
+              return executeSync(peer, status, nextSlot, blockRequest.getReadyForNextRequest());
             })
         .exceptionally(err -> handleFailedRequestToPeer(peer, err));
   }
