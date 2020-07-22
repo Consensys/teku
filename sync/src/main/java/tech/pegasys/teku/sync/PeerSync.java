@@ -138,9 +138,9 @@ public class PeerSync {
             (blockRequest) -> {
               final UnsignedLong nextSlot = blockRequest.getActualEndSlot().plus(UnsignedLong.ONE);
               LOG.trace(
-                  "Completed request for {} blocks starting at {} from peer {}. Next request starts from {}",
-                  count,
+                  "Completed request starting at {} for {} slots from peer {}. Next request starts from {}",
                   startSlot,
+                  count,
                   peer.getId(),
                   nextSlot);
               if (count.compareTo(MIN_SLOTS_TO_PROGRESS_PER_REQUEST) > 0
