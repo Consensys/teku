@@ -83,6 +83,10 @@ public class BLSSignature implements SimpleOffsetSerializable {
             new BLSSignature(reader.readFixedBytes(BLS_SIGNATURE_SIZE)));
   }
 
+  // Sometimes we are dealing with random, invalid signature points, e.g. when testing.
+  // Let's only interpret the raw data into a point when necessary to do so.
+  // And vice versa while aggregating we are dealing with points only so let's
+  // convert point to raw data when necessary to do so.
   private final Supplier<Signature> signature;
   private final Supplier<Bytes> bytesCompressed;
 

@@ -92,6 +92,10 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
     return ret;
   }
 
+  // Sometimes we are dealing with random, invalid pubkey points, e.g. when testing.
+  // Let's only interpret the raw data into a point when necessary to do so.
+  // And vice versa while aggregating we are dealing with points only so let's
+  // convert point to raw data when necessary to do so.
   private final Supplier<PublicKey> publicKey;
   private final Supplier<Bytes48> bytesCompressed;
 
