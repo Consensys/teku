@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.api.schema;
+package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
