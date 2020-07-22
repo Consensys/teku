@@ -11,13 +11,13 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
 import tech.pegasys.teku.bls.impl.Signature;
+import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
 import tech.pegasys.teku.bls.impl.blst.swig.blst;
 import tech.pegasys.teku.bls.impl.blst.swig.p2;
 import tech.pegasys.teku.bls.impl.blst.swig.p2_affine;
 
 public class BlstSignature implements Signature {
   private static final int COMPRESSED_SIG_SIZE = 96;
-  private static final int UNCOMPRESSED_SIG_SIZE = 192;
 
   public static BlstSignature fromBytes(Bytes compressed) {
     checkArgument(
@@ -25,8 +25,14 @@ public class BlstSignature implements Signature {
         "Expected " + COMPRESSED_SIG_SIZE + " bytes of input but got %s",
         compressed.size());
     p2_affine ec2Point = new p2_affine();
-    blst.p2_uncompress(ec2Point, compressed.toArrayUnsafe());
-    return new BlstSignature(ec2Point);
+    BLST_ERROR rc = blst.p2_uncompress(ec2Point, compressed.toArrayUnsafe());
+    if (rc != BLST_ERROR.BLST_SUCCESS) {
+      ec2Point.delete();
+      throw new IllegalArgumentException(
+          "Invalid Signature bytes: " + compressed + ", error: " + rc);
+    } else {
+      return new BlstSignature(ec2Point);
+    }
   }
 
   public static BlstSignature aggregate(List<BlstSignature> signatures) {
