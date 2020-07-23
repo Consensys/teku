@@ -15,6 +15,24 @@ public class BlstPublicKeyTest {
   }
 
   @Test
+  void infinityPublicKey() {
+    BlstPublicKey inf1 = BlstPublicKey.fromBytes(
+        Bytes48.fromHexString(
+            "0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"));
+    Bytes bytes = inf1.toBytesUncompressed();
+
+    Bytes48 x =
+        Bytes48.fromHexString(
+            "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+    Bytes48 y =
+        Bytes48.fromHexString(
+            "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001");
+    BlstPublicKey publicKey = BlstPublicKey.fromBytesUncompressed(bytes);
+    publicKey.forceValidation();
+  }
+
+
+  @Test
   void succeedsWhenInvalidPublicKeyIsInvalid() {
     Bytes48 invalidPublicKeyBytes = Bytes48.fromHexString(
         "0x9378a6e3984e96d2cd50450c76ca14732f1300efa04aecdb805b22e6d6926a85ef409e8f3acf494a1481090bf32ce3bd");

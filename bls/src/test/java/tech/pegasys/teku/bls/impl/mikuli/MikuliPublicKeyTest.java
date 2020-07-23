@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.impl.BLS12381;
@@ -63,5 +64,18 @@ public class MikuliPublicKeyTest extends PublicKeyTest {
     MikuliPublicKey publicKey1 = new MikuliPublicKey(new G1Point());
     MikuliPublicKey publicKey2 = MikuliPublicKey.fromBytesCompressed(publicKey1.toBytesCompressed());
     assertEquals(publicKey1, publicKey2);
+  }
+
+  @Test
+  void infinityPublicKeyIsValid() {
+    MikuliPublicKey infinityG1 =
+        MikuliPublicKey.fromBytesCompressed(
+            Bytes48.fromHexString(
+                "0x"
+                    + "c0000000000000000000000000000000"
+                    + "00000000000000000000000000000000"
+                    + "00000000000000000000000000000000"));
+    infinityG1.forceValidation();
+    System.out.println(infinityG1.g1Point());
   }
 }
