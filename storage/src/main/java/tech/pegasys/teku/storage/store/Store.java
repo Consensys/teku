@@ -45,7 +45,6 @@ import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.stategenerator.StateGenerator;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -302,12 +301,6 @@ class Store implements UpdatableStore {
     } finally {
       readLock.unlock();
     }
-  }
-
-  @Override
-  public BeaconBlock getBlock(Bytes32 blockRoot) {
-    // TODO(#2291) - replace this retrieveBlock()
-    return retrieveBlock(blockRoot).join().orElse(null);
   }
 
   @Override
@@ -774,12 +767,6 @@ class Store implements UpdatableStore {
     @Override
     public Checkpoint getBestJustifiedCheckpoint() {
       return best_justified_checkpoint.orElseGet(Store.this::getBestJustifiedCheckpoint);
-    }
-
-    @Override
-    public BeaconBlock getBlock(final Bytes32 blockRoot) {
-      final SignedBeaconBlock signedBlock = getSignedBlock(blockRoot);
-      return signedBlock != null ? signedBlock.getMessage() : null;
     }
 
     @Override
