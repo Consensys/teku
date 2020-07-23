@@ -168,11 +168,11 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
     }
 
     BLSPublicKey other = (BLSPublicKey) obj;
-    return Objects.equals(this.getPublicKey(), other.getPublicKey());
+    return Objects.equals(this.toBytesCompressed(), other.toBytesCompressed());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getPublicKey());
+    return Objects.hash(toBytesCompressed());
   }
 }

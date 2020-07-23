@@ -133,7 +133,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
 
   @Override
   public int hashCode() {
-    return getSignature().hashCode();
+    return toSSZBytes().hashCode();
   }
 
   @Override
@@ -148,6 +148,6 @@ public class BLSSignature implements SimpleOffsetSerializable {
       return false;
     }
     BLSSignature other = (BLSSignature) obj;
-    return Objects.equals(this.getSignature(), other.getSignature());
+    return Objects.equals(toSSZBytes(), other.toSSZBytes());
   }
 }
