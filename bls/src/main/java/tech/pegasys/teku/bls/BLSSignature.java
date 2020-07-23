@@ -77,10 +77,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
         bytes.size() == BLS_SIGNATURE_SIZE,
         "Expected " + BLS_SIGNATURE_SIZE + " bytes but received %s.",
         bytes.size());
-    return SSZ.decode(
-        bytes,
-        reader ->
-            new BLSSignature(reader.readFixedBytes(BLS_SIGNATURE_SIZE)));
+    return SSZ.decode(bytes, reader -> new BLSSignature(reader.readFixedBytes(BLS_SIGNATURE_SIZE)));
   }
 
   // Sometimes we are dealing with random, invalid signature points, e.g. when testing.

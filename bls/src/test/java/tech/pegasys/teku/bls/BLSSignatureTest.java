@@ -91,8 +91,6 @@ class BLSSignatureTest {
   @Test
   void succeedsWhenEqualsReturnsTrueForEmptySignatures() {
     assertEquals(BLSSignature.empty(), BLSSignature.empty());
-    assertEquals(
-        BLSSignature.empty().hashCode(),
-        BLSSignature.empty().hashCode());
+    assertEquals(BLSSignature.empty().hashCode(), BLSSignature.empty().hashCode());
   }
 }
