@@ -116,8 +116,7 @@ class TestStoreImpl implements MutablePrunableStore {
     return blocks.get(blockRoot);
   }
 
-  @Override
-  public Optional<SignedBlockAndState> getBlockAndState(final Bytes32 blockRoot) {
+  private Optional<SignedBlockAndState> getBlockAndState(final Bytes32 blockRoot) {
     final SignedBeaconBlock block = getSignedBlock(blockRoot);
     final BeaconState state = getBlockState(blockRoot);
     if (block == null || state == null) {
@@ -144,8 +143,7 @@ class TestStoreImpl implements MutablePrunableStore {
         .collect(Collectors.toList());
   }
 
-  @Override
-  public BeaconState getBlockState(final Bytes32 blockRoot) {
+  private BeaconState getBlockState(final Bytes32 blockRoot) {
     return block_states.get(blockRoot);
   }
 
