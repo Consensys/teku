@@ -32,7 +32,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.events.FinalizedChainData;
 import tech.pegasys.teku.storage.store.Store.Transaction;
 
-public class StoreTransactionUpdatesFactory {
+class StoreTransactionUpdatesFactory {
   private final Store baseStore;
   private final Store.Transaction tx;
 
