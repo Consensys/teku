@@ -65,7 +65,7 @@ public class BlstBLS12381 implements BLS12381 {
     blst.p2_to_affine(p2SignatureAffine, p2Signature);
     p2Signature.delete();
     hash.delete();
-    return new BlstSignature(p2SignatureAffine);
+    return new BlstSignature(p2SignatureAffine, true);
   }
 
   public static boolean verify(BlstPublicKey publicKey, Bytes message, BlstSignature signature) {

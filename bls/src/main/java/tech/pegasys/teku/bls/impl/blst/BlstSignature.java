@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.impl.PublicKey;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.bls.impl.blst.swig.p2_affine;
 public class BlstSignature implements Signature {
   private static final int COMPRESSED_SIG_SIZE = 96;
 
+
   public static BlstSignature fromBytes(Bytes compressed) {
     checkArgument(
         compressed.size() == COMPRESSED_SIG_SIZE,
@@ -39,16 +41,16 @@ public class BlstSignature implements Signature {
         compressed.size());
     p2_affine ec2Point = new p2_affine();
     BLST_ERROR rc = blst.p2_uncompress(ec2Point, compressed.toArrayUnsafe());
-    if (rc != BLST_ERROR.BLST_SUCCESS) {
-      ec2Point.delete();
-      throw new IllegalArgumentException(
-          "Invalid Signature bytes: " + compressed + ", error: " + rc);
-    } else {
-      return new BlstSignature(ec2Point);
-    }
+    return new BlstSignature(ec2Point, rc == BLST_ERROR.BLST_SUCCESS);
   }
 
   public static BlstSignature aggregate(List<BlstSignature> signatures) {
+    Optional<BlstSignature> invalidSignature = signatures.stream().filter(s -> !s.isValid).findFirst();
+    if (invalidSignature.isPresent()) {
+      throw new IllegalArgumentException(
+          "Can't aggregate invalid signature: " + invalidSignature.get());
+    }
+
     p2 sum = new p2();
     blst.p2_from_affine(sum, signatures.get(0).ec2Point);
     for (int i = 1; i < signatures.size(); i++) {
@@ -57,13 +59,15 @@ public class BlstSignature implements Signature {
     p2_affine res = new p2_affine();
     blst.p2_to_affine(res, sum);
     sum.delete();
-    return new BlstSignature(res);
+    return new BlstSignature(res, true);
   }
 
   final p2_affine ec2Point;
+  private final boolean isValid;
 
-  public BlstSignature(p2_affine ec2Point) {
+  public BlstSignature(p2_affine ec2Point, boolean isValid) {
     this.ec2Point = ec2Point;
+    this.isValid = isValid;
   }
 
   @Override

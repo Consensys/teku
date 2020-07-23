@@ -91,8 +91,10 @@ public class BLS {
    *
    * @param signatures the list of signatures to be aggregated
    * @return the aggregated signature
+   * @throws IllegalArgumentException if any of supplied signatures is invalid
    */
-  public static BLSSignature aggregate(List<BLSSignature> signatures) {
+  public static BLSSignature aggregate(List<BLSSignature> signatures)
+      throws IllegalArgumentException {
     checkArgument(signatures.size() > 0, "Aggregating zero signatures is invalid.");
     return new BLSSignature(
         getBlsImpl()
