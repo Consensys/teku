@@ -1,0 +1,104 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.services.remotevalidator;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import io.javalin.Javalin;
+import io.javalin.websocket.WsConnectContext;
+import io.javalin.websocket.WsContext;
+import java.io.IOException;
+import java.util.Objects;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.util.config.TekuConfiguration;
+
+public class RemoteValidatorApi {
+
+  private static final Logger LOG = LogManager.getLogger();
+
+  private final RemoteValidatorSubscriptions subscriptionManager;
+  private final Javalin app;
+
+  public RemoteValidatorApi(
+      final TekuConfiguration configuration,
+      final RemoteValidatorSubscriptions subscriptionManager) {
+    checkNotNull(configuration, "TekuConfiguration can't be null");
+    checkNotNull(subscriptionManager, "RemoteValidatorSubscriptions can't be null");
+
+    this.subscriptionManager = subscriptionManager;
+
+    this.app =
+        Javalin.create(
+            config -> {
+              config.defaultContentType = "application/json";
+              config.logIfServerNotStarted = false;
+              config.showJavalinBanner = false;
+            });
+
+    configureServer(configuration);
+  }
+
+  private void configureServer(final TekuConfiguration configuration) {
+    Objects.requireNonNull(this.app.server())
+        .setServerHost(configuration.getRemoteValidatorApiInterface());
+    Objects.requireNonNull(this.app.server())
+        .setServerPort(configuration.getRemoteValidatorApiPort());
+
+    app.ws(
+        "/",
+        (ws) -> {
+          ws.onConnect(this::subscribeValidator);
+
+          ws.onClose(this::unsubscribeValidator);
+
+          /*
+           The server should not receive any messages from the remote validators
+          */
+          ws.onMessage(this::unsubscribeValidator);
+        });
+  }
+
+  private void subscribeValidator(final WsConnectContext handler) {
+    boolean hasSubscribed =
+        subscriptionManager.subscribe(
+            handler.getSessionId(),
+            (msg) -> {
+              try {
+                handler.session.getRemote().sendString(msg.toJson());
+              } catch (IOException e) {
+                LOG.error("Error sending msg to validator {}", handler.getSessionId(), e);
+                // TODO what do we do in this case? Close connection? Unsubscribe? Retry?
+              }
+            });
+
+    if (!hasSubscribed) {
+      // TODO we should provide better reasons for closing the session
+      handler.session.close();
+    }
+  }
+
+  private void unsubscribeValidator(final WsContext handler) {
+    handler.session.close();
+    subscriptionManager.unsubscribe(handler.getSessionId());
+  }
+
+  public void start() {
+    app.start();
+  }
+
+  public void stop() {
+    app.stop();
+  }
+}

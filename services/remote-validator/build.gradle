@@ -1,0 +1,13 @@
+dependencies {
+  implementation project(':ethereum:statetransition')
+  implementation project(':ethereum:datastructures')
+  implementation project(':events')
+  implementation project(':infrastructure:async')
+  implementation project(':services:serviceutils')
+  implementation project(':storage:api')
+  implementation project(':util')
+  implementation project(':validator:api')
+
+  implementation 'com.google.code.gson:gson'
+  implementation 'io.javalin:javalin'
+}
