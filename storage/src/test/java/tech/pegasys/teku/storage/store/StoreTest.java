@@ -50,7 +50,7 @@ class StoreTest extends AbstractStoreTest {
   }
 
   @Test
-  public void getBlockState_withLimitedCache() throws StateTransitionException {
+  public void getBlockState_withLimitedCache() {
     processChainWithLimitedCache(
         (store, blockAndState) -> {
           final BeaconState result = store.getBlockState(blockAndState.getRoot());
