@@ -50,7 +50,6 @@ import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -719,8 +718,11 @@ public abstract class AbstractDatabaseTest {
       final List<BeaconState> hotStates =
           currentStore.getBlockRoots().stream()
               .map(currentStore::retrieveBlockState)
-              .filter(SafeFuture::isDone)
-              .map(SafeFuture::join)
+              .map(
+                  f -> {
+                    assertThat(f).isCompleted();
+                    return f.join();
+                  })
               .flatMap(Optional::stream)
               .collect(toList());
 
@@ -739,8 +741,11 @@ public abstract class AbstractDatabaseTest {
     final List<BeaconState> hotStates =
         memoryStore.getBlockRoots().stream()
             .map(memoryStore::retrieveBlockState)
-            .filter(SafeFuture::isDone)
-            .map(SafeFuture::join)
+            .map(
+                f -> {
+                  assertThat(f).isCompleted();
+                  return f.join();
+                })
             .flatMap(Optional::stream)
             .collect(toList());
 
