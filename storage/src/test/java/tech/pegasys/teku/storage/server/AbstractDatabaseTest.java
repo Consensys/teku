@@ -44,7 +44,6 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.core.ChainProperties;
-import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -145,7 +144,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldGetHotBlockByRoot() throws StateTransitionException {
+  public void shouldGetHotBlockByRoot() {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     final SignedBlockAndState block1 = chainBuilder.generateBlockAtSlot(1);
     final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
@@ -217,7 +216,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void getFinalizedState() throws StateTransitionException {
+  public void getFinalizedState() {
     generateCheckpoints();
     final Checkpoint finalizedCheckpoint =
         chainBuilder.getCurrentCheckpointForEpoch(UnsignedLong.ONE);
@@ -242,7 +241,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldStoreSingleValueFields() throws StateTransitionException {
+  public void shouldStoreSingleValueFields() {
     generateCheckpoints();
 
     final List<SignedBlockAndState> allBlocks =
@@ -283,7 +282,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldStoreSingleValue_justifiedCheckpoint() throws StateTransitionException {
+  public void shouldStoreSingleValue_justifiedCheckpoint() {
     generateCheckpoints();
     final Checkpoint newValue = checkpoint3;
     // Sanity check
@@ -298,7 +297,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldStoreSingleValue_finalizedCheckpoint() throws StateTransitionException {
+  public void shouldStoreSingleValue_finalizedCheckpoint() {
     generateCheckpoints();
     final List<SignedBlockAndState> allBlocks =
         chainBuilder
@@ -317,7 +316,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldStoreSingleValue_bestJustifiedCheckpoint() throws StateTransitionException {
+  public void shouldStoreSingleValue_bestJustifiedCheckpoint() {
     generateCheckpoints();
     final Checkpoint newValue = checkpoint3;
     // Sanity check
@@ -332,7 +331,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldStoreSingleValue_singleBlockAndState() throws StateTransitionException {
+  public void shouldStoreSingleValue_singleBlockAndState() {
     final SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
     // Sanity check
     assertThat(store.getBlock(newBlock.getRoot())).isNull();
@@ -347,7 +346,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldLoadHotBlocksAndStatesIntoMemoryStore() throws StateTransitionException {
+  public void shouldLoadHotBlocksAndStatesIntoMemoryStore() {
     final Bytes32 genesisRoot = genesisBlockAndState.getRoot();
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
 
@@ -370,7 +369,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldRemoveHotBlocksAndStatesOnceEpochIsFinalized() throws StateTransitionException {
+  public void shouldRemoveHotBlocksAndStatesOnceEpochIsFinalized() {
     generateCheckpoints();
     final List<SignedBlockAndState> allBlocks =
         chainBuilder
@@ -439,7 +438,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void handleFinalizationWhenCacheLimitsExceeded() throws StateTransitionException {
+  public void handleFinalizationWhenCacheLimitsExceeded() {
     createStorage(StateStorageMode.ARCHIVE);
     initGenesis();
 
@@ -467,18 +466,17 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldRecordFinalizedBlocksAndStates_pruneMode() throws StateTransitionException {
+  public void shouldRecordFinalizedBlocksAndStates_pruneMode() {
     testShouldRecordFinalizedBlocksAndStates(StateStorageMode.PRUNE, false);
   }
 
   @Test
-  public void shouldRecordFinalizedBlocksAndStates_archiveMode() throws StateTransitionException {
+  public void shouldRecordFinalizedBlocksAndStates_archiveMode() {
     testShouldRecordFinalizedBlocksAndStates(StateStorageMode.ARCHIVE, false);
   }
 
   @Test
-  public void testShouldRecordFinalizedBlocksAndStatesInBatchUpdate()
-      throws StateTransitionException {
+  public void testShouldRecordFinalizedBlocksAndStatesInBatchUpdate() {
     testShouldRecordFinalizedBlocksAndStates(StateStorageMode.ARCHIVE, true);
   }
 
@@ -534,16 +532,14 @@ public abstract class AbstractDatabaseTest {
   }
 
   public void testShouldRecordFinalizedBlocksAndStates(
-      final StateStorageMode storageMode, final boolean batchUpdate)
-      throws StateTransitionException {
+      final StateStorageMode storageMode, final boolean batchUpdate) {
     testShouldRecordFinalizedBlocksAndStates(storageMode, batchUpdate, this::createStorage);
   }
 
   protected void testShouldRecordFinalizedBlocksAndStates(
       final StateStorageMode storageMode,
       final boolean batchUpdate,
-      Consumer<StateStorageMode> initializeDatabase)
-      throws StateTransitionException {
+      Consumer<StateStorageMode> initializeDatabase) {
     // Setup chains
     // Both chains share block up to slot 3
     final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
@@ -862,7 +858,7 @@ public abstract class AbstractDatabaseTest {
     store = recentChainData.getStore();
   }
 
-  protected void generateCheckpoints() throws StateTransitionException {
+  protected void generateCheckpoints() {
     while (chainBuilder.getLatestEpoch().longValue() < 3) {
       chainBuilder.generateNextBlock();
     }

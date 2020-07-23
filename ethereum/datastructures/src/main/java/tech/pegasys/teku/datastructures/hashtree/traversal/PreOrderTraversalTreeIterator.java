@@ -11,16 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.datastructures.hashtree;
+package tech.pegasys.teku.datastructures.hashtree.traversal;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 
-public class PreOrderTraversalTreeIterator implements Iterator<Bytes32> {
+class PreOrderTraversalTreeIterator implements Iterator<Bytes32> {
   private final Deque<Bytes32> remainingNodes = new ArrayDeque<>();
   private final ChildLookup childLookup;
 
@@ -44,10 +43,5 @@ public class PreOrderTraversalTreeIterator implements Iterator<Bytes32> {
     Optional.ofNullable(childLookup.getChildren(next))
         .ifPresent(children -> children.forEach(remainingNodes::push));
     return next;
-  }
-
-  @FunctionalInterface
-  interface ChildLookup {
-    Set<Bytes32> getChildren(final Bytes32 parent);
   }
 }

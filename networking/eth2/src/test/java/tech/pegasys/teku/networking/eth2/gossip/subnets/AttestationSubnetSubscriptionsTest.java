@@ -21,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
@@ -73,8 +74,10 @@ public class AttestationSubnetSubscriptionsTest {
     int subnetId = computeSubnetId(attestation);
     assertThat(computeSubnetId(attestation2)).isNotEqualTo(subnetId); // Sanity check
     subnetSubscriptions.subscribeToSubnetId(subnetId);
-    assertThat(subnetSubscriptions.getChannel(attestation)).isNotEqualTo(Optional.empty());
-    assertThat(subnetSubscriptions.getChannel(attestation2)).isEqualTo(Optional.empty());
+    assertThatSafeFuture(subnetSubscriptions.getChannel(attestation))
+        .isCompletedWithNonEmptyOptional();
+    assertThatSafeFuture(subnetSubscriptions.getChannel(attestation2))
+        .isCompletedWithEmptyOptional();
   }
 
   @Test
@@ -82,7 +85,8 @@ public class AttestationSubnetSubscriptionsTest {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     int subnetId = computeSubnetId(attestation);
     subnetSubscriptions.subscribeToSubnetId(subnetId);
-    assertThat(subnetSubscriptions.getChannel(attestation)).isNotEqualTo(Optional.empty());
+    assertThatSafeFuture(subnetSubscriptions.getChannel(attestation))
+        .isCompletedWithNonEmptyOptional();
   }
 
   @Test
@@ -110,8 +114,10 @@ public class AttestationSubnetSubscriptionsTest {
     verify(gossipNetwork)
         .subscribe(argThat(i -> i.contains("beacon_attestation_" + subnetId2)), any());
 
-    assertThat(subnetSubscriptions.getChannel(attestation1)).isEqualTo(Optional.of(topicChannel1));
-    assertThat(subnetSubscriptions.getChannel(attestation2)).isEqualTo(Optional.of(topicChannel2));
+    assertThat(subnetSubscriptions.getChannel(attestation1))
+        .isCompletedWithValue(Optional.of(topicChannel1));
+    assertThat(subnetSubscriptions.getChannel(attestation2))
+        .isCompletedWithValue(Optional.of(topicChannel2));
   }
 
   @Test
@@ -126,7 +132,8 @@ public class AttestationSubnetSubscriptionsTest {
 
     verify(gossipNetwork).subscribe(any(), any());
 
-    assertThat(subnetSubscriptions.getChannel(attestation)).isEqualTo(Optional.of(topicChannel));
+    assertThat(subnetSubscriptions.getChannel(attestation))
+        .isCompletedWithValue(Optional.of(topicChannel));
 
     subnetSubscriptions.unsubscribeFromSubnetId(subnetId);
 

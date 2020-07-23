@@ -30,7 +30,7 @@ public class SignedBlockAndState {
     checkNotNull(block);
     checkNotNull(state);
     checkArgument(
-        Objects.equals(block.getMessage().getState_root(), state.hash_tree_root()),
+        Objects.equals(block.getStateRoot(), state.hash_tree_root()),
         "State must belong to the given block");
 
     this.block = block;
@@ -47,6 +47,10 @@ public class SignedBlockAndState {
 
   public Bytes32 getParentRoot() {
     return block.getParent_root();
+  }
+
+  public Bytes32 getStateRoot() {
+    return state.hash_tree_root();
   }
 
   public UnsignedLong getSlot() {

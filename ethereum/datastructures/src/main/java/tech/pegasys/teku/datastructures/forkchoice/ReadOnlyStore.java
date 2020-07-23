@@ -14,6 +14,7 @@
 package tech.pegasys.teku.datastructures.forkchoice;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
@@ -59,6 +60,12 @@ public interface ReadOnlyStore {
   boolean containsBlock(Bytes32 blockRoot);
 
   Set<Bytes32> getBlockRoots();
+
+  /**
+   * @return A list of block roots ordered to guarantee that parent roots will be sorted earlier
+   *     than child roots
+   */
+  List<Bytes32> getOrderedBlockRoots();
 
   Optional<BeaconState> getCheckpointState(Checkpoint checkpoint);
 

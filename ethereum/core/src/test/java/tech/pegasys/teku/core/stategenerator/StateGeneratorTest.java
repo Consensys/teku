@@ -35,7 +35,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -49,8 +48,7 @@ public class StateGeneratorTest {
 
   @ParameterizedTest(name = "cache size: {0}, block batch size: {1}")
   @MethodSource("getParameters")
-  public void shouldHandleValidChainFromGenesis(final int cacheSize, final int blockBatchSize)
-      throws StateTransitionException {
+  public void shouldHandleValidChainFromGenesis(final int cacheSize, final int blockBatchSize) {
     // Build a small chain
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     chainBuilder.generateBlocksUpToSlot(10);
@@ -65,8 +63,7 @@ public class StateGeneratorTest {
 
   @ParameterizedTest(name = "cache size: {0}, block batch size: {1}")
   @MethodSource("getParameters")
-  public void shouldHandleValidPostGenesisChain(final int cacheSize, final int blockBatchSize)
-      throws StateTransitionException {
+  public void shouldHandleValidPostGenesisChain(final int cacheSize, final int blockBatchSize) {
     // Build a small chain
     chainBuilder.generateGenesis();
     chainBuilder.generateBlocksUpToSlot(10);
@@ -82,8 +79,7 @@ public class StateGeneratorTest {
 
   @ParameterizedTest(name = "cache size: {0}, block batch size: {1}")
   @MethodSource("getParameters")
-  public void shouldHandleInvalidForkBlocks(final int cacheSize, final int blockBatchSize)
-      throws StateTransitionException {
+  public void shouldHandleInvalidForkBlocks(final int cacheSize, final int blockBatchSize) {
     // Build a small chain
     chainBuilder.generateGenesis();
     chainBuilder.generateBlocksUpToSlot(5);
@@ -114,8 +110,7 @@ public class StateGeneratorTest {
 
   @ParameterizedTest(name = "cache size: {0}, block batch size: {1}")
   @MethodSource("getParameters")
-  public void shouldHandleForkBlocks(final int cacheSize, final int blockBatchSize)
-      throws StateTransitionException {
+  public void shouldHandleForkBlocks(final int cacheSize, final int blockBatchSize) {
     // Build a small chain
     chainBuilder.generateGenesis();
     chainBuilder.generateBlocksUpToSlot(5);
@@ -140,8 +135,7 @@ public class StateGeneratorTest {
 
   @ParameterizedTest(name = "cache size: {0}, block batch size: {1}")
   @MethodSource("getParameters")
-  public void shouldHandleMultipleForks(final int cacheSize, final int blockBatchSize)
-      throws StateTransitionException {
+  public void shouldHandleMultipleForks(final int cacheSize, final int blockBatchSize) {
     // Build a small chain
     chainBuilder.generateGenesis();
     chainBuilder.generateBlocksUpToSlot(5);
@@ -186,7 +180,7 @@ public class StateGeneratorTest {
   }
 
   @Test
-  public void regenerateAllStates_failOnMissingBlocks() throws StateTransitionException {
+  public void regenerateAllStates_failOnMissingBlocks() {
     testGeneratorWithMissingBlock(
         (generator, missingBlock) -> {
           SafeFuture<Void> result = generator.regenerateAllStates(StateHandler.NOOP);
@@ -200,7 +194,7 @@ public class StateGeneratorTest {
   }
 
   @Test
-  public void regenerateStateForBlock_failOnMissingBlocks() throws StateTransitionException {
+  public void regenerateStateForBlock_failOnMissingBlocks() {
     testGeneratorWithMissingBlock(
         (generator, missingBlock) -> {
           SafeFuture<SignedBlockAndState> result =
@@ -214,7 +208,7 @@ public class StateGeneratorTest {
   }
 
   @Test
-  public void regenerateStateForBlock_blockPastTargetIsMissing() throws StateTransitionException {
+  public void regenerateStateForBlock_blockPastTargetIsMissing() {
     testGeneratorWithMissingBlock(
         (generator, missingBlock) -> {
           SignedBlockAndState target =
@@ -226,7 +220,7 @@ public class StateGeneratorTest {
   }
 
   private void testGeneratorWithMissingBlock(
-      BiConsumer<StateGenerator, SignedBeaconBlock> processor) throws StateTransitionException {
+      BiConsumer<StateGenerator, SignedBeaconBlock> processor) {
     // Build a small chain
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     chainBuilder.generateBlocksUpToSlot(5);
