@@ -22,21 +22,24 @@ public class RemoteValidatorApiOptions {
       paramLabel = "<BOOLEAN>",
       description = "Enables Remote Validator API",
       fallbackValue = "true",
-      arity = "0..1")
+      arity = "0..1",
+      hidden = true)
   private boolean apiEnabled = false;
 
   @Option(
       names = {"--remote-validator-api-port"},
       paramLabel = "<INTEGER>",
       description = "Port number of Remote Validator API",
-      arity = "1")
+      arity = "1",
+      hidden = true)
   private int apiPort = 9999;
 
   @Option(
       names = {"--remote-validator-api-interface"},
       paramLabel = "<NETWORK>",
       description = "Interface of Remote Validator API",
-      arity = "1")
+      arity = "1",
+      hidden = true)
   private String apiInterface = "127.0.0.1";
 
   public int getApiPort() {
