@@ -87,4 +87,12 @@ class BLSSignatureTest {
     BLSSignature signature2 = BLSSignature.fromSSZBytes(signature1.toSSZBytes());
     assertEquals(signature1, signature2);
   }
+
+  @Test
+  void succeedsWhenEqualsReturnsTrueForEmptySignatures() {
+    assertEquals(BLSSignature.empty(), BLSSignature.empty());
+    assertEquals(
+        BLSSignature.empty().hashCode(),
+        BLSSignature.empty().hashCode());
+  }
 }
