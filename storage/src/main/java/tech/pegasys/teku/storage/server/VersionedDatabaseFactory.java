@@ -22,6 +22,7 @@ import java.nio.file.StandardOpenOption;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.storage.server.fs.FsDatabaseFactory;
 import tech.pegasys.teku.storage.server.metadata.DatabaseMetadata;
 import tech.pegasys.teku.storage.server.noop.NoOpDatabase;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
@@ -116,6 +117,13 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
             "Created V5 Finalized database ({}) at {}",
             dbVersion.getValue(),
             archiveDirectory.getAbsolutePath());
+        break;
+      case FS1:
+        database = FsDatabaseFactory.create(dbDirectory.toPath(), metricsSystem);
+        LOG.trace(
+            "Created FileSystem database ({}) at {}",
+            dbVersion.getValue(),
+            dbDirectory.getAbsolutePath());
         break;
       default:
         throw new UnsupportedOperationException("Unhandled database version " + dbVersion);

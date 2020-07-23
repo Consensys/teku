@@ -16,9 +16,11 @@ package tech.pegasys.teku.storage.client;
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Throwables;
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -133,10 +135,15 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final AsyncRunner asyncRunner) {
     return requestInitialStore()
         .exceptionallyCompose(
-            (err) ->
-                asyncRunner.runAfterDelay(
+            err -> {
+              if (Throwables.getRootCause(err) instanceof TimeoutException) {
+                return asyncRunner.runAfterDelay(
                     () -> requestInitialStoreWithRetry(asyncRunner),
                     Constants.STORAGE_REQUEST_TIMEOUT,
-                    TimeUnit.SECONDS));
+                    TimeUnit.SECONDS);
+              } else {
+                return SafeFuture.failedFuture(err);
+              }
+            });
   }
 }

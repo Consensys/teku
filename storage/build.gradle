@@ -20,7 +20,10 @@ dependencies {
   implementation 'org.hyperledger.besu.internal:metrics-core'
   implementation 'org.hyperledger.besu:plugin-api'
   implementation 'org.rocksdb:rocksdbjni'
-  implementation 'org.apache.derby:derby'
+  implementation 'com.h2database:h2'
+  implementation 'org.springframework:spring-jdbc'
+  implementation 'org.flywaydb:flyway-core'
+  implementation 'com.zaxxer:HikariCP'
 
   testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':data:metrics'))

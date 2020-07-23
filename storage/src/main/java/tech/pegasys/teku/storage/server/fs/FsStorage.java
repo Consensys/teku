@@ -28,7 +28,7 @@ public class FsStorage {
   private final Path baseDir;
   private final FsIndex index;
 
-  private FsStorage(final Path baseDir, final FsIndex index) {
+  public FsStorage(final Path baseDir, final FsIndex index) {
     this.baseDir = baseDir;
     this.index = index;
   }
@@ -150,6 +150,10 @@ public class FsStorage {
     private void write(final Path path, final SimpleOffsetSerializable data) {
       if (path.toFile().exists()) {
         return;
+      }
+      final File targetDirectory = path.getParent().toFile();
+      if (!targetDirectory.mkdirs() && !targetDirectory.isDirectory()) {
+        throw new DatabaseStorageException("Failed to create directory " + targetDirectory);
       }
       try {
         Files.write(
