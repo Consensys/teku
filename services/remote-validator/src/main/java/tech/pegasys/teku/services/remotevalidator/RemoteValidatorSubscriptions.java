@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 public class RemoteValidatorSubscriptions implements BeaconChainEventsListener {
 
   // TODO should we parametrize maxSubscribers?
-  private final int maxSubscribers = 2;
+  private final int maxSubscribers = 1_000;
 
   private final Map<String, Consumer<BeaconChainEvent>> subscriptions = new ConcurrentHashMap<>();
 
