@@ -23,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.storage.server.metadata.DatabaseMetadata;
+import tech.pegasys.teku.storage.server.noop.NoOpDatabase;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -85,6 +86,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
     Database database;
     switch (dbVersion) {
+      case NOOP:
+        database = new NoOpDatabase();
+        LOG.trace("Created no-op database");
+        break;
       case V3:
         database = createV3Database();
         LOG.trace(
