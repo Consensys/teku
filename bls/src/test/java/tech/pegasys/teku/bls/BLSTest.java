@@ -14,6 +14,7 @@
 package tech.pegasys.teku.bls;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -62,7 +63,7 @@ class BLSTest {
   @Test
   void succeedsWhenAggregatingASingleSignatureReturnsTheSameSignature() {
     BLSSignature signature = BLSSignature.random(1);
-    assertEquals(signature, BLS.aggregate(Collections.singletonList(signature)));
+    assertEquals(signature, BLS.aggregate(singletonList(signature)));
   }
 
   @Test
@@ -167,5 +168,21 @@ class BLSTest {
     // Any message should result in the signature at infinity
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     assertEquals(infinityG2, BLS.sign(zeroSK, message));
+  }
+
+  @Test
+  void testSignatureVerifyForSomeRealValues() {
+    String signingRoot = "0x95b8e2ba063ab62f68ebe7db0a9669ab9e7906aa4e060e1cc0b67b294ce8c5e4";
+    String sig =
+        "0xab51f352e90509ca5085ec43af9ad3ea4ae42bf30c91af7dcdc113ef79cfc8601b756f18d8cf634436d8b6b0095fc5680066f382eb3728a7090c55c9afb66e8f94b44d2682db8ef5de4b89928d1744824df174e0c800b9e934b0ad14e6388163";
+    String pk =
+        "0xb5e8f551c28abd6ef8253581ffad0834bfd8fafa9948d09b337c9c5f21d6e7fd6065a1ee35ac5146ac17344f97490301";
+
+    Bytes msg = Bytes.fromHexString(signingRoot);
+    BLSSignature signature = BLSSignature.fromSSZBytes(Bytes.fromHexString(sig));
+    BLSPublicKey publicKey = BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString(pk));
+
+    boolean res = BLS.verify(publicKey, msg, signature);
+    assertTrue(res);
   }
 }
