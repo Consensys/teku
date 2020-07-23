@@ -317,18 +317,6 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public Optional<SignedBlockAndState> getBlockAndState(final Bytes32 blockRoot) {
-    // TODO(#2291) - replace this with retrieveBlockAndState
-    return retrieveBlockAndState(blockRoot).join();
-  }
-
-  @Override
-  public BeaconState getBlockState(Bytes32 blockRoot) {
-    // TODO(#2291) - replace this with retrieveBlockState
-    return retrieveBlockState(blockRoot).join().orElse(null);
-  }
-
-  @Override
   public Optional<BeaconState> getCheckpointState(Checkpoint checkpoint) {
     // TODO(#2291) - replace this with retrieveCheckpointState
     return retrieveCheckpointState(checkpoint).join();
@@ -710,7 +698,7 @@ class Store implements UpdatableStore {
       final Lock writeLock = Store.this.lock.writeLock();
       writeLock.lock();
       try {
-        updates = StoreTransactionUpdates.calculate(Store.this, this);
+        updates = StoreTransactionUpdatesFactory.create(Store.this, this).join();
       } finally {
         writeLock.unlock();
       }
@@ -770,10 +758,12 @@ class Store implements UpdatableStore {
 
     @Override
     public SignedBlockAndState getLatestFinalizedBlockAndState() {
-      return finalized_checkpoint
-          .map(Checkpoint::getRoot)
-          .flatMap(this::getBlockAndState)
-          .orElse(Store.this.getLatestFinalizedBlockAndState());
+      if (finalized_checkpoint.isPresent()) {
+        // Ideally we wouldn't join here - but seems not worth making this API async since we're
+        // unlikely to call this on tx objects
+        return retrieveBlockAndState(finalized_checkpoint.get().getRoot()).join().orElseThrow();
+      }
+      return Store.this.getLatestFinalizedBlockAndState();
     }
 
     @Override
@@ -795,16 +785,6 @@ class Store implements UpdatableStore {
     @Override
     public SignedBeaconBlock getSignedBlock(final Bytes32 blockRoot) {
       return either(blockRoot, blocks::get, Store.this::getSignedBlock);
-    }
-
-    @Override
-    public Optional<SignedBlockAndState> getBlockAndState(final Bytes32 blockRoot) {
-      final SignedBeaconBlock block = getSignedBlock(blockRoot);
-      final BeaconState state = getBlockState(blockRoot);
-      if (block == null || state == null) {
-        return Optional.empty();
-      }
-      return Optional.of(new SignedBlockAndState(block, state));
     }
 
     @Override
@@ -831,11 +811,6 @@ class Store implements UpdatableStore {
       } finally {
         Store.this.lock.readLock().unlock();
       }
-    }
-
-    @Override
-    public BeaconState getBlockState(final Bytes32 blockRoot) {
-      return either(blockRoot, block_states::get, Store.this::getBlockState);
     }
 
     @Override
