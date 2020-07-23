@@ -344,7 +344,8 @@ public abstract class AbstractDatabaseTest {
     commit(transaction);
 
     final UpdatableStore result = recreateStore();
-    assertThat(result.getSignedBlock(newBlock.getRoot())).isEqualTo(newBlock.getBlock());
+    assertThat(result.retrieveSignedBlock(newBlock.getRoot()))
+        .isCompletedWithValue(Optional.of(newBlock.getBlock()));
     assertThat(result.retrieveBlockState(newBlock.getRoot()))
         .isCompletedWithValue(Optional.of(newBlock.getState()));
   }
@@ -363,11 +364,12 @@ public abstract class AbstractDatabaseTest {
     commit(transaction);
 
     final UpdatableStore result = recreateStore();
-    assertThat(result.getSignedBlock(genesisRoot)).isEqualTo(genesisBlockAndState.getBlock());
-    assertThat(result.getSignedBlock(blockAndState1.getRoot()))
-        .isEqualTo(blockAndState1.getBlock());
-    assertThat(result.getSignedBlock(blockAndState2.getRoot()))
-        .isEqualTo(blockAndState2.getBlock());
+    assertThat(result.retrieveSignedBlock(genesisRoot))
+        .isCompletedWithValue(Optional.of(genesisBlockAndState.getBlock()));
+    assertThat(result.retrieveSignedBlock(blockAndState1.getRoot()))
+        .isCompletedWithValue(Optional.of(blockAndState1.getBlock()));
+    assertThat(result.retrieveSignedBlock(blockAndState2.getRoot()))
+        .isCompletedWithValue(Optional.of(blockAndState2.getBlock()));
     assertThat(result.retrieveBlockState(blockAndState1.getRoot()))
         .isCompletedWithValue(Optional.of(blockAndState1.getState()));
     assertThat(result.retrieveBlockState(blockAndState2.getRoot()))
@@ -400,14 +402,16 @@ public abstract class AbstractDatabaseTest {
     final UpdatableStore result = recreateStore();
     // Historical blocks should not be in the new store
     for (SignedBlockAndState historicalBlock : historicalBlocks) {
-      assertThat(result.getSignedBlock(historicalBlock.getRoot())).isNull();
+      assertThatSafeFuture(result.retrieveSignedBlock(historicalBlock.getRoot()))
+          .isCompletedWithEmptyOptional();
       assertThatSafeFuture(result.retrieveBlockState(historicalBlock.getRoot()))
           .isCompletedWithEmptyOptional();
     }
 
     // Hot blocks should be available in the new store
     for (SignedBlockAndState hotBlock : hotBlocks) {
-      assertThat(result.getSignedBlock(hotBlock.getRoot())).isEqualTo(hotBlock.getBlock());
+      assertThat(result.retrieveSignedBlock(hotBlock.getRoot()))
+          .isCompletedWithValue(Optional.of(hotBlock.getBlock()));
       assertThat(result.retrieveBlockState(hotBlock.getRoot()))
           .isCompletedWithValue(Optional.of(hotBlock.getState()));
     }

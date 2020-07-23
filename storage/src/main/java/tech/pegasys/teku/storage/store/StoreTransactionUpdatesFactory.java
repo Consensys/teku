@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -106,12 +107,13 @@ class StoreTransactionUpdatesFactory {
               final BeaconState latestFinalizedState =
                   maybeLatestFinalizedState.orElseThrow(
                       () -> new IllegalStateException("Missing latest finalized state"));
+              final SignedBlockAndState latestFinalized =
+                  new SignedBlockAndState(finalizedBlock, latestFinalizedState);
               final Optional<FinalizedChainData> finalizedChainData =
                   Optional.of(
                       FinalizedChainData.builder()
                           .finalizedCheckpoint(finalizedCheckpoint.getCheckpoint())
-                          .finalizedBlock(finalizedCheckpoint.getBlock())
-                          .latestFinalizedState(latestFinalizedState)
+                          .latestFinalizedBlockAndState(latestFinalized)
                           .finalizedChildAndParent(finalizedChildToParent)
                           .finalizedBlocks(finalizedBlocks)
                           .finalizedStates(finalizedStates)

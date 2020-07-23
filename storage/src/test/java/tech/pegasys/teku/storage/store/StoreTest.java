@@ -38,18 +38,6 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 class StoreTest extends AbstractStoreTest {
 
   @Test
-  public void getSignedBlock_withLimitedCache() {
-    processChainWithLimitedCache(
-        (store, blockAndState) -> {
-          final SignedBeaconBlock expectedBlock = blockAndState.getBlock();
-          final SignedBeaconBlock blockResult = store.getSignedBlock(expectedBlock.getRoot());
-          assertThat(blockResult)
-              .withFailMessage("Expected block %s to be available", expectedBlock.getSlot())
-              .isEqualTo(expectedBlock);
-        });
-  }
-
-  @Test
   public void retrieveSignedBlock_withLimitedCache() throws Exception {
     processChainWithLimitedCache(
         (store, blockAndState) -> {
