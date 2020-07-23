@@ -758,10 +758,12 @@ class Store implements UpdatableStore {
 
     @Override
     public SignedBlockAndState getLatestFinalizedBlockAndState() {
-      return finalized_checkpoint
-          .map(Checkpoint::getRoot)
-          .flatMap(this::getBlockAndStateFromTx)
-          .orElse(Store.this.getLatestFinalizedBlockAndState());
+      if (finalized_checkpoint.isPresent()) {
+        // Ideally we wouldn't join here - but seems not worth making this API async since we're
+        // unlikely to call this on tx objects
+        return retrieveBlockAndState(finalized_checkpoint.get().getRoot()).join().orElseThrow();
+      }
+      return Store.this.getLatestFinalizedBlockAndState();
     }
 
     @Override
@@ -783,15 +785,6 @@ class Store implements UpdatableStore {
     @Override
     public SignedBeaconBlock getSignedBlock(final Bytes32 blockRoot) {
       return either(blockRoot, blocks::get, Store.this::getSignedBlock);
-    }
-
-    private Optional<SignedBlockAndState> getBlockAndStateFromTx(final Bytes32 blockRoot) {
-      final SignedBeaconBlock block = blocks.get(blockRoot);
-      final BeaconState state = block_states.get(blockRoot);
-      if (block == null || state == null) {
-        return Optional.empty();
-      }
-      return Optional.of(new SignedBlockAndState(block, state));
     }
 
     @Override
