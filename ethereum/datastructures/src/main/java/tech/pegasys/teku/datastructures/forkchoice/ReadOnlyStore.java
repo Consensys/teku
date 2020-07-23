@@ -53,10 +53,6 @@ public interface ReadOnlyStore {
 
   SignedBeaconBlock getSignedBlock(Bytes32 blockRoot);
 
-  Optional<SignedBlockAndState> getBlockAndState(Bytes32 blockRoot);
-
-  BeaconState getBlockState(Bytes32 blockRoot);
-
   boolean containsBlock(Bytes32 blockRoot);
 
   Set<Bytes32> getBlockRoots();

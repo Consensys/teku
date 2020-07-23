@@ -39,7 +39,6 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.core.ChainProperties;
-import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -144,7 +143,7 @@ class RecentChainDataTest {
   }
 
   @Test
-  public void startStoreTransaction_mutateFinalizedCheckpoint() throws StateTransitionException {
+  public void startStoreTransaction_mutateFinalizedCheckpoint() {
     final BeaconState genesisState = chainBuilder.getStateAtSlot(Constants.GENESIS_SLOT);
     preGenesisStorageClient.initializeFromGenesis(genesisState);
 
@@ -378,26 +377,27 @@ class RecentChainDataTest {
   }
 
   @Test
-  public void getBlockAndState_withBlockAndStateAvailable() throws Exception {
+  public void retrieveBlockAndState_withBlockAndStateAvailable() throws Exception {
     final SignedBlockAndState block = advanceChain(storageClient);
-    assertThat(storageClient.getStore().getBlockAndState(block.getRoot())).contains(block);
+    assertThat(storageClient.getStore().retrieveBlockAndState(block.getRoot()))
+        .isCompletedWithValue(Optional.of(block));
   }
 
   @Test
-  public void getBlockAndState_withinTxFromUnderlyingStore() throws Exception {
+  public void retrieveBlockAndState_withinTxFromUnderlyingStore() throws Exception {
     final SignedBlockAndState block = advanceChain(storageClient);
     final StoreTransaction tx = storageClient.startStoreTransaction();
-    assertThat(tx.getBlockAndState(block.getRoot())).contains(block);
+    assertThat(tx.retrieveBlockAndState(block.getRoot())).isCompletedWithValue(Optional.of(block));
   }
 
   @Test
-  public void getBlockAndState_withinTxFromUpdates() throws Exception {
+  public void retrieveBlockAndState_withinTxFromUpdates() throws Exception {
     final SignedBlockAndState block = chainBuilder.generateNextBlock();
 
     final StoreTransaction tx = storageClient.startStoreTransaction();
     tx.putBlockAndState(block);
 
-    assertThat(tx.getBlockAndState(block.getRoot())).contains(block);
+    assertThat(tx.retrieveBlockAndState(block.getRoot())).isCompletedWithValue(Optional.of(block));
   }
 
   @Test
@@ -584,11 +584,9 @@ class RecentChainDataTest {
    * saved to the store.
    *
    * @param pruneNewBlocks Whether to keep the blocks to be pruned in the finalizing transaction, or
-   *     keep the blocks to be kept in the finalizing transaction
-   * @throws StateTransitionException
+   *     keep the blocks to be kept in the finalizing transaction @
    */
-  private void testCommitPruningOfParallelBlocks(final boolean pruneNewBlocks)
-      throws StateTransitionException {
+  private void testCommitPruningOfParallelBlocks(final boolean pruneNewBlocks) {
     final UnsignedLong epoch2Slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(2));
 
     // Create a fork by skipping the next slot on the fork chain
@@ -677,8 +675,7 @@ class RecentChainDataTest {
     transaction.commit().join();
   }
 
-  private SignedBlockAndState addNewBestBlock(RecentChainData recentChainData)
-      throws StateTransitionException {
+  private SignedBlockAndState addNewBestBlock(RecentChainData recentChainData) {
     final SignedBlockAndState nextBlock = chainBuilder.generateNextBlock();
     updateBestBlock(recentChainData, nextBlock);
 
@@ -692,8 +689,7 @@ class RecentChainDataTest {
     storageClient.updateBestBlock(bestBlock.getRoot(), bestBlock.getSlot());
   }
 
-  private SignedBlockAndState advanceBestBlock(final RecentChainData recentChainData)
-      throws StateTransitionException {
+  private SignedBlockAndState advanceBestBlock(final RecentChainData recentChainData) {
     final SignedBlockAndState nextBlock = advanceChain(recentChainData);
     updateBestBlock(recentChainData, nextBlock);
     return nextBlock;
@@ -710,8 +706,7 @@ class RecentChainDataTest {
     assertThat(tx.commit()).isCompleted();
   }
 
-  private SignedBlockAndState advanceChain(final RecentChainData recentChainData)
-      throws StateTransitionException {
+  private SignedBlockAndState advanceChain(final RecentChainData recentChainData) {
     final SignedBlockAndState nextBlock = chainBuilder.generateNextBlock();
     saveBlock(recentChainData, nextBlock);
     return nextBlock;

@@ -22,7 +22,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -33,6 +32,49 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
 
 public class StoreTransactionTest extends AbstractStoreTest {
+
+  @Test
+  public void getLatestFinalizedBlockAndState_fromUnderlyingStore() {
+    final Store store = createGenesisStore();
+    final SignedBlockAndState expected = store.getLatestFinalizedBlockAndState();
+
+    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    assertThat(tx.getLatestFinalizedBlockAndState()).isEqualTo(expected);
+  }
+
+  @Test
+  public void getLatestFinalizedBlockAndState_withNewFinalizedCheckpoint_blockInUnderlyingStore() {
+    final Store store = createGenesisStore();
+
+    // Create some blocks that we can finalize
+    final UnsignedLong epoch = UnsignedLong.ONE;
+    final SignedBlockAndState finalizedBlock =
+        chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(epoch));
+    final Checkpoint finalizedCheckpoint = new Checkpoint(epoch, finalizedBlock.getRoot());
+
+    // Save the finalized block
+    addBlock(store, finalizedBlock);
+
+    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    assertThat(tx.getLatestFinalizedBlockAndState()).isEqualTo(finalizedBlock);
+  }
+
+  @Test
+  public void getLatestFinalizedBlockAndState_withNewFinalizedCheckpoint_blockAddedToTx() {
+    final Store store = createGenesisStore();
+
+    // Create some blocks that we can finalize
+    final UnsignedLong epoch = UnsignedLong.ONE;
+    final SignedBlockAndState finalizedBlock =
+        chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(epoch));
+    final Checkpoint finalizedCheckpoint = new Checkpoint(epoch, finalizedBlock.getRoot());
+
+    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    tx.putBlockAndState(finalizedBlock);
+    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    assertThat(tx.getLatestFinalizedBlockAndState()).isEqualTo(finalizedBlock);
+  }
 
   @Test
   public void retrieveSignedBlock_fromUnderlyingStore_withLimitedCache() throws Exception {
@@ -62,7 +104,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
   }
 
   @Test
-  public void retrieveBlock_fromUnderlyingStore_withLimitedCache() throws StateTransitionException {
+  public void retrieveBlock_fromUnderlyingStore_withLimitedCache() {
     processChainWithLimitedCache(
         (store, blockAndState) -> {
           UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
@@ -88,8 +130,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
   }
 
   @Test
-  public void retrieveBlockAndState_fromUnderlyingStore_withLimitedCache()
-      throws StateTransitionException {
+  public void retrieveBlockAndState_fromUnderlyingStore_withLimitedCache() {
     processChainWithLimitedCache(
         (store, blockAndState) -> {
           UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
@@ -116,8 +157,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
   }
 
   @Test
-  public void retrieveBlockState_fromUnderlyingStore_withLimitedCache()
-      throws StateTransitionException {
+  public void retrieveBlockState_fromUnderlyingStore_withLimitedCache() {
     processChainWithLimitedCache(
         (store, blockAndState) -> {
           UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
@@ -142,8 +182,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
   }
 
   @Test
-  public void retrieveCheckpointState_fromUnderlyingStore_withLimitedCache()
-      throws StateTransitionException {
+  public void retrieveCheckpointState_fromUnderlyingStore_withLimitedCache() {
     processCheckpointsWithLimitedCache(
         (store, checkpointState) -> {
           UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
@@ -172,7 +211,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
   }
 
   @Test
-  public void getOrderedBlockRoots_withNewBlocks() throws StateTransitionException {
+  public void getOrderedBlockRoots_withNewBlocks() {
     final Store store = createGenesisStore();
     final SignedBlockAndState genesis = chainBuilder.getBlockAndStateAtSlot(Constants.GENESIS_SLOT);
 
