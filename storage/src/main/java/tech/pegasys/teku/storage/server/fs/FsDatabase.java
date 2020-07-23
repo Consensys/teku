@@ -1,17 +1,31 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.storage.server.fs;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.primitives.UnsignedLong;
+import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -29,7 +43,6 @@ import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 
 public class FsDatabase implements Database {
-  private static final Logger LOG = LogManager.getLogger();
   private final MetricsSystem metricsSystem;
   private final FsStorage storage;
 
@@ -42,7 +55,6 @@ public class FsDatabase implements Database {
   public void storeGenesis(final AnchorPoint genesis) {
     // We should only have a single block / state / checkpoint at genesis
     final Checkpoint genesisCheckpoint = genesis.getCheckpoint();
-    final Bytes32 genesisRoot = genesisCheckpoint.getRoot();
     final BeaconState genesisState = genesis.getState();
     final SignedBeaconBlock genesisBlock = genesis.getBlock();
     try (final FsStorage.Transaction transaction = storage.startTransaction()) {
@@ -52,6 +64,7 @@ public class FsDatabase implements Database {
 
       transaction.storeBlock(genesisBlock, true);
       transaction.storeState(genesisState);
+      transaction.commit();
     }
   }
 
@@ -67,10 +80,18 @@ public class FsDatabase implements Database {
       update.getBestJustifiedCheckpoint().ifPresent(transaction::storeBestJustifiedCheckpoint);
 
       update.getHotBlocks().values().forEach(block -> transaction.storeBlock(block, false));
-      update.getDeletedHotBlocks().forEach(transaction::deleteBlock);
-      transaction.storeVotes(update.getVotes());
-
       update.getFinalizedBlocks().forEach((root, block) -> transaction.finalizeBlock(block));
+      update
+          .getDeletedHotBlocks()
+          .forEach(
+              blockRoot -> {
+                transaction.deleteBlock(blockRoot);
+                // Effectively always in prune mode
+                transaction.deleteStateByBlockRoot(blockRoot);
+              });
+      transaction.storeVotes(update.getVotes());
+      update.getStateRoots().forEach(transaction::storeStateRoot);
+      update.getLatestFinalizedState().ifPresent(transaction::storeState);
 
       // TODO: Periodically store finalized states
       transaction.commit();
@@ -80,7 +101,6 @@ public class FsDatabase implements Database {
 
   @Override
   public Optional<StoreBuilder> createMemoryStore() {
-    LOG.info("createMemoryStore");
     final Optional<Checkpoint> maybeFinalizedCheckpoint = storage.getFinalizedCheckpoint();
     if (maybeFinalizedCheckpoint.isEmpty()) {
       return Optional.empty();
@@ -115,55 +135,63 @@ public class FsDatabase implements Database {
 
   @Override
   public Optional<UnsignedLong> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
-    return Optional.empty();
+    return storage.getBlockByBlockRoot(blockRoot).map(SignedBeaconBlock::getSlot);
   }
 
   @Override
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UnsignedLong slot) {
-    return Optional.empty();
+    return storage.getFinalizedBlockBySlot(slot);
   }
 
   @Override
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UnsignedLong slot) {
-    return Optional.empty();
+    return storage.getLatestFinalizedBlockAtSlot(slot);
   }
 
   @Override
   public Optional<SignedBeaconBlock> getSignedBlock(final Bytes32 root) {
-    return Optional.empty();
+    return storage.getBlockByBlockRoot(root);
   }
 
   @Override
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots) {
-    return null;
+    return blockRoots.stream()
+        .flatMap(blockRoot -> getSignedBlock(blockRoot).stream())
+        .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
   }
 
   @Override
+  @MustBeClosed
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UnsignedLong startSlot, final UnsignedLong endSlot) {
-    return null;
+    return storage.streamFinalizedBlocks(startSlot, endSlot);
   }
 
   @Override
   public List<Bytes32> getStateRootsBeforeSlot(final UnsignedLong slot) {
+    // TODO: Work out if we really need this.
     return null;
   }
 
   @Override
   public void addHotStateRoots(
-      final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap) {}
-
-  @Override
-  public Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot) {
-    return Optional.empty();
+      final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap) {
+    // TODO: This shouldn't be needed - updates should come through StorageUpdate events
   }
 
   @Override
-  public void pruneHotStateRoots(final List<Bytes32> stateRoots) {}
+  public Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot) {
+    return storage.getSlotAndBlockRootFromStateRoot(stateRoot);
+  }
+
+  @Override
+  public void pruneHotStateRoots(final List<Bytes32> stateRoots) {
+    // TODO: Should tie state pruning into finalization updates
+  }
 
   @Override
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UnsignedLong maxSlot) {
-    return Optional.empty();
+    return storage.getLatestAvailableFinalizedState(maxSlot);
   }
 
   @Override
@@ -191,5 +219,7 @@ public class FsDatabase implements Database {
   public void putProtoArraySnapshot(final ProtoArraySnapshot protoArray) {}
 
   @Override
-  public void close() throws Exception {}
+  public void close() {
+    storage.close();
+  }
 }

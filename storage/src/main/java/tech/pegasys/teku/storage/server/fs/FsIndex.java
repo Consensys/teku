@@ -1,25 +1,39 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.storage.server.fs;
 
 import com.google.common.primitives.UnsignedLong;
+import com.zaxxer.hikari.HikariDataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 
 /**
@@ -27,24 +41,24 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
  *
  * <p>block (blockRoot, slot, parentRoot, finalized) indexes (blockRoot), (slot, finalized)
  *
- * <p>state (stateRoot, blockRoot, slot) indexes (stateRoot), (blockRoot), (slot)
+ * <p>state (stateRoot, blockRoot, slot, stored) indexes (stateRoot), (blockRoot), (slot, stored)
  *
  * <p>checkpoint (type, blockRoot, epoch)
  *
  * <p>vote (validatorIndex, currentRoot, nextRoot, nextEpoch)
  */
-public class FsIndex {
-private static final Logger LOG = LogManager.getLogger();
+public class FsIndex implements AutoCloseable {
   private final PlatformTransactionManager transactionManager;
+  private final HikariDataSource dataSource;
   private final JdbcOperations jdbc;
 
-  public FsIndex(PlatformTransactionManager transactionManager, final JdbcOperations jdbc) {
+  public FsIndex(PlatformTransactionManager transactionManager, final HikariDataSource dataSource) {
     this.transactionManager = transactionManager;
-    this.jdbc = jdbc;
+    this.dataSource = dataSource;
+    this.jdbc = new JdbcTemplate(dataSource);
   }
 
   public Transaction startTransaction() {
-    LOG.info("Starting transaction");
     return new Transaction(transactionManager.getTransaction(TransactionDefinition.withDefaults()));
   }
 
@@ -60,6 +74,44 @@ private static final Logger LOG = LogManager.getLogger();
         "SELECT stateRoot FROM state WHERE blockRoot = ? ORDER BY slot LIMIT 1",
         (rs, rowNum) -> getBytes32(rs, "stateRoot"),
         (Object) blockRoot.toArrayUnsafe());
+  }
+
+  public Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot) {
+    return loadSingle(
+        "SELECT blockRoot, slot FROM state WHERE stateRoot = ?",
+        (rs, rowNum) ->
+            new SlotAndBlockRoot(getUnsignedLong(rs, "slot"), getBytes32(rs, "blockRoot")),
+        (Object) stateRoot.toArrayUnsafe());
+  }
+
+  public Optional<Bytes32> getLatestAvailableStateRoot(final UnsignedLong maxSlot) {
+    return loadSingle(
+        "SELECT stateRoot FROM state WHERE slot <= ? AND stored = true ORDER BY slot DESC LIMIT 1",
+        (rs, rowNum) -> getBytes32(rs, "stateRoot"),
+        maxSlot.bigIntegerValue());
+  }
+
+  public Optional<Bytes32> getFinalizedBlockRootBySlot(final UnsignedLong slot) {
+    return loadSingle(
+        "SELECT blockRoot FROM block WHERE slot = ? AND finalized = true",
+        (rs, rowNum) -> getBytes32(rs, "blockRoot"),
+        slot.bigIntegerValue());
+  }
+
+  public Optional<Bytes32> getLatestFinalizedBlockRootAtSlot(final UnsignedLong slot) {
+    return loadSingle(
+        "SELECT blockRoot FROM block WHERE slot <= ? AND finalized = true ORDER BY slot DESC LIMIT 1",
+        (rs, rowNum) -> getBytes32(rs, "blockRoot"),
+        slot.bigIntegerValue());
+  }
+
+  public List<Bytes32> getFinalizedBlockRoots(
+      final UnsignedLong startSlot, final UnsignedLong endSlot) {
+    return jdbc.query(
+        "SELECT blockRoot FROM block WHERE slot >= ? AND slot <= endSlot ORDER BY slot",
+        (rs, rowNum) -> getBytes32(rs, "blockRoot"),
+        startSlot.bigIntegerValue(),
+        endSlot.bigIntegerValue());
   }
 
   public Map<Bytes32, Bytes32> getHotBlockChildToParentLookup() {
@@ -82,6 +134,11 @@ private static final Logger LOG = LogManager.getLogger();
                     getBytes32(rs, "nextRoot"),
                     getUnsignedLong(rs, "nextEpoch"))));
     return votes;
+  }
+
+  @Override
+  public void close() {
+    dataSource.close();
   }
 
   private <T> Optional<T> loadSingle(
@@ -121,8 +178,8 @@ private static final Logger LOG = LogManager.getLogger();
     public void setCheckpoint(final CheckpointType type, final Checkpoint checkpoint) {
       execSql(
           "INSERT INTO checkpoint (type, blockRoot, epoch) VALUES (?, ?, ?)"
-              + " ON DUPLICATE UPDATE SET blockRoot = VALUES(blockRoot), epoch VALUES(epoch)",
-          type,
+              + " ON DUPLICATE KEY UPDATE blockRoot = VALUES(blockRoot), epoch = VALUES(epoch)",
+          type.name(),
           checkpoint.getRoot().toArrayUnsafe(),
           checkpoint.getEpoch().bigIntegerValue());
     }
@@ -130,7 +187,7 @@ private static final Logger LOG = LogManager.getLogger();
     public void addBlock(final SignedBeaconBlock block, final boolean finalized) {
       execSql(
           "INSERT INTO block (blockRoot, slot, parentRoot, finalized) VALUES (?, ?, ?, ?) "
-              + " ON DUPLICATE UPDATE SET finalized = VALUES(finalized)",
+              + " ON DUPLICATE KEY UPDATE finalized = VALUES(finalized)",
           block.getRoot().toArrayUnsafe(),
           block.getSlot().bigIntegerValue(),
           block.getParent_root().toArrayUnsafe(),
@@ -148,12 +205,25 @@ private static final Logger LOG = LogManager.getLogger();
       execSql("DELETE FROM block WHERE blockRoot = ?", (Object) blockRoot.toArrayUnsafe());
     }
 
-    public void addState(final BeaconState state) {
+    public void addState(
+        final Bytes32 stateRoot,
+        final UnsignedLong slot,
+        final Bytes32 blockRoot,
+        final boolean stored) {
       execSql(
-          "INSERT INTO state (stateRoot, blockRoot, slot) VALUES (?, ?, ?)",
-          state.hash_tree_root().toArrayUnsafe(),
-          state.getLatest_block_header().hash_tree_root().toArrayUnsafe(),
-          state.getSlot().bigIntegerValue());
+          "INSERT INTO state (stateRoot, blockRoot, slot, stored) VALUES (?, ?, ?, ?)"
+              + " ON DUPLICATE KEY UPDATE stored = VALUES(stored)",
+          stateRoot.toArrayUnsafe(),
+          blockRoot.toArrayUnsafe(),
+          slot.bigIntegerValue(),
+          stored);
+    }
+
+    public Optional<Bytes32> deleteStateByBlockRoot(final Bytes32 blockRoot) {
+      final Optional<Bytes32> maybeStateRoot = getStateRootByBlockRoot(blockRoot);
+      maybeStateRoot.ifPresent(
+          stateRoot -> execSql("DELETE FROM state WHERE stateRoot = ?", maybeStateRoot));
+      return maybeStateRoot;
     }
 
     public void storeVotes(final Map<UnsignedLong, VoteTracker> votes) {
@@ -161,9 +231,9 @@ private static final Logger LOG = LogManager.getLogger();
           (validatorIndex, voteTracker) ->
               execSql(
                   "INSERT INTO vote (validatorIndex, currentRoot, nextRoot, nextEpoch) VALUES (?, ?, ?, ?)"
-                      + " ON DUPLICATE UPDATE SET currentRoot = VALUES(currentRoot),"
-                      + "                     SET nextRoot = VALUES(nextRoot),"
-                      + "                     SET nextEpoch = VALUES(nextEpoch)",
+                      + " ON DUPLICATE KEY UPDATE currentRoot = VALUES(currentRoot),"
+                      + "                     nextRoot = VALUES(nextRoot),"
+                      + "                     nextEpoch = VALUES(nextEpoch)",
                   validatorIndex.bigIntegerValue(),
                   voteTracker.getCurrentRoot().toArrayUnsafe(),
                   voteTracker.getNextRoot().toArrayUnsafe(),
