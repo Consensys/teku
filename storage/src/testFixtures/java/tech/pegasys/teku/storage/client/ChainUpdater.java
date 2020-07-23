@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -47,14 +46,10 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState addNewBestBlock() {
-    try {
-      final SignedBlockAndState nextBlock;
-      nextBlock = chainBuilder.generateNextBlock();
-      updateBestBlock(nextBlock);
-      return nextBlock;
-    } catch (StateTransitionException e) {
-      throw new IllegalStateException(e);
-    }
+    final SignedBlockAndState nextBlock;
+    nextBlock = chainBuilder.generateNextBlock();
+    updateBestBlock(nextBlock);
+    return nextBlock;
   }
 
   public SignedBlockAndState initializeGenesis() {
@@ -91,13 +86,9 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState advanceChain() {
-    try {
-      final SignedBlockAndState block = chainBuilder.generateNextBlock();
-      saveBlock(block);
-      return block;
-    } catch (StateTransitionException e) {
-      throw new IllegalStateException(e);
-    }
+    final SignedBlockAndState block = chainBuilder.generateNextBlock();
+    saveBlock(block);
+    return block;
   }
 
   public SignedBlockAndState advanceChain(final long slot) {
@@ -105,13 +96,9 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState advanceChain(final UnsignedLong slot) {
-    try {
-      final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slot);
-      saveBlock(block);
-      return block;
-    } catch (StateTransitionException e) {
-      throw new IllegalStateException(e);
-    }
+    final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slot);
+    saveBlock(block);
+    return block;
   }
 
   public void saveBlock(final SignedBlockAndState block) {

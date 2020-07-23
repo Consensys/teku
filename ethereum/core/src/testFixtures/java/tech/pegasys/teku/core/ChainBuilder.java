@@ -230,13 +230,11 @@ public class ChainBuilder {
     return blockAndState;
   }
 
-  public List<SignedBlockAndState> generateBlocksUpToSlot(final long slot)
-      throws StateTransitionException {
+  public List<SignedBlockAndState> generateBlocksUpToSlot(final long slot) {
     return generateBlocksUpToSlot(UnsignedLong.valueOf(slot));
   }
 
-  public List<SignedBlockAndState> generateBlocksUpToSlot(final UnsignedLong slot)
-      throws StateTransitionException {
+  public List<SignedBlockAndState> generateBlocksUpToSlot(final UnsignedLong slot) {
     assertBlockCanBeGenerated();
     final List<SignedBlockAndState> generated = new ArrayList<>();
 
@@ -249,13 +247,12 @@ public class ChainBuilder {
     return generated;
   }
 
-  public SignedBlockAndState generateNextBlock() throws StateTransitionException {
+  public SignedBlockAndState generateNextBlock() {
     assertBlockCanBeGenerated();
     return generateNextBlock(0);
   }
 
-  public SignedBlockAndState generateNextBlock(final int skipSlots)
-      throws StateTransitionException {
+  public SignedBlockAndState generateNextBlock(final int skipSlots) {
     assertBlockCanBeGenerated();
     final SignedBlockAndState latest = getLatestBlockAndState();
     final UnsignedLong nextSlot =
@@ -263,17 +260,16 @@ public class ChainBuilder {
     return generateBlockAtSlot(nextSlot);
   }
 
-  public SignedBlockAndState generateBlockAtSlot(final long slot) throws StateTransitionException {
+  public SignedBlockAndState generateBlockAtSlot(final long slot) {
     return generateBlockAtSlot(UnsignedLong.valueOf(slot));
   }
 
-  public SignedBlockAndState generateBlockAtSlot(final UnsignedLong slot)
-      throws StateTransitionException {
+  public SignedBlockAndState generateBlockAtSlot(final UnsignedLong slot) {
     return generateBlockAtSlot(slot, BlockOptions.create());
   }
 
   public SignedBlockAndState generateBlockAtSlot(
-      final UnsignedLong slot, final BlockOptions options) throws StateTransitionException {
+      final UnsignedLong slot, final BlockOptions options) {
     assertBlockCanBeGenerated();
     final SignedBlockAndState latest = getLatestBlockAndState();
     checkState(
@@ -333,26 +329,30 @@ public class ChainBuilder {
   }
 
   private SignedBlockAndState appendNewBlockToChain(
-      final UnsignedLong slot, final BlockOptions options) throws StateTransitionException {
+      final UnsignedLong slot, final BlockOptions options) {
     final SignedBlockAndState latestBlockAndState = getLatestBlockAndState();
     final BeaconState preState = latestBlockAndState.getState();
     final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hash_tree_root();
 
     final int proposerIndex = blockProposalTestUtil.getProposerIndexForSlot(preState, slot);
     final MessageSignerService signer = getSigner(proposerIndex);
-    final SignedBlockAndState nextBlockAndState =
-        blockProposalTestUtil.createBlock(
-            signer,
-            slot,
-            preState,
-            parentRoot,
-            Optional.of(options.getAttestations()),
-            Optional.empty(),
-            Optional.empty(),
-            options.getEth1Data());
-
-    trackBlock(nextBlockAndState);
-    return nextBlockAndState;
+    final SignedBlockAndState nextBlockAndState;
+    try {
+      nextBlockAndState =
+          blockProposalTestUtil.createBlock(
+              signer,
+              slot,
+              preState,
+              parentRoot,
+              Optional.of(options.getAttestations()),
+              Optional.empty(),
+              Optional.empty(),
+              options.getEth1Data());
+      trackBlock(nextBlockAndState);
+      return nextBlockAndState;
+    } catch (StateTransitionException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private BeaconState resultToState(final SignedBlockAndState result) {
