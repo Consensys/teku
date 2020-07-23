@@ -16,6 +16,17 @@ public class BlstPublicKey implements PublicKey {
   private static final int COMPRESSED_PK_SIZE = 48;
   private static final int UNCOMPRESSED_PK_LENGTH = 96;
 
+  public static BlstPublicKey fromBytesUncompressed(Bytes uncompressed) {
+    checkArgument(uncompressed.size() == UNCOMPRESSED_PK_LENGTH);
+    p1_affine ecPoint = new p1_affine();
+    if (blst.p1_deserialize(ecPoint, uncompressed.toArrayUnsafe()) == BLST_ERROR.BLST_SUCCESS) {
+      return new BlstPublicKey(ecPoint);
+    } else {
+      ecPoint.delete();
+      throw new IllegalArgumentException("Invalid PublicKey bytes: " + uncompressed);
+    }
+  }
+
   public static BlstPublicKey fromBytes(Bytes48 compressed) {
     p1_affine ecPoint = new p1_affine();
     if (blst.p1_uncompress(ecPoint, compressed.toArrayUnsafe()) == BLST_ERROR.BLST_SUCCESS) {
@@ -50,7 +61,7 @@ public class BlstPublicKey implements PublicKey {
   @Override
   public void forceValidation() throws IllegalArgumentException {
     if (blst.p1_affine_in_g1(ecPoint) == 0) {
-      throw new IllegalArgumentException("Invalid PublicKey: " + this);
+      throw new IllegalArgumentException("Invalid PublicKey: " + toBytesCompressed());
     }
   }
 
