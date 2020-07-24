@@ -78,6 +78,10 @@ public class StatusLogger {
     log.error(message, file.toString(), cause);
   }
 
+  public void loadingValidators(final int validatorCount) {
+    log.info("Loading {} validator keys...", validatorCount);
+  }
+
   public void validatorsInitialised(final List<String> validators) {
     if (validators.size() > 100) {
       log.info("Loaded {} validators", validators.size());
