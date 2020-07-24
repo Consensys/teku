@@ -345,11 +345,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store.retrieveBlock(root);
   }
 
-  public Optional<SignedBeaconBlock> getSignedBlockByRoot(final Bytes32 root) {
+  public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlockByRoot(final Bytes32 root) {
     if (store == null) {
-      return Optional.empty();
+      return EmptyStoreResults.EMPTY_SIGNED_BLOCK_FUTURE;
     }
-    return Optional.ofNullable(store.getSignedBlock(root));
+    return store.retrieveSignedBlock(root);
   }
 
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {

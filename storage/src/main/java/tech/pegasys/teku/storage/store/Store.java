@@ -31,7 +31,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
@@ -53,7 +52,6 @@ import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -262,18 +260,6 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public CheckpointAndBlock getFinalizedCheckpointAndBlock() {
-    readLock.lock();
-    try {
-      final Checkpoint checkpoint = finalized_checkpoint;
-      final SignedBeaconBlock block = finalizedBlockAndState.getBlock();
-      return new CheckpointAndBlock(checkpoint, block);
-    } finally {
-      readLock.unlock();
-    }
-  }
-
-  @Override
   public SignedBlockAndState getLatestFinalizedBlockAndState() {
     readLock.lock();
     try {
@@ -301,12 +287,6 @@ class Store implements UpdatableStore {
     } finally {
       readLock.unlock();
     }
-  }
-
-  @Override
-  public SignedBeaconBlock getSignedBlock(Bytes32 blockRoot) {
-    // TODO(#2291) - replace this with retrieveSignedBlock
-    return retrieveSignedBlock(blockRoot).join().orElse(null);
   }
 
   @Override
@@ -740,16 +720,6 @@ class Store implements UpdatableStore {
     }
 
     @Override
-    public CheckpointAndBlock getFinalizedCheckpointAndBlock() {
-      return finalized_checkpoint
-          .flatMap(
-              (checkpoint) ->
-                  Optional.ofNullable(getSignedBlock(checkpoint.getRoot()))
-                      .map(block -> new CheckpointAndBlock(checkpoint, block)))
-          .orElse(Store.this.getFinalizedCheckpointAndBlock());
-    }
-
-    @Override
     public SignedBlockAndState getLatestFinalizedBlockAndState() {
       if (finalized_checkpoint.isPresent()) {
         // Ideally we wouldn't join here - but seems not worth making this API async since we're
@@ -767,11 +737,6 @@ class Store implements UpdatableStore {
     @Override
     public Checkpoint getBestJustifiedCheckpoint() {
       return best_justified_checkpoint.orElseGet(Store.this::getBestJustifiedCheckpoint);
-    }
-
-    @Override
-    public SignedBeaconBlock getSignedBlock(final Bytes32 blockRoot) {
-      return either(blockRoot, blocks::get, Store.this::getSignedBlock);
     }
 
     @Override
@@ -851,11 +816,6 @@ class Store implements UpdatableStore {
     @Override
     public Set<UnsignedLong> getVotedValidatorIndices() {
       return Sets.union(votes.keySet(), Store.this.getVotedValidatorIndices());
-    }
-
-    private <I, O> O either(I input, Function<I, O> primary, Function<I, O> secondary) {
-      final O primaryValue = primary.apply(input);
-      return primaryValue != null ? primaryValue : secondary.apply(input);
     }
 
     @Override
