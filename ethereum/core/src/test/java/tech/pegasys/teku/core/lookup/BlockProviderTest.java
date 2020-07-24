@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 
@@ -32,8 +31,7 @@ public class BlockProviderTest {
   private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
 
   @Test
-  void withKnownBlocks_withEmptyProvider()
-      throws StateTransitionException, ExecutionException, InterruptedException {
+  void withKnownBlocks_withEmptyProvider() throws ExecutionException, InterruptedException {
     chainBuilder.generateGenesis();
     chainBuilder.generateBlocksUpToSlot(2);
     final Map<Bytes32, SignedBeaconBlock> knownBlocks =
@@ -48,8 +46,7 @@ public class BlockProviderTest {
   }
 
   @Test
-  void withKnownBlocks_withNonEmptyProvider()
-      throws StateTransitionException, ExecutionException, InterruptedException {
+  void withKnownBlocks_withNonEmptyProvider() throws ExecutionException, InterruptedException {
     chainBuilder.generateGenesis();
     chainBuilder.generateBlocksUpToSlot(10);
 
@@ -76,7 +73,7 @@ public class BlockProviderTest {
   }
 
   @Test
-  void combined() throws StateTransitionException, ExecutionException, InterruptedException {
+  void combined() throws ExecutionException, InterruptedException {
     chainBuilder.generateGenesis();
     chainBuilder.generateBlocksUpToSlot(10);
 
@@ -108,7 +105,7 @@ public class BlockProviderTest {
   }
 
   @Test
-  void fromDynamicMap() throws StateTransitionException {
+  void fromDynamicMap() {
     chainBuilder.generateGenesis();
     SignedBlockAndState blockA = chainBuilder.generateNextBlock();
     SignedBlockAndState blockB = chainBuilder.generateNextBlock();

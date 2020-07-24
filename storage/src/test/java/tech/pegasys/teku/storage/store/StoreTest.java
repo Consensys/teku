@@ -21,7 +21,6 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -39,7 +38,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 class StoreTest extends AbstractStoreTest {
 
   @Test
-  public void getSignedBlock_withLimitedCache() throws StateTransitionException {
+  public void getSignedBlock_withLimitedCache() {
     processChainWithLimitedCache(
         (store, blockAndState) -> {
           final SignedBeaconBlock expectedBlock = blockAndState.getBlock();
@@ -47,20 +46,6 @@ class StoreTest extends AbstractStoreTest {
           assertThat(blockResult)
               .withFailMessage("Expected block %s to be available", expectedBlock.getSlot())
               .isEqualTo(expectedBlock);
-        });
-  }
-
-  @Test
-  public void getBlockState_withLimitedCache() throws StateTransitionException {
-    processChainWithLimitedCache(
-        (store, blockAndState) -> {
-          final BeaconState result = store.getBlockState(blockAndState.getRoot());
-          assertThat(result)
-              .withFailMessage(
-                  "Expected state for block %s to be available", blockAndState.getSlot())
-              .isNotNull();
-          assertThat(result.hash_tree_root())
-              .isEqualTo(blockAndState.getBlock().getMessage().getState_root());
         });
   }
 
@@ -79,7 +64,7 @@ class StoreTest extends AbstractStoreTest {
   }
 
   @Test
-  public void retrieveBlock_withLimitedCache() throws StateTransitionException {
+  public void retrieveBlock_withLimitedCache() {
     processChainWithLimitedCache(
         (store, blockAndState) -> {
           final Bytes32 root = blockAndState.getRoot();
@@ -93,7 +78,7 @@ class StoreTest extends AbstractStoreTest {
   }
 
   @Test
-  public void retrieveBlockAndState_withLimitedCache() throws StateTransitionException {
+  public void retrieveBlockAndState_withLimitedCache() {
     processChainWithLimitedCache(
         (store, blockAndState) -> {
           final Bytes32 root = blockAndState.getRoot();
@@ -107,7 +92,7 @@ class StoreTest extends AbstractStoreTest {
   }
 
   @Test
-  public void retrieveBlockState_withLimitedCache() throws StateTransitionException {
+  public void retrieveBlockState_withLimitedCache() {
     processChainWithLimitedCache(
         (store, blockAndState) -> {
           final Bytes32 root = blockAndState.getRoot();
@@ -120,7 +105,7 @@ class StoreTest extends AbstractStoreTest {
   }
 
   @Test
-  public void getCheckpointState_withLimitedCache() throws StateTransitionException {
+  public void getCheckpointState_withLimitedCache() {
     processCheckpointsWithLimitedCache(
         (store, checkpointState) -> {
           final Optional<BeaconState> result =
@@ -134,7 +119,7 @@ class StoreTest extends AbstractStoreTest {
   }
 
   @Test
-  public void retrieveCheckpointState_withLimitedCache() throws StateTransitionException {
+  public void retrieveCheckpointState_withLimitedCache() {
     processCheckpointsWithLimitedCache(
         (store, checkpointState) -> {
           SafeFuture<Optional<BeaconState>> result =
@@ -147,13 +132,12 @@ class StoreTest extends AbstractStoreTest {
   }
 
   @Test
-  public void shouldApplyChangesWhenTransactionCommits() throws StateTransitionException {
+  public void shouldApplyChangesWhenTransactionCommits() {
     testApplyChangesWhenTransactionCommits(false);
   }
 
   @Test
-  public void shouldApplyChangesWhenTransactionCommits_withInterleavedTx()
-      throws StateTransitionException {
+  public void shouldApplyChangesWhenTransactionCommits_withInterleavedTx() {
     testApplyChangesWhenTransactionCommits(true);
   }
 
@@ -196,8 +180,7 @@ class StoreTest extends AbstractStoreTest {
         .hasCauseInstanceOf(InvalidCheckpointException.class);
   }
 
-  public void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction)
-      throws StateTransitionException {
+  public void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction) {
     final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
     final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
     final UnsignedLong epoch3Slot = compute_start_slot_at_epoch(UnsignedLong.valueOf(4));
@@ -247,7 +230,10 @@ class StoreTest extends AbstractStoreTest {
     // Check that transaction is updated
     chainBuilder
         .streamBlocksAndStates(1, chainBuilder.getLatestSlot().longValue())
-        .forEach(b -> assertThat(tx.getBlockAndState(b.getRoot())).isEqualTo(Optional.of(b)));
+        .forEach(
+            b ->
+                assertThat(tx.retrieveBlockAndState(b.getRoot()))
+                    .isCompletedWithValue(Optional.of(b)));
     // Check checkpoints
     assertThat(tx.getFinalizedCheckpoint()).isEqualTo(checkpoint1);
     assertThat(tx.getJustifiedCheckpoint()).isEqualTo(checkpoint2);
@@ -278,7 +264,10 @@ class StoreTest extends AbstractStoreTest {
     // Check store is updated
     chainBuilder
         .streamBlocksAndStates(checkpoint3.getEpochStartSlot(), chainBuilder.getLatestSlot())
-        .forEach(b -> assertThat(store.getBlockAndState(b.getRoot())).isEqualTo(Optional.of(b)));
+        .forEach(
+            b ->
+                assertThat(store.retrieveBlockAndState(b.getRoot()))
+                    .isCompletedWithValue(Optional.of(b)));
     // Check checkpoints
     assertThat(store.getFinalizedCheckpoint()).isEqualTo(checkpoint1);
     assertThat(store.getJustifiedCheckpoint()).isEqualTo(checkpoint2);

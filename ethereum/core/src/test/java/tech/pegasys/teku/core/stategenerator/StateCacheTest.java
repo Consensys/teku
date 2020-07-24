@@ -22,7 +22,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
@@ -40,7 +39,7 @@ public class StateCacheTest {
   private StateCache cache;
 
   @BeforeEach
-  void setup() throws StateTransitionException {
+  void setup() {
     chainBuilder.generateGenesis();
     chainBuilder.generateBlocksUpToSlot(chainSize);
     chain = chainBuilder.streamBlocksAndStates().collect(Collectors.toList());

@@ -41,7 +41,7 @@ import org.rocksdb.CompressionType;
 @SuppressWarnings("FieldMayBeFinal")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RocksDbConfiguration {
-  public static final int DEFAULT_MAX_OPEN_FILES = 1024;
+  public static final int DEFAULT_MAX_OPEN_FILES = 128;
   public static final int DEFAULT_MAX_BACKGROUND_JOBS = 6;
   public static final int DEFAULT_BACKGROUND_THREAD_COUNT = 6;
   public static final long DEFAULT_CACHE_CAPACITY = 8 << 20;

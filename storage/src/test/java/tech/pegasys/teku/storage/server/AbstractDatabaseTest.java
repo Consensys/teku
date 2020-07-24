@@ -19,6 +19,7 @@ import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.storage.store.StoreAssertions.assertStoresMatch;
 
 import com.google.common.collect.Streams;
@@ -29,7 +30,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -44,7 +44,6 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.core.ChainProperties;
-import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -145,7 +144,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldGetHotBlockByRoot() throws StateTransitionException {
+  public void shouldGetHotBlockByRoot() {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     final SignedBlockAndState block1 = chainBuilder.generateBlockAtSlot(1);
     final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
@@ -217,7 +216,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void getFinalizedState() throws StateTransitionException {
+  public void getFinalizedState() {
     generateCheckpoints();
     final Checkpoint finalizedCheckpoint =
         chainBuilder.getCurrentCheckpointForEpoch(UnsignedLong.ONE);
@@ -242,7 +241,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldStoreSingleValueFields() throws StateTransitionException {
+  public void shouldStoreSingleValueFields() {
     generateCheckpoints();
 
     final List<SignedBlockAndState> allBlocks =
@@ -283,7 +282,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldStoreSingleValue_justifiedCheckpoint() throws StateTransitionException {
+  public void shouldStoreSingleValue_justifiedCheckpoint() {
     generateCheckpoints();
     final Checkpoint newValue = checkpoint3;
     // Sanity check
@@ -298,7 +297,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldStoreSingleValue_finalizedCheckpoint() throws StateTransitionException {
+  public void shouldStoreSingleValue_finalizedCheckpoint() {
     generateCheckpoints();
     final List<SignedBlockAndState> allBlocks =
         chainBuilder
@@ -317,7 +316,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldStoreSingleValue_bestJustifiedCheckpoint() throws StateTransitionException {
+  public void shouldStoreSingleValue_bestJustifiedCheckpoint() {
     generateCheckpoints();
     final Checkpoint newValue = checkpoint3;
     // Sanity check
@@ -332,7 +331,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldStoreSingleValue_singleBlockAndState() throws StateTransitionException {
+  public void shouldStoreSingleValue_singleBlockAndState() {
     final SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
     // Sanity check
     assertThat(store.getBlock(newBlock.getRoot())).isNull();
@@ -343,11 +342,12 @@ public abstract class AbstractDatabaseTest {
 
     final UpdatableStore result = recreateStore();
     assertThat(result.getSignedBlock(newBlock.getRoot())).isEqualTo(newBlock.getBlock());
-    assertThat(result.getBlockState(newBlock.getRoot())).isEqualTo(newBlock.getState());
+    assertThat(result.retrieveBlockState(newBlock.getRoot()))
+        .isCompletedWithValue(Optional.of(newBlock.getState()));
   }
 
   @Test
-  public void shouldLoadHotBlocksAndStatesIntoMemoryStore() throws StateTransitionException {
+  public void shouldLoadHotBlocksAndStatesIntoMemoryStore() {
     final Bytes32 genesisRoot = genesisBlockAndState.getRoot();
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
 
@@ -365,12 +365,14 @@ public abstract class AbstractDatabaseTest {
         .isEqualTo(blockAndState1.getBlock());
     assertThat(result.getSignedBlock(blockAndState2.getRoot()))
         .isEqualTo(blockAndState2.getBlock());
-    assertThat(result.getBlockState(blockAndState1.getRoot())).isEqualTo(blockAndState1.getState());
-    assertThat(result.getBlockState(blockAndState2.getRoot())).isEqualTo(blockAndState2.getState());
+    assertThat(result.retrieveBlockState(blockAndState1.getRoot()))
+        .isCompletedWithValue(Optional.of(blockAndState1.getState()));
+    assertThat(result.retrieveBlockState(blockAndState2.getRoot()))
+        .isCompletedWithValue(Optional.of(blockAndState2.getState()));
   }
 
   @Test
-  public void shouldRemoveHotBlocksAndStatesOnceEpochIsFinalized() throws StateTransitionException {
+  public void shouldRemoveHotBlocksAndStatesOnceEpochIsFinalized() {
     generateCheckpoints();
     final List<SignedBlockAndState> allBlocks =
         chainBuilder
@@ -396,13 +398,15 @@ public abstract class AbstractDatabaseTest {
     // Historical blocks should not be in the new store
     for (SignedBlockAndState historicalBlock : historicalBlocks) {
       assertThat(result.getSignedBlock(historicalBlock.getRoot())).isNull();
-      assertThat(result.getBlockState(historicalBlock.getRoot())).isNull();
+      assertThatSafeFuture(result.retrieveBlockState(historicalBlock.getRoot()))
+          .isCompletedWithEmptyOptional();
     }
 
     // Hot blocks should be available in the new store
     for (SignedBlockAndState hotBlock : hotBlocks) {
       assertThat(result.getSignedBlock(hotBlock.getRoot())).isEqualTo(hotBlock.getBlock());
-      assertThat(result.getBlockState(hotBlock.getRoot())).isEqualTo(hotBlock.getState());
+      assertThat(result.retrieveBlockState(hotBlock.getRoot()))
+          .isCompletedWithValue(Optional.of(hotBlock.getState()));
     }
 
     final Set<Bytes32> hotBlockRoots =
@@ -439,7 +443,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void handleFinalizationWhenCacheLimitsExceeded() throws StateTransitionException {
+  public void handleFinalizationWhenCacheLimitsExceeded() {
     createStorage(StateStorageMode.ARCHIVE);
     initGenesis();
 
@@ -467,18 +471,17 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void shouldRecordFinalizedBlocksAndStates_pruneMode() throws StateTransitionException {
+  public void shouldRecordFinalizedBlocksAndStates_pruneMode() {
     testShouldRecordFinalizedBlocksAndStates(StateStorageMode.PRUNE, false);
   }
 
   @Test
-  public void shouldRecordFinalizedBlocksAndStates_archiveMode() throws StateTransitionException {
+  public void shouldRecordFinalizedBlocksAndStates_archiveMode() {
     testShouldRecordFinalizedBlocksAndStates(StateStorageMode.ARCHIVE, false);
   }
 
   @Test
-  public void testShouldRecordFinalizedBlocksAndStatesInBatchUpdate()
-      throws StateTransitionException {
+  public void testShouldRecordFinalizedBlocksAndStatesInBatchUpdate() {
     testShouldRecordFinalizedBlocksAndStates(StateStorageMode.ARCHIVE, true);
   }
 
@@ -534,16 +537,14 @@ public abstract class AbstractDatabaseTest {
   }
 
   public void testShouldRecordFinalizedBlocksAndStates(
-      final StateStorageMode storageMode, final boolean batchUpdate)
-      throws StateTransitionException {
+      final StateStorageMode storageMode, final boolean batchUpdate) {
     testShouldRecordFinalizedBlocksAndStates(storageMode, batchUpdate, this::createStorage);
   }
 
   protected void testShouldRecordFinalizedBlocksAndStates(
       final StateStorageMode storageMode,
       final boolean batchUpdate,
-      Consumer<StateStorageMode> initializeDatabase)
-      throws StateTransitionException {
+      Consumer<StateStorageMode> initializeDatabase) {
     // Setup chains
     // Both chains share block up to slot 3
     final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
@@ -716,8 +717,13 @@ public abstract class AbstractDatabaseTest {
 
       final List<BeaconState> hotStates =
           currentStore.getBlockRoots().stream()
-              .map(currentStore::getBlockState)
-              .filter(Objects::nonNull)
+              .map(currentStore::retrieveBlockState)
+              .map(
+                  f -> {
+                    assertThat(f).isCompleted();
+                    return f.join();
+                  })
+              .flatMap(Optional::stream)
               .collect(toList());
 
       assertThat(hotStates)
@@ -734,8 +740,13 @@ public abstract class AbstractDatabaseTest {
 
     final List<BeaconState> hotStates =
         memoryStore.getBlockRoots().stream()
-            .map(memoryStore::getBlockState)
-            .filter(Objects::nonNull)
+            .map(memoryStore::retrieveBlockState)
+            .map(
+                f -> {
+                  assertThat(f).isCompleted();
+                  return f.join();
+                })
+            .flatMap(Optional::stream)
             .collect(toList());
 
     assertThat(hotStates)
@@ -779,7 +790,7 @@ public abstract class AbstractDatabaseTest {
     // Check pruned data has been removed from store
     for (Bytes32 prunedBlock : prunedBlocks) {
       assertThat(store.getBlock(prunedBlock)).isNull();
-      assertThat(store.getBlockState(prunedBlock)).isNull();
+      assertThatSafeFuture(store.retrieveBlockState(prunedBlock)).isCompletedWithEmptyOptional();
     }
   }
 
@@ -862,7 +873,7 @@ public abstract class AbstractDatabaseTest {
     store = recentChainData.getStore();
   }
 
-  protected void generateCheckpoints() throws StateTransitionException {
+  protected void generateCheckpoints() {
     while (chainBuilder.getLatestEpoch().longValue() < 3) {
       chainBuilder.generateNextBlock();
     }
