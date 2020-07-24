@@ -35,9 +35,9 @@ public class BlstSecretKey implements SecretKey {
   public static BlstSecretKey generateNew(Random random) {
     byte[] ikm = new byte[128];
     random.nextBytes(ikm);
-    scalar scalar = new scalar();
-    blst.keygen(scalar, ikm, null);
-    return new BlstSecretKey(scalar);
+    scalar sk = new scalar();
+    blst.keygen(sk, ikm, null);
+    return new BlstSecretKey(sk);
   }
 
   public final scalar scalarVal;
@@ -65,12 +65,12 @@ public class BlstSecretKey implements SecretKey {
 
   @Override
   public BlstPublicKey derivePublicKey() {
-    p1 p1 = new p1();
-    blst.sk_to_pk_in_g1(p1, scalarVal);
-    p1_affine p1_affine = new p1_affine();
-    blst.p1_to_affine(p1_affine, p1);
-    p1.delete();
-    return new BlstPublicKey(p1_affine);
+    p1 pk = new p1();
+    blst.sk_to_pk_in_g1(pk, scalarVal);
+    p1_affine pkAffine = new p1_affine();
+    blst.p1_to_affine(pkAffine, pk);
+    pk.delete();
+    return new BlstPublicKey(pkAffine);
   }
 
   @Override

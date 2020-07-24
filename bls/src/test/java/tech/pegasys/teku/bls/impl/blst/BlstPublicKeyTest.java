@@ -35,12 +35,6 @@ public class BlstPublicKeyTest {
                 "0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"));
     Bytes bytes = inf1.toBytesUncompressed();
 
-    Bytes48 x =
-        Bytes48.fromHexString(
-            "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
-    Bytes48 y =
-        Bytes48.fromHexString(
-            "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001");
     BlstPublicKey publicKey = BlstPublicKey.fromBytesUncompressed(bytes);
     publicKey.forceValidation();
   }
@@ -53,7 +47,6 @@ public class BlstPublicKeyTest {
     assertThatThrownBy(
             () -> {
               BlstPublicKey publicKey = BlstPublicKey.fromBytes(invalidPublicKeyBytes);
-              Bytes uncompressed = publicKey.toBytesUncompressed();
               publicKey.forceValidation();
             })
         .isInstanceOf(IllegalArgumentException.class);

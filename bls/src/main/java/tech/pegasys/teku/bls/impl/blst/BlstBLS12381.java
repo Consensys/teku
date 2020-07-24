@@ -117,9 +117,9 @@ public class BlstBLS12381 implements BLS12381 {
   public BlstBatchSemiAggregate prepareBatchVerify(
       int index, List<? extends PublicKey> publicKeys, Bytes message, Signature signature) {
     BlstPublicKey aggrPubKey = aggregatePublicKeys(publicKeys);
-    p2 p2 = HashToCurve.hashToG2(message);
+    p2 g2Hash = HashToCurve.hashToG2(message);
     p2_affine p2Affine = new p2_affine();
-    blst.p2_to_affine(p2Affine, p2);
+    blst.p2_to_affine(p2Affine, g2Hash);
 
     pairing ctx = new pairing();
     try {
@@ -137,7 +137,7 @@ public class BlstBLS12381 implements BLS12381 {
       ctx.delete();
       throw e;
     } finally {
-      p2.delete();
+      g2Hash.delete();
       p2Affine.delete(); // not sure if its copied inside pairing_mul_n_aggregate_pk_in_g1
     }
     blst.pairing_commit(ctx);

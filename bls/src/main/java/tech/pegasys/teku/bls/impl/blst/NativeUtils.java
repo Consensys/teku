@@ -72,7 +72,7 @@ public class NativeUtils {
     }
 
     // Obtain filename from path
-    String[] parts = path.split("/");
+    String[] parts = path.split("/", -1);
     String filename = (parts.length > 1) ? parts[parts.length - 1] : null;
 
     // Check if the filename is okay

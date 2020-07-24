@@ -33,7 +33,6 @@ import tech.pegasys.teku.bls.impl.blst.swig.p2_affine;
 public class BlstSignature implements Signature {
   private static final int COMPRESSED_SIG_SIZE = 96;
 
-
   public static BlstSignature fromBytes(Bytes compressed) {
     checkArgument(
         compressed.size() == COMPRESSED_SIG_SIZE,
@@ -45,7 +44,8 @@ public class BlstSignature implements Signature {
   }
 
   public static BlstSignature aggregate(List<BlstSignature> signatures) {
-    Optional<BlstSignature> invalidSignature = signatures.stream().filter(s -> !s.isValid).findFirst();
+    Optional<BlstSignature> invalidSignature =
+        signatures.stream().filter(s -> !s.isValid).findFirst();
     if (invalidSignature.isPresent()) {
       throw new IllegalArgumentException(
           "Can't aggregate invalid signature: " + invalidSignature.get());

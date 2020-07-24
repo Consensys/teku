@@ -15,45 +15,19 @@ package tech.pegasys.teku.bls.impl.blst;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.security.SecureRandom;
 import java.util.List;
+import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
-import tech.pegasys.teku.bls.impl.blst.swig.blst;
-import tech.pegasys.teku.bls.impl.blst.swig.p1_affine;
 
 public class BlstTest {
-  private static final SecureRandom random = new SecureRandom(new byte[] {1});
+  private static final Random random = new Random(1);
 
   @BeforeAll
   static void setup() {
     BlstBLS12381.INSTANCE.hashCode();
-  }
-
-  @Test
-  void test2() {
-    Bytes x =
-        Bytes.fromHexString(
-            "187db8f7b715c7672615292c7924d618e6f2e0026b85be837b9f8a3ba2f87160705451ceb3403df02a31bfdde5edac5e");
-    Bytes y =
-        Bytes.fromHexString(
-            "0b08bb210c0b17f86e21eda0bd01a435259ff05f6d5d7256db66de2245c84de68030941c637d290f9e890c4aca4d9016");
-    Bytes z =
-        Bytes.fromHexString(
-            "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001");
-    BLSPublicKey publicKey = BLSPublicKey.random(1);
-    Bytes pkCompressedBytes = publicKey.toBytesCompressed();
-
-    p1_affine p1_affine = new p1_affine();
-    BLST_ERROR error = blst.p1_uncompress(p1_affine, pkCompressedBytes.toArrayUnsafe());
-
-    int ret = blst.p1_affine_on_curve(p1_affine);
-
-    System.out.println(ret);
   }
 
   @Test
