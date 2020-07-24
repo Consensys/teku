@@ -71,6 +71,9 @@ public class NetworkDefinition {
                   .snappyCompressionEnabled(true)
                   .startupTimeoutSeconds(120)
                   .eth1DepositContractAddress("0x07b39F4fDE4A38bACe212b546dAc87C58DfE3fDC")
+                  .discoveryBootnodes(
+                      // PegaSys Teku
+                      "enr:-KG4QIOJRu0BBlcXJcn3lI34Ub1aBLYipbnDaxBnr2uf2q6nE1TWnKY5OAajg3eG6mHheQSfRhXLuy-a8V5rqXKSoUEChGV0aDKQGK5MywAAAAH__________4JpZIJ2NIJpcIQKAAFhiXNlY3AyNTZrMaEDESplmV9c2k73v0DjxVXJ6__2bWyP-tK28_80lf7dUhqDdGNwgiMog3VkcIIjKA")
                   .build())
           .build();
 
