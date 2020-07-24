@@ -37,8 +37,7 @@ public class FinalizedChainDataTest {
             .build();
 
     assertThat(result.getFinalizedCheckpoint()).isEqualTo(genesisCheckpoint);
-    assertThat(result.getLatestFinalizedState()).isEqualTo(genesis.getState());
-    assertThat(result.getLatestFinalizedBlock()).isEqualTo(genesis.getBlock());
+    assertThat(result.getLatestFinalizedBlockAndState()).isEqualTo(genesis);
     assertThat(result.getBlocks()).isEqualTo(Map.of(genesis.getRoot(), genesis.getBlock()));
     assertThat(result.getStates()).isEqualTo(Map.of(genesis.getRoot(), genesis.getState()));
     assertThat(result.getFinalizedChildToParentMap())

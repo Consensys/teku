@@ -20,7 +20,6 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -90,9 +89,7 @@ class StoreTransactionUpdates {
     finalizedChainData.ifPresent(
         finalizedData -> {
           store.finalized_checkpoint = finalizedData.getFinalizedCheckpoint();
-          final SignedBeaconBlock finalizedBlock = finalizedData.getLatestFinalizedBlock();
-          final BeaconState finalizedState = finalizedData.getLatestFinalizedState();
-          store.finalizedBlockAndState = new SignedBlockAndState(finalizedBlock, finalizedState);
+          store.finalizedBlockAndState = finalizedData.getLatestFinalizedBlockAndState();
         });
 
     // Prune blocks and states

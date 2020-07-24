@@ -57,10 +57,6 @@ public class FinalizedChainData {
     return latestFinalizedBlockAndState.getState();
   }
 
-  public SignedBeaconBlock getLatestFinalizedBlock() {
-    return latestFinalizedBlockAndState.getBlock();
-  }
-
   public Map<Bytes32, Bytes32> getFinalizedChildToParentMap() {
     return finalizedChildToParentMap;
   }
@@ -71,6 +67,10 @@ public class FinalizedChainData {
 
   public Map<Bytes32, BeaconState> getStates() {
     return finalizedStates;
+  }
+
+  public SignedBlockAndState getLatestFinalizedBlockAndState() {
+    return latestFinalizedBlockAndState;
   }
 
   public static class Builder {
