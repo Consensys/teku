@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -104,11 +103,6 @@ class TestStoreImpl implements MutablePrunableStore {
   @Override
   public Checkpoint getBestJustifiedCheckpoint() {
     return best_justified_checkpoint;
-  }
-
-  @Override
-  public BeaconBlock getBlock(final Bytes32 blockRoot) {
-    return blocks.get(blockRoot).getMessage();
   }
 
   @Override

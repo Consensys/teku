@@ -45,7 +45,6 @@ import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.stategenerator.StateGenerator;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -305,12 +304,6 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public BeaconBlock getBlock(Bytes32 blockRoot) {
-    // TODO(#2291) - replace this retrieveBlock()
-    return retrieveBlock(blockRoot).join().orElse(null);
-  }
-
-  @Override
   public SignedBeaconBlock getSignedBlock(Bytes32 blockRoot) {
     // TODO(#2291) - replace this with retrieveSignedBlock
     return retrieveSignedBlock(blockRoot).join().orElse(null);
@@ -377,7 +370,7 @@ class Store implements UpdatableStore {
   @Override
   public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(final Bytes32 blockRoot) {
     if (!containsBlock(blockRoot)) {
-      return EmptyStoreResults.EMPTY_BLOCK_FUTURE;
+      return EmptyStoreResults.EMPTY_SIGNED_BLOCK_FUTURE;
     }
     final Optional<SignedBeaconBlock> inMemoryBlock = getBlockIfAvailable(blockRoot);
     if (inMemoryBlock.isPresent()) {
@@ -774,12 +767,6 @@ class Store implements UpdatableStore {
     @Override
     public Checkpoint getBestJustifiedCheckpoint() {
       return best_justified_checkpoint.orElseGet(Store.this::getBestJustifiedCheckpoint);
-    }
-
-    @Override
-    public BeaconBlock getBlock(final Bytes32 blockRoot) {
-      final SignedBeaconBlock signedBlock = getSignedBlock(blockRoot);
-      return signedBlock != null ? signedBlock.getMessage() : null;
     }
 
     @Override

@@ -120,9 +120,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     eventBus.post(genesis);
 
     // The genesis state is by definition finalized so just get the root from there.
-    Bytes32 headBlockRoot = store.getFinalizedCheckpoint().getRoot();
-    BeaconBlock headBlock = store.getBlock(headBlockRoot);
-    updateBestBlock(headBlockRoot, headBlock.getSlot());
+    final SignedBlockAndState headBlock = store.getLatestFinalizedBlockAndState();
+    updateBestBlock(headBlock.getRoot(), headBlock.getSlot());
   }
 
   public UnsignedLong getGenesisTime() {
@@ -339,11 +338,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return Optional.ofNullable(store).map(s -> s.containsBlock(root)).orElse(false);
   }
 
-  public Optional<BeaconBlock> getBlockByRoot(final Bytes32 root) {
+  public SafeFuture<Optional<BeaconBlock>> retrieveBlockByRoot(final Bytes32 root) {
     if (store == null) {
-      return Optional.empty();
+      return EmptyStoreResults.EMPTY_BLOCK_FUTURE;
     }
-    return Optional.ofNullable(store.getBlock(root));
+    return store.retrieveBlock(root);
   }
 
   public Optional<SignedBeaconBlock> getSignedBlockByRoot(final Bytes32 root) {
