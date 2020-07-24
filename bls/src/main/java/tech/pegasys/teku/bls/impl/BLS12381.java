@@ -103,7 +103,8 @@ public interface BLS12381 {
    * @return Signature
    * @throws IllegalArgumentException if any of supplied signatures is invalid
    */
-  Signature aggregateSignatures(List<? extends Signature> signatures) throws IllegalArgumentException;
+  Signature aggregateSignatures(List<? extends Signature> signatures)
+      throws IllegalArgumentException;
 
   /**
    * https://ethresear.ch/t/fast-verification-of-multiple-bls-signatures/5407
