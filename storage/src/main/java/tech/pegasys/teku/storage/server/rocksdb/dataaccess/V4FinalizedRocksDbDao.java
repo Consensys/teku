@@ -79,15 +79,10 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
       final Bytes32 stateRoot) {
     Optional<UnsignedLong> maybeSlot =
         db.get(V4SchemaFinalized.SLOTS_BY_FINALIZED_STATE_ROOT, stateRoot);
-    if (maybeSlot.isPresent()) {
-      Optional<SignedBeaconBlock> maybeRoot =
-          db.get(V4SchemaFinalized.FINALIZED_BLOCKS_BY_SLOT, maybeSlot.get());
-      if (maybeRoot.isPresent()) {
-        return Optional.of(
-            new SlotAndBlockRoot(maybeSlot.get(), maybeRoot.get().getMessage().hash_tree_root()));
-      }
-    }
-    return Optional.empty();
+    return maybeSlot.flatMap(
+        slot ->
+            getFinalizedBlockAtSlot(slot)
+                .map(block -> new SlotAndBlockRoot(slot, block.getRoot())));
   }
 
   @Override

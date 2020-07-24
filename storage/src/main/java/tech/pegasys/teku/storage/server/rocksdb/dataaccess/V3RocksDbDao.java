@@ -105,8 +105,10 @@ public class V3RocksDbDao
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(
       final Bytes32 stateRoot) {
     Optional<UnsignedLong> maybeSlot = db.get(V3Schema.SLOTS_BY_FINALIZED_STATE_ROOT, stateRoot);
-    return maybeSlot.flatMap(slot -> 
-        getFinalizedBlockAtSlot(slot).map(block -> new SlotAndBlockRoot(slot, block.getRoot())));
+    return maybeSlot.flatMap(
+        slot ->
+            getFinalizedBlockAtSlot(slot)
+                .map(block -> new SlotAndBlockRoot(slot, block.getRoot())));
   }
 
   @Override
