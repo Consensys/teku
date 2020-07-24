@@ -30,4 +30,6 @@ public interface V4SchemaFinalized extends Schema {
       RocksDbColumn.create(2, UNSIGNED_LONG_SERIALIZER, SIGNED_BLOCK_SERIALIZER);
   RocksDbColumn<UnsignedLong, BeaconState> FINALIZED_STATES_BY_SLOT =
       RocksDbColumn.create(3, UNSIGNED_LONG_SERIALIZER, STATE_SERIALIZER);
+  RocksDbColumn<Bytes32, UnsignedLong> SLOTS_BY_FINALIZED_STATE_ROOT =
+      RocksDbColumn.create(4, BYTES32_SERIALIZER, UNSIGNED_LONG_SERIALIZER);
 }

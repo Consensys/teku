@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
 /**
@@ -42,11 +43,17 @@ public interface RocksDbFinalizedDao extends AutoCloseable {
 
   Optional<UnsignedLong> getSlotForFinalizedBlockRoot(Bytes32 blockRoot);
 
+  Optional<UnsignedLong> getSlotForFinalizedStateRoot(Bytes32 stateRoot);
+
+  Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(Bytes32 stateRoot);
+
   interface FinalizedUpdater extends AutoCloseable {
 
     void addFinalizedBlock(final SignedBeaconBlock block);
 
     void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
+
+    void addFinalizedStateRoot(final Bytes32 stateRoot, final UnsignedLong slot);
 
     void commit();
 

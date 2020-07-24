@@ -55,6 +55,8 @@ public interface V3Schema extends Schema {
       RocksDbColumn.create(7, UNSIGNED_LONG_SERIALIZER, DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER);
   RocksDbColumn<Bytes32, SlotAndBlockRoot> STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT =
       RocksDbColumn.create(8, BYTES32_SERIALIZER, SLOT_AND_BLOCK_ROOT_SERIALIZER);
+  RocksDbColumn<Bytes32, UnsignedLong> SLOTS_BY_FINALIZED_STATE_ROOT =
+      RocksDbColumn.create(9, BYTES32_SERIALIZER, UNSIGNED_LONG_SERIALIZER);
 
   // Variables
   RocksDbVariable<UnsignedLong> GENESIS_TIME = RocksDbVariable.create(1, UNSIGNED_LONG_SERIALIZER);
