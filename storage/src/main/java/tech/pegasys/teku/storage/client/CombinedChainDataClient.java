@@ -304,9 +304,14 @@ public class CombinedChainDataClient {
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {
     return recentChainData
-        .getSignedBlockByRoot(blockRoot)
-        .map(value -> SafeFuture.completedFuture(Optional.of(value)))
-        .orElseGet(() -> historicalChainData.getBlockByBlockRoot(blockRoot));
+        .retrieveSignedBlockByRoot(blockRoot)
+        .thenCompose(
+            maybeBlock -> {
+              if (maybeBlock.isPresent()) {
+                return SafeFuture.completedFuture(maybeBlock);
+              }
+              return historicalChainData.getBlockByBlockRoot(blockRoot);
+            });
   }
 
   private boolean isRecentData(final UnsignedLong slot) {
