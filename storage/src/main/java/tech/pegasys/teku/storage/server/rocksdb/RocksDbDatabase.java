@@ -271,7 +271,12 @@ public class RocksDbDatabase implements Database {
 
   @Override
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot) {
-    return hotDao.getSlotAndBlockRootFromStateRoot(stateRoot);
+    Optional<SlotAndBlockRoot> maybeSlotAndBlockRoot =
+        hotDao.getSlotAndBlockRootFromStateRoot(stateRoot);
+    if (maybeSlotAndBlockRoot.isPresent()) {
+      return maybeSlotAndBlockRoot;
+    }
+    return finalizedDao.getSlotAndBlockRootForFinalizedStateRoot(stateRoot);
   }
 
   @Override
@@ -400,6 +405,7 @@ public class RocksDbDatabase implements Database {
                   (block, state) -> {
                     updater.addFinalizedBlock(block);
                     updater.addFinalizedState(block.getRoot(), state);
+                    updater.addFinalizedStateRoot(state.hash_tree_root(), state.getSlot());
                   })
               .join();
           break;
