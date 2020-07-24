@@ -67,14 +67,12 @@ class KeystoresValidatorKeyProviderTest {
   void emptyPasswordFileThrowsError(@TempDir final Path tempDir) throws Exception {
     // load keystores from resources
     final Path scryptKeystore = Path.of(Resources.getResource("scryptTestVector.json").toURI());
-    final Path pbkdf2Keystore = Path.of(Resources.getResource("pbkdf2TestVector.json").toURI());
 
     // create password file
     final Path tempPasswordFile = createTempFile(tempDir, "pass", ".txt");
 
     final List<Pair<Path, Path>> keystorePasswordFilePairs =
-        List.of(
-            Pair.of(scryptKeystore, tempPasswordFile), Pair.of(pbkdf2Keystore, tempPasswordFile));
+        List.of(Pair.of(scryptKeystore, tempPasswordFile));
 
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
 
@@ -87,15 +85,13 @@ class KeystoresValidatorKeyProviderTest {
   void invalidPasswordThrowsError(@TempDir final Path tempDir) throws Exception {
     // load keystores from resources
     final Path scryptKeystore = Path.of(Resources.getResource("scryptTestVector.json").toURI());
-    final Path pbkdf2Keystore = Path.of(Resources.getResource("pbkdf2TestVector.json").toURI());
 
     // create password file
     final Path tempPasswordFile = createTempFile(tempDir, "pass", ".txt");
     writeString(tempPasswordFile, "invalidpassword");
 
     final List<Pair<Path, Path>> keystorePasswordFilePairs =
-        List.of(
-            Pair.of(scryptKeystore, tempPasswordFile), Pair.of(pbkdf2Keystore, tempPasswordFile));
+        List.of(Pair.of(scryptKeystore, tempPasswordFile));
 
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
 
@@ -108,14 +104,12 @@ class KeystoresValidatorKeyProviderTest {
   void nonExistentPasswordFileThrowsError(@TempDir final Path tempDir) throws Exception {
     // load keystores from resources
     final Path scryptKeystore = Path.of(Resources.getResource("scryptTestVector.json").toURI());
-    final Path pbkdf2Keystore = Path.of(Resources.getResource("pbkdf2TestVector.json").toURI());
 
     // create password file
     final Path tempPasswordFile = tempDir.resolve("nonexistent.txt");
 
     final List<Pair<Path, Path>> keystorePasswordFilePairs =
-        List.of(
-            Pair.of(scryptKeystore, tempPasswordFile), Pair.of(pbkdf2Keystore, tempPasswordFile));
+        List.of(Pair.of(scryptKeystore, tempPasswordFile));
 
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
 
@@ -128,15 +122,13 @@ class KeystoresValidatorKeyProviderTest {
   void nonExistentKeystoreFileThrowsError(@TempDir final Path tempDir) throws IOException {
     // load keystores from resources
     final Path scryptKeystore = tempDir.resolve("scryptTestVector.json");
-    final Path pbkdf2Keystore = tempDir.resolve("pbkdf2TestVector.json");
 
     // create password file
     final Path tempPasswordFile = createTempFile(tempDir, "pass", ".txt");
     writeString(tempPasswordFile, EXPECTED_PASSWORD);
 
     final List<Pair<Path, Path>> keystorePasswordFilePairs =
-        List.of(
-            Pair.of(scryptKeystore, tempPasswordFile), Pair.of(pbkdf2Keystore, tempPasswordFile));
+        List.of(Pair.of(scryptKeystore, tempPasswordFile));
 
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
 

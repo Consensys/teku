@@ -19,6 +19,7 @@ import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.storage.store.StoreAssertions.assertStoresMatch;
 
 import com.google.common.collect.Streams;
@@ -29,7 +30,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -196,9 +196,12 @@ public abstract class AbstractDatabaseTest {
     add(List.of(blockC));
 
     // Verify all blocks are available
-    assertThat(store.getBlock(blockA.getRoot())).isEqualTo(blockA.getBlock().getMessage());
-    assertThat(store.getBlock(blockB.getRoot())).isEqualTo(blockB.getBlock().getMessage());
-    assertThat(store.getBlock(blockC.getRoot())).isEqualTo(blockC.getBlock().getMessage());
+    assertThat(store.retrieveBlock(blockA.getRoot()))
+        .isCompletedWithValue(Optional.of(blockA.getBlock().getMessage()));
+    assertThat(store.retrieveBlock(blockB.getRoot()))
+        .isCompletedWithValue(Optional.of(blockB.getBlock().getMessage()));
+    assertThat(store.retrieveBlock(blockC.getRoot()))
+        .isCompletedWithValue(Optional.of(blockC.getBlock().getMessage()));
 
     // Finalize subsequent block to prune blocks a, b, and c
     final SignedBlockAndState finalBlock = chainBuilder.generateNextBlock();
@@ -334,15 +337,17 @@ public abstract class AbstractDatabaseTest {
   public void shouldStoreSingleValue_singleBlockAndState() {
     final SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
     // Sanity check
-    assertThat(store.getBlock(newBlock.getRoot())).isNull();
+    assertThatSafeFuture(store.retrieveBlock(newBlock.getRoot())).isCompletedWithEmptyOptional();
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     transaction.putBlockAndState(newBlock);
     commit(transaction);
 
     final UpdatableStore result = recreateStore();
-    assertThat(result.getSignedBlock(newBlock.getRoot())).isEqualTo(newBlock.getBlock());
-    assertThat(result.getBlockState(newBlock.getRoot())).isEqualTo(newBlock.getState());
+    assertThat(result.retrieveSignedBlock(newBlock.getRoot()))
+        .isCompletedWithValue(Optional.of(newBlock.getBlock()));
+    assertThat(result.retrieveBlockState(newBlock.getRoot()))
+        .isCompletedWithValue(Optional.of(newBlock.getState()));
   }
 
   @Test
@@ -359,13 +364,16 @@ public abstract class AbstractDatabaseTest {
     commit(transaction);
 
     final UpdatableStore result = recreateStore();
-    assertThat(result.getSignedBlock(genesisRoot)).isEqualTo(genesisBlockAndState.getBlock());
-    assertThat(result.getSignedBlock(blockAndState1.getRoot()))
-        .isEqualTo(blockAndState1.getBlock());
-    assertThat(result.getSignedBlock(blockAndState2.getRoot()))
-        .isEqualTo(blockAndState2.getBlock());
-    assertThat(result.getBlockState(blockAndState1.getRoot())).isEqualTo(blockAndState1.getState());
-    assertThat(result.getBlockState(blockAndState2.getRoot())).isEqualTo(blockAndState2.getState());
+    assertThat(result.retrieveSignedBlock(genesisRoot))
+        .isCompletedWithValue(Optional.of(genesisBlockAndState.getBlock()));
+    assertThat(result.retrieveSignedBlock(blockAndState1.getRoot()))
+        .isCompletedWithValue(Optional.of(blockAndState1.getBlock()));
+    assertThat(result.retrieveSignedBlock(blockAndState2.getRoot()))
+        .isCompletedWithValue(Optional.of(blockAndState2.getBlock()));
+    assertThat(result.retrieveBlockState(blockAndState1.getRoot()))
+        .isCompletedWithValue(Optional.of(blockAndState1.getState()));
+    assertThat(result.retrieveBlockState(blockAndState2.getRoot()))
+        .isCompletedWithValue(Optional.of(blockAndState2.getState()));
   }
 
   @Test
@@ -394,14 +402,18 @@ public abstract class AbstractDatabaseTest {
     final UpdatableStore result = recreateStore();
     // Historical blocks should not be in the new store
     for (SignedBlockAndState historicalBlock : historicalBlocks) {
-      assertThat(result.getSignedBlock(historicalBlock.getRoot())).isNull();
-      assertThat(result.getBlockState(historicalBlock.getRoot())).isNull();
+      assertThatSafeFuture(result.retrieveSignedBlock(historicalBlock.getRoot()))
+          .isCompletedWithEmptyOptional();
+      assertThatSafeFuture(result.retrieveBlockState(historicalBlock.getRoot()))
+          .isCompletedWithEmptyOptional();
     }
 
     // Hot blocks should be available in the new store
     for (SignedBlockAndState hotBlock : hotBlocks) {
-      assertThat(result.getSignedBlock(hotBlock.getRoot())).isEqualTo(hotBlock.getBlock());
-      assertThat(result.getBlockState(hotBlock.getRoot())).isEqualTo(hotBlock.getState());
+      assertThat(result.retrieveSignedBlock(hotBlock.getRoot()))
+          .isCompletedWithValue(Optional.of(hotBlock.getBlock()));
+      assertThat(result.retrieveBlockState(hotBlock.getRoot()))
+          .isCompletedWithValue(Optional.of(hotBlock.getState()));
     }
 
     final Set<Bytes32> hotBlockRoots =
@@ -712,8 +724,13 @@ public abstract class AbstractDatabaseTest {
 
       final List<BeaconState> hotStates =
           currentStore.getBlockRoots().stream()
-              .map(currentStore::getBlockState)
-              .filter(Objects::nonNull)
+              .map(currentStore::retrieveBlockState)
+              .map(
+                  f -> {
+                    assertThat(f).isCompleted();
+                    return f.join();
+                  })
+              .flatMap(Optional::stream)
               .collect(toList());
 
       assertThat(hotStates)
@@ -730,8 +747,13 @@ public abstract class AbstractDatabaseTest {
 
     final List<BeaconState> hotStates =
         memoryStore.getBlockRoots().stream()
-            .map(memoryStore::getBlockState)
-            .filter(Objects::nonNull)
+            .map(memoryStore::retrieveBlockState)
+            .map(
+                f -> {
+                  assertThat(f).isCompleted();
+                  return f.join();
+                })
+            .flatMap(Optional::stream)
             .collect(toList());
 
     assertThat(hotStates)
@@ -774,8 +796,9 @@ public abstract class AbstractDatabaseTest {
       final Set<Checkpoint> prunedCheckpoints) {
     // Check pruned data has been removed from store
     for (Bytes32 prunedBlock : prunedBlocks) {
-      assertThat(store.getBlock(prunedBlock)).isNull();
-      assertThat(store.getBlockState(prunedBlock)).isNull();
+      assertThat(store.containsBlock(prunedBlock)).isFalse();
+      assertThatSafeFuture(store.retrieveBlock(prunedBlock)).isCompletedWithEmptyOptional();
+      assertThatSafeFuture(store.retrieveBlockState(prunedBlock)).isCompletedWithEmptyOptional();
     }
   }
 

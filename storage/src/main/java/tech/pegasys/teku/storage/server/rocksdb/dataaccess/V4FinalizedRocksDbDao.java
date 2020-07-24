@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
@@ -69,6 +70,22 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
   }
 
   @Override
+  public Optional<UnsignedLong> getSlotForFinalizedStateRoot(final Bytes32 stateRoot) {
+    return db.get(V4SchemaFinalized.SLOTS_BY_FINALIZED_STATE_ROOT, stateRoot);
+  }
+
+  @Override
+  public Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(
+      final Bytes32 stateRoot) {
+    Optional<UnsignedLong> maybeSlot =
+        db.get(V4SchemaFinalized.SLOTS_BY_FINALIZED_STATE_ROOT, stateRoot);
+    return maybeSlot.flatMap(
+        slot ->
+            getFinalizedBlockAtSlot(slot)
+                .map(block -> new SlotAndBlockRoot(slot, block.getRoot())));
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root) {
     return db.get(V4SchemaFinalized.SLOTS_BY_FINALIZED_ROOT, root)
         .flatMap(this::getFinalizedBlockAtSlot);
@@ -108,6 +125,11 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
       } else {
         addFinalizedState(state);
       }
+    }
+
+    @Override
+    public void addFinalizedStateRoot(final Bytes32 stateRoot, final UnsignedLong slot) {
+      transaction.put(V4SchemaFinalized.SLOTS_BY_FINALIZED_STATE_ROOT, stateRoot, slot);
     }
 
     private void addFinalizedState(final BeaconState state) {

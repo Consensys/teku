@@ -377,26 +377,27 @@ class RecentChainDataTest {
   }
 
   @Test
-  public void getBlockAndState_withBlockAndStateAvailable() throws Exception {
+  public void retrieveBlockAndState_withBlockAndStateAvailable() throws Exception {
     final SignedBlockAndState block = advanceChain(storageClient);
-    assertThat(storageClient.getStore().getBlockAndState(block.getRoot())).contains(block);
+    assertThat(storageClient.getStore().retrieveBlockAndState(block.getRoot()))
+        .isCompletedWithValue(Optional.of(block));
   }
 
   @Test
-  public void getBlockAndState_withinTxFromUnderlyingStore() throws Exception {
+  public void retrieveBlockAndState_withinTxFromUnderlyingStore() throws Exception {
     final SignedBlockAndState block = advanceChain(storageClient);
     final StoreTransaction tx = storageClient.startStoreTransaction();
-    assertThat(tx.getBlockAndState(block.getRoot())).contains(block);
+    assertThat(tx.retrieveBlockAndState(block.getRoot())).isCompletedWithValue(Optional.of(block));
   }
 
   @Test
-  public void getBlockAndState_withinTxFromUpdates() throws Exception {
+  public void retrieveBlockAndState_withinTxFromUpdates() throws Exception {
     final SignedBlockAndState block = chainBuilder.generateNextBlock();
 
     final StoreTransaction tx = storageClient.startStoreTransaction();
     tx.putBlockAndState(block);
 
-    assertThat(tx.getBlockAndState(block.getRoot())).contains(block);
+    assertThat(tx.retrieveBlockAndState(block.getRoot())).isCompletedWithValue(Optional.of(block));
   }
 
   @Test
@@ -646,14 +647,15 @@ class RecentChainDataTest {
     assertThat(storageClient.getStore().getBlockRoots())
         .containsExactlyInAnyOrderElementsOf(blockRoots);
     for (SignedBlockAndState expectedBlock : expectedBlocks) {
-      assertThat(storageClient.getSignedBlockByRoot(expectedBlock.getRoot()))
-          .contains(expectedBlock.getBlock());
+      assertThat(storageClient.retrieveSignedBlockByRoot(expectedBlock.getRoot()))
+          .isCompletedWithValue(Optional.of(expectedBlock.getBlock()));
       assertThat(storageClient.retrieveBlockState(expectedBlock.getRoot()))
           .isCompletedWithValue(Optional.of(expectedBlock.getState()));
     }
     // Check pruned blocks
     for (Bytes32 prunedBlock : prunedBlocks) {
-      assertThat(storageClient.getSignedBlockByRoot(prunedBlock)).isEmpty();
+      assertThatSafeFuture(storageClient.retrieveSignedBlockByRoot(prunedBlock))
+          .isCompletedWithEmptyOptional();
       assertThat(storageClient.retrieveBlockState(prunedBlock))
           .isCompletedWithValue(Optional.empty());
     }

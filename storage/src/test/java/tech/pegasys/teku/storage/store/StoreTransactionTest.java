@@ -34,6 +34,49 @@ import tech.pegasys.teku.util.config.Constants;
 public class StoreTransactionTest extends AbstractStoreTest {
 
   @Test
+  public void getLatestFinalizedBlockAndState_fromUnderlyingStore() {
+    final Store store = createGenesisStore();
+    final SignedBlockAndState expected = store.getLatestFinalizedBlockAndState();
+
+    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    assertThat(tx.getLatestFinalizedBlockAndState()).isEqualTo(expected);
+  }
+
+  @Test
+  public void getLatestFinalizedBlockAndState_withNewFinalizedCheckpoint_blockInUnderlyingStore() {
+    final Store store = createGenesisStore();
+
+    // Create some blocks that we can finalize
+    final UnsignedLong epoch = UnsignedLong.ONE;
+    final SignedBlockAndState finalizedBlock =
+        chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(epoch));
+    final Checkpoint finalizedCheckpoint = new Checkpoint(epoch, finalizedBlock.getRoot());
+
+    // Save the finalized block
+    addBlock(store, finalizedBlock);
+
+    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    assertThat(tx.getLatestFinalizedBlockAndState()).isEqualTo(finalizedBlock);
+  }
+
+  @Test
+  public void getLatestFinalizedBlockAndState_withNewFinalizedCheckpoint_blockAddedToTx() {
+    final Store store = createGenesisStore();
+
+    // Create some blocks that we can finalize
+    final UnsignedLong epoch = UnsignedLong.ONE;
+    final SignedBlockAndState finalizedBlock =
+        chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(epoch));
+    final Checkpoint finalizedCheckpoint = new Checkpoint(epoch, finalizedBlock.getRoot());
+
+    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    tx.putBlockAndState(finalizedBlock);
+    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    assertThat(tx.getLatestFinalizedBlockAndState()).isEqualTo(finalizedBlock);
+  }
+
+  @Test
   public void retrieveSignedBlock_fromUnderlyingStore_withLimitedCache() throws Exception {
     processChainWithLimitedCache(
         (store, blockAndState) -> {
