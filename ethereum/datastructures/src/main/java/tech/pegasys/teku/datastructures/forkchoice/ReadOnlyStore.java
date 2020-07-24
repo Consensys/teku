@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -48,8 +47,6 @@ public interface ReadOnlyStore {
   SignedBlockAndState getLatestFinalizedBlockAndState();
 
   Checkpoint getBestJustifiedCheckpoint();
-
-  BeaconBlock getBlock(Bytes32 blockRoot);
 
   SignedBeaconBlock getSignedBlock(Bytes32 blockRoot);
 

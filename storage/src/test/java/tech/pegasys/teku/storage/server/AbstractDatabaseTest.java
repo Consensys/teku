@@ -196,9 +196,12 @@ public abstract class AbstractDatabaseTest {
     add(List.of(blockC));
 
     // Verify all blocks are available
-    assertThat(store.getBlock(blockA.getRoot())).isEqualTo(blockA.getBlock().getMessage());
-    assertThat(store.getBlock(blockB.getRoot())).isEqualTo(blockB.getBlock().getMessage());
-    assertThat(store.getBlock(blockC.getRoot())).isEqualTo(blockC.getBlock().getMessage());
+    assertThat(store.retrieveBlock(blockA.getRoot()))
+        .isCompletedWithValue(Optional.of(blockA.getBlock().getMessage()));
+    assertThat(store.retrieveBlock(blockB.getRoot()))
+        .isCompletedWithValue(Optional.of(blockB.getBlock().getMessage()));
+    assertThat(store.retrieveBlock(blockC.getRoot()))
+        .isCompletedWithValue(Optional.of(blockC.getBlock().getMessage()));
 
     // Finalize subsequent block to prune blocks a, b, and c
     final SignedBlockAndState finalBlock = chainBuilder.generateNextBlock();
@@ -334,7 +337,7 @@ public abstract class AbstractDatabaseTest {
   public void shouldStoreSingleValue_singleBlockAndState() {
     final SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
     // Sanity check
-    assertThat(store.getBlock(newBlock.getRoot())).isNull();
+    assertThatSafeFuture(store.retrieveBlock(newBlock.getRoot())).isCompletedWithEmptyOptional();
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     transaction.putBlockAndState(newBlock);
@@ -789,7 +792,7 @@ public abstract class AbstractDatabaseTest {
       final Set<Checkpoint> prunedCheckpoints) {
     // Check pruned data has been removed from store
     for (Bytes32 prunedBlock : prunedBlocks) {
-      assertThat(store.getBlock(prunedBlock)).isNull();
+      assertThatSafeFuture(store.retrieveBlock(prunedBlock)).isCompletedWithEmptyOptional();
       assertThatSafeFuture(store.retrieveBlockState(prunedBlock)).isCompletedWithEmptyOptional();
     }
   }

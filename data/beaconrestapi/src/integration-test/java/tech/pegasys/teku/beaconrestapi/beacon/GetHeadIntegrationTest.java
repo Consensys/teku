@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetHead;
+import tech.pegasys.teku.storage.store.EmptyStoreResults;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class GetHeadIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
@@ -49,7 +50,8 @@ public class GetHeadIntegrationTest extends AbstractBeaconRestAPIIntegrationTest
   public void shouldReturnNoContentIfBestBlockIsMissing() throws Exception {
     final Bytes32 headRoot = dataStructureUtil.randomBytes32();
     when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(headRoot));
-    when(recentChainData.getBlockByRoot(headRoot)).thenReturn(Optional.empty());
+    when(recentChainData.retrieveBlockByRoot(headRoot))
+        .thenReturn(EmptyStoreResults.EMPTY_BLOCK_FUTURE);
 
     final Response response = get();
     assertNoContent(response);
