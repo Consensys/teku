@@ -26,7 +26,6 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 class TestStoreImpl implements MutablePrunableStore {
@@ -80,12 +79,6 @@ class TestStoreImpl implements MutablePrunableStore {
   @Override
   public Checkpoint getFinalizedCheckpoint() {
     return finalized_checkpoint;
-  }
-
-  @Override
-  public CheckpointAndBlock getFinalizedCheckpointAndBlock() {
-    final SignedBeaconBlock block = getSignedBlock(finalized_checkpoint.getRoot());
-    return new CheckpointAndBlock(finalized_checkpoint, block);
   }
 
   @Override

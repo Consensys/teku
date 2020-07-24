@@ -21,7 +21,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
 
 public interface ReadOnlyStore {
 
@@ -32,8 +31,6 @@ public interface ReadOnlyStore {
   Checkpoint getJustifiedCheckpoint();
 
   Checkpoint getFinalizedCheckpoint();
-
-  CheckpointAndBlock getFinalizedCheckpointAndBlock();
 
   /**
    * Return the slot of the latest finalized block. This slot may be at or prior to the epoch

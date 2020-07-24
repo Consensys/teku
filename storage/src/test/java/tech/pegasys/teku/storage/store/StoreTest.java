@@ -18,7 +18,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.lookup.BlockProvider;
@@ -263,5 +265,13 @@ class StoreTest extends AbstractStoreTest {
     // Check time
     assertThat(store.getTime()).isEqualTo(initialTime.plus(UnsignedLong.ONE));
     assertThat(store.getGenesisTime()).isEqualTo(genesisTime.plus(UnsignedLong.ONE));
+
+    // Check store was pruned as expected
+    final List<Bytes32> expectedBlockRoots =
+        chainBuilder
+            .streamBlocksAndStates(checkpoint1.getEpochStartSlot())
+            .map(SignedBlockAndState::getRoot)
+            .collect(Collectors.toList());
+    assertThat(store.getOrderedBlockRoots()).containsExactlyElementsOf(expectedBlockRoots);
   }
 }

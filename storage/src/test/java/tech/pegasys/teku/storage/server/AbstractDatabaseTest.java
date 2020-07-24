@@ -796,6 +796,7 @@ public abstract class AbstractDatabaseTest {
       final Set<Checkpoint> prunedCheckpoints) {
     // Check pruned data has been removed from store
     for (Bytes32 prunedBlock : prunedBlocks) {
+      assertThat(store.containsBlock(prunedBlock)).isFalse();
       assertThatSafeFuture(store.retrieveBlock(prunedBlock)).isCompletedWithEmptyOptional();
       assertThatSafeFuture(store.retrieveBlockState(prunedBlock)).isCompletedWithEmptyOptional();
     }

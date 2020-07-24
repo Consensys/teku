@@ -52,7 +52,6 @@ import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.CheckpointAndBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -255,18 +254,6 @@ class Store implements UpdatableStore {
     readLock.lock();
     try {
       return finalized_checkpoint;
-    } finally {
-      readLock.unlock();
-    }
-  }
-
-  @Override
-  public CheckpointAndBlock getFinalizedCheckpointAndBlock() {
-    readLock.lock();
-    try {
-      final Checkpoint checkpoint = finalized_checkpoint;
-      final SignedBeaconBlock block = finalizedBlockAndState.getBlock();
-      return new CheckpointAndBlock(checkpoint, block);
     } finally {
       readLock.unlock();
     }
@@ -730,19 +717,6 @@ class Store implements UpdatableStore {
     @Override
     public Checkpoint getFinalizedCheckpoint() {
       return finalized_checkpoint.orElseGet(Store.this::getFinalizedCheckpoint);
-    }
-
-    @Override
-    public CheckpointAndBlock getFinalizedCheckpointAndBlock() {
-      if (finalized_checkpoint.isPresent()) {
-        // Ideally we wouldn't join here - but seems not worth making this API async since we're
-        // unlikely to call this on tx objects
-        final SignedBeaconBlock finalizedBlock =
-            retrieveSignedBlock(finalized_checkpoint.get().getRoot()).join().orElseThrow();
-        return new CheckpointAndBlock(finalized_checkpoint.get(), finalizedBlock);
-      }
-
-      return Store.this.getFinalizedCheckpointAndBlock();
     }
 
     @Override
