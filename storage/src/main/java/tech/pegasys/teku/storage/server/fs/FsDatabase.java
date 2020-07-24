@@ -63,7 +63,7 @@ public class FsDatabase implements Database {
       transaction.storeFinalizedCheckpoint(genesisCheckpoint);
 
       transaction.storeBlock(genesisBlock, true);
-      transaction.storeState(genesisState);
+      transaction.storeState(genesisBlock.getRoot(), genesisState);
       transaction.commit();
     }
   }
@@ -85,13 +85,15 @@ public class FsDatabase implements Database {
           .getDeletedHotBlocks()
           .forEach(
               blockRoot -> {
-                transaction.deleteBlock(blockRoot);
+                if (!update.getFinalizedStates().containsKey(blockRoot)) {
+                  transaction.deleteBlock(blockRoot);
+                }
                 // Effectively always in prune mode
                 transaction.deleteStateByBlockRoot(blockRoot);
               });
       transaction.storeVotes(update.getVotes());
       update.getStateRoots().forEach(transaction::storeStateRoot);
-      update.getLatestFinalizedState().ifPresent(transaction::storeState);
+      update.getFinalizedStates().forEach(transaction::storeState);
 
       // TODO: Periodically store finalized states
       transaction.commit();
@@ -117,6 +119,7 @@ public class FsDatabase implements Database {
         finalizedBlock.getMessage().getState_root().equals(finalizedState.hash_tree_root()),
         "Latest finalized state does not match latest finalized block");
     final Map<Bytes32, Bytes32> childToParentLookup = storage.getHotBlockChildToParentLookup();
+    childToParentLookup.put(finalizedBlock.getRoot(), finalizedBlock.getParent_root());
 
     final Map<UnsignedLong, VoteTracker> votes = storage.loadVotes();
 

@@ -191,12 +191,8 @@ public class FsStorage implements AutoCloseable {
       delete(blockPath(blockRoot));
     }
 
-    public void storeState(final BeaconState state) {
-      indexTransaction.addState(
-          state.hash_tree_root(),
-          state.getSlot(),
-          state.getLatest_block_header().hash_tree_root(),
-          true);
+    public void storeState(final Bytes32 blockRoot, final BeaconState state) {
+      indexTransaction.addState(state.hash_tree_root(), state.getSlot(), blockRoot, true);
       write(statePath(state), state);
     }
 

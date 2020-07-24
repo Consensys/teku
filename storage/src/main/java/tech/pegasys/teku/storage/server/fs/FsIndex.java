@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes32;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
@@ -145,11 +145,8 @@ public class FsIndex implements AutoCloseable {
       final String sql, final RowMapper<T> mapper, final Object... params) {
     try {
       return Optional.ofNullable(jdbc.queryForObject(sql, mapper, params));
-    } catch (final IncorrectResultSizeDataAccessException e) {
-      if (e.getActualSize() == 0) {
-        return Optional.empty();
-      }
-      throw e;
+    } catch (final EmptyResultDataAccessException e) {
+      return Optional.empty();
     }
   }
 
@@ -196,7 +193,7 @@ public class FsIndex implements AutoCloseable {
 
     public boolean finalizeBlock(final SignedBeaconBlock block) {
       return execSql(
-              "UPDATE block SET finalzied = true WHERE blockRoot = ?",
+              "UPDATE block SET finalized = true WHERE blockRoot = ?",
               (Object) block.getRoot().toArrayUnsafe())
           > 0;
     }
@@ -222,7 +219,8 @@ public class FsIndex implements AutoCloseable {
     public Optional<Bytes32> deleteStateByBlockRoot(final Bytes32 blockRoot) {
       final Optional<Bytes32> maybeStateRoot = getStateRootByBlockRoot(blockRoot);
       maybeStateRoot.ifPresent(
-          stateRoot -> execSql("DELETE FROM state WHERE stateRoot = ?", maybeStateRoot));
+          stateRoot ->
+              execSql("DELETE FROM state WHERE stateRoot = ?", (Object) stateRoot.toArrayUnsafe()));
       return maybeStateRoot;
     }
 
