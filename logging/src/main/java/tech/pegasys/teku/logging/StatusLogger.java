@@ -79,9 +79,7 @@ public class StatusLogger {
   }
 
   public void loadingValidators(final int validatorCount) {
-    if (validatorCount > 100) {
-      log.info("Loading {} validator keys...", validatorCount);
-    }
+    log.info("Loading {} validator keys...", validatorCount);
   }
 
   public void validatorsInitialised(final List<String> validators) {
