@@ -100,7 +100,6 @@ public class FsDatabase implements Database {
       update.getBestJustifiedCheckpoint().ifPresent(transaction::storeBestJustifiedCheckpoint);
 
       update.getHotBlocks().values().forEach(block -> transaction.storeBlock(block, false));
-      update.getFinalizedBlocks().forEach((root, block) -> transaction.finalizeBlock(block));
       update
           .getDeletedHotBlocks()
           .forEach(
