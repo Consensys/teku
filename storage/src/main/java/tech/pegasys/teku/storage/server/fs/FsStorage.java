@@ -13,23 +13,29 @@
 
 package tech.pegasys.teku.storage.server.fs;
 
+import com.google.common.io.ByteStreams;
 import com.google.common.primitives.UnsignedLong;
-import java.io.File;
-import java.io.FileNotFoundException;
+import com.zaxxer.hikari.HikariDataSource;
 import java.io.IOException;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
+import java.sql.Blob;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -37,219 +43,276 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
 public class FsStorage implements AutoCloseable {
-  private static final Logger LOG = LogManager.getLogger();
 
-  private final Path baseDir;
-  private final FsIndex index;
+  private static final RowMapper<SignedBeaconBlock> BLOCK_ROW_MAPPER =
+      (rs, rowNum) -> getSsz(rs, SignedBeaconBlock.class);
+  private static final RowMapper<BeaconState> STATE_ROW_MAPPER =
+      (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class);
+  private final PlatformTransactionManager transactionManager;
+  private final HikariDataSource dataSource;
+  private final JdbcOperations jdbc;
 
-  public FsStorage(final Path baseDir, final FsIndex index) {
-    this.baseDir = baseDir;
-    this.index = index;
+  public FsStorage(
+      PlatformTransactionManager transactionManager, final HikariDataSource dataSource) {
+    this.transactionManager = transactionManager;
+    this.dataSource = dataSource;
+    this.jdbc = new JdbcTemplate(dataSource);
   }
 
   public Transaction startTransaction() {
-    return new Transaction(index.startTransaction());
-  }
-
-  public Optional<Checkpoint> getFinalizedCheckpoint() {
-    return index.getCheckpoint(CheckpointType.FINALIZED);
+    return new Transaction(transactionManager.getTransaction(TransactionDefinition.withDefaults()));
   }
 
   public Optional<Checkpoint> getJustifiedCheckpoint() {
-    return index.getCheckpoint(CheckpointType.JUSTIFIED);
+    return getCheckpoint(CheckpointType.JUSTIFIED);
   }
 
   public Optional<Checkpoint> getBestJustifiedCheckpoint() {
-    return index.getCheckpoint(CheckpointType.BEST_JUSTIFIED);
+    return getCheckpoint(CheckpointType.BEST_JUSTIFIED);
+  }
+
+  public Optional<Checkpoint> getFinalizedCheckpoint() {
+    return getCheckpoint(CheckpointType.FINALIZED);
+  }
+
+  private Optional<Checkpoint> getCheckpoint(final CheckpointType type) {
+    return loadSingle(
+        "SELECT * FROM checkpoint WHERE type = ?",
+        (rs, rowNum) -> new Checkpoint(getUnsignedLong(rs, "epoch"), getBytes32(rs, "blockRoot")),
+        type.name());
+  }
+
+  public Optional<BeaconState> getStateByStateRoot(final Bytes32 stateRoot) {
+    return loadSingle(
+        "SELECT ssz FROM state WHERE stateRoot = ?",
+        STATE_ROW_MAPPER,
+        (Object) stateRoot.toArrayUnsafe());
+  }
+
+  public Optional<BeaconState> getStateByBlockRoot(final Bytes32 blockRoot) {
+    return loadSingle(
+        "SELECT ssz FROM state WHERE blockRoot = ? ORDER BY slot LIMIT 1",
+        STATE_ROW_MAPPER,
+        (Object) blockRoot.toArrayUnsafe());
+  }
+
+  public Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot) {
+    return loadSingle(
+        "SELECT blockRoot, slot FROM state WHERE stateRoot = ?",
+        (rs, rowNum) ->
+            new SlotAndBlockRoot(getUnsignedLong(rs, "slot"), getBytes32(rs, "blockRoot")),
+        (Object) stateRoot.toArrayUnsafe());
+  }
+
+  public Optional<BeaconState> getLatestAvailableFinalizedState(final UnsignedLong maxSlot) {
+    return loadSingle(
+        "SELECT ssz FROM state WHERE slot <= ? AND ssz IS NOT NULL ORDER BY slot DESC LIMIT 1",
+        STATE_ROW_MAPPER,
+        maxSlot.bigIntegerValue());
   }
 
   public Optional<SignedBeaconBlock> getBlockByBlockRoot(final Bytes32 blockRoot) {
-    return load(blockPath(blockRoot), SignedBeaconBlock.class);
+    return loadSingle(
+        "SELECT ssz FROM block WHERE blockRoot = ?",
+        BLOCK_ROW_MAPPER,
+        (Object) blockRoot.toArrayUnsafe());
+  }
+
+  private static <T> T getSsz(final ResultSet rs, final Class<? extends T> type)
+      throws SQLException {
+    final Blob blob = rs.getBlob("ssz");
+    if (blob == null) {
+      return null;
+    }
+    try {
+      final Bytes data = Bytes.wrap(ByteStreams.toByteArray(blob.getBinaryStream()));
+      return SimpleOffsetSerializer.deserialize(data, type);
+    } catch (IOException e) {
+      throw new SQLException("Failed to read BLOB content", e);
+    } finally {
+      blob.free();
+    }
   }
 
   public Optional<SignedBeaconBlock> getFinalizedBlockBySlot(final UnsignedLong slot) {
-    return index.getFinalizedBlockRootBySlot(slot).flatMap(this::getBlockByBlockRoot);
+    return loadSingle(
+        "SELECT blockRoot FROM block WHERE slot = ? AND finalized = true",
+        BLOCK_ROW_MAPPER,
+        slot.bigIntegerValue());
   }
 
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UnsignedLong slot) {
-    return index.getLatestFinalizedBlockRootAtSlot(slot).flatMap(this::getBlockByBlockRoot);
+    return loadSingle(
+        "SELECT ssz FROM block WHERE slot <= ? AND finalized = true ORDER BY slot DESC LIMIT 1",
+        BLOCK_ROW_MAPPER,
+        slot.bigIntegerValue());
   }
 
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UnsignedLong startSlot, final UnsignedLong endSlot) {
-    return index.getFinalizedBlockRoots(startSlot, endSlot).stream()
-        .flatMap(blockRoot -> getBlockByBlockRoot(blockRoot).stream());
-  }
-
-  public Optional<BeaconState> getStateByBlockRoot(final Bytes32 blockRoot) {
-    return index.getStateRootByBlockRoot(blockRoot).flatMap(this::getStateByStateRoot);
-  }
-
-  public Optional<BeaconState> getStateByStateRoot(final Bytes32 stateRoot) {
-    return this.load(statePath(stateRoot), BeaconStateImpl.class);
-  }
-
-  public Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot) {
-    return index.getSlotAndBlockRootFromStateRoot(stateRoot);
-  }
-
-  public Optional<BeaconState> getLatestAvailableFinalizedState(final UnsignedLong maxSlot) {
-    return index
-        .getLatestAvailableStateRoot(maxSlot)
-        .map(
-            stateRoot ->
-                getStateByStateRoot(stateRoot)
-                    .orElseThrow(
-                        () ->
-                            new DatabaseStorageException(
-                                "Expected state with root "
-                                    + stateRoot
-                                    + " to be available but was not found")));
+    final List<Bytes32> blockRoots =
+        jdbc.query(
+            "SELECT blockRoot FROM block WHERE finalized = true AND slot >= ? AND slot <= endSlot ORDER BY slot",
+            (rs, rowNum) -> getBytes32(rs, "blockRoot"),
+            startSlot.bigIntegerValue(),
+            endSlot.bigIntegerValue());
+    return blockRoots.stream().map(blockRoot -> getBlockByBlockRoot(blockRoot).orElseThrow());
   }
 
   public Map<Bytes32, Bytes32> getHotBlockChildToParentLookup() {
-    return index.getHotBlockChildToParentLookup();
+    final Map<Bytes32, Bytes32> childToParentLookup = new HashMap<>();
+    loadForEach(
+        "SELECT blockRoot, parentRoot FROM block WHERE finalized = false",
+        rs -> childToParentLookup.put(getBytes32(rs, "blockRoot"), getBytes32(rs, "parentRoot")));
+    return childToParentLookup;
   }
 
   public Map<UnsignedLong, VoteTracker> loadVotes() {
-    return index.loadVotes();
-  }
-
-  public void prune() {}
-
-  private <T> Optional<T> load(final Path path, final Class<? extends T> type) {
-    try {
-      return Optional.of(
-          SimpleOffsetSerializer.deserialize(Bytes.wrap(Files.readAllBytes(path)), type));
-    } catch (final FileNotFoundException e) {
-      return Optional.empty();
-    } catch (IOException e) {
-      throw new DatabaseStorageException(
-          "Failed to load " + type.getSimpleName() + " from " + path, e);
-    }
-  }
-
-  private Path blockPath(final SignedBeaconBlock block) {
-    return blockPath(block.getRoot());
-  }
-
-  private Path blockPath(final Bytes32 blockRoot) {
-    return baseDir.resolve("blocks").resolve(blockRoot.toUnprefixedHexString());
-  }
-
-  private Path statePath(final BeaconState state) {
-    return statePath(state.hash_tree_root());
-  }
-
-  private Path statePath(final Bytes32 stateRoot) {
-    return baseDir.resolve("states").resolve(stateRoot.toUnprefixedHexString());
+    final Map<UnsignedLong, VoteTracker> votes = new HashMap<>();
+    loadForEach(
+        "SELECT validatorIndex, currentRoot, nextRoot, nextEpoch from vote",
+        rs ->
+            votes.put(
+                getUnsignedLong(rs, "validatorIndex"),
+                new VoteTracker(
+                    getBytes32(rs, "currentRoot"),
+                    getBytes32(rs, "nextRoot"),
+                    getUnsignedLong(rs, "nextEpoch"))));
+    return votes;
   }
 
   @Override
   public void close() {
-    index.close();
+    dataSource.close();
+  }
+
+  private <T> Optional<T> loadSingle(
+      final String sql, final RowMapper<T> mapper, final Object... params) {
+    try {
+      return Optional.ofNullable(jdbc.queryForObject(sql, mapper, params));
+    } catch (final EmptyResultDataAccessException e) {
+      return Optional.empty();
+    }
+  }
+
+  private void loadForEach(
+      final String sql, final RowCallbackHandler rowHandler, final Object... params) {
+    jdbc.query(sql, rowHandler, params);
+  }
+
+  private UnsignedLong getUnsignedLong(final ResultSet rs, final String field) throws SQLException {
+    return UnsignedLong.valueOf(rs.getBigDecimal(field).toBigIntegerExact());
+  }
+
+  private Bytes32 getBytes32(final ResultSet rs, final String field) throws SQLException {
+    return Bytes32.wrap(rs.getBytes(field));
   }
 
   public class Transaction implements AutoCloseable {
-    private final List<Path> toDelete = new ArrayList<>();
-    private final FsIndex.Transaction indexTransaction;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
-    public Transaction(final FsIndex.Transaction indexTransaction) {
-      this.indexTransaction = indexTransaction;
+    private final TransactionStatus transaction;
+
+    public Transaction(final TransactionStatus transaction) {
+      this.transaction = transaction;
     }
 
     public void storeJustifiedCheckpoint(final Checkpoint checkpoint) {
-      indexTransaction.setCheckpoint(CheckpointType.JUSTIFIED, checkpoint);
+      setCheckpoint(CheckpointType.JUSTIFIED, checkpoint);
     }
 
     public void storeBestJustifiedCheckpoint(final Checkpoint checkpoint) {
-      indexTransaction.setCheckpoint(CheckpointType.BEST_JUSTIFIED, checkpoint);
+      setCheckpoint(CheckpointType.BEST_JUSTIFIED, checkpoint);
     }
 
     public void storeFinalizedCheckpoint(final Checkpoint checkpoint) {
-      indexTransaction.setCheckpoint(CheckpointType.FINALIZED, checkpoint);
+      setCheckpoint(CheckpointType.FINALIZED, checkpoint);
+    }
+
+    private void setCheckpoint(final CheckpointType type, final Checkpoint checkpoint) {
+      execSql(
+          "INSERT INTO checkpoint (type, blockRoot, epoch) VALUES (?, ?, ?)"
+              + " ON DUPLICATE KEY UPDATE blockRoot = VALUES(blockRoot), epoch = VALUES(epoch)",
+          type.name(),
+          checkpoint.getRoot().toArrayUnsafe(),
+          checkpoint.getEpoch().bigIntegerValue());
     }
 
     public void storeBlock(final SignedBeaconBlock block, final boolean finalized) {
-      indexTransaction.addBlock(block, finalized);
-      write(blockPath(block), block);
+      execSql(
+          "INSERT INTO block (blockRoot, slot, parentRoot, finalized, ssz) VALUES (?, ?, ?, ?, ?) "
+              + " ON DUPLICATE KEY UPDATE finalized = VALUES(finalized)",
+          block.getRoot().toArrayUnsafe(),
+          block.getSlot().bigIntegerValue(),
+          block.getParent_root().toArrayUnsafe(),
+          finalized,
+          SimpleOffsetSerializer.serialize(block).toArrayUnsafe());
     }
 
     public void finalizeBlock(final SignedBeaconBlock block) {
-      final boolean existingBlock = indexTransaction.finalizeBlock(block);
-      if (!existingBlock) {
-        storeBlock(block, true);
-      }
+      execSql(
+          "UPDATE block SET finalized = true WHERE blockRoot = ?",
+          (Object) block.getRoot().toArrayUnsafe());
     }
 
     public void deleteBlock(final Bytes32 blockRoot) {
-      indexTransaction.deleteBlock(blockRoot);
-      delete(blockPath(blockRoot));
-    }
-
-    public void storeState(final Bytes32 blockRoot, final BeaconState state) {
-      indexTransaction.addState(state.hash_tree_root(), state.getSlot(), blockRoot, true);
-      write(statePath(state), state);
+      execSql("DELETE FROM block WHERE blockRoot = ?", (Object) blockRoot.toArrayUnsafe());
     }
 
     public void storeStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
-      indexTransaction.addState(
-          stateRoot, slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), false);
+      execSql(
+          "INSERT INTO state (stateRoot, blockRoot, slot) VALUES (?, ?, ?)",
+          stateRoot.toArrayUnsafe(),
+          slotAndBlockRoot.getBlockRoot().toArrayUnsafe(),
+          slotAndBlockRoot.getSlot().bigIntegerValue());
+    }
+
+    public void storeState(final Bytes32 blockRoot, final BeaconState state) {
+      execSql(
+          "INSERT INTO state (stateRoot, blockRoot, slot, ssz) VALUES (?, ?, ?, ?)"
+              + " ON DUPLICATE KEY UPDATE ssz = VALUES(ssz)",
+          state.hash_tree_root().toArrayUnsafe(),
+          blockRoot.toArrayUnsafe(),
+          state.getSlot().bigIntegerValue(),
+          SimpleOffsetSerializer.serialize(state).toArrayUnsafe());
     }
 
     public void deleteStateByBlockRoot(final Bytes32 blockRoot) {
-      final Optional<Bytes32> deletedStateRoot = indexTransaction.deleteStateByBlockRoot(blockRoot);
-      deletedStateRoot.ifPresent(stateRoot -> delete(statePath(stateRoot)));
+      execSql("DELETE FROM state WHERE blockRoot = ?", (Object) blockRoot.toArrayUnsafe());
     }
 
     public void storeVotes(final Map<UnsignedLong, VoteTracker> votes) {
-      indexTransaction.storeVotes(votes);
+      votes.forEach(
+          (validatorIndex, voteTracker) ->
+              execSql(
+                  "INSERT INTO vote (validatorIndex, currentRoot, nextRoot, nextEpoch) VALUES (?, ?, ?, ?)"
+                      + " ON DUPLICATE KEY UPDATE currentRoot = VALUES(currentRoot),"
+                      + "                     nextRoot = VALUES(nextRoot),"
+                      + "                     nextEpoch = VALUES(nextEpoch)",
+                  validatorIndex.bigIntegerValue(),
+                  voteTracker.getCurrentRoot().toArrayUnsafe(),
+                  voteTracker.getNextRoot().toArrayUnsafe(),
+                  voteTracker.getNextEpoch().bigIntegerValue()));
+    }
+
+    // Returns number of affected rows.
+    private int execSql(final String sql, final Object... params) {
+      return jdbc.update(sql, params);
+    }
+
+    public void commit() {
+      if (closed.compareAndSet(false, true)) {
+        transactionManager.commit(transaction);
+      }
     }
 
     @Override
     public void close() {
-      indexTransaction.close();
-    }
-
-    private void write(final Path path, final SimpleOffsetSerializable data) {
-      if (path.toFile().exists()) {
-        return;
+      if (closed.compareAndSet(false, true)) {
+        transactionManager.rollback(transaction);
       }
-      final File targetDirectory = path.getParent().toFile();
-      if (!targetDirectory.mkdirs() && !targetDirectory.isDirectory()) {
-        throw new DatabaseStorageException("Failed to create directory " + targetDirectory);
-      }
-      try {
-        Files.write(
-            path,
-            SimpleOffsetSerializer.serialize(data).toArrayUnsafe(),
-            StandardOpenOption.CREATE_NEW);
-      } catch (final FileAlreadyExistsException e) {
-        // File already written, ignore
-      } catch (final IOException e) {
-        throw new DatabaseStorageException("Failed to store data to path " + path, e);
-      }
-    }
-
-    private void delete(final Path path) {
-      // Files are only actually deleted after the commit is successful
-      toDelete.add(path);
-    }
-
-    public void commit() {
-      indexTransaction.commit();
-      toDelete.forEach(
-          path -> {
-            final File file = path.toFile();
-            if (!file.delete() && file.exists()) {
-              LOG.warn("Unable to delete block data " + path);
-            }
-          });
-      close();
     }
   }
 }

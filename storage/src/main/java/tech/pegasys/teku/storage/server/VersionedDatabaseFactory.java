@@ -119,7 +119,9 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
             archiveDirectory.getAbsolutePath());
         break;
       case FS1:
-        database = FsDatabaseFactory.create(dbDirectory.toPath(), metricsSystem);
+        database =
+            FsDatabaseFactory.create(
+                dbDirectory.toPath(), stateStorageMode, stateStorageFrequency, metricsSystem);
         LOG.trace(
             "Created FileSystem database ({}) at {}",
             dbVersion.getValue(),

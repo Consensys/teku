@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.fs;
 
+import com.google.common.primitives.UnsignedLong;
 import com.zaxxer.hikari.HikariDataSource;
 import java.nio.file.Path;
 import org.flywaydb.core.Flyway;
@@ -20,10 +21,15 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class FsDatabaseFactory {
 
-  public static Database create(final Path dbDir, final MetricsSystem metricsSystem) {
+  public static Database create(
+      final Path dbDir,
+      final StateStorageMode stateStorageMode,
+      final long stateStorageFrequency,
+      final MetricsSystem metricsSystem) {
     final HikariDataSource dataSource = new HikariDataSource();
     dataSource.setJdbcUrl(
         "jdbc:h2:file:" + dbDir.resolve("index").toAbsolutePath() + ";mode=MySQL");
@@ -35,10 +41,11 @@ public class FsDatabaseFactory {
 
     final PlatformTransactionManager transactionManager =
         new DataSourceTransactionManager(dataSource);
-    final FsIndex index = new FsIndex(transactionManager, dataSource);
 
-    final FsDatabase database =
-        new FsDatabase(metricsSystem, new FsStorage(dbDir.resolve("artifacts"), index));
-    return database;
+    return new FsDatabase(
+        metricsSystem,
+        new FsStorage(transactionManager, dataSource),
+        stateStorageMode,
+        UnsignedLong.valueOf(stateStorageFrequency));
   }
 }

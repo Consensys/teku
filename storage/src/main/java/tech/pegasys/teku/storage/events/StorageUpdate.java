@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -106,6 +107,10 @@ public class StorageUpdate {
 
   public Optional<BeaconState> getLatestFinalizedState() {
     return finalizedChainData.map(FinalizedChainData::getLatestFinalizedState);
+  }
+
+  public Optional<SignedBlockAndState> getLatestFinalizedBlockAndState() {
+    return finalizedChainData.map(FinalizedChainData::getLatestFinalizedBlockAndState);
   }
 
   public Map<UnsignedLong, VoteTracker> getVotes() {

@@ -23,17 +23,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.stategenerator.StateGenerator;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
@@ -41,14 +46,23 @@ import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.store.StoreBuilder;
+import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class FsDatabase implements Database {
   private final MetricsSystem metricsSystem;
   private final FsStorage storage;
+  private final StateStorageMode stateStorageMode;
+  private final UnsignedLong stateStorageFrequency;
 
-  public FsDatabase(final MetricsSystem metricsSystem, final FsStorage storage) {
+  public FsDatabase(
+      final MetricsSystem metricsSystem,
+      final FsStorage storage,
+      final StateStorageMode stateStorageMode,
+      final UnsignedLong stateStorageFrequency) {
     this.metricsSystem = metricsSystem;
     this.storage = storage;
+    this.stateStorageMode = stateStorageMode;
+    this.stateStorageFrequency = stateStorageFrequency;
   }
 
   @Override
@@ -75,6 +89,12 @@ public class FsDatabase implements Database {
     }
 
     try (final FsStorage.Transaction transaction = storage.startTransaction()) {
+      updateFinalizedData(
+          update.getFinalizedChildToParentMap(),
+          update.getFinalizedBlocks(),
+          update.getFinalizedStates(),
+          transaction);
+
       update.getFinalizedCheckpoint().ifPresent(transaction::storeFinalizedCheckpoint);
       update.getJustifiedCheckpoint().ifPresent(transaction::storeJustifiedCheckpoint);
       update.getBestJustifiedCheckpoint().ifPresent(transaction::storeBestJustifiedCheckpoint);
@@ -85,20 +105,92 @@ public class FsDatabase implements Database {
           .getDeletedHotBlocks()
           .forEach(
               blockRoot -> {
-                if (!update.getFinalizedStates().containsKey(blockRoot)) {
+                if (!update.getFinalizedBlocks().containsKey(blockRoot)) {
                   transaction.deleteBlock(blockRoot);
+                  transaction.deleteStateByBlockRoot(blockRoot);
                 }
-                // Effectively always in prune mode
-                transaction.deleteStateByBlockRoot(blockRoot);
               });
       transaction.storeVotes(update.getVotes());
       update.getStateRoots().forEach(transaction::storeStateRoot);
-      update.getFinalizedStates().forEach(transaction::storeState);
+      // Ensure the latest finalized block and state is always stored
+      // TODO: Prune earlier states if storage mode is prune
+      update
+          .getLatestFinalizedBlockAndState()
+          .ifPresent(
+              blockAndState ->
+                  transaction.storeState(blockAndState.getRoot(), blockAndState.getState()));
 
       // TODO: Periodically store finalized states
       transaction.commit();
     }
-    storage.prune();
+  }
+
+  private void updateFinalizedData(
+      Map<Bytes32, Bytes32> finalizedChildToParentMap,
+      final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
+      final Map<Bytes32, BeaconState> finalizedStates,
+      final FsStorage.Transaction updater) {
+    if (finalizedChildToParentMap.isEmpty()) {
+      // Nothing to do
+      return;
+    }
+
+    final BlockProvider blockProvider =
+        BlockProvider.withKnownBlocks(
+            roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
+
+    switch (stateStorageMode) {
+      case ARCHIVE:
+        // Get previously finalized block to build on top of
+        final SignedBlockAndState baseBlock = getFinalizedBlockAndState();
+
+        final HashTree blockTree =
+            HashTree.builder()
+                .rootHash(baseBlock.getRoot())
+                .childAndParentRoots(finalizedChildToParentMap)
+                .build();
+
+        final AtomicReference<UnsignedLong> lastStateStoredSlot =
+            new AtomicReference<>(baseBlock.getSlot());
+
+        final StateGenerator stateGenerator =
+            StateGenerator.create(blockTree, baseBlock, blockProvider, finalizedStates);
+        // TODO (#2397) - don't join, create synchronous API for synchronous blockProvider
+        stateGenerator
+            .regenerateAllStates(
+                (block, state) -> {
+                  updater.finalizeBlock(block);
+
+                  UnsignedLong nextStorageSlot =
+                      lastStateStoredSlot.get().plus(stateStorageFrequency);
+                  if (state.getSlot().compareTo(nextStorageSlot) >= 0) {
+                    updater.storeState(block.getRoot(), state);
+                    lastStateStoredSlot.set(state.getSlot());
+                  }
+                })
+            .join();
+        break;
+      case PRUNE:
+        for (Bytes32 root : finalizedChildToParentMap.keySet()) {
+          SignedBeaconBlock block =
+              blockProvider
+                  .getBlock(root)
+                  .join()
+                  .orElseThrow(() -> new IllegalStateException("Missing finalized block"));
+          updater.storeBlock(block, true);
+        }
+        break;
+      default:
+        throw new UnsupportedOperationException("Unhandled storage mode: " + stateStorageMode);
+    }
+  }
+
+  private SignedBlockAndState getFinalizedBlockAndState() {
+    final Bytes32 baseBlockRoot = storage.getFinalizedCheckpoint().orElseThrow().getRoot();
+    final SignedBeaconBlock baseBlock = storage.getBlockByBlockRoot(baseBlockRoot).orElseThrow();
+    final BeaconState baseState =
+        storage.getStateByStateRoot(baseBlock.getStateRoot()).orElseThrow();
+    return new SignedBlockAndState(baseBlock, baseState);
   }
 
   @Override
