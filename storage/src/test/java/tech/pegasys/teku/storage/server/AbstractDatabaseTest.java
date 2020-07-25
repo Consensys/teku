@@ -196,9 +196,12 @@ public abstract class AbstractDatabaseTest {
     add(List.of(blockC));
 
     // Verify all blocks are available
-    assertThat(store.getBlock(blockA.getRoot())).isEqualTo(blockA.getBlock().getMessage());
-    assertThat(store.getBlock(blockB.getRoot())).isEqualTo(blockB.getBlock().getMessage());
-    assertThat(store.getBlock(blockC.getRoot())).isEqualTo(blockC.getBlock().getMessage());
+    assertThat(store.retrieveBlock(blockA.getRoot()))
+        .isCompletedWithValue(Optional.of(blockA.getBlock().getMessage()));
+    assertThat(store.retrieveBlock(blockB.getRoot()))
+        .isCompletedWithValue(Optional.of(blockB.getBlock().getMessage()));
+    assertThat(store.retrieveBlock(blockC.getRoot()))
+        .isCompletedWithValue(Optional.of(blockC.getBlock().getMessage()));
 
     // Finalize subsequent block to prune blocks a, b, and c
     final SignedBlockAndState finalBlock = chainBuilder.generateNextBlock();
@@ -334,14 +337,15 @@ public abstract class AbstractDatabaseTest {
   public void shouldStoreSingleValue_singleBlockAndState() {
     final SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
     // Sanity check
-    assertThat(store.getBlock(newBlock.getRoot())).isNull();
+    assertThatSafeFuture(store.retrieveBlock(newBlock.getRoot())).isCompletedWithEmptyOptional();
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     transaction.putBlockAndState(newBlock);
     commit(transaction);
 
     final UpdatableStore result = recreateStore();
-    assertThat(result.getSignedBlock(newBlock.getRoot())).isEqualTo(newBlock.getBlock());
+    assertThat(result.retrieveSignedBlock(newBlock.getRoot()))
+        .isCompletedWithValue(Optional.of(newBlock.getBlock()));
     assertThat(result.retrieveBlockState(newBlock.getRoot()))
         .isCompletedWithValue(Optional.of(newBlock.getState()));
   }
@@ -360,11 +364,12 @@ public abstract class AbstractDatabaseTest {
     commit(transaction);
 
     final UpdatableStore result = recreateStore();
-    assertThat(result.getSignedBlock(genesisRoot)).isEqualTo(genesisBlockAndState.getBlock());
-    assertThat(result.getSignedBlock(blockAndState1.getRoot()))
-        .isEqualTo(blockAndState1.getBlock());
-    assertThat(result.getSignedBlock(blockAndState2.getRoot()))
-        .isEqualTo(blockAndState2.getBlock());
+    assertThat(result.retrieveSignedBlock(genesisRoot))
+        .isCompletedWithValue(Optional.of(genesisBlockAndState.getBlock()));
+    assertThat(result.retrieveSignedBlock(blockAndState1.getRoot()))
+        .isCompletedWithValue(Optional.of(blockAndState1.getBlock()));
+    assertThat(result.retrieveSignedBlock(blockAndState2.getRoot()))
+        .isCompletedWithValue(Optional.of(blockAndState2.getBlock()));
     assertThat(result.retrieveBlockState(blockAndState1.getRoot()))
         .isCompletedWithValue(Optional.of(blockAndState1.getState()));
     assertThat(result.retrieveBlockState(blockAndState2.getRoot()))
@@ -397,14 +402,16 @@ public abstract class AbstractDatabaseTest {
     final UpdatableStore result = recreateStore();
     // Historical blocks should not be in the new store
     for (SignedBlockAndState historicalBlock : historicalBlocks) {
-      assertThat(result.getSignedBlock(historicalBlock.getRoot())).isNull();
+      assertThatSafeFuture(result.retrieveSignedBlock(historicalBlock.getRoot()))
+          .isCompletedWithEmptyOptional();
       assertThatSafeFuture(result.retrieveBlockState(historicalBlock.getRoot()))
           .isCompletedWithEmptyOptional();
     }
 
     // Hot blocks should be available in the new store
     for (SignedBlockAndState hotBlock : hotBlocks) {
-      assertThat(result.getSignedBlock(hotBlock.getRoot())).isEqualTo(hotBlock.getBlock());
+      assertThat(result.retrieveSignedBlock(hotBlock.getRoot()))
+          .isCompletedWithValue(Optional.of(hotBlock.getBlock()));
       assertThat(result.retrieveBlockState(hotBlock.getRoot()))
           .isCompletedWithValue(Optional.of(hotBlock.getState()));
     }
@@ -789,7 +796,8 @@ public abstract class AbstractDatabaseTest {
       final Set<Checkpoint> prunedCheckpoints) {
     // Check pruned data has been removed from store
     for (Bytes32 prunedBlock : prunedBlocks) {
-      assertThat(store.getBlock(prunedBlock)).isNull();
+      assertThat(store.containsBlock(prunedBlock)).isFalse();
+      assertThatSafeFuture(store.retrieveBlock(prunedBlock)).isCompletedWithEmptyOptional();
       assertThatSafeFuture(store.retrieveBlockState(prunedBlock)).isCompletedWithEmptyOptional();
     }
   }

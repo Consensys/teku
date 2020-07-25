@@ -18,7 +18,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.lookup.BlockProvider;
@@ -36,18 +38,6 @@ import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class StoreTest extends AbstractStoreTest {
-
-  @Test
-  public void getSignedBlock_withLimitedCache() {
-    processChainWithLimitedCache(
-        (store, blockAndState) -> {
-          final SignedBeaconBlock expectedBlock = blockAndState.getBlock();
-          final SignedBeaconBlock blockResult = store.getSignedBlock(expectedBlock.getRoot());
-          assertThat(blockResult)
-              .withFailMessage("Expected block %s to be available", expectedBlock.getSlot())
-              .isEqualTo(expectedBlock);
-        });
-  }
 
   @Test
   public void retrieveSignedBlock_withLimitedCache() throws Exception {
@@ -275,5 +265,13 @@ class StoreTest extends AbstractStoreTest {
     // Check time
     assertThat(store.getTime()).isEqualTo(initialTime.plus(UnsignedLong.ONE));
     assertThat(store.getGenesisTime()).isEqualTo(genesisTime.plus(UnsignedLong.ONE));
+
+    // Check store was pruned as expected
+    final List<Bytes32> expectedBlockRoots =
+        chainBuilder
+            .streamBlocksAndStates(checkpoint1.getEpochStartSlot())
+            .map(SignedBlockAndState::getRoot)
+            .collect(Collectors.toList());
+    assertThat(store.getOrderedBlockRoots()).containsExactlyElementsOf(expectedBlockRoots);
   }
 }

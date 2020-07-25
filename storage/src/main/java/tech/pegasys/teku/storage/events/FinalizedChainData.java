@@ -21,24 +21,25 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 
 public class FinalizedChainData {
   private final Checkpoint finalizedCheckpoint;
-  private final BeaconState latestFinalizedState;
+  private final SignedBlockAndState latestFinalizedBlockAndState;
   private final Map<Bytes32, Bytes32> finalizedChildToParentMap;
   private final Map<Bytes32, SignedBeaconBlock> finalizedBlocks;
   private final Map<Bytes32, BeaconState> finalizedStates;
 
   private FinalizedChainData(
       final Checkpoint finalizedCheckpoint,
-      final BeaconState latestFinalizedState,
+      final SignedBlockAndState latestFinalizedBlockAndState,
       final Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
       final Map<Bytes32, BeaconState> finalizedStates) {
     this.finalizedCheckpoint = finalizedCheckpoint;
-    this.latestFinalizedState = latestFinalizedState;
+    this.latestFinalizedBlockAndState = latestFinalizedBlockAndState;
     this.finalizedChildToParentMap = finalizedChildToParentMap;
     this.finalizedBlocks = finalizedBlocks;
     this.finalizedStates = finalizedStates;
@@ -53,7 +54,7 @@ public class FinalizedChainData {
   }
 
   public BeaconState getLatestFinalizedState() {
-    return latestFinalizedState;
+    return latestFinalizedBlockAndState.getState();
   }
 
   public Map<Bytes32, Bytes32> getFinalizedChildToParentMap() {
@@ -68,9 +69,13 @@ public class FinalizedChainData {
     return finalizedStates;
   }
 
+  public SignedBlockAndState getLatestFinalizedBlockAndState() {
+    return latestFinalizedBlockAndState;
+  }
+
   public static class Builder {
     private Checkpoint finalizedCheckpoint;
-    private BeaconState latestFinalizedState;
+    private SignedBlockAndState latestFinalizedBlockAndState;
     private final Map<Bytes32, Bytes32> finalizedChildToParentMap = new HashMap<>();
     private Map<Bytes32, SignedBeaconBlock> finalizedBlocks = new HashMap<>();
     private Map<Bytes32, BeaconState> finalizedStates = new HashMap<>();
@@ -79,7 +84,7 @@ public class FinalizedChainData {
       assertValid();
       return new FinalizedChainData(
           finalizedCheckpoint,
-          latestFinalizedState,
+          latestFinalizedBlockAndState,
           finalizedChildToParentMap,
           finalizedBlocks,
           finalizedStates);
@@ -87,7 +92,11 @@ public class FinalizedChainData {
 
     private void assertValid() {
       checkState(finalizedCheckpoint != null, "Finalized checkpoint must be set");
-      checkState(latestFinalizedState != null, "Latest finalized state must be set");
+      checkState(
+          latestFinalizedBlockAndState != null, "Latest finalized block and state must be set");
+      checkState(
+          finalizedCheckpoint.getRoot().equals(latestFinalizedBlockAndState.getRoot()),
+          "Latest finalized block and state must match finalized checkpoint");
       checkState(!finalizedChildToParentMap.isEmpty(), "Must supply finalized roots");
       checkState(
           finalizedChildToParentMap.containsKey(finalizedCheckpoint.getRoot()),
@@ -100,9 +109,16 @@ public class FinalizedChainData {
       return this;
     }
 
-    public Builder latestFinalizedState(final BeaconState latestFinalizedState) {
-      checkNotNull(latestFinalizedState);
-      this.latestFinalizedState = latestFinalizedState;
+    public Builder latestFinalizedBlockAndState(
+        final SignedBlockAndState latestFinalizedBlockAndState) {
+      checkNotNull(latestFinalizedBlockAndState);
+      this.latestFinalizedBlockAndState = latestFinalizedBlockAndState;
+      this.finalizedBlocks.put(
+          latestFinalizedBlockAndState.getRoot(), latestFinalizedBlockAndState.getBlock());
+      this.finalizedStates.put(
+          latestFinalizedBlockAndState.getRoot(), latestFinalizedBlockAndState.getState());
+      finalizedChildAndParent(
+          latestFinalizedBlockAndState.getRoot(), latestFinalizedBlockAndState.getParentRoot());
       return this;
     }
 

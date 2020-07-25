@@ -97,6 +97,21 @@ public class V3RocksDbDao
   }
 
   @Override
+  public Optional<UnsignedLong> getSlotForFinalizedStateRoot(final Bytes32 stateRoot) {
+    return db.get(V3Schema.SLOTS_BY_FINALIZED_STATE_ROOT, stateRoot);
+  }
+
+  @Override
+  public Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(
+      final Bytes32 stateRoot) {
+    Optional<UnsignedLong> maybeSlot = db.get(V3Schema.SLOTS_BY_FINALIZED_STATE_ROOT, stateRoot);
+    return maybeSlot.flatMap(
+        slot ->
+            getFinalizedBlockAtSlot(slot)
+                .map(block -> new SlotAndBlockRoot(slot, block.getRoot())));
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 root) {
     return db.get(V3Schema.HOT_BLOCKS_BY_ROOT, root);
   }
@@ -238,6 +253,11 @@ public class V3RocksDbDao
     @Override
     public void addFinalizedState(final Bytes32 blockRoot, final BeaconState state) {
       transaction.put(V3Schema.FINALIZED_STATES_BY_ROOT, blockRoot, state);
+    }
+
+    @Override
+    public void addFinalizedStateRoot(final Bytes32 stateRoot, final UnsignedLong slot) {
+      transaction.put(V3Schema.SLOTS_BY_FINALIZED_STATE_ROOT, stateRoot, slot);
     }
 
     @Override
