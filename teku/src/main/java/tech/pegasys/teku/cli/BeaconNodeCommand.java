@@ -355,9 +355,10 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setRestApiEnabled(beaconRestApiOptions.isRestApiEnabled())
         .setRestApiInterface(beaconRestApiOptions.getRestApiInterface())
         .setRestApiHostAllowlist(beaconRestApiOptions.getRestApiHostAllowlist())
-        .setRemoteValidatorApiEnabled(remoteValidatorApiOptions.isApiEnabled())
         .setRemoteValidatorApiInterface(remoteValidatorApiOptions.getApiInterface())
         .setRemoteValidatorApiPort(remoteValidatorApiOptions.getApiPort())
+        .setRemoteValidatorApiMaxSubscribers(remoteValidatorApiOptions.getMaxSubscribers())
+        .setRemoteValidatorApiEnabled(remoteValidatorApiOptions.isApiEnabled())
         .build();
   }
 }

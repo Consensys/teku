@@ -18,7 +18,7 @@ import picocli.CommandLine.Option;
 public class RemoteValidatorApiOptions {
 
   @Option(
-      names = {"--remote-validator-api-enabled"},
+      names = {"--Xremote-validator-api-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enables Remote Validator API",
       fallbackValue = "true",
@@ -27,7 +27,7 @@ public class RemoteValidatorApiOptions {
   private boolean apiEnabled = false;
 
   @Option(
-      names = {"--remote-validator-api-port"},
+      names = {"--Xremote-validator-api-port"},
       paramLabel = "<INTEGER>",
       description = "Port number of Remote Validator API",
       arity = "1",
@@ -35,12 +35,20 @@ public class RemoteValidatorApiOptions {
   private int apiPort = 9999;
 
   @Option(
-      names = {"--remote-validator-api-interface"},
+      names = {"--Xremote-validator-api-interface"},
       paramLabel = "<NETWORK>",
       description = "Interface of Remote Validator API",
       arity = "1",
       hidden = true)
   private String apiInterface = "127.0.0.1";
+
+  @Option(
+      names = {"--Xremote-validator-api-max-subscribers"},
+      paramLabel = "<INTEGER>",
+      description = "Maximum of Validator nodes connected to the API",
+      arity = "0..1",
+      hidden = true)
+  private int maxSubscribers = 1_000;
 
   public int getApiPort() {
     return apiPort;
@@ -52,5 +60,9 @@ public class RemoteValidatorApiOptions {
 
   public String getApiInterface() {
     return apiInterface;
+  }
+
+  public int getMaxSubscribers() {
+    return maxSubscribers;
   }
 }

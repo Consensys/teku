@@ -1,4 +1,5 @@
 # remote validator api
-remote-validator-api-enabled: True
-remote-validator-api-port: 1234
-remote-validator-api-interface: "127.0.0.123"
+Xremote-validator-api-interface: "127.0.0.123"
+Xremote-validator-api-port: 1234
+Xremote-validator-api-max-subscribers: 9_876
+Xremote-validator-api-enabled: True

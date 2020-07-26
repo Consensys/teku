@@ -113,6 +113,7 @@ public class TekuConfiguration implements MetricsConfig {
   private final String remoteValidatorApiInterface;
   private final int remoteValidatorApiPort;
   private final boolean remoteValidatorApiEnabled;
+  private final int remoteValidatorApiMaxSubscribers;
 
   public static TekuConfigurationBuilder builder() {
     return new TekuConfigurationBuilder();
@@ -176,6 +177,7 @@ public class TekuConfiguration implements MetricsConfig {
       final List<String> restApiHostAllowlist,
       final String remoteValidatorApiInterface,
       final int remoteValidatorApiPort,
+      final int remoteValidatorApiMaxSubscribers,
       final boolean remoteValidatorApiEnabled,
       final Bytes32 graffiti) {
     this.constants = constants;
@@ -236,6 +238,7 @@ public class TekuConfiguration implements MetricsConfig {
     this.remoteValidatorApiInterface = remoteValidatorApiInterface;
     this.remoteValidatorApiPort = remoteValidatorApiPort;
     this.remoteValidatorApiEnabled = remoteValidatorApiEnabled;
+    this.remoteValidatorApiMaxSubscribers = remoteValidatorApiMaxSubscribers;
     this.graffiti = graffiti;
   }
 
@@ -499,6 +502,10 @@ public class TekuConfiguration implements MetricsConfig {
 
   public boolean isRemoteValidatorApiEnabled() {
     return remoteValidatorApiEnabled;
+  }
+
+  public int getRemoteValidatorApiMaxSubscribers() {
+    return remoteValidatorApiMaxSubscribers;
   }
 
   public Bytes32 getGraffiti() {

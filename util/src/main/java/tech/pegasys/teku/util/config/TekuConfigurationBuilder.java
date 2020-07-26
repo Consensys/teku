@@ -80,6 +80,7 @@ public class TekuConfigurationBuilder {
   private NetworkDefinition network;
   private String remoteValidatorApiInterface;
   private int remoteValidatorApiPort;
+  private int remoteValidatorApiMaxSubscribers;
   private boolean remoteValidatorApiEnabled;
   private Bytes32 graffiti;
 
@@ -373,20 +374,23 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
-  public TekuConfigurationBuilder setRemoteValidatorApiEnabled(
-      final boolean remoteValidatorApiEnabled) {
-    this.remoteValidatorApiEnabled = remoteValidatorApiEnabled;
+  public TekuConfigurationBuilder setRemoteValidatorApiInterface(final String host) {
+    this.remoteValidatorApiInterface = host;
     return this;
   }
 
-  public TekuConfigurationBuilder setRemoteValidatorApiInterface(
-      final String remoteValidatorApiInterface) {
-    this.remoteValidatorApiInterface = remoteValidatorApiInterface;
+  public TekuConfigurationBuilder setRemoteValidatorApiPort(final int port) {
+    this.remoteValidatorApiPort = port;
     return this;
   }
 
-  public TekuConfigurationBuilder setRemoteValidatorApiPort(final int remoteValidatorApiPort) {
-    this.remoteValidatorApiPort = remoteValidatorApiPort;
+  public TekuConfigurationBuilder setRemoteValidatorApiMaxSubscribers(final int maxSubscribers) {
+    this.remoteValidatorApiMaxSubscribers = maxSubscribers;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setRemoteValidatorApiEnabled(final boolean enabled) {
+    this.remoteValidatorApiEnabled = enabled;
     return this;
   }
 
@@ -480,6 +484,7 @@ public class TekuConfigurationBuilder {
         restApiHostAllowlist,
         remoteValidatorApiInterface,
         remoteValidatorApiPort,
+        remoteValidatorApiMaxSubscribers,
         remoteValidatorApiEnabled,
         graffiti);
   }
