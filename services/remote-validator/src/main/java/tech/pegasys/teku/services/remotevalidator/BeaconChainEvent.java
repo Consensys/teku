@@ -14,7 +14,6 @@
 package tech.pegasys.teku.services.remotevalidator;
 
 import com.google.common.primitives.UnsignedLong;
-import com.google.gson.Gson;
 
 public class BeaconChainEvent {
 
@@ -48,13 +47,5 @@ public class BeaconChainEvent {
 
   public void setData(final UnsignedLong data) {
     this.data = data;
-  }
-
-  public String toJson() {
-    return new Gson().toJson(this);
-  }
-
-  public static BeaconChainEvent fromJson(String json) {
-    return new Gson().fromJson(json, BeaconChainEvent.class);
   }
 }
