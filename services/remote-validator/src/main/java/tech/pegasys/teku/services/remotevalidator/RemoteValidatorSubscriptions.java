@@ -13,18 +13,27 @@
 
 package tech.pegasys.teku.services.remotevalidator;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class RemoteValidatorSubscriptions implements BeaconChainEventsListener {
 
-  // TODO should we parametrize maxSubscribers?
-  private final int maxSubscribers = 1_000;
+  private final int maxSubscribers;
 
   private final Map<String, Consumer<BeaconChainEvent>> subscriptions = new ConcurrentHashMap<>();
 
+  public RemoteValidatorSubscriptions(final TekuConfiguration configuration) {
+    checkNotNull(configuration, "TekuConfiguration can't be null");
+
+    this.maxSubscribers = configuration.getRemoteValidatorApiMaxSubscribers();
+  }
+
   boolean subscribe(String id, Consumer<BeaconChainEvent> sendEvent) {
+    // TODO return a subscribe status?
     synchronized (this) {
       if (subscriptions.size() >= maxSubscribers) {
         return false;

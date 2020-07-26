@@ -24,7 +24,7 @@ public class RemoteValidatorService extends Service {
   private final RemoteValidatorBeaconChainEventsAdapter beaconChainEventsAdapter;
 
   public RemoteValidatorService(ServiceConfig serviceConfig) {
-    subscriptions = new RemoteValidatorSubscriptions();
+    subscriptions = new RemoteValidatorSubscriptions(serviceConfig.getConfig());
     api = new RemoteValidatorApi(serviceConfig.getConfig(), subscriptions);
     beaconChainEventsAdapter =
         new RemoteValidatorBeaconChainEventsAdapter(serviceConfig, subscriptions);
