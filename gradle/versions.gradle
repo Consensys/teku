@@ -139,6 +139,7 @@ dependencyManagement {
     dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.1'
 
     dependency 'com.h2database:h2:1.4.200'
+    dependency 'org.hsqldb:hsqldb:2.5.1'
     dependency 'org.springframework:spring-jdbc:5.2.8.RELEASE'
     dependency 'org.flywaydb:flyway-core:6.5.2'
     dependency 'com.zaxxer:HikariCP:3.4.5'

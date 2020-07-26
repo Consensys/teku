@@ -78,6 +78,7 @@ public class FsDatabase implements Database {
 
       transaction.storeBlock(genesisBlock, true);
       transaction.storeState(genesisBlock.getRoot(), genesisState);
+      transaction.storeLatestFinalizedState(genesisState);
       transaction.commit();
     }
   }
@@ -112,12 +113,7 @@ public class FsDatabase implements Database {
       transaction.storeVotes(update.getVotes());
       update.getStateRoots().forEach(transaction::storeStateRoot);
       // Ensure the latest finalized block and state is always stored
-      // TODO: Prune earlier states if storage mode is prune
-      update
-          .getLatestFinalizedBlockAndState()
-          .ifPresent(
-              blockAndState ->
-                  transaction.storeState(blockAndState.getRoot(), blockAndState.getState()));
+      update.getLatestFinalizedState().ifPresent(transaction::storeLatestFinalizedState);
 
       // TODO: Periodically store finalized states
       transaction.commit();
@@ -187,8 +183,7 @@ public class FsDatabase implements Database {
   private SignedBlockAndState getFinalizedBlockAndState() {
     final Bytes32 baseBlockRoot = storage.getFinalizedCheckpoint().orElseThrow().getRoot();
     final SignedBeaconBlock baseBlock = storage.getBlockByBlockRoot(baseBlockRoot).orElseThrow();
-    final BeaconState baseState =
-        storage.getStateByStateRoot(baseBlock.getStateRoot()).orElseThrow();
+    final BeaconState baseState = storage.getLatestFinalizedState().orElseThrow();
     return new SignedBlockAndState(baseBlock, baseState);
   }
 

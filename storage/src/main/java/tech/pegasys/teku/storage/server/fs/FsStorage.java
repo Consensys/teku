@@ -36,6 +36,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
+import org.xerial.snappy.Snappy;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -43,22 +44,24 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
 public class FsStorage implements AutoCloseable {
 
-  private static final RowMapper<SignedBeaconBlock> BLOCK_ROW_MAPPER =
-      (rs, rowNum) -> getSsz(rs, SignedBeaconBlock.class);
-  private static final RowMapper<BeaconState> STATE_ROW_MAPPER =
-      (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class);
   private final PlatformTransactionManager transactionManager;
   private final HikariDataSource dataSource;
   private final JdbcOperations jdbc;
+  private final boolean compress;
 
   public FsStorage(
-      PlatformTransactionManager transactionManager, final HikariDataSource dataSource) {
+      PlatformTransactionManager transactionManager,
+      final HikariDataSource dataSource,
+      final boolean compress) {
     this.transactionManager = transactionManager;
     this.dataSource = dataSource;
     this.jdbc = new JdbcTemplate(dataSource);
+    this.compress = compress;
   }
 
   public Transaction startTransaction() {
@@ -87,14 +90,14 @@ public class FsStorage implements AutoCloseable {
   public Optional<BeaconState> getStateByStateRoot(final Bytes32 stateRoot) {
     return loadSingle(
         "SELECT ssz FROM state WHERE stateRoot = ?",
-        STATE_ROW_MAPPER,
+        (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class),
         (Object) stateRoot.toArrayUnsafe());
   }
 
   public Optional<BeaconState> getStateByBlockRoot(final Bytes32 blockRoot) {
     return loadSingle(
         "SELECT ssz FROM state WHERE blockRoot = ? ORDER BY slot LIMIT 1",
-        STATE_ROW_MAPPER,
+        (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class),
         (Object) blockRoot.toArrayUnsafe());
   }
 
@@ -106,28 +109,34 @@ public class FsStorage implements AutoCloseable {
         (Object) stateRoot.toArrayUnsafe());
   }
 
+  public Optional<BeaconState> getLatestFinalizedState() {
+    return loadSingle("SELECT ssz FROM finalized_state",
+        (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class));
+  }
+
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UnsignedLong maxSlot) {
     return loadSingle(
         "SELECT ssz FROM state WHERE slot <= ? AND ssz IS NOT NULL ORDER BY slot DESC LIMIT 1",
-        STATE_ROW_MAPPER,
+        (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class),
         maxSlot.bigIntegerValue());
   }
 
   public Optional<SignedBeaconBlock> getBlockByBlockRoot(final Bytes32 blockRoot) {
     return loadSingle(
         "SELECT ssz FROM block WHERE blockRoot = ?",
-        BLOCK_ROW_MAPPER,
+        (rs, rowNum) -> getSsz(rs, SignedBeaconBlock.class),
         (Object) blockRoot.toArrayUnsafe());
   }
 
-  private static <T> T getSsz(final ResultSet rs, final Class<? extends T> type)
+  private <T> T getSsz(final ResultSet rs, final Class<? extends T> type)
       throws SQLException {
     final Blob blob = rs.getBlob("ssz");
     if (blob == null) {
       return null;
     }
     try {
-      final Bytes data = Bytes.wrap(ByteStreams.toByteArray(blob.getBinaryStream()));
+      final byte[] rawData = ByteStreams.toByteArray(blob.getBinaryStream());
+      final Bytes data = Bytes.wrap(compress ? Snappy.uncompress(rawData) : rawData);
       return SimpleOffsetSerializer.deserialize(data, type);
     } catch (IOException e) {
       throw new SQLException("Failed to read BLOB content", e);
@@ -139,14 +148,14 @@ public class FsStorage implements AutoCloseable {
   public Optional<SignedBeaconBlock> getFinalizedBlockBySlot(final UnsignedLong slot) {
     return loadSingle(
         "SELECT blockRoot FROM block WHERE slot = ? AND finalized = true",
-        BLOCK_ROW_MAPPER,
+        (rs, rowNum) -> getSsz(rs, SignedBeaconBlock.class),
         slot.bigIntegerValue());
   }
 
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UnsignedLong slot) {
     return loadSingle(
         "SELECT ssz FROM block WHERE slot <= ? AND finalized = true ORDER BY slot DESC LIMIT 1",
-        BLOCK_ROW_MAPPER,
+        (rs, rowNum) -> getSsz(rs, SignedBeaconBlock.class),
         slot.bigIntegerValue());
   }
 
@@ -248,7 +257,7 @@ public class FsStorage implements AutoCloseable {
           block.getSlot().bigIntegerValue(),
           block.getParent_root().toArrayUnsafe(),
           finalized,
-          SimpleOffsetSerializer.serialize(block).toArrayUnsafe());
+          serializeSsz(block));
     }
 
     public void finalizeBlock(final SignedBeaconBlock block) {
@@ -276,7 +285,13 @@ public class FsStorage implements AutoCloseable {
           state.hash_tree_root().toArrayUnsafe(),
           blockRoot.toArrayUnsafe(),
           state.getSlot().bigIntegerValue(),
-          SimpleOffsetSerializer.serialize(state).toArrayUnsafe());
+          serializeSsz(state));
+    }
+
+    public void storeLatestFinalizedState(final BeaconState state) {
+      execSql(
+          "INSERT INTO finalized_state (id, ssz) VALUES (1, ?) ON DUPLICATE KEY UPDATE ssz = VALUES(ssz)",
+          serializeSsz(state));
     }
 
     public void deleteStateByBlockRoot(final Bytes32 blockRoot) {
@@ -297,7 +312,16 @@ public class FsStorage implements AutoCloseable {
                   voteTracker.getNextEpoch().bigIntegerValue()));
     }
 
+    private Object serializeSsz(final SimpleOffsetSerializable obj) {
+      try {
+        final byte[] uncompressed = SimpleOffsetSerializer.serialize(obj).toArrayUnsafe();
+        return compress ? Snappy.compress(uncompressed) : uncompressed;
+      } catch (final IOException e) {
+        throw new DatabaseStorageException("Compression failed", e);
+      }
+    }
     // Returns number of affected rows.
+
     private int execSql(final String sql, final Object... params) {
       return jdbc.update(sql, params);
     }

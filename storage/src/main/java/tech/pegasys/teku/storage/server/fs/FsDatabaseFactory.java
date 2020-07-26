@@ -31,8 +31,12 @@ public class FsDatabaseFactory {
       final long stateStorageFrequency,
       final MetricsSystem metricsSystem) {
     final HikariDataSource dataSource = new HikariDataSource();
+//    dataSource.setJdbcUrl(
+//        "jdbc:h2:file:" + dbDir.resolve("index").toAbsolutePath() + ";mode=MySQL");
+
     dataSource.setJdbcUrl(
-        "jdbc:h2:file:" + dbDir.resolve("index").toAbsolutePath() + ";mode=MySQL");
+        "jdbc:hsqldb:file:" + dbDir.resolve("index").toAbsolutePath() + ";sql.syntax_mys=true"
+    );
 
     final Flyway flyway = Flyway.configure().dataSource(dataSource).load();
 
@@ -42,9 +46,10 @@ public class FsDatabaseFactory {
     final PlatformTransactionManager transactionManager =
         new DataSourceTransactionManager(dataSource);
 
+    final boolean useSnappyCompression = false;
     return new FsDatabase(
         metricsSystem,
-        new FsStorage(transactionManager, dataSource),
+        new FsStorage(transactionManager, dataSource, useSnappyCompression),
         stateStorageMode,
         UnsignedLong.valueOf(stateStorageFrequency));
   }
