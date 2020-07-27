@@ -50,35 +50,35 @@ public class RemoteValidatorBeaconChainEventsAdapter
 
   @Subscribe
   public void onBroadcastAttestationEvent(final BroadcastAttestationEvent event) {
-    BeaconChainEvent beaconChainEvent =
+    final BeaconChainEvent beaconChainEvent =
         new BeaconChainEvent(BeaconChainEvent.ATTESTATION, event.getNodeSlot());
     listener.onEvent(beaconChainEvent);
   }
 
   @Subscribe
-  public void onAggregationEvent(BroadcastAggregatesEvent event) {
-    BeaconChainEvent beaconChainEvent =
+  public void onAggregationEvent(final BroadcastAggregatesEvent event) {
+    final BeaconChainEvent beaconChainEvent =
         new BeaconChainEvent(BeaconChainEvent.AGGREGATION, event.getSlot());
     listener.onEvent(beaconChainEvent);
   }
 
   @Subscribe
-  public void onImportedBlockEvent(ImportedBlockEvent event) {
-    BeaconChainEvent beaconChainEvent =
+  public void onImportedBlockEvent(final ImportedBlockEvent event) {
+    final BeaconChainEvent beaconChainEvent =
         new BeaconChainEvent(BeaconChainEvent.IMPORTED_BLOCK, event.getBlock().getSlot());
     listener.onEvent(beaconChainEvent);
   }
 
   @Override
   public void onSlot(final UnsignedLong slot) {
-    BeaconChainEvent beaconChainEvent = new BeaconChainEvent(BeaconChainEvent.ATTESTATION, slot);
+    final BeaconChainEvent beaconChainEvent = new BeaconChainEvent(BeaconChainEvent.ON_SLOT, slot);
     listener.onEvent(beaconChainEvent);
   }
 
   @Override
   public void reorgOccurred(final Bytes32 bestBlockRoot, final UnsignedLong bestSlot) {
-    BeaconChainEvent beaconChainEvent =
-        new BeaconChainEvent(BeaconChainEvent.ATTESTATION, bestSlot);
+    final BeaconChainEvent beaconChainEvent =
+        new BeaconChainEvent(BeaconChainEvent.REORG_OCCURRED, bestSlot);
     listener.onEvent(beaconChainEvent);
   }
 }

@@ -9,6 +9,10 @@ dependencies {
   implementation project(':util')
   implementation project(':validator:api')
 
-  implementation 'com.google.code.gson:gson'
   implementation 'io.javalin:javalin'
+
+  testImplementation 'org.junit.jupiter:junit-jupiter-api'
+  testImplementation 'org.assertj:assertj-core'
+  testImplementation 'org.mockito:mockito-core'
+  testImplementation 'org.mockito:mockito-junit-jupiter'
 }

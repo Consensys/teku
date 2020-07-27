@@ -14,6 +14,7 @@
 package tech.pegasys.teku.services.remotevalidator;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Objects;
 
 public class BeaconChainEvent {
 
@@ -47,5 +48,22 @@ public class BeaconChainEvent {
 
   public void setData(final UnsignedLong data) {
     this.data = data;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final BeaconChainEvent that = (BeaconChainEvent) o;
+    return name.equals(that.name) && data.equals(that.data);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(name, data);
   }
 }
