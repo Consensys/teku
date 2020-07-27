@@ -27,7 +27,7 @@ final class BlstFiniteSemiAggregate implements BatchSemiAggregate {
         ((BlstFiniteSemiAggregate) agg2).release();
         return agg1;
       } else {
-        if (((BlstInfiniteSemiAggregate)agg2).isValid()) {
+        if (((BlstInfiniteSemiAggregate) agg2).isValid()) {
           return agg1;
         } else {
           ((BlstFiniteSemiAggregate) agg1).release();
@@ -35,7 +35,7 @@ final class BlstFiniteSemiAggregate implements BatchSemiAggregate {
         }
       }
     } else {
-      if (((BlstInfiniteSemiAggregate)agg1).isValid()) {
+      if (((BlstInfiniteSemiAggregate) agg1).isValid()) {
         return agg2;
       } else {
         if (agg2 instanceof BlstFiniteSemiAggregate) {

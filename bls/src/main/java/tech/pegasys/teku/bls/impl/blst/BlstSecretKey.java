@@ -94,6 +94,7 @@ public class BlstSecretKey implements SecretKey {
     if (destroyed) throw new IllegalStateException("Private key was destroyed");
     return scalarVal;
   }
+
   @Override
   public int hashCode() {
     return toBytes().hashCode();

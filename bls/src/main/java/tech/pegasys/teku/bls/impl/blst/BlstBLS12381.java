@@ -161,8 +161,7 @@ public class BlstBLS12381 implements BLS12381 {
       List<? extends PublicKey> publicKeys2,
       Bytes message2,
       Signature signature2) {
-    BatchSemiAggregate aggregate1 =
-        prepareBatchVerify(index, publicKeys1, message1, signature1);
+    BatchSemiAggregate aggregate1 = prepareBatchVerify(index, publicKeys1, message1, signature1);
     BatchSemiAggregate aggregate2 =
         prepareBatchVerify(index + 1, publicKeys2, message2, signature2);
 
@@ -171,10 +170,11 @@ public class BlstBLS12381 implements BLS12381 {
 
   @Override
   public boolean completeBatchVerify(List<? extends BatchSemiAggregate> preparedList) {
-    boolean anyInvalidDummy = preparedList.stream()
-        .filter(a -> a instanceof BlstInfiniteSemiAggregate)
-        .map(a -> (BlstInfiniteSemiAggregate) a)
-        .anyMatch(a -> !a.isValid());
+    boolean anyInvalidDummy =
+        preparedList.stream()
+            .filter(a -> a instanceof BlstInfiniteSemiAggregate)
+            .map(a -> (BlstInfiniteSemiAggregate) a)
+            .anyMatch(a -> !a.isValid());
 
     List<BlstFiniteSemiAggregate> blstList =
         preparedList.stream()
