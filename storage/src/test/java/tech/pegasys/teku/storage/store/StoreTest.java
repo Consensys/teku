@@ -18,7 +18,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.lookup.BlockProvider;
@@ -36,32 +38,6 @@ import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class StoreTest extends AbstractStoreTest {
-
-  @Test
-  public void getSignedBlock_withLimitedCache() {
-    processChainWithLimitedCache(
-        (store, blockAndState) -> {
-          final SignedBeaconBlock expectedBlock = blockAndState.getBlock();
-          final SignedBeaconBlock blockResult = store.getSignedBlock(expectedBlock.getRoot());
-          assertThat(blockResult)
-              .withFailMessage("Expected block %s to be available", expectedBlock.getSlot())
-              .isEqualTo(expectedBlock);
-        });
-  }
-
-  @Test
-  public void getBlockState_withLimitedCache() {
-    processChainWithLimitedCache(
-        (store, blockAndState) -> {
-          final BeaconState result = store.getBlockState(blockAndState.getRoot());
-          assertThat(result)
-              .withFailMessage(
-                  "Expected state for block %s to be available", blockAndState.getSlot())
-              .isNotNull();
-          assertThat(result.hash_tree_root())
-              .isEqualTo(blockAndState.getBlock().getMessage().getState_root());
-        });
-  }
 
   @Test
   public void retrieveSignedBlock_withLimitedCache() throws Exception {
@@ -244,7 +220,10 @@ class StoreTest extends AbstractStoreTest {
     // Check that transaction is updated
     chainBuilder
         .streamBlocksAndStates(1, chainBuilder.getLatestSlot().longValue())
-        .forEach(b -> assertThat(tx.getBlockAndState(b.getRoot())).isEqualTo(Optional.of(b)));
+        .forEach(
+            b ->
+                assertThat(tx.retrieveBlockAndState(b.getRoot()))
+                    .isCompletedWithValue(Optional.of(b)));
     // Check checkpoints
     assertThat(tx.getFinalizedCheckpoint()).isEqualTo(checkpoint1);
     assertThat(tx.getJustifiedCheckpoint()).isEqualTo(checkpoint2);
@@ -275,7 +254,10 @@ class StoreTest extends AbstractStoreTest {
     // Check store is updated
     chainBuilder
         .streamBlocksAndStates(checkpoint3.getEpochStartSlot(), chainBuilder.getLatestSlot())
-        .forEach(b -> assertThat(store.getBlockAndState(b.getRoot())).isEqualTo(Optional.of(b)));
+        .forEach(
+            b ->
+                assertThat(store.retrieveBlockAndState(b.getRoot()))
+                    .isCompletedWithValue(Optional.of(b)));
     // Check checkpoints
     assertThat(store.getFinalizedCheckpoint()).isEqualTo(checkpoint1);
     assertThat(store.getJustifiedCheckpoint()).isEqualTo(checkpoint2);
@@ -283,5 +265,13 @@ class StoreTest extends AbstractStoreTest {
     // Check time
     assertThat(store.getTime()).isEqualTo(initialTime.plus(UnsignedLong.ONE));
     assertThat(store.getGenesisTime()).isEqualTo(genesisTime.plus(UnsignedLong.ONE));
+
+    // Check store was pruned as expected
+    final List<Bytes32> expectedBlockRoots =
+        chainBuilder
+            .streamBlocksAndStates(checkpoint1.getEpochStartSlot())
+            .map(SignedBlockAndState::getRoot)
+            .collect(Collectors.toList());
+    assertThat(store.getOrderedBlockRoots()).containsExactlyElementsOf(expectedBlockRoots);
   }
 }
