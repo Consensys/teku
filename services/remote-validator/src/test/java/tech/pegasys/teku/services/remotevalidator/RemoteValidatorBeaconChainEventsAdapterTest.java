@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -27,11 +28,7 @@ import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
@@ -41,28 +38,29 @@ import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
-@ExtendWith(MockitoExtension.class)
 class RemoteValidatorBeaconChainEventsAdapterTest {
 
-  private RemoteValidatorBeaconChainEventsAdapter eventsAdapter;
+  private final ServiceConfig serviceConfig = mock(ServiceConfig.class);
 
-  @Mock private ServiceConfig serviceConfig;
+  private final BeaconChainEventsListener listener = mock(BeaconChainEventsListener.class);
 
-  @Mock private BeaconChainEventsListener listener;
+  private final EventBus eventBus = mock(EventBus.class);
 
-  @Mock private EventBus eventBus;
+  private final EventChannels eventChannels = mock(EventChannels.class);
 
-  @Mock private EventChannels eventChannels;
+  private final ArgumentCaptor<BeaconChainEvent> beaconChainEventArgCaptor =
+      ArgumentCaptor.forClass(BeaconChainEvent.class);
 
-  @Captor private ArgumentCaptor<BeaconChainEvent> beaconChainEventArgCaptor;
+  private RemoteValidatorBeaconChainEventsAdapter eventsAdapter =
+      new RemoteValidatorBeaconChainEventsAdapter(serviceConfig, listener);
 
   @BeforeEach
   public void beforeEach() {
+    reset(serviceConfig, listener, eventBus, eventChannels);
+
     lenient().when(serviceConfig.getEventBus()).thenReturn(eventBus);
     lenient().when(serviceConfig.getEventChannels()).thenReturn(eventChannels);
     lenient().when(eventChannels.subscribe(any(), any())).thenReturn(eventChannels);
-
-    eventsAdapter = new RemoteValidatorBeaconChainEventsAdapter(serviceConfig, listener);
   }
 
   @Test

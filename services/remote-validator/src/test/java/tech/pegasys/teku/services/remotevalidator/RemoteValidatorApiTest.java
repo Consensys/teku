@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,33 +34,31 @@ import org.eclipse.jetty.websocket.api.StatusCode;
 import org.eclipse.jetty.websocket.servlet.ServletUpgradeRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.teku.services.remotevalidator.RemoteValidatorSubscriptions.SubscriptionStatus;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
-@ExtendWith(MockitoExtension.class)
 class RemoteValidatorApiTest {
 
-  @Mock private TekuConfiguration configuration;
+  private final TekuConfiguration configuration = mock(TekuConfiguration.class);
 
-  @Mock private RemoteValidatorSubscriptions subscriptionManager;
+  private final RemoteValidatorSubscriptions subscriptionManager =
+      mock(RemoteValidatorSubscriptions.class);
 
-  @Mock private Session wsSession;
+  private final Session wsSession = mock(Session.class);
 
-  @Captor private ArgumentCaptor<Consumer<BeaconChainEvent>> subscriberCallbackArgCaptor;
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<Consumer<BeaconChainEvent>> subscriberCallbackArgCaptor =
+      ArgumentCaptor.forClass(Consumer.class);
 
-  private WsConnectContext wsContext;
+  private final WsConnectContext wsContext = createWsContextStub();
 
-  private RemoteValidatorApi remoteValidatorApi;
+  private final RemoteValidatorApi remoteValidatorApi =
+      new RemoteValidatorApi(configuration, subscriptionManager);
 
   @BeforeEach
   public void beforeEach() {
-    wsContext = createWsContextStub();
-    remoteValidatorApi = new RemoteValidatorApi(configuration, subscriptionManager);
+    reset(configuration, subscriptionManager, wsSession);
   }
 
   @Test

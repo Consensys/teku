@@ -16,6 +16,7 @@ package tech.pegasys.teku.services.remotevalidator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,27 +26,24 @@ import java.util.function.Consumer;
 import org.assertj.core.util.introspection.FieldSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import tech.pegasys.teku.services.remotevalidator.RemoteValidatorSubscriptions.SubscriptionStatus;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
-@ExtendWith(MockitoExtension.class)
 class RemoteValidatorSubscriptionsTest {
 
   private static final int MAX_SUBSCRIBERS = 2;
 
-  @Mock private TekuConfiguration configuration;
+  private final TekuConfiguration configuration = mock(TekuConfiguration.class);
 
-  @Mock private Consumer<BeaconChainEvent> subscriberCallback;
+  @SuppressWarnings("unchecked")
+  private final Consumer<BeaconChainEvent> subscriberCallback = mock(Consumer.class);
 
   private RemoteValidatorSubscriptions subscriptions;
 
   @BeforeEach
   public void beforeEach() {
+    reset(configuration, subscriberCallback);
     when(configuration.getRemoteValidatorApiMaxSubscribers()).thenReturn(MAX_SUBSCRIBERS);
-
     subscriptions = new RemoteValidatorSubscriptions(configuration);
   }
 
