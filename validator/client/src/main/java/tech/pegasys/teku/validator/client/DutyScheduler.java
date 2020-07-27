@@ -31,7 +31,7 @@ public class DutyScheduler implements ValidatorTimingChannel {
   private final DutyLoader epochDutiesScheduler;
   private final StableSubnetSubscriber stableSubnetSubscriber;
   private final NavigableMap<UnsignedLong, DutyQueue> dutiesByEpoch = new TreeMap<>();
-  private volatile UnsignedLong lastAttestationCreationSlot;
+  private UnsignedLong lastAttestationCreationSlot;
 
   public DutyScheduler(
       final MetricsSystem metricsSystem,
@@ -72,7 +72,7 @@ public class DutyScheduler implements ValidatorTimingChannel {
   }
 
   @Override
-  public synchronized void onAttestationCreationDue(final UnsignedLong slot) {
+  public void onAttestationCreationDue(final UnsignedLong slot) {
     // Check slot being null for the edge case of genesis slot (i.e. slot 0)
     if (lastAttestationCreationSlot != null && slot.compareTo(lastAttestationCreationSlot) <= 0) {
       return;
