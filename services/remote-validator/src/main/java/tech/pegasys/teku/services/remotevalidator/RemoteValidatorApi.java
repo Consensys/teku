@@ -15,6 +15,7 @@ package tech.pegasys.teku.services.remotevalidator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.javalin.Javalin;
 import io.javalin.websocket.WsConnectContext;
 import io.javalin.websocket.WsContext;
@@ -74,7 +75,8 @@ public class RemoteValidatorApi {
         });
   }
 
-  private void subscribeValidator(final WsConnectContext handler) {
+  @VisibleForTesting
+  void subscribeValidator(final WsConnectContext handler) {
     final SubscriptionStatus subscriptionStatus =
         subscriptionManager.subscribe(
             handler.getSessionId(),
@@ -94,7 +96,8 @@ public class RemoteValidatorApi {
     }
   }
 
-  private void unsubscribeValidator(final WsContext handler) {
+  @VisibleForTesting
+  void unsubscribeValidator(final WsContext handler) {
     handler.session.close();
     subscriptionManager.unsubscribe(handler.getSessionId());
   }
