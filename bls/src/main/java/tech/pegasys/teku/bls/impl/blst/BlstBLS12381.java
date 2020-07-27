@@ -60,7 +60,7 @@ public class BlstBLS12381 implements BLS12381 {
   public static BlstSignature sign(BlstSecretKey secretKey, Bytes message) {
     p2 p2Signature = new p2();
     p2 hash = HashToCurve.hashToG2(message);
-    blst.sign_pk_in_g1(p2Signature, hash, secretKey.scalarVal);
+    blst.sign_pk_in_g1(p2Signature, hash, secretKey.getScalarVal());
     p2_affine p2SignatureAffine = new p2_affine();
     blst.p2_to_affine(p2SignatureAffine, p2Signature);
     p2Signature.delete();

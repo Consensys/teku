@@ -40,7 +40,8 @@ public class BlstSecretKey implements SecretKey {
     return new BlstSecretKey(sk);
   }
 
-  public final scalar scalarVal;
+  private final scalar scalarVal;
+  private boolean destroyed = false;
 
   public BlstSecretKey(scalar scalarVal) {
     this.scalarVal = scalarVal;
@@ -49,7 +50,7 @@ public class BlstSecretKey implements SecretKey {
   @Override
   public Bytes32 toBytes() {
     byte[] res = new byte[32];
-    blst.bendian_from_scalar(res, scalarVal);
+    blst.bendian_from_scalar(res, getScalarVal());
     return Bytes32.wrap(res);
   }
 
@@ -60,19 +61,24 @@ public class BlstSecretKey implements SecretKey {
 
   @Override
   public void destroy() {
-    // TODO
+    blst.scalar_from_bendian(getScalarVal(), Bytes32.ZERO.toArrayUnsafe());
+    destroyed = true;
   }
 
   @Override
   public BlstPublicKey derivePublicKey() {
     p1 pk = new p1();
-    blst.sk_to_pk_in_g1(pk, scalarVal);
+    blst.sk_to_pk_in_g1(pk, getScalarVal());
     p1_affine pkAffine = new p1_affine();
     blst.p1_to_affine(pkAffine, pk);
     pk.delete();
     return new BlstPublicKey(pkAffine);
   }
 
+  scalar getScalarVal() {
+    if (destroyed) throw new IllegalStateException("Private key was destroyed");
+    return scalarVal;
+  }
   @Override
   public int hashCode() {
     return toBytes().hashCode();
