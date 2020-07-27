@@ -26,8 +26,8 @@ public class RemoteValidatorMetrics {
         SettableGauge.create(
             metricsSystem,
             TekuMetricCategory.REMOTE_VALIDATOR,
-            "connected_validators",
-            "Number of validators connected to the Remote Validator Service");
+            "connected_validator_nodes",
+            "Number of validator nodes connected to the Remote Validator Service");
   }
 
   public void updateConnectedValidators(final int value) {
