@@ -65,7 +65,7 @@ public class BlstSecretKey implements SecretKey {
 
   @Override
   public Signature sign(Bytes message) {
-    if (this == ZERO_SK) {
+    if (isZero()) {
       return BlstSignature.INFINITY;
     }
     return BlstBLS12381.sign(this, message);
@@ -79,7 +79,7 @@ public class BlstSecretKey implements SecretKey {
 
   @Override
   public BlstPublicKey derivePublicKey() {
-    if (this == ZERO_SK) {
+    if (isZero()) {
       return BlstPublicKey.INFINITY;
     }
     p1 pk = new p1();
@@ -93,6 +93,11 @@ public class BlstSecretKey implements SecretKey {
   scalar getScalarVal() {
     if (destroyed) throw new IllegalStateException("Private key was destroyed");
     return scalarVal;
+  }
+
+  @SuppressWarnings("ReferenceEquality")
+  boolean isZero() {
+    return this == ZERO_SK;
   }
 
   @Override

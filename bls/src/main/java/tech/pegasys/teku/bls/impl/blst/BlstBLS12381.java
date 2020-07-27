@@ -69,8 +69,8 @@ public class BlstBLS12381 implements BLS12381 {
   }
 
   public static boolean verify(BlstPublicKey publicKey, Bytes message, BlstSignature signature) {
-    if (publicKey == BlstPublicKey.INFINITY || signature == BlstSignature.INFINITY) {
-      return publicKey == BlstPublicKey.INFINITY && signature == BlstSignature.INFINITY;
+    if (publicKey.isInfinity() || signature.isInfinity()) {
+      return publicKey.isInfinity() && signature.isInfinity();
     }
     BLST_ERROR res =
         blst.core_verify_pk_in_g1(
@@ -120,9 +120,9 @@ public class BlstBLS12381 implements BLS12381 {
   public BatchSemiAggregate prepareBatchVerify(
       int index, List<? extends PublicKey> publicKeys, Bytes message, Signature signature) {
     BlstPublicKey aggrPubKey = aggregatePublicKeys(publicKeys);
-    if (aggrPubKey == BlstPublicKey.INFINITY || signature == BlstSignature.INFINITY) {
-      return new BlstInfiniteSemiAggregate(
-          aggrPubKey == BlstPublicKey.INFINITY && signature == BlstSignature.INFINITY);
+    BlstSignature blstSignature = (BlstSignature) signature;
+    if (aggrPubKey.isInfinity() || blstSignature.isInfinity()) {
+      return new BlstInfiniteSemiAggregate(aggrPubKey.isInfinity() && blstSignature.isInfinity());
     }
     p2 g2Hash = HashToCurve.hashToG2(message);
     p2_affine p2Affine = new p2_affine();
@@ -135,7 +135,7 @@ public class BlstBLS12381 implements BLS12381 {
           blst.pairing_mul_n_aggregate_pk_in_g1(
               ctx,
               aggrPubKey.ecPoint,
-              ((BlstSignature) signature).ec2Point,
+              blstSignature.ec2Point,
               p2Affine,
               nextBatchRandomMultiplier(),
               BATCH_RANDOM_BYTES * 8);

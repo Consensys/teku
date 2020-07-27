@@ -63,9 +63,7 @@ public class BlstSignature implements Signature {
 
   public static BlstSignature aggregate(List<BlstSignature> signatures) {
     List<BlstSignature> finiteSignatures =
-        signatures.stream()
-            .filter(sig -> sig != BlstSignature.INFINITY)
-            .collect(Collectors.toList());
+        signatures.stream().filter(sig -> !sig.isInfinity()).collect(Collectors.toList());
 
     Optional<BlstSignature> invalidSignature =
         finiteSignatures.stream().filter(s -> !s.isValid).findFirst();
@@ -132,6 +130,11 @@ public class BlstSignature implements Signature {
   @Override
   public boolean verify(PublicKey publicKey, Bytes message) {
     return BlstBLS12381.verify((BlstPublicKey) publicKey, message, this);
+  }
+
+  @SuppressWarnings("ReferenceEquality")
+  boolean isInfinity() {
+    return this == INFINITY;
   }
 
   @Override

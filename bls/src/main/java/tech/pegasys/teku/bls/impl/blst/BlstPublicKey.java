@@ -65,7 +65,7 @@ public class BlstPublicKey implements PublicKey {
   }
 
   public static BlstPublicKey fromBytes(Bytes48 compressed) {
-    if ((compressed.equals(INFINITY_COMPRESSED_BYTES))) {
+    if (compressed.equals(INFINITY_COMPRESSED_BYTES)) {
       return INFINITY;
     }
     p1_affine ecPoint = new p1_affine();
@@ -81,7 +81,7 @@ public class BlstPublicKey implements PublicKey {
     checkArgument(publicKeys.size() > 0);
 
     List<BlstPublicKey> finitePublicKeys =
-        publicKeys.stream().filter(pk -> pk != BlstPublicKey.INFINITY).collect(Collectors.toList());
+        publicKeys.stream().filter(pk -> !pk.isInfinity()).collect(Collectors.toList());
     if (finitePublicKeys.isEmpty()) {
       return BlstPublicKey.INFINITY;
     }
@@ -122,6 +122,11 @@ public class BlstPublicKey implements PublicKey {
     byte[] res = new byte[UNCOMPRESSED_PK_LENGTH];
     blst.p1_affine_serialize(res, ecPoint);
     return Bytes.wrap(res);
+  }
+
+  @SuppressWarnings("ReferenceEquality")
+  boolean isInfinity() {
+    return this == INFINITY;
   }
 
   @Override
