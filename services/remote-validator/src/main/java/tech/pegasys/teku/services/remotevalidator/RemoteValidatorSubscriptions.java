@@ -32,14 +32,13 @@ public class RemoteValidatorSubscriptions implements BeaconChainEventsListener {
     this.maxSubscribers = configuration.getRemoteValidatorApiMaxSubscribers();
   }
 
-  boolean subscribe(String id, Consumer<BeaconChainEvent> sendEvent) {
-    // TODO return a subscribe status?
+  SubscriptionStatus subscribe(String id, Consumer<BeaconChainEvent> sendEvent) {
     synchronized (this) {
       if (subscriptions.size() >= maxSubscribers) {
-        return false;
+        return SubscriptionStatus.maxSubscribers();
       } else {
         subscriptions.put(id, sendEvent);
-        return true;
+        return SubscriptionStatus.success();
       }
     }
   }
@@ -55,5 +54,32 @@ public class RemoteValidatorSubscriptions implements BeaconChainEventsListener {
   @Override
   public void onEvent(final BeaconChainEvent event) {
     subscriptions.values().parallelStream().forEach((callback) -> callback.accept(event));
+  }
+
+  static class SubscriptionStatus {
+
+    private final boolean hasSubscribed;
+    private final String info;
+
+    static SubscriptionStatus success() {
+      return new SubscriptionStatus(true, "ok");
+    }
+
+    static SubscriptionStatus maxSubscribers() {
+      return new SubscriptionStatus(true, "Reached max subscribers");
+    }
+
+    private SubscriptionStatus(final boolean hasSubscribed, final String info) {
+      this.hasSubscribed = hasSubscribed;
+      this.info = info;
+    }
+
+    public boolean hasSubscribed() {
+      return hasSubscribed;
+    }
+
+    public String getInfo() {
+      return info;
+    }
   }
 }

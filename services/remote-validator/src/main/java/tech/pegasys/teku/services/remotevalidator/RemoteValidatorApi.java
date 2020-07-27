@@ -22,7 +22,9 @@ import java.io.IOException;
 import java.util.Objects;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jetty.websocket.api.StatusCode;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.services.remotevalidator.RemoteValidatorSubscriptions.SubscriptionStatus;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class RemoteValidatorApi {
@@ -73,7 +75,7 @@ public class RemoteValidatorApi {
   }
 
   private void subscribeValidator(final WsConnectContext handler) {
-    boolean hasSubscribed =
+    final SubscriptionStatus subscriptionStatus =
         subscriptionManager.subscribe(
             handler.getSessionId(),
             (msg) -> {
@@ -82,13 +84,13 @@ public class RemoteValidatorApi {
                 handler.session.getRemote().sendString(json);
               } catch (IOException e) {
                 LOG.error("Error sending msg to validator {}", handler.getSessionId(), e);
-                // TODO what do we do in this case? Close connection? Unsubscribe? Retry?
+                handler.session.close(
+                    StatusCode.SERVER_ERROR, "Unexpected error on Remote Validator server");
               }
             });
 
-    if (!hasSubscribed) {
-      // TODO we should provide better reasons for closing the session
-      handler.session.close();
+    if (!subscriptionStatus.hasSubscribed()) {
+      handler.session.close(StatusCode.NORMAL, subscriptionStatus.getInfo());
     }
   }
 
