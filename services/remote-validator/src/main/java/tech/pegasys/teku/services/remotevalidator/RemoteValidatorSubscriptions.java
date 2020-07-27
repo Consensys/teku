@@ -23,13 +23,17 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
 public class RemoteValidatorSubscriptions implements BeaconChainEventsListener {
 
   private final int maxSubscribers;
+  private final RemoteValidatorMetrics metrics;
 
   private final Map<String, Consumer<BeaconChainEvent>> subscriptions = new ConcurrentHashMap<>();
 
-  public RemoteValidatorSubscriptions(final TekuConfiguration configuration) {
+  public RemoteValidatorSubscriptions(
+      final TekuConfiguration configuration, final RemoteValidatorMetrics metrics) {
     checkNotNull(configuration, "TekuConfiguration can't be null");
+    checkNotNull(metrics, "RemoteValidatorMetrics can't be null");
 
     this.maxSubscribers = configuration.getRemoteValidatorApiMaxSubscribers();
+    this.metrics = metrics;
   }
 
   SubscriptionStatus subscribe(String id, Consumer<BeaconChainEvent> sendEvent) {
@@ -38,6 +42,7 @@ public class RemoteValidatorSubscriptions implements BeaconChainEventsListener {
         return SubscriptionStatus.maxSubscribers();
       } else {
         subscriptions.put(id, sendEvent);
+        updateSubscribedValidatorsMetric();
         return SubscriptionStatus.success();
       }
     }
@@ -45,15 +50,21 @@ public class RemoteValidatorSubscriptions implements BeaconChainEventsListener {
 
   void unsubscribe(String id) {
     subscriptions.remove(id);
+    updateSubscribedValidatorsMetric();
   }
 
   void unsubscribeAll() {
     subscriptions.clear();
+    updateSubscribedValidatorsMetric();
   }
 
   @Override
   public void onEvent(final BeaconChainEvent event) {
     subscriptions.values().parallelStream().forEach((callback) -> callback.accept(event));
+  }
+
+  private void updateSubscribedValidatorsMetric() {
+    metrics.updateConnectedValidators(subscriptions.size());
   }
 
   static class SubscriptionStatus {
