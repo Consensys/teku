@@ -14,6 +14,7 @@
 package tech.pegasys.teku.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -109,11 +110,13 @@ public class BlockPropagationIntegrationTest {
         () -> {
           for (SignedBeaconBlock block : blocksToFetch) {
             final Bytes32 blockRoot = block.getMessage().hash_tree_root();
-            assertThat(node2.storageClient().getBlockByRoot(blockRoot)).isPresent();
+            assertThatSafeFuture(node2.storageClient().retrieveBlockByRoot(blockRoot))
+                .isCompletedWithNonEmptyOptional();
           }
           // Last block should be imported as well
           final Bytes32 newBlockRoot = newBlock.getMessage().hash_tree_root();
-          assertThat(node2.storageClient().getBlockByRoot(newBlockRoot)).isPresent();
+          assertThatSafeFuture(node2.storageClient().retrieveBlockByRoot(newBlockRoot))
+              .isCompletedWithNonEmptyOptional();
         });
   }
 }

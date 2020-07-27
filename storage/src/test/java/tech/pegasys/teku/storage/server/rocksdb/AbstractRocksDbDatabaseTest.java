@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.storage.server.rocksdb;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.stream.Stream;
@@ -49,7 +49,8 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
     final SignedBlockAndState newValue = chainBuilder.generateBlockAtSlot(1);
     // Sanity check
-    assertThat(store.getBlockState(newValue.getRoot())).isNull();
+    assertThatSafeFuture(store.retrieveBlockState(newValue.getRoot()))
+        .isCompletedWithEmptyOptional();
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     transaction.putBlockAndState(newValue);
 

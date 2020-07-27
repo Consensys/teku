@@ -14,8 +14,10 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import org.apache.logging.log4j.LogManager;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
@@ -39,16 +41,19 @@ public class BeaconBlocksByRootMessageHandler
     LOG.trace(
         "Peer {} requested BeaconBlocks with roots: {}", peer.getId(), message.getBlockRoots());
     if (storageClient.getStore() != null) {
-      message
-          .getBlockRoots()
-          .forEach(
-              blockRoot -> {
-                final SignedBeaconBlock block = storageClient.getStore().getSignedBlock(blockRoot);
-                if (block != null) {
-                  callback.respond(block);
-                }
-              });
+      SafeFuture<Void> future = SafeFuture.COMPLETE;
+      for (Bytes32 blockRoot : message.getBlockRoots()) {
+        future =
+            future.thenCompose(
+                __ ->
+                    storageClient
+                        .getStore()
+                        .retrieveSignedBlock(blockRoot)
+                        .thenAccept(block -> block.ifPresent(callback::respond)));
+      }
+      future.finish(callback::completeSuccessfully, callback::completeWithUnexpectedError);
+    } else {
+      callback.completeSuccessfully();
     }
-    callback.completeSuccessfully();
   }
 }

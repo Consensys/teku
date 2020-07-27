@@ -24,7 +24,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -40,8 +39,7 @@ public abstract class AbstractStoreTest {
   protected final ChainBuilder chainBuilder = ChainBuilder.createDefault();
 
   protected void processChainWithLimitedCache(
-      BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor)
-      throws StateTransitionException {
+      BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor) {
     final int cacheSize = 10;
     final int cacheMultiplier = 3;
 
@@ -67,7 +65,7 @@ public abstract class AbstractStoreTest {
   }
 
   protected void processCheckpointsWithLimitedCache(
-      BiConsumer<UpdatableStore, CheckpointState> chainProcessor) throws StateTransitionException {
+      BiConsumer<UpdatableStore, CheckpointState> chainProcessor) {
     final int cacheSize = 3;
     final int epochsToProcess = cacheSize * 3;
 
