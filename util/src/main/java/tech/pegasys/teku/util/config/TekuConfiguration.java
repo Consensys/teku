@@ -109,6 +109,12 @@ public class TekuConfiguration implements MetricsConfig {
   private final String restApiInterface;
   private final List<String> restApiHostAllowlist;
 
+  // Remote Validator WS API
+  private final String remoteValidatorApiInterface;
+  private final int remoteValidatorApiPort;
+  private final boolean remoteValidatorApiEnabled;
+  private final int remoteValidatorApiMaxSubscribers;
+
   public static TekuConfigurationBuilder builder() {
     return new TekuConfigurationBuilder();
   }
@@ -169,6 +175,10 @@ public class TekuConfiguration implements MetricsConfig {
       final boolean restApiEnabled,
       final String restApiInterface,
       final List<String> restApiHostAllowlist,
+      final String remoteValidatorApiInterface,
+      final int remoteValidatorApiPort,
+      final int remoteValidatorApiMaxSubscribers,
+      final boolean remoteValidatorApiEnabled,
       final Bytes32 graffiti) {
     this.constants = constants;
     this.startupTargetPeerCount = startupTargetPeerCount;
@@ -225,6 +235,10 @@ public class TekuConfiguration implements MetricsConfig {
     this.restApiEnabled = restApiEnabled;
     this.restApiInterface = restApiInterface;
     this.restApiHostAllowlist = restApiHostAllowlist;
+    this.remoteValidatorApiInterface = remoteValidatorApiInterface;
+    this.remoteValidatorApiPort = remoteValidatorApiPort;
+    this.remoteValidatorApiEnabled = remoteValidatorApiEnabled;
+    this.remoteValidatorApiMaxSubscribers = remoteValidatorApiMaxSubscribers;
     this.graffiti = graffiti;
   }
 
@@ -476,6 +490,22 @@ public class TekuConfiguration implements MetricsConfig {
 
   public List<String> getRestApiHostAllowlist() {
     return restApiHostAllowlist;
+  }
+
+  public String getRemoteValidatorApiInterface() {
+    return remoteValidatorApiInterface;
+  }
+
+  public int getRemoteValidatorApiPort() {
+    return remoteValidatorApiPort;
+  }
+
+  public boolean isRemoteValidatorApiEnabled() {
+    return remoteValidatorApiEnabled;
+  }
+
+  public int getRemoteValidatorApiMaxSubscribers() {
+    return remoteValidatorApiMaxSubscribers;
   }
 
   public Bytes32 getGraffiti() {
