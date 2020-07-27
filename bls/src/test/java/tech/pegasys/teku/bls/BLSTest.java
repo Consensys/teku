@@ -170,6 +170,58 @@ class BLSTest {
   }
 
   @Test
+  void aggregateInfinitePublicKeyAndSignature() {
+    BLSKeyPair keyPair1 = BLSKeyPair.random(1);
+    BLSKeyPair keyPairInf = new BLSKeyPair(zeroSK);
+
+    Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
+    BLSSignature sig1 = BLS.sign(keyPair1.getSecretKey(), message);
+    BLSSignature sigInf = BLS.sign(keyPairInf.getSecretKey(), message);
+
+    BLSPublicKey pubKeyAggr = BLS
+        .aggregatePublicKeys(List.of(keyPair1.getPublicKey(), keyPairInf.getPublicKey()));
+    BLSSignature sigAggr = BLS.aggregate(List.of(sig1, sigInf));
+    boolean res1 = BLS.verify(pubKeyAggr, message, sigAggr);
+    assertTrue(res1);
+  }
+
+  @Test
+  void batchVerify2InfinitePublicKeyAndSignature() {
+    System.out.println(zeroSK.toBytes());
+    BLSKeyPair keyPairInf = new BLSKeyPair(zeroSK);
+
+    Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
+    BLSSignature sigInf = BLS.sign(keyPairInf.getSecretKey(), message);
+
+    BatchSemiAggregate semiAggregate1 = BLS
+        .prepareBatchVerify(0, List.of(keyPairInf.getPublicKey()), message, sigInf);
+    BatchSemiAggregate semiAggregateInf = BLS
+        .prepareBatchVerify(1, List.of(keyPairInf.getPublicKey()), message, sigInf);
+
+    boolean res1 = BLS.completeBatchVerify(List.of(semiAggregate1, semiAggregateInf));
+    assertTrue(res1);
+  }
+
+  @Test
+  void batchVerifyInfinitePublicKeyAndSignature() {
+    System.out.println(zeroSK.toBytes());
+    BLSKeyPair keyPair1 = BLSKeyPair.random(1);
+    BLSKeyPair keyPairInf = new BLSKeyPair(zeroSK);
+
+    Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
+    BLSSignature sig1 = BLS.sign(keyPair1.getSecretKey(), message);
+    BLSSignature sigInf = BLS.sign(keyPairInf.getSecretKey(), message);
+
+    BatchSemiAggregate semiAggregate1 = BLS
+        .prepareBatchVerify(0, List.of(keyPair1.getPublicKey()), message, sig1);
+    BatchSemiAggregate semiAggregateInf = BLS
+        .prepareBatchVerify(1, List.of(keyPairInf.getPublicKey()), message, sigInf);
+
+    boolean res1 = BLS.completeBatchVerify(List.of(semiAggregate1, semiAggregateInf));
+    assertTrue(res1);
+  }
+
+  @Test
   void testSignatureVerifyForSomeRealValues() {
     String signingRoot = "0x95b8e2ba063ab62f68ebe7db0a9669ab9e7906aa4e060e1cc0b67b294ce8c5e4";
     String sig =

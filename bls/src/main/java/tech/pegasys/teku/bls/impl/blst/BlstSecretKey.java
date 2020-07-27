@@ -25,8 +25,17 @@ import tech.pegasys.teku.bls.impl.blst.swig.p1_affine;
 import tech.pegasys.teku.bls.impl.blst.swig.scalar;
 
 public class BlstSecretKey implements SecretKey {
+  static final BlstSecretKey ZERO_SK = BlstSecretKey.fromBytesRaw(Bytes32.ZERO);
 
   public static BlstSecretKey fromBytes(Bytes32 bytes) {
+    if (bytes.isZero()) {
+      return ZERO_SK;
+    } else {
+      return fromBytesRaw(bytes);
+    }
+  }
+
+  private static BlstSecretKey fromBytesRaw(Bytes32 bytes) {
     scalar scalarVal = new scalar();
     blst.scalar_from_bendian(scalarVal, bytes.toArrayUnsafe());
     return new BlstSecretKey(scalarVal);
@@ -56,6 +65,9 @@ public class BlstSecretKey implements SecretKey {
 
   @Override
   public Signature sign(Bytes message) {
+    if (this == ZERO_SK) {
+      return BlstSignature.INFINITY;
+    }
     return BlstBLS12381.sign(this, message);
   }
 
@@ -67,6 +79,9 @@ public class BlstSecretKey implements SecretKey {
 
   @Override
   public BlstPublicKey derivePublicKey() {
+    if (this == ZERO_SK) {
+      return BlstPublicKey.INFINITY;
+    }
     p1 pk = new p1();
     blst.sk_to_pk_in_g1(pk, getScalarVal());
     p1_affine pkAffine = new p1_affine();

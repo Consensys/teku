@@ -91,6 +91,13 @@ public class BLS {
     return signature.getSignature().verify(publicKey.getPublicKey(), message);
   }
 
+  public static BLSPublicKey aggregatePublicKeys(List<BLSPublicKey> publicKeys) {
+    return new BLSPublicKey(
+        getBlsImpl()
+            .aggregatePublicKeys(
+                publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList())));
+  }
+
   /**
    * Aggregates a list of BLSSignatures into a single BLSSignature.
    *

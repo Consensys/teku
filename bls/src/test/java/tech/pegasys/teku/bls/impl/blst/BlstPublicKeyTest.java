@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class BlstPublicKeyTest {
@@ -27,6 +28,7 @@ public class BlstPublicKeyTest {
     BlstBLS12381.INSTANCE.hashCode();
   }
 
+  @Disabled
   @Test
   void infinityPublicKey() {
     BlstPublicKey inf1 =

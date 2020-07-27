@@ -69,6 +69,9 @@ public class BlstBLS12381 implements BLS12381 {
   }
 
   public static boolean verify(BlstPublicKey publicKey, Bytes message, BlstSignature signature) {
+    if (publicKey == BlstPublicKey.INFINITY || signature == BlstSignature.INFINITY) {
+      return publicKey == BlstPublicKey.INFINITY && signature == BlstSignature.INFINITY;
+    }
     BLST_ERROR res =
         blst.core_verify_pk_in_g1(
             publicKey.ecPoint,
@@ -114,9 +117,13 @@ public class BlstBLS12381 implements BLS12381 {
   }
 
   @Override
-  public BlstBatchSemiAggregate prepareBatchVerify(
+  public BatchSemiAggregate prepareBatchVerify(
       int index, List<? extends PublicKey> publicKeys, Bytes message, Signature signature) {
     BlstPublicKey aggrPubKey = aggregatePublicKeys(publicKeys);
+    if (aggrPubKey == BlstPublicKey.INFINITY || signature == BlstSignature.INFINITY) {
+      return new BlstInfiniteSemiAggregate(
+          aggrPubKey == BlstPublicKey.INFINITY && signature == BlstSignature.INFINITY);
+    }
     p2 g2Hash = HashToCurve.hashToG2(message);
     p2_affine p2Affine = new p2_affine();
     blst.p2_to_affine(p2Affine, g2Hash);
@@ -142,11 +149,11 @@ public class BlstBLS12381 implements BLS12381 {
     }
     blst.pairing_commit(ctx);
 
-    return new BlstBatchSemiAggregate(ctx);
+    return new BlstFiniteSemiAggregate(ctx);
   }
 
   @Override
-  public BlstBatchSemiAggregate prepareBatchVerify2(
+  public BatchSemiAggregate prepareBatchVerify2(
       int index,
       List<? extends PublicKey> publicKeys1,
       Bytes message1,
@@ -154,20 +161,26 @@ public class BlstBLS12381 implements BLS12381 {
       List<? extends PublicKey> publicKeys2,
       Bytes message2,
       Signature signature2) {
-    BlstBatchSemiAggregate aggregate1 =
+    BatchSemiAggregate aggregate1 =
         prepareBatchVerify(index, publicKeys1, message1, signature1);
-    BlstBatchSemiAggregate aggregate2 =
+    BatchSemiAggregate aggregate2 =
         prepareBatchVerify(index + 1, publicKeys2, message2, signature2);
-    aggregate1.mergeWith(aggregate2);
-    aggregate2.release();
 
-    return aggregate1;
+    return BlstFiniteSemiAggregate.merge(aggregate1, aggregate2);
   }
 
   @Override
   public boolean completeBatchVerify(List<? extends BatchSemiAggregate> preparedList) {
-    List<BlstBatchSemiAggregate> blstList =
-        preparedList.stream().map(b -> (BlstBatchSemiAggregate) b).collect(Collectors.toList());
+    boolean anyInvalidDummy = preparedList.stream()
+        .filter(a -> a instanceof BlstInfiniteSemiAggregate)
+        .map(a -> (BlstInfiniteSemiAggregate) a)
+        .anyMatch(a -> !a.isValid());
+
+    List<BlstFiniteSemiAggregate> blstList =
+        preparedList.stream()
+            .filter(a -> a instanceof BlstFiniteSemiAggregate)
+            .map(b -> (BlstFiniteSemiAggregate) b)
+            .collect(Collectors.toList());
 
     if (blstList.isEmpty()) {
       return true;
@@ -182,7 +195,7 @@ public class BlstBLS12381 implements BLS12381 {
 
     int boolRes = blst.pairing_finalverify(ctx0, null);
     blstList.get(0).release();
-    return mergeRes && boolRes != 0;
+    return mergeRes && boolRes != 0 && !anyInvalidDummy;
   }
 
   private static BigInteger nextBatchRandomMultiplier() {

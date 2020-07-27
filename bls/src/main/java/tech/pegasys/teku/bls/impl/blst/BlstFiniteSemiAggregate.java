@@ -18,11 +18,38 @@ import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
 import tech.pegasys.teku.bls.impl.blst.swig.blst;
 import tech.pegasys.teku.bls.impl.blst.swig.pairing;
 
-public final class BlstBatchSemiAggregate implements BatchSemiAggregate {
+final class BlstFiniteSemiAggregate implements BatchSemiAggregate {
+
+  public static BatchSemiAggregate merge(BatchSemiAggregate agg1, BatchSemiAggregate agg2) {
+    if (agg1 instanceof BlstFiniteSemiAggregate) {
+      if (agg2 instanceof BlstFiniteSemiAggregate) {
+        ((BlstFiniteSemiAggregate) agg1).mergeWith((BlstFiniteSemiAggregate) agg2);
+        ((BlstFiniteSemiAggregate) agg2).release();
+        return agg1;
+      } else {
+        if (((BlstInfiniteSemiAggregate)agg2).isValid()) {
+          return agg1;
+        } else {
+          ((BlstFiniteSemiAggregate) agg1).release();
+          return agg2;
+        }
+      }
+    } else {
+      if (((BlstInfiniteSemiAggregate)agg1).isValid()) {
+        return agg2;
+      } else {
+        if (agg2 instanceof BlstFiniteSemiAggregate) {
+          ((BlstFiniteSemiAggregate) agg2).release();
+        }
+        return agg1;
+      }
+    }
+  }
+
   private final pairing ctx;
   private boolean released = false;
 
-  BlstBatchSemiAggregate(pairing ctx) {
+  BlstFiniteSemiAggregate(pairing ctx) {
     this.ctx = ctx;
   }
 
@@ -36,7 +63,7 @@ public final class BlstBatchSemiAggregate implements BatchSemiAggregate {
     ctx.delete();
   }
 
-  void mergeWith(BlstBatchSemiAggregate other) {
+  void mergeWith(BlstFiniteSemiAggregate other) {
     BLST_ERROR ret = blst.pairing_merge(getCtx(), other.getCtx());
     if (ret != BLST_ERROR.BLST_SUCCESS) {
       throw new IllegalStateException("Error merging Blst pairing contexts: " + ret);

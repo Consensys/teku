@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.impl.PublicKey;
@@ -28,6 +29,29 @@ import tech.pegasys.teku.bls.impl.blst.swig.p1_affine;
 public class BlstPublicKey implements PublicKey {
   private static final int COMPRESSED_PK_SIZE = 48;
   private static final int UNCOMPRESSED_PK_LENGTH = 96;
+
+  static final Bytes48 INFINITY_COMPRESSED_BYTES =
+      Bytes48.fromHexString(
+          "0x"
+              + "c0000000000000000000000000000000"
+              + "00000000000000000000000000000000"
+              + "00000000000000000000000000000000");
+
+  static final BlstPublicKey INFINITY =
+      new BlstPublicKey(null) {
+        @Override
+        public void forceValidation() {}
+
+        @Override
+        public Bytes48 toBytesCompressed() {
+          return INFINITY_COMPRESSED_BYTES;
+        }
+
+        @Override
+        public Bytes toBytesUncompressed() {
+          throw new UnsupportedOperationException();
+        }
+      };
 
   public static BlstPublicKey fromBytesUncompressed(Bytes uncompressed) {
     checkArgument(uncompressed.size() == UNCOMPRESSED_PK_LENGTH);
@@ -41,6 +65,9 @@ public class BlstPublicKey implements PublicKey {
   }
 
   public static BlstPublicKey fromBytes(Bytes48 compressed) {
+    if ((compressed.equals(INFINITY_COMPRESSED_BYTES))) {
+      return INFINITY;
+    }
     p1_affine ecPoint = new p1_affine();
     if (blst.p1_uncompress(ecPoint, compressed.toArrayUnsafe()) == BLST_ERROR.BLST_SUCCESS) {
       return new BlstPublicKey(ecPoint);
@@ -53,10 +80,16 @@ public class BlstPublicKey implements PublicKey {
   public static BlstPublicKey aggregate(List<BlstPublicKey> publicKeys) {
     checkArgument(publicKeys.size() > 0);
 
+    List<BlstPublicKey> finitePublicKeys =
+        publicKeys.stream().filter(pk -> pk != BlstPublicKey.INFINITY).collect(Collectors.toList());
+    if (finitePublicKeys.isEmpty()) {
+      return BlstPublicKey.INFINITY;
+    }
+
     p1 sum = new p1();
-    blst.p1_from_affine(sum, publicKeys.get(0).ecPoint);
-    for (int i = 1; i < publicKeys.size(); i++) {
-      blst.p1_add_affine(sum, sum, publicKeys.get(i).ecPoint);
+    blst.p1_from_affine(sum, finitePublicKeys.get(0).ecPoint);
+    for (int i = 1; i < finitePublicKeys.size(); i++) {
+      blst.p1_add_affine(sum, sum, finitePublicKeys.get(i).ecPoint);
     }
     p1_affine res = new p1_affine();
     blst.p1_to_affine(res, sum);

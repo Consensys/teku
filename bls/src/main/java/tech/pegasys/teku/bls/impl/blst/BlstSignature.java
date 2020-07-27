@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.bls.BatchSemiAggregate;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
 import tech.pegasys.teku.bls.impl.Signature;
@@ -33,7 +34,24 @@ import tech.pegasys.teku.bls.impl.blst.swig.p2_affine;
 public class BlstSignature implements Signature {
   private static final int COMPRESSED_SIG_SIZE = 96;
 
+  private static final Bytes INFINITY_BYTES =
+      Bytes.fromHexString(
+          "0x"
+              + "c000000000000000000000000000000000000000000000000000000000000000"
+              + "0000000000000000000000000000000000000000000000000000000000000000"
+              + "0000000000000000000000000000000000000000000000000000000000000000");
+  static final BlstSignature INFINITY;
+
+  static {
+    p2_affine ec2Point = new p2_affine();
+    blst.p2_uncompress(ec2Point, INFINITY_BYTES.toArrayUnsafe());
+    INFINITY = new BlstSignature(ec2Point, true);
+  }
+
   public static BlstSignature fromBytes(Bytes compressed) {
+    if (compressed.equals(INFINITY_BYTES)) {
+      return INFINITY;
+    }
     checkArgument(
         compressed.size() == COMPRESSED_SIG_SIZE,
         "Expected " + COMPRESSED_SIG_SIZE + " bytes of input but got %s",
@@ -44,17 +62,22 @@ public class BlstSignature implements Signature {
   }
 
   public static BlstSignature aggregate(List<BlstSignature> signatures) {
+    List<BlstSignature> finiteSignatures =
+        signatures.stream()
+            .filter(sig -> sig != BlstSignature.INFINITY)
+            .collect(Collectors.toList());
+
     Optional<BlstSignature> invalidSignature =
-        signatures.stream().filter(s -> !s.isValid).findFirst();
+        finiteSignatures.stream().filter(s -> !s.isValid).findFirst();
     if (invalidSignature.isPresent()) {
       throw new IllegalArgumentException(
           "Can't aggregate invalid signature: " + invalidSignature.get());
     }
 
     p2 sum = new p2();
-    blst.p2_from_affine(sum, signatures.get(0).ec2Point);
-    for (int i = 1; i < signatures.size(); i++) {
-      blst.p2_add_affine(sum, sum, signatures.get(i).ec2Point);
+    blst.p2_from_affine(sum, finiteSignatures.get(0).ec2Point);
+    for (int i = 1; i < finiteSignatures.size(); i++) {
+      blst.p2_add_affine(sum, sum, finiteSignatures.get(i).ec2Point);
     }
     p2_affine res = new p2_affine();
     blst.p2_to_affine(res, sum);
@@ -85,11 +108,11 @@ public class BlstSignature implements Signature {
   @Override
   public boolean verify(List<PublicKeyMessagePair> keysToMessages) {
 
-    List<BlstBatchSemiAggregate> semiAggregates = new ArrayList<>();
+    List<BatchSemiAggregate> semiAggregates = new ArrayList<>();
     for (int i = 0; i < keysToMessages.size(); i++) {
       BlstPublicKey publicKey = (BlstPublicKey) keysToMessages.get(i).getPublicKey();
       Bytes message = keysToMessages.get(i).getMessage();
-      BlstBatchSemiAggregate semiAggregate =
+      BatchSemiAggregate semiAggregate =
           BlstBLS12381.INSTANCE.prepareBatchVerify(
               i, Collections.singletonList(publicKey), message, this);
       semiAggregates.add(semiAggregate);

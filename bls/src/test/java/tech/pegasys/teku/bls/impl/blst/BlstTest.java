@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BatchSemiAggregate;
 
 public class BlstTest {
   private static final Random random = new Random(1);
@@ -39,7 +40,7 @@ public class BlstTest {
 
     BlstSignature blstSignature = BlstBLS12381.sign(blstSK, msg);
 
-    BlstBatchSemiAggregate semiAggregate =
+    BatchSemiAggregate semiAggregate =
         BlstBLS12381.INSTANCE.prepareBatchVerify(0, List.of(blstPK), msg, blstSignature);
 
     boolean blstRes = BlstBLS12381.INSTANCE.completeBatchVerify(List.of(semiAggregate));
@@ -60,9 +61,9 @@ public class BlstTest {
     BlstPublicKey blstPK2 = blstSK2.derivePublicKey();
     BlstSignature blstSignature2 = BlstBLS12381.sign(blstSK2, msg2);
 
-    BlstBatchSemiAggregate semiAggregate1 =
+    BatchSemiAggregate semiAggregate1 =
         BlstBLS12381.INSTANCE.prepareBatchVerify(0, List.of(blstPK1), msg1, blstSignature1);
-    BlstBatchSemiAggregate semiAggregate2 =
+    BatchSemiAggregate semiAggregate2 =
         BlstBLS12381.INSTANCE.prepareBatchVerify(1, List.of(blstPK2), msg2, blstSignature2);
 
     boolean blstRes =
