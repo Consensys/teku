@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,12 +13,16 @@
 
 package tech.pegasys.teku.sync;
 
-enum PeerSyncResult {
-  SUCCESSFUL_SYNC,
-  FAULTY_ADVERTISEMENT,
-  CANCELLED,
-  BAD_BLOCK,
-  IMPORT_FAILED,
-  EXCESSIVE_THROTTLING,
-  WRONG_ORDERING
+import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
+
+public class OutOfOrderException extends InvalidResponseException {
+
+  public OutOfOrderException(UnsignedLong lastBlockNumber, UnsignedLong newBlockNumber) {
+    super(
+        "Unable to import block due to wrong block order. Last imported block number: "
+            + lastBlockNumber
+            + " new block number: "
+            + newBlockNumber);
+  }
 }

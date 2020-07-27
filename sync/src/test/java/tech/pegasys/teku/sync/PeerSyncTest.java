@@ -394,6 +394,44 @@ public class PeerSyncTest {
   }
 
   @Test
+  void sync_stopSyncIfPeerSendsBlocksInWrongOrder() {
+    final UnsignedLong startSlot = UnsignedLong.ONE;
+    UnsignedLong peerHeadSlot = UnsignedLong.valueOf(1000000);
+
+    withPeerHeadSlot(peerHeadSlot);
+
+    final SafeFuture<Void> requestFuture = new SafeFuture<>();
+    when(peer.requestBlocksByRange(any(), any(), any(), any())).thenReturn(requestFuture);
+
+    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
+    assertThat(syncFuture).isNotDone();
+
+    verify(peer)
+        .requestBlocksByRange(
+            eq(startSlot),
+            eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
+            eq(UnsignedLong.ONE),
+            responseListenerArgumentCaptor.capture());
+
+    ResponseStreamListener<SignedBeaconBlock> listener = responseListenerArgumentCaptor.getValue();
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(10);
+    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(9);
+    listener.onResponse(block1).join();
+
+    try {
+      listener.onResponse(block2).join();
+    } catch (final Exception e) {
+      assertThat(e).isInstanceOf(OutOfOrderException.class);
+      requestFuture.completeExceptionally(e);
+    }
+
+    // Peer returns some blocks but they are not ordered
+    assertThat(syncFuture).isCompletedWithValue(PeerSyncResult.WRONG_ORDERING);
+
+    verify(peer).disconnectCleanly(any());
+  }
+
+  @Test
   void sync_continueSyncIfPeerThrottlesAReasonableAmount() {
     final UnsignedLong startSlot = UnsignedLong.ONE;
     UnsignedLong peerHeadSlot = UnsignedLong.valueOf(1000000);

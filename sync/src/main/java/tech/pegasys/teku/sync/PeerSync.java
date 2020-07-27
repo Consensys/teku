@@ -171,9 +171,16 @@ public class PeerSync {
         return PeerSyncResult.IMPORT_FAILED;
       }
     }
+
     if (rootException instanceof CancellationException) {
       return PeerSyncResult.CANCELLED;
     }
+
+    if (rootException instanceof OutOfOrderException) {
+      disconnectFromPeer(peer);
+      return PeerSyncResult.WRONG_ORDERING;
+    }
+
     if (err instanceof RuntimeException) {
       throw (RuntimeException) err;
     } else {
