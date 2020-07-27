@@ -66,7 +66,7 @@ public class RemoteValidatorSubscriptions implements BeaconChainEventsListener {
     }
 
     static SubscriptionStatus maxSubscribers() {
-      return new SubscriptionStatus(true, "Reached max subscribers");
+      return new SubscriptionStatus(false, "Reached max subscribers");
     }
 
     private SubscriptionStatus(final boolean hasSubscribed, final String info) {
