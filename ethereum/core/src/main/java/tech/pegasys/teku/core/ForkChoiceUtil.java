@@ -375,7 +375,7 @@ public class ForkChoiceUtil {
    * @return
    */
   private static AttestationProcessingResult indexAndValidateAttestation(
-      MutableStore store, ValidateableAttestation attestation, Checkpoint target) {
+      ReadOnlyStore store, ValidateableAttestation attestation, Checkpoint target) {
     BeaconState targetState;
     try {
       Optional<BeaconState> maybeTargetState = store.getCheckpointState(target);
@@ -404,7 +404,7 @@ public class ForkChoiceUtil {
   }
 
   private static AttestationProcessingResult validateOnAttestation(
-      final MutableStore store,
+      final ReadOnlyStore store,
       final Attestation attestation,
       final ForkChoiceStrategy forkChoiceStrategy) {
     final Checkpoint target = attestation.getData().getTarget();
@@ -457,7 +457,7 @@ public class ForkChoiceUtil {
   }
 
   private static AttestationProcessingResult checkIfAttestationShouldBeSavedForFuture(
-      MutableStore store, Attestation attestation) {
+      ReadOnlyStore store, Attestation attestation) {
 
     // Attestations can only affect the fork choice of subsequent slots.
     // Delay consideration in the fork choice until their slot is in the past.
