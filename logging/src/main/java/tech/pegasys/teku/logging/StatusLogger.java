@@ -98,6 +98,18 @@ public class StatusLogger {
     log.info("Initializing storage");
   }
 
+  public void initializingChainDataTimeout() {
+    log.info("storage initialisation timed out, will retry.");
+  }
+
+  public void fatalErrorInitialisingStorage(Throwable err) {
+    log.debug("Failed to intiailize storage", err);
+    log.fatal(
+        "Failed to initialize storage. "
+            + "Is your network set in line with your existing database? "
+            + "Set log level to debug for more information.");
+  }
+
   public void finishInitializingChainData() {
     log.info("Storage initialization complete");
   }
