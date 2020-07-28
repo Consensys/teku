@@ -60,6 +60,8 @@ services:
       - '--Xlog-wire-gossip-enabled'
     volumes:
       - './nodes/node1:/data'
+    ports:
+      - '19601:5051'
 
   teku2:
     image: pegasyseng/teku:develop
@@ -84,6 +86,8 @@ services:
       - '--p2p-static-peers=/dns4/teku1/tcp/9000/p2p/16Uiu2HAmGNMvKxVP6E1Jjnn6oTxUMRbdkJXaEvd2R9ENkGYVDqVh,/dns4/teku3/tcp/9000/p2p/16Uiu2HAm3NZUwzzNHfnnB8ADfnuP5MTDuqjRb3nTRBxPTQ4g7Wjj,/dns4/teku4/tcp/9000/p2p/16Uiu2HAmPF4kvruyovDo7Pg8ZSAYefGdQvTiqQUWC1oUGFfUGm32'
     volumes:
       - './nodes/node2:/data'
+    ports:
+      - '19602:5051'
 
   teku3:
     image: pegasyseng/teku:develop
@@ -108,6 +112,8 @@ services:
       - '--p2p-static-peers=/dns4/teku1/tcp/9000/p2p/16Uiu2HAmGNMvKxVP6E1Jjnn6oTxUMRbdkJXaEvd2R9ENkGYVDqVh,/dns4/teku2/tcp/9000/p2p/16Uiu2HAm7WCLoc7KqP5jKQuQM3CNfR9tiamadxmEmNYUviXKoYmm,/dns4/teku4/tcp/9000/p2p/16Uiu2HAmPF4kvruyovDo7Pg8ZSAYefGdQvTiqQUWC1oUGFfUGm32'
     volumes:
       - './nodes/node3:/data'
+    ports:
+      - '19603:5051'
 
   teku4:
     image: pegasyseng/teku:develop
@@ -132,3 +138,5 @@ services:
       - '--p2p-static-peers=/dns4/teku1/tcp/9000/p2p/16Uiu2HAmGNMvKxVP6E1Jjnn6oTxUMRbdkJXaEvd2R9ENkGYVDqVh,/dns4/teku2/tcp/9000/p2p/16Uiu2HAm7WCLoc7KqP5jKQuQM3CNfR9tiamadxmEmNYUviXKoYmm,/dns4/teku3/tcp/9000/p2p/16Uiu2HAm3NZUwzzNHfnnB8ADfnuP5MTDuqjRb3nTRBxPTQ4g7Wjj'
     volumes:
       - './nodes/node4:/data'
+    ports:
+      - '19604:5051'

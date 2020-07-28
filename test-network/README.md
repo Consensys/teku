@@ -10,4 +10,6 @@ To stop, simply ctrl-C to kill the docker instances and then optionally run `doc
 
 Metrics are available via Grafana at http://localhost:3001/ username is `admin` and password is `pass`.
 
+Each node's REST APIs are exposed on ports 19601, 19602, 19603 and 19604 respectively.
+
 Add a `ports:` section to any of the nodes to expose additional ports and access services from that node.
