@@ -395,6 +395,14 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     forkChoiceStrategy.ifPresent(strategy -> strategy.maybePrune(finalizedCheckpoint.getRoot()));
   }
 
+  public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
+    if (store == null) {
+      return EmptyStoreResults.EMPTY_STATE_FUTURE;
+    }
+
+    return store.retrieveCheckpointState(checkpoint);
+  }
+
   private static class SignedBlockAndStateAndSlot extends SignedBlockAndState {
     private final UnsignedLong headSlot;
 
