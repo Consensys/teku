@@ -116,14 +116,68 @@ public class BlstBLS12381 implements BLS12381 {
         signatures.stream().map(s -> (BlstSignature) s).collect(Collectors.toList()));
   }
 
-  @Override
+  pairing blstPrepareVerifyAggregated(
+      BlstPublicKey pubKey,
+      Bytes message,
+      pairing ctx,
+      BlstSignature blstSignature) {
+
+    p2 g2Hash = HashToCurve.hashToG2(message);
+    p2_affine p2Affine = new p2_affine();
+    blst.p2_to_affine(p2Affine, g2Hash);
+
+    if (ctx == null) {
+      ctx = new pairing();
+      blst.pairing_init(ctx);
+    }
+
+    try {
+      BLST_ERROR ret =
+          blst.pairing_aggregate_pk_in_g1(
+              ctx,
+              pubKey.ecPoint,
+              blstSignature == null ? null : blstSignature.ec2Point,
+              1,
+              message.toArrayUnsafe(),
+              HashToCurve.ETH2_DST.toArrayUnsafe(),
+              null);
+      if (ret != BLST_ERROR.BLST_SUCCESS) throw new IllegalArgumentException("Error: " + ret);
+    } catch (Exception e) {
+      ctx.delete();
+      throw e;
+    } finally {
+      g2Hash.delete();
+      p2Affine.delete(); // not sure if its copied inside pairing_mul_n_aggregate_pk_in_g1
+    }
+
+    return ctx;
+  }
+
+  boolean blstCompleteVerifyAggregated(pairing ctx) {
+    try {
+      blst.pairing_commit(ctx);
+      return blst.pairing_finalverify(ctx, null) > 0;
+    } finally {
+      ctx.delete();
+    }
+  }
+
+
+      @Override
   public BatchSemiAggregate prepareBatchVerify(
       int index, List<? extends PublicKey> publicKeys, Bytes message, Signature signature) {
+
     BlstPublicKey aggrPubKey = aggregatePublicKeys(publicKeys);
     BlstSignature blstSignature = (BlstSignature) signature;
     if (aggrPubKey.isInfinity() || blstSignature.isInfinity()) {
       return new BlstInfiniteSemiAggregate(aggrPubKey.isInfinity() && blstSignature.isInfinity());
     }
+    return blstPrepareBatchVerify(aggrPubKey, message, blstSignature);
+  }
+
+  BatchSemiAggregate blstPrepareBatchVerify(
+      BlstPublicKey pubKey, Bytes message, BlstSignature blstSignature) {
+
     p2 g2Hash = HashToCurve.hashToG2(message);
     p2_affine p2Affine = new p2_affine();
     blst.p2_to_affine(p2Affine, g2Hash);
@@ -134,7 +188,7 @@ public class BlstBLS12381 implements BLS12381 {
       BLST_ERROR ret =
           blst.pairing_mul_n_aggregate_pk_in_g1(
               ctx,
-              aggrPubKey.ecPoint,
+              pubKey.ecPoint,
               blstSignature.ec2Point,
               p2Affine,
               nextBatchRandomMultiplier(),
@@ -198,7 +252,7 @@ public class BlstBLS12381 implements BLS12381 {
     return mergeRes && boolRes != 0 && !anyInvalidDummy;
   }
 
-  private static BigInteger nextBatchRandomMultiplier() {
+  static BigInteger nextBatchRandomMultiplier() {
     byte[] scalarBytes = new byte[BATCH_RANDOM_BYTES];
     getRND().nextBytes(scalarBytes);
     return new BigInteger(1, scalarBytes);

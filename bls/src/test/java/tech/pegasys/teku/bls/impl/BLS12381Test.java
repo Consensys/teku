@@ -116,28 +116,29 @@ public abstract class BLS12381Test {
     assertTrue(aggregatedSignature.verify(publicKeys, message));
   }
 
-  @Test
-  void aggregateVerifyDistinctMessages() {
-    Bytes message1 = Bytes.wrap("Hello, world 1!".getBytes(UTF_8));
-    Bytes message2 = Bytes.wrap("Hello, world 2!".getBytes(UTF_8));
-    Bytes message3 = Bytes.wrap("Hello, world 3!".getBytes(UTF_8));
-    KeyPair keyPair1 = getBls().generateKeyPair(1);
-    KeyPair keyPair2 = getBls().generateKeyPair(2);
-    KeyPair keyPair3 = getBls().generateKeyPair(3);
-
-    List<PublicKey> publicKeys =
-        Arrays.asList(keyPair1.getPublicKey(), keyPair2.getPublicKey(), keyPair3.getPublicKey());
-    List<Bytes> messages = Arrays.asList(message1, message2, message3);
-    List<Signature> signatures =
-        Arrays.asList(
-            keyPair1.getSecretKey().sign(message1),
-            keyPair2.getSecretKey().sign(message2),
-            keyPair3.getSecretKey().sign(message3));
-    Signature aggregatedSignature = getBls().aggregateSignatures(signatures);
-
-    assertTrue(aggregatedSignature.verify(PublicKeyMessagePair.fromLists(publicKeys, messages)));
-  }
-
+//  @Test
+//  void aggregateVerifyDistinctMessages1() {
+//    Bytes message1 = Bytes.fromHexString("0x0000000000000000000000000000000000000000000000000000000000000000");
+//    Bytes message2 = Bytes.fromHexString("0x5656565656565656565656565656565656565656565656565656565656565656");
+//    Bytes message3 = Bytes.fromHexString("0xabababababababababababababababababababababababababababababababab");
+//
+//    List<PublicKey> publicKeys =
+//        Arrays.asList(
+//            BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString("0xa491d1b0ecd9bb917989f0e74f0dea0422eac4a873e5e2644f368dffb9a6e20fd6e10c1b77654d067c0618f6e5a7f79a")),
+//            BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString("0xa491d1b0ecd9bb917989f0e74f0dea0422eac4a873e5e2644f368dffb9a6e20fd6e10c1b77654d067c0618f6e5a7f79a")),
+//            BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString("0xa491d1b0ecd9bb917989f0e74f0dea0422eac4a873e5e2644f368dffb9a6e20fd6e10c1b77654d067c0618f6e5a7f79a"))
+//            );
+//    List<Bytes> messages = Arrays.asList(message1, message2, message3);
+//    List<Signature> signatures =
+//        Arrays.asList(
+//            keyPair1.getSecretKey().sign(message1),
+//            keyPair2.getSecretKey().sign(message2),
+//            keyPair3.getSecretKey().sign(message3));
+//    Signature aggregatedSignature = getBls().aggregateSignatures(signatures);
+//
+//    assertTrue(aggregatedSignature.verify(PublicKeyMessagePair.fromLists(publicKeys, messages)));
+//  }
+//
   @Test
   void aggregateVerifyDuplicateMessages() {
     Bytes message1 = Bytes.wrap("Hello, world 1!".getBytes(UTF_8));

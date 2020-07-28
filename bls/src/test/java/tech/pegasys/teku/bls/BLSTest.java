@@ -117,6 +117,28 @@ class BLSTest {
   }
 
   @Test
+  void succeedsWhenAggregateVerifyWithDistinctMessagesReturnsTrue() {
+    Bytes message1 = Bytes.wrap("Hello, world 1!".getBytes(UTF_8));
+    Bytes message2 = Bytes.wrap("Hello, world 2!".getBytes(UTF_8));
+    Bytes message3 = Bytes.wrap("Hello, world 3!".getBytes(UTF_8));
+    BLSKeyPair keyPair1 = BLSKeyPair.random(1);
+    BLSKeyPair keyPair2 = BLSKeyPair.random(2);
+    BLSKeyPair keyPair3 = BLSKeyPair.random(3);
+
+    List<BLSPublicKey> publicKeys =
+        Arrays.asList(keyPair1.getPublicKey(), keyPair2.getPublicKey(), keyPair3.getPublicKey());
+    List<Bytes> messages = Arrays.asList(message1, message2, message3);
+    List<BLSSignature> signatures =
+        Arrays.asList(
+            BLS.sign(keyPair1.getSecretKey(), message1),
+            BLS.sign(keyPair2.getSecretKey(), message2),
+            BLS.sign(keyPair3.getSecretKey(), message3));
+    BLSSignature aggregatedSignature = BLS.aggregateSignatures(signatures);
+
+    assertTrue(BLS.aggregateVerify(publicKeys, messages, aggregatedSignature));
+  }
+
+  @Test
   // The standard says that this is INVALID
   void aggregateThrowsExceptionForEmptySignatureList() {
     assertThrows(IllegalArgumentException.class, () -> BLS.aggregateSignatures(new ArrayList<>()));

@@ -15,14 +15,11 @@ package tech.pegasys.teku.bls.impl.blst;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.BatchSemiAggregate;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
 import tech.pegasys.teku.bls.impl.Signature;
@@ -30,6 +27,7 @@ import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
 import tech.pegasys.teku.bls.impl.blst.swig.blst;
 import tech.pegasys.teku.bls.impl.blst.swig.p2;
 import tech.pegasys.teku.bls.impl.blst.swig.p2_affine;
+import tech.pegasys.teku.bls.impl.blst.swig.pairing;
 
 public class BlstSignature implements Signature {
   private static final int COMPRESSED_SIG_SIZE = 96;
@@ -106,17 +104,15 @@ public class BlstSignature implements Signature {
   @Override
   public boolean verify(List<PublicKeyMessagePair> keysToMessages) {
 
-    List<BatchSemiAggregate> semiAggregates = new ArrayList<>();
+    pairing ctx = null;
     for (int i = 0; i < keysToMessages.size(); i++) {
       BlstPublicKey publicKey = (BlstPublicKey) keysToMessages.get(i).getPublicKey();
       Bytes message = keysToMessages.get(i).getMessage();
-      BatchSemiAggregate semiAggregate =
-          BlstBLS12381.INSTANCE.prepareBatchVerify(
-              i, Collections.singletonList(publicKey), message, this);
-      semiAggregates.add(semiAggregate);
+      BlstSignature signature = i == 0 ? this : null;
+      ctx = BlstBLS12381.INSTANCE.blstPrepareVerifyAggregated(publicKey, message, ctx, signature);
     }
 
-    return BlstBLS12381.INSTANCE.completeBatchVerify(semiAggregates);
+    return BlstBLS12381.INSTANCE.blstCompleteVerifyAggregated(ctx);
   }
 
   @Override
