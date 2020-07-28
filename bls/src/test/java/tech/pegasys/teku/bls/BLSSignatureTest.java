@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.bls;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Collections;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
@@ -63,8 +65,9 @@ class BLSSignatureTest {
 
   @Test
   void succeedsWhenEqualsReturnsTrueForTheSameSignature() {
-    BLSSignature signature = BLSSignature.random(9);
+    BLSSignature signature = BLSSignature.random(42);
     assertEquals(signature, signature);
+    assertEquals(signature.hashCode(), signature.hashCode());
   }
 
   @Test
@@ -92,5 +95,24 @@ class BLSSignatureTest {
   void succeedsWhenEqualsReturnsTrueForEmptySignatures() {
     assertEquals(BLSSignature.empty(), BLSSignature.empty());
     assertEquals(BLSSignature.empty().hashCode(), BLSSignature.empty().hashCode());
+  }
+
+  @Test
+  void succeedsWhenPassingEmptyListToAggregateSignaturesDoesNotThrowException() {
+    assertDoesNotThrow(() -> BLS.aggregate(Collections.emptyList()));
+  }
+
+  @Test
+  void roundtripEncodeDecodeCompressed() {
+    BLSSignature signature = BLSSignature.random(513);
+    final BLSSignature result = BLSSignature.fromSSZBytes(signature.toSSZBytes());
+    assertEquals(signature, result);
+    assertEquals(signature.hashCode(), result.hashCode());
+  }
+
+  @Test
+  void testRandomFromSeed() {
+    BLSSignature randomSig = BLSSignature.random(92892840);
+    System.out.println(randomSig);
   }
 }

@@ -20,7 +20,6 @@ import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.SecretKey;
 import tech.pegasys.teku.bls.impl.Signature;
 
@@ -65,7 +64,7 @@ public class MikuliSecretKey implements SecretKey {
   }
 
   @Override
-  public PublicKey derivePublicKey() {
+  public MikuliPublicKey derivePublicKey() {
     return new MikuliPublicKey(this);
   }
 

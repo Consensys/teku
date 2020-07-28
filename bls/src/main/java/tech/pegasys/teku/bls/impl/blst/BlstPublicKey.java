@@ -146,4 +146,9 @@ public class BlstPublicKey implements PublicKey {
     BlstPublicKey that = (BlstPublicKey) o;
     return Objects.equals(toBytesCompressed(), that.toBytesCompressed());
   }
+
+  @Override
+  public String toString() {
+    return toBytesCompressed().toHexString();
+  }
 }

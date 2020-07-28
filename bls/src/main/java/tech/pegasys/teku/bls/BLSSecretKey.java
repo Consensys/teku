@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.bls;
 
+import java.math.BigInteger;
+import java.nio.ByteOrder;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -20,8 +22,36 @@ import tech.pegasys.teku.bls.impl.SecretKey;
 
 public final class BLSSecretKey {
 
-  public static BLSSecretKey fromBytes(Bytes32 bytes) {
-    return new BLSSecretKey(BLS.getBlsImpl().secretKeyFromBytes(bytes));
+  private static final Bytes32 CURVE_ORDER =
+      Bytes32.fromHexString("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001");
+  private static final BigInteger CURVE_ORDER_BI =
+      CURVE_ORDER.toUnsignedBigInteger(ByteOrder.BIG_ENDIAN);
+
+  /**
+   * Creates a secret key instance from bytes
+   *
+   * @param bytes Should be in range [0, 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001)
+   * @throws IllegalArgumentException if bytes are not in the valid range
+   */
+  public static BLSSecretKey fromBytes(Bytes32 bytes) throws IllegalArgumentException {
+    if (bytes.compareTo(CURVE_ORDER) >= 0) {
+      throw new IllegalArgumentException(
+          "Invalid bytes for secret key (0 <= SK < r, where r is " + CURVE_ORDER + "): " + bytes);
+    } else {
+      return new BLSSecretKey(BLS.getBlsImpl().secretKeyFromBytes(bytes));
+    }
+  }
+
+  static BLSSecretKey fromBytesModR(Bytes32 secretKeyBytes) {
+    final Bytes32 keyBytes;
+    if (secretKeyBytes.compareTo(CURVE_ORDER) >= 0) {
+      BigInteger validSK = secretKeyBytes.toUnsignedBigInteger(ByteOrder.BIG_ENDIAN)
+          .mod(CURVE_ORDER_BI);
+      keyBytes = Bytes32.leftPad(Bytes.wrap(validSK.toByteArray()));
+    } else {
+      keyBytes = secretKeyBytes;
+    }
+    return fromBytes(keyBytes);
   }
 
   private SecretKey secretKey;
@@ -35,8 +65,12 @@ public final class BLSSecretKey {
     this.secretKey = secretKey;
   }
 
-  public SecretKey getSecretKey() {
+  SecretKey getSecretKey() {
     return secretKey;
+  }
+
+  public BLSPublicKey toPublicKey() {
+    return new BLSPublicKey(getSecretKey().derivePublicKey());
   }
 
   public Bytes toBytes() {
