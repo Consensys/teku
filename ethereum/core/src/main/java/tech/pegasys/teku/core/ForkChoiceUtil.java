@@ -340,7 +340,7 @@ public class ForkChoiceUtil {
    *
    * @param store
    * @param validateableAttestation
-   * @param stateTransition
+   * @param maybeTargetState The state corresponding to the attestation target
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_attestation</a>
    */
@@ -348,14 +348,13 @@ public class ForkChoiceUtil {
   public static AttestationProcessingResult on_attestation(
       final MutableStore store,
       final ValidateableAttestation validateableAttestation,
-      final StateTransition stateTransition,
+      final Optional<BeaconState> maybeTargetState,
       final ForkChoiceStrategy forkChoiceStrategy) {
 
     Attestation attestation = validateableAttestation.getAttestation();
-    Checkpoint target = attestation.getData().getTarget();
 
     return validateOnAttestation(store, attestation, forkChoiceStrategy)
-        .ifSuccessful(() -> indexAndValidateAttestation(store, validateableAttestation, target))
+        .ifSuccessful(() -> indexAndValidateAttestation(validateableAttestation, maybeTargetState))
         .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation))
         .ifSuccessful(
             () -> {
@@ -369,16 +368,14 @@ public class ForkChoiceUtil {
   /**
    * Returns the indexed attestation if attestation is valid, else, returns an empty optional.
    *
-   * @param store
    * @param attestation
-   * @param target
+   * @param maybeTargetState The state corresponding to the attestation target, if it is available
    * @return
    */
   private static AttestationProcessingResult indexAndValidateAttestation(
-      ReadOnlyStore store, ValidateableAttestation attestation, Checkpoint target) {
+      ValidateableAttestation attestation, Optional<BeaconState> maybeTargetState) {
     BeaconState targetState;
     try {
-      Optional<BeaconState> maybeTargetState = store.getCheckpointState(target);
       if (maybeTargetState.isEmpty()) {
         return AttestationProcessingResult.UNKNOWN_BLOCK;
       }
