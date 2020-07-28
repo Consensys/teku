@@ -225,7 +225,15 @@ public class CombinedChainDataClient {
             maybeSlotAndBlockRoot ->
                 maybeSlotAndBlockRoot
                     .map(this::getStateFromSlotAndBlock)
-                    .orElse(STATE_NOT_AVAILABLE));
+                    .orElseGet(() -> getFinalizedStateFromStateRoot(stateRoot)));
+  }
+
+  private SafeFuture<Optional<BeaconState>> getFinalizedStateFromStateRoot(
+      final Bytes32 stateRoot) {
+    return historicalChainData
+        .getFinalizedSlotByStateRoot(stateRoot)
+        .thenCompose(
+            maybeSlot -> maybeSlot.map(this::getStateAtSlotExact).orElse(STATE_NOT_AVAILABLE));
   }
 
   private SafeFuture<Optional<BeaconState>> getStateFromSlotAndBlock(
