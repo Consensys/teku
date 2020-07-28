@@ -1,0 +1,146 @@
+version: '3.6'
+
+x-teku-deploy-def:
+  &teku-deploy-def
+  environment:
+    - 'JAVA_OPTS=-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/data -Djdk.nio.maxCachedBufferSize=1 -XX:+UseContainerSupport'
+  deploy:
+    resources:
+      limits:
+        cpus: "1"
+        memory: 512m
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - './prometheus:/etc/prometheus'
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+  node-exporter:
+    image: prom/node-exporter:latest
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=pass
+    volumes:
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+      - ./grafana/data/:/var/lib/grafana
+      - ./grafana/log/:/var/log/grafana
+    depends_on:
+      - prometheus
+    ports:
+      - "3001:3000"
+
+  teku1:
+    image: pegasyseng/teku:develop
+    << : *teku-deploy-def
+    user: "${USER}"
+    command:
+      - '--network=minimal'
+      - '--rest-api-enabled'
+      - '--metrics-enabled'
+      - '--metrics-port=8008'
+      - '--metrics-host-allowlist=*'
+      - '--rest-api-host-allowlist=*'
+      - '--log-file=/data/teku.log'
+      - '--data-path=/data/storage'
+      - '--data-storage-mode=archive'
+      - '--Xinterop-genesis-time=${GENESIS_TIME}'
+      - '--Xinterop-owned-validator-start-index=0'
+      - '--Xinterop-owned-validator-count=16'
+      - '--Xinterop-number-of-validators=64'
+      - '--Xinterop-enabled'
+      - '--p2p-private-key-file=/etc/teku/p2p-key.txt'
+      - '--p2p-static-peers=/dns4/teku2/tcp/9000/p2p/16Uiu2HAm7WCLoc7KqP5jKQuQM3CNfR9tiamadxmEmNYUviXKoYmm,/dns4/teku3/tcp/9000/p2p/16Uiu2HAm3NZUwzzNHfnnB8ADfnuP5MTDuqjRb3nTRBxPTQ4g7Wjj,/dns4/teku4/tcp/9000/p2p/16Uiu2HAmPF4kvruyovDo7Pg8ZSAYefGdQvTiqQUWC1oUGFfUGm32'
+      - '--logging=TRACE'
+      - '--Xlog-wire-cipher-enabled'
+      - '--Xlog-wire-mux-enabled'
+      - '--Xlog-wire-gossip-enabled'
+    volumes:
+      - './nodes/node1:/etc/teku'
+      - './data/node1:/data'
+    ports:
+      - '19601:5051'
+
+  teku2:
+    image: pegasyseng/teku:develop
+    <<: *teku-deploy-def
+    user: "${USER}"
+    command:
+      - '--network=minimal'
+      - '--rest-api-enabled'
+      - '--metrics-enabled'
+      - '--metrics-port=8008'
+      - '--metrics-host-allowlist=*'
+      - '--rest-api-host-allowlist=*'
+      - '--log-file=/data/teku.log'
+      - '--data-path=/data/storage'
+      - '--data-storage-mode=archive'
+      - '--Xinterop-genesis-time=${GENESIS_TIME}'
+      - '--Xinterop-owned-validator-start-index=16'
+      - '--Xinterop-owned-validator-count=16'
+      - '--Xinterop-number-of-validators=64'
+      - '--Xinterop-enabled'
+      - '--p2p-private-key-file=/etc/teku/p2p-key.txt'
+      - '--p2p-static-peers=/dns4/teku1/tcp/9000/p2p/16Uiu2HAmGNMvKxVP6E1Jjnn6oTxUMRbdkJXaEvd2R9ENkGYVDqVh,/dns4/teku3/tcp/9000/p2p/16Uiu2HAm3NZUwzzNHfnnB8ADfnuP5MTDuqjRb3nTRBxPTQ4g7Wjj,/dns4/teku4/tcp/9000/p2p/16Uiu2HAmPF4kvruyovDo7Pg8ZSAYefGdQvTiqQUWC1oUGFfUGm32'
+    volumes:
+      - './nodes/node2:/etc/teku'
+      - './data/node2:/data'
+    ports:
+      - '19602:5051'
+
+  teku3:
+    image: pegasyseng/teku:develop
+    <<: *teku-deploy-def
+    user: "${USER}"
+    command:
+      - '--network=minimal'
+      - '--rest-api-enabled'
+      - '--metrics-enabled'
+      - '--metrics-port=8008'
+      - '--metrics-host-allowlist=*'
+      - '--rest-api-host-allowlist=*'
+      - '--log-file=/data/teku.log'
+      - '--data-path=/data/storage'
+      - '--data-storage-mode=archive'
+      - '--Xinterop-genesis-time=${GENESIS_TIME}'
+      - '--Xinterop-owned-validator-start-index=32'
+      - '--Xinterop-owned-validator-count=16'
+      - '--Xinterop-number-of-validators=64'
+      - '--Xinterop-enabled'
+      - '--p2p-private-key-file=/etc/teku/p2p-key.txt'
+      - '--p2p-static-peers=/dns4/teku1/tcp/9000/p2p/16Uiu2HAmGNMvKxVP6E1Jjnn6oTxUMRbdkJXaEvd2R9ENkGYVDqVh,/dns4/teku2/tcp/9000/p2p/16Uiu2HAm7WCLoc7KqP5jKQuQM3CNfR9tiamadxmEmNYUviXKoYmm,/dns4/teku4/tcp/9000/p2p/16Uiu2HAmPF4kvruyovDo7Pg8ZSAYefGdQvTiqQUWC1oUGFfUGm32'
+    volumes:
+      - './nodes/node3:/etc/teku'
+      - './data/node3:/data'
+    ports:
+      - '19603:5051'
+
+  teku4:
+    image: pegasyseng/teku:develop
+    <<: *teku-deploy-def
+    user: "${USER}"
+    command:
+      - '--network=minimal'
+      - '--rest-api-enabled'
+      - '--metrics-enabled'
+      - '--metrics-port=8008'
+      - '--metrics-host-allowlist=*'
+      - '--rest-api-host-allowlist=*'
+      - '--log-file=/data/teku.log'
+      - '--data-path=/data/storage'
+      - '--data-storage-mode=archive'
+      - '--Xinterop-genesis-time=${GENESIS_TIME}'
+      - '--Xinterop-owned-validator-start-index=48'
+      - '--Xinterop-owned-validator-count=16'
+      - '--Xinterop-number-of-validators=64'
+      - '--Xinterop-enabled'
+      - '--p2p-private-key-file=/etc/teku/p2p-key.txt'
+      - '--p2p-static-peers=/dns4/teku1/tcp/9000/p2p/16Uiu2HAmGNMvKxVP6E1Jjnn6oTxUMRbdkJXaEvd2R9ENkGYVDqVh,/dns4/teku2/tcp/9000/p2p/16Uiu2HAm7WCLoc7KqP5jKQuQM3CNfR9tiamadxmEmNYUviXKoYmm,/dns4/teku3/tcp/9000/p2p/16Uiu2HAm3NZUwzzNHfnnB8ADfnuP5MTDuqjRb3nTRBxPTQ4g7Wjj'
+    volumes:
+      - './nodes/node4:/etc/teku'
+      - './data/node4:/data'
+    ports:
+      - '19604:5051'
