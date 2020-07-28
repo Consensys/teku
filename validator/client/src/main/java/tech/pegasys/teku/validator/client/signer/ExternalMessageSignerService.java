@@ -73,7 +73,7 @@ public class ExternalMessageSignerService implements MessageSignerService {
   }
 
   private SafeFuture<BLSSignature> sign(final Bytes signingRoot) {
-    final String publicKey = blsPublicKey.getPublicKey().toString();
+    final String publicKey = blsPublicKey.toBytesCompressed().toString();
     return SafeFuture.ofComposed(
         () -> {
           final String requestBody = createSigningRequestBody(signingRoot);

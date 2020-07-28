@@ -128,9 +128,9 @@ public class BlsKeyPairIO {
       for (int i = 0; i < count; i++) {
         BLSKeyPair blsKeyPair = generator.get();
         writer
-            .append(blsKeyPair.getSecretKey().getSecretKey().toBytes().toHexString())
+            .append(blsKeyPair.getSecretKey().toBytes().toHexString())
             .append(':')
-            .append(blsKeyPair.getPublicKey().getPublicKey().toBytesCompressed().toHexString())
+            .append(blsKeyPair.getPublicKey().toBytesCompressed().toHexString())
             .append('\n');
       }
     }

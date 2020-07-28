@@ -143,7 +143,7 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
     return bytesCompressed.get();
   }
 
-  public PublicKey getPublicKey() {
+  PublicKey getPublicKey() {
     return publicKey.get();
   }
 
