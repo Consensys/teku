@@ -60,8 +60,6 @@ services:
       - '--Xlog-wire-gossip-enabled'
     volumes:
       - './nodes/node1:/data'
-    ports:
-      - "9005:9000"
 
   teku2:
     image: pegasyseng/teku:develop
