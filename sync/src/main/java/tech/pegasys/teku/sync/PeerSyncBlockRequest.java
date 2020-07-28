@@ -45,7 +45,7 @@ public class PeerSyncBlockRequest implements ResponseStreamListener<SignedBeacon
       }
     }
 
-    maybeSlotOfLastBlock = Optional.of(response.getSlot());
+    maybeSlotOfLastBlock = Optional.of(newBlockSlot);
     return blockResponseListener.onResponse(response);
   }
 
