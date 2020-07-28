@@ -414,7 +414,6 @@ public class RocksDbDatabase implements Database {
                     updater.addFinalizedBlock(block);
                     updater.addFinalizedState(block.getRoot(), state);
                     recorder.acceptNextState(state);
-                    updater.addFinalizedStateRoot(state.hash_tree_root(), state.getSlot());
                   })
               .join();
           break;

@@ -34,10 +34,9 @@ public class StateRootRecorderTest {
   @Test
   public void shouldHandleSingleStep() {
     final StateRootRecorder stateRootRecorder =
-        new StateRootRecorder(
-            slot.minus(ONE), (stateRoot, slot) -> stateRoots.put(slot, stateRoot));
+        new StateRootRecorder(slot, (stateRoot, slot) -> stateRoots.put(slot, stateRoot));
     stateRootRecorder.acceptNextState(state);
-    assertThat(stateRoots).containsOnlyKeys(slot.minus(ONE));
+    assertThat(stateRoots).containsOnlyKeys(slot);
   }
 
   @Test
@@ -47,15 +46,8 @@ public class StateRootRecorderTest {
             slot.minus(UnsignedLong.valueOf(2)),
             (stateRoot, slot) -> stateRoots.put(slot, stateRoot));
     stateRootRecorder.acceptNextState(state);
-    assertThat(stateRoots).containsOnlyKeys(slot.minus(UnsignedLong.valueOf(2)), slot.minus(ONE));
-  }
-
-  @Test
-  public void shouldHandleNoStep() {
-    final StateRootRecorder stateRootRecorder =
-        new StateRootRecorder(slot, (stateRoot, slot) -> stateRoots.put(slot, stateRoot));
-    stateRootRecorder.acceptNextState(state);
-    assertThat(stateRoots).isEmpty();
+    assertThat(stateRoots)
+        .containsOnlyKeys(slot.minus(UnsignedLong.valueOf(2)), slot.minus(ONE), slot);
   }
 
   @Test
@@ -66,6 +58,6 @@ public class StateRootRecorderTest {
         new StateRootRecorder(
             slot.minus(history), (stateRoot, slot) -> stateRoots.put(slot, stateRoot));
     stateRootRecorder.acceptNextState(state);
-    assertThat(stateRoots.size()).isEqualTo(SLOTS_PER_HISTORICAL_ROOT);
+    assertThat(stateRoots.size()).isEqualTo(SLOTS_PER_HISTORICAL_ROOT + 1);
   }
 }

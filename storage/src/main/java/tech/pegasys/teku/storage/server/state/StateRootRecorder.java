@@ -17,10 +17,13 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.function.BiConsumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
 public class StateRootRecorder {
+  private static final Logger LOG = LogManager.getLogger();
   private final UnsignedLong slotsPerHistoricalRoot;
   private UnsignedLong slot;
   private final BiConsumer<Bytes32, UnsignedLong> stateRootConsumer;
@@ -33,10 +36,10 @@ public class StateRootRecorder {
   }
 
   public void acceptNextState(final BeaconState state) {
-    // if there are more than SLOTS_PER_HISTORICAL_ROOT of missed blocks,
-    // then we will end up missing some state roots, because they aren't available to record
     if (slot.plus(slotsPerHistoricalRoot).compareTo(state.getSlot()) < 0) {
-      slot = state.getSlot().minus(slotsPerHistoricalRoot);
+      final UnsignedLong floor = state.getSlot().minus(slotsPerHistoricalRoot);
+      LOG.warn("Missing state root mappings from slot {} to {}", slot, floor);
+      slot = floor;
     }
 
     while (slot.compareTo(state.getSlot()) < 0) {
@@ -44,5 +47,7 @@ public class StateRootRecorder {
           state.getState_roots().get(slot.mod(slotsPerHistoricalRoot).intValue()), slot);
       slot = slot.plus(UnsignedLong.ONE);
     }
+
+    stateRootConsumer.accept(state.hash_tree_root(), state.getSlot());
   }
 }
