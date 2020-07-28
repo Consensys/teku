@@ -13,14 +13,10 @@
 
 package tech.pegasys.teku.bls;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.Collections;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
@@ -97,19 +93,6 @@ class BLSSignatureTest {
   void succeedsWhenEqualsReturnsTrueForEmptySignatures() {
     assertEquals(BLSSignature.empty(), BLSSignature.empty());
     assertEquals(BLSSignature.empty().hashCode(), BLSSignature.empty().hashCode());
-  }
-
-  @Test
-  void succeedsWhenPassingEmptyListToAggregateSignaturesDoesNotThrowException() {
-    assertDoesNotThrow(() -> BLS.aggregateSignatures(Collections.emptyList()));
-  }
-
-  @Test
-  void aggregateSignatures_aggregateEmptyListAndAggregate() {
-    BLSSignature emptySig = BLS.aggregateSignatures(Collections.emptyList());
-    BLSSignature sig = BLSSignature.random(1);
-    BLSSignature aggrSig = BLS.aggregateSignatures(List.of(emptySig, sig));
-    assertThat(aggrSig).isEqualTo(sig);
   }
 
   @Test
