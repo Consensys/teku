@@ -115,7 +115,7 @@ public class AttestationGenerator {
     Bitlist targetBitlist = new Bitlist(targetBitlistSize, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     srcAttestations.forEach(a -> targetBitlist.setAllBits(a.getAggregation_bits()));
     BLSSignature targetSig =
-        BLS.aggregate(
+        BLS.aggregateSignatures(
             srcAttestations.stream()
                 .map(Attestation::getAggregate_signature)
                 .collect(Collectors.toList()));

@@ -35,7 +35,7 @@ public class BlsAggregateTestExecutor implements TestExecutor {
     final BLSSignature expectedSignature = data.getOutput();
     BLSSignature actualSignature;
     try {
-      actualSignature = BLS.aggregate(signatures);
+      actualSignature = BLS.aggregateSignatures(signatures);
     } catch (RuntimeException e) {
       actualSignature = null;
     }

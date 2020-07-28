@@ -63,7 +63,7 @@ class AggregateAttestationBuilder {
         new Attestation(
             currentAggregateBits,
             attestationData,
-            BLS.aggregate(
+            BLS.aggregateSignatures(
                 includedAttestations.stream()
                     .map(ValidateableAttestation::getAttestation)
                     .map(Attestation::getAggregate_signature)

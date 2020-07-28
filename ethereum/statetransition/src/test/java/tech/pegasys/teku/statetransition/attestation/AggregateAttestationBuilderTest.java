@@ -82,7 +82,7 @@ class AggregateAttestationBuilderTest {
     expectedAggregationBits.setBit(3);
 
     final BLSSignature expectedSignature =
-        BLS.aggregate(
+        BLS.aggregateSignatures(
             asList(
                 attestation1.getAttestation().getAggregate_signature(),
                 attestation2.getAttestation().getAggregate_signature(),
