@@ -99,7 +99,7 @@ class BLSSignatureTest {
 
   @Test
   void succeedsWhenPassingEmptyListToAggregateSignaturesDoesNotThrowException() {
-    assertDoesNotThrow(() -> BLS.aggregate(Collections.emptyList()));
+    assertDoesNotThrow(() -> BLS.aggregateSignatures(Collections.emptyList()));
   }
 
   @Test
