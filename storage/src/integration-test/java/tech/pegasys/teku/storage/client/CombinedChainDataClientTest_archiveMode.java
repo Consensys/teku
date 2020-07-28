@@ -105,4 +105,30 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
     assertThat(result.isPresent()).isTrue();
     assertThat(result.get()).isEqualTo(finalizedBlock.getState());
   }
+
+  @Test
+  public void getStateByStateRoot_shouldReturnFinalizedStateAtSkippedSlot()
+      throws ExecutionException, InterruptedException {
+    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
+    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+
+    // Setup chain with finalized block
+    chainUpdater.initializeGenesis();
+    final SignedBlockAndState historicalBlock = chainUpdater.advanceChain();
+    final UnsignedLong skippedSlot = historicalBlock.getSlot().plus(UnsignedLong.ONE);
+    chainUpdater.advanceChain(skippedSlot.plus(UnsignedLong.ONE));
+    chainUpdater.advanceChain(finalizedSlot);
+    final SignedBlockAndState finalizedBlock = chainUpdater.finalizeEpoch(finalizedEpoch);
+    chainUpdater.addNewBestBlock();
+    final BeaconState skippedSlotState = client.getStateAtSlotExact(skippedSlot).join().get();
+
+    // Sanity check
+    assertThat(skippedSlot).isLessThan(finalizedBlock.getSlot());
+    assertThat(skippedSlot).isEqualTo(skippedSlotState.getSlot());
+
+    Optional<BeaconState> result =
+        client.getStateByStateRoot(skippedSlotState.hash_tree_root()).get();
+    assertThat(result.isPresent()).isTrue();
+    assertThat(result.get()).isEqualTo(skippedSlotState);
+  }
 }
