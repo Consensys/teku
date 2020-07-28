@@ -41,6 +41,8 @@ public interface Database extends AutoCloseable {
 
   Optional<UnsignedLong> getSlotForFinalizedBlockRoot(Bytes32 blockRoot);
 
+  Optional<UnsignedLong> getSlotForFinalizedStateRoot(Bytes32 stateRoot);
+
   /**
    * Return the finalized block at this slot if such a block exists.
    *

@@ -51,6 +51,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Optional<UnsignedLong> getSlotForFinalizedStateRoot(final Bytes32 stateRoot) {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UnsignedLong slot) {
     return Optional.empty();
   }
