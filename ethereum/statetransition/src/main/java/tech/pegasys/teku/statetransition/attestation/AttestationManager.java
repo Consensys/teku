@@ -35,6 +35,8 @@ import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 public class AttestationManager extends Service implements SlotEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final SafeFuture<AttestationProcessingResult> ATTESTATION_SAVED_FOR_FUTURE_RESULT =
+      SafeFuture.completedFuture(AttestationProcessingResult.SAVED_FOR_FUTURE);
 
   private final EventBus eventBus;
   private final ForkChoiceAttestationProcessor attestationProcessor;
@@ -102,40 +104,52 @@ public class AttestationManager extends Service implements SlotEventsChannel {
         .forEach(
             attestation -> {
               pendingAttestations.remove(attestation);
-              onAttestation(attestation);
+              onAttestation(attestation)
+                  .finish(
+                      err ->
+                          LOG.error(
+                              "Failed to process pending attestation dependent on " + blockRoot,
+                              err));
             });
     block.getMessage().getBody().getAttestations().forEach(aggregatingAttestationPool::remove);
   }
 
-  public AttestationProcessingResult onAttestation(final ValidateableAttestation attestation) {
+  public SafeFuture<AttestationProcessingResult> onAttestation(
+      final ValidateableAttestation attestation) {
     if (pendingAttestations.contains(attestation)) {
-      return AttestationProcessingResult.SAVED_FOR_FUTURE;
+      return ATTESTATION_SAVED_FOR_FUTURE_RESULT;
     }
 
-    final AttestationProcessingResult result = attestationProcessor.processAttestation(attestation);
-    switch (result.getStatus()) {
-      case SUCCESSFUL:
-        LOG.trace("Processed attestation {} successfully", attestation::hash_tree_root);
-        aggregatingAttestationPool.add(attestation);
-        notifySubscribers(attestation);
-        break;
-      case UNKNOWN_BLOCK:
-        LOG.trace(
-            "Deferring attestation {} as required block is not yet present",
-            attestation::hash_tree_root);
-        pendingAttestations.add(attestation);
-        break;
-      case SAVED_FOR_FUTURE:
-        LOG.trace("Deferring attestation {} until a future slot", attestation::hash_tree_root);
-        futureAttestations.add(attestation);
-        aggregatingAttestationPool.add(attestation);
-        break;
-      case INVALID:
-        break;
-      default:
-        throw new UnsupportedOperationException("AttestationProcessingResult is unrecognizable");
-    }
-    return result;
+    return attestationProcessor
+        .processAttestation(attestation)
+        .thenApply(
+            result -> {
+              switch (result.getStatus()) {
+                case SUCCESSFUL:
+                  LOG.trace("Processed attestation {} successfully", attestation::hash_tree_root);
+                  aggregatingAttestationPool.add(attestation);
+                  notifySubscribers(attestation);
+                  break;
+                case UNKNOWN_BLOCK:
+                  LOG.trace(
+                      "Deferring attestation {} as required block is not yet present",
+                      attestation::hash_tree_root);
+                  pendingAttestations.add(attestation);
+                  break;
+                case SAVED_FOR_FUTURE:
+                  LOG.trace(
+                      "Deferring attestation {} until a future slot", attestation::hash_tree_root);
+                  futureAttestations.add(attestation);
+                  aggregatingAttestationPool.add(attestation);
+                  break;
+                case INVALID:
+                  break;
+                default:
+                  throw new UnsupportedOperationException(
+                      "AttestationProcessingResult is unrecognizable");
+              }
+              return result;
+            });
   }
 
   @Override
