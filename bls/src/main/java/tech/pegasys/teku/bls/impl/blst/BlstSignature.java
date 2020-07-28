@@ -62,6 +62,9 @@ public class BlstSignature implements Signature {
   }
 
   public static BlstSignature aggregate(List<BlstSignature> signatures) {
+    if (signatures.isEmpty()) {
+      return INFINITY;
+    }
     List<BlstSignature> finiteSignatures =
         signatures.stream().filter(sig -> !sig.isInfinity()).collect(Collectors.toList());
 

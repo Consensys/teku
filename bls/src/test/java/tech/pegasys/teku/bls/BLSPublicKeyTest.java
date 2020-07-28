@@ -34,7 +34,7 @@ class BLSPublicKeyTest {
   }
 
   @Test
-  void isValidReturnsFalseForInvalidKey() {
+  void fromBytesCompressedValidate_throwsOnInvalidData() {
     BLSPublicKey publicKey = BLSPublicKey.random(1);
     assertThatThrownBy(
             () ->
@@ -58,7 +58,7 @@ class BLSPublicKeyTest {
   }
 
   @Test
-  void succeedsWhenInvalidPublicKeyIsInvalid() {
+  void fromBytesCompressedValidate_throwsOnInvalidPubKey() {
     Bytes48 invalidPublicKeyBytes =
         Bytes48.fromHexString(
             "0x9378a6e3984e96d2cd50450c76ca14732f1300efa04aecdb805b22e6d6926a85ef409e8f3acf494a1481090bf32ce3bd");

@@ -113,7 +113,6 @@ public class BLS {
    */
   public static BLSSignature aggregateSignatures(List<BLSSignature> signatures)
       throws IllegalArgumentException {
-    checkArgument(signatures.size() > 0, "Aggregating zero signatures is invalid.");
     return new BLSSignature(
         getBlsImpl()
             .aggregateSignatures(
