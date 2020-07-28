@@ -8,6 +8,31 @@ we recommend most users use the latest `master` branch of Teku.
 - Anyone using `/node/version` should switch to use
    the new `/v1/node/version` endpoint, as `/node/version` will be removed in a future release.
 
+## 0.12.2
+
+### Additions and Improvements
+- Added `medalla` network definition. As the genesis state is not yet known, an ETH1 endpoint must be specified when connecting to the `medalla` testnet
+- Attestations are now created and published immediately after the block for the slot is imported, instead of waiting until 1/3rd of the way through the slot
+- The Teku docker image has been upgraded to run Java 14
+- `/beacon/state` REST API now supports a `stateRoot` parameter to request states by state root. This includes retrieving states for empty slots
+- Reduced gas limit and used current gas price reported by the ETH1 node when sending deposit transactions with the `validator` subcommands 
+- Validator keys are now loaded in parallel to improve start up time
+- Added a docker-compose configuration to quickly launch a 4-node local testnet
+- Exposed additional metrics to report on RocksDB memory usage:
+  - storage_hot_estimated_table_readers_memory
+  - storage_finalized_estimated_table_readers_memory
+  - storage_hot_current_size_all_mem_tables
+  - storage_finalized_current_size_all_mem_tables
+- Stricter req/resp message lengths are now enforced based on message content type
+
+### Bug Fixes
+- Significant reductions in process resident memory. As this involved a configuration change for RocksDB the most significant reduction is achieved with a new database
+- Fixed issue where Teku did not reconnect to peers after a network interruption
+- Fixed issue where Teku may stop attempting to create new outbound peer connections
+- Fixed incompatibility with deposits with public keys that could not be resolved to a G1 point
+- Avoid disconnecting peers that do not return all requested blocks for a block by range request
+- Reduced log level for a noisy message about duplicate peer connections
+
 ## 0.12.1
 
 ### Breaking Changes

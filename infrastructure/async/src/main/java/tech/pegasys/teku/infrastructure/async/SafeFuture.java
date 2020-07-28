@@ -252,6 +252,17 @@ public class SafeFuture<T> extends CompletableFuture<T> {
         .reportExceptions();
   }
 
+  public void finish(final Consumer<Throwable> onError) {
+    handle(
+            (result, error) -> {
+              if (error != null) {
+                onError.accept(error);
+              }
+              return null;
+            })
+        .reportExceptions();
+  }
+
   /**
    * Returns a new CompletionStage that, when the provided stage completes exceptionally, is
    * executed with the provided stage's exception as the argument to the supplied function.
