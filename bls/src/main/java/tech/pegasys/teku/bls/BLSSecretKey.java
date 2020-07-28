@@ -30,7 +30,8 @@ public final class BLSSecretKey {
   /**
    * Creates a secret key instance from bytes
    *
-   * @param bytes Should be in range [0, 0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001)
+   * @param bytes Should be in range [0,
+   *     0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001)
    * @throws IllegalArgumentException if bytes are not in the valid range
    */
   public static BLSSecretKey fromBytes(Bytes32 bytes) throws IllegalArgumentException {
@@ -45,8 +46,8 @@ public final class BLSSecretKey {
   static BLSSecretKey fromBytesModR(Bytes32 secretKeyBytes) {
     final Bytes32 keyBytes;
     if (secretKeyBytes.compareTo(CURVE_ORDER) >= 0) {
-      BigInteger validSK = secretKeyBytes.toUnsignedBigInteger(ByteOrder.BIG_ENDIAN)
-          .mod(CURVE_ORDER_BI);
+      BigInteger validSK =
+          secretKeyBytes.toUnsignedBigInteger(ByteOrder.BIG_ENDIAN).mod(CURVE_ORDER_BI);
       keyBytes = Bytes32.leftPad(Bytes.wrap(validSK.toByteArray()));
     } else {
       keyBytes = secretKeyBytes;

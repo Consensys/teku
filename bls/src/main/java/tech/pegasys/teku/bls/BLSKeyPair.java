@@ -41,7 +41,8 @@ public final class BLSKeyPair {
    * @return a keypair generated from a seed
    */
   public static BLSKeyPair random(int seed) {
-    BLSSecretKey pseudoRandomSecretBytes = BLSSecretKey.fromBytesModR(Bytes32.random(new Random(seed)));
+    BLSSecretKey pseudoRandomSecretBytes =
+        BLSSecretKey.fromBytesModR(Bytes32.random(new Random(seed)));
     return new BLSKeyPair(pseudoRandomSecretBytes);
   }
 
