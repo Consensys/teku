@@ -56,5 +56,8 @@ eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/
 
 /teku.db
 node_modules
-/scripts/teku-localnet/grafana/data
-/scripts/teku-localnet/grafana/logs
+
+/test-network/grafana/data
+/test-network/grafana/logs
+/test-network/grafana/provisioning/dashboards/teku-dashboard-grafana.json
+/test-network/nodes/node*/teku
