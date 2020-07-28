@@ -53,11 +53,11 @@ class SignerTest {
   }
 
   @Test
-  public void shouldSignBlock() {
+  public void shouldSignBlock1() {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(10);
     final BLSSignature signature = dataStructureUtil.randomSignature();
     final Bytes expectedSigningRoot =
-        Bytes.fromHexString("0xc0e4ed8375c98504b262f610f217d31ebf109f0f73c164362090c6ad7d4770c1");
+        Bytes.fromHexString("0xfa8b3cfed0268ed15e354e84db5558eb76ad30737a86d6d057615e331ff30d44");
     when(signerService.signBlock(expectedSigningRoot))
         .thenReturn(SafeFuture.completedFuture(signature));
 
