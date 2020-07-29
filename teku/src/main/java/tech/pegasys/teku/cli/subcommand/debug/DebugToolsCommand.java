@@ -27,7 +27,7 @@ import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 import tech.pegasys.teku.util.cli.VersionProvider;
 
 @Command(
-    name = "debug",
+    name = "debug-tools",
     description = "Utilities for debugging issues",
     subcommands = {DebugDbCommand.class},
     showDefaultValues = true,
@@ -40,7 +40,7 @@ import tech.pegasys.teku.util.cli.VersionProvider;
     optionListHeading = "%nOptions:%n",
     footerHeading = "%n",
     footer = "Teku is licensed under the Apache License 2.0")
-public class DebugCommand implements Runnable {
+public class DebugToolsCommand implements Runnable {
   @Spec private CommandSpec commandSpec;
 
   @Override
