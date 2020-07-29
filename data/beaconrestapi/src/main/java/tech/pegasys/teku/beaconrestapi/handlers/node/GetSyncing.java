@@ -26,7 +26,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.teku.api.SyncDataProvider;
-import tech.pegasys.teku.api.schema.SyncingResponse;
+import tech.pegasys.teku.api.schema.SyncingStatus;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetSyncing implements Handler {
@@ -49,12 +49,13 @@ public class GetSyncing implements Handler {
       description =
           "Returns an object with data about the synchronization status, or false if not synchronizing.",
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = SyncingResponse.class)),
+        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = SyncingStatus.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
   public void handle(Context ctx) throws Exception {
     ctx.header(CACHE_CONTROL, CACHE_NONE);
-    ctx.result(jsonProvider.objectToJSON(new SyncingResponse(syncDataProvider.getSyncStatus())));
+    final SyncingStatus syncingStatus = syncDataProvider.getSyncStatus();
+    ctx.result(jsonProvider.objectToJSON(syncingStatus));
   }
 }

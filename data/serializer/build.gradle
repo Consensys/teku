@@ -4,7 +4,6 @@ dependencies {
 
   implementation project(':bls')
   implementation project(':ethereum:datastructures')
-  implementation project(':sync')
 
   testImplementation testFixtures(project(':ethereum:datastructures'))
 }
