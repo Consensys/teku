@@ -45,6 +45,7 @@ import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkData;
 import tech.pegasys.teku.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
+import tech.pegasys.teku.datastructures.state.SigningData;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
@@ -88,7 +89,7 @@ public class SszTestExecutor<T extends SimpleOffsetSerializable & Merkleizable>
               "ssz_static/SignedBeaconBlockHeader",
               new SszTestExecutor<>(SignedBeaconBlockHeader.class))
           .put("ssz_static/SignedVoluntaryExit", new SszTestExecutor<>(SignedVoluntaryExit.class))
-          .put("ssz_static/SigningData", IGNORE_TESTS) // TODO (#2399): Should make this work
+          .put("ssz_static/SigningData", new SszTestExecutor<>(SigningData.class))
           .put("ssz_static/Validator", new SszTestExecutor<>(Validator.class))
           .put("ssz_static/VoluntaryExit", new SszTestExecutor<>(VoluntaryExit.class))
 
