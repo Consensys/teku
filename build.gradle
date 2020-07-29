@@ -287,7 +287,7 @@ task autocomplete(type: JavaExec) {
   outputs.file "build/teku.autocomplete.sh"
 
   main = application.mainClassName
-  args "debug", "generate-autocomplete", "--output", "build/teku.autocomplete.sh"
+  args "debug-tools", "generate-autocomplete", "--output", "build/teku.autocomplete.sh"
   classpath sourceSets.main.runtimeClasspath
 }
 
