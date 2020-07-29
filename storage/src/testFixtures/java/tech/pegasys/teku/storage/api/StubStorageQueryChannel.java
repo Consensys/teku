@@ -68,4 +68,9 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   public SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(Bytes32 blockRoot) {
     return SafeFuture.completedFuture(Optional.empty());
   }
+
+  @Override
+  public SafeFuture<Optional<UnsignedLong>> getFinalizedSlotByStateRoot(final Bytes32 stateRoot) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
 }

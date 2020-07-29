@@ -34,6 +34,7 @@ class RemoteValidatorSubscriptionsTest {
   private static final int MAX_SUBSCRIBERS = 2;
 
   private final TekuConfiguration configuration = mock(TekuConfiguration.class);
+  private final RemoteValidatorMetrics metrics = mock(RemoteValidatorMetrics.class);
 
   @SuppressWarnings("unchecked")
   private final Consumer<BeaconChainEvent> subscriberCallback = mock(Consumer.class);
@@ -44,7 +45,7 @@ class RemoteValidatorSubscriptionsTest {
   public void beforeEach() {
     reset(configuration, subscriberCallback);
     when(configuration.getRemoteValidatorApiMaxSubscribers()).thenReturn(MAX_SUBSCRIBERS);
-    subscriptions = new RemoteValidatorSubscriptions(configuration);
+    subscriptions = new RemoteValidatorSubscriptions(configuration, metrics);
   }
 
   @Test
@@ -101,6 +102,38 @@ class RemoteValidatorSubscriptionsTest {
     subscriptions.onEvent(mock(BeaconChainEvent.class));
 
     verify(subscriberCallback, times(2)).accept(any(BeaconChainEvent.class));
+  }
+
+  @Test
+  public void subscribeShouldUpdateMetrics() {
+    subscriptions.subscribe("1", subscriberCallback);
+    verify(metrics).updateConnectedValidators(1);
+
+    subscriptions.subscribe("2", subscriberCallback);
+    verify(metrics).updateConnectedValidators(2);
+  }
+
+  @Test
+  public void unsubscribeShouldUpdateMetrics() {
+    subscriptions.subscribe("1", subscriberCallback);
+    subscriptions.subscribe("2", subscriberCallback);
+    reset(metrics);
+
+    subscriptions.unsubscribe("1");
+    verify(metrics).updateConnectedValidators(1);
+
+    subscriptions.unsubscribe("2");
+    verify(metrics).updateConnectedValidators(0);
+  }
+
+  @Test
+  public void unsubscribeAllShouldUpdateMetrics() {
+    subscriptions.subscribe("1", subscriberCallback);
+    subscriptions.subscribe("2", subscriberCallback);
+    reset(metrics);
+
+    subscriptions.unsubscribeAll();
+    verify(metrics).updateConnectedValidators(0);
   }
 
   @SuppressWarnings("unchecked")

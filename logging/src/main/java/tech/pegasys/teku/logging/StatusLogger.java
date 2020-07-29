@@ -98,6 +98,14 @@ public class StatusLogger {
     log.info("Initializing storage");
   }
 
+  public void fatalErrorInitialisingStorage(Throwable err) {
+    log.debug("Failed to intiailize storage", err);
+    log.fatal(
+        "Failed to initialize storage. "
+            + "Check the existing database matches the current network configuration. "
+            + "Set log level to debug for more information.");
+  }
+
   public void finishInitializingChainData() {
     log.info("Storage initialization complete");
   }

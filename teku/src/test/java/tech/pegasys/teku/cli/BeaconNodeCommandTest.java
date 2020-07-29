@@ -178,15 +178,19 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"OFF", "FATAL", "WARN", "INFO", "DEBUG", "TRACE", "ALL"})
+  @ValueSource(
+      strings = {
+        "OFF", "FATAL", "ERROR", "WARN", "INFO", "DEBUG", "TRACE", "ALL", "off", "fatal", "error",
+        "warn", "info", "debug", "trace", "all"
+      })
   public void loglevel_shouldAcceptValues(String level) {
     final String[] args = {"--logging", level};
     beaconNodeCommand.parse(args);
-    assertThat(beaconNodeCommand.getLogLevel().toString()).isEqualTo(level);
+    assertThat(beaconNodeCommand.getLogLevel().toString()).isEqualToIgnoringCase(level);
   }
 
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"Off", "Fatal", "WaRN", "InfO", "DebUG", "trACE", "all"})
+  @ValueSource(strings = {"Off", "Fatal", "eRRoR", "WaRN", "InfO", "DebUG", "trACE", "All"})
   public void loglevel_shouldAcceptValuesMixedCase(String level) {
     final String[] args = {"--logging", level};
     beaconNodeCommand.parse(args);

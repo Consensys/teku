@@ -49,4 +49,6 @@ public interface StorageQueryChannel extends ChannelInterface {
   SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(final UnsignedLong slot);
 
   SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(final Bytes32 blockRoot);
+
+  SafeFuture<Optional<UnsignedLong>> getFinalizedSlotByStateRoot(final Bytes32 stateRoot);
 }

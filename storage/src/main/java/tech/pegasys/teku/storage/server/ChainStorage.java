@@ -141,6 +141,11 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
                 .flatMap(this::getLatestFinalizedStateAtSlotSync));
   }
 
+  @Override
+  public SafeFuture<Optional<UnsignedLong>> getFinalizedSlotByStateRoot(final Bytes32 stateRoot) {
+    return SafeFuture.of(() -> database.getSlotForFinalizedStateRoot(stateRoot));
+  }
+
   private Optional<BeaconState> getLatestFinalizedStateAtSlotSync(final UnsignedLong slot) {
     return finalizedStateCache.getFinalizedState(slot);
   }

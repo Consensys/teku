@@ -1,0 +1,9 @@
+dependencies {
+  api 'com.fasterxml.jackson.core:jackson-databind'
+  api 'io.swagger.core.v3:swagger-annotations'
+
+  implementation project(':bls')
+  implementation project(':ethereum:datastructures')
+
+  testImplementation testFixtures(project(':ethereum:datastructures'))
+}

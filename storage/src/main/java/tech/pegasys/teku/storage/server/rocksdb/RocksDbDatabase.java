@@ -63,6 +63,7 @@ import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V4HotRocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
+import tech.pegasys.teku.storage.server.state.StateRootRecorder;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -219,6 +220,11 @@ public class RocksDbDatabase implements Database {
   @Override
   public Optional<UnsignedLong> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
     return finalizedDao.getSlotForFinalizedBlockRoot(blockRoot);
+  }
+
+  @Override
+  public Optional<UnsignedLong> getSlotForFinalizedStateRoot(final Bytes32 stateRoot) {
+    return finalizedDao.getSlotForFinalizedStateRoot(stateRoot);
   }
 
   @Override
@@ -397,6 +403,8 @@ public class RocksDbDatabase implements Database {
                   .childAndParentRoots(finalizedChildToParentMap)
                   .build();
 
+          final StateRootRecorder recorder =
+              new StateRootRecorder(baseBlock.getSlot(), updater::addFinalizedStateRoot);
           final StateGenerator stateGenerator =
               StateGenerator.create(blockTree, baseBlock, blockProvider, finalizedStates);
           // TODO (#2397) - don't join, create synchronous API for synchronous blockProvider
@@ -405,7 +413,7 @@ public class RocksDbDatabase implements Database {
                   (block, state) -> {
                     updater.addFinalizedBlock(block);
                     updater.addFinalizedState(block.getRoot(), state);
-                    updater.addFinalizedStateRoot(state.hash_tree_root(), state.getSlot());
+                    recorder.acceptNextState(state);
                   })
               .join();
           break;

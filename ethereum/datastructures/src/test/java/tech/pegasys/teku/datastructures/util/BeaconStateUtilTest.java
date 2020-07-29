@@ -108,7 +108,7 @@ class BeaconStateUtilTest {
             depositData.getPubkey(),
             depositData.getWithdrawal_credentials(),
             depositData.getAmount());
-    Bytes domain =
+    Bytes32 domain =
         BeaconStateUtil.get_domain(
             createBeaconState(),
             Constants.DOMAIN_DEPOSIT,
@@ -128,7 +128,7 @@ class BeaconStateUtilTest {
             depositData.getPubkey(),
             depositData.getWithdrawal_credentials(),
             depositData.getAmount());
-    Bytes domain =
+    Bytes32 domain =
         BeaconStateUtil.get_domain(
             createBeaconState(),
             Constants.DOMAIN_DEPOSIT,
