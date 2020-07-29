@@ -28,12 +28,12 @@ import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ForkChoice {
-
   private final RecentChainData recentChainData;
   private final StateTransition stateTransition;
 
@@ -101,9 +101,20 @@ public class ForkChoice {
     return result;
   }
 
-  public AttestationProcessingResult onAttestation(
-      final MutableStore store, final ValidateableAttestation attestation) {
-    return on_attestation(store, attestation, stateTransition, getForkChoiceStrategy());
+  public SafeFuture<AttestationProcessingResult> onAttestation(
+      final ValidateableAttestation attestation) {
+    return recentChainData
+        .retrieveCheckpointState(attestation.getData().getTarget())
+        .thenApply(
+            targetState -> {
+              StoreTransaction transaction = recentChainData.startStoreTransaction();
+              final AttestationProcessingResult result =
+                  on_attestation(transaction, attestation, targetState, getForkChoiceStrategy());
+              if (result.isSuccessful()) {
+                transaction.commit(() -> {}, "Failed to persist attestation result");
+              }
+              return result;
+            });
   }
 
   public void save() {

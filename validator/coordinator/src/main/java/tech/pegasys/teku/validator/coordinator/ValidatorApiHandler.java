@@ -226,20 +226,30 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final Attestation attestation, final Optional<Integer> expectedValidatorIndex) {
     attestationManager
         .onAttestation(ValidateableAttestation.fromAttestation(attestation))
-        .ifInvalid(
-            reason -> {
-              int actualValidatorIndex =
-                  get_attesting_indices(
-                          combinedChainDataClient.getHeadStateFromStore().orElseThrow(),
-                          attestation.getData(),
-                          attestation.getAggregation_bits())
-                      .get(0);
-              VALIDATOR_LOGGER.producedInvalidAttestation(
-                  attestation.getData().getSlot(),
-                  actualValidatorIndex,
-                  expectedValidatorIndex,
-                  reason);
-            });
+        .finish(
+            result ->
+                result.ifInvalid(
+                    reason -> {
+                      VALIDATOR_LOGGER.producedInvalidAttestation(
+                          attestation.getData().getSlot(),
+                          getValidatorIndex(attestation),
+                          expectedValidatorIndex,
+                          reason);
+                    }),
+            err ->
+                LOG.error(
+                    "Failed to send signed attestation for validator {}, slot {}, block {}",
+                    getValidatorIndex(attestation),
+                    attestation.getData().getSlot(),
+                    attestation.getData().getBeacon_block_root()));
+  }
+
+  private int getValidatorIndex(final Attestation attestation) {
+    return get_attesting_indices(
+            combinedChainDataClient.getHeadStateFromStore().orElseThrow(),
+            attestation.getData(),
+            attestation.getAggregation_bits())
+        .get(0);
   }
 
   @Override
@@ -251,10 +261,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
     attestationManager
         .onAttestation(ValidateableAttestation.fromSignedAggregate(aggregateAndProof))
-        .ifInvalid(
-            reason ->
-                VALIDATOR_LOGGER.producedInvalidAggregate(
-                    aggregateAndProof.getMessage().getAggregate().getData().getSlot(), reason));
+        .finish(
+            result ->
+                result.ifInvalid(
+                    reason ->
+                        VALIDATOR_LOGGER.producedInvalidAggregate(
+                            aggregateAndProof.getMessage().getAggregate().getData().getSlot(),
+                            reason)),
+            err ->
+                LOG.error(
+                    "Failed to send aggregate for slot {}",
+                    aggregateAndProof.getMessage().getAggregate().getData().getSlot()));
   }
 
   @Override
