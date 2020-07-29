@@ -156,7 +156,7 @@ public class BeaconStateUtil {
       if (BLS_VERIFY_DEPOSIT) {
         final DepositMessage deposit_message =
             new DepositMessage(pubkey, deposit.getData().getWithdrawal_credentials(), amount);
-        final Bytes domain = compute_domain(DOMAIN_DEPOSIT);
+        final Bytes32 domain = compute_domain(DOMAIN_DEPOSIT);
         final Bytes signing_root = compute_signing_root(deposit_message, domain);
         boolean proof_is_valid =
             !BLS_VERIFY_DEPOSIT
@@ -332,14 +332,15 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_domain</a>
    */
-  public static Bytes compute_domain(
+  public static Bytes32 compute_domain(
       Bytes4 domain_type, Bytes4 fork_version, Bytes32 genesis_validators_root) {
     final Bytes32 fork_data_root = compute_fork_data_root(fork_version, genesis_validators_root);
     return compute_domain(domain_type, fork_data_root);
   }
 
-  public static Bytes compute_domain(final Bytes4 domain_type, final Bytes32 fork_data_root) {
-    return Bytes.concatenate(domain_type.getWrappedBytes(), fork_data_root.slice(0, 28));
+  public static Bytes32 compute_domain(final Bytes4 domain_type, final Bytes32 fork_data_root) {
+    return Bytes32.wrap(
+        Bytes.concatenate(domain_type.getWrappedBytes(), fork_data_root.slice(0, 28)));
   }
 
   /**
@@ -350,7 +351,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_domain</a>
    */
-  public static Bytes compute_domain(Bytes4 domain_type) {
+  public static Bytes32 compute_domain(Bytes4 domain_type) {
     return compute_domain(domain_type, GENESIS_FORK_VERSION, Bytes32.ZERO);
   }
 
@@ -363,7 +364,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
    */
-  public static Bytes compute_signing_root(Merkleizable object, Bytes domain) {
+  public static Bytes compute_signing_root(Merkleizable object, Bytes32 domain) {
     return new SigningData(object.hash_tree_root(), domain).hash_tree_root();
   }
 
@@ -376,7 +377,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
    */
-  public static Bytes compute_signing_root(long number, Bytes domain) {
+  public static Bytes compute_signing_root(long number, Bytes32 domain) {
     SigningData domain_wrapped_object =
         new SigningData(
             HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.BASIC, SSZ.encodeUInt64(number)),
@@ -393,7 +394,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.0/specs/phase0/beacon-chain.md#compute_signing_root</a>
    */
-  public static Bytes compute_signing_root(Bytes bytes, Bytes domain) {
+  public static Bytes compute_signing_root(Bytes bytes, Bytes32 domain) {
     SigningData domain_wrapped_object =
         new SigningData(
             HashTreeUtil.hash_tree_root(HashTreeUtil.SSZTypes.VECTOR_OF_BASIC, bytes), domain);
@@ -764,7 +765,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_domain</a>
    */
-  public static Bytes get_domain(
+  public static Bytes32 get_domain(
       BeaconState state, Bytes4 domain_type, UnsignedLong message_epoch) {
     UnsignedLong epoch = (message_epoch == null) ? get_current_epoch(state) : message_epoch;
     return get_domain(domain_type, epoch, state.getFork(), state.getGenesis_validators_root());
@@ -781,7 +782,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_domain</a>
    */
-  public static Bytes get_domain(
+  public static Bytes32 get_domain(
       final Bytes4 domain_type,
       final UnsignedLong epoch,
       final Fork fork,
@@ -803,7 +804,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_domain</a>
    */
-  public static Bytes get_domain(BeaconState state, Bytes4 domain_type) {
+  public static Bytes32 get_domain(BeaconState state, Bytes4 domain_type) {
     return get_domain(state, domain_type, null);
   }
 

@@ -31,9 +31,9 @@ public class SigningData implements Merkleizable, SimpleOffsetSerializable, SSZC
   public static final int SSZ_FIELD_COUNT = 2;
 
   private final Bytes32 object_root;
-  private final Bytes domain;
+  private final Bytes32 domain;
 
-  public SigningData(Bytes32 object_root, Bytes domain) {
+  public SigningData(Bytes32 object_root, Bytes32 domain) {
     this.object_root = object_root;
     this.domain = domain;
   }
