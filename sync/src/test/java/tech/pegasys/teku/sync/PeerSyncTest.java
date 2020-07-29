@@ -43,6 +43,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseOutOfOrderException;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
@@ -413,20 +414,12 @@ public class PeerSyncTest {
             eq(UnsignedLong.ONE),
             responseListenerArgumentCaptor.capture());
 
-    ResponseStreamListener<SignedBeaconBlock> listener = responseListenerArgumentCaptor.getValue();
-    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(10);
-    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(9);
-    listener.onResponse(block1).join();
-
-    try {
-      listener.onResponse(block2).join();
-    } catch (final Exception e) {
-      assertThat(e).isInstanceOf(OutOfOrderException.class);
-      requestFuture.completeExceptionally(e);
-    }
+    requestFuture.completeExceptionally(
+        new BlocksByRangeResponseOutOfOrderException(
+            peer, startSlot, startSlot.plus(UnsignedLong.valueOf(100))));
 
     // Peer returns some blocks but they are not ordered
-    assertThat(syncFuture).isCompletedWithValue(PeerSyncResult.WRONG_ORDERING);
+    assertThat(syncFuture).isCompletedWithValue(PeerSyncResult.INVALID_RESPONSE);
 
     verify(peer).disconnectCleanly(any());
   }

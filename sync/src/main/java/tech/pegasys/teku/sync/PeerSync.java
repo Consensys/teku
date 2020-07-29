@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseOutOfOrderException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -176,9 +177,9 @@ public class PeerSync {
       return PeerSyncResult.CANCELLED;
     }
 
-    if (rootException instanceof OutOfOrderException) {
+    if (rootException instanceof BlocksByRangeResponseOutOfOrderException) {
       disconnectFromPeer(peer);
-      return PeerSyncResult.WRONG_ORDERING;
+      return PeerSyncResult.INVALID_RESPONSE;
     }
 
     if (err instanceof RuntimeException) {

@@ -11,18 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
+import tech.pegasys.teku.networking.p2p.peer.Peer;
 
-public class OutOfOrderException extends InvalidResponseException {
+public class BlocksByRangeResponseOutOfOrderException extends InvalidResponseException {
 
-  public OutOfOrderException(UnsignedLong lastBlockNumber, UnsignedLong newBlockNumber) {
+  public BlocksByRangeResponseOutOfOrderException(
+      Peer peer, UnsignedLong startSlot, UnsignedLong endSlot) {
     super(
-        "Unable to import block due to wrong block order. Last imported block number: "
-            + lastBlockNumber
-            + " new block number: "
-            + newBlockNumber);
+        String.format(
+            "Received invalid response from peer %s.  Peer returned blocks at slots %s, %s out of order. ",
+            peer, startSlot, endSlot));
   }
 }
