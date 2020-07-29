@@ -21,6 +21,8 @@ import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -34,6 +36,7 @@ import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.util.config.Constants;
 
 public class StorageBackedRecentChainData extends RecentChainData {
+  private static final Logger LOG = LogManager.getLogger();
   private final BlockProvider blockProvider;
   private final StorageQueryChannel storageQueryChannel;
 
@@ -137,7 +140,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
         .exceptionallyCompose(
             (err) -> {
               if (Throwables.getRootCause(err) instanceof TimeoutException) {
-                STATUS_LOG.initializingChainDataTimeout();
+                LOG.trace("Storage initialization timed out, will retry.");
                 return asyncRunner.runAfterDelay(
                     () -> requestInitialStoreWithRetry(asyncRunner),
                     Constants.STORAGE_REQUEST_TIMEOUT,
