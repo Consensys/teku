@@ -13,6 +13,12 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,16 +28,11 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 public class BlocksByRangeListenerWrapperTest {
   private DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private BlocksByRangeListenerWrapper listenerWrapper;
   private Eth2Peer peer = mock(Eth2Peer.class);
+
   @SuppressWarnings("unchecked")
   private ResponseStreamListener<SignedBeaconBlock> listener = mock(ResponseStreamListener.class);
 
