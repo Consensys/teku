@@ -19,6 +19,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_VOLUNTARY_EXIT;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
@@ -39,7 +40,7 @@ public class VoluntaryExitSignatureVerifier {
                 exit.getValidator_index(),
                 idx -> state.getValidators().get(toIntExact(idx.longValue())).getPubkey());
 
-    final Bytes domain = get_domain(state, DOMAIN_VOLUNTARY_EXIT, exit.getEpoch());
+    final Bytes32 domain = get_domain(state, DOMAIN_VOLUNTARY_EXIT, exit.getEpoch());
     final Bytes signing_root = compute_signing_root(exit, domain);
     return signatureVerifier.verify(publicKey, signing_root, signedExit.getSignature());
   }
