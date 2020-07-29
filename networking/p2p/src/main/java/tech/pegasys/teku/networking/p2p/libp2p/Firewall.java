@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.async.FutureUtil;
 
 /**
  * The very first Netty handler in the Libp2p connection pipeline. Sets up Netty Channel options and
@@ -54,6 +55,6 @@ public class Firewall extends ChannelInboundHandlerAdapter {
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     LOG.debug("Error in Firewall, disconnecting" + cause);
-    ctx.close();
+    FutureUtil.ignoreFuture(ctx.close());
   }
 }
