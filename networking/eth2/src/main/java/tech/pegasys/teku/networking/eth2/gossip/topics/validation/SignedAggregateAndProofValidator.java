@@ -169,7 +169,7 @@ public class SignedAggregateAndProofValidator {
       final BeaconState state,
       final BLSPublicKey aggregatorPublicKey) {
     final AggregateAndProof aggregateAndProof = signedAggregate.getMessage();
-    final Bytes domain =
+    final Bytes32 domain =
         get_domain(
             Constants.DOMAIN_AGGREGATE_AND_PROOF,
             compute_epoch_at_slot(aggregateAndProof.getAggregate().getData().getSlot()),
@@ -184,7 +184,7 @@ public class SignedAggregateAndProofValidator {
       final BeaconState state,
       final BLSPublicKey aggregatorPublicKey,
       final BLSSignature selectionProof) {
-    final Bytes domain =
+    final Bytes32 domain =
         get_domain(
             DOMAIN_SELECTION_PROOF,
             compute_epoch_at_slot(aggregateSlot),

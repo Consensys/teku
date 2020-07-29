@@ -160,7 +160,7 @@ public class AttestationUtil {
     }
 
     BLSSignature signature = indexed_attestation.getSignature();
-    Bytes domain =
+    Bytes32 domain =
         get_domain(
             state, DOMAIN_BEACON_ATTESTER, indexed_attestation.getData().getTarget().getEpoch());
     Bytes signing_root = compute_signing_root(indexed_attestation.getData(), domain);
