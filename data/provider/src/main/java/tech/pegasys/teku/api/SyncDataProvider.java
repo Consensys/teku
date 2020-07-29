@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.api;
 
+import tech.pegasys.teku.api.schema.SyncStatus;
+import tech.pegasys.teku.api.schema.SyncingStatus;
 import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.sync.SyncingStatus;
 
 public class SyncDataProvider {
+
   private final SyncService syncService;
 
   public SyncDataProvider(SyncService syncService) {
@@ -30,7 +32,21 @@ public class SyncDataProvider {
    *     slot, current slot and highest slot.
    */
   public SyncingStatus getSyncStatus() {
-    return syncService.getSyncStatus();
+    final tech.pegasys.teku.sync.SyncingStatus syncingStatus = syncService.getSyncStatus();
+    final tech.pegasys.teku.sync.SyncStatus syncStatus = syncingStatus.getSyncStatus();
+
+    final SyncStatus schemaSyncStatus;
+    if (syncStatus != null) {
+      schemaSyncStatus =
+          new SyncStatus(
+              syncStatus.getStartingSlot(),
+              syncStatus.getCurrentSlot(),
+              syncStatus.getHighestSlot());
+    } else {
+      schemaSyncStatus = new SyncStatus(null, null, null);
+    }
+
+    return new SyncingStatus(syncingStatus.isSyncing(), schemaSyncStatus);
   }
 
   SyncService getSyncService() {

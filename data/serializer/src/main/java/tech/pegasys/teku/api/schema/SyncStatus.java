@@ -34,16 +34,4 @@ public class SyncStatus {
     this.currentSlot = currentSlot;
     this.highestSlot = highestSlot;
   }
-
-  public SyncStatus(final tech.pegasys.teku.sync.SyncStatus syncStatus) {
-    if (syncStatus != null) {
-      this.startingSlot = syncStatus.getStartingSlot();
-      this.currentSlot = syncStatus.getCurrentSlot();
-      this.highestSlot = syncStatus.getHighestSlot();
-    } else {
-      startingSlot = null;
-      currentSlot = null;
-      highestSlot = null;
-    }
-  }
 }
