@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -172,6 +173,32 @@ public class StorageBackedRecentChainDataTest {
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
     assertThat(client.get().getStore()).isEqualTo(genesisStoreBuilder.build());
+  }
+
+  @Test
+  public void storageBackedClient_storeInitializeViaGetStoreRequestAfterIOException()
+      throws ExecutionException, InterruptedException {
+    SafeFuture<Optional<StoreBuilder>> storeRequestFuture = new SafeFuture<>();
+    when(storageQueryChannel.onStoreRequest())
+        .thenReturn(SafeFuture.failedFuture(new IOException()))
+        .thenReturn(storeRequestFuture);
+
+    final EventBus eventBus = new EventBus();
+    final SafeFuture<RecentChainData> client =
+        StorageBackedRecentChainData.create(
+            new StubMetricsSystem(),
+            asyncRunner,
+            storageQueryChannel,
+            storageUpdateChannel,
+            new StubProtoArrayStorageChannel(),
+            finalizedCheckpointChannel,
+            reorgEventChannel,
+            eventBus);
+
+    // We should have posted a request to get the store from storage
+    verify(storageQueryChannel).onStoreRequest();
+
+    assertThat(client).isCompletedExceptionally();
   }
 
   private void assertStoreInitialized(final RecentChainData client) {
