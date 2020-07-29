@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SAVED_FOR_FUTURE;
 import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
 import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.UNKNOWN_BLOCK;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
@@ -79,8 +80,8 @@ class AttestationManagerTest {
   public void shouldProcessAttestationsThatAreReadyImmediately() {
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromAttestation(dataStructureUtil.randomAttestation());
-    when(attestationProcessor.processAttestation(any())).thenReturn(SUCCESSFUL);
-    attestationManager.onAttestation(attestation);
+    when(attestationProcessor.processAttestation(any())).thenReturn(completedFuture(SUCCESSFUL));
+    attestationManager.onAttestation(attestation).reportExceptions();
 
     verifyAttestationProcessed(attestation);
     verify(attestationPool).add(attestation);
@@ -93,8 +94,8 @@ class AttestationManagerTest {
     final ValidateableAttestation aggregate =
         ValidateableAttestation.fromSignedAggregate(
             dataStructureUtil.randomSignedAggregateAndProof());
-    when(attestationProcessor.processAttestation(any())).thenReturn(SUCCESSFUL);
-    attestationManager.onAttestation(aggregate);
+    when(attestationProcessor.processAttestation(any())).thenReturn(completedFuture(SUCCESSFUL));
+    attestationManager.onAttestation(aggregate).reportExceptions();
 
     verifyAttestationProcessed(aggregate);
     verify(attestationPool).add(aggregate);
@@ -107,8 +108,9 @@ class AttestationManagerTest {
     ValidateableAttestation attestation =
         ValidateableAttestation.fromAttestation(attestationFromSlot(100));
     IndexedAttestation randomIndexedAttestation = dataStructureUtil.randomIndexedAttestation();
-    when(attestationProcessor.processAttestation(any())).thenReturn(SAVED_FOR_FUTURE);
-    attestationManager.onAttestation(attestation);
+    when(attestationProcessor.processAttestation(any()))
+        .thenReturn(completedFuture(SAVED_FOR_FUTURE));
+    attestationManager.onAttestation(attestation).reportExceptions();
 
     ArgumentCaptor<ValidateableAttestation> captor =
         ArgumentCaptor.forClass(ValidateableAttestation.class);
@@ -136,9 +138,9 @@ class AttestationManagerTest {
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromAttestation(attestationFromSlot(1, requiredBlockRoot));
     when(attestationProcessor.processAttestation(any()))
-        .thenReturn(UNKNOWN_BLOCK)
-        .thenReturn(SUCCESSFUL);
-    attestationManager.onAttestation(attestation);
+        .thenReturn(completedFuture(UNKNOWN_BLOCK))
+        .thenReturn(completedFuture(SUCCESSFUL));
+    attestationManager.onAttestation(attestation).reportExceptions();
 
     ArgumentCaptor<ValidateableAttestation> captor =
         ArgumentCaptor.forClass(ValidateableAttestation.class);
@@ -167,8 +169,8 @@ class AttestationManagerTest {
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromAttestation(dataStructureUtil.randomAttestation());
     when(attestationProcessor.processAttestation(any()))
-        .thenReturn(AttestationProcessingResult.invalid("Didn't like it"));
-    attestationManager.onAttestation(attestation);
+        .thenReturn(completedFuture(AttestationProcessingResult.invalid("Didn't like it")));
+    attestationManager.onAttestation(attestation).reportExceptions();
 
     verifyAttestationProcessed(attestation);
     assertThat(pendingAttestations.size()).isZero();
@@ -182,8 +184,8 @@ class AttestationManagerTest {
         ValidateableAttestation.fromSignedAggregate(
             dataStructureUtil.randomSignedAggregateAndProof());
     when(attestationProcessor.processAttestation(any()))
-        .thenReturn(AttestationProcessingResult.invalid("Don't wanna"));
-    attestationManager.onAttestation(aggregateAndProof);
+        .thenReturn(completedFuture(AttestationProcessingResult.invalid("Don't wanna")));
+    attestationManager.onAttestation(aggregateAndProof).reportExceptions();
 
     verifyAttestationProcessed(aggregateAndProof);
     assertThat(pendingAttestations.size()).isZero();

@@ -25,6 +25,8 @@ public class LogTypeConverter implements ITypeConverter<Level> {
         return Level.OFF;
       case "FATAL":
         return Level.FATAL;
+      case "ERROR":
+        return Level.ERROR;
       case "WARN":
         return Level.WARN;
       case "INFO":

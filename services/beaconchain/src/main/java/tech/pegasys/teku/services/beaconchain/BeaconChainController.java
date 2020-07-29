@@ -400,8 +400,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                   attestation ->
                       attestationManager
                           .onAttestation(attestation)
-                          .ifInvalid(
-                              reason -> LOG.debug("Rejected gossiped attestation: " + reason)))
+                          .finish(
+                              result ->
+                                  result.ifInvalid(
+                                      reason ->
+                                          LOG.debug("Rejected gossiped attestation: " + reason)),
+                              err -> LOG.error("Failed to process gossiped attestation.", err)))
               .gossipedAttesterSlashingConsumer(attesterSlashingPool::add)
               .gossipedProposerSlashingConsumer(proposerSlashingPool::add)
               .gossipedVoluntaryExitConsumer(voluntaryExitPool::add)

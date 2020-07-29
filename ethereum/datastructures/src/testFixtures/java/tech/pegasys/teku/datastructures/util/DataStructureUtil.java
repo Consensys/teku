@@ -420,7 +420,7 @@ public final class DataStructureUtil {
         new DepositMessage(
             pubkey, withdrawal_credentials, UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
 
-    final Bytes domain = compute_domain(DOMAIN_DEPOSIT);
+    final Bytes32 domain = compute_domain(DOMAIN_DEPOSIT);
     final Bytes signing_root = compute_signing_root(proof_of_possession_data, domain);
 
     BLSSignature proof_of_possession = BLS.sign(keyPair.getSecretKey(), signing_root);
