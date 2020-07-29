@@ -23,13 +23,13 @@ import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.SyncDataProvider;
-import tech.pegasys.teku.api.schema.SyncingResponse;
+import tech.pegasys.teku.api.schema.SyncStatus;
+import tech.pegasys.teku.api.schema.SyncingStatus;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.sync.SyncStatus;
-import tech.pegasys.teku.sync.SyncingStatus;
 
 public class GetSyncingTest {
+
   private Context context = mock(Context.class);
   private final JsonProvider jsonProvider = new JsonProvider();
   private final SyncService syncService = mock(SyncService.class);
@@ -41,10 +41,12 @@ public class GetSyncingTest {
     final UnsignedLong startSlot = UnsignedLong.ONE;
     final UnsignedLong currentSlot = UnsignedLong.valueOf(5);
     final UnsignedLong highestSlot = UnsignedLong.valueOf(10);
-    final SyncingStatus syncingStatus =
-        new SyncingStatus(isSyncing, new SyncStatus(startSlot, currentSlot, highestSlot));
+    final tech.pegasys.teku.sync.SyncingStatus syncingStatus =
+        new tech.pegasys.teku.sync.SyncingStatus(
+            isSyncing, new tech.pegasys.teku.sync.SyncStatus(startSlot, currentSlot, highestSlot));
     final GetSyncing handler = new GetSyncing(syncDataProvider, jsonProvider);
-    final SyncingResponse expectedResponse = new SyncingResponse(syncingStatus);
+    final SyncingStatus expectedResponse =
+        new SyncingStatus(true, new SyncStatus(startSlot, currentSlot, highestSlot));
 
     when(syncService.getSyncStatus()).thenReturn(syncingStatus);
     handler.handle(context);
@@ -55,8 +57,10 @@ public class GetSyncingTest {
   @Test
   public void shouldReturnFalseWhenNotSyncing() throws Exception {
     final boolean isSyncing = false;
-    final SyncingStatus syncingStatus = new SyncingStatus(isSyncing, null);
-    final SyncingResponse expectedResponse = new SyncingResponse(syncingStatus);
+    final tech.pegasys.teku.sync.SyncingStatus syncingStatus =
+        new tech.pegasys.teku.sync.SyncingStatus(isSyncing, null);
+    final SyncingStatus expectedResponse =
+        new SyncingStatus(false, new SyncStatus(null, null, null));
     final GetSyncing handler = new GetSyncing(syncDataProvider, jsonProvider);
 
     when(syncService.getSyncStatus()).thenReturn(syncingStatus);
