@@ -13,11 +13,13 @@
 
 package tech.pegasys.teku.bls;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
@@ -145,5 +147,21 @@ class BLSPublicKeyTest {
     BLSPublicKey publicKey1 = BLSPublicKey.fromSSZBytes(InfinityPublicKey);
     BLSPublicKey publicKey2 = BLSPublicKey.fromSSZBytes(publicKey1.toSSZBytes());
     assertEquals(publicKey1, publicKey2);
+  }
+
+  @Test
+  void aggregateSamePubKeys() {
+    BLSPublicKey pk =
+        BLSPublicKey.fromBytesCompressedValidate(
+            Bytes48.fromHexString(
+                "0x89ece308f9d1f0131765212deca99697b112d61f9be9a5f1f3780a51335b3ff981747a0b2ca2179b96d2c0c9024e5224"));
+
+    BLSPublicKey aggrPk = BLS.aggregatePublicKeys(List.of(pk, pk));
+
+    BLSPublicKey aggrPkGolden =
+        BLSPublicKey.fromBytesCompressedValidate(
+            Bytes48.fromHexString(
+                "0xa6e82f6da4520f85c5d27d8f329eccfa05944fd1096b20734c894966d12a9e2a9a9744529d7212d33883113a0cadb909"));
+    assertThat(aggrPk).isEqualTo(aggrPkGolden);
   }
 }

@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
@@ -91,6 +93,28 @@ class BLSTest {
             BLS.sign(keyPair2.getSecretKey(), message),
             BLS.sign(keyPair3.getSecretKey(), message));
     BLSSignature aggregatedSignature = BLS.aggregateSignatures(signatures);
+
+    assertTrue(BLS.fastAggregateVerify(publicKeys, message, aggregatedSignature));
+  }
+
+  @Test
+  void fastAggregateVerify_verify4Signers() {
+    Bytes message =
+        Bytes.fromHexString("0x999bb85f3690c2ccb1607dd3e11a7e114038eb4044bdbdd340bc81aa3e5e0c9e");
+
+    List<BLSPublicKey> publicKeys =
+        Stream.of(
+                "0x97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb",
+                "0xa572cbea904d67468808c8eb50a9450c9721db309128012543902d0ac358a62ae28f75bb8f1c7c42c39a8c5529bf0f4e",
+                "0x89ece308f9d1f0131765212deca99697b112d61f9be9a5f1f3780a51335b3ff981747a0b2ca2179b96d2c0c9024e5224",
+                "0xac9b60d5afcbd5663a8a44b7c5a02f19e9a77ab0a35bd65809bb5c67ec582c897feb04decc694b13e08587f3ff9b5b60")
+            .map(pk -> BLSPublicKey.fromBytesCompressedValidate(Bytes48.fromHexString(pk)))
+            .collect(Collectors.toList());
+
+    BLSSignature aggregatedSignature =
+        BLSSignature.fromSSZBytes(
+            Bytes.fromHexString(
+                "0xb2550663aa862b2741c9abc94f7b0b8a725b6f12b8f214d833e214e87c64235e4b1fb1e1ee64e5ae942cb3e0392699fc0524ae6f35072d1f243668de730be8745ab5be3314f90c107e246cefd1f1b97cd7241cfe97f4c80aeb354e8fac2ea720"));
 
     assertTrue(BLS.fastAggregateVerify(publicKeys, message, aggregatedSignature));
   }

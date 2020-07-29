@@ -117,10 +117,7 @@ public class BlstBLS12381 implements BLS12381 {
   }
 
   pairing blstPrepareVerifyAggregated(
-      BlstPublicKey pubKey,
-      Bytes message,
-      pairing ctx,
-      BlstSignature blstSignature) {
+      BlstPublicKey pubKey, Bytes message, pairing ctx, BlstSignature blstSignature) {
 
     p2 g2Hash = HashToCurve.hashToG2(message);
     p2_affine p2Affine = new p2_affine();
@@ -162,8 +159,7 @@ public class BlstBLS12381 implements BLS12381 {
     }
   }
 
-
-      @Override
+  @Override
   public BatchSemiAggregate prepareBatchVerify(
       int index, List<? extends PublicKey> publicKeys, Bytes message, Signature signature) {
 
