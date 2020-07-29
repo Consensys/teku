@@ -16,20 +16,14 @@ package tech.pegasys.teku.api.schema;
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import tech.pegasys.teku.sync.SyncingStatus;
 
 @JsonInclude(NON_NULL)
-public class SyncingResponse {
+public class SyncingStatus {
   public final boolean is_syncing;
   public final SyncStatus sync_status;
 
-  public SyncingResponse(final boolean syncing, final SyncStatus sync_status) {
+  public SyncingStatus(final boolean syncing, final SyncStatus sync_status) {
     this.is_syncing = syncing;
     this.sync_status = sync_status;
-  }
-
-  public SyncingResponse(final SyncingStatus syncStatus) {
-    this.is_syncing = syncStatus.isSyncing();
-    this.sync_status = new SyncStatus(syncStatus.getSyncStatus());
   }
 }
