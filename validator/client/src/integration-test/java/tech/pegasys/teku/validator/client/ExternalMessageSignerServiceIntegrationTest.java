@@ -117,9 +117,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
 
   @Test
   void signsBlockWhenSigningServiceReturnsSuccessfulResponse() {
-    client
-        .when(request())
-        .respond(response().withBody(expectedSignature.getSignature().toString()));
+    client.when(request()).respond(response().withBody(expectedSignature.toString()));
 
     final BLSSignature signature = externalMessageSignerService.signBlock(SIGNING_ROOT).join();
     assertThat(signature).isEqualTo(expectedSignature);

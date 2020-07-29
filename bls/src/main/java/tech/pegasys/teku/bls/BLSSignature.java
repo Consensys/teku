@@ -122,7 +122,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
         });
   }
 
-  public Signature getSignature() {
+  Signature getSignature() {
     return signature.get();
   }
 
