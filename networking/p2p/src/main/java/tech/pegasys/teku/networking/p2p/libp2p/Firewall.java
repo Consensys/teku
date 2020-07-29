@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.p2p.libp2p;
 
 import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.WriteBufferWaterMark;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.infrastructure.async.FutureUtil;
  * The very first Netty handler in the Libp2p connection pipeline. Sets up Netty Channel options and
  * doing other duties preventing DoS attacks
  */
+@Sharable
 public class Firewall extends ChannelInboundHandlerAdapter {
   private static final Logger LOG = LogManager.getLogger();
 
