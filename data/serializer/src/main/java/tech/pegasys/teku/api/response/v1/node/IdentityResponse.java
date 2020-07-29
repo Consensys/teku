@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.node;
+package tech.pegasys.teku.api.response.v1.node;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Version {
-  public final String version;
+public class IdentityResponse {
+  public final Identity data;
 
   @JsonCreator
-  public Version(@JsonProperty("version") final String version) {
-    this.version = version;
+  public IdentityResponse(@JsonProperty("data") final Identity data) {
+    this.data = data;
   }
 }
