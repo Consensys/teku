@@ -14,6 +14,7 @@
 package tech.pegasys.teku.bls;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -32,7 +33,11 @@ class BLSPublicKeyTest {
 
   @Test
   void fromBytesCompressedValidate_okWhenValidBytes() {
-    BLSPublicKey.fromBytesCompressedValidate(BLSPublicKey.random(1).toBytesCompressed());
+    assertThatCode(
+            () ->
+                BLSPublicKey.fromBytesCompressedValidate(
+                    BLSPublicKey.random(1).toBytesCompressed()))
+        .doesNotThrowAnyException();
   }
 
   @Test

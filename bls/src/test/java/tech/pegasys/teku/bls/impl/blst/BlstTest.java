@@ -35,7 +35,7 @@ public class BlstTest {
 
   @Test
   void testBatchVerifySingleSig() {
-    Bytes msg = Bytes32.ZERO; // .fromHexString("123456");
+    Bytes msg = Bytes32.ZERO;
 
     BlstSecretKey blstSK = BlstSecretKey.generateNew(random);
     BlstPublicKey blstPK = blstSK.derivePublicKey();

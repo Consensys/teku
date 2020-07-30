@@ -109,10 +109,4 @@ class BLSSignatureTest {
     assertEquals(signature, result);
     assertEquals(signature.hashCode(), result.hashCode());
   }
-
-  @Test
-  void testRandomFromSeed() {
-    BLSSignature randomSig = BLSSignature.random(92892840);
-    System.out.println(randomSig);
-  }
 }
