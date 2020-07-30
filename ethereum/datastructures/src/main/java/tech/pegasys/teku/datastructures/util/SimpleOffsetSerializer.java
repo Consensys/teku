@@ -502,7 +502,8 @@ public class SimpleOffsetSerializer {
         return new Bytes4(reader.readFixedBytes(Bytes4.SIZE));
       case "BLSSignature":
         bytePointer.add(BLSSignature.SSZ_BLS_SIGNATURE_SIZE);
-        return BLSSignature.fromSSZBytes(reader.readFixedBytes(BLSSignature.SSZ_BLS_SIGNATURE_SIZE));
+        return BLSSignature.fromSSZBytes(
+            reader.readFixedBytes(BLSSignature.SSZ_BLS_SIGNATURE_SIZE));
       case "BLSPublicKey":
         bytePointer.add(BLSPublicKey.SSZ_BLS_PUBKEY_SIZE);
         return BLSPublicKey.fromSSZBytes(reader.readFixedBytes(BLSPublicKey.SSZ_BLS_PUBKEY_SIZE));

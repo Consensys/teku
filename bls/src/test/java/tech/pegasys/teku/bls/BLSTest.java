@@ -112,7 +112,7 @@ class BLSTest {
             .collect(Collectors.toList());
 
     BLSSignature aggregatedSignature =
-        BLSSignature.fromSSZBytes(
+        BLSSignature.fromBytesCompressed(
             Bytes.fromHexString(
                 "0xb2550663aa862b2741c9abc94f7b0b8a725b6f12b8f214d833e214e87c64235e4b1fb1e1ee64e5ae942cb3e0392699fc0524ae6f35072d1f243668de730be8745ab5be3314f90c107e246cefd1f1b97cd7241cfe97f4c80aeb354e8fac2ea720"));
 
@@ -188,7 +188,7 @@ class BLSTest {
                   + "00000000000000000000000000000000"
                   + "00000000000000000000000000000000"));
   static final BLSSignature infinityG2 =
-      BLSSignature.fromSSZBytes(
+      BLSSignature.fromBytesCompressed(
           Bytes.fromHexString(
               "0x"
                   + "c000000000000000000000000000000000000000000000000000000000000000"
@@ -289,7 +289,7 @@ class BLSTest {
         "0xb5e8f551c28abd6ef8253581ffad0834bfd8fafa9948d09b337c9c5f21d6e7fd6065a1ee35ac5146ac17344f97490301";
 
     Bytes msg = Bytes.fromHexString(signingRoot);
-    BLSSignature signature = BLSSignature.fromSSZBytes(Bytes.fromHexString(sig));
+    BLSSignature signature = BLSSignature.fromBytesCompressed(Bytes.fromHexString(sig));
     BLSPublicKey publicKey = BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString(pk));
 
     boolean res = BLS.verify(publicKey, msg, signature);

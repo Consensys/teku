@@ -115,7 +115,7 @@ public class ExternalMessageSignerService implements MessageSignerService {
 
     try {
       final Bytes signature = Bytes.fromHexString(response.body());
-      return BLSSignature.fromSSZBytes(signature);
+      return BLSSignature.fromBytesCompressed(signature);
     } catch (final IllegalArgumentException e) {
       throw new ExternalSignerException(
           "External signer returned an invalid signature: " + e.getMessage(), e);

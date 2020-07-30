@@ -87,7 +87,9 @@ public class ValidatorDataProvider {
 
     return validatorApiChannel
         .createUnsignedBlock(
-            slot, tech.pegasys.teku.bls.BLSSignature.fromSSZBytes(randao.getBytes()), graffiti)
+            slot,
+            tech.pegasys.teku.bls.BLSSignature.fromBytesCompressed(randao.getBytes()),
+            graffiti)
         .thenApply(maybeBlock -> maybeBlock.map(BeaconBlock::new));
   }
 

@@ -31,7 +31,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
-  public static final int BLS_SIGNATURE_SIZE = 96;
+  public static final int SSZ_BLS_SIGNATURE_SIZE = BLSConstants.BLS_SIGNATURE_SIZE;
 
   /**
    * Create a random, but valid, signature.
@@ -62,7 +62,7 @@ public class BLSSignature implements SimpleOffsetSerializable {
    * @return the empty signature
    */
   public static BLSSignature empty() {
-    return BLSSignature.fromSSZBytes(Bytes.wrap(new byte[BLS_SIGNATURE_SIZE]));
+    return BLSSignature.fromBytesCompressed(Bytes.wrap(new byte[SSZ_BLS_SIGNATURE_SIZE]));
   }
 
   @Override
@@ -75,12 +75,21 @@ public class BLSSignature implements SimpleOffsetSerializable {
     return List.of(toSSZBytes());
   }
 
+  public static BLSSignature fromBytesCompressed(Bytes bytes) {
+    checkArgument(
+        bytes.size() == BLSConstants.BLS_SIGNATURE_SIZE,
+        "Expected " + BLSConstants.BLS_SIGNATURE_SIZE + " bytes but received %s.",
+        bytes.size());
+    return new BLSSignature(bytes);
+  }
+
   public static BLSSignature fromSSZBytes(Bytes bytes) {
     checkArgument(
-        bytes.size() == BLS_SIGNATURE_SIZE,
-        "Expected " + BLS_SIGNATURE_SIZE + " bytes but received %s.",
+        bytes.size() == SSZ_BLS_SIGNATURE_SIZE,
+        "Expected " + SSZ_BLS_SIGNATURE_SIZE + " bytes but received %s.",
         bytes.size());
-    return SSZ.decode(bytes, reader -> new BLSSignature(reader.readFixedBytes(BLS_SIGNATURE_SIZE)));
+    return SSZ.decode(
+        bytes, reader -> new BLSSignature(reader.readFixedBytes(SSZ_BLS_SIGNATURE_SIZE)));
   }
 
   // Sometimes we are dealing with random, invalid signature points, e.g. when testing.
@@ -122,18 +131,22 @@ public class BLSSignature implements SimpleOffsetSerializable {
         });
   }
 
+  public Bytes toBytesCompressed() {
+    return bytesCompressed.get();
+  }
+
   Signature getSignature() {
     return signature.get();
   }
 
   @Override
   public String toString() {
-    return toSSZBytes().toString();
+    return toBytesCompressed().toString();
   }
 
   @Override
   public int hashCode() {
-    return toSSZBytes().hashCode();
+    return toBytesCompressed().hashCode();
   }
 
   @Override
@@ -148,6 +161,6 @@ public class BLSSignature implements SimpleOffsetSerializable {
       return false;
     }
     BLSSignature other = (BLSSignature) obj;
-    return Objects.equals(toSSZBytes(), other.toSSZBytes());
+    return Objects.equals(toBytesCompressed(), other.toBytesCompressed());
   }
 }

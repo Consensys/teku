@@ -58,6 +58,13 @@ class BLSSignatureTest {
   @Test
   void succeedsIfDeserializationThrowsWithTooFewBytes() {
     Bytes tooFewBytes = Bytes.wrap(new byte[95]);
+    assertThrows(
+        IllegalArgumentException.class, () -> BLSSignature.fromBytesCompressed(tooFewBytes));
+  }
+
+  @Test
+  void succeedsIfSSZDeserializationThrowsWithTooFewBytes() {
+    Bytes tooFewBytes = Bytes.wrap(new byte[95]);
     assertThrows(IllegalArgumentException.class, () -> BLSSignature.fromSSZBytes(tooFewBytes));
   }
 
@@ -98,7 +105,7 @@ class BLSSignatureTest {
   @Test
   void roundtripEncodeDecodeCompressed() {
     BLSSignature signature = BLSSignature.random(513);
-    final BLSSignature result = BLSSignature.fromSSZBytes(signature.toSSZBytes());
+    final BLSSignature result = BLSSignature.fromBytesCompressed(signature.toBytesCompressed());
     assertEquals(signature, result);
     assertEquals(signature.hashCode(), result.hashCode());
   }
