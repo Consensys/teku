@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.bls.impl.mikuli;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -76,7 +77,7 @@ public class MikuliPublicKeyTest extends PublicKeyTest {
                     + "c0000000000000000000000000000000"
                     + "00000000000000000000000000000000"
                     + "00000000000000000000000000000000"));
-    infinityG1.forceValidation();
-    System.out.println(infinityG1.g1Point());
+
+    assertThatCode(infinityG1::forceValidation).doesNotThrowAnyException();
   }
 }
