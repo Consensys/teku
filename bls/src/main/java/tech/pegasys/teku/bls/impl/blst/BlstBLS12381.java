@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
@@ -34,17 +36,23 @@ import tech.pegasys.teku.bls.impl.blst.swig.p2_affine;
 import tech.pegasys.teku.bls.impl.blst.swig.pairing;
 
 public class BlstBLS12381 implements BLS12381 {
+  private static final Logger LOG = LogManager.getLogger();
 
-  public static BlstBLS12381 INSTANCE = new BlstBLS12381();
+  public static final Optional<BlstBLS12381> INSTANCE;
 
   private static final int BATCH_RANDOM_BYTES = 8;
 
   static {
+    boolean libraryLoaded;
     try {
       NativeUtils.loadLibraryFromJar("/" + System.mapLibraryName("jblst"));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+      libraryLoaded = true;
+      LOG.info("Successfully loaded native BLS library");
+    } catch (Throwable e) {
+      LOG.warn("Couldn't load native BLS library: " + e);
+      libraryLoaded = false;
     }
+    INSTANCE = libraryLoaded ? Optional.of(new BlstBLS12381()) : Optional.empty();
   }
 
   private static Random getRND() {

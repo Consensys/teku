@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.apache.tuweni.bytes.Bytes;
@@ -25,7 +26,7 @@ public class BlstPublicKeyTest {
 
   @BeforeAll
   static void setup() {
-    BlstBLS12381.INSTANCE.hashCode();
+    assertThat(BlstBLS12381.INSTANCE).isNotEmpty();
   }
 
   // Blst library doesn't handle infinity pubkeys at the moment.

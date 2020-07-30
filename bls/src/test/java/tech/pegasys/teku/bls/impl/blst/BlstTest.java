@@ -26,9 +26,11 @@ import tech.pegasys.teku.bls.BatchSemiAggregate;
 public class BlstTest {
   private static final Random random = new Random(1);
 
+  private static BlstBLS12381 BLS;
+
   @BeforeAll
   static void setup() {
-    BlstBLS12381.INSTANCE.hashCode();
+    BLS = BlstBLS12381.INSTANCE.orElseThrow();
   }
 
   @Test
@@ -41,9 +43,9 @@ public class BlstTest {
     BlstSignature blstSignature = BlstBLS12381.sign(blstSK, msg);
 
     BatchSemiAggregate semiAggregate =
-        BlstBLS12381.INSTANCE.prepareBatchVerify(0, List.of(blstPK), msg, blstSignature);
+        BLS.prepareBatchVerify(0, List.of(blstPK), msg, blstSignature);
 
-    boolean blstRes = BlstBLS12381.INSTANCE.completeBatchVerify(List.of(semiAggregate));
+    boolean blstRes = BLS.completeBatchVerify(List.of(semiAggregate));
     assertThat(blstRes).isTrue();
   }
 
@@ -62,12 +64,11 @@ public class BlstTest {
     BlstSignature blstSignature2 = BlstBLS12381.sign(blstSK2, msg2);
 
     BatchSemiAggregate semiAggregate1 =
-        BlstBLS12381.INSTANCE.prepareBatchVerify(0, List.of(blstPK1), msg1, blstSignature1);
+        BLS.prepareBatchVerify(0, List.of(blstPK1), msg1, blstSignature1);
     BatchSemiAggregate semiAggregate2 =
-        BlstBLS12381.INSTANCE.prepareBatchVerify(1, List.of(blstPK2), msg2, blstSignature2);
+        BLS.prepareBatchVerify(1, List.of(blstPK2), msg2, blstSignature2);
 
-    boolean blstRes =
-        BlstBLS12381.INSTANCE.completeBatchVerify(List.of(semiAggregate1, semiAggregate2));
+    boolean blstRes = BLS.completeBatchVerify(List.of(semiAggregate1, semiAggregate2));
     assertThat(blstRes).isTrue();
   }
 }
