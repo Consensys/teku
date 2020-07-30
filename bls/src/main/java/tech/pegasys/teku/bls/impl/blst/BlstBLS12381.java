@@ -144,7 +144,7 @@ public class BlstBLS12381 implements BLS12381 {
       throw e;
     } finally {
       g2Hash.delete();
-      p2Affine.delete(); // not sure if its copied inside pairing_mul_n_aggregate_pk_in_g1
+      p2Affine.delete();
     }
 
     return ctx;
