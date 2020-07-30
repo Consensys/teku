@@ -21,23 +21,19 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.impl.SecretKey;
 
 public final class BLSSecretKey {
-
-  private static final Bytes32 CURVE_ORDER =
-      Bytes32.fromHexString("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001");
-  private static final BigInteger CURVE_ORDER_BI =
-      CURVE_ORDER.toUnsignedBigInteger(ByteOrder.BIG_ENDIAN);
-
   /**
    * Creates a secret key instance from bytes
    *
-   * @param bytes Should be in range [0,
-   *     0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001)
+   * @param bytes Should be in range [0, )
    * @throws IllegalArgumentException if bytes are not in the valid range
    */
   public static BLSSecretKey fromBytes(Bytes32 bytes) throws IllegalArgumentException {
-    if (bytes.compareTo(CURVE_ORDER) >= 0) {
+    if (bytes.compareTo(BLSConstants.CURVE_ORDER_BYTES) >= 0) {
       throw new IllegalArgumentException(
-          "Invalid bytes for secret key (0 <= SK < r, where r is " + CURVE_ORDER + "): " + bytes);
+          "Invalid bytes for secret key (0 <= SK < r, where r is "
+              + BLSConstants.CURVE_ORDER_BYTES
+              + "): "
+              + bytes);
     } else {
       return new BLSSecretKey(BLS.getBlsImpl().secretKeyFromBytes(bytes));
     }
@@ -45,9 +41,11 @@ public final class BLSSecretKey {
 
   static BLSSecretKey fromBytesModR(Bytes32 secretKeyBytes) {
     final Bytes32 keyBytes;
-    if (secretKeyBytes.compareTo(CURVE_ORDER) >= 0) {
+    if (secretKeyBytes.compareTo(BLSConstants.CURVE_ORDER_BYTES) >= 0) {
       BigInteger validSK =
-          secretKeyBytes.toUnsignedBigInteger(ByteOrder.BIG_ENDIAN).mod(CURVE_ORDER_BI);
+          secretKeyBytes
+              .toUnsignedBigInteger(ByteOrder.BIG_ENDIAN)
+              .mod(BLSConstants.CURVE_ORDER_BI);
       keyBytes = Bytes32.leftPad(Bytes.wrap(validSK.toByteArray()));
     } else {
       keyBytes = secretKeyBytes;
@@ -74,15 +72,8 @@ public final class BLSSecretKey {
     return new BLSPublicKey(getSecretKey().derivePublicKey());
   }
 
-  public Bytes toBytes() {
-    final Bytes bytes = secretKey.toBytes();
-    if (bytes.size() == 48) {
-      final int paddingLength = 48 - 32;
-      if (bytes.slice(0, paddingLength).isZero()) {
-        return bytes.slice(paddingLength, 32);
-      }
-    }
-    return bytes;
+  public Bytes32 toBytes() {
+    return secretKey.toBytes();
   }
 
   /** Overwrites the key with zeros so that it is no longer in memory */

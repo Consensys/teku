@@ -29,7 +29,7 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
-  public static final int BLS_PUBKEY_SIZE = 48;
+  public static final int SSZ_BLS_PUBKEY_SIZE = BLSConstants.BLS_PUBKEY_SIZE;
 
   /**
    * Generates a compressed, serialized, random, valid public key based on a seed.
@@ -46,7 +46,7 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
    * @return the empty public key as per the Eth2 spec
    */
   public static BLSPublicKey empty() {
-    return BLSPublicKey.fromSSZBytes(Bytes.wrap(new byte[BLS_PUBKEY_SIZE]));
+    return BLSPublicKey.fromBytesCompressed(Bytes48.ZERO);
   }
 
   @Override
@@ -61,11 +61,12 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
 
   public static BLSPublicKey fromSSZBytes(Bytes bytes) {
     checkArgument(
-        bytes.size() == BLS_PUBKEY_SIZE,
-        "Expected " + BLS_PUBKEY_SIZE + " bytes but received %s.",
+        bytes.size() == SSZ_BLS_PUBKEY_SIZE,
+        "Expected " + SSZ_BLS_PUBKEY_SIZE + " bytes but received %s.",
         bytes.size());
     return SSZ.decode(
-        bytes, reader -> new BLSPublicKey(Bytes48.wrap(reader.readFixedBytes(BLS_PUBKEY_SIZE))));
+        bytes,
+        reader -> new BLSPublicKey(Bytes48.wrap(reader.readFixedBytes(SSZ_BLS_PUBKEY_SIZE))));
   }
 
   /**
