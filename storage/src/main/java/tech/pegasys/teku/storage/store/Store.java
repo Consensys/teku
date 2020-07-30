@@ -195,27 +195,32 @@ class Store implements UpdatableStore {
    */
   @Override
   public void startMetrics() {
-    stateCountGauge =
-        Optional.of(
-            SettableGauge.create(
-                metricsSystem,
-                TekuMetricCategory.STORAGE,
-                "memory_state_count",
-                "Number of beacon states held in the in-memory store"));
-    blockCountGauge =
-        Optional.of(
-            SettableGauge.create(
-                metricsSystem,
-                TekuMetricCategory.STORAGE,
-                "memory_block_count",
-                "Number of beacon blocks held in the in-memory store"));
-    checkpointCountGauge =
-        Optional.of(
-            SettableGauge.create(
-                metricsSystem,
-                TekuMetricCategory.STORAGE,
-                "memory_checkpoint_state_count",
-                "Number of checkpoint states held in the in-memory store"));
+    lock.writeLock().lock();
+    try {
+      stateCountGauge =
+          Optional.of(
+              SettableGauge.create(
+                  metricsSystem,
+                  TekuMetricCategory.STORAGE,
+                  "memory_state_count",
+                  "Number of beacon states held in the in-memory store"));
+      blockCountGauge =
+          Optional.of(
+              SettableGauge.create(
+                  metricsSystem,
+                  TekuMetricCategory.STORAGE,
+                  "memory_block_count",
+                  "Number of beacon blocks held in the in-memory store"));
+      checkpointCountGauge =
+          Optional.of(
+              SettableGauge.create(
+                  metricsSystem,
+                  TekuMetricCategory.STORAGE,
+                  "memory_checkpoint_state_count",
+                  "Number of checkpoint states held in the in-memory store"));
+    } finally {
+      lock.writeLock().unlock();
+    }
   }
 
   @Override
