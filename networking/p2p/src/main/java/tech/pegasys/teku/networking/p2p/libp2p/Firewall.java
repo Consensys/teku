@@ -18,7 +18,9 @@ import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.WriteBufferWaterMark;
+import io.netty.handler.timeout.WriteTimeoutException;
 import io.netty.handler.timeout.WriteTimeoutHandler;
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -33,11 +35,11 @@ import tech.pegasys.teku.infrastructure.async.FutureUtil;
 public class Firewall extends ChannelInboundHandlerAdapter {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final int writeTimeoutSec;
+  private final Duration writeTimeout;
   private final List<ChannelHandler> additionalHandlers;
 
-  public Firewall(int writeTimeoutSec, List<ChannelHandler> additionalHandlers) {
-    this.writeTimeoutSec = writeTimeoutSec;
+  public Firewall(Duration writeTimeout, List<ChannelHandler> additionalHandlers) {
+    this.writeTimeout = writeTimeout;
     this.additionalHandlers = additionalHandlers;
   }
 
@@ -45,7 +47,8 @@ public class Firewall extends ChannelInboundHandlerAdapter {
   public void handlerAdded(ChannelHandlerContext ctx) {
     additionalHandlers.forEach(h -> ctx.pipeline().addLast(h));
     ctx.channel().config().setWriteBufferWaterMark(new WriteBufferWaterMark(100, 1024));
-    ctx.pipeline().addLast(new WriteTimeoutHandler(writeTimeoutSec, TimeUnit.SECONDS));
+    ctx.pipeline().addLast(new WriteTimeoutHandler(writeTimeout.toMillis(), TimeUnit.MILLISECONDS));
+    ctx.pipeline().addLast(new FirewallExceptionHandler());
   }
 
   @Override
@@ -54,9 +57,15 @@ public class Firewall extends ChannelInboundHandlerAdapter {
     ctx.fireChannelWritabilityChanged();
   }
 
-  @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-    LOG.debug("Error in Firewall, disconnecting" + cause);
-    FutureUtil.ignoreFuture(ctx.close());
+  class FirewallExceptionHandler extends ChannelInboundHandlerAdapter {
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+      if (cause instanceof WriteTimeoutException) {
+        LOG.debug("Firewall closed channel by write timeout. No writes during " + writeTimeout);
+      } else {
+        LOG.debug("Error in Firewall, disconnecting" + cause);
+        FutureUtil.ignoreFuture(ctx.close());
+      }
+    }
   }
 }

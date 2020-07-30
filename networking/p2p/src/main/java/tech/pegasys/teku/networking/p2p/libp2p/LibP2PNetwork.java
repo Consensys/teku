@@ -42,6 +42,7 @@ import io.netty.channel.ChannelHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
@@ -148,7 +149,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
               if (config.getWireLogsConfig().isLogWireCipher()) {
                 beforeSecureLogHandler.add(new LoggingHandler("wire.ciphered", LogLevel.DEBUG));
               }
-              Firewall firewall = new Firewall(30, beforeSecureLogHandler);
+              Firewall firewall = new Firewall(Duration.ofSeconds(30), beforeSecureLogHandler);
               b.getDebug().getBeforeSecureHandler().setHandler(firewall);
 
               if (config.getWireLogsConfig().isLogWirePlain()) {
