@@ -69,6 +69,19 @@ class BLSPublicKeyTest {
   }
 
   @Test
+  void succeedsWhenComparingInvalidAndValidPublicKeyFails() {
+    BLSPublicKey invalidPublicKey =
+        BLSPublicKey.fromBytesCompressed(
+            Bytes48.fromHexString(
+                "0x9378a6e3984e96d2cd50450c76ca14732f1300efa04aecdb805b22e6d6926a85ef409e8f3acf494a1481090bf32ce3bd"));
+    BLSPublicKey validPublicKey =
+        BLSPublicKey.fromBytesCompressed(
+            Bytes48.fromHexString(
+                "0xb51aa9cdb40ed3e7e5a9b3323550fe323ecd5c7f5cb3d8b47af55a061811bc7da0397986cad0d565c0bdbbe99af24355"));
+    assertNotEquals(validPublicKey, invalidPublicKey);
+  }
+
+  @Test
   void succeedsWhenInvalidPublicReturnsHashCode() {
     BLSPublicKey invalidPublicKey =
         BLSPublicKey.fromBytesCompressed(
