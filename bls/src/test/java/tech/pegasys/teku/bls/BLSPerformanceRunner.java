@@ -68,7 +68,7 @@ public class BLSPerformanceRunner {
 
                 List<BLSPublicKey> publicKeys =
                     keyPairs.stream().map(BLSKeyPair::getPublicKey).collect(Collectors.toList());
-                BLSSignature aggregateSignature = BLS.aggregateSignatures(sigs);
+                BLSSignature aggregateSignature = BLS.aggregate(sigs);
 
                 // Verify the aggregate signatures and keys
                 BLS.fastAggregateVerify(publicKeys, message, aggregateSignature);
@@ -97,7 +97,7 @@ public class BLSPerformanceRunner {
         executeRun(
             () -> {
               try {
-                BLS.aggregateSignatures(sigs);
+                BLS.aggregate(sigs);
               } catch (RuntimeException e) {
                 LOG.error("Aggregation failed", e);
               }
@@ -127,7 +127,7 @@ public class BLSPerformanceRunner {
         executeRun(
             () -> {
               try {
-                BLS.aggregateSignatures(Collections.singletonList(signature));
+                BLS.aggregate(Collections.singletonList(signature));
               } catch (RuntimeException e) {
                 LOG.error("Aggregation failed", e);
               }

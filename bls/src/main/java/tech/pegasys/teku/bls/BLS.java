@@ -82,13 +82,6 @@ public class BLS {
     return signature.getSignature().verify(publicKey.getPublicKey(), message);
   }
 
-  public static BLSPublicKey aggregatePublicKeys(List<BLSPublicKey> publicKeys) {
-    return new BLSPublicKey(
-        getBlsImpl()
-            .aggregatePublicKeys(
-                publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList())));
-  }
-
   /**
    * Aggregates a list of BLSSignatures into a single BLSSignature.
    *
@@ -102,7 +95,7 @@ public class BLS {
    * @return the aggregated signature
    * @throws IllegalArgumentException if any of supplied signatures is invalid
    */
-  public static BLSSignature aggregateSignatures(List<BLSSignature> signatures)
+  public static BLSSignature aggregate(List<BLSSignature> signatures)
       throws IllegalArgumentException {
     checkArgument(signatures.size() > 0, "Aggregating zero signatures is invalid.");
     return new BLSSignature(

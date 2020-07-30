@@ -19,6 +19,7 @@ import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
@@ -47,6 +48,20 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
    */
   public static BLSPublicKey empty() {
     return BLSPublicKey.fromBytesCompressed(Bytes48.ZERO);
+  }
+
+  /**
+   * Aggregates list of PublicKeys, returns the public key that corresponds to G1 point at infinity
+   * if list is empty
+   *
+   * @param publicKeys The list of public keys to aggregate
+   * @return PublicKey The public key
+   */
+  public static BLSPublicKey aggregate(List<BLSPublicKey> publicKeys) {
+    return new BLSPublicKey(
+        BLS.getBlsImpl()
+            .aggregatePublicKeys(
+                publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList())));
   }
 
   @Override

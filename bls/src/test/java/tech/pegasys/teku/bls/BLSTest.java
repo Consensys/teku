@@ -64,7 +64,7 @@ class BLSTest {
   @Test
   void succeedsWhenAggregatingASingleSignatureReturnsTheSameSignature() {
     BLSSignature signature = BLSSignature.random(1);
-    assertEquals(signature, BLS.aggregateSignatures(singletonList(signature)));
+    assertEquals(signature, BLS.aggregate(singletonList(signature)));
   }
 
   @Test
@@ -75,7 +75,7 @@ class BLSTest {
     BLSSignature signature3 = BLSSignature.random(3);
     assertThrows(
         IllegalArgumentException.class,
-        () -> BLS.aggregateSignatures(Arrays.asList(signature1, signature2, signature3)));
+        () -> BLS.aggregate(Arrays.asList(signature1, signature2, signature3)));
   }
 
   @Test
@@ -92,7 +92,7 @@ class BLSTest {
             BLS.sign(keyPair1.getSecretKey(), message),
             BLS.sign(keyPair2.getSecretKey(), message),
             BLS.sign(keyPair3.getSecretKey(), message));
-    BLSSignature aggregatedSignature = BLS.aggregateSignatures(signatures);
+    BLSSignature aggregatedSignature = BLS.aggregate(signatures);
 
     assertTrue(BLS.fastAggregateVerify(publicKeys, message, aggregatedSignature));
   }
@@ -135,7 +135,7 @@ class BLSTest {
             BLS.sign(keyPair1.getSecretKey(), message1),
             BLS.sign(keyPair2.getSecretKey(), message2),
             BLS.sign(keyPair3.getSecretKey(), message2));
-    BLSSignature aggregatedSignature = BLS.aggregateSignatures(signatures);
+    BLSSignature aggregatedSignature = BLS.aggregate(signatures);
 
     assertFalse(BLS.aggregateVerify(publicKeys, messages, aggregatedSignature));
   }
@@ -157,7 +157,7 @@ class BLSTest {
             BLS.sign(keyPair1.getSecretKey(), message1),
             BLS.sign(keyPair2.getSecretKey(), message2),
             BLS.sign(keyPair3.getSecretKey(), message3));
-    BLSSignature aggregatedSignature = BLS.aggregateSignatures(signatures);
+    BLSSignature aggregatedSignature = BLS.aggregate(signatures);
 
     assertTrue(BLS.aggregateVerify(publicKeys, messages, aggregatedSignature));
   }
@@ -165,7 +165,7 @@ class BLSTest {
   @Test
   // The standard says that this is INVALID
   void aggregateThrowsExceptionForEmptySignatureList() {
-    assertThrows(IllegalArgumentException.class, () -> BLS.aggregateSignatures(new ArrayList<>()));
+    assertThrows(IllegalArgumentException.class, () -> BLS.aggregate(new ArrayList<>()));
   }
 
   @Test
@@ -225,8 +225,8 @@ class BLSTest {
     BLSSignature sigInf = BLS.sign(keyPairInf.getSecretKey(), message);
 
     BLSPublicKey pubKeyAggr =
-        BLS.aggregatePublicKeys(List.of(keyPair1.getPublicKey(), keyPairInf.getPublicKey()));
-    BLSSignature sigAggr = BLS.aggregateSignatures(List.of(sig1, sigInf));
+        BLSPublicKey.aggregate(List.of(keyPair1.getPublicKey(), keyPairInf.getPublicKey()));
+    BLSSignature sigAggr = BLS.aggregate(List.of(sig1, sigInf));
     boolean res1 = BLS.verify(pubKeyAggr, message, sigAggr);
     assertTrue(res1);
   }

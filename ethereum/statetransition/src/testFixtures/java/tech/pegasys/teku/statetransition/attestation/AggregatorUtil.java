@@ -31,7 +31,6 @@ public class AggregatorUtil {
       aggregateBits.setAllBits(attestation.getAggregation_bits());
       signatures.add(attestation.getAggregate_signature());
     }
-    return new Attestation(
-        aggregateBits, firstAttestation.getData(), BLS.aggregateSignatures(signatures));
+    return new Attestation(aggregateBits, firstAttestation.getData(), BLS.aggregate(signatures));
   }
 }

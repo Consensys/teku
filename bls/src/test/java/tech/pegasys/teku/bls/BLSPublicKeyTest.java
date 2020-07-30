@@ -174,7 +174,7 @@ class BLSPublicKeyTest {
             Bytes48.fromHexString(
                 "0x89ece308f9d1f0131765212deca99697b112d61f9be9a5f1f3780a51335b3ff981747a0b2ca2179b96d2c0c9024e5224"));
 
-    BLSPublicKey aggrPk = BLS.aggregatePublicKeys(List.of(pk, pk));
+    BLSPublicKey aggrPk = BLSPublicKey.aggregate(List.of(pk, pk));
 
     BLSPublicKey aggrPkGolden =
         BLSPublicKey.fromBytesCompressedValidate(
