@@ -124,8 +124,6 @@ public class BlstSignature implements Signature {
     }
   }
 
-
-
   final p2_affine ec2Point;
   private final boolean isValid;
 

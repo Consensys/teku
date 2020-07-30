@@ -280,7 +280,6 @@ class BLSTest {
     assertFalse(res1);
   }
 
-
   @Test
   void testSignatureVerifyForSomeRealValues() {
     String signingRoot = "0x95b8e2ba063ab62f68ebe7db0a9669ab9e7906aa4e060e1cc0b67b294ce8c5e4";
