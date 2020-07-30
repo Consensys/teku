@@ -81,6 +81,51 @@ public class BlstSignature implements Signature {
     return new BlstSignature(res, true);
   }
 
+  private static pairing blstPrepareVerifyAggregated(
+      BlstPublicKey pubKey, Bytes message, pairing ctx, BlstSignature blstSignature) {
+
+    p2 g2Hash = HashToCurve.hashToG2(message);
+    p2_affine p2Affine = new p2_affine();
+    blst.p2_to_affine(p2Affine, g2Hash);
+
+    if (ctx == null) {
+      ctx = new pairing();
+      blst.pairing_init(ctx);
+    }
+
+    try {
+      BLST_ERROR ret =
+          blst.pairing_aggregate_pk_in_g1(
+              ctx,
+              pubKey.ecPoint,
+              blstSignature == null ? null : blstSignature.ec2Point,
+              1,
+              message.toArrayUnsafe(),
+              HashToCurve.ETH2_DST.toArrayUnsafe(),
+              null);
+      if (ret != BLST_ERROR.BLST_SUCCESS) throw new IllegalArgumentException("Error: " + ret);
+    } catch (Exception e) {
+      ctx.delete();
+      throw e;
+    } finally {
+      g2Hash.delete();
+      p2Affine.delete();
+    }
+
+    return ctx;
+  }
+
+  private static boolean blstCompleteVerifyAggregated(pairing ctx) {
+    try {
+      blst.pairing_commit(ctx);
+      return blst.pairing_finalverify(ctx, null) > 0;
+    } finally {
+      ctx.delete();
+    }
+  }
+
+
+
   final p2_affine ec2Point;
   private final boolean isValid;
 
@@ -109,10 +154,10 @@ public class BlstSignature implements Signature {
       BlstPublicKey publicKey = (BlstPublicKey) keysToMessages.get(i).getPublicKey();
       Bytes message = keysToMessages.get(i).getMessage();
       BlstSignature signature = i == 0 ? this : null;
-      ctx = BlstBLS12381.INSTANCE.blstPrepareVerifyAggregated(publicKey, message, ctx, signature);
+      ctx = blstPrepareVerifyAggregated(publicKey, message, ctx, signature);
     }
 
-    return BlstBLS12381.INSTANCE.blstCompleteVerifyAggregated(ctx);
+    return blstCompleteVerifyAggregated(ctx);
   }
 
   @Override
