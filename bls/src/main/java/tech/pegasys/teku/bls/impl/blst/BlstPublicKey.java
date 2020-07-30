@@ -87,15 +87,18 @@ public class BlstPublicKey implements PublicKey {
     }
 
     p1 sum = new p1();
-    blst.p1_from_affine(sum, finitePublicKeys.get(0).ecPoint);
-    for (int i = 1; i < finitePublicKeys.size(); i++) {
-      blst.p1_add_or_double_affine(sum, sum, finitePublicKeys.get(i).ecPoint);
-    }
-    p1_affine res = new p1_affine();
-    blst.p1_to_affine(res, sum);
-    sum.delete();
+    try {
+      blst.p1_from_affine(sum, finitePublicKeys.get(0).ecPoint);
+      for (int i = 1; i < finitePublicKeys.size(); i++) {
+        blst.p1_add_or_double_affine(sum, sum, finitePublicKeys.get(i).ecPoint);
+      }
+      p1_affine res = new p1_affine();
+      blst.p1_to_affine(res, sum);
 
-    return new BlstPublicKey(res);
+      return new BlstPublicKey(res);
+    } finally {
+      sum.delete();
+    }
   }
 
   final p1_affine ecPoint;

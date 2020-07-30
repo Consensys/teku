@@ -30,7 +30,12 @@ class HashToCurve {
 
   static p2 hashToG2(Bytes message, Bytes dst) {
     p2 p2Hash = new p2();
-    blst.hash_to_g2(p2Hash, message.toArray(), dst.toArray(), new byte[0]);
-    return p2Hash;
+    try {
+      blst.hash_to_g2(p2Hash, message.toArray(), dst.toArray(), new byte[0]);
+      return p2Hash;
+    } catch (Exception e) {
+      p2Hash.delete();
+      throw e;
+    }
   }
 }

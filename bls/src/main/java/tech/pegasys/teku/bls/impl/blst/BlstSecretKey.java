@@ -83,11 +83,15 @@ public class BlstSecretKey implements SecretKey {
       return BlstPublicKey.INFINITY;
     }
     p1 pk = new p1();
-    blst.sk_to_pk_in_g1(pk, getScalarVal());
-    p1_affine pkAffine = new p1_affine();
-    blst.p1_to_affine(pkAffine, pk);
-    pk.delete();
-    return new BlstPublicKey(pkAffine);
+    try {
+      blst.sk_to_pk_in_g1(pk, getScalarVal());
+      p1_affine pkAffine = new p1_affine();
+      blst.p1_to_affine(pkAffine, pk);
+
+      return new BlstPublicKey(pkAffine);
+    } finally {
+      pk.delete();
+    }
   }
 
   scalar getScalarVal() {

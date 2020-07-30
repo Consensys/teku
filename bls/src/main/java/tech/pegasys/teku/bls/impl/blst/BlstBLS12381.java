@@ -66,14 +66,18 @@ public class BlstBLS12381 implements BLS12381 {
   }
 
   public static BlstSignature sign(BlstSecretKey secretKey, Bytes message) {
-    p2 p2Signature = new p2();
     p2 hash = HashToCurve.hashToG2(message);
-    blst.sign_pk_in_g1(p2Signature, hash, secretKey.getScalarVal());
-    p2_affine p2SignatureAffine = new p2_affine();
-    blst.p2_to_affine(p2SignatureAffine, p2Signature);
-    p2Signature.delete();
-    hash.delete();
-    return new BlstSignature(p2SignatureAffine, true);
+    p2 p2Signature = new p2();
+    try {
+      blst.sign_pk_in_g1(p2Signature, hash, secretKey.getScalarVal());
+      p2_affine p2SignatureAffine = new p2_affine();
+      blst.p2_to_affine(p2SignatureAffine, p2Signature);
+
+      return new BlstSignature(p2SignatureAffine, true);
+    } finally {
+      hash.delete();
+      p2Signature.delete();
+    }
   }
 
   public static boolean verify(BlstPublicKey publicKey, Bytes message, BlstSignature signature) {
@@ -141,10 +145,9 @@ public class BlstBLS12381 implements BLS12381 {
 
     p2 g2Hash = HashToCurve.hashToG2(message);
     p2_affine p2Affine = new p2_affine();
-    blst.p2_to_affine(p2Affine, g2Hash);
-
     pairing ctx = new pairing();
     try {
+      blst.p2_to_affine(p2Affine, g2Hash);
       blst.pairing_init(ctx);
       BLST_ERROR ret =
           blst.pairing_mul_n_aggregate_pk_in_g1(
@@ -155,6 +158,10 @@ public class BlstBLS12381 implements BLS12381 {
               nextBatchRandomMultiplier(),
               BATCH_RANDOM_BYTES * 8);
       if (ret != BLST_ERROR.BLST_SUCCESS) throw new IllegalArgumentException("Error: " + ret);
+
+      blst.pairing_commit(ctx);
+
+      return new BlstFiniteSemiAggregate(ctx);
     } catch (Exception e) {
       ctx.delete();
       throw e;
@@ -162,9 +169,6 @@ public class BlstBLS12381 implements BLS12381 {
       g2Hash.delete();
       p2Affine.delete(); // not sure if its copied inside pairing_mul_n_aggregate_pk_in_g1
     }
-    blst.pairing_commit(ctx);
-
-    return new BlstFiniteSemiAggregate(ctx);
   }
 
   @Override
@@ -185,36 +189,38 @@ public class BlstBLS12381 implements BLS12381 {
 
   @Override
   public boolean completeBatchVerify(List<? extends BatchSemiAggregate> preparedList) {
-    boolean anyInvalidInfinity =
-        preparedList.stream()
-            .filter(a -> a instanceof BlstInfiniteSemiAggregate)
-            .map(a -> (BlstInfiniteSemiAggregate) a)
-            .anyMatch(a -> !a.isValid());
+    try {
+      boolean anyInvalidInfinity =
+          preparedList.stream()
+              .filter(a -> a instanceof BlstInfiniteSemiAggregate)
+              .map(a -> (BlstInfiniteSemiAggregate) a)
+              .anyMatch(a -> !a.isValid());
 
-    if (anyInvalidInfinity) {
-      return false;
+      List<BlstFiniteSemiAggregate> blstList =
+          preparedList.stream()
+              .filter(a -> a instanceof BlstFiniteSemiAggregate)
+              .map(b -> (BlstFiniteSemiAggregate) b)
+              .collect(Collectors.toList());
+
+      if (blstList.isEmpty()) {
+        return !anyInvalidInfinity;
+      }
+      pairing ctx0 = blstList.get(0).getCtx();
+      boolean mergeRes = true;
+      for (int i = 1; i < blstList.size(); i++) {
+        BLST_ERROR ret = blst.pairing_merge(ctx0, blstList.get(i).getCtx());
+        mergeRes &= ret == BLST_ERROR.BLST_SUCCESS;
+      }
+
+      int boolRes = blst.pairing_finalverify(ctx0, null);
+      return mergeRes && boolRes != 0;
+
+    } finally {
+      preparedList.stream()
+          .filter(a -> a instanceof BlstFiniteSemiAggregate)
+          .map(b -> (BlstFiniteSemiAggregate) b)
+          .forEach(BlstFiniteSemiAggregate::release);
     }
-
-    List<BlstFiniteSemiAggregate> blstList =
-        preparedList.stream()
-            .filter(a -> a instanceof BlstFiniteSemiAggregate)
-            .map(b -> (BlstFiniteSemiAggregate) b)
-            .collect(Collectors.toList());
-
-    if (blstList.isEmpty()) {
-      return true;
-    }
-    pairing ctx0 = blstList.get(0).getCtx();
-    boolean mergeRes = true;
-    for (int i = 1; i < blstList.size(); i++) {
-      BLST_ERROR ret = blst.pairing_merge(ctx0, blstList.get(i).getCtx());
-      mergeRes &= ret == BLST_ERROR.BLST_SUCCESS;
-      blstList.get(i).release();
-    }
-
-    int boolRes = blst.pairing_finalverify(ctx0, null);
-    blstList.get(0).release();
-    return mergeRes && boolRes != 0;
   }
 
   static BigInteger nextBatchRandomMultiplier() {

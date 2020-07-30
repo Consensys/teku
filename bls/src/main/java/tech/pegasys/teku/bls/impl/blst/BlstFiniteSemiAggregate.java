@@ -54,6 +54,7 @@ final class BlstFiniteSemiAggregate implements BatchSemiAggregate {
   }
 
   pairing getCtx() {
+    if (released) throw new IllegalStateException("Attempting to use disposed BatchSemiAggregate");
     return ctx;
   }
 
