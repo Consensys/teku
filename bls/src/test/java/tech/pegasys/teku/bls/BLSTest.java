@@ -233,7 +233,6 @@ class BLSTest {
 
   @Test
   void batchVerify2InfinitePublicKeyAndSignature() {
-    System.out.println(zeroSK.toBytes());
     BLSKeyPair keyPairInf = new BLSKeyPair(zeroSK);
 
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
@@ -250,7 +249,6 @@ class BLSTest {
 
   @Test
   void batchVerifyInfinitePublicKeyAndSignature() {
-    System.out.println(zeroSK.toBytes());
     BLSKeyPair keyPair1 = BLSKeyPair.random(1);
     BLSKeyPair keyPairInf = new BLSKeyPair(zeroSK);
 
@@ -266,6 +264,22 @@ class BLSTest {
     boolean res1 = BLS.completeBatchVerify(List.of(semiAggregate1, semiAggregateInf));
     assertTrue(res1);
   }
+
+  @Test
+  void batchVerifyInvalidInfiniteSignature() {
+    BLSKeyPair keyPair1 = BLSKeyPair.random(1);
+    BLSKeyPair keyPairInf = new BLSKeyPair(zeroSK);
+
+    Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
+    BLSSignature sigInf = BLS.sign(keyPairInf.getSecretKey(), message);
+
+    BatchSemiAggregate semiAggregate =
+        BLS.prepareBatchVerify(0, List.of(keyPair1.getPublicKey()), message, sigInf);
+
+    boolean res1 = BLS.completeBatchVerify(List.of(semiAggregate));
+    assertFalse(res1);
+  }
+
 
   @Test
   void testSignatureVerifyForSomeRealValues() {

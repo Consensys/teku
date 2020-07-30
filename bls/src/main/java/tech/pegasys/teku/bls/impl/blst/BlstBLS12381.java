@@ -177,11 +177,15 @@ public class BlstBLS12381 implements BLS12381 {
 
   @Override
   public boolean completeBatchVerify(List<? extends BatchSemiAggregate> preparedList) {
-    boolean anyInvalidDummy =
+    boolean anyInvalidInfinity =
         preparedList.stream()
             .filter(a -> a instanceof BlstInfiniteSemiAggregate)
             .map(a -> (BlstInfiniteSemiAggregate) a)
             .anyMatch(a -> !a.isValid());
+
+    if (anyInvalidInfinity) {
+      return false;
+    }
 
     List<BlstFiniteSemiAggregate> blstList =
         preparedList.stream()
@@ -202,7 +206,7 @@ public class BlstBLS12381 implements BLS12381 {
 
     int boolRes = blst.pairing_finalverify(ctx0, null);
     blstList.get(0).release();
-    return mergeRes && boolRes != 0 && !anyInvalidDummy;
+    return mergeRes && boolRes != 0;
   }
 
   static BigInteger nextBatchRandomMultiplier() {
