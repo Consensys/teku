@@ -129,13 +129,13 @@ An issue that causes data loss/corruption is automatically classed as Catastroph
     <td class="tg-c3ow">Very Low</td>
   </tr>
   <tr>
-    <td class="tg-7btt"><b>Improbable</b></td>
+    <td class="tg-7btt"><b>Probable</b></td>
+    <td class="tg-c3ow">High</td>
+    <td class="tg-c3ow">High</td>
     <td class="tg-c3ow">Medium</td>
-    <td class="tg-c3ow">Low</td>
-    <td class="tg-c3ow">Low</td>
+    <td class="tg-c3ow">Medium</td>
     <td class="tg-c3ow">Very Low</td>
-    <td class="tg-c3ow">Very Low</td>
-  </tr>
+    </tr>
   <tr>
     <td class="tg-7btt"><b>Occasional</b></td>
     <td class="tg-c3ow">High</td>
@@ -145,19 +145,19 @@ An issue that causes data loss/corruption is automatically classed as Catastroph
     <td class="tg-c3ow">Very Low</td>
   </tr>
   <tr>
-    <td class="tg-7btt"><b>Probable</b></td>
-    <td class="tg-c3ow">High</td>
-    <td class="tg-c3ow">High</td>
-    <td class="tg-c3ow">Medium</td>
-    <td class="tg-c3ow">Medium</td>
-    <td class="tg-c3ow">Very Low</td>
-  </tr>
-  <tr>
     <td class="tg-7btt"><b>Remote</b></td>
     <td class="tg-c3ow">Medium</td>
     <td class="tg-c3ow">Medium</td>
     <td class="tg-c3ow">Low</td>
     <td class="tg-c3ow">Low</td>
+    <td class="tg-c3ow">Very Low</td>
+  </tr>
+  <tr>
+    <td class="tg-7btt"><b>Improbable</b></td>
+    <td class="tg-c3ow">Medium</td>
+    <td class="tg-c3ow">Low</td>
+    <td class="tg-c3ow">Low</td>
+    <td class="tg-c3ow">Very Low</td>
     <td class="tg-c3ow">Very Low</td>
   </tr>
 </tbody>
