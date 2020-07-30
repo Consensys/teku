@@ -28,6 +28,9 @@ public class BlstPublicKeyTest {
     BlstBLS12381.INSTANCE.hashCode();
   }
 
+  // Blst library doesn't handle infinity pubkeys at the moment.
+  // Could enable the test when the issue https://github.com/supranational/blst/issues/11 is
+  // addressed
   @Disabled
   @Test
   void infinityPublicKey() {
