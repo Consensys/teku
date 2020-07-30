@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 public class FirewallTest {
 
   @Test
+  @SuppressWarnings("FutureReturnValueIgnored")
   void testFirewallNotPropagateTimeoutExceptionUpstream() throws Exception {
     Firewall firewall = new Firewall(Duration.ofMillis(100), Collections.emptyList());
     EmbeddedChannel channel =
