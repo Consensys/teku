@@ -107,7 +107,7 @@ public class DepositProcessingController {
     active = true;
 
     fromBlock = latestSuccessfullyQueriedBlock.add(BigInteger.ONE);
-    toBlock = latestCanonicalBlockNumber;
+    toBlock = latestCanonicalBlockNumber.min(fromBlock.add(BigInteger.valueOf(500_000)));
 
     depositFetcher
         .fetchDepositsInRange(fromBlock, toBlock)

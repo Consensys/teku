@@ -53,6 +53,7 @@ import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.metrics.SettableGauge;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.util.collections.ConcurrentLimitedMap;
@@ -71,6 +72,9 @@ class Store implements UpdatableStore {
   private final Counter checkpointStateRequestRegenerateCounter;
   private final Counter checkpointStateRequestMissCounter;
   private final MetricsSystem metricsSystem;
+  private Optional<SettableGauge> stateCountGauge = Optional.empty();
+  private Optional<SettableGauge> blockCountGauge = Optional.empty();
+  private Optional<SettableGauge> checkpointCountGauge = Optional.empty();
 
   private final BlockProvider blockProvider;
 
@@ -191,21 +195,32 @@ class Store implements UpdatableStore {
    */
   @Override
   public void startMetrics() {
-    metricsSystem.createIntegerGauge(
-        TekuMetricCategory.STORAGE,
-        "memory_state_count",
-        "Number of beacon states held in the in-memory store",
-        this::countStates);
-    metricsSystem.createIntegerGauge(
-        TekuMetricCategory.STORAGE,
-        "memory_block_count",
-        "Number of beacon blocks held in the in-memory store",
-        this::countBlocks);
-    metricsSystem.createIntegerGauge(
-        TekuMetricCategory.STORAGE,
-        "memory_checkpoint_state_count",
-        "Number of checkpoint states held in the in-memory store",
-        this::countCheckpointStates);
+    lock.writeLock().lock();
+    try {
+      stateCountGauge =
+          Optional.of(
+              SettableGauge.create(
+                  metricsSystem,
+                  TekuMetricCategory.STORAGE,
+                  "memory_state_count",
+                  "Number of beacon states held in the in-memory store"));
+      blockCountGauge =
+          Optional.of(
+              SettableGauge.create(
+                  metricsSystem,
+                  TekuMetricCategory.STORAGE,
+                  "memory_block_count",
+                  "Number of beacon blocks held in the in-memory store"));
+      checkpointCountGauge =
+          Optional.of(
+              SettableGauge.create(
+                  metricsSystem,
+                  TekuMetricCategory.STORAGE,
+                  "memory_checkpoint_state_count",
+                  "Number of checkpoint states held in the in-memory store"));
+    } finally {
+      lock.writeLock().unlock();
+    }
   }
 
   @Override
@@ -533,6 +548,7 @@ class Store implements UpdatableStore {
     lock.writeLock().lock();
     try {
       checkpoint_states.put(checkpoint, state);
+      checkpointCountGauge.ifPresent(gauge -> gauge.set(checkpoint_states.size()));
     } finally {
       lock.writeLock().unlock();
     }
@@ -544,6 +560,7 @@ class Store implements UpdatableStore {
     try {
       if (containsBlock(blockRoot)) {
         block_states.put(blockRoot, state);
+        stateCountGauge.ifPresent(gauge -> gauge.set(block_states.size()));
       }
     } finally {
       writeLock.unlock();
@@ -556,36 +573,10 @@ class Store implements UpdatableStore {
     try {
       if (containsBlock(block.getRoot())) {
         blocks.put(block.getRoot(), block);
+        blockCountGauge.ifPresent(gauge -> gauge.set(blocks.size()));
       }
     } finally {
       writeLock.unlock();
-    }
-  }
-
-  private int countBlocks() {
-    readLock.lock();
-    try {
-      return blocks.size();
-    } finally {
-      readLock.unlock();
-    }
-  }
-
-  private int countStates() {
-    readLock.lock();
-    try {
-      return block_states.size();
-    } finally {
-      readLock.unlock();
-    }
-  }
-
-  private int countCheckpointStates() {
-    readLock.lock();
-    try {
-      return checkpoint_states.size();
-    } finally {
-      readLock.unlock();
     }
   }
 

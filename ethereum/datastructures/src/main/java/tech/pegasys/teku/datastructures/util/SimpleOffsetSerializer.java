@@ -138,16 +138,11 @@ public class SimpleOffsetSerializer {
   }
 
   public static Bytes serialize(SimpleOffsetSerializable value) {
-    // TODO (#2407): assert sum(fixed_lengths + variable_lengths) < 2**(BYTES_PER_LENGTH_OFFSET *
-    // BITS_PER_BYTE)
-    // List<UnsignedLong> variable_lengths = new ArrayList<>();
     List<UnsignedLong> variable_offsets = new ArrayList<>();
     List<Bytes> interleaved_values = new ArrayList<>();
     UnsignedLong fixedLengthSum = UnsignedLong.ZERO;
     UnsignedLong varLengthSum = UnsignedLong.ZERO;
 
-    // System.out.println("Fixed Part Size: " + value.get_fixed_parts().size());
-    // System.out.println("Var Part Size: " + value.get_variable_parts().size());
     for (Bytes fixedPart : value.get_fixed_parts()) {
       UnsignedLong fixedPartSize = UnsignedLong.valueOf(fixedPart.size());
       if (fixedPartSize.equals(UnsignedLong.ZERO)) {
