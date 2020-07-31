@@ -44,18 +44,18 @@ public class BLS {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static BLS12381 BlsImpl;
+  private static BLS12381 BLS_IMPL;
 
   static {
     resetBlsImplementation();
   }
 
   public static void setBlsImplementation(BLS12381 blsImpl) {
-    BlsImpl = blsImpl;
+    BLS_IMPL = blsImpl;
   }
 
   public static void resetBlsImplementation() {
-    BlsImpl = BlstBLS12381.INSTANCE.map(bls -> (BLS12381) bls).orElse(MikuliBLS12381.INSTANCE);
+    BLS_IMPL = BlstBLS12381.INSTANCE.map(bls -> (BLS12381) bls).orElse(MikuliBLS12381.INSTANCE);
   }
 
   /*
@@ -358,6 +358,6 @@ public class BLS {
   }
 
   static BLS12381 getBlsImpl() {
-    return BlsImpl;
+    return BLS_IMPL;
   }
 }
