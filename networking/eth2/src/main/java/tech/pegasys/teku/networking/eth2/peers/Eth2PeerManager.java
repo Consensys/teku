@@ -43,6 +43,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.events.Subscribers;
+import tech.pegasys.teku.util.time.TimeProvider;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();
@@ -75,7 +76,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final RpcEncoding rpcEncoding,
       final Duration eth2RpcPingInterval,
       final int eth2RpcOutstandingPingThreshold,
-      Duration eth2StatusUpdateInterval) {
+      final Duration eth2StatusUpdateInterval) {
     this.asyncRunner = asyncRunner;
     this.eth2PeerFactory = eth2PeerFactory;
     this.peerValidatorFactory = peerValidatorFactory;
@@ -104,7 +105,9 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final RpcEncoding rpcEncoding,
       final Duration eth2RpcPingInterval,
       final int eth2RpcOutstandingPingThreshold,
-      Duration eth2StatusUpdateInterval) {
+      final Duration eth2StatusUpdateInterval,
+      final TimeProvider timeProvider,
+      final Integer peerRateLimit) {
 
     final PeerValidatorFactory peerValidatorFactory =
         (peer, status) ->
@@ -118,7 +121,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         new CombinedChainDataClient(recentChainData, historicalChainData),
         recentChainData,
         metricsSystem,
-        new Eth2PeerFactory(statusMessageFactory, metadataMessagesFactory),
+        new Eth2PeerFactory(
+            statusMessageFactory, metadataMessagesFactory, timeProvider, peerRateLimit),
         peerValidatorFactory,
         statusMessageFactory,
         metadataMessagesFactory,

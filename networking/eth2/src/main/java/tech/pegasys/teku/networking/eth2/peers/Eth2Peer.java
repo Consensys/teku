@@ -49,6 +49,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.util.time.TimeProvider;
 
 public class Eth2Peer extends DelegatingPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -63,16 +64,20 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   private final AtomicBoolean chainValidated = new AtomicBoolean(false);
   private final AtomicInteger outstandingRequests = new AtomicInteger(0);
   private final AtomicInteger outstandingPings = new AtomicInteger();
+  private final RateTracker rateTracker;
 
   public Eth2Peer(
       final Peer peer,
       final BeaconChainMethods rpcMethods,
       final StatusMessageFactory statusMessageFactory,
-      final MetadataMessagesFactory metadataMessagesFactory) {
+      final MetadataMessagesFactory metadataMessagesFactory,
+      final TimeProvider timeProvider,
+      final Integer peerRateLimit) {
     super(peer);
     this.rpcMethods = rpcMethods;
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
+    this.rateTracker = new RateTracker(peerRateLimit, 60, timeProvider);
   }
 
   public void updateStatus(final PeerStatus status) {
@@ -186,6 +191,10 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
 
   public SafeFuture<MetadataMessage> requestMetadata() {
     return requestSingleItem(rpcMethods.getMetadata(), EmptyMessage.EMPTY_MESSAGE);
+  }
+
+  public long wantToReceiveObjects(final long objectCount) {
+    return rateTracker.wantToRequestObjects(objectCount);
   }
 
   public SafeFuture<UnsignedLong> sendPing() {

@@ -46,6 +46,15 @@ public class NetworkOptions {
       hidden = true)
   private Integer startupTimeoutSeconds;
 
+  @Option(
+      names = {"--Xpeer-rate-limit"},
+      paramLabel = "<NUMBER>",
+      description =
+          "the number of requested objects per peer to allow before disconnecting the peer.",
+      arity = "1",
+      hidden = true)
+  private Integer peerRateLimit = 500;
+
   public String getNetwork() {
     return network;
   }
@@ -60,5 +69,9 @@ public class NetworkOptions {
 
   public Integer getStartupTimeoutSeconds() {
     return startupTimeoutSeconds;
+  }
+
+  public Integer getPeerRateLimit() {
+    return peerRateLimit;
   }
 }

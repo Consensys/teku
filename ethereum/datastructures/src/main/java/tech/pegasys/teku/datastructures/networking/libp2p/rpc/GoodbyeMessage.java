@@ -36,6 +36,7 @@ public final class GoodbyeMessage implements RpcRequest, SimpleOffsetSerializabl
   // Custom reasons
   public static final UnsignedLong REASON_UNABLE_TO_VERIFY_NETWORK = UnsignedLong.valueOf(128);
   public static final UnsignedLong REASON_TOO_MANY_PEERS = UnsignedLong.valueOf(129);
+  public static final UnsignedLong REASON_RATE_LIMITING = UnsignedLong.valueOf(130);
 
   public GoodbyeMessage(UnsignedLong reason) {
     checkArgument(
