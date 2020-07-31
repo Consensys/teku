@@ -13,7 +13,19 @@
 
 package tech.pegasys.teku.bls;
 
+import java.math.BigInteger;
+import java.nio.ByteOrder;
+import org.apache.tuweni.bytes.Bytes32;
+
 public class BLSConstants {
+
+  public static final int BLS_PUBKEY_SIZE = 48;
+  public static final int BLS_SIGNATURE_SIZE = 96;
+
+  static final Bytes32 CURVE_ORDER_BYTES =
+      Bytes32.fromHexString("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001");
+  static final BigInteger CURVE_ORDER_BI =
+      CURVE_ORDER_BYTES.toUnsignedBigInteger(ByteOrder.BIG_ENDIAN);
 
   public static boolean VERIFICATION_DISABLED = false;
 

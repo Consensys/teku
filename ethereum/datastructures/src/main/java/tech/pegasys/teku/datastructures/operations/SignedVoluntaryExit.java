@@ -62,7 +62,7 @@ public class SignedVoluntaryExit implements SimpleOffsetSerializable, SSZContain
     return HashTreeUtil.merkleize(
         Arrays.asList(
             message.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toSSZBytes())));
   }
 
   @Override

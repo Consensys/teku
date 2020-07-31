@@ -359,7 +359,7 @@ public class TekuConfiguration implements MetricsConfig {
     }
     try {
       return validatorExternalSignerPublicKeys.stream()
-          .map(key -> BLSPublicKey.fromBytes(Bytes.fromHexString(key)))
+          .map(key -> BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)))
           .collect(Collectors.toList());
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("Invalid configuration. Signer public key is invalid", e);

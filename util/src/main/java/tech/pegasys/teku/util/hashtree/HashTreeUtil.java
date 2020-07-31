@@ -339,7 +339,7 @@ public final class HashTreeUtil {
   private static Bytes32 hash_tree_root_list_pubkey(SSZList<BLSPublicKey> bytes) {
     List<Bytes32> hashTreeRootList =
         bytes.stream()
-            .map(item -> hash_tree_root(SSZTypes.VECTOR_OF_BASIC, item.toBytes()))
+            .map(item -> hash_tree_root(SSZTypes.VECTOR_OF_BASIC, item.toSSZBytes()))
             .collect(Collectors.toList());
     return mix_in_length(
         merkleize(hashTreeRootList, chunk_count(SSZTypes.LIST_OF_COMPOSITE, bytes.getMaxSize())),

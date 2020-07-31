@@ -13,13 +13,16 @@
 
 package tech.pegasys.teku.bls;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.api.Test;
 
@@ -29,16 +32,22 @@ class BLSPublicKeyTest {
           "0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
 
   @Test
-  void isValidReturnsTrueForValidKey() {
-    BLSPublicKey publicKey = BLSPublicKey.random(1);
-    assertTrue(publicKey.isValid());
+  void fromBytesCompressedValidate_okWhenValidBytes() {
+    assertThatCode(
+            () ->
+                BLSPublicKey.fromBytesCompressedValidate(
+                    BLSPublicKey.random(1).toBytesCompressed()))
+        .doesNotThrowAnyException();
   }
 
   @Test
-  void isValidReturnsFalseForInvalidKey() {
+  void fromBytesCompressedValidate_throwsOnInvalidData() {
     BLSPublicKey publicKey = BLSPublicKey.random(1);
-    BLSPublicKey invalidPublicKey = BLSPublicKey.fromBytes(publicKey.toBytes().shiftLeft(1));
-    assertFalse(invalidPublicKey.isValid());
+    assertThatThrownBy(
+            () ->
+                BLSPublicKey.fromBytesCompressedValidate(
+                    Bytes48.wrap(publicKey.toBytesCompressed().shiftLeft(1))))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
@@ -50,32 +59,30 @@ class BLSPublicKeyTest {
   @Test
   void succeedsWhenTwoInfinityPublicKeysAreEqual() {
     // Infinity keys are valid G1 points, so pass the equality test
-    BLSPublicKey publicKey1 = BLSPublicKey.fromBytes(InfinityPublicKey);
-    BLSPublicKey publicKey2 = BLSPublicKey.fromBytes(InfinityPublicKey);
+    BLSPublicKey publicKey1 = BLSPublicKey.fromSSZBytes(InfinityPublicKey);
+    BLSPublicKey publicKey2 = BLSPublicKey.fromSSZBytes(InfinityPublicKey);
     assertEquals(publicKey1, publicKey2);
   }
 
   @Test
-  void succeedsWhenInvalidPublicKeyIsInvalid() {
-    BLSPublicKey invalidPublicKey =
-        BLSPublicKey.fromBytesCompressed(
-            Bytes.fromHexString(
-                "0x9378a6e3984e96d2cd50450c76ca14732f1300efa04aecdb805b22e6d6926a85ef409e8f3acf494a1481090bf32ce3bd"));
-    assertFalse(invalidPublicKey.isValid());
+  void fromBytesCompressedValidate_throwsOnInvalidPubKey() {
+    Bytes48 invalidPublicKeyBytes =
+        Bytes48.fromHexString(
+            "0x9378a6e3984e96d2cd50450c76ca14732f1300efa04aecdb805b22e6d6926a85ef409e8f3acf494a1481090bf32ce3bd");
+    assertThatThrownBy(() -> BLSPublicKey.fromBytesCompressedValidate(invalidPublicKeyBytes))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   void succeedsWhenComparingInvalidAndValidPublicKeyFails() {
     BLSPublicKey invalidPublicKey =
         BLSPublicKey.fromBytesCompressed(
-            Bytes.fromHexString(
+            Bytes48.fromHexString(
                 "0x9378a6e3984e96d2cd50450c76ca14732f1300efa04aecdb805b22e6d6926a85ef409e8f3acf494a1481090bf32ce3bd"));
     BLSPublicKey validPublicKey =
         BLSPublicKey.fromBytesCompressed(
-            Bytes.fromHexString(
+            Bytes48.fromHexString(
                 "0xb51aa9cdb40ed3e7e5a9b3323550fe323ecd5c7f5cb3d8b47af55a061811bc7da0397986cad0d565c0bdbbe99af24355"));
-    assertFalse(invalidPublicKey.isValid());
-    assertTrue(validPublicKey.isValid());
     assertNotEquals(validPublicKey, invalidPublicKey);
   }
 
@@ -83,11 +90,11 @@ class BLSPublicKeyTest {
   void succeedsWhenInvalidPublicReturnsHashCode() {
     BLSPublicKey invalidPublicKey =
         BLSPublicKey.fromBytesCompressed(
-            Bytes.fromHexString(
+            Bytes48.fromHexString(
                 "0x9378a6e3984e96d2cd50450c76ca14732f1300efa04aecdb805b22e6d6926a85ef409e8f3acf494a1481090bf32ce3bd"));
     BLSPublicKey validPublicKey =
         BLSPublicKey.fromBytesCompressed(
-            Bytes.fromHexString(
+            Bytes48.fromHexString(
                 "0xb51aa9cdb40ed3e7e5a9b3323550fe323ecd5c7f5cb3d8b47af55a061811bc7da0397986cad0d565c0bdbbe99af24355"));
     assertNotEquals(invalidPublicKey.hashCode(), validPublicKey.hashCode());
     assertEquals(invalidPublicKey.hashCode(), invalidPublicKey.hashCode());
@@ -99,12 +106,12 @@ class BLSPublicKeyTest {
     assertEquals(
         "0x000000000000000000000000000000000000000000000000"
             + "000000000000000000000000000000000000000000000000",
-        emptyPublicKey.toBytes().toHexString());
+        emptyPublicKey.toSSZBytes().toHexString());
   }
 
   @Test
   void succeedsIfDeserializationOfInfinityPublicKeyIsCorrect() {
-    BLSPublicKey infinityPublicKey = BLSPublicKey.fromBytes(InfinityPublicKey);
+    BLSPublicKey infinityPublicKey = BLSPublicKey.fromSSZBytes(InfinityPublicKey);
     byte[] pointBytes = new byte[48];
     pointBytes[0] = (byte) 0xc0;
     Bytes infinityBytesSsz =
@@ -112,27 +119,20 @@ class BLSPublicKeyTest {
             writer -> {
               writer.writeFixedBytes(Bytes.wrap(pointBytes));
             });
-    BLSPublicKey deserializedPublicKey = BLSPublicKey.fromBytes(infinityBytesSsz);
+    BLSPublicKey deserializedPublicKey = BLSPublicKey.fromSSZBytes(infinityBytesSsz);
     assertEquals(infinityPublicKey, deserializedPublicKey);
   }
 
   @Test
   void succeedsIfDeserializationThrowsWithTooFewBytes() {
     Bytes tooFewBytes = Bytes.wrap(new byte[51]);
-    assertThrows(IllegalArgumentException.class, () -> BLSPublicKey.fromBytes(tooFewBytes));
+    assertThrows(IllegalArgumentException.class, () -> BLSPublicKey.fromSSZBytes(tooFewBytes));
   }
 
   @Test
   void succeedsWhenEqualsReturnsTrueForTheSamePublicKey() {
     BLSPublicKey publicKey = BLSPublicKey.random(42);
     assertEquals(publicKey, publicKey);
-  }
-
-  @Test
-  void succeedsWhenEqualsReturnsTrueForIdenticalPublicKeys() {
-    BLSPublicKey publicKey = BLSPublicKey.random(42);
-    BLSPublicKey copyOfPublicKey = new BLSPublicKey(publicKey);
-    assertEquals(publicKey, copyOfPublicKey);
   }
 
   @Test
@@ -147,8 +147,8 @@ class BLSPublicKeyTest {
     BLSPublicKey publicKey1 = BLSPublicKey.random(1);
     Bytes compressedBytes = publicKey1.toBytesCompressed();
 
-    BLSPublicKey publicKey2 = BLSPublicKey.fromBytes(compressedBytes);
-    BLSPublicKey publicKey3 = BLSPublicKey.fromBytes(compressedBytes);
+    BLSPublicKey publicKey2 = BLSPublicKey.fromSSZBytes(compressedBytes);
+    BLSPublicKey publicKey3 = BLSPublicKey.fromSSZBytes(compressedBytes);
     assertEquals(publicKey1, publicKey2);
     assertEquals(publicKey2, publicKey3);
   }
@@ -156,14 +156,30 @@ class BLSPublicKeyTest {
   @Test
   void succeedsWhenRoundtripSSZReturnsTheSamePublicKey() {
     BLSPublicKey publicKey1 = BLSPublicKey.random(42);
-    BLSPublicKey publicKey2 = BLSPublicKey.fromBytes(publicKey1.toBytes());
+    BLSPublicKey publicKey2 = BLSPublicKey.fromSSZBytes(publicKey1.toSSZBytes());
     assertEquals(publicKey1, publicKey2);
   }
 
   @Test
   void succeedsWhenRoundtripSSZReturnsTheInfinityPublicKey() {
-    BLSPublicKey publicKey1 = BLSPublicKey.fromBytes(InfinityPublicKey);
-    BLSPublicKey publicKey2 = BLSPublicKey.fromBytes(publicKey1.toBytes());
+    BLSPublicKey publicKey1 = BLSPublicKey.fromSSZBytes(InfinityPublicKey);
+    BLSPublicKey publicKey2 = BLSPublicKey.fromSSZBytes(publicKey1.toSSZBytes());
     assertEquals(publicKey1, publicKey2);
+  }
+
+  @Test
+  void aggregateSamePubKeys() {
+    BLSPublicKey pk =
+        BLSPublicKey.fromBytesCompressedValidate(
+            Bytes48.fromHexString(
+                "0x89ece308f9d1f0131765212deca99697b112d61f9be9a5f1f3780a51335b3ff981747a0b2ca2179b96d2c0c9024e5224"));
+
+    BLSPublicKey aggrPk = BLSPublicKey.aggregate(List.of(pk, pk));
+
+    BLSPublicKey aggrPkGolden =
+        BLSPublicKey.fromBytesCompressedValidate(
+            Bytes48.fromHexString(
+                "0xa6e82f6da4520f85c5d27d8f329eccfa05944fd1096b20734c894966d12a9e2a9a9744529d7212d33883113a0cadb909"));
+    assertThat(aggrPk).isEqualTo(aggrPkGolden);
   }
 }

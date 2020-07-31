@@ -146,9 +146,9 @@ public class LengthBoundCalculator {
       case "Bytes4":
         return Bytes4.SIZE;
       case "BLSSignature":
-        return BLSSignature.BLS_SIGNATURE_SIZE;
+        return BLSSignature.SSZ_BLS_SIGNATURE_SIZE;
       case "BLSPublicKey":
-        return BLSPublicKey.BLS_PUBKEY_SIZE;
+        return BLSPublicKey.SSZ_BLS_PUBKEY_SIZE;
       case "Boolean":
       case "boolean":
         return BOOLEAN_SIZE;

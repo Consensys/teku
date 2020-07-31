@@ -60,7 +60,7 @@ public class DepositsFromBlockEventSerializer implements RocksDbSerializer<Depos
         depositWriter -> {
           depositWriter.writeFixedBytes(deposit.getPubkey().toBytesCompressed());
           depositWriter.writeFixedBytes(deposit.getWithdrawal_credentials());
-          depositWriter.writeFixedBytes(deposit.getSignature().toBytes());
+          depositWriter.writeFixedBytes(deposit.getSignature().toSSZBytes());
           depositWriter.writeUInt64(deposit.getAmount().longValue());
           depositWriter.writeUInt64(deposit.getMerkle_tree_index().longValue());
         });
@@ -71,10 +71,11 @@ public class DepositsFromBlockEventSerializer implements RocksDbSerializer<Depos
         data,
         reader -> {
           final BLSPublicKey publicKey =
-              BLSPublicKey.fromBytesCompressed(reader.readFixedBytes(BLSPublicKey.BLS_PUBKEY_SIZE));
+              BLSPublicKey.fromSSZBytes(
+                  Bytes.wrap(reader.readFixedBytes(BLSPublicKey.SSZ_BLS_PUBKEY_SIZE)));
           final Bytes32 withdrawalCredentials = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final BLSSignature signature =
-              BLSSignature.fromBytes(reader.readFixedBytes(BLSSignature.BLS_SIGNATURE_SIZE));
+              BLSSignature.fromSSZBytes(reader.readFixedBytes(BLSSignature.SSZ_BLS_SIGNATURE_SIZE));
           final UnsignedLong amount = UnsignedLong.fromLongBits(reader.readUInt64());
           final UnsignedLong merkleTreeIndex = UnsignedLong.fromLongBits(reader.readUInt64());
           return new Deposit(publicKey, withdrawalCredentials, signature, amount, merkleTreeIndex);

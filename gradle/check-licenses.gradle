@@ -169,6 +169,7 @@ downloadLicenses {
       //JMH-Core is licensed under GPLv2 with the Classpath Exception, which allows us to link it and license the derived work under our license.
       'org.openjdk.jmh:jmh-core:1.21': apache,
       (group('io.libp2p')): apache,
+      (group('tech.pegasys')): apache,
   ]
 }
 

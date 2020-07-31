@@ -30,6 +30,6 @@ public class BlsTests {
           .build();
 
   public static BLSSignature parseSignature(final String value) {
-    return BLSSignature.fromBytes(Bytes.fromHexStringLenient(value, 96));
+    return BLSSignature.fromSSZBytes(Bytes.fromHexStringLenient(value, 96));
   }
 }
