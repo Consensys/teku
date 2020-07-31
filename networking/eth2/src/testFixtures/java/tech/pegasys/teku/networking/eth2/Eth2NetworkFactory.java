@@ -25,6 +25,7 @@ import io.libp2p.core.crypto.KeyKt;
 import java.net.BindException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -42,11 +43,17 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
+import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
@@ -64,9 +71,6 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.Waiter;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.events.Subscribers;
 import tech.pegasys.teku.util.time.StubTimeProvider;
@@ -167,21 +171,35 @@ public class Eth2NetworkFactory {
 
         this.peerHandler(eth2PeerManager);
 
+        final NoOpMetricsSystem metricsSystem = new NoOpMetricsSystem();
         final ReputationManager reputationManager =
             new ReputationManager(
-                StubTimeProvider.withTimeInSeconds(1000), Constants.REPUTATION_MANAGER_CAPACITY);
+                metricsSystem,
+                StubTimeProvider.withTimeInSeconds(1000),
+                Constants.REPUTATION_MANAGER_CAPACITY);
+        final AttestationSubnetTopicProvider subnetTopicProvider =
+            new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
         final DiscoveryNetwork<?> network =
             DiscoveryNetwork.create(
+                metricsSystem,
+                asyncRunner,
                 new LibP2PNetwork(
+                    asyncRunner,
                     config,
                     reputationManager,
                     METRICS_SYSTEM,
                     new ArrayList<>(rpcMethods),
                     peerHandlers),
-                reputationManager,
+                new Eth2PeerSelectionStrategy(
+                    config.getTargetPeerRange(),
+                    gossipNetwork ->
+                        PeerSubnetSubscriptions.create(gossipNetwork, subnetTopicProvider),
+                    reputationManager,
+                    Collections::shuffle),
                 config);
 
         return new ActiveEth2Network(
+            metricsSystem,
             network,
             eth2PeerManager,
             eventBus,
@@ -213,7 +231,7 @@ public class Eth2NetworkFactory {
           peerAddresses,
           false,
           emptyList(),
-          new TargetPeerRange(20, 30),
+          new TargetPeerRange(20, 30, 0),
           GossipConfig.DEFAULT_CONFIG,
           new WireLogsConfig(false, false, true, false));
     }

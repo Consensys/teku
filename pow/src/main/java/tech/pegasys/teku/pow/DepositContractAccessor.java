@@ -22,9 +22,9 @@ import org.web3j.abi.datatypes.Type;
 import org.web3j.protocol.Web3j;
 import org.web3j.tx.ClientTransactionManager;
 import org.web3j.tx.gas.DefaultGasProvider;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.pow.contract.DepositContract;
 import tech.pegasys.teku.pow.exception.Eth1RequestException;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class DepositContractAccessor {
   private final Eth1Provider eth1Provider;

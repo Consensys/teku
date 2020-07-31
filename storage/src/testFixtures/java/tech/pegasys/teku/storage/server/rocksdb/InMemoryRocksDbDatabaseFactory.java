@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.server.rocksdb;
 
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.rocksdb.core.MockRocksDbInstance;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
@@ -24,6 +25,15 @@ public class InMemoryRocksDbDatabaseFactory {
   public static Database createV3(
       final MockRocksDbInstance rocksDbInstance, final StateStorageMode storageMode) {
     return RocksDbDatabase.createV3(new NoOpMetricsSystem(), rocksDbInstance, storageMode);
+  }
+
+  public static Database createV4(
+      MockRocksDbInstance hotDb,
+      MockRocksDbInstance coldDb,
+      final StateStorageMode storageMode,
+      final long stateStorageFrequency) {
+    return RocksDbDatabase.createV4(
+        new StubMetricsSystem(), hotDb, coldDb, storageMode, stateStorageFrequency);
   }
 
   public static MockRocksDbInstance createEmptyV3RocksDbInstance() {

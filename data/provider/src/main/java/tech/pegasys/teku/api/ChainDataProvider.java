@@ -33,10 +33,10 @@ import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ChainDataProvider {
@@ -138,17 +138,23 @@ public class ChainDataProvider {
         .thenApply(state -> state.map(BeaconState::new));
   }
 
-  public SafeFuture<Optional<BeaconState>> getStateAtSlot(final UnsignedLong slot) {
-    return SafeFuture.of(
-        () -> {
-          if (!combinedChainDataClient.isChainDataFullyAvailable()) {
-            return chainUnavailable();
-          }
+  public SafeFuture<Optional<BeaconState>> getStateByStateRoot(final Bytes32 stateRoot) {
+    if (!isStoreAvailable()) {
+      return chainUnavailable();
+    }
+    return combinedChainDataClient
+        .getStateByStateRoot(stateRoot)
+        .thenApply(state -> state.map(BeaconState::new));
+  }
 
-          return combinedChainDataClient
-              .getBlockAndStateInEffectAtSlot(slot)
-              .thenApply(state -> state.map(BeaconState::new));
-        });
+  public SafeFuture<Optional<BeaconState>> getStateAtSlot(final UnsignedLong slot) {
+    if (!combinedChainDataClient.isChainDataFullyAvailable()) {
+      return chainUnavailable();
+    }
+
+    return combinedChainDataClient
+        .getStateAtSlotExact(slot)
+        .thenApply(stateInternal -> stateInternal.map(BeaconState::new));
   }
 
   public SafeFuture<Optional<Bytes32>> getStateRootAtSlot(final UnsignedLong slot) {
@@ -159,8 +165,11 @@ public class ChainDataProvider {
     return SafeFuture.of(
         () ->
             combinedChainDataClient
-                .getBlockAtSlotExact(slot)
-                .thenApply(block -> block.map(b -> b.getMessage().getState_root())));
+                .getStateAtSlotExact(slot)
+                .thenApplyChecked(
+                    maybeState ->
+                        maybeState.map(
+                            tech.pegasys.teku.datastructures.state.BeaconState::hash_tree_root)));
   }
 
   public SafeFuture<Optional<BeaconValidators>> getValidatorsByValidatorsRequest(

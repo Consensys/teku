@@ -13,55 +13,141 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
 
 import com.google.common.primitives.UnsignedLong;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import io.netty.buffer.ByteBuf;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ChunkTooLongException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.LengthOutOfBoundsException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.MessageTruncatedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 class LengthPrefixedEncodingTest {
 
   private final RpcEncoding encoding = RpcEncoding.SSZ;
-  private static final Bytes ONE_BYTE_LENGTH_PREFIX = Bytes.fromHexString("0x0A");
   private static final Bytes TWO_BYTE_LENGTH_PREFIX = Bytes.fromHexString("0x8002");
   private static final Bytes LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH =
       ProtobufEncoder.encodeVarInt(MAX_CHUNK_SIZE + 1);
 
   @Test
   public void decodePayload_shouldReturnErrorWhenLengthPrefixIsTooLong() {
-    assertThatThrownBy(
-            () ->
-                encoding.decodePayload(
-                    inputStream("0xAAAAAAAAAAAAAAAAAAAA80"), StatusMessage.class))
-        .isEqualTo(RpcException.CHUNK_TOO_LONG);
+    List<List<ByteBuf>> testByteBufSlices =
+        Utils.generateTestSlices(Bytes.fromHexString("0xAAAAAAAAAAAAAAAAAAAA80"));
+
+    for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
+      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.class);
+      List<ByteBuf> usedBufs = new ArrayList<>();
+      assertThatThrownBy(
+              () -> {
+                for (ByteBuf bufSlice : bufSlices) {
+                  decoder.decodeOneMessage(bufSlice);
+                  bufSlice.release();
+                  usedBufs.add(bufSlice);
+                }
+              })
+          .isInstanceOf(ChunkTooLongException.class);
+      assertThat(usedBufs).allMatch(b -> b.refCnt() == 0);
+    }
+  }
+
+  @Test
+  public void decodePayload_shouldReturnErrorWhenLengthPrefixIsTooShortForMessageType() {
+    List<List<ByteBuf>> testByteBufSlices = Utils.generateTestSlices(Bytes.fromHexString("0x52"));
+
+    for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
+      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.class);
+      List<ByteBuf> usedBufs = new ArrayList<>();
+      assertThatThrownBy(
+              () -> {
+                for (ByteBuf bufSlice : bufSlices) {
+                  decoder.decodeOneMessage(bufSlice);
+                  bufSlice.release();
+                  usedBufs.add(bufSlice);
+                }
+              })
+          .isInstanceOf(LengthOutOfBoundsException.class);
+      assertThat(usedBufs).allMatch(b -> b.refCnt() == 0);
+    }
+  }
+
+  @Test
+  public void decodePayload_shouldReturnErrorWhenLengthPrefixIsTooLongForMessageType() {
+    List<List<ByteBuf>> testByteBufSlices = Utils.generateTestSlices(Bytes.fromHexString("0x55"));
+
+    for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
+      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.class);
+      List<ByteBuf> usedBufs = new ArrayList<>();
+      assertThatThrownBy(
+              () -> {
+                for (ByteBuf bufSlice : bufSlices) {
+                  decoder.decodeOneMessage(bufSlice);
+                  bufSlice.release();
+                  usedBufs.add(bufSlice);
+                }
+              })
+          .isInstanceOf(LengthOutOfBoundsException.class);
+      assertThat(usedBufs).allMatch(b -> b.refCnt() == 0);
+    }
   }
 
   @Test
   public void decodePayload_shouldReturnErrorWhenNoPayloadIsPresent() {
-    final InputStream invalidMessage = inputStream(ONE_BYTE_LENGTH_PREFIX);
-    assertThatThrownBy(() -> encoding.decodePayload(invalidMessage, StatusMessage.class))
-        .isEqualTo(RpcException.PAYLOAD_TRUNCATED);
+    final Bytes statusMessageLengthPrefix = Bytes.fromHexString("0x54");
+    List<List<ByteBuf>> testByteBufSlices = Utils.generateTestSlices(statusMessageLengthPrefix);
+
+    for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
+      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.class);
+      List<ByteBuf> usedBufs = new ArrayList<>();
+      assertThatThrownBy(
+              () -> {
+                for (ByteBuf bufSlice : bufSlices) {
+                  assertThat(decoder.decodeOneMessage(bufSlice)).isEmpty();
+                  bufSlice.release();
+                  usedBufs.add(bufSlice);
+                }
+                decoder.complete();
+              })
+          .isInstanceOf(PayloadTruncatedException.class);
+      assertThat(usedBufs).allMatch(b -> b.refCnt() == 0);
+    }
   }
 
   @Test
   public void decodePayload_shouldReturnErrorWhenPayloadTooShort() {
     final Bytes correctMessage = createValidStatusMessage();
     final int truncatedSize = correctMessage.size() - 5;
-    final InputStream partialMessage = inputStream(correctMessage.slice(0, truncatedSize));
-    assertThatThrownBy(() -> encoding.decodePayload(partialMessage, StatusMessage.class))
-        .isEqualTo(RpcException.PAYLOAD_TRUNCATED);
+    List<List<ByteBuf>> testByteBufSlices =
+        Utils.generateTestSlices(correctMessage.slice(0, truncatedSize));
+
+    for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
+      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.class);
+      List<ByteBuf> usedBufs = new ArrayList<>();
+      assertThatThrownBy(
+              () -> {
+                for (ByteBuf bufSlice : bufSlices) {
+                  assertThat(decoder.decodeOneMessage(bufSlice)).isEmpty();
+                  bufSlice.release();
+                  usedBufs.add(bufSlice);
+                }
+                decoder.complete();
+              })
+          .isInstanceOf(PayloadTruncatedException.class);
+      assertThat(usedBufs).allMatch(b -> b.refCnt() == 0);
+    }
   }
 
   @Test
@@ -69,37 +155,89 @@ class LengthPrefixedEncodingTest {
     final StatusMessage originalMessage = StatusMessage.createPreGenesisStatus();
     final Bytes encoded = encoding.encodePayload(originalMessage);
     final Bytes extraData = Bytes.of(1, 2, 3, 4);
-    final InputStream input = inputStream(encoded, extraData);
-    final StatusMessage result = encoding.decodePayload(input, StatusMessage.class);
-    assertThat(result).isEqualTo(originalMessage);
+    List<List<ByteBuf>> testByteBufSlices = Utils.generateTestSlices(encoded, extraData);
+
+    for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
+      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.class);
+      Optional<StatusMessage> result = Optional.empty();
+      int unreadBytes = 0;
+      for (ByteBuf bufSlice : bufSlices) {
+        if (result.isEmpty()) {
+          result = decoder.decodeOneMessage(bufSlice);
+        }
+        if (result.isPresent()) {
+          unreadBytes += bufSlice.readableBytes();
+        }
+        bufSlice.release();
+      }
+      decoder.complete();
+      assertThat(result).contains(originalMessage);
+      assertThat(unreadBytes).isEqualTo(4);
+      assertThat(bufSlices).allMatch(b -> b.refCnt() == 0);
+    }
   }
 
   @Test
   public void decodePayload_shouldRejectMessagesThatAreTooLong() {
-    // We should reject the message based on the length prefix and skip reading the data entirely.
-    final InputStream input = inputStream(LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH);
-    assertThatThrownBy(() -> encoding.decodePayload(input, StatusMessage.class))
-        .isEqualTo(RpcException.CHUNK_TOO_LONG);
+    // We should reject the message based on the length prefix and skip reading the data entirely
+    List<List<ByteBuf>> testByteBufSlices =
+        Utils.generateTestSlices(LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH);
+
+    for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
+      RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.class);
+      List<ByteBuf> usedBufs = new ArrayList<>();
+      assertThatThrownBy(
+              () -> {
+                for (ByteBuf bufSlice : bufSlices) {
+                  assertThat(decoder.decodeOneMessage(bufSlice)).isEmpty();
+                  bufSlice.release();
+                  usedBufs.add(bufSlice);
+                }
+                decoder.complete();
+              })
+          .isInstanceOf(ChunkTooLongException.class);
+      assertThat(usedBufs).allMatch(b -> b.refCnt() == 0);
+    }
   }
 
   @Test
   public void decodePayload_shouldRejectEmptyMessages() {
-    final InputStream input = inputStream(Bytes.EMPTY);
-    assertThatThrownBy(() -> encoding.decodePayload(input, StatusMessage.class))
-        .isEqualTo(RpcException.MESSAGE_TRUNCATED);
+    final ByteBuf input = Utils.emptyBuf();
+    RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.class);
+
+    assertThatThrownBy(
+            () -> {
+              decoder.decodeOneMessage(input);
+              decoder.complete();
+            })
+        .isInstanceOf(MessageTruncatedException.class);
+    input.release();
+    assertThat(input.refCnt()).isEqualTo(0);
   }
 
   @Test
   public void decodePayload_shouldThrowErrorWhenPrefixTruncated() {
-    final InputStream input = inputStream(TWO_BYTE_LENGTH_PREFIX.slice(0, 1));
-    assertThatThrownBy(() -> encoding.decodePayload(input, StatusMessage.class))
-        .isEqualTo(RpcException.MESSAGE_TRUNCATED);
+    final ByteBuf input = inputByteBuffer(TWO_BYTE_LENGTH_PREFIX.slice(0, 1));
+    assertThatThrownBy(
+            () -> {
+              RpcByteBufDecoder<StatusMessage> decoder =
+                  encoding.createDecoder(StatusMessage.class);
+              decoder.decodeOneMessage(input);
+              decoder.complete();
+            })
+        .isInstanceOf(MessageTruncatedException.class);
+    input.release();
+    assertThat(input.refCnt()).isEqualTo(0);
   }
 
   @Test
   public void decodePayload_shouldThrowRpcExceptionIfMessageLengthPrefixIsMoreThanThreeBytes() {
-    assertThatThrownBy(() -> encoding.decodePayload(inputStream("0x80808001"), StatusMessage.class))
-        .isEqualTo(RpcException.CHUNK_TOO_LONG);
+    final ByteBuf input = inputByteBuffer("0x80808001");
+    RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.class);
+    assertThatThrownBy(() -> decoder.decodeOneMessage(input))
+        .isInstanceOf(ChunkTooLongException.class);
+    input.release();
+    assertThat(input.refCnt()).isEqualTo(0);
   }
 
   @Test
@@ -111,32 +249,33 @@ class LengthPrefixedEncodingTest {
   }
 
   @Test
-  public void encodePayload_shouldEncodeStringWithoutWrapper() {
-    final String expected = "Some string to test";
-    final Bytes payloadBytes = Bytes.wrap(expected.getBytes(StandardCharsets.UTF_8));
-    final Bytes encoded = encoding.encodePayload(expected);
-    // Length prefix plus UTF-8 bytes.
-    assertThat(encoded).isEqualTo(Bytes.wrap(Bytes.fromHexString("0x13"), payloadBytes));
-  }
-
-  @Test
   public void roundtrip_blocksByRootRequest() throws Exception {
     final BeaconBlocksByRootRequestMessage request =
         new BeaconBlocksByRootRequestMessage(
-            asList(Bytes32.ZERO, Bytes32.fromHexString("0x01"), Bytes32.fromHexString("0x02")));
+            List.of(Bytes32.ZERO, Bytes32.fromHexString("0x01"), Bytes32.fromHexString("0x02")));
     final Bytes data = encoding.encodePayload(request);
     final int expectedLengthPrefixLength = 1;
     assertThat(data.size())
         .isEqualTo(request.getBlockRoots().size() * Bytes32.SIZE + expectedLengthPrefixLength);
-    assertThat(encoding.decodePayload(inputStream(data), BeaconBlocksByRootRequestMessage.class))
-        .isEqualTo(request);
-  }
 
-  @Test
-  public void roundtrip_string() throws Exception {
-    final String expected = "Some string to test";
-    final Bytes encoded = encoding.encodePayload(expected);
-    assertThat(encoding.decodePayload(inputStream(encoded), String.class)).isEqualTo(expected);
+    List<List<ByteBuf>> testByteBufSlices = Utils.generateTestSlices(data);
+
+    for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
+      RpcByteBufDecoder<BeaconBlocksByRootRequestMessage> decoder =
+          encoding.createDecoder(BeaconBlocksByRootRequestMessage.class);
+      Optional<BeaconBlocksByRootRequestMessage> result = Optional.empty();
+      for (ByteBuf bufSlice : bufSlices) {
+        if (result.isEmpty()) {
+          result = decoder.decodeOneMessage(bufSlice);
+        } else {
+          assertThat(decoder.decodeOneMessage(bufSlice)).isEmpty();
+        }
+        bufSlice.release();
+      }
+      decoder.complete();
+      assertThat(result).contains(request);
+      assertThat(bufSlices).allMatch(b -> b.refCnt() == 0);
+    }
   }
 
   private Bytes createValidStatusMessage() {
@@ -149,15 +288,11 @@ class LengthPrefixedEncodingTest {
             UnsignedLong.ZERO));
   }
 
-  private InputStream inputStream(final Bytes... data) {
-    return inputStream(Bytes.concatenate(data));
+  private ByteBuf inputByteBuffer(final Bytes... data) {
+    return Utils.toByteBuf(data);
   }
 
-  private InputStream inputStream(final String hexString) {
-    return inputStream(Bytes.fromHexString(hexString));
-  }
-
-  private InputStream inputStream(final Bytes bytes) {
-    return new ByteArrayInputStream(bytes.toArrayUnsafe());
+  private ByteBuf inputByteBuffer(final String hexString) {
+    return inputByteBuffer(Bytes.fromHexString(hexString));
   }
 }

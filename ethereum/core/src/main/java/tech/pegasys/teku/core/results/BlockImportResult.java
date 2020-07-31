@@ -30,7 +30,7 @@ public interface BlockImportResult {
     return new FailedBlockImportResult(FailureReason.FAILED_STATE_TRANSITION, Optional.of(cause));
   }
 
-  static BlockImportResult internalError(final Exception cause) {
+  static BlockImportResult internalError(final Throwable cause) {
     return new FailedBlockImportResult(FailureReason.INTERNAL_ERROR, Optional.of(cause));
   }
 

@@ -19,8 +19,10 @@ ext.acceptedLicenses = [
     'BSD 2-Clause',
     'BSD 3-Clause',
     'Eclipse Distribution License - v 1.0',
+    'Eclipse Distribution License v. 1.0',
     'EDL 1.0',
     'Eclipse Public License - v 1.0',
+    'Eclipse Public License v1.0',
     'Eclipse Public License - Version 1.0',
     'Eclipse Public License 1.0',
     'Eclipse Public License - v 2.0',
@@ -134,14 +136,15 @@ downloadLicenses {
   ]
 
   licenses = [
-      (group('teku'))            : apache,
-      (group('teku.ethereum'))   : apache,
-      (group('teku.services'))   : apache,
-      (group('teku.consensus'))  : apache,
-      (group('teku.data'))       : apache,
-      (group('teku.storage'))    : apache,
-      (group('teku.validator'))  : apache,
-      (group('teku.networking')) : apache,
+      (group('teku'))                : apache,
+      (group('teku.ethereum'))       : apache,
+      (group('teku.services'))       : apache,
+      (group('teku.consensus'))      : apache,
+      (group('teku.data'))           : apache,
+      (group('teku.infrastructure')) : apache,
+      (group('teku.storage'))        : apache,
+      (group('teku.validator'))      : apache,
+      (group('teku.networking'))     : apache,
 
       // https://checkerframework.org/manual/#license
       // The more permissive MIT License applies to code that you might want
@@ -166,6 +169,7 @@ downloadLicenses {
       //JMH-Core is licensed under GPLv2 with the Classpath Exception, which allows us to link it and license the derived work under our license.
       'org.openjdk.jmh:jmh-core:1.21': apache,
       (group('io.libp2p')): apache,
+      (group('tech.pegasys')): apache,
   ]
 }
 

@@ -14,13 +14,20 @@
 package tech.pegasys.teku.storage.api;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.storage.store.StoreBuilder;
+import tech.pegasys.teku.util.channels.ChannelInterface;
 
-public interface StorageQueryChannel {
+public interface StorageQueryChannel extends ChannelInterface {
+
+  SafeFuture<Optional<StoreBuilder>> onStoreRequest();
 
   SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(final UnsignedLong slot);
 
@@ -28,7 +35,20 @@ public interface StorageQueryChannel {
 
   SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot);
 
+  /**
+   * Returns "hot" blocks - the latest finalized block or blocks that descend from the latest
+   * finalized block
+   *
+   * @param blockRoots The roots of blocks to look up
+   * @return A map from root too block of any found blocks
+   */
+  SafeFuture<Map<Bytes32, SignedBeaconBlock>> getHotBlocksByRoot(final Set<Bytes32> blockRoots);
+
+  SafeFuture<Optional<SlotAndBlockRoot>> getSlotAndBlockRootByStateRoot(final Bytes32 stateRoot);
+
   SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(final UnsignedLong slot);
 
   SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(final Bytes32 blockRoot);
+
+  SafeFuture<Optional<UnsignedLong>> getFinalizedSlotByStateRoot(final Bytes32 stateRoot);
 }

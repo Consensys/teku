@@ -42,8 +42,8 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class GetStateRoot implements Handler {
   public static final String ROUTE = "/beacon/state_root";

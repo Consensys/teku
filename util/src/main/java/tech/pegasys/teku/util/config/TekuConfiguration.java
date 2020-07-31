@@ -28,9 +28,10 @@ import org.apache.logging.log4j.status.StatusLogger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.metrics.MetricsConfig;
 
 /** Configuration of an instance of Teku. */
-public class TekuConfiguration {
+public class TekuConfiguration implements MetricsConfig {
   // Network
   private final String constants;
   private final String initialState;
@@ -60,7 +61,7 @@ public class TekuConfiguration {
 
   // Validator
   private final String validatorsKeyFile;
-  // TODO: The following two options will eventually be moved to the validator subcommand
+  // TODO (#1918): The following two options will eventually be moved to the validator subcommand
   private final List<String> validatorKeystoreFiles;
   private final List<String> validatorKeystorePasswordFiles;
   private final List<String> validatorExternalSignerPublicKeys;
@@ -98,6 +99,8 @@ public class TekuConfiguration {
   // Database
   private final String dataPath;
   private final StateStorageMode dataStorageMode;
+  private final long dataStorageFrequency;
+  private final String dataStorageCreateDbVersion;
 
   // Beacon REST API
   private final int restApiPort;
@@ -105,6 +108,12 @@ public class TekuConfiguration {
   private final boolean restApiEnabled;
   private final String restApiInterface;
   private final List<String> restApiHostAllowlist;
+
+  // Remote Validator WS API
+  private final String remoteValidatorApiInterface;
+  private final int remoteValidatorApiPort;
+  private final boolean remoteValidatorApiEnabled;
+  private final int remoteValidatorApiMaxSubscribers;
 
   public static TekuConfigurationBuilder builder() {
     return new TekuConfigurationBuilder();
@@ -159,11 +168,17 @@ public class TekuConfiguration {
       final List<String> metricsHostAllowlist,
       final String dataPath,
       final StateStorageMode dataStorageMode,
+      final long dataStorageFrequency,
+      final String dataStorageCreateDbVersion,
       final int restApiPort,
       final boolean restApiDocsEnabled,
       final boolean restApiEnabled,
       final String restApiInterface,
       final List<String> restApiHostAllowlist,
+      final String remoteValidatorApiInterface,
+      final int remoteValidatorApiPort,
+      final int remoteValidatorApiMaxSubscribers,
+      final boolean remoteValidatorApiEnabled,
       final Bytes32 graffiti) {
     this.constants = constants;
     this.startupTargetPeerCount = startupTargetPeerCount;
@@ -213,11 +228,17 @@ public class TekuConfiguration {
     this.metricsHostAllowlist = metricsHostAllowlist;
     this.dataPath = dataPath;
     this.dataStorageMode = dataStorageMode;
+    this.dataStorageFrequency = dataStorageFrequency;
+    this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
     this.restApiInterface = restApiInterface;
     this.restApiHostAllowlist = restApiHostAllowlist;
+    this.remoteValidatorApiInterface = remoteValidatorApiInterface;
+    this.remoteValidatorApiPort = remoteValidatorApiPort;
+    this.remoteValidatorApiEnabled = remoteValidatorApiEnabled;
+    this.remoteValidatorApiMaxSubscribers = remoteValidatorApiMaxSubscribers;
     this.graffiti = graffiti;
   }
 
@@ -271,6 +292,10 @@ public class TekuConfiguration {
 
   public int getP2pPeerUpperBound() {
     return p2pPeerUpperBound;
+  }
+
+  public int getMinimumRandomlySelectedPeerCount() {
+    return Math.min(1, p2pPeerLowerBound * 2 / 10);
   }
 
   public List<String> getP2pStaticPeers() {
@@ -327,7 +352,7 @@ public class TekuConfiguration {
     }
     try {
       return validatorExternalSignerPublicKeys.stream()
-          .map(key -> BLSPublicKey.fromBytes(Bytes.fromHexString(key)))
+          .map(key -> BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)))
           .collect(Collectors.toList());
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("Invalid configuration. Signer public key is invalid", e);
@@ -406,22 +431,27 @@ public class TekuConfiguration {
     return transitionRecordDirectory;
   }
 
+  @Override
   public boolean isMetricsEnabled() {
     return metricsEnabled;
   }
 
+  @Override
   public int getMetricsPort() {
     return metricsPort;
   }
 
+  @Override
   public String getMetricsInterface() {
     return metricsInterface;
   }
 
+  @Override
   public List<String> getMetricsCategories() {
     return metricsCategories;
   }
 
+  @Override
   public List<String> getMetricsHostAllowlist() {
     return metricsHostAllowlist;
   }
@@ -432,6 +462,14 @@ public class TekuConfiguration {
 
   public StateStorageMode getDataStorageMode() {
     return dataStorageMode;
+  }
+
+  public long getDataStorageFrequency() {
+    return dataStorageFrequency;
+  }
+
+  public String getDataStorageCreateDbVersion() {
+    return dataStorageCreateDbVersion;
   }
 
   public int getRestApiPort() {
@@ -452,6 +490,22 @@ public class TekuConfiguration {
 
   public List<String> getRestApiHostAllowlist() {
     return restApiHostAllowlist;
+  }
+
+  public String getRemoteValidatorApiInterface() {
+    return remoteValidatorApiInterface;
+  }
+
+  public int getRemoteValidatorApiPort() {
+    return remoteValidatorApiPort;
+  }
+
+  public boolean isRemoteValidatorApiEnabled() {
+    return remoteValidatorApiEnabled;
+  }
+
+  public int getRemoteValidatorApiMaxSubscribers() {
+    return remoteValidatorApiMaxSubscribers;
   }
 
   public Bytes32 getGraffiti() {

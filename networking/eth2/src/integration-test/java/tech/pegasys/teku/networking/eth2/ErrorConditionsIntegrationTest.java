@@ -21,17 +21,19 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import org.assertj.core.api.Assertions;
+import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcMethod;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.LengthOutOfBoundsException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.util.Waiter;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ErrorConditionsIntegrationTest {
@@ -58,10 +60,23 @@ public class ErrorConditionsIntegrationTest {
     final SafeFuture<StatusMessage> response =
         peer.requestSingleItem(status, new InvalidStatusMessage());
 
+    final RpcException expected = new LengthOutOfBoundsException();
+
     Assertions.assertThatThrownBy(() -> Waiter.waitFor(response))
         .isInstanceOf(ExecutionException.class)
         .extracting(Throwable::getCause)
-        .isEqualToComparingFieldByField(RpcException.DESERIALIZATION_FAILED);
+        .isInstanceOf(RpcException.class)
+        .is(
+            new Condition<>(
+                error -> {
+                  final RpcException rpcException = (RpcException) error;
+                  return rpcException
+                          .getErrorMessageString()
+                          .equals(expected.getErrorMessageString())
+                      && rpcException.getResponseCode() == expected.getResponseCode();
+                },
+                "Exception did not match expected exception %s",
+                expected));
   }
 
   public static Stream<Arguments> getEncodings() {

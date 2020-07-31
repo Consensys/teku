@@ -16,7 +16,7 @@ package tech.pegasys.teku.networking.p2p.discovery;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface DiscoveryService {
 

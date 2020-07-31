@@ -13,27 +13,30 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p.rpc;
 
-import static tech.pegasys.teku.util.async.FutureUtil.ignoreFuture;
+import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import io.libp2p.core.Connection;
 import io.libp2p.core.P2PChannel;
+import io.libp2p.core.Stream;
+import io.libp2p.core.StreamPromise;
 import io.libp2p.core.multistream.Multistream;
 import io.libp2p.core.multistream.ProtocolBinding;
 import io.libp2p.core.multistream.ProtocolDescriptor;
+import io.libp2p.etc.util.netty.mux.RemoteWriteClosed;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture.Interruptor;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler.Controller;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -43,8 +46,6 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamTimeoutException;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class RpcHandler implements ProtocolBinding<Controller> {
   private static final Duration TIMEOUT = Duration.ofSeconds(5);
@@ -61,53 +62,38 @@ public class RpcHandler implements ProtocolBinding<Controller> {
   @SuppressWarnings("unchecked")
   public SafeFuture<RpcStream> sendRequest(
       Connection connection, Bytes initialPayload, RpcRequestHandler handler) {
-    if (connection.closeFuture().isDone()) {
-      return SafeFuture.failedFuture(new PeerDisconnectedException());
-    }
 
-    SafeFuture<RpcStream> streamFuture = new SafeFuture<>();
+    Interruptor closeInterruptor =
+        SafeFuture.createInterruptor(connection.closeFuture(), PeerDisconnectedException::new);
+    Interruptor timeoutInterruptor =
+        SafeFuture.createInterruptor(
+            asyncRunner.getDelayedFuture(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+            () ->
+                new StreamTimeoutException(
+                    "Timed out waiting to initialize stream for method " + rpcMethod.getId()));
 
-    // Complete future if peer disconnects
-    SafeFuture.of(connection.closeFuture())
-        .always(() -> streamFuture.completeExceptionally(new PeerDisconnectedException()));
-    // Complete future if we fail to initialize
-    asyncRunner
-        .getDelayedFuture(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
-        .thenAccept(
+    return SafeFuture.notInterrupted(closeInterruptor)
+        .thenApply(
             __ ->
-                streamFuture.completeExceptionally(
-                    new StreamTimeoutException(
-                        "Timed out waiting to initialize stream for method " + rpcMethod.getId())))
-        .reportExceptions();
-
-    // Try to initiate stream
-    SafeFuture.of(
-            connection
-                .muxerSession()
-                .createStream(Multistream.create(this).toStreamHandler())
-                .getController())
+                connection.muxerSession().createStream(Multistream.create(this).toStreamHandler()))
+        // waiting for a stream or interrupt
+        .thenWaitFor(StreamPromise::getStream)
+        .orInterrupt(closeInterruptor, timeoutInterruptor)
         .thenCompose(
-            ctr -> {
-              ctr.setRequestHandler(handler);
-              return ctr.getRpcStream()
-                  .writeBytes(initialPayload)
-                  .thenApply(f -> ctr.getRpcStream())
-                  .thenAccept(
-                      rpcStream -> {
-                        if (!streamFuture.complete(rpcStream)) {
-                          // If future was already completed exceptionally, close the controller
-                          ctr.close();
-                        }
-                      });
-            })
-        .exceptionally(
-            err -> {
-              streamFuture.completeExceptionally(err);
-              return null;
-            })
-        .reportExceptions();
+            streamPromise ->
+                // waiting for controller, writing initial payload or interrupt
+                SafeFuture.of(streamPromise.getController())
+                    .orInterrupt(closeInterruptor, timeoutInterruptor)
+                    .thenPeek(ctr -> ctr.setRequestHandler(handler))
+                    .thenApply(Controller::getRpcStream)
+                    .thenWaitFor(rpcStream -> rpcStream.writeBytes(initialPayload))
+                    .orInterrupt(closeInterruptor, timeoutInterruptor)
+                    // closing the stream in case of any errors or interruption
+                    .whenException(err -> closeStreamAbruptly(streamPromise.getStream().join())));
+  }
 
-    return streamFuture;
+  private void closeStreamAbruptly(Stream stream) {
+    SafeFuture.of(stream.close()).reportExceptions();
   }
 
   @NotNull
@@ -121,7 +107,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
   public SafeFuture<Controller> initChannel(P2PChannel channel, String s) {
     final Connection connection = ((io.libp2p.core.Stream) channel).getConnection();
     final NodeId nodeId = new LibP2PNodeId(connection.secureSession().getRemoteId());
-    Controller controller = new Controller(nodeId, channel, asyncRunner);
+    Controller controller = new Controller(nodeId, channel);
     if (!channel.isInitiator()) {
       controller.setRequestHandler(rpcMethod.createIncomingRequestHandler());
     }
@@ -132,30 +118,14 @@ public class RpcHandler implements ProtocolBinding<Controller> {
   static class Controller extends SimpleChannelInboundHandler<ByteBuf> {
     private final NodeId nodeId;
     private final P2PChannel p2pChannel;
-    private final AsyncRunner asyncRunner;
     private RpcRequestHandler rpcRequestHandler;
     private RpcStream rpcStream;
 
-    private final PipedOutputStream outputStream;
-    private final InputStream inputStream;
-    private boolean outputStreamClosed = false;
-
     protected final SafeFuture<Controller> activeFuture = new SafeFuture<>();
 
-    private Controller(
-        final NodeId nodeId, final P2PChannel p2pChannel, final AsyncRunner asyncRunner) {
+    private Controller(final NodeId nodeId, final P2PChannel p2pChannel) {
       this.nodeId = nodeId;
       this.p2pChannel = p2pChannel;
-      this.asyncRunner = asyncRunner;
-
-      try {
-        outputStream = new PipedOutputStream();
-        inputStream = new PipedInputStream(outputStream, 2048);
-      } catch (IOException e) {
-        // We should never hits this
-        // This exception should only be thrown if input and output are incorrectly connected
-        throw new IllegalStateException(e);
-      }
     }
 
     @Override
@@ -170,23 +140,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
 
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final ByteBuf msg) {
-      if (outputStreamClosed) {
-        // Discard any data if output stream has been closed
-        return;
-      }
-      try {
-        // TODO - we may want to optimize this to pass on ByteBuf's directly and manage their
-        //  garbage collection rather than immediately copying these bytes
-        final Bytes bytes = Bytes.wrapByteBuf(msg);
-        outputStream.write(bytes.toArray());
-        // TODO temporary workaround for BC-419
-        outputStream.flush();
-      } catch (IOException e) {
-        // We should only hit this if the connected input pipe has been closed,
-        // which means we're done processing this stream of data
-        LOG.debug("Caught exception while delivering bytes to input stream, closing channel.", e);
-        close();
-      }
+      rpcRequestHandler.processData(nodeId, rpcStream, msg);
     }
 
     public void setRequestHandler(RpcRequestHandler rpcRequestHandler) {
@@ -195,28 +149,19 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       }
       this.rpcRequestHandler = rpcRequestHandler;
 
-      activeFuture
-          .thenCompose(
-              __ ->
-                  asyncRunner.runAsync(
-                      () -> rpcRequestHandler.processInput(nodeId, rpcStream, inputStream)))
-          .handle(
-              (res, err) -> {
-                if (err != null) {
-                  if (Throwables.getRootCause(err) instanceof StreamClosedException) {
-                    LOG.debug("Stream closed while processing rpc input", err);
-                  } else {
-                    LOG.error("Unhandled exception while processing rpc input", err);
-                  }
-                }
-                try {
-                  inputStream.close();
-                } catch (IOException e) {
-                  throw new RuntimeException(e);
-                }
-                return null;
-              })
-          .reportExceptions();
+      activeFuture.finish(
+          () -> {
+            rpcRequestHandler.active(nodeId, rpcStream);
+          },
+          err -> {
+            if (err != null) {
+              if (Throwables.getRootCause(err) instanceof StreamClosedException) {
+                LOG.debug("Stream closed while processing rpc input", err);
+              } else {
+                LOG.error("Unhandled exception while processing rpc input", err);
+              }
+            }
+          });
     }
 
     @Override
@@ -232,36 +177,37 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       close();
     }
 
-    private void close() {
-      SafeFuture.of(p2pChannel.closeFuture())
-          .whenComplete(
-              (res, err) -> {
-                if (err != null) {
-                  LOG.warn("Failed to close p2pChannel.", err);
-                }
-                closeOutputStream();
-              })
-          .reportExceptions();
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+      if (evt instanceof RemoteWriteClosed && rpcRequestHandler != null) {
+        try {
+          rpcRequestHandler.complete(nodeId, rpcStream);
+        } finally {
+          rpcRequestHandler = null;
+        }
+      }
+    }
+
+    @VisibleForTesting
+    void close() {
+      if (rpcRequestHandler != null) {
+        try {
+          rpcRequestHandler.complete(nodeId, rpcStream);
+        } catch (Exception e) {
+          LOG.trace("Exception completing RpcRequestHandler", e);
+        }
+        rpcRequestHandler = null;
+      }
 
       if (rpcStream != null) {
         rpcStream.close().reportExceptions();
       }
+
       // We're listening for the result of the close future above, so we can ignore this future
       ignoreFuture(p2pChannel.close());
 
       // Make sure to complete activation future in case we are never activated
       activeFuture.completeExceptionally(new StreamClosedException());
-    }
-
-    private void closeOutputStream() {
-      if (!outputStreamClosed) {
-        outputStreamClosed = true;
-        try {
-          outputStream.close();
-        } catch (IOException e) {
-          throw new IllegalStateException(e);
-        }
-      }
     }
   }
 }

@@ -23,13 +23,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
 public class PeerChainValidator {
@@ -40,9 +44,14 @@ public class PeerChainValidator {
   private final Eth2Peer peer;
   private final AtomicBoolean hasRun = new AtomicBoolean(false);
   private final PeerStatus status;
+  private final Counter validationStartedCounter;
+  private final Counter chainValidCounter;
+  private final Counter chainInvalidCounter;
+  private final Counter validationErrorCounter;
   private SafeFuture<Boolean> result;
 
   private PeerChainValidator(
+      final MetricsSystem metricsSystem,
       final RecentChainData storageClient,
       final StorageQueryChannel historicalChainData,
       final Eth2Peer peer,
@@ -51,14 +60,26 @@ public class PeerChainValidator {
     this.historicalChainData = historicalChainData;
     this.peer = peer;
     this.status = status;
+
+    final LabelledMetric<Counter> validationCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.NETWORK,
+            "peer_chain_validation_attempts",
+            "Number of peers chain verification has been performed on",
+            "status");
+    validationStartedCounter = validationCounter.labels("started");
+    chainValidCounter = validationCounter.labels("valid");
+    chainInvalidCounter = validationCounter.labels("invalid");
+    validationErrorCounter = validationCounter.labels("error");
   }
 
   public static PeerChainValidator create(
+      final MetricsSystem metricsSystem,
       final RecentChainData storageClient,
       final StorageQueryChannel historicalChainData,
       final Eth2Peer peer,
       final PeerStatus status) {
-    return new PeerChainValidator(storageClient, historicalChainData, peer, status);
+    return new PeerChainValidator(metricsSystem, storageClient, historicalChainData, peer, status);
   }
 
   public SafeFuture<Boolean> run() {
@@ -70,15 +91,18 @@ public class PeerChainValidator {
 
   private SafeFuture<Boolean> executeCheck() {
     LOG.trace("Validate chain of peer: {}", peer);
+    validationStartedCounter.inc();
     return checkRemoteChain()
         .thenApply(
             isValid -> {
               if (!isValid) {
                 // We are not on the same chain
                 LOG.trace("Disconnecting peer on different chain: {}", peer);
+                chainInvalidCounter.inc();
                 peer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK);
               } else {
                 LOG.trace("Validated peer's chain: {}", peer);
+                chainValidCounter.inc();
                 peer.markChainValidated();
               }
               return isValid;
@@ -86,6 +110,7 @@ public class PeerChainValidator {
         .exceptionally(
             err -> {
               LOG.debug("Unable to validate peer's chain, disconnecting: " + peer, err);
+              validationErrorCounter.inc();
               peer.disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK);
               return false;
             });

@@ -24,8 +24,8 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
@@ -123,6 +123,7 @@ class ValidatorApiDutyLoader implements DutyLoader {
             scheduledDuties,
             attestationCommitteeIndex,
             attestationCommitteePosition,
+            validatorIndex,
             validator,
             slot);
 
@@ -140,10 +141,11 @@ class ValidatorApiDutyLoader implements DutyLoader {
       final ScheduledDuties scheduledDuties,
       final int attestationCommitteeIndex,
       final int attestationCommitteePosition,
+      final int validatorIndex,
       final Validator validator,
       final UnsignedLong slot) {
     return scheduledDuties.scheduleAttestationProduction(
-        slot, validator, attestationCommitteeIndex, attestationCommitteePosition);
+        slot, validator, attestationCommitteeIndex, attestationCommitteePosition, validatorIndex);
   }
 
   private SafeFuture<Void> scheduleAggregation(

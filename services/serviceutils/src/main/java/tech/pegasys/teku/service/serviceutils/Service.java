@@ -14,7 +14,7 @@
 package tech.pegasys.teku.service.serviceutils;
 
 import java.util.concurrent.atomic.AtomicReference;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public abstract class Service {
   enum State {

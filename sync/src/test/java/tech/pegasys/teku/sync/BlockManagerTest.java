@@ -30,6 +30,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.ImportedBlocks;
@@ -39,7 +40,6 @@ import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
 public class BlockManagerTest {
@@ -170,7 +170,7 @@ public class BlockManagerTest {
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
 
     // Import next block, causing remaining blocks to be imported
-    assertThat(blockImporter.importBlock(blocks.get(0)).isSuccessful()).isTrue();
+    assertThat(blockImporter.importBlock(blocks.get(0)).get().isSuccessful()).isTrue();
     assertThat(importedBlocks.get()).containsExactlyElementsOf(blocks);
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
@@ -268,7 +268,7 @@ public class BlockManagerTest {
 
     // Import next block, causing next block to be queued for import
     final SignedBeaconBlock firstBlock = blocks.get(0);
-    assertThat(blockImporter.importBlock(firstBlock).isSuccessful()).isTrue();
+    assertThat(blockImporter.importBlock(firstBlock).get().isSuccessful()).isTrue();
     assertThat(importedBlocks.get()).containsExactly(firstBlock);
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(1);

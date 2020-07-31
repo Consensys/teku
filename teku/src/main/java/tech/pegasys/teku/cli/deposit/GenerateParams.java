@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.deposit;
 
+import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
+
 import java.util.function.Function;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.ITypeConverter;
@@ -73,17 +75,17 @@ public class GenerateParams {
     this.consoleAdapter = consoleAdapter;
   }
 
-  public GenerateAction createGenerateAction(final boolean displayConfirmation) {
+  public GenerateAction createGenerateAction(final boolean verboseOutputEnabled) {
     return new GenerateAction(
         validatorCount,
         outputPath,
         encryptKeys,
         validatorPasswordOptions,
         withdrawalPasswordOptions,
-        displayConfirmation,
         consoleAdapter,
         spec,
-        envSupplier);
+        envSupplier,
+        verboseOutputEnabled ? SUB_COMMAND_LOG::display : s -> {});
   }
 
   public int getValidatorCount() {

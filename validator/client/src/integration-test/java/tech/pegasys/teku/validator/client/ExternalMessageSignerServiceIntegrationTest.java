@@ -24,6 +24,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.model.Delay;
+import org.mockserver.model.MediaType;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -59,7 +61,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
     this.client = client;
     signingServiceUri = new URL("http://127.0.0.1:" + client.getLocalPort());
 
-    final Bytes privateKey = Bytes.fromHexString(PRIVATE_KEY);
+    final Bytes32 privateKey = Bytes32.fromHexString(PRIVATE_KEY);
     keyPair = new BLSKeyPair(BLSSecretKey.fromBytes(privateKey));
     expectedSignature = BLS.sign(keyPair.getSecretKey(), SIGNING_ROOT);
 
@@ -77,7 +79,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
     final ExternalMessageSignerService externalMessageSignerService =
         new ExternalMessageSignerService(
             signingServiceUri,
-            BLSPublicKey.fromBytes(Bytes.fromHexString(UNKNOWN_PUBLIC_KEY)),
+            BLSPublicKey.fromSSZBytes(Bytes.fromHexString(UNKNOWN_PUBLIC_KEY)),
             TIMEOUT);
 
     assertThatThrownBy(() -> externalMessageSignerService.signBlock(SIGNING_ROOT).join())
@@ -88,11 +90,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(SIGNING_ROOT.toHexString());
 
-    client.verify(
-        request()
-            .withMethod("POST")
-            .withBody(json(signingRequestBody))
-            .withPath("/signer/sign/" + UNKNOWN_PUBLIC_KEY));
+    verifySignRequest(UNKNOWN_PUBLIC_KEY, signingRequestBody);
   }
 
   @Test
@@ -119,9 +117,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
 
   @Test
   void signsBlockWhenSigningServiceReturnsSuccessfulResponse() {
-    client
-        .when(request())
-        .respond(response().withBody(expectedSignature.getSignature().toString()));
+    client.when(request()).respond(response().withBody(expectedSignature.toString()));
 
     final BLSSignature signature = externalMessageSignerService.signBlock(SIGNING_ROOT).join();
     assertThat(signature).isEqualTo(expectedSignature);
@@ -129,11 +125,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
     final String publicKey = keyPair.getPublicKey().toString();
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(SIGNING_ROOT.toHexString());
-    client.verify(
-        request()
-            .withMethod("POST")
-            .withBody(json(signingRequestBody))
-            .withPath("/signer/sign/" + publicKey));
+    verifySignRequest(publicKey, signingRequestBody);
   }
 
   @Test
@@ -147,11 +139,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
     final String publicKey = keyPair.getPublicKey().toString();
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(SIGNING_ROOT.toHexString());
-    client.verify(
-        request()
-            .withMethod("POST")
-            .withBody(json(signingRequestBody))
-            .withPath("/signer/sign/" + publicKey));
+    verifySignRequest(publicKey, signingRequestBody);
   }
 
   @Test
@@ -165,11 +153,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
     final String publicKey = keyPair.getPublicKey().toString();
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(SIGNING_ROOT.toHexString());
-    client.verify(
-        request()
-            .withMethod("POST")
-            .withBody(json(signingRequestBody))
-            .withPath("/signer/sign/" + publicKey));
+    verifySignRequest(publicKey, signingRequestBody);
   }
 
   @Test
@@ -183,9 +167,15 @@ public class ExternalMessageSignerServiceIntegrationTest {
     final String publicKey = keyPair.getPublicKey().toString();
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(SIGNING_ROOT.toHexString());
+    verifySignRequest(publicKey, signingRequestBody);
+  }
+
+  private void verifySignRequest(
+      final String publicKey, final SigningRequestBody signingRequestBody) {
     client.verify(
         request()
             .withMethod("POST")
+            .withContentType(MediaType.APPLICATION_JSON)
             .withBody(json(signingRequestBody))
             .withPath("/signer/sign/" + publicKey));
   }

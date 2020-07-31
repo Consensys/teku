@@ -15,9 +15,11 @@ package tech.pegasys.teku.ssz.SSZTypes;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkElementIndex;
+import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.Objects;
 import java.util.BitSet;
+import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 
@@ -46,6 +48,10 @@ public class Bitvector {
     for (int i : indicesToSet) {
       setBit(i);
     }
+  }
+
+  public List<Integer> getSetBitIndexes() {
+    return data.stream().boxed().collect(toList());
   }
 
   public void setBit(int i) {
@@ -77,6 +83,10 @@ public class Bitvector {
     return size;
   }
 
+  public IntStream streamAllSetBits() {
+    return data.stream();
+  }
+
   @SuppressWarnings("NarrowingCompoundAssignment")
   public Bytes serialize() {
     byte[] array = new byte[sszSerializationLength(size)];
@@ -101,7 +111,7 @@ public class Bitvector {
     return new Bitvector(bitset, size);
   }
 
-  private static int sszSerializationLength(final int size) {
+  public static int sszSerializationLength(final int size) {
     return (size + 7) / 8;
   }
 

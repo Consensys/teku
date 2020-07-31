@@ -118,32 +118,13 @@ public final class BlockProcessorUtil {
     }
   }
 
-  /**
-   * Processes randao
-   *
-   * @param state
-   * @param block
-   * @throws BlockProcessingException
-   * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#randao</a>
-   */
-  public static void process_randao(MutableBeaconState state, BeaconBlock block)
-      throws BlockProcessingException {
-    try {
-      verify_randao(state, block, BLSSignatureVerifier.SIMPLE);
-      process_randao_no_validation(state, block.getBody());
-    } catch (InvalidSignatureException e) {
-      throw new BlockProcessingException(e);
-    }
-  }
-
   public static void process_randao_no_validation(MutableBeaconState state, BeaconBlockBody body)
       throws BlockProcessingException {
     try {
       UnsignedLong epoch = get_current_epoch(state);
 
       Bytes32 mix =
-          get_randao_mix(state, epoch).xor(Hash.sha2_256(body.getRandao_reveal().toBytes()));
+          get_randao_mix(state, epoch).xor(Hash.sha2_256(body.getRandao_reveal().toSSZBytes()));
       int index = epoch.mod(UnsignedLong.valueOf(EPOCHS_PER_HISTORICAL_VECTOR)).intValue();
       state.getRandao_mixes().set(index, mix);
     } catch (IllegalArgumentException e) {

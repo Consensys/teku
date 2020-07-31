@@ -18,13 +18,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.Preconditions;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class ResponseStreamImpl<O> implements ResponseStream<O> {
 
   private final SafeFuture<Void> completionFuture = new SafeFuture<>();
   private final AtomicInteger receivedResponseCount = new AtomicInteger(0);
-  private volatile ResponseListener<O> responseListener;
+  private volatile ResponseStreamListener<O> responseListener;
 
   @Override
   public SafeFuture<O> expectSingleResponse() {
@@ -35,6 +35,7 @@ public class ResponseStreamImpl<O> implements ResponseStream<O> {
                 throw new IllegalStateException(
                     "Received multiple responses when single response expected");
               }
+              return SafeFuture.COMPLETE;
             })
         .thenApply(
             done -> {
@@ -53,17 +54,17 @@ public class ResponseStreamImpl<O> implements ResponseStream<O> {
   }
 
   @Override
-  public SafeFuture<Void> expectMultipleResponses(final ResponseListener<O> listener) {
+  public SafeFuture<Void> expectMultipleResponses(final ResponseStreamListener<O> listener) {
     Preconditions.checkArgument(
         responseListener == null, "Multiple calls to 'expect' methods not allowed");
     responseListener = listener;
     return completionFuture;
   }
 
-  public void respond(final O data) {
+  public SafeFuture<?> respond(final O data) {
     checkNotNull(responseListener, "Must call an 'expect' method");
     receivedResponseCount.incrementAndGet();
-    responseListener.onResponse(data);
+    return responseListener.onResponse(data);
   }
 
   public int getResponseChunkCount() {

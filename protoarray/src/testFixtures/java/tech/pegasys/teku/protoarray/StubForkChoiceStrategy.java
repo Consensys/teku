@@ -48,4 +48,7 @@ public class StubForkChoiceStrategy implements ForkChoiceStrategy {
   public boolean contains(Bytes32 blockRoot) {
     return false;
   }
+
+  @Override
+  public void save() {}
 }

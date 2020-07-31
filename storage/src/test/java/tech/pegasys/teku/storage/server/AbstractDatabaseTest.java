@@ -19,6 +19,7 @@ import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.storage.store.StoreAssertions.assertStoresMatch;
 
 import com.google.common.collect.Streams;
@@ -29,10 +30,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -44,18 +44,18 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.core.ChainProperties;
-import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.storage.api.DatabaseBackedStorageUpdateChannel;
-import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.storage.store.StoreFactory;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.events.AnchorPoint;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.StorePruningOptions;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
@@ -66,8 +66,8 @@ public abstract class AbstractDatabaseTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
 
   protected final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
-  protected UpdatableStore store;
 
+  protected AnchorPoint genesisAnchor;
   protected SignedBlockAndState genesisBlockAndState;
   protected SignedBlockAndState checkpoint1BlockAndState;
   protected SignedBlockAndState checkpoint2BlockAndState;
@@ -78,69 +78,74 @@ public abstract class AbstractDatabaseTest {
   protected Checkpoint checkpoint2;
   protected Checkpoint checkpoint3;
 
+  protected StateStorageMode storageMode;
+  protected StorageSystem storageSystem;
   protected Database database;
-  protected StorageUpdateChannel storageUpdateChannel;
+  protected RecentChainData recentChainData;
+  protected UpdatableStore store;
 
-  protected List<Database> databases = new ArrayList<>();
+  protected List<tech.pegasys.teku.storage.storageSystem.StorageSystem> storageSystems =
+      new ArrayList<>();
 
   @BeforeEach
   public void setup() {
     Constants.SLOTS_PER_EPOCH = 3;
-    setupDatabase(StateStorageMode.ARCHIVE);
+    createStorage(StateStorageMode.ARCHIVE);
 
     genesisBlockAndState = chainBuilder.generateGenesis();
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
+    genesisAnchor = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
 
-    store =
-        StoreFactory.getForkChoiceStore(new StubMetricsSystem(), genesisBlockAndState.getState());
-    database.storeGenesis(store);
-  }
-
-  protected void generateCheckpoints() throws StateTransitionException {
-    while (chainBuilder.getLatestEpoch().longValue() < 3) {
-      chainBuilder.generateNextBlock();
-    }
-
-    checkpoint1BlockAndState = chainBuilder.getLatestBlockAndStateAtEpochBoundary(1);
-    checkpoint1 = chainBuilder.getCurrentCheckpointForEpoch(1);
-    checkpoint2BlockAndState = chainBuilder.getLatestBlockAndStateAtEpochBoundary(2);
-    checkpoint2 = chainBuilder.getCurrentCheckpointForEpoch(2);
-    checkpoint3BlockAndState = chainBuilder.getLatestBlockAndStateAtEpochBoundary(3);
-    checkpoint3 = chainBuilder.getCurrentCheckpointForEpoch(3);
+    // Initialize genesis store
+    initGenesis();
   }
 
   @AfterEach
   public void tearDown() throws Exception {
     Constants.setConstants("minimal");
-    for (Database db : databases) {
-      db.close();
+    for (StorageSystem storageSystem : storageSystems) {
+      storageSystem.close();
     }
   }
 
-  protected abstract Database createDatabase(final StateStorageMode storageMode);
+  // This method shouldn't be called outside of createStorage
+  protected abstract StorageSystem createStorageSystemInternal(final StateStorageMode storageMode);
 
-  protected Database setupDatabase(final StateStorageMode storageMode) {
-    database = createDatabase(storageMode);
-    databases.add(database);
-    storageUpdateChannel = new DatabaseBackedStorageUpdateChannel(database);
-    return database;
+  protected void restartStorage() {
+    final StorageSystem storage = storageSystem.restarted(storageMode);
+    setDefaultStorage(storage);
+  }
+
+  protected StorageSystem createStorage(final StateStorageMode storageMode) {
+    this.storageMode = storageMode;
+    storageSystem = createStorageSystemInternal(storageMode);
+    setDefaultStorage(storageSystem);
+
+    return storageSystem;
+  }
+
+  protected void setDefaultStorage(final StorageSystem storageSystem) {
+    this.storageSystem = storageSystem;
+    database = storageSystem.getDatabase();
+    recentChainData = storageSystem.recentChainData();
+    storageSystems.add(storageSystem);
   }
 
   @Test
   public void createMemoryStoreFromEmptyDatabase() {
-    Database database = setupDatabase(StateStorageMode.ARCHIVE);
+    createStorage(StateStorageMode.ARCHIVE);
     assertThat(database.createMemoryStore()).isEmpty();
   }
 
   @Test
   public void shouldRecreateOriginalGenesisStore() {
-    final UpdatableStore memoryStore = database.createMemoryStore().orElseThrow();
+    final UpdatableStore memoryStore = recreateStore();
     assertStoresMatch(memoryStore, store);
   }
 
   @Test
-  public void shouldGetHotBlockByRoot() throws StateTransitionException {
-    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
+  public void shouldGetHotBlockByRoot() {
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
     final SignedBlockAndState block1 = chainBuilder.generateBlockAtSlot(1);
     final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
 
@@ -191,16 +196,20 @@ public abstract class AbstractDatabaseTest {
     add(List.of(blockC));
 
     // Verify all blocks are available
-    assertThat(store.getBlock(blockA.getRoot())).isEqualTo(blockA.getBlock().getMessage());
-    assertThat(store.getBlock(blockB.getRoot())).isEqualTo(blockB.getBlock().getMessage());
-    assertThat(store.getBlock(blockC.getRoot())).isEqualTo(blockC.getBlock().getMessage());
+    assertThat(store.retrieveBlock(blockA.getRoot()))
+        .isCompletedWithValue(Optional.of(blockA.getBlock().getMessage()));
+    assertThat(store.retrieveBlock(blockB.getRoot()))
+        .isCompletedWithValue(Optional.of(blockB.getBlock().getMessage()));
+    assertThat(store.retrieveBlock(blockC.getRoot()))
+        .isCompletedWithValue(Optional.of(blockC.getBlock().getMessage()));
 
     // Finalize subsequent block to prune blocks a, b, and c
     final SignedBlockAndState finalBlock = chainBuilder.generateNextBlock();
     add(List.of(finalBlock));
     final UnsignedLong finalEpoch = chainBuilder.getLatestEpoch().plus(ONE);
-    final Checkpoint finalizedCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(finalEpoch);
-    finalizeCheckpoint(finalizedCheckpoint);
+    final SignedBlockAndState finalizedBlock =
+        chainBuilder.getLatestBlockAndStateAtEpochBoundary(finalEpoch);
+    justifyAndFinalizeEpoch(finalEpoch, finalizedBlock);
 
     // Check pruning result
     final Set<Bytes32> rootsToPrune = new HashSet<>(block10Roots);
@@ -210,7 +219,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void getFinalizedState() throws StateTransitionException {
+  public void getFinalizedState() {
     generateCheckpoints();
     final Checkpoint finalizedCheckpoint =
         chainBuilder.getCurrentCheckpointForEpoch(UnsignedLong.ONE);
@@ -224,16 +233,18 @@ public abstract class AbstractDatabaseTest {
     addBlocks(allBlocks);
 
     // Finalize block2
-    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
     transaction.setFinalizedCheckpoint(finalizedCheckpoint);
     commit(transaction);
 
-    assertThat(database.getFinalizedState(block2.getRoot())).contains(block2.getState());
-    assertThat(database.getFinalizedState(block1.getRoot())).contains(block1.getState());
+    assertThat(database.getLatestAvailableFinalizedState(block2.getSlot()))
+        .contains(block2.getState());
+    assertThat(database.getLatestAvailableFinalizedState(block1.getSlot()))
+        .contains(block1.getState());
   }
 
   @Test
-  public void shouldStoreSingleValueFields() throws StateTransitionException {
+  public void shouldStoreSingleValueFields() {
     generateCheckpoints();
 
     final List<SignedBlockAndState> allBlocks =
@@ -242,7 +253,7 @@ public abstract class AbstractDatabaseTest {
             .collect(toList());
     addBlocks(allBlocks);
 
-    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
     transaction.setGenesis_time(UnsignedLong.valueOf(3));
     transaction.setFinalizedCheckpoint(checkpoint1);
     transaction.setJustifiedCheckpoint(checkpoint2);
@@ -250,7 +261,7 @@ public abstract class AbstractDatabaseTest {
 
     commit(transaction);
 
-    final UpdatableStore result = database.createMemoryStore().orElseThrow();
+    final UpdatableStore result = recreateStore();
 
     assertThat(result.getGenesisTime()).isEqualTo(transaction.getGenesisTime());
     assertThat(result.getFinalizedCheckpoint()).isEqualTo(transaction.getFinalizedCheckpoint());
@@ -265,31 +276,31 @@ public abstract class AbstractDatabaseTest {
     // Sanity check
     assertThat(store.getGenesisTime()).isNotEqualTo(newGenesisTime);
 
-    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
     transaction.setGenesis_time(newGenesisTime);
     commit(transaction);
 
-    final UpdatableStore result = database.createMemoryStore().orElseThrow();
+    final UpdatableStore result = recreateStore();
     assertThat(result.getGenesisTime()).isEqualTo(transaction.getGenesisTime());
   }
 
   @Test
-  public void shouldStoreSingleValue_justifiedCheckpoint() throws StateTransitionException {
+  public void shouldStoreSingleValue_justifiedCheckpoint() {
     generateCheckpoints();
     final Checkpoint newValue = checkpoint3;
     // Sanity check
     assertThat(store.getJustifiedCheckpoint()).isNotEqualTo(checkpoint3);
 
-    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
     transaction.setJustifiedCheckpoint(newValue);
     commit(transaction);
 
-    final UpdatableStore result = database.createMemoryStore().orElseThrow();
+    final UpdatableStore result = recreateStore();
     assertThat(result.getJustifiedCheckpoint()).isEqualTo(newValue);
   }
 
   @Test
-  public void shouldStoreSingleValue_finalizedCheckpoint() throws StateTransitionException {
+  public void shouldStoreSingleValue_finalizedCheckpoint() {
     generateCheckpoints();
     final List<SignedBlockAndState> allBlocks =
         chainBuilder
@@ -301,135 +312,48 @@ public abstract class AbstractDatabaseTest {
     // Sanity check
     assertThat(store.getFinalizedCheckpoint()).isNotEqualTo(checkpoint3);
 
-    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
-    transaction.setFinalizedCheckpoint(newValue);
-    commit(transaction);
+    justifyAndFinalizeEpoch(newValue.getEpoch(), checkpoint3BlockAndState);
 
-    final UpdatableStore result = database.createMemoryStore().orElseThrow();
+    final UpdatableStore result = recreateStore();
     assertThat(result.getFinalizedCheckpoint()).isEqualTo(newValue);
   }
 
   @Test
-  public void shouldStoreSingleValue_bestJustifiedCheckpoint() throws StateTransitionException {
+  public void shouldStoreSingleValue_bestJustifiedCheckpoint() {
     generateCheckpoints();
     final Checkpoint newValue = checkpoint3;
     // Sanity check
     assertThat(store.getBestJustifiedCheckpoint()).isNotEqualTo(checkpoint3);
 
-    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
     transaction.setBestJustifiedCheckpoint(newValue);
     commit(transaction);
 
-    final UpdatableStore result = database.createMemoryStore().orElseThrow();
+    final UpdatableStore result = recreateStore();
     assertThat(result.getBestJustifiedCheckpoint()).isEqualTo(newValue);
   }
 
   @Test
-  public void shouldStoreSingleValue_singleBlockAndState() throws StateTransitionException {
+  public void shouldStoreSingleValue_singleBlockAndState() {
     final SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
     // Sanity check
-    assertThat(store.getBlock(newBlock.getRoot())).isNull();
+    assertThatSafeFuture(store.retrieveBlock(newBlock.getRoot())).isCompletedWithEmptyOptional();
 
-    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
     transaction.putBlockAndState(newBlock);
     commit(transaction);
 
-    final UpdatableStore result = database.createMemoryStore().orElseThrow();
-    assertThat(result.getSignedBlock(newBlock.getRoot())).isEqualTo(newBlock.getBlock());
-    assertThat(result.getBlockState(newBlock.getRoot())).isEqualTo(newBlock.getState());
+    final UpdatableStore result = recreateStore();
+    assertThat(result.retrieveSignedBlock(newBlock.getRoot()))
+        .isCompletedWithValue(Optional.of(newBlock.getBlock()));
+    assertThat(result.retrieveBlockState(newBlock.getRoot()))
+        .isCompletedWithValue(Optional.of(newBlock.getState()));
   }
 
   @Test
-  public void shouldStoreSingleValue_singleCheckpointState() throws StateTransitionException {
-    generateCheckpoints();
-    final Checkpoint checkpoint = checkpoint3;
-    final BeaconState newState = checkpoint3BlockAndState.getState();
-    // Sanity check
-    assertThat(store.getCheckpointState(checkpoint)).isNull();
-
-    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
-    transaction.putCheckpointState(checkpoint, newState);
-    commit(transaction);
-
-    final UpdatableStore result = database.createMemoryStore().orElseThrow();
-    assertThat(result.getCheckpointState(checkpoint)).isEqualTo(newState);
-  }
-
-  @Test
-  public void shouldStoreCheckpointStates() throws StateTransitionException {
-    generateCheckpoints();
-    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
-
-    addBlocks(checkpoint1BlockAndState, checkpoint2BlockAndState, checkpoint3BlockAndState);
-
-    transaction.putCheckpointState(checkpoint1, checkpoint1BlockAndState.getState());
-    transaction.putCheckpointState(checkpoint2, checkpoint2BlockAndState.getState());
-    transaction.putCheckpointState(checkpoint3, checkpoint3BlockAndState.getState());
-
-    commit(transaction);
-
-    final UpdatableStore result = database.createMemoryStore().orElseThrow();
-    assertThat(result.getCheckpointState(checkpoint1))
-        .isEqualTo(checkpoint1BlockAndState.getState());
-    assertThat(result.getCheckpointState(checkpoint2))
-        .isEqualTo(checkpoint2BlockAndState.getState());
-    assertThat(result.getCheckpointState(checkpoint3))
-        .isEqualTo(checkpoint3BlockAndState.getState());
-  }
-
-  @Test
-  public void shouldRemoveCheckpointStatesPriorToFinalizedCheckpoint()
-      throws StateTransitionException {
-    generateCheckpoints();
-    // Store blocks up to final checkpoint
-    final List<SignedBlockAndState> allBlocks =
-        chainBuilder
-            .streamBlocksAndStates(0, checkpoint3BlockAndState.getSlot().longValue())
-            .collect(toList());
-    addBlocks(allBlocks);
-
-    // First store the initial checkpoints.
-    final StoreTransaction transaction1 = store.startTransaction(storageUpdateChannel);
-    // Add blocks
-    transaction1.putBlockAndState(checkpoint1BlockAndState);
-    transaction1.putBlockAndState(checkpoint2BlockAndState);
-    transaction1.putBlockAndState(checkpoint3BlockAndState);
-    // Add checkpoint states
-    transaction1.putCheckpointState(checkpoint1, checkpoint1BlockAndState.getState());
-    transaction1.putCheckpointState(checkpoint2, checkpoint2BlockAndState.getState());
-    transaction1.putCheckpointState(checkpoint3, checkpoint3BlockAndState.getState());
-    commit(transaction1);
-
-    // Now update the finalized checkpoint
-    final Set<SignedBlockAndState> blocksToPrune =
-        chainBuilder
-            .streamBlocksAndStates(0, checkpoint2.getEpochStartSlot().longValue())
-            .collect(Collectors.toSet());
-    blocksToPrune.remove(checkpoint2BlockAndState);
-    final StoreTransaction transaction2 = store.startTransaction(storageUpdateChannel);
-    transaction2.setFinalizedCheckpoint(checkpoint2);
-    commit(transaction2);
-
-    final Set<Bytes32> expectedPrunedBlocks =
-        blocksToPrune.stream().map(SignedBlockAndState::getRoot).collect(Collectors.toSet());
-    final Set<Checkpoint> expectedPrunedCheckpoints = Set.of(genesisCheckpoint, checkpoint1);
-
-    // Check pruned data has been removed from store
-    assertStoreWasPruned(store, expectedPrunedBlocks, expectedPrunedCheckpoints);
-
-    final UpdatableStore result = database.createMemoryStore().orElseThrow();
-    assertThat(result.getCheckpointState(checkpoint1)).isNull();
-    assertThat(result.getCheckpointState(checkpoint2))
-        .isEqualTo(transaction1.getCheckpointState(checkpoint2));
-    assertThat(result.getCheckpointState(checkpoint3))
-        .isEqualTo(transaction1.getCheckpointState(checkpoint3));
-    assertStoreWasPruned(result, expectedPrunedBlocks, expectedPrunedCheckpoints);
-  }
-
-  @Test
-  public void shouldLoadHotBlocksAndStatesIntoMemoryStore() throws StateTransitionException {
+  public void shouldLoadHotBlocksAndStatesIntoMemoryStore() {
     final Bytes32 genesisRoot = genesisBlockAndState.getRoot();
-    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
 
     final SignedBlockAndState blockAndState1 = chainBuilder.generateBlockAtSlot(1);
     final SignedBlockAndState blockAndState2 = chainBuilder.generateBlockAtSlot(2);
@@ -439,18 +363,21 @@ public abstract class AbstractDatabaseTest {
 
     commit(transaction);
 
-    final UpdatableStore result = database.createMemoryStore().orElseThrow();
-    assertThat(result.getSignedBlock(genesisRoot)).isEqualTo(genesisBlockAndState.getBlock());
-    assertThat(result.getSignedBlock(blockAndState1.getRoot()))
-        .isEqualTo(blockAndState1.getBlock());
-    assertThat(result.getSignedBlock(blockAndState2.getRoot()))
-        .isEqualTo(blockAndState2.getBlock());
-    assertThat(result.getBlockState(blockAndState1.getRoot())).isEqualTo(blockAndState1.getState());
-    assertThat(result.getBlockState(blockAndState2.getRoot())).isEqualTo(blockAndState2.getState());
+    final UpdatableStore result = recreateStore();
+    assertThat(result.retrieveSignedBlock(genesisRoot))
+        .isCompletedWithValue(Optional.of(genesisBlockAndState.getBlock()));
+    assertThat(result.retrieveSignedBlock(blockAndState1.getRoot()))
+        .isCompletedWithValue(Optional.of(blockAndState1.getBlock()));
+    assertThat(result.retrieveSignedBlock(blockAndState2.getRoot()))
+        .isCompletedWithValue(Optional.of(blockAndState2.getBlock()));
+    assertThat(result.retrieveBlockState(blockAndState1.getRoot()))
+        .isCompletedWithValue(Optional.of(blockAndState1.getState()));
+    assertThat(result.retrieveBlockState(blockAndState2.getRoot()))
+        .isCompletedWithValue(Optional.of(blockAndState2.getState()));
   }
 
   @Test
-  public void shouldRemoveHotBlocksAndStatesOnceEpochIsFinalized() throws StateTransitionException {
+  public void shouldRemoveHotBlocksAndStatesOnceEpochIsFinalized() {
     generateCheckpoints();
     final List<SignedBlockAndState> allBlocks =
         chainBuilder
@@ -459,9 +386,7 @@ public abstract class AbstractDatabaseTest {
     addBlocks(allBlocks);
 
     // Finalize block
-    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
-    tx.setFinalizedCheckpoint(checkpoint1);
-    commit(tx);
+    justifyAndFinalizeEpoch(checkpoint1.getEpoch(), checkpoint1BlockAndState);
 
     final List<SignedBlockAndState> historicalBlocks =
         chainBuilder
@@ -474,17 +399,21 @@ public abstract class AbstractDatabaseTest {
                 checkpoint1BlockAndState.getSlot(), checkpoint2BlockAndState.getSlot())
             .collect(toList());
 
-    final UpdatableStore result = database.createMemoryStore().orElseThrow();
+    final UpdatableStore result = recreateStore();
     // Historical blocks should not be in the new store
     for (SignedBlockAndState historicalBlock : historicalBlocks) {
-      assertThat(result.getSignedBlock(historicalBlock.getRoot())).isNull();
-      assertThat(result.getBlockState(historicalBlock.getRoot())).isNull();
+      assertThatSafeFuture(result.retrieveSignedBlock(historicalBlock.getRoot()))
+          .isCompletedWithEmptyOptional();
+      assertThatSafeFuture(result.retrieveBlockState(historicalBlock.getRoot()))
+          .isCompletedWithEmptyOptional();
     }
 
     // Hot blocks should be available in the new store
     for (SignedBlockAndState hotBlock : hotBlocks) {
-      assertThat(result.getSignedBlock(hotBlock.getRoot())).isEqualTo(hotBlock.getBlock());
-      assertThat(result.getBlockState(hotBlock.getRoot())).isEqualTo(hotBlock.getState());
+      assertThat(result.retrieveSignedBlock(hotBlock.getRoot()))
+          .isCompletedWithValue(Optional.of(hotBlock.getBlock()));
+      assertThat(result.retrieveBlockState(hotBlock.getRoot()))
+          .isCompletedWithValue(Optional.of(hotBlock.getState()));
     }
 
     final Set<Bytes32> hotBlockRoots =
@@ -521,14 +450,12 @@ public abstract class AbstractDatabaseTest {
   }
 
   @Test
-  public void handleFinalizationWhenCacheLimitsExceeded() throws StateTransitionException {
-    database = setupDatabase(StateStorageMode.ARCHIVE);
-    store =
-        StoreFactory.getForkChoiceStore(new StubMetricsSystem(), genesisBlockAndState.getState());
-    database.storeGenesis(store);
+  public void handleFinalizationWhenCacheLimitsExceeded() {
+    createStorage(StateStorageMode.ARCHIVE);
+    initGenesis();
 
     final int startSlot = genesisBlockAndState.getSlot().intValue();
-    final int minFinalSlot = startSlot + StoreFactory.STATE_CACHE_SIZE + 10;
+    final int minFinalSlot = startSlot + StorePruningOptions.DEFAULT_STATE_CACHE_SIZE + 10;
     final UnsignedLong finalizedEpoch =
         ChainProperties.computeBestEpochFinalizableAtSlot(minFinalSlot);
     final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
@@ -542,46 +469,93 @@ public abstract class AbstractDatabaseTest {
         chainBuilder.streamBlocksAndStates(startSlot).collect(toList());
     add(newBlocks);
     // Then finalize
-    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.setFinalizedCheckpoint(finalizedCheckpoint);
-    tx.commit().reportExceptions();
+    assertThat(tx.commit()).isCompleted();
 
     // All finalized blocks and states should be available
     assertFinalizedBlocksAndStatesAvailable(newBlocks);
   }
 
   @Test
-  public void shouldRecordFinalizedBlocksAndStates_pruneMode() throws StateTransitionException {
+  public void shouldRecordFinalizedBlocksAndStates_pruneMode() {
     testShouldRecordFinalizedBlocksAndStates(StateStorageMode.PRUNE, false);
   }
 
   @Test
-  public void shouldRecordFinalizedBlocksAndStates_archiveMode() throws StateTransitionException {
+  public void shouldRecordFinalizedBlocksAndStates_archiveMode() {
     testShouldRecordFinalizedBlocksAndStates(StateStorageMode.ARCHIVE, false);
   }
 
   @Test
-  public void testShouldRecordFinalizedBlocksAndStatesInBatchUpdate()
-      throws StateTransitionException {
+  public void testShouldRecordFinalizedBlocksAndStatesInBatchUpdate() {
     testShouldRecordFinalizedBlocksAndStates(StateStorageMode.ARCHIVE, true);
   }
 
+  @Test
+  public void slotAndBlock_shouldStoreAndRetrieve() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(
+            dataStructureUtil.randomUnsignedLong(), dataStructureUtil.randomBytes32());
+
+    database.addHotStateRoots(Map.of(stateRoot, slotAndBlockRoot));
+
+    final Optional<SlotAndBlockRoot> fromStorage =
+        database.getSlotAndBlockRootFromStateRoot(stateRoot);
+
+    assertThat(fromStorage.isPresent()).isTrue();
+    assertThat(fromStorage.get()).isEqualTo(slotAndBlockRoot);
+  }
+
+  @Test
+  public void slotAndBlock_shouldGetStateRootsBeforeSlot() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final Bytes32 zeroStateRoot = insertRandomSlotAndBlock(0L, dataStructureUtil);
+    final Bytes32 oneStateRoot = insertRandomSlotAndBlock(1L, dataStructureUtil);
+    insertRandomSlotAndBlock(2L, dataStructureUtil);
+    insertRandomSlotAndBlock(3L, dataStructureUtil);
+
+    assertThat(database.getStateRootsBeforeSlot(UnsignedLong.valueOf(2L)))
+        .containsExactlyInAnyOrder(zeroStateRoot, oneStateRoot);
+  }
+
+  @Test
+  public void slotAndBlock_shouldPurgeToSlot() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    insertRandomSlotAndBlock(0L, dataStructureUtil);
+    insertRandomSlotAndBlock(1L, dataStructureUtil);
+    final Bytes32 twoStateRoot = insertRandomSlotAndBlock(2L, dataStructureUtil);
+    final Bytes32 threeStateRoot = insertRandomSlotAndBlock(3L, dataStructureUtil);
+
+    database.pruneHotStateRoots(database.getStateRootsBeforeSlot(UnsignedLong.valueOf(2L)));
+    assertThat(database.getStateRootsBeforeSlot(UnsignedLong.valueOf(10L)))
+        .containsExactlyInAnyOrder(twoStateRoot, threeStateRoot);
+  }
+
+  protected Bytes32 insertRandomSlotAndBlock(
+      final long slot, final DataStructureUtil dataStructureUtil) {
+    final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(UnsignedLong.valueOf(slot), dataStructureUtil.randomBytes32());
+    database.addHotStateRoots(Map.of(stateRoot, slotAndBlockRoot));
+    return stateRoot;
+  }
+
   public void testShouldRecordFinalizedBlocksAndStates(
-      final StateStorageMode storageMode, final boolean batchUpdate)
-      throws StateTransitionException {
-    testShouldRecordFinalizedBlocksAndStates(storageMode, batchUpdate, this::setupDatabase, d -> d);
+      final StateStorageMode storageMode, final boolean batchUpdate) {
+    testShouldRecordFinalizedBlocksAndStates(storageMode, batchUpdate, this::createStorage);
   }
 
   protected void testShouldRecordFinalizedBlocksAndStates(
       final StateStorageMode storageMode,
       final boolean batchUpdate,
-      Function<StateStorageMode, Database> initializeDatabase,
-      Function<Database, Database> restartDatabase)
-      throws StateTransitionException {
+      Consumer<StateStorageMode> initializeDatabase) {
     // Setup chains
     // Both chains share block up to slot 3
     final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
-    final SignedBlockAndState genesis = primaryChain.generateGenesis();
+    primaryChain.generateGenesis();
     primaryChain.generateBlocksUpToSlot(3);
     final ChainBuilder forkChain = primaryChain.fork();
     // Fork chain's next block is at 6
@@ -597,23 +571,21 @@ public abstract class AbstractDatabaseTest {
     forkChain.generateBlockAtSlot(hotSlot);
 
     // Setup database
-    database = initializeDatabase.apply(storageMode);
-    final Checkpoint genesisCheckpoint = getCheckpointForBlock(genesis.getBlock());
-    store = StoreFactory.getForkChoiceStore(new StubMetricsSystem(), genesis.getState());
-    database.storeGenesis(store);
+    initializeDatabase.accept(storageMode);
+    initGenesis();
 
     final Set<SignedBlockAndState> allBlocksAndStates =
         Streams.concat(primaryChain.streamBlocksAndStates(), forkChain.streamBlocksAndStates())
             .collect(Collectors.toSet());
 
     if (batchUpdate) {
-      final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
+      final StoreTransaction transaction = recentChainData.startStoreTransaction();
       add(transaction, allBlocksAndStates);
-      transaction.setFinalizedCheckpoint(finalizedCheckpoint);
-      transaction.commit().reportExceptions();
+      justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock, transaction);
+      assertThat(transaction.commit()).isCompleted();
     } else {
       add(allBlocksAndStates);
-      finalizeCheckpoint(finalizedCheckpoint);
+      justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock);
     }
 
     // Upon finalization, we should prune data
@@ -629,7 +601,7 @@ public abstract class AbstractDatabaseTest {
     // Check data was pruned from store
     assertStoreWasPruned(store, blocksToPrune, checkpointsToPrune);
 
-    database = restartDatabase.apply(database);
+    restartStorage();
 
     // Check hot data
     final List<SignedBlockAndState> expectedHotBlocksAndStates =
@@ -647,6 +619,12 @@ public abstract class AbstractDatabaseTest {
     assertBlocksFinalized(expectedFinalizedBlocks);
     assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(expectedFinalizedBlocks);
     assertBlocksAvailableByRoot(expectedFinalizedBlocks);
+    assertFinalizedBlocksAvailableViaStream(
+        1,
+        3,
+        primaryChain.getBlockAtSlot(1),
+        primaryChain.getBlockAtSlot(2),
+        primaryChain.getBlockAtSlot(3));
 
     switch (storageMode) {
       case ARCHIVE:
@@ -659,10 +637,19 @@ public abstract class AbstractDatabaseTest {
         break;
       case PRUNE:
         // Check pruned states
-        final List<Bytes32> unavailableRoots =
-            allBlocksAndStates.stream().map(SignedBlockAndState::getRoot).collect(toList());
-        assertStatesUnavailable(unavailableRoots);
+        final List<UnsignedLong> unavailableSlots =
+            allBlocksAndStates.stream().map(SignedBlockAndState::getSlot).collect(toList());
+        assertStatesUnavailable(unavailableSlots);
         break;
+    }
+  }
+
+  protected void assertFinalizedBlocksAvailableViaStream(
+      final int fromSlot, final int toSlot, final SignedBeaconBlock... expectedBlocks) {
+    try (final Stream<SignedBeaconBlock> stream =
+        database.streamFinalizedBlocks(
+            UnsignedLong.valueOf(fromSlot), UnsignedLong.valueOf(toSlot))) {
+      assertThat(stream).containsExactly(expectedBlocks);
     }
   }
 
@@ -680,9 +667,9 @@ public abstract class AbstractDatabaseTest {
 
   protected void assertBlocksFinalized(final List<SignedBeaconBlock> blocks) {
     for (SignedBeaconBlock block : blocks) {
-      assertThat(database.getFinalizedRootAtSlot(block.getSlot()))
-          .describedAs("Block root at slot %s", block.getSlot())
-          .contains(block.getMessage().hash_tree_root());
+      assertThat(database.getFinalizedBlockAtSlot(block.getSlot()))
+          .describedAs("Block at slot %s", block.getSlot())
+          .contains(block);
     }
   }
 
@@ -697,8 +684,8 @@ public abstract class AbstractDatabaseTest {
   protected void assertGetLatestFinalizedRootAtSlotReturnsFinalizedBlocks(
       final List<SignedBeaconBlock> blocks) {
     final UnsignedLong genesisSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
-    final Bytes32 genesisRoot = database.getFinalizedRootAtSlot(genesisSlot).get();
-    final SignedBeaconBlock genesisBlock = database.getSignedBlock(genesisRoot).get();
+    final SignedBeaconBlock genesisBlock =
+        database.getFinalizedBlockAtSlot(genesisSlot).orElseThrow();
 
     final List<SignedBeaconBlock> finalizedBlocks = new ArrayList<>();
     finalizedBlocks.add(genesisBlock);
@@ -711,9 +698,9 @@ public abstract class AbstractDatabaseTest {
       for (long slot = currentBlock.getSlot().longValue();
           slot < nextBlock.getSlot().longValue();
           slot++) {
-        assertThat(database.getLatestFinalizedRootAtSlot(UnsignedLong.valueOf(slot)))
-            .describedAs("Latest finalized at block root at slot %s", slot)
-            .contains(currentBlock.getMessage().hash_tree_root());
+        assertThat(database.getLatestFinalizedBlockAtSlot(UnsignedLong.valueOf(slot)))
+            .describedAs("Latest finalized block at slot %s", slot)
+            .contains(currentBlock);
       }
     }
 
@@ -721,16 +708,15 @@ public abstract class AbstractDatabaseTest {
     final SignedBeaconBlock lastFinalizedBlock = finalizedBlocks.get(finalizedBlocks.size() - 1);
     for (int i = 0; i < 10; i++) {
       final UnsignedLong slot = lastFinalizedBlock.getSlot().plus(UnsignedLong.valueOf(i));
-      assertThat(database.getLatestFinalizedRootAtSlot(slot))
-          .describedAs("Latest finalized at block root at slot %s", slot)
-          .contains(lastFinalizedBlock.getMessage().hash_tree_root());
+      assertThat(database.getLatestFinalizedBlockAtSlot(slot))
+          .describedAs("Latest finalized block at slot %s", slot)
+          .contains(lastFinalizedBlock);
     }
   }
 
   protected void assertHotBlocksAndStates(
       final UpdatableStore store, final Collection<SignedBlockAndState> blocksAndStates) {
-    final List<UpdatableStore> storesToCheck =
-        List.of(store, database.createMemoryStore().orElseThrow());
+    final List<UpdatableStore> storesToCheck = List.of(store, recreateStore());
     for (UpdatableStore currentStore : storesToCheck) {
       assertThat(currentStore.getBlockRoots())
           .hasSameElementsAs(
@@ -738,8 +724,13 @@ public abstract class AbstractDatabaseTest {
 
       final List<BeaconState> hotStates =
           currentStore.getBlockRoots().stream()
-              .map(currentStore::getBlockState)
-              .filter(Objects::nonNull)
+              .map(currentStore::retrieveBlockState)
+              .map(
+                  f -> {
+                    assertThat(f).isCompleted();
+                    return f.join();
+                  })
+              .flatMap(Optional::stream)
               .collect(toList());
 
       assertThat(hotStates)
@@ -750,14 +741,19 @@ public abstract class AbstractDatabaseTest {
 
   protected void assertHotBlocksAndStatesInclude(
       final Collection<SignedBlockAndState> blocksAndStates) {
-    final UpdatableStore memoryStore = database.createMemoryStore().orElseThrow();
+    final UpdatableStore memoryStore = recreateStore();
     assertThat(memoryStore.getBlockRoots())
         .containsAll(blocksAndStates.stream().map(SignedBlockAndState::getRoot).collect(toList()));
 
     final List<BeaconState> hotStates =
         memoryStore.getBlockRoots().stream()
-            .map(memoryStore::getBlockState)
-            .filter(Objects::nonNull)
+            .map(memoryStore::retrieveBlockState)
+            .map(
+                f -> {
+                  assertThat(f).isCompleted();
+                  return f.join();
+                })
+            .flatMap(Optional::stream)
             .collect(toList());
 
     assertThat(hotStates)
@@ -765,14 +761,17 @@ public abstract class AbstractDatabaseTest {
   }
 
   protected void assertFinalizedStatesAvailable(final Map<Bytes32, BeaconState> states) {
-    for (Bytes32 root : states.keySet()) {
-      assertThat(database.getFinalizedState(root)).contains(states.get(root));
+    for (BeaconState state : states.values()) {
+      assertThat(database.getLatestAvailableFinalizedState(state.getSlot())).contains(state);
     }
   }
 
-  protected void assertStatesUnavailable(final Collection<Bytes32> roots) {
-    for (Bytes32 root : roots) {
-      Optional<BeaconState> bs = database.getFinalizedState(root);
+  protected void assertStatesUnavailable(final Collection<UnsignedLong> slots) {
+    for (UnsignedLong slot : slots) {
+      Optional<BeaconState> bs =
+          database
+              .getLatestAvailableFinalizedState(slot)
+              .filter(state -> state.getSlot().equals(slot));
       assertThat(bs).isEmpty();
     }
   }
@@ -797,11 +796,9 @@ public abstract class AbstractDatabaseTest {
       final Set<Checkpoint> prunedCheckpoints) {
     // Check pruned data has been removed from store
     for (Bytes32 prunedBlock : prunedBlocks) {
-      assertThat(store.getBlock(prunedBlock)).isNull();
-      assertThat(store.getBlockState(prunedBlock)).isNull();
-    }
-    for (Checkpoint prunedCheckpoint : prunedCheckpoints) {
-      assertThat(store.getCheckpointState(prunedCheckpoint)).isNull();
+      assertThat(store.containsBlock(prunedBlock)).isFalse();
+      assertThatSafeFuture(store.retrieveBlock(prunedBlock)).isCompletedWithEmptyOptional();
+      assertThatSafeFuture(store.retrieveBlockState(prunedBlock)).isCompletedWithEmptyOptional();
     }
   }
 
@@ -810,15 +807,19 @@ public abstract class AbstractDatabaseTest {
   }
 
   protected void addBlocks(final List<SignedBlockAndState> blocks) {
-    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
     for (SignedBlockAndState block : blocks) {
       transaction.putBlockAndState(block);
+      recentChainData
+          .getForkChoiceStrategy()
+          .orElseThrow()
+          .onBlock(block.getBlock().getMessage(), block.getState());
     }
     commit(transaction);
   }
 
   protected void add(final Collection<SignedBlockAndState> blocks) {
-    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
     add(transaction, blocks);
     commit(transaction);
   }
@@ -827,19 +828,40 @@ public abstract class AbstractDatabaseTest {
       final StoreTransaction transaction, final Collection<SignedBlockAndState> blocksAndStates) {
     for (SignedBlockAndState blockAndState : blocksAndStates) {
       transaction.putBlockAndState(blockAndState);
+      recentChainData
+          .getForkChoiceStrategy()
+          .orElseThrow()
+          .onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
     }
   }
 
-  protected void finalizeEpoch(final UnsignedLong epoch, final Bytes32 root) {
-    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
-    transaction.setFinalizedCheckpoint(new Checkpoint(epoch, root));
-    commit(transaction);
+  protected void justifyAndFinalizeEpoch(
+      final UnsignedLong epoch, final SignedBlockAndState block) {
+    StoreTransaction tx = recentChainData.startStoreTransaction();
+    justifyAndFinalizeEpoch(epoch, block, tx);
+    tx.commit().reportExceptions();
   }
 
-  protected void finalizeCheckpoint(final Checkpoint checkpoint) {
-    final StoreTransaction transaction = store.startTransaction(storageUpdateChannel);
+  protected void justifyAndFinalizeEpoch(
+      final UnsignedLong epoch, final SignedBlockAndState block, final StoreTransaction tx) {
+    justifyEpoch(epoch, block, tx);
+    finalizeEpoch(epoch, block, tx);
+  }
+
+  protected void finalizeEpoch(
+      final UnsignedLong epoch,
+      final SignedBlockAndState block,
+      final StoreTransaction transaction) {
+    final Checkpoint checkpoint = new Checkpoint(epoch, block.getRoot());
     transaction.setFinalizedCheckpoint(checkpoint);
-    commit(transaction);
+  }
+
+  protected void justifyEpoch(
+      final UnsignedLong epoch,
+      final SignedBlockAndState block,
+      final StoreTransaction transaction) {
+    final Checkpoint checkpoint = new Checkpoint(epoch, block.getRoot());
+    transaction.setJustifiedCheckpoint(checkpoint);
   }
 
   protected Checkpoint getCheckpointForBlock(final SignedBeaconBlock block) {
@@ -852,5 +874,28 @@ public abstract class AbstractDatabaseTest {
 
   private boolean equivalentLongs(final UnsignedLong valA, final UnsignedLong valB) {
     return valA.compareTo(valB) == 0;
+  }
+
+  protected void initGenesis() {
+    recentChainData.initializeFromGenesis(genesisBlockAndState.getState());
+    store = recentChainData.getStore();
+  }
+
+  protected void generateCheckpoints() {
+    while (chainBuilder.getLatestEpoch().longValue() < 3) {
+      chainBuilder.generateNextBlock();
+    }
+
+    checkpoint1BlockAndState = chainBuilder.getLatestBlockAndStateAtEpochBoundary(1);
+    checkpoint1 = chainBuilder.getCurrentCheckpointForEpoch(1);
+    checkpoint2BlockAndState = chainBuilder.getLatestBlockAndStateAtEpochBoundary(2);
+    checkpoint2 = chainBuilder.getCurrentCheckpointForEpoch(2);
+    checkpoint3BlockAndState = chainBuilder.getLatestBlockAndStateAtEpochBoundary(3);
+    checkpoint3 = chainBuilder.getCurrentCheckpointForEpoch(3);
+  }
+
+  protected UpdatableStore recreateStore() {
+    restartStorage();
+    return storageSystem.recentChainData().getStore();
   }
 }

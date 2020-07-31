@@ -24,19 +24,31 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.core.results.BlockImportResult;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
-import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class PeerSync {
   private static final Duration NEXT_REQUEST_TIMEOUT = Duration.ofSeconds(3);
+
+  /**
+   * Peers are allowed to limit the number of blocks they actually return to use. We tolerate this
+   * up to a point, but if the peer is throttling too excessively we would be better syncing from a
+   * different peer. This value sets how many slots we should progress per request. Since some slots
+   * may be empty we check that we're progressing through slots, even if not many blocks are being
+   * returned.
+   */
+  private static final UnsignedLong MIN_SLOTS_TO_PROGRESS_PER_REQUEST = UnsignedLong.valueOf(50);
 
   private static final Logger LOG = LogManager.getLogger();
   private static final UnsignedLong STEP = UnsignedLong.ONE;
@@ -46,16 +58,27 @@ public class PeerSync {
   private final BlockImporter blockImporter;
 
   private final AsyncRunner asyncRunner;
+  private final Counter blockImportSuccessResult;
+  private final Counter blockImportFailureResult;
 
   private volatile UnsignedLong startingSlot = UnsignedLong.valueOf(0);
 
   public PeerSync(
       final AsyncRunner asyncRunner,
       final RecentChainData storageClient,
-      final BlockImporter blockImporter) {
+      final BlockImporter blockImporter,
+      final MetricsSystem metricsSystem) {
     this.asyncRunner = asyncRunner;
     this.storageClient = storageClient;
     this.blockImporter = blockImporter;
+    final LabelledMetric<Counter> blockImportCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.BEACON,
+            "block_import_total",
+            "The number of block imports performed",
+            "result");
+    this.blockImportSuccessResult = blockImportCounter.labels("imported");
+    this.blockImportFailureResult = blockImportCounter.labels("rejected");
   }
 
   public SafeFuture<PeerSyncResult> sync(final Eth2Peer peer) {
@@ -105,18 +128,29 @@ public class PeerSync {
               final SafeFuture<Void> readyForNextRequest =
                   asyncRunner.getDelayedFuture(
                       NEXT_REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-              return peer.requestBlocksByRange(startSlot, count, STEP, this::blockResponseListener)
-                  .thenApply((res) -> readyForNextRequest);
+              final PeerSyncBlockRequest request =
+                  new PeerSyncBlockRequest(
+                      readyForNextRequest, startSlot.plus(count), this::blockResponseListener);
+              return peer.requestBlocksByRange(startSlot, count, STEP, request)
+                  .thenApply((res) -> request);
             })
         .thenCompose(
-            (readyForNextRequest) -> {
+            (blockRequest) -> {
+              final UnsignedLong nextSlot = blockRequest.getActualEndSlot().plus(UnsignedLong.ONE);
               LOG.trace(
-                  "Completed request for {} blocks starting at {} from peer {}",
-                  count,
+                  "Completed request starting at {} for {} slots from peer {}. Next request starts from {}",
                   startSlot,
-                  peer.getId());
-              final UnsignedLong nextSlot = startSlot.plus(count);
-              return executeSync(peer, status, nextSlot, readyForNextRequest);
+                  count,
+                  peer.getId(),
+                  nextSlot);
+              if (count.compareTo(MIN_SLOTS_TO_PROGRESS_PER_REQUEST) > 0
+                  && startSlot.plus(MIN_SLOTS_TO_PROGRESS_PER_REQUEST).compareTo(nextSlot) > 0) {
+                LOG.debug(
+                    "Rejecting peer {} as sync target because it excessively throttled returned blocks",
+                    peer.getId());
+                return SafeFuture.completedFuture(PeerSyncResult.EXCESSIVE_THROTTLING);
+              }
+              return executeSync(peer, status, nextSlot, blockRequest.getReadyForNextRequest());
             })
         .exceptionally(err -> handleFailedRequestToPeer(peer, err));
   }
@@ -127,7 +161,7 @@ public class PeerSync {
       final FailedBlockImportException importException = (FailedBlockImportException) rootException;
       final FailureReason reason = importException.getResult().getFailureReason();
       final SignedBeaconBlock block = importException.getBlock();
-      LOG.warn("Failed to import block from peer {}: {}", block, peer);
+      LOG.warn("Failed to import block from peer (err: {}) {}: {}", reason, block, peer);
       if (reason == FailureReason.FAILED_STATE_TRANSITION
           || reason == FailureReason.UNKNOWN_PARENT) {
         LOG.debug("Disconnecting from peer ({}) who sent invalid block: {}", peer, block);
@@ -174,15 +208,23 @@ public class PeerSync {
         : diff;
   }
 
-  private void blockResponseListener(final SignedBeaconBlock block) {
+  private SafeFuture<?> blockResponseListener(final SignedBeaconBlock block) {
     if (stopped.get()) {
       throw new CancellationException("Peer sync was cancelled");
     }
-    final BlockImportResult result = blockImporter.importBlock(block);
-    LOG.trace("Block import result for block at {}: {}", block.getMessage().getSlot(), result);
-    if (!result.isSuccessful()) {
-      throw new FailedBlockImportException(block, result);
-    }
+    return blockImporter
+        .importBlock(block)
+        .thenAccept(
+            (result) -> {
+              LOG.trace(
+                  "Block import result for block at {}: {}", block.getMessage().getSlot(), result);
+              if (!result.isSuccessful()) {
+                this.blockImportFailureResult.inc();
+                throw new FailedBlockImportException(block, result);
+              } else {
+                this.blockImportSuccessResult.inc();
+              }
+            });
   }
 
   private void disconnectFromPeer(Eth2Peer peer) {

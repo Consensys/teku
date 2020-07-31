@@ -25,6 +25,8 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.ROOT_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT_QUERY_DESCRIPTION;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.STATE_ROOT;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.STATE_ROOT_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
@@ -46,8 +48,8 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class GetState extends AbstractHandler implements Handler {
   public static final String ROUTE = "/beacon/state";
@@ -66,9 +68,10 @@ public class GetState extends AbstractHandler implements Handler {
       tags = {TAG_BEACON},
       queryParams = {
         @OpenApiParam(name = ROOT, description = ROOT_QUERY_DESCRIPTION),
-        @OpenApiParam(name = SLOT, description = SLOT_QUERY_DESCRIPTION)
+        @OpenApiParam(name = SLOT, description = SLOT_QUERY_DESCRIPTION),
+        @OpenApiParam(name = STATE_ROOT, description = STATE_ROOT_QUERY_DESCRIPTION)
       },
-      description = "Returns the beacon chain state that matches the specified slot or block root.",
+      description = "Returns the beacon chain state that matches the specified slot or root.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconState.class)),
         @OpenApiResponse(
@@ -94,9 +97,12 @@ public class GetState extends AbstractHandler implements Handler {
         final UnsignedLong slot = getParameterValueAsUnsignedLong(parameters, SLOT);
         future = provider.getStateAtSlot(getParameterValueAsUnsignedLong(parameters, SLOT));
         isFinalizedState = provider.isFinalized(slot);
+      } else if (parameters.containsKey(STATE_ROOT)) {
+        future = provider.getStateByStateRoot(getParameterValueAsBytes32(parameters, STATE_ROOT));
       } else {
         ctx.result(
-            jsonProvider.objectToJSON(new BadRequest("expected one of " + SLOT + " or " + ROOT)));
+            jsonProvider.objectToJSON(
+                new BadRequest("expected one of " + SLOT + ", " + ROOT + ", or " + STATE_ROOT)));
         ctx.status(SC_BAD_REQUEST);
         return;
       }

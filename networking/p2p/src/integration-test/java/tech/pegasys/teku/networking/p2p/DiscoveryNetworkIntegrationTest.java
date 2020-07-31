@@ -15,12 +15,13 @@ package tech.pegasys.teku.networking.p2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.network.p2p.DiscoveryNetworkFactory;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
-import tech.pegasys.teku.util.Waiter;
 
 public class DiscoveryNetworkIntegrationTest {
   private final DiscoveryNetworkFactory discoveryNetworkFactory = new DiscoveryNetworkFactory();
@@ -46,7 +47,10 @@ public class DiscoveryNetworkIntegrationTest {
     assertConnected(network1, network2);
 
     // Peers disconnect
-    network1.getPeer(network2.getNodeId()).orElseThrow().disconnectImmediately();
+    network1
+        .getPeer(network2.getNodeId())
+        .orElseThrow()
+        .disconnectImmediately(Optional.empty(), true);
 
     // But are automatically reconnected
     assertConnected(network1, network2);
@@ -62,7 +66,10 @@ public class DiscoveryNetworkIntegrationTest {
     // Already connected, but now tell network1 to maintain a persistent connection to network2.
     network1.addStaticPeer(network2.getNodeAddress());
 
-    network1.getPeer(network2.getNodeId()).orElseThrow().disconnectImmediately();
+    network1
+        .getPeer(network2.getNodeId())
+        .orElseThrow()
+        .disconnectImmediately(Optional.empty(), true);
     assertConnected(network1, network2);
 
     // Check we remain connected and didn't just briefly reconnect.

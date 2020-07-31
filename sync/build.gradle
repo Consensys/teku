@@ -1,8 +1,10 @@
 dependencies {
     implementation project(':data')
+    implementation project(':data:metrics')
     implementation project(':ethereum:core')
     implementation project(':ethereum:datastructures')
     implementation project(':ethereum:statetransition')
+    implementation project(':infrastructure:async')
     implementation project(':networking:p2p')
     implementation project(':networking:eth2')
     implementation project(':logging')
@@ -17,9 +19,11 @@ dependencies {
 
     testImplementation testFixtures(project(':ethereum:datastructures'))
     testImplementation testFixtures(project(':ethereum:statetransition'))
+    testImplementation testFixtures(project(':infrastructure:async'))
     testImplementation testFixtures(project('::networking:eth2'))
     testImplementation testFixtures(project('::networking:p2p'))
     testImplementation testFixtures(project(':util'))
+    testImplementation 'org.hyperledger.besu.internal:metrics-core'
 
     integrationTestImplementation testFixtures(project(':bls'))
     integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
@@ -33,6 +37,7 @@ dependencies {
 
     testFixturesImplementation testFixtures(project(':ethereum:core'))
     testFixturesImplementation testFixtures(project(':ethereum:statetransition'))
+    testFixturesImplementation testFixtures(project(':infrastructure:async'))
     testFixturesImplementation testFixtures(project('::networking:eth2'))
     testFixturesImplementation testFixtures(project('::networking:p2p'))
     testFixturesImplementation testFixtures(project('::events'))

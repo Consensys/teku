@@ -14,6 +14,8 @@
 package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -34,12 +36,35 @@ public class DataOptions {
       arity = "1")
   private StateStorageMode dataStorageMode = StateStorageMode.PRUNE;
 
+  @Option(
+      names = {"--data-storage-archive-frequency"},
+      paramLabel = "<FREQUENCY>",
+      description = "Sets the frequency, in slots, at which to store finalized states to disk.",
+      arity = "1")
+  private long dataStorageFrequency = VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY;
+
+  @Option(
+      names = {"--Xdata-storage-create-db-version"},
+      paramLabel = "<VERSION>",
+      description = "Database version to create",
+      arity = "1",
+      hidden = true)
+  private String createDbVersion = DatabaseVersion.DEFAULT_VERSION.getValue();
+
   public String getDataPath() {
     return dataPath;
   }
 
   public StateStorageMode getDataStorageMode() {
     return dataStorageMode;
+  }
+
+  public long getDataStorageFrequency() {
+    return dataStorageFrequency;
+  }
+
+  public String getCreateDbVersion() {
+    return createDbVersion;
   }
 
   private static String defaultDataPath() {

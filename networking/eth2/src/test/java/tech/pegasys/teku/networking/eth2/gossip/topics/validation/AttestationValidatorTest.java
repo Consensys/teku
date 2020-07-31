@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
@@ -23,7 +24,6 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.Interna
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.junit.jupiter.api.AfterAll;
@@ -33,16 +33,19 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
+import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.util.config.StateStorageMode;
 
 /**
  * The following validations MUST pass before forwarding the attestation on the subnet.
@@ -67,11 +70,14 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 class AttestationValidatorTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(64);
-  private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(new EventBus());
-  private final BeaconChainUtil beaconChainUtil =
-      BeaconChainUtil.create(recentChainData, VALIDATOR_KEYS, false);
+  private final StorageSystem storageSystem =
+      InMemoryStorageSystem.createEmptyLatestStorageSystem(StateStorageMode.ARCHIVE);
+  private final RecentChainData recentChainData = storageSystem.recentChainData();
+  private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+  private final ChainUpdater chainUpdater =
+      new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
   private final AttestationGenerator attestationGenerator =
-      new AttestationGenerator(beaconChainUtil.getValidatorKeys());
+      new AttestationGenerator(chainBuilder.getValidatorKeys());
 
   private final AttestationValidator validator = new AttestationValidator(recentChainData);
 
@@ -87,7 +93,7 @@ class AttestationValidatorTest {
 
   @BeforeEach
   public void setUp() {
-    beaconChainUtil.initializeStorage();
+    chainUpdater.initializeGenesis(false);
   }
 
   @Test
@@ -118,9 +124,9 @@ class AttestationValidatorTest {
 
     // In the first slot after
     final UnsignedLong slot = ATTESTATION_PROPAGATION_SLOT_RANGE.plus(ONE);
-    beaconChainUtil.setSlot(slot);
+    chainUpdater.setCurrentSlot(slot);
     // Add one more second to get past the MAXIMUM_GOSSIP_CLOCK_DISPARITY
-    beaconChainUtil.setTime(recentChainData.getStore().getTime().plus(ONE));
+    chainUpdater.setTime(recentChainData.getStore().getTime().plus(ONE));
 
     assertThat(validate(attestation)).isEqualTo(IGNORE);
   }
@@ -133,7 +139,7 @@ class AttestationValidatorTest {
     // At the very start of the first slot the attestation isn't allowed, but still within
     // the MAXIMUM_GOSSIP_CLOCK_DISPARITY so should be allowed.
     final UnsignedLong slot = ATTESTATION_PROPAGATION_SLOT_RANGE.plus(ONE);
-    beaconChainUtil.setSlot(slot);
+    chainUpdater.setCurrentSlot(slot);
 
     assertThat(validate(attestation)).isEqualTo(ACCEPT);
   }
@@ -145,7 +151,7 @@ class AttestationValidatorTest {
             recentChainData.getBestBlockAndState().orElseThrow(), ONE);
     assertThat(attestation.getData().getSlot()).isEqualTo(ONE);
 
-    beaconChainUtil.setSlot(ZERO);
+    chainUpdater.setCurrentSlot(ZERO);
 
     assertThat(validate(attestation)).isEqualTo(SAVE_FOR_FUTURE);
   }
@@ -159,7 +165,7 @@ class AttestationValidatorTest {
 
     // Ideally we'd rewind the time by a few milliseconds but our Store only keeps time to second
     // precision.  Alternatively we might consider using system time, not store time.
-    beaconChainUtil.setSlot(ONE);
+    chainUpdater.setCurrentSlot(ONE);
 
     assertThat(validate(attestation)).isEqualTo(ACCEPT);
   }
@@ -178,7 +184,7 @@ class AttestationValidatorTest {
   @Test
   public void shouldRejectAttestationForSameValidatorAndTargetEpoch() throws Exception {
     final BeaconBlockAndState genesis = recentChainData.getBestBlockAndState().orElseThrow();
-    beaconChainUtil.createAndImportBlockAtSlot(ONE);
+    chainUpdater.advanceChain(ONE);
 
     // Slot 1 attestation for the block at slot 1
     final Attestation attestation1 =
@@ -204,7 +210,7 @@ class AttestationValidatorTest {
   public void shouldAcceptAttestationForSameValidatorButDifferentTargetEpoch() throws Exception {
     final BeaconBlockAndState genesis = recentChainData.getBestBlockAndState().orElseThrow();
     final SignedBeaconBlock nextEpochBlock =
-        beaconChainUtil.createAndImportBlockAtSlot(UnsignedLong.valueOf(SLOTS_PER_EPOCH + 1));
+        chainUpdater.advanceChain(UnsignedLong.valueOf(SLOTS_PER_EPOCH + 1)).getBlock();
 
     // Slot 0 attestation
     final Attestation attestation1 = attestationGenerator.validAttestation(genesis);
@@ -262,8 +268,8 @@ class AttestationValidatorTest {
   @Test
   public void shouldDeferAttestationWhenBlockBeingVotedForIsNotAvailable() throws Exception {
     final BeaconBlockAndState unknownBlockAndState =
-        beaconChainUtil.createBlockAndStateAtSlot(ONE, true).toUnsigned();
-    beaconChainUtil.setSlot(ONE);
+        chainBuilder.generateBlockAtSlot(ONE).toUnsigned();
+    chainUpdater.setCurrentSlot(ONE);
     final Attestation attestation = attestationGenerator.validAttestation(unknownBlockAndState);
 
     assertThat(validate(attestation)).isEqualTo(SAVE_FOR_FUTURE);
@@ -271,23 +277,26 @@ class AttestationValidatorTest {
 
   @Test
   public void shouldRejectAttestationsSentOnTheWrongSubnet() {
-    final Attestation attestation =
-        attestationGenerator.validAttestation(recentChainData.getBestBlockAndState().orElseThrow());
-    final int expectedSubnetId = CommitteeUtil.getSubnetId(attestation);
+    final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
+    final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
+    final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
             validator.validate(
                 ValidateableAttestation.fromAttestation(attestation), expectedSubnetId + 1))
-        .isEqualTo(REJECT);
+        .isCompletedWithValue(REJECT);
     assertThat(
             validator.validate(
                 ValidateableAttestation.fromAttestation(attestation), expectedSubnetId))
-        .isEqualTo(ACCEPT);
+        .isCompletedWithValue(ACCEPT);
   }
 
   private InternalValidationResult validate(final Attestation attestation) {
-    return validator.validate(
-        ValidateableAttestation.fromAttestation(attestation),
-        CommitteeUtil.getSubnetId(attestation));
+    final BeaconState state = recentChainData.getBestState().orElseThrow();
+    return validator
+        .validate(
+            ValidateableAttestation.fromAttestation(attestation),
+            computeSubnetForAttestation(state, attestation))
+        .join();
   }
 
   private boolean hasSameValidators(final Attestation attestation1, final Attestation attestation) {

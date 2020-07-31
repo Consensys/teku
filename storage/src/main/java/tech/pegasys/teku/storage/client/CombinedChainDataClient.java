@@ -16,26 +16,31 @@ package tech.pegasys.teku.storage.client;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
-import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NavigableMap;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.exceptions.EpochProcessingException;
+import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.store.UpdatableStore;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class CombinedChainDataClient {
   private static final Logger LOG = LogManager.getLogger();
@@ -47,11 +52,22 @@ public class CombinedChainDataClient {
 
   private final RecentChainData recentChainData;
   private final StorageQueryChannel historicalChainData;
+  private final StateTransition stateTransition;
 
   public CombinedChainDataClient(
       final RecentChainData recentChainData, final StorageQueryChannel historicalChainData) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
+    this.stateTransition = new StateTransition();
+  }
+
+  public CombinedChainDataClient(
+      final RecentChainData recentChainData,
+      final StorageQueryChannel historicalChainData,
+      final StateTransition stateTransition) {
+    this.recentChainData = recentChainData;
+    this.historicalChainData = historicalChainData;
+    this.stateTransition = stateTransition;
   }
 
   /**
@@ -127,6 +143,14 @@ public class CombinedChainDataClient {
                     .orElseGet(() -> SafeFuture.completedFuture(Optional.empty())));
   }
 
+  public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(final UnsignedLong slot) {
+    return getBlockAndStateInEffectAtSlot(slot)
+        .thenApplyChecked(
+            maybeBlockAndState ->
+                maybeBlockAndState.flatMap(
+                    blockAndState -> regenerateBeaconState(blockAndState.getState(), slot)));
+  }
+
   private SafeFuture<Optional<BeaconBlockAndState>> getStateForBlock(final BeaconBlock block) {
     return getStateByBlockRoot(block.hash_tree_root())
         .thenApply(maybeState -> maybeState.map(state -> new BeaconBlockAndState(block, state)));
@@ -143,10 +167,6 @@ public class CombinedChainDataClient {
     return finalizedEpoch.compareTo(epoch) >= 0;
   }
 
-  public Optional<BeaconState> getNonfinalizedBlockState(final Bytes32 blockRoot) {
-    return recentChainData.getBlockState(blockRoot);
-  }
-
   /**
    * Returns the latest state at the given slot on the current chain.
    *
@@ -159,16 +179,19 @@ public class CombinedChainDataClient {
     }
 
     if (isRecentData(slot)) {
-      final Optional<BeaconState> recentState = recentChainData.getStateInEffectAtSlot(slot);
-      if (recentState.isPresent()) {
-        LOG.trace("State at slot {} was from recent chain data", slot);
-        return completedFuture(recentState);
-      }
+      return recentChainData
+          .retrieveStateInEffectAtSlot(slot)
+          .thenCompose(
+              recentState -> {
+                if (recentState.isPresent()) {
+                  return completedFuture(recentState);
+                }
+                // Fall-through to historical query in case state has moved into historical range
+                // during processing
+                return historicalChainData.getLatestFinalizedStateAtSlot(slot);
+              });
     }
 
-    // Fall-through to historical query in case state has moved into historical range during
-    // processing
-    LOG.trace("Getting state at slot {} from historical chain data", slot);
     return historicalChainData.getLatestFinalizedStateAtSlot(slot);
   }
 
@@ -178,12 +201,64 @@ public class CombinedChainDataClient {
       LOG.trace("No state at blockRoot {} because the store is not set", blockRoot);
       return STATE_NOT_AVAILABLE;
     }
-    final BeaconState state = store.getBlockState(blockRoot);
-    if (state != null) {
-      return completedFuture(Optional.of(state));
-    }
 
-    return historicalChainData.getFinalizedStateByBlockRoot(blockRoot);
+    return store
+        .retrieveBlockState(blockRoot)
+        .thenCompose(
+            maybeState -> {
+              if (maybeState.isPresent()) {
+                return completedFuture(maybeState);
+              }
+              return historicalChainData.getFinalizedStateByBlockRoot(blockRoot);
+            });
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateByStateRoot(final Bytes32 stateRoot) {
+    final UpdatableStore store = getStore();
+    if (store == null) {
+      LOG.trace("No state at stateRoot {} because the store is not set", stateRoot);
+      return STATE_NOT_AVAILABLE;
+    }
+    return historicalChainData
+        .getSlotAndBlockRootByStateRoot(stateRoot)
+        .thenCompose(
+            maybeSlotAndBlockRoot ->
+                maybeSlotAndBlockRoot
+                    .map(this::getStateFromSlotAndBlock)
+                    .orElseGet(() -> getFinalizedStateFromStateRoot(stateRoot)));
+  }
+
+  private SafeFuture<Optional<BeaconState>> getFinalizedStateFromStateRoot(
+      final Bytes32 stateRoot) {
+    return historicalChainData
+        .getFinalizedSlotByStateRoot(stateRoot)
+        .thenCompose(
+            maybeSlot -> maybeSlot.map(this::getStateAtSlotExact).orElse(STATE_NOT_AVAILABLE));
+  }
+
+  private SafeFuture<Optional<BeaconState>> getStateFromSlotAndBlock(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return getStateByBlockRoot(slotAndBlockRoot.getBlockRoot())
+        .thenApply(
+            maybeState ->
+                maybeState.flatMap(
+                    preState -> regenerateBeaconState(preState, slotAndBlockRoot.getSlot())));
+  }
+
+  private Optional<BeaconState> regenerateBeaconState(
+      final BeaconState preState, final UnsignedLong slot) {
+    if (preState.getSlot().equals(slot)) {
+      return Optional.of(preState);
+    } else if (slot.compareTo(getBestSlot()) > 0) {
+      LOG.debug("Attempted to wind forward to a future state: {}", slot.toString());
+      return Optional.empty();
+    }
+    try {
+      return Optional.of(stateTransition.process_slots(preState, slot));
+    } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
+      LOG.debug("State Transition error", e);
+      return Optional.empty();
+    }
   }
 
   public Optional<BeaconState> getHeadStateFromStore() {
@@ -192,6 +267,10 @@ public class CombinedChainDataClient {
 
   public Optional<Bytes32> getBestBlockRoot() {
     return recentChainData.getBestBlockRoot();
+  }
+
+  public Optional<SignedBeaconBlock> getBestBlock() {
+    return recentChainData.getBestBlock();
   }
 
   public boolean isStoreAvailable() {
@@ -226,11 +305,21 @@ public class CombinedChainDataClient {
     return recentChainData.getStore();
   }
 
+  public NavigableMap<UnsignedLong, Bytes32> getAncestorRoots(
+      final UnsignedLong startSlot, final UnsignedLong step, final UnsignedLong count) {
+    return recentChainData.getAncestorRoots(startSlot, step, count);
+  }
+
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {
     return recentChainData
-        .getSignedBlockByRoot(blockRoot)
-        .map(value -> SafeFuture.completedFuture(Optional.of(value)))
-        .orElseGet(() -> historicalChainData.getBlockByBlockRoot(blockRoot));
+        .retrieveSignedBlockByRoot(blockRoot)
+        .thenCompose(
+            maybeBlock -> {
+              if (maybeBlock.isPresent()) {
+                return SafeFuture.completedFuture(maybeBlock);
+              }
+              return historicalChainData.getBlockByBlockRoot(blockRoot);
+            });
   }
 
   private boolean isRecentData(final UnsignedLong slot) {

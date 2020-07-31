@@ -15,25 +15,27 @@ package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.util.Waiter.waitFor;
+import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public abstract class BeaconBlocksByRangeIntegrationTest {
 
@@ -111,11 +113,14 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
     recentChainData1.updateBestBlock(block2Root, block2.getSlot());
 
-    peer1.disconnectImmediately();
+    peer1.disconnectImmediately(Optional.empty(), false);
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     final SafeFuture<Void> res =
         peer1.requestBlocksByRange(
-            UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add);
+            UnsignedLong.ONE,
+            UnsignedLong.valueOf(10),
+            UnsignedLong.ONE,
+            ResponseStreamListener.from(blocks::add));
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -135,7 +140,10 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     final SafeFuture<Void> res =
         peer1.requestBlocksByRange(
-            UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add);
+            UnsignedLong.ONE,
+            UnsignedLong.valueOf(10),
+            UnsignedLong.ONE,
+            ResponseStreamListener.from(blocks::add));
 
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
@@ -151,7 +159,7 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
     recentChainData1.updateBestBlock(block2Root, block2.getSlot());
 
-    peer1.disconnectImmediately();
+    peer1.disconnectImmediately(Optional.empty(), false);
     final SafeFuture<SignedBeaconBlock> res = peer1.requestBlockBySlot(UnsignedLong.ONE);
 
     waitFor(() -> assertThat(res).isDone());
@@ -181,7 +189,10 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     waitFor(
         peer1.requestBlocksByRange(
-            UnsignedLong.ONE, UnsignedLong.valueOf(10), UnsignedLong.ONE, blocks::add));
+            UnsignedLong.ONE,
+            UnsignedLong.valueOf(10),
+            UnsignedLong.ONE,
+            ResponseStreamListener.from(blocks::add)));
     return blocks;
   }
 

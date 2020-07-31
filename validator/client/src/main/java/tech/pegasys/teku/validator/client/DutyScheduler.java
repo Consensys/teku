@@ -18,7 +18,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.NavigableMap;
-import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import org.apache.logging.log4j.LogManager;
@@ -32,6 +31,7 @@ public class DutyScheduler implements ValidatorTimingChannel {
   private final DutyLoader epochDutiesScheduler;
   private final StableSubnetSubscriber stableSubnetSubscriber;
   private final NavigableMap<UnsignedLong, DutyQueue> dutiesByEpoch = new TreeMap<>();
+  private UnsignedLong lastAttestationCreationSlot;
 
   public DutyScheduler(
       final MetricsSystem metricsSystem,
@@ -73,6 +73,12 @@ public class DutyScheduler implements ValidatorTimingChannel {
 
   @Override
   public void onAttestationCreationDue(final UnsignedLong slot) {
+    // Check slot being null for the edge case of genesis slot (i.e. slot 0)
+    if (lastAttestationCreationSlot != null && slot.compareTo(lastAttestationCreationSlot) <= 0) {
+      return;
+    }
+
+    lastAttestationCreationSlot = slot;
     notifyDutyQueue(DutyQueue::onAttestationCreationDue, slot);
   }
 
@@ -83,6 +89,9 @@ public class DutyScheduler implements ValidatorTimingChannel {
 
   @Override
   public void onBlockImportedForSlot(final UnsignedLong slot) {
+    // Create attestations for the current slot as soon as the block is imported.
+    onAttestationCreationDue(slot);
+
     // From an epoch x we can calculate duties for epoch's x and x+1 and importing more blocks from
     // epoch x won't change those duties.
     // However, importing a block from epoch x-1 will change the duties for x+1 (2 epochs after the
@@ -108,11 +117,12 @@ public class DutyScheduler implements ValidatorTimingChannel {
   }
 
   private void removePriorEpochs(final UnsignedLong epochNumber) {
-    final SortedMap<UnsignedLong, DutyQueue> toRemove = dutiesByEpoch.headMap(epochNumber);
+    final NavigableMap<UnsignedLong, DutyQueue> toRemove =
+        dutiesByEpoch.headMap(epochNumber, false);
     removeEpochs(toRemove);
   }
 
-  private void removeEpochs(final SortedMap<UnsignedLong, DutyQueue> toRemove) {
+  private void removeEpochs(final NavigableMap<UnsignedLong, DutyQueue> toRemove) {
     toRemove.values().forEach(DutyQueue::cancel);
     toRemove.clear();
   }

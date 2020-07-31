@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -24,12 +26,13 @@ import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordBuilder;
 import org.ethereum.beacon.discovery.schema.NodeRecordInfo;
 import org.ethereum.beacon.discovery.schema.NodeStatus;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrUtil;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 
 public class DiscV5Service extends Service implements DiscoveryService {
 
@@ -96,7 +99,8 @@ public class DiscV5Service extends Service implements DiscoveryService {
         new DiscoveryPeer(
             (Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1),
             nodeRecord.getUdpAddress().get(),
-            Optional.empty());
+            Optional.empty(),
+            new Bitvector(ATTESTATION_SUBNET_COUNT));
 
     return Optional.of(MultiaddrUtil.fromDiscoveryPeerAsUdp(discoveryPeer).toString());
   }

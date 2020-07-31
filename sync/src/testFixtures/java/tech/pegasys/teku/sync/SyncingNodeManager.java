@@ -24,6 +24,8 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.events.EventChannels;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilder;
@@ -37,7 +39,6 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class SyncingNodeManager {
@@ -64,11 +65,7 @@ public class SyncingNodeManager {
   }
 
   public static SyncingNodeManager create(
-      Eth2NetworkFactory networkFactory, final List<BLSKeyPair> validatorKeys) throws Exception {
-    return create(networkFactory, validatorKeys, c -> {});
-  }
-
-  public static SyncingNodeManager create(
+      final AsyncRunner asyncRunner,
       Eth2NetworkFactory networkFactory,
       final List<BLSKeyPair> validatorKeys,
       Consumer<Eth2P2PNetworkBuilder> configureNetwork)
@@ -94,7 +91,7 @@ public class SyncingNodeManager {
     final FutureItems<SignedBeaconBlock> futureBlocks =
         new FutureItems<>(SignedBeaconBlock::getSlot);
     final FetchRecentBlocksService recentBlockFetcher =
-        FetchRecentBlocksService.create(eth2Network, pendingBlocks);
+        FetchRecentBlocksService.create(asyncRunner, eth2Network, pendingBlocks);
     BlockManager blockManager =
         BlockManager.create(
             eventBus,
@@ -104,7 +101,9 @@ public class SyncingNodeManager {
             recentChainData,
             blockImporter);
 
-    SyncManager syncManager = SyncManager.create(eth2Network, recentChainData, blockImporter);
+    SyncManager syncManager =
+        SyncManager.create(
+            asyncRunner, eth2Network, recentChainData, blockImporter, new NoOpMetricsSystem());
     SyncService syncService = new DefaultSyncService(blockManager, syncManager, recentChainData);
 
     eventChannels

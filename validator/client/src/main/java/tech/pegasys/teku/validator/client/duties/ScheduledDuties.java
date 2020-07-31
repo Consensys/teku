@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.client.Validator;
 
 public class ScheduledDuties {
@@ -46,10 +46,12 @@ public class ScheduledDuties {
       final UnsignedLong slot,
       final Validator validator,
       final int attestationCommitteeIndex,
-      final int attestationCommitteePosition) {
+      final int attestationCommitteePosition,
+      final int validatorIndex) {
     return attestationProductionDuties
         .computeIfAbsent(slot, dutyFactory::createAttestationProductionDuty)
-        .addValidator(validator, attestationCommitteeIndex, attestationCommitteePosition);
+        .addValidator(
+            validator, attestationCommitteeIndex, attestationCommitteePosition, validatorIndex);
   }
 
   public synchronized void scheduleAggregationDuties(
@@ -97,7 +99,7 @@ public class ScheduledDuties {
 
   private void discardDutiesBeforeSlot(
       final NavigableMap<UnsignedLong, ? extends Duty> duties, final UnsignedLong slot) {
-    duties.subMap(UnsignedLong.ZERO, slot).clear();
+    duties.subMap(UnsignedLong.ZERO, true, slot, false).clear();
   }
 
   public int countDuties() {

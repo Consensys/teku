@@ -16,7 +16,7 @@ package tech.pegasys.teku.pow;
 import com.google.common.primitives.UnsignedLong;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface Eth1Provider {
 

@@ -26,11 +26,11 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.events.Subscribers;
 
 public class BlockImporter {
@@ -57,57 +57,63 @@ public class BlockImporter {
   }
 
   @CheckReturnValue
-  public BlockImportResult importBlock(SignedBeaconBlock block) {
+  public SafeFuture<BlockImportResult> importBlock(SignedBeaconBlock block) {
     LOG.trace("Import block at slot {}: {}", block.getMessage().getSlot(), block);
-    try {
-      if (recentChainData.containsBlock(block.getMessage().hash_tree_root())) {
-        LOG.trace(
-            "Importing known block {}.  Return successful result without re-processing.",
-            block.getMessage().hash_tree_root());
-        return BlockImportResult.knownBlock(block);
-      }
-
-      BlockImportResult result = forkChoice.onBlock(block);
-      if (!result.isSuccessful()) {
-        LOG.trace(
-            "Failed to import block for reason {}: {}",
-            result.getFailureReason(),
-            block.getMessage());
-        return result;
-      }
-      LOG.trace("Successfully imported block {}", block.getMessage().hash_tree_root());
-
-      final Optional<BlockProcessingRecord> record = result.getBlockProcessingRecord();
-      eventBus.post(new ImportedBlockEvent(block));
-      notifyBlockOperationSubscribers(block);
-      record.ifPresent(eventBus::post);
-
-      return result;
-    } catch (Exception e) {
-      LOG.error("Internal error while importing block: " + block.getMessage(), e);
-      return BlockImportResult.internalError(e);
+    if (recentChainData.containsBlock(block.getMessage().hash_tree_root())) {
+      LOG.trace(
+          "Importing known block {}.  Return successful result without re-processing.",
+          block.getMessage().hash_tree_root());
+      return SafeFuture.completedFuture(BlockImportResult.knownBlock(block));
     }
-  }
 
-  public SafeFuture<BlockImportResult> importBlockAsync(final SignedBeaconBlock block) {
-    return SafeFuture.of(() -> importBlock(block));
+    return recentChainData
+        .retrieveBlockState(block.getParent_root())
+        .thenApply(
+            preState -> {
+              BlockImportResult result = forkChoice.onBlock(block, preState);
+              if (!result.isSuccessful()) {
+                LOG.trace(
+                    "Failed to import block for reason {}: {}",
+                    result.getFailureReason(),
+                    block.getMessage());
+                return result;
+              }
+              LOG.trace("Successfully imported block {}", block.getMessage().hash_tree_root());
+
+              final Optional<BlockProcessingRecord> record = result.getBlockProcessingRecord();
+              eventBus.post(new ImportedBlockEvent(block));
+              notifyBlockOperationSubscribers(block);
+              record.ifPresent(eventBus::post);
+
+              return result;
+            })
+        .exceptionally(
+            (e) -> {
+              LOG.error("Internal error while importing block: " + block.getMessage(), e);
+              return BlockImportResult.internalError(e);
+            });
   }
 
   @Subscribe
   @SuppressWarnings("unused")
   private void onBlockProposed(final ProposedBlockEvent blockProposedEvent) {
     LOG.trace("Preparing to import proposed block: {}", blockProposedEvent.getBlock());
-    final BlockImportResult result = importBlock(blockProposedEvent.getBlock());
-    if (result.isSuccessful()) {
-      LOG.trace("Successfully imported proposed block: {}", blockProposedEvent.getBlock());
-    } else {
-      LOG.error(
-          "Failed to import proposed block for reason + "
-              + result.getFailureReason()
-              + ": "
-              + blockProposedEvent,
-          result.getFailureCause().orElse(null));
-    }
+    importBlock(blockProposedEvent.getBlock())
+        .thenAccept(
+            (result) -> {
+              if (result.isSuccessful()) {
+                LOG.trace(
+                    "Successfully imported proposed block: {}", blockProposedEvent.getBlock());
+              } else {
+                LOG.error(
+                    "Failed to import proposed block for reason + "
+                        + result.getFailureReason()
+                        + ": "
+                        + blockProposedEvent,
+                    result.getFailureCause().orElse(null));
+              }
+            })
+        .reportExceptions();
   }
 
   private void notifyBlockOperationSubscribers(SignedBeaconBlock block) {

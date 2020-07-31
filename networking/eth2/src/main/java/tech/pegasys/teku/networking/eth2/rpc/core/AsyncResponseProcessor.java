@@ -19,8 +19,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 class AsyncResponseProcessor<TResponse> {
   private static final Logger LOG = LogManager.getLogger();
@@ -105,7 +105,7 @@ class AsyncResponseProcessor<TResponse> {
         .runAsync(
             () -> {
               LOG.trace("Send response to response stream: {}", response);
-              responseStream.respond(response);
+              return responseStream.respond(response);
             })
         .exceptionally(
             (err) -> {

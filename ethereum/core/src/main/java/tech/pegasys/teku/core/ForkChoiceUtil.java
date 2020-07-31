@@ -25,18 +25,20 @@ import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.primitives.UnsignedLong;
 import java.time.Instant;
+import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.TreeMap;
+import java.util.function.Consumer;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
-import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -58,6 +60,10 @@ public class ForkChoiceUtil {
 
   public static UnsignedLong getCurrentSlot(UnsignedLong currentTime, UnsignedLong genesisTime) {
     return currentTime.minus(genesisTime).dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
+  }
+
+  public static UnsignedLong getSlotStartTime(UnsignedLong slotNumber, UnsignedLong genesisTime) {
+    return genesisTime.plus(slotNumber.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
   }
 
   public static UnsignedLong get_current_slot(ReadOnlyStore store, boolean useUnixTime) {
@@ -82,7 +88,7 @@ public class ForkChoiceUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.1/specs/phase0/fork-choice.md#get_ancestor</a>
    */
-  private static Optional<Bytes32> get_ancestor(
+  public static Optional<Bytes32> get_ancestor(
       ForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UnsignedLong slot) {
     Bytes32 parentRoot = root;
     Optional<UnsignedLong> blockSlot = forkChoiceStrategy.blockSlot(root);
@@ -91,6 +97,42 @@ public class ForkChoiceUtil {
       blockSlot = forkChoiceStrategy.blockSlot(parentRoot);
     }
     return blockSlot.isPresent() ? Optional.of(parentRoot) : Optional.empty();
+  }
+
+  public static NavigableMap<UnsignedLong, Bytes32> getAncestors(
+      ForkChoiceStrategy forkChoiceStrategy,
+      Bytes32 root,
+      UnsignedLong startSlot,
+      UnsignedLong step,
+      UnsignedLong count) {
+    final NavigableMap<UnsignedLong, Bytes32> roots = new TreeMap<>();
+    // minus(ONE) because the start block is included
+    final UnsignedLong endSlot = startSlot.plus(step.times(count)).minus(UnsignedLong.ONE);
+    Bytes32 parentRoot = root;
+    Optional<UnsignedLong> parentSlot = forkChoiceStrategy.blockSlot(parentRoot);
+    while (parentSlot.isPresent() && parentSlot.get().compareTo(startSlot) > 0) {
+      maybeAddRoot(startSlot, step, roots, endSlot, parentRoot, parentSlot);
+      parentRoot = forkChoiceStrategy.blockParentRoot(parentRoot).orElseThrow();
+      parentSlot = forkChoiceStrategy.blockSlot(parentRoot);
+    }
+    maybeAddRoot(startSlot, step, roots, endSlot, parentRoot, parentSlot);
+    return roots;
+  }
+
+  private static void maybeAddRoot(
+      final UnsignedLong startSlot,
+      final UnsignedLong step,
+      final NavigableMap<UnsignedLong, Bytes32> roots,
+      final UnsignedLong endSlot,
+      final Bytes32 root,
+      final Optional<UnsignedLong> maybeSlot) {
+    maybeSlot.ifPresent(
+        slot -> {
+          if (slot.compareTo(endSlot) <= 0
+              && slot.minus(startSlot).mod(step).equals(UnsignedLong.ZERO)) {
+            roots.put(slot, root);
+          }
+        });
   }
 
   /*
@@ -154,7 +196,10 @@ public class ForkChoiceUtil {
   /**
    * @param store
    * @param signed_block
+   * @param maybePreState
    * @param st
+   * @param forkChoiceStrategy
+   * @param beaconStateConsumer
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_block</a>
    */
@@ -162,24 +207,26 @@ public class ForkChoiceUtil {
   public static BlockImportResult on_block(
       final MutableStore store,
       final SignedBeaconBlock signed_block,
+      Optional<BeaconState> maybePreState,
       final StateTransition st,
-      final ForkChoiceStrategy forkChoiceStrategy) {
+      final ForkChoiceStrategy forkChoiceStrategy,
+      final Consumer<BeaconState> beaconStateConsumer) {
     final BeaconBlock block = signed_block.getMessage();
-    final BeaconState preState = store.getBlockState(block.getParent_root());
 
     // Return early if precondition checks fail;
     final Optional<BlockImportResult> maybeFailure =
-        checkOnBlockConditions(block, preState, store, forkChoiceStrategy);
+        checkOnBlockConditions(block, maybePreState.orElse(null), store, forkChoiceStrategy);
     if (maybeFailure.isPresent()) {
       return maybeFailure.get();
     }
+    final BeaconState preState = maybePreState.orElseThrow();
 
     // Make a copy of the state to avoid mutability issues
     BeaconState state;
 
     // Check the block is valid and compute the post-state
     try {
-      state = st.initiate(preState, signed_block, true);
+      state = st.initiate(preState, signed_block, true, beaconStateConsumer);
     } catch (StateTransitionException e) {
       return BlockImportResult.failedStateTransition(e);
     }
@@ -190,29 +237,18 @@ public class ForkChoiceUtil {
     // Update justified checkpoint
     final Checkpoint justifiedCheckpoint = state.getCurrent_justified_checkpoint();
     if (justifiedCheckpoint.getEpoch().compareTo(store.getJustifiedCheckpoint().getEpoch()) > 0) {
-      try {
-        if (justifiedCheckpoint.getEpoch().compareTo(store.getBestJustifiedCheckpoint().getEpoch())
-            > 0) {
-          storeCheckpointState(store, st, justifiedCheckpoint);
-          store.setBestJustifiedCheckpoint(justifiedCheckpoint);
-        }
-        if (should_update_justified_checkpoint(store, justifiedCheckpoint, forkChoiceStrategy)) {
-          storeCheckpointState(store, st, justifiedCheckpoint);
-          store.setJustifiedCheckpoint(justifiedCheckpoint);
-        }
-      } catch (SlotProcessingException | EpochProcessingException e) {
-        return BlockImportResult.failedStateTransition(e);
+      if (justifiedCheckpoint.getEpoch().compareTo(store.getBestJustifiedCheckpoint().getEpoch())
+          > 0) {
+        store.setBestJustifiedCheckpoint(justifiedCheckpoint);
+      }
+      if (should_update_justified_checkpoint(store, justifiedCheckpoint, forkChoiceStrategy)) {
+        store.setJustifiedCheckpoint(justifiedCheckpoint);
       }
     }
 
     // Update finalized checkpoint
     final Checkpoint finalizedCheckpoint = state.getFinalized_checkpoint();
     if (finalizedCheckpoint.getEpoch().compareTo(store.getFinalizedCheckpoint().getEpoch()) > 0) {
-      try {
-        storeCheckpointState(store, st, finalizedCheckpoint);
-      } catch (SlotProcessingException | EpochProcessingException e) {
-        return BlockImportResult.failedStateTransition(e);
-      }
       store.setFinalizedCheckpoint(finalizedCheckpoint);
       // Update justified if new justified is later than store justified
       // or if store justified is not in chain with finalized checkpoint
@@ -222,12 +258,7 @@ public class ForkChoiceUtil {
                   .compareTo(store.getJustifiedCheckpoint().getEpoch())
               > 0
           || !isFinalizedAncestorOfJustified(forkChoiceStrategy, store)) {
-        try {
-          storeCheckpointState(store, st, finalizedCheckpoint);
-          store.setJustifiedCheckpoint(state.getCurrent_justified_checkpoint());
-        } catch (SlotProcessingException | EpochProcessingException e) {
-          return BlockImportResult.failedStateTransition(e);
-        }
+        store.setJustifiedCheckpoint(state.getCurrent_justified_checkpoint());
       }
     }
 
@@ -309,7 +340,7 @@ public class ForkChoiceUtil {
    *
    * @param store
    * @param validateableAttestation
-   * @param stateTransition
+   * @param maybeTargetState The state corresponding to the attestation target
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_attestation</a>
    */
@@ -317,15 +348,13 @@ public class ForkChoiceUtil {
   public static AttestationProcessingResult on_attestation(
       final MutableStore store,
       final ValidateableAttestation validateableAttestation,
-      final StateTransition stateTransition,
+      final Optional<BeaconState> maybeTargetState,
       final ForkChoiceStrategy forkChoiceStrategy) {
 
     Attestation attestation = validateableAttestation.getAttestation();
-    Checkpoint target = attestation.getData().getTarget();
 
     return validateOnAttestation(store, attestation, forkChoiceStrategy)
-        .ifSuccessful(() -> storeTargetCheckpointState(store, stateTransition, target))
-        .ifSuccessful(() -> indexAndValidateAttestation(store, validateableAttestation, target))
+        .ifSuccessful(() -> indexAndValidateAttestation(validateableAttestation, maybeTargetState))
         .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation))
         .ifSuccessful(
             () -> {
@@ -339,47 +368,40 @@ public class ForkChoiceUtil {
   /**
    * Returns the indexed attestation if attestation is valid, else, returns an empty optional.
    *
-   * @param store
    * @param attestation
-   * @param target
+   * @param maybeTargetState The state corresponding to the attestation target, if it is available
    * @return
    */
   private static AttestationProcessingResult indexAndValidateAttestation(
-      MutableStore store, ValidateableAttestation attestation, Checkpoint target) {
-    BeaconState target_state = store.getCheckpointState(target);
-
-    // Get state at the `target` to validate attestation and calculate the committees
-    IndexedAttestation indexed_attestation;
+      ValidateableAttestation attestation, Optional<BeaconState> maybeTargetState) {
+    BeaconState targetState;
     try {
-      indexed_attestation = get_indexed_attestation(target_state, attestation.getAttestation());
+      if (maybeTargetState.isEmpty()) {
+        return AttestationProcessingResult.UNKNOWN_BLOCK;
+      }
+      targetState = maybeTargetState.get();
+    } catch (final InvalidCheckpointException e) {
+      LOG.debug("on_attestation: Attestation target checkpoint is invalid", e);
+      return AttestationProcessingResult.invalid("Invalid target checkpoint: " + e.getMessage());
+    }
+
+    IndexedAttestation indexedAttestation;
+    try {
+      indexedAttestation = get_indexed_attestation(targetState, attestation.getAttestation());
     } catch (IllegalArgumentException e) {
       LOG.debug("on_attestation: Attestation is not valid: ", e);
       return AttestationProcessingResult.invalid(e.getMessage());
     }
-    return is_valid_indexed_attestation(target_state, indexed_attestation)
+    return is_valid_indexed_attestation(targetState, indexedAttestation)
         .ifSuccessful(
             () -> {
-              attestation.setIndexedAttestation(indexed_attestation);
+              attestation.setIndexedAttestation(indexedAttestation);
               return SUCCESSFUL;
             });
   }
 
-  private static AttestationProcessingResult storeTargetCheckpointState(
-      final MutableStore store, final StateTransition stateTransition, final Checkpoint target) {
-    // Store target checkpoint state if not yet seen
-    try {
-      storeCheckpointState(store, stateTransition, target);
-    } catch (SlotProcessingException | EpochProcessingException e) {
-      LOG.error(
-          "on_attestation: Unexpected state transition error when computing checkpoint state. ", e);
-      return AttestationProcessingResult.invalid(
-          "Attestation failed state transition: " + e.getMessage());
-    }
-    return SUCCESSFUL;
-  }
-
   private static AttestationProcessingResult validateOnAttestation(
-      final MutableStore store,
+      final ReadOnlyStore store,
       final Attestation attestation,
       final ForkChoiceStrategy forkChoiceStrategy) {
     final Checkpoint target = attestation.getData().getTarget();
@@ -419,11 +441,20 @@ public class ForkChoiceUtil {
           "Attestations must not be for blocks in the future. If not, the attestation should not be considered");
     }
 
+    // LMD vote must be consistent with FFG vote target
+    final UnsignedLong target_slot = compute_start_slot_at_epoch(target.getEpoch());
+    if (get_ancestor(forkChoiceStrategy, attestation.getData().getBeacon_block_root(), target_slot)
+        .map(ancestorRoot -> !ancestorRoot.equals(target.getRoot()))
+        .orElse(true)) {
+      return AttestationProcessingResult.invalid(
+          "LMD vote must be consistent with FFG vote target");
+    }
+
     return SUCCESSFUL;
   }
 
   private static AttestationProcessingResult checkIfAttestationShouldBeSavedForFuture(
-      MutableStore store, Attestation attestation) {
+      ReadOnlyStore store, Attestation attestation) {
 
     // Attestations can only affect the fork choice of subsequent slots.
     // Delay consideration in the fork choice until their slot is in the past.
@@ -438,21 +469,5 @@ public class ForkChoiceUtil {
       return AttestationProcessingResult.SAVED_FOR_FUTURE;
     }
     return SUCCESSFUL;
-  }
-
-  private static void storeCheckpointState(
-      final MutableStore store, final StateTransition stateTransition, final Checkpoint checkpoint)
-      throws SlotProcessingException, EpochProcessingException {
-    if (!store.containsCheckpointState(checkpoint)) {
-      final BeaconState checkpointBlockState = store.getBlockState(checkpoint.getRoot());
-      final BeaconState checkpointState;
-      if (checkpoint.getEpochStartSlot().equals(checkpointBlockState.getSlot())) {
-        checkpointState = checkpointBlockState;
-      } else {
-        checkpointState =
-            stateTransition.process_slots(checkpointBlockState, checkpoint.getEpochStartSlot());
-      }
-      store.putCheckpointState(checkpoint, checkpointState);
-    }
   }
 }

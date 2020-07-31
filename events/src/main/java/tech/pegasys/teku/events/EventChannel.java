@@ -20,46 +20,46 @@ import static tech.pegasys.teku.events.LoggingChannelExceptionHandler.LOGGING_EX
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
 
-public class EventChannel<T> {
+class EventChannel<T> {
 
-  private final T publisher;
+  private final Class<T> channelInterface;
   private final EventDeliverer<T> invoker;
   private final boolean allowMultipleSubscribers;
   private final AtomicBoolean hasSubscriber = new AtomicBoolean(false);
 
   private EventChannel(
-      final T publisher, final EventDeliverer<T> invoker, final boolean allowMultipleSubscribers) {
-    this.publisher = publisher;
+      final Class<T> channelInterface,
+      final EventDeliverer<T> invoker,
+      final boolean allowMultipleSubscribers) {
+    this.channelInterface = channelInterface;
     this.invoker = invoker;
     this.allowMultipleSubscribers = allowMultipleSubscribers;
   }
 
-  public static <T> EventChannel<T> create(
+  static <T> EventChannel<T> create(
       final Class<T> channelInterface, final MetricsSystem metricsSystem) {
     return create(channelInterface, LOGGING_EXCEPTION_HANDLER, metricsSystem);
   }
 
-  public static <T> EventChannel<T> create(
+  static <T> EventChannel<T> create(
       final Class<T> channelInterface,
       final ChannelExceptionHandler exceptionHandler,
       final MetricsSystem metricsSystem) {
     return create(channelInterface, new DirectEventDeliverer<>(exceptionHandler, metricsSystem));
   }
 
-  public static <T> EventChannel<T> createAsync(
-      final Class<T> channelInterface, final MetricsSystem metricsSystem) {
-    return createAsync(channelInterface, LOGGING_EXCEPTION_HANDLER, metricsSystem);
-  }
-
-  public static <T> EventChannel<T> createAsync(
+  static <T> EventChannel<T> createAsync(
       final Class<T> channelInterface,
       final ChannelExceptionHandler exceptionHandler,
       final MetricsSystem metricsSystem) {
@@ -106,15 +106,14 @@ public class EventChannel<T> {
     final boolean hasReturnValues =
         Stream.of(channelInterface.getMethods())
             .anyMatch(method -> hasAllowedAsyncReturnValue(method.getReturnType()));
-    @SuppressWarnings("unchecked")
-    final T publisher =
-        (T)
-            Proxy.newProxyInstance(
-                channelInterface.getClassLoader(),
-                new Class<?>[] {channelInterface},
-                eventDeliverer);
+    if (hasReturnValues && VoidReturningChannelInterface.class.isAssignableFrom(channelInterface)) {
+      throw new IllegalArgumentException(
+          "Channel interface extends "
+              + VoidReturningChannelInterface.class.getSimpleName()
+              + " but has non-void return types");
+    }
 
-    return new EventChannel<>(publisher, eventDeliverer, !hasReturnValues);
+    return new EventChannel<>(channelInterface, eventDeliverer, !hasReturnValues);
   }
 
   private static boolean isReturnTypeAllowed(final Method method) {
@@ -130,11 +129,18 @@ public class EventChannel<T> {
         && returnType.isAssignableFrom(SafeFuture.class);
   }
 
-  public T getPublisher() {
+  T getPublisher(final Optional<AsyncRunner> responseRunner) {
+    @SuppressWarnings("unchecked")
+    final T publisher =
+        (T)
+            Proxy.newProxyInstance(
+                channelInterface.getClassLoader(),
+                new Class<?>[] {channelInterface},
+                (proxy, method, args) -> invoker.invoke(proxy, method, args, responseRunner));
     return publisher;
   }
 
-  public void subscribe(final T listener) {
+  void subscribe(final T listener) {
     subscribeMultithreaded(listener, 1);
   }
 
@@ -150,7 +156,7 @@ public class EventChannel<T> {
    * @param listener the listener to notify of events
    * @param requestedParallelism the number of threads to use to process events
    */
-  public void subscribeMultithreaded(final T listener, final int requestedParallelism) {
+  void subscribeMultithreaded(final T listener, final int requestedParallelism) {
     checkArgument(requestedParallelism > 0, "Number of threads must be at least 1");
     if (!hasSubscriber.compareAndSet(false, true) && !allowMultipleSubscribers) {
       throw new IllegalStateException("Only one subscriber is supported by this event channel");

@@ -20,6 +20,7 @@ import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class TekuConfigurationBuilder {
+
   private static final boolean DEFAULT_P2P_SNAPPY_ENABLED = false;
   private String constants;
   private Integer startupTargetPeerCount;
@@ -69,12 +70,18 @@ public class TekuConfigurationBuilder {
   private List<String> metricsHostAllowlist;
   private String dataPath;
   private StateStorageMode dataStorageMode;
+  private String dataStorageCreateDbVersion;
+  private long dataStorageFrequency;
   private int restApiPort;
   private boolean restApiDocsEnabled;
   private boolean restApiEnabled;
   private String restApiInterface;
   private List<String> restApiHostAllowlist;
   private NetworkDefinition network;
+  private String remoteValidatorApiInterface;
+  private int remoteValidatorApiPort;
+  private int remoteValidatorApiMaxSubscribers;
+  private boolean remoteValidatorApiEnabled;
   private Bytes32 graffiti;
 
   public TekuConfigurationBuilder setConstants(final String constants) {
@@ -331,6 +338,17 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
+  public TekuConfigurationBuilder setDataStorageFrequency(final long dataStorageFrequency) {
+    this.dataStorageFrequency = dataStorageFrequency;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setDataStorageCreateDbVersion(
+      final String dataStorageCreateDbVersion) {
+    this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
+    return this;
+  }
+
   public TekuConfigurationBuilder setRestApiPort(final int restApiPort) {
     this.restApiPort = restApiPort;
     return this;
@@ -353,6 +371,26 @@ public class TekuConfigurationBuilder {
 
   public TekuConfigurationBuilder setRestApiHostAllowlist(final List<String> restApiHostAllowlist) {
     this.restApiHostAllowlist = restApiHostAllowlist;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setRemoteValidatorApiInterface(final String host) {
+    this.remoteValidatorApiInterface = host;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setRemoteValidatorApiPort(final int port) {
+    this.remoteValidatorApiPort = port;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setRemoteValidatorApiMaxSubscribers(final int maxSubscribers) {
+    this.remoteValidatorApiMaxSubscribers = maxSubscribers;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setRemoteValidatorApiEnabled(final boolean enabled) {
+    this.remoteValidatorApiEnabled = enabled;
     return this;
   }
 
@@ -437,11 +475,17 @@ public class TekuConfigurationBuilder {
         metricsHostAllowlist,
         dataPath,
         dataStorageMode,
+        dataStorageFrequency,
+        dataStorageCreateDbVersion,
         restApiPort,
         restApiDocsEnabled,
         restApiEnabled,
         restApiInterface,
         restApiHostAllowlist,
+        remoteValidatorApiInterface,
+        remoteValidatorApiPort,
+        remoteValidatorApiMaxSubscribers,
+        remoteValidatorApiEnabled,
         graffiti);
   }
 

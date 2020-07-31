@@ -14,8 +14,9 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.util.Waiter.ensureConditionRemainsMet;
-import static tech.pegasys.teku.util.Waiter.waitFor;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
+import static tech.pegasys.teku.infrastructure.async.Waiter.ensureConditionRemainsMet;
+import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -34,10 +35,10 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
-import tech.pegasys.teku.util.Waiter;
 import tech.pegasys.teku.util.events.Subscribers;
 
 public class GossipMessageHandlerIntegrationTest {
@@ -80,7 +81,7 @@ public class GossipMessageHandlerIntegrationTest {
           assertThat(node2.network().getPeerCount()).isEqualTo(2);
           assertThat(node3.network().getPeerCount()).isEqualTo(1);
         });
-    // TODO: debug this - we shouldn't have to wait here
+    // TODO (#1855): debug this - we shouldn't have to wait here
     Thread.sleep(2000);
 
     // Propagate block from network 1
@@ -130,7 +131,7 @@ public class GossipMessageHandlerIntegrationTest {
           assertThat(node3.network().getPeerCount()).isEqualTo(1);
         });
 
-    // TODO: debug this - we shouldn't have to wait here
+    // TODO (#1855): debug this - we shouldn't have to wait here
     Thread.sleep(2000);
 
     // Propagate invalid block from network 1
@@ -240,12 +241,11 @@ public class GossipMessageHandlerIntegrationTest {
         ValidateableAttestation.fromAttestation(
             attestationGenerator.validAttestation(bestBlockAndState));
 
-    node1
-        .network()
-        .subscribeToAttestationSubnetId(validAttestation.getData().getIndex().intValue());
-    node2
-        .network()
-        .subscribeToAttestationSubnetId(validAttestation.getData().getIndex().intValue());
+    final int subnetId =
+        computeSubnetForAttestation(
+            bestBlockAndState.getState(), validAttestation.getAttestation());
+    node1.network().subscribeToAttestationSubnetId(subnetId);
+    node2.network().subscribeToAttestationSubnetId(subnetId);
 
     waitForTopicRegistration();
 
@@ -303,12 +303,11 @@ public class GossipMessageHandlerIntegrationTest {
         ValidateableAttestation.fromAttestation(
             attestationGenerator.validAttestation(bestBlockAndState));
 
-    node1
-        .network()
-        .subscribeToAttestationSubnetId(validAttestation.getData().getIndex().intValue());
-    node2
-        .network()
-        .subscribeToAttestationSubnetId(validAttestation.getData().getIndex().intValue());
+    final int subnetId =
+        computeSubnetForAttestation(
+            bestBlockAndState.getState(), validAttestation.getAttestation());
+    node1.network().subscribeToAttestationSubnetId(subnetId);
+    node2.network().subscribeToAttestationSubnetId(subnetId);
 
     waitForTopicRegistration();
 
@@ -319,12 +318,8 @@ public class GossipMessageHandlerIntegrationTest {
     assertThat(node2attestations.size()).isEqualTo(1);
     assertThat(node2attestations.get(0)).isEqualTo(validAttestation);
 
-    node1
-        .network()
-        .unsubscribeFromAttestationSubnetId(validAttestation.getData().getIndex().intValue());
-    node2
-        .network()
-        .unsubscribeFromAttestationSubnetId(validAttestation.getData().getIndex().intValue());
+    node1.network().unsubscribeFromAttestationSubnetId(subnetId);
+    node2.network().unsubscribeFromAttestationSubnetId(subnetId);
 
     waitForTopicDeregistration();
 

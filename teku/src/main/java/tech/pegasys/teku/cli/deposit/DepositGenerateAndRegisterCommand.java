@@ -25,9 +25,8 @@ import org.jetbrains.annotations.NotNull;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
-import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.deposit.GenerateAction.ValidatorKeys;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 
 @Command(
@@ -48,13 +47,7 @@ public class DepositGenerateAndRegisterCommand implements Runnable {
 
   @Mixin private RegisterParams registerParams;
   @Mixin private GenerateParams generateParams;
-
-  @Option(
-      names = {"--Xconfirm-enabled"},
-      arity = "1",
-      defaultValue = "true",
-      hidden = true)
-  private boolean displayConfirmation = true;
+  @Mixin private VerboseOutputParam verboseOutputParam;
 
   public DepositGenerateAndRegisterCommand() {
     this.shutdownFunction =
@@ -66,19 +59,20 @@ public class DepositGenerateAndRegisterCommand implements Runnable {
       final Consumer<Integer> shutdownFunction,
       final RegisterParams registerParams,
       final GenerateParams generateParams,
-      final boolean displayConfirmation) {
+      final VerboseOutputParam verboseOutputParam) {
     this.shutdownFunction = shutdownFunction;
     this.registerParams = registerParams;
     this.generateParams = generateParams;
-    this.displayConfirmation = displayConfirmation;
+    this.verboseOutputParam = verboseOutputParam;
   }
 
   @Override
   public void run() {
-    final GenerateAction generateAction = generateParams.createGenerateAction(displayConfirmation);
+    final GenerateAction generateAction =
+        generateParams.createGenerateAction(verboseOutputParam.isVerboseOutputEnabled());
 
     try (final RegisterAction registerAction =
-        registerParams.createRegisterAction(displayConfirmation)) {
+        registerParams.createRegisterAction(verboseOutputParam.isVerboseOutputEnabled())) {
       registerAction.displayConfirmation(generateParams.getValidatorCount());
       final List<SafeFuture<TransactionReceipt>> transactionReceipts =
           generateAction

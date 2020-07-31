@@ -14,23 +14,30 @@
 package tech.pegasys.teku.statetransition.events.attestation;
 
 import com.google.common.primitives.UnsignedLong;
-import org.apache.tuweni.bytes.Bytes32;
+import java.util.Objects;
 
 public class BroadcastAttestationEvent {
 
-  Bytes32 headBlockRoot;
-  UnsignedLong nodeSlot;
+  private final UnsignedLong nodeSlot;
 
-  public BroadcastAttestationEvent(Bytes32 headBlockRoot, UnsignedLong nodeSlot) {
-    this.headBlockRoot = headBlockRoot;
+  public BroadcastAttestationEvent(final UnsignedLong nodeSlot) {
     this.nodeSlot = nodeSlot;
-  }
-
-  public Bytes32 getHeadBlockRoot() {
-    return this.headBlockRoot;
   }
 
   public UnsignedLong getNodeSlot() {
     return nodeSlot;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final BroadcastAttestationEvent that = (BroadcastAttestationEvent) o;
+    return Objects.equals(nodeSlot, that.nodeSlot);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(nodeSlot);
   }
 }

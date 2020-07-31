@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.primitives.UnsignedLong;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,8 +23,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.Cancellable;
+import tech.pegasys.teku.infrastructure.async.RootCauseExceptionHandler;
 import tech.pegasys.teku.networking.eth2.AttestationSubnetService;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
@@ -33,24 +34,21 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFa
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
-import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.Cancellable;
-import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
-import tech.pegasys.teku.util.async.RootCauseExceptionHandler;
+import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.events.Subscribers;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();
 
   private final AsyncRunner asyncRunner;
-  private final StatusMessageFactory statusMessageFactory;
+  private final Eth2PeerFactory eth2PeerFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
 
   private final Subscribers<PeerConnectedSubscriber<Eth2Peer>> connectSubscribers =
@@ -70,20 +68,21 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final CombinedChainDataClient combinedChainDataClient,
       final RecentChainData storageClient,
       final MetricsSystem metricsSystem,
+      final Eth2PeerFactory eth2PeerFactory,
       final PeerValidatorFactory peerValidatorFactory,
-      final AttestationSubnetService attestationSubnetService,
+      final StatusMessageFactory statusMessageFactory,
+      final MetadataMessagesFactory metadataMessagesFactory,
       final RpcEncoding rpcEncoding,
       final Duration eth2RpcPingInterval,
       final int eth2RpcOutstandingPingThreshold,
       Duration eth2StatusUpdateInterval) {
     this.asyncRunner = asyncRunner;
-    this.statusMessageFactory = new StatusMessageFactory(storageClient);
-    metadataMessagesFactory = new MetadataMessagesFactory();
-    attestationSubnetService.subscribeToUpdates(metadataMessagesFactory);
+    this.eth2PeerFactory = eth2PeerFactory;
     this.peerValidatorFactory = peerValidatorFactory;
+    this.metadataMessagesFactory = metadataMessagesFactory;
     this.rpcMethods =
         BeaconChainMethods.create(
-            DelayedExecutorAsyncRunner.create(),
+            asyncRunner,
             this,
             combinedChainDataClient,
             storageClient,
@@ -98,7 +97,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
 
   public static Eth2PeerManager create(
       final AsyncRunner asyncRunner,
-      final RecentChainData storageClient,
+      final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
       final MetricsSystem metricsSystem,
       final AttestationSubnetService attestationSubnetService,
@@ -106,16 +105,23 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final Duration eth2RpcPingInterval,
       final int eth2RpcOutstandingPingThreshold,
       Duration eth2StatusUpdateInterval) {
+
     final PeerValidatorFactory peerValidatorFactory =
         (peer, status) ->
-            PeerChainValidator.create(storageClient, historicalChainData, peer, status);
+            PeerChainValidator.create(
+                metricsSystem, recentChainData, historicalChainData, peer, status);
+    final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(recentChainData);
+    final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
+    attestationSubnetService.subscribeToUpdates(metadataMessagesFactory);
     return new Eth2PeerManager(
         asyncRunner,
-        new CombinedChainDataClient(storageClient, historicalChainData),
-        storageClient,
+        new CombinedChainDataClient(recentChainData, historicalChainData),
+        recentChainData,
         metricsSystem,
+        new Eth2PeerFactory(statusMessageFactory, metadataMessagesFactory),
         peerValidatorFactory,
-        attestationSubnetService,
+        statusMessageFactory,
+        metadataMessagesFactory,
         rpcEncoding,
         eth2RpcPingInterval,
         eth2RpcOutstandingPingThreshold,
@@ -130,7 +136,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     Cancellable periodicStatusUpdateTask = periodicallyUpdatePeerStatus(peer);
     Cancellable periodicPingTask = periodicallyPingPeer(peer);
     peer.subscribeDisconnect(
-        () -> {
+        (reason, locallyInitiated) -> {
           periodicStatusUpdateTask.cancel();
           periodicPingTask.cancel();
         });
@@ -158,16 +164,14 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
 
   @Override
   public void onConnect(final Peer peer) {
-    Eth2Peer eth2Peer =
-        new Eth2Peer(peer, rpcMethods, statusMessageFactory, metadataMessagesFactory);
+    Eth2Peer eth2Peer = eth2PeerFactory.create(peer, rpcMethods);
     final boolean wasAdded = connectedPeerMap.putIfAbsent(peer.getId(), eth2Peer) == null;
     if (!wasAdded) {
-      LOG.warn("Duplicate peer connection detected. Ignoring peer.");
+      LOG.debug("Duplicate peer connection detected for peer {}. Ignoring peer.", peer.getId());
       return;
     }
 
-    peer.setDisconnectRequestHandler(
-        reason -> eth2Peer.sendGoodbye(convertToEth2DisconnectReason(reason)));
+    peer.setDisconnectRequestHandler(reason -> eth2Peer.sendGoodbye(reason.getReasonCode()));
     if (peer.connectionInitiatedLocally()) {
       eth2Peer
           .sendStatus()
@@ -176,9 +180,18 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
               RootCauseExceptionHandler.builder()
                   .addCatch(
                       RpcException.class,
-                      err -> LOG.trace("Status message rejected by {}: {}", peer.getId(), err))
+                      err -> {
+                        LOG.trace("Status message rejected by {}: {}", peer.getId(), err);
+                        eth2Peer.disconnectImmediately(
+                            Optional.of(DisconnectReason.REMOTE_FAULT), true);
+                      })
                   .defaultCatch(
-                      err -> LOG.debug("Failed to send status to {}: {}", peer.getId(), err)));
+                      err -> {
+                        LOG.debug("Failed to send status to {}: {}", peer.getId(), err);
+                        eth2Peer.disconnectImmediately(Optional.empty(), true);
+                      }));
+    } else {
+      ensureStatusReceived(eth2Peer);
     }
 
     eth2Peer.subscribeInitialStatus(
@@ -196,34 +209,38 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                     error -> LOG.debug("Error while validating peer", error)));
   }
 
+  private void ensureStatusReceived(final Eth2Peer peer) {
+    asyncRunner
+        .runAfterDelay(
+            () -> {
+              if (!peer.hasStatus()) {
+                LOG.trace(
+                    "Disconnecting peer {} because initial status was not received", peer.getId());
+                peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT);
+              }
+            },
+            Constants.RESP_TIMEOUT,
+            TimeUnit.SECONDS)
+        .finish(
+            () -> {},
+            error -> {
+              LOG.error(
+                  "Error while waiting for peer {} to exchange status. Disconnecting",
+                  peer.getId());
+              peer.disconnectImmediately(Optional.of(DisconnectReason.REMOTE_FAULT), true);
+            });
+  }
+
   @VisibleForTesting
   void sendPeriodicPing(Eth2Peer peer) {
     if (peer.getOutstandingPings() >= eth2RpcOutstandingPingThreshold) {
       LOG.debug("Disconnecting the peer {} due to PING timeout.", peer.getId());
-      peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT);
+      peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE);
     } else {
       peer.sendPing()
           .finish(
               i -> LOG.trace("Periodic ping returned {} from {}", i, peer.getId()),
               t -> LOG.debug("Ping request failed for peer {}", peer.getId(), t));
-    }
-  }
-
-  private UnsignedLong convertToEth2DisconnectReason(final DisconnectReason reason) {
-    switch (reason) {
-      case TOO_MANY_PEERS:
-        return GoodbyeMessage.REASON_TOO_MANY_PEERS;
-      case SHUTTING_DOWN:
-        return GoodbyeMessage.REASON_CLIENT_SHUT_DOWN;
-      case REMOTE_FAULT:
-        return GoodbyeMessage.REASON_FAULT_ERROR;
-      case IRRELEVANT_NETWORK:
-        return GoodbyeMessage.REASON_IRRELEVANT_NETWORK;
-      case UNABLE_TO_VERIFY_NETWORK:
-        return GoodbyeMessage.REASON_UNABLE_TO_VERIFY_NETWORK;
-      default:
-        LOG.warn("Unknown disconnect reason: " + reason);
-        return GoodbyeMessage.REASON_FAULT_ERROR;
     }
   }
 

@@ -1,15 +1,15 @@
 import java.text.SimpleDateFormat
 
 plugins {
-  id 'com.diffplug.gradle.spotless' version '3.26.0'
-  id 'com.jfrog.bintray' version '1.8.4'
-  id 'com.github.ben-manes.versions' version '0.27.0'
+  id 'com.diffplug.gradle.spotless' version '4.5.1'
+  id 'com.jfrog.bintray' version '1.8.5'
+  id 'com.github.ben-manes.versions' version '0.28.0'
   id 'com.github.hierynomus.license' version '0.15.0'
-  id 'io.spring.dependency-management' version '1.0.8.RELEASE'
-  id 'net.ltgt.errorprone' version '1.1.1' apply false
+  id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+  id 'net.ltgt.errorprone' version '1.2.1' apply false
   id 'net.researchgate.release' version '2.8.1'
   id 'me.champeau.gradle.jmh' version '0.5.0' apply false
-  id 'de.undercouch.download' version '4.0.1'
+  id 'de.undercouch.download' version '4.1.0'
   id 'org.ajoberstar.grgit' version '4.0.2'
 }
 
@@ -141,6 +141,12 @@ allprojects {
       check('EqualsGetClass', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       // We use the JSR-305 annotations instead of the Google annotations.
       check('ImmutableEnumChecker', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      // Storing a lambda to avoid code duplication is not a bad thing
+      check('UnnecessaryLambda', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+
+      // We don't apply strict javadoc requirements yet
+      check('EmptyBlockTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+      check('MissingSummary', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
       check('FieldCanBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('InsecureCryptoUsage', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
@@ -212,7 +218,7 @@ allprojects {
   }
 }
 
-def refTestVersion = 'v0.11.3'
+def refTestVersion = 'v0.12.1'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
 def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/"
@@ -259,11 +265,36 @@ task cleanRefTests(dependsOn: [cleanRefTestsGeneral, cleanRefTestsMainnet, clean
 
 task deploy() {}
 
+application {
+  applicationName = "teku"
+  mainClassName = "tech.pegasys.teku.Teku"
+  applicationDefaultJvmArgs = [
+      "-Dvertx.disableFileCPResolving=true",
+      "-Dteku.home=TEKU_HOME",
+      // We shutdown log4j ourselves, as otherwise his shutdown hook runs before our own and whatever
+      // happens during shutdown is not logged.
+      "-Dlog4j.shutdownHookEnabled=false",
+      "-XX:+HeapDumpOnOutOfMemoryError",
+      // run `jcmd <PID> VM.native_memory` to check JVM native memory consumption
+      "-XX:NativeMemoryTracking=summary",
+      // 32Mb for Netty Direct ByteBuf
+      "-Dio.netty.maxDirectMemory=33554432"
+  ]
+}
+
+task autocomplete(type: JavaExec) {
+  dependsOn compileJava
+  outputs.file "build/teku.autocomplete.sh"
+
+  main = application.mainClassName
+  args "debug-tools", "generate-autocomplete", "--output", "build/teku.autocomplete.sh"
+  classpath sourceSets.main.runtimeClasspath
+}
 
 installDist { }
 
 distTar {
-  dependsOn checkLicenses
+  dependsOn checkLicenses, autocomplete
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.tar.gz')
   }
@@ -272,24 +303,10 @@ distTar {
 }
 
 distZip {
-  dependsOn checkLicenses
+  dependsOn checkLicenses, autocomplete
   doFirst {
     delete fileTree(dir: 'build/distributions', include: '*.zip')
   }
-}
-
-application {
-  applicationName = "teku"
-  mainClassName = "tech.pegasys.teku.Teku"
-  applicationDefaultJvmArgs = [
-      "-Djava.library.path=TEKU_HOME/native",
-      "-Dvertx.disableFileCPResolving=true",
-      "-Dteku.home=TEKU_HOME",
-      // We shutdown log4j ourselves, as otherwise his shutdown hook runs before our own and whatever
-      // happens during shutdown is not logged.
-      "-Dlog4j.shutdownHookEnabled=false",
-      "-XX:+HeapDumpOnOutOfMemoryError"
-  ]
 }
 
 startScripts {
@@ -358,6 +375,11 @@ subprojects {
     useJUnitPlatform()
     reports {
       junitXml.enabled = true
+    }
+    filter {
+      // Support filtering tests with the --tests option to gradle
+      // Without this the build fails if you filter out all the tests for any module
+      setFailOnNoMatchingTests(false)
     }
   }
 
@@ -574,6 +596,7 @@ distributions {
       from("./LICENSE") { into "." }
       from("build/reports/license/license-dependency.html") { into "." }
       from("libs") { into "native" }
+      from("build/teku.autocomplete.sh") { into "." }
     }
   }
 }

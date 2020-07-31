@@ -20,7 +20,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import tech.pegasys.teku.util.async.ExceptionThrowingFunction;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFunction;
 
 @SuppressWarnings("MustBeClosedChecker")
 public class ReferenceTestFinder {

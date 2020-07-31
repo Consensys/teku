@@ -14,13 +14,23 @@
 package tech.pegasys.teku.storage.api;
 
 import com.google.common.primitives.UnsignedLong;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.storage.store.StoreBuilder;
 
 public class StubStorageQueryChannel implements StorageQueryChannel {
+
+  @Override
+  public SafeFuture<Optional<StoreBuilder>> onStoreRequest() {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
 
   @Override
   public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(UnsignedLong slot) {
@@ -38,12 +48,29 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
+  public SafeFuture<Map<Bytes32, SignedBeaconBlock>> getHotBlocksByRoot(
+      final Set<Bytes32> blockRoots) {
+    return SafeFuture.completedFuture(Collections.emptyMap());
+  }
+
+  @Override
+  public SafeFuture<Optional<SlotAndBlockRoot>> getSlotAndBlockRootByStateRoot(
+      final Bytes32 stateRoot) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
   public SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(UnsignedLong slot) {
     return SafeFuture.completedFuture(Optional.empty());
   }
 
   @Override
   public SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(Bytes32 blockRoot) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<Optional<UnsignedLong>> getFinalizedSlotByStateRoot(final Bytes32 stateRoot) {
     return SafeFuture.completedFuture(Optional.empty());
   }
 }

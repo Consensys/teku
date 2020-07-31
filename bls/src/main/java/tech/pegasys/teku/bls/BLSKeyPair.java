@@ -16,7 +16,9 @@ package tech.pegasys.teku.bls;
 import com.google.common.base.MoreObjects;
 import java.security.SecureRandom;
 import java.util.Objects;
-import tech.pegasys.teku.bls.mikuli.KeyPair;
+import java.util.Random;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.impl.KeyPair;
 
 public final class BLSKeyPair {
 
@@ -28,7 +30,7 @@ public final class BLSKeyPair {
    * @return a random key pair
    */
   public static BLSKeyPair random(final SecureRandom srng) {
-    return new BLSKeyPair(KeyPair.random(srng));
+    return new BLSKeyPair(BLS.getBlsImpl().generateKeyPair(srng));
   }
 
   /**
@@ -39,7 +41,9 @@ public final class BLSKeyPair {
    * @return a keypair generated from a seed
    */
   public static BLSKeyPair random(int seed) {
-    return new BLSKeyPair(KeyPair.random(seed));
+    BLSSecretKey pseudoRandomSecretBytes =
+        BLSSecretKey.fromBytesModR(Bytes32.random(new Random(seed)));
+    return new BLSKeyPair(pseudoRandomSecretBytes);
   }
 
   private final BLSPublicKey publicKey;
@@ -70,8 +74,8 @@ public final class BLSKeyPair {
    *
    * @param keyPair a Mikuli key pair
    */
-  BLSKeyPair(KeyPair keyPair) {
-    this(new BLSPublicKey(keyPair.publicKey()), new BLSSecretKey(keyPair.secretKey()));
+  private BLSKeyPair(KeyPair keyPair) {
+    this(new BLSPublicKey(keyPair.getPublicKey()), new BLSSecretKey(keyPair.getSecretKey()));
   }
 
   public BLSPublicKey getPublicKey() {

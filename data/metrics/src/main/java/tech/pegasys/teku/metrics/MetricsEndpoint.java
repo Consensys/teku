@@ -14,7 +14,6 @@
 package tech.pegasys.teku.metrics;
 
 import static java.util.stream.Collectors.toSet;
-import static tech.pegasys.teku.util.async.SafeFuture.reportExceptions;
 
 import com.google.common.collect.ImmutableMap;
 import io.vertx.core.Vertx;
@@ -23,13 +22,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.metrics.prometheus.MetricsConfiguration;
 import org.hyperledger.besu.metrics.prometheus.MetricsService;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
-import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class MetricsEndpoint {
 
@@ -44,8 +43,8 @@ public class MetricsEndpoint {
     SUPPORTED_CATEGORIES = builder.build();
   }
 
-  public MetricsEndpoint(final TekuConfiguration tekuConfig, final Vertx vertx) {
-    final MetricsConfiguration metricsConfig = createMetricsConfiguration(tekuConfig);
+  public MetricsEndpoint(final MetricsConfig config, final Vertx vertx) {
+    final MetricsConfiguration metricsConfig = createMetricsConfiguration(config);
     metricsSystem = PrometheusMetricsSystem.init(metricsConfig);
     if (metricsConfig.isEnabled()) {
       metricsService = Optional.of(MetricsService.create(vertx, metricsConfig, metricsSystem));
@@ -54,30 +53,32 @@ public class MetricsEndpoint {
     }
   }
 
-  public void start() {
-    metricsService.ifPresent(reportExceptions(MetricsService::start));
+  public CompletableFuture<?> start() {
+    return metricsService
+        .map(MetricsService::start)
+        .orElse(CompletableFuture.completedFuture(null));
   }
 
-  public void stop() {
-    metricsService.ifPresent(reportExceptions(MetricsService::stop));
+  public CompletableFuture<?> stop() {
+    return metricsService.map(MetricsService::stop).orElse(CompletableFuture.completedFuture(null));
   }
 
   public MetricsSystem getMetricsSystem() {
     return metricsSystem;
   }
 
-  private MetricsConfiguration createMetricsConfiguration(final TekuConfiguration tekuConfig) {
+  private MetricsConfiguration createMetricsConfiguration(final MetricsConfig config) {
     return MetricsConfiguration.builder()
-        .enabled(tekuConfig.isMetricsEnabled())
-        .port(tekuConfig.getMetricsPort())
-        .host(tekuConfig.getMetricsInterface())
-        .metricCategories(getEnabledMetricCategories(tekuConfig))
-        .hostsWhitelist(tekuConfig.getMetricsHostAllowlist())
+        .enabled(config.isMetricsEnabled())
+        .port(config.getMetricsPort())
+        .host(config.getMetricsInterface())
+        .metricCategories(getEnabledMetricCategories(config))
+        .hostsWhitelist(config.getMetricsHostAllowlist())
         .build();
   }
 
-  private Set<MetricCategory> getEnabledMetricCategories(final TekuConfiguration tekuConfig) {
-    return tekuConfig.getMetricsCategories().stream()
+  private Set<MetricCategory> getEnabledMetricCategories(final MetricsConfig config) {
+    return config.getMetricsCategories().stream()
         .map(SUPPORTED_CATEGORIES::get)
         .filter(Objects::nonNull)
         .collect(toSet());

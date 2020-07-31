@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
@@ -32,14 +33,15 @@ import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationGossipManager;
-import tech.pegasys.teku.networking.eth2.gossip.AttestationSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.AttesterSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.ProposerSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
@@ -57,10 +59,10 @@ import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements Eth2Network {
 
+  private final MetricsSystem metricsSystem;
   private final DiscoveryNetwork<?> discoveryNetwork;
   private final Eth2PeerManager peerManager;
   private final EventBus eventBus;
@@ -90,6 +92,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final GossipedOperationConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
 
   public ActiveEth2Network(
+      final MetricsSystem metricsSystem,
       final DiscoveryNetwork<?> discoveryNetwork,
       final Eth2PeerManager peerManager,
       final EventBus eventBus,
@@ -104,6 +107,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
       final VerifiedBlockAttestationsSubscriptionProvider
           verifiedBlockAttestationsSubscriptionProvider) {
     super(discoveryNetwork);
+    this.metricsSystem = metricsSystem;
     this.discoveryNetwork = discoveryNetwork;
     this.peerManager = peerManager;
     this.eventBus = eventBus;
@@ -137,7 +141,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     BlockValidator blockValidator = new BlockValidator(recentChainData, new StateTransition());
     AttestationValidator attestationValidator = new AttestationValidator(recentChainData);
     SignedAggregateAndProofValidator aggregateValidator =
-        new SignedAggregateAndProofValidator(attestationValidator, recentChainData);
+        new SignedAggregateAndProofValidator(recentChainData, attestationValidator);
     final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
     VoluntaryExitValidator exitValidator =
         new VoluntaryExitValidator(
@@ -168,7 +172,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
             discoveryNetwork, gossipEncoding, forkInfo, blockValidator, eventBus);
 
     attestationGossipManager =
-        new AttestationGossipManager(gossipEncoding, attestationSubnetSubscriptions);
+        new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
 
     aggregateGossipManager =
         new AggregateGossipManager(
@@ -247,7 +251,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   @Override
   public int getPeerCount() {
-    // TODO - look into keep separate collections for pending peers / validated peers so
+    // TODO (#2403): look into keep separate collections for pending peers / validated peers so
     // we don't have to iterate over the peer list to get this count.
     return Math.toIntExact(streamPeers().count());
   }

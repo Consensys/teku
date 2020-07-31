@@ -26,7 +26,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
@@ -42,9 +42,9 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
-import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.async.StubAsyncRunner;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -340,13 +340,118 @@ class DutySchedulerTest {
 
     // Both validators should be scheduled to create an attestation in the same slot
     verify(attestationDuty)
-        .addValidator(validator1, validator1Committee, validator1CommitteePosition);
+        .addValidator(
+            validator1, validator1Committee, validator1CommitteePosition, validator1Index);
     verify(attestationDuty)
-        .addValidator(validator2, validator2Committee, validator2CommitteePosition);
+        .addValidator(
+            validator2, validator2Committee, validator2CommitteePosition, validator2Index);
 
     // Execute
     dutyScheduler.onAttestationCreationDue(attestationSlot);
     verify(attestationDuty).performDuty();
+  }
+
+  @Test
+  public void shouldScheduleAttestationDutiesWhenBlockIsImported() {
+    final UnsignedLong attestationSlot = UnsignedLong.valueOf(5);
+    final int validator1Index = 5;
+    final int validator1Committee = 3;
+    final int validator1CommitteePosition = 9;
+    final int validator2Index = 6;
+    final int validator2Committee = 4;
+    final int validator2CommitteePosition = 8;
+    final ValidatorDuties validator1Duties =
+        ValidatorDuties.withDuties(
+            VALIDATOR1_KEY,
+            validator1Index,
+            validator1Committee,
+            validator1CommitteePosition,
+            0,
+            emptyList(),
+            attestationSlot);
+    final ValidatorDuties validator2Duties =
+        ValidatorDuties.withDuties(
+            VALIDATOR2_KEY,
+            validator2Index,
+            validator2Committee,
+            validator2CommitteePosition,
+            0,
+            emptyList(),
+            attestationSlot);
+    when(validatorApiChannel.getDuties(eq(ZERO), any()))
+        .thenReturn(completedFuture(Optional.of(List.of(validator1Duties, validator2Duties))));
+
+    final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
+    when(attestationDuty.performDuty()).thenReturn(new SafeFuture<>());
+    when(dutyFactory.createAttestationProductionDuty(attestationSlot)).thenReturn(attestationDuty);
+
+    // Load duties
+    dutyScheduler.onSlot(compute_start_slot_at_epoch(ZERO));
+
+    // Both validators should be scheduled to create an attestation in the same slot
+    verify(attestationDuty)
+        .addValidator(
+            validator1, validator1Committee, validator1CommitteePosition, validator1Index);
+    verify(attestationDuty)
+        .addValidator(
+            validator2, validator2Committee, validator2CommitteePosition, validator2Index);
+
+    // Execute
+    dutyScheduler.onBlockImportedForSlot(attestationSlot);
+    verify(attestationDuty).performDuty();
+  }
+
+  @Test
+  public void shouldNotScheduleAttestationDutiesTwice() {
+    final UnsignedLong attestationSlot = UnsignedLong.valueOf(5);
+    final int validator1Index = 5;
+    final int validator1Committee = 3;
+    final int validator1CommitteePosition = 9;
+    final int validator2Index = 6;
+    final int validator2Committee = 4;
+    final int validator2CommitteePosition = 8;
+    final ValidatorDuties validator1Duties =
+        ValidatorDuties.withDuties(
+            VALIDATOR1_KEY,
+            validator1Index,
+            validator1Committee,
+            validator1CommitteePosition,
+            0,
+            emptyList(),
+            attestationSlot);
+    final ValidatorDuties validator2Duties =
+        ValidatorDuties.withDuties(
+            VALIDATOR2_KEY,
+            validator2Index,
+            validator2Committee,
+            validator2CommitteePosition,
+            0,
+            emptyList(),
+            attestationSlot);
+    when(validatorApiChannel.getDuties(eq(ZERO), any()))
+        .thenReturn(completedFuture(Optional.of(List.of(validator1Duties, validator2Duties))));
+
+    final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
+    when(attestationDuty.performDuty()).thenReturn(new SafeFuture<>());
+    when(dutyFactory.createAttestationProductionDuty(attestationSlot)).thenReturn(attestationDuty);
+
+    // Load duties
+    dutyScheduler.onSlot(compute_start_slot_at_epoch(ZERO));
+
+    // Both validators should be scheduled to create an attestation in the same slot
+    verify(attestationDuty)
+        .addValidator(
+            validator1, validator1Committee, validator1CommitteePosition, validator1Index);
+    verify(attestationDuty)
+        .addValidator(
+            validator2, validator2Committee, validator2CommitteePosition, validator2Index);
+
+    // Execute
+    dutyScheduler.onBlockImportedForSlot(attestationSlot);
+    verify(attestationDuty).performDuty();
+
+    dutyScheduler.onAttestationCreationDue(attestationSlot);
+    verifyNoMoreInteractions(attestationDuty);
   }
 
   @Test
@@ -391,7 +496,8 @@ class DutySchedulerTest {
     when(dutyFactory.createAttestationProductionDuty(attestationSlot)).thenReturn(attestationDuty);
     when(dutyFactory.createAggregationDuty(attestationSlot)).thenReturn(aggregationDuty);
     when(aggregationDuty.performDuty()).thenReturn(new SafeFuture<>());
-    when(attestationDuty.addValidator(validator1, validator1Committee, validator1CommitteePosition))
+    when(attestationDuty.addValidator(
+            validator1, validator1Committee, validator1CommitteePosition, validator1Index))
         .thenReturn(unsignedAttestationFuture);
 
     // Load duties

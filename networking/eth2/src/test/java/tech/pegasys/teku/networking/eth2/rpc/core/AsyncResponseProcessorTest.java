@@ -22,9 +22,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.rpc.core.AsyncResponseProcessor.AsyncProcessingErrorHandler;
-import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.async.StubAsyncRunner;
 
 public class AsyncResponseProcessorTest {
 
@@ -44,7 +44,8 @@ public class AsyncResponseProcessorTest {
   @BeforeEach
   public void setup() {
     responseStream
-        .expectMultipleResponses((s) -> requestProcessor.get().accept(s))
+        .expectMultipleResponses(
+            ResponseStreamListener.from((s) -> requestProcessor.get().accept(s)))
         .reportExceptions();
   }
 

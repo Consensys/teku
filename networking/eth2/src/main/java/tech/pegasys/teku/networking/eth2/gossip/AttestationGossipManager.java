@@ -13,28 +13,38 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.committeeIndexToSubnetId;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscriptions;
 
 public class AttestationGossipManager {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final GossipEncoding gossipEncoding;
   private final AttestationSubnetSubscriptions subnetSubscriptions;
 
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
+  private final Counter attestationPublishSuccessCounter;
+  private final Counter attestationPublishFailureCounter;
 
   public AttestationGossipManager(
-      final GossipEncoding gossipEncoding,
+      final MetricsSystem metricsSystem,
       final AttestationSubnetSubscriptions attestationSubnetSubscriptions) {
-    this.gossipEncoding = gossipEncoding;
     subnetSubscriptions = attestationSubnetSubscriptions;
+    final LabelledMetric<Counter> publishedAttestationCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.BEACON,
+            "published_attestation_total",
+            "Total number of attestations sent to the gossip network",
+            "result");
+    attestationPublishSuccessCounter = publishedAttestationCounter.labels("success");
+    attestationPublishFailureCounter = publishedAttestationCounter.labels("failure");
   }
 
   public void onNewAttestation(final ValidateableAttestation validateableAttestation) {
@@ -42,15 +52,22 @@ public class AttestationGossipManager {
       return;
     }
     final Attestation attestation = validateableAttestation.getAttestation();
-    final int subnetId = committeeIndexToSubnetId(attestation.getData().getIndex());
     subnetSubscriptions
-        .getChannel(subnetId)
-        .ifPresentOrElse(
-            channel -> channel.gossip(gossipEncoding.encode(attestation)),
-            () ->
-                LOG.trace(
-                    "Ignoring attestation for subnet id {}, which does not correspond to any currently assigned subnet ids.",
-                    subnetId));
+        .gossip(attestation)
+        .finish(
+            __ -> {
+              LOG.trace(
+                  "Successfully published attestation for slot {}",
+                  attestation.getData().getSlot());
+              attestationPublishSuccessCounter.inc();
+            },
+            error -> {
+              LOG.trace(
+                  "Failed to publish attestation for slot {}",
+                  attestation.getData().getSlot(),
+                  error);
+              attestationPublishFailureCounter.inc();
+            });
   }
 
   public void subscribeToSubnetId(final int subnetId) {

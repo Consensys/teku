@@ -16,12 +16,17 @@ package tech.pegasys.teku.networking.p2p.network;
 import static com.google.common.net.InetAddresses.isInetAddress;
 
 import io.libp2p.core.crypto.PrivKey;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 
 public class NetworkConfig {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final PrivKey privateKey;
   private final String networkInterface;
@@ -99,7 +104,7 @@ public class NetworkConfig {
   }
 
   public String getAdvertisedIp() {
-    return advertisedIp.orElse(networkInterface);
+    return resolveAnyLocalAddress(advertisedIp.orElse(networkInterface));
   }
 
   public int getListenPort() {
@@ -132,5 +137,20 @@ public class NetworkConfig {
 
   public WireLogsConfig getWireLogsConfig() {
     return wireLogsConfig;
+  }
+
+  private String resolveAnyLocalAddress(final String ipAddress) {
+    try {
+      final InetAddress advertisedAddress = InetAddress.getByName(ipAddress);
+      if (advertisedAddress.isAnyLocalAddress()) {
+        return InetAddress.getLocalHost().getHostAddress();
+      } else {
+        return ipAddress;
+      }
+    } catch (UnknownHostException err) {
+      LOG.error(
+          "Unable to start LibP2PNetwork due to failed attempt at obtaining host address", err);
+      return ipAddress;
+    }
   }
 }

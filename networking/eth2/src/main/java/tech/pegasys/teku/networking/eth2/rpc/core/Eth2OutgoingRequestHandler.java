@@ -13,20 +13,21 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
-import java.io.InputStream;
+import io.netty.buffer.ByteBuf;
 import java.time.Duration;
-import java.util.Optional;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcRequest;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppendedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcTimeouts.RpcTimeoutException;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
-import tech.pegasys.teku.util.async.AsyncRunner;
 
 public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
     implements RpcRequestHandler {
@@ -76,42 +77,46 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   }
 
   @Override
-  public void processInput(
-      final NodeId nodeId, final RpcStream rpcStream, final InputStream input) {
+  public void active(NodeId nodeId, RpcStream rpcStream) {}
+
+  @Override
+  public void processData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf data) {
     try {
       this.rpcStream = rpcStream;
 
-      Optional<TResponse> maybeResponse =
-          responseDecoder.decodeNextResponse(input, this::onFirstByteReceived);
-      while (!isClosed.get() && maybeResponse.isPresent()) {
-        final TResponse response = maybeResponse.get();
-        responseProcessor.processResponse(response);
-
-        final int chunksReceived = currentChunkCount.incrementAndGet();
-        if (chunksReceived >= maximumResponseChunks) {
-          // Make sure there aren't any trailing unconsumed bytes
-          if (input.available() > 0) {
-            LOG.debug(
-                "Encountered unconsumed data after last expected response chunk was processed.");
-            cancelRequest(rpcStream, RpcException.EXTRA_DATA_APPENDED);
-          } else {
-            completeRequest(rpcStream);
-          }
-          break;
-        } else {
-          ensureNextResponseArrivesInTime(rpcStream, chunksReceived, currentChunkCount);
+      if (!isClosed.get()) {
+        if (data.isReadable()) {
+          onFirstByteReceived();
         }
-
-        // Get next response
-        maybeResponse = responseDecoder.decodeNextResponse(input);
+        List<TResponse> maybeResponses = responseDecoder.decodeNextResponses(data);
+        final int chunksReceived = currentChunkCount.addAndGet(maybeResponses.size());
+        if (chunksReceived > maximumResponseChunks) {
+          throw new ExtraDataAppendedException();
+        }
+        maybeResponses.forEach(responseProcessor::processResponse);
+        if (chunksReceived == maximumResponseChunks) {
+          completeRequest(rpcStream);
+        } else {
+          if (!maybeResponses.isEmpty()) {
+            ensureNextResponseArrivesInTime(rpcStream, chunksReceived, currentChunkCount);
+          }
+        }
       }
-
-      completeRequest(rpcStream);
     } catch (final RpcException e) {
       cancelRequest(rpcStream, e);
     } catch (final Throwable t) {
       LOG.error("Encountered error while processing response", t);
       cancelRequest(rpcStream, t);
+    }
+  }
+
+  @Override
+  public void complete(NodeId nodeId, RpcStream rpcStream) {
+    try {
+      responseDecoder.complete();
+      completeRequest(rpcStream);
+    } catch (RpcException e) {
+      cancelRequest(rpcStream, e);
     }
   }
 

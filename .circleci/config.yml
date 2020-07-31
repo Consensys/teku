@@ -139,6 +139,7 @@ jobs:
             ./gradlew --no-daemon --parallel spotlessCheck
 
   unitTests:
+    parallelism: 2
     executor: medium_plus_executor
     steps:
       - prepare
@@ -148,7 +149,15 @@ jobs:
           name: UnitTests
           no_output_timeout: 20m
           command: |
-            ./gradlew --no-daemon --parallel test
+            CLASSNAMES=$(circleci tests glob "**/src/test/java/**/*.java" \
+              | sed 's@.*/src/test/java/@@' \
+              | sed 's@/@.@g' \
+              | sed 's/.\{5\}$//' \
+              | circleci tests split --split-by=timings --timings-type=classname)
+            # Format the arguments to "./gradlew test"
+            GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
+            echo "Prepared arguments for Gradle: $GRADLE_ARGS"
+            ./gradlew --no-daemon --parallel test $GRADLE_ARGS
       - capture_test_results
 
   integrationTests:
@@ -165,7 +174,7 @@ jobs:
       - capture_test_results
 
   acceptanceTests:
-    parallelism: 1
+    parallelism: 2
     executor: machine_executor
     steps:
       - prepare
@@ -294,7 +303,7 @@ jobs:
       - run:
           name: Extract OpenAPI JSON
           command: |
-            build/install/teku/bin/teku --network=mainnet --Xinterop-enabled=true --rest-api-docs-enabled=true 2>&1 > teku_output.log &
+            build/install/teku/bin/teku --network=mainnet --Xinterop-enabled=true --rest-api-enabled=true --rest-api-docs-enabled=true 2>&1 > teku_output.log &
             TEKU_PID=$!
 
             EXIT_CODE=0
@@ -426,6 +435,7 @@ workflows:
               only:
                 - master
                 - /^release-.*/
+                - /^.*-integration$/
           requires:
             - unitTests
             - integrationTests
@@ -439,6 +449,7 @@ workflows:
               only:
                 - master
                 - /^release-.*/
+                - /^.*-integration$/
           requires:
             - unitTests
             - integrationTests
@@ -451,6 +462,7 @@ workflows:
             branches:
               only:
                 - master
+                - /^release-.*/
             tags: # stable doc is published only on tags to prevent confusion on the doc site.
               only: /.*/
           requires:

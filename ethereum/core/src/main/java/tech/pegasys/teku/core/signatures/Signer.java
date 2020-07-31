@@ -21,13 +21,14 @@ import static tech.pegasys.teku.util.config.Constants.DOMAIN_SELECTION_PROOF;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
 public class Signer {
@@ -39,7 +40,7 @@ public class Signer {
 
   public SafeFuture<BLSSignature> createRandaoReveal(
       final UnsignedLong epoch, final ForkInfo forkInfo) {
-    Bytes domain =
+    Bytes32 domain =
         get_domain(
             Constants.DOMAIN_RANDAO,
             epoch,
@@ -50,7 +51,7 @@ public class Signer {
   }
 
   public SafeFuture<BLSSignature> signBlock(final BeaconBlock block, final ForkInfo forkInfo) {
-    final Bytes domain =
+    final Bytes32 domain =
         get_domain(
             Constants.DOMAIN_BEACON_PROPOSER,
             compute_epoch_at_slot(block.getSlot()),
@@ -62,7 +63,7 @@ public class Signer {
 
   public SafeFuture<BLSSignature> signAttestationData(
       final AttestationData attestationData, final ForkInfo forkInfo) {
-    final Bytes domain =
+    final Bytes32 domain =
         get_domain(
             DOMAIN_BEACON_ATTESTER,
             attestationData.getTarget().getEpoch(),
@@ -74,7 +75,7 @@ public class Signer {
 
   public SafeFuture<BLSSignature> signAggregationSlot(
       final UnsignedLong slot, final ForkInfo forkInfo) {
-    final Bytes domain =
+    final Bytes32 domain =
         get_domain(
             DOMAIN_SELECTION_PROOF,
             compute_epoch_at_slot(slot),
@@ -86,7 +87,7 @@ public class Signer {
 
   public SafeFuture<BLSSignature> signAggregateAndProof(
       final AggregateAndProof aggregateAndProof, final ForkInfo forkInfo) {
-    final Bytes domain =
+    final Bytes32 domain =
         get_domain(
             Constants.DOMAIN_AGGREGATE_AND_PROOF,
             compute_epoch_at_slot(aggregateAndProof.getAggregate().getData().getSlot()),
@@ -98,7 +99,7 @@ public class Signer {
 
   public SafeFuture<BLSSignature> signVoluntaryExit(
       final VoluntaryExit voluntaryExit, final ForkInfo forkInfo) {
-    final Bytes domain =
+    final Bytes32 domain =
         get_domain(
             Constants.DOMAIN_VOLUNTARY_EXIT,
             voluntaryExit.getEpoch(),

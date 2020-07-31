@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.util.Waiter.waitFor;
+import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;

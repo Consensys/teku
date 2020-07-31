@@ -120,6 +120,6 @@ public class SignedBeaconBlock implements SimpleOffsetSerializable, SSZContainer
     return HashTreeUtil.merkleize(
         List.of(
             message.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toSSZBytes())));
   }
 }

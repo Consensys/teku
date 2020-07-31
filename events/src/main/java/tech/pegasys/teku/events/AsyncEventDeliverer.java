@@ -26,7 +26,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
   private static final Logger LOG = LogManager.getLogger();
@@ -62,12 +63,17 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
 
   @Override
   protected <X> SafeFuture<X> deliverToWithResponse(
-      final T subscriber, final Method method, final Object[] args) {
+      final T subscriber,
+      final Method method,
+      final Object[] args,
+      final AsyncRunner responseRunner) {
     final SafeFuture<X> result = new SafeFuture<>();
     enqueueDelivery(
         subscriber,
         method,
-        () -> super.<X>deliverToWithResponse(subscriber, method, args).propagateTo(result));
+        () ->
+            super.<X>deliverToWithResponse(subscriber, method, args, responseRunner)
+                .propagateToAsync(result, responseRunner));
     return result;
   }
 

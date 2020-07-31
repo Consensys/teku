@@ -28,15 +28,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.events.Subscribers;
 
 public class PeerManager implements ConnectionHandler {
@@ -131,18 +132,20 @@ public class PeerManager implements ConnectionHandler {
       LOG.debug("onConnectedPeer() {}", peer.getId());
       peerHandlers.forEach(h -> h.onConnect(peer));
       connectSubscribers.forEach(c -> c.onConnected(peer));
-      peer.subscribeDisconnect(() -> onDisconnectedPeer(peer));
+      peer.subscribeDisconnect(
+          (reason, locallyInitiated) -> onDisconnectedPeer(peer, reason, locallyInitiated));
     } else {
       LOG.trace("Disconnecting duplicate connection to {}", peer::getId);
-      peer.disconnectImmediately();
+      peer.disconnectImmediately(Optional.empty(), true);
       throw new PeerAlreadyConnectedException(peer);
     }
   }
 
-  @VisibleForTesting
-  void onDisconnectedPeer(Peer peer) {
+  private void onDisconnectedPeer(
+      final Peer peer, final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
     if (connectedPeerMap.remove(peer.getId()) != null) {
       LOG.debug("Peer disconnected: {}", peer.getId());
+      reputationManager.reportDisconnection(peer.getAddress(), reason, locallyInitiated);
       peerHandlers.forEach(h -> h.onDisconnect(peer));
     }
   }

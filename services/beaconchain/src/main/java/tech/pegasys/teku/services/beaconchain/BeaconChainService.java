@@ -13,22 +13,16 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class BeaconChainService extends Service {
 
   private final BeaconChainController controller;
 
   public BeaconChainService(final ServiceConfig config) {
-    this.controller =
-        new BeaconChainController(
-            config.getTimeProvider(),
-            config.getEventBus(),
-            config.getEventChannels(),
-            config.getMetricsSystem(),
-            config.getConfig());
+    this.controller = new BeaconChainController(config);
   }
 
   @Override

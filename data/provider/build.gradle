@@ -1,12 +1,11 @@
 dependencies {
-    api 'com.fasterxml.jackson.core:jackson-databind'
-    api 'io.swagger.core.v3:swagger-annotations'
-
     implementation project(':bls')
     implementation project(':data')
+    implementation project(':data:serializer')
     implementation project(':ethereum:core')
     implementation project(':ethereum:datastructures')
     implementation project(':ethereum:statetransition')
+    implementation project(':infrastructure:async')
     implementation project(':networking:eth2')
     implementation project(':services:serviceutils')
     implementation project(':ssz')

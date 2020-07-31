@@ -15,7 +15,7 @@ package tech.pegasys.teku.core.blockvalidator;
 
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 /**
  * Dedicated class which performs block validation (apart from {@link
@@ -49,7 +49,7 @@ public interface BlockValidator {
   }
 
   /** Block validator which just returns OK result without any validations */
-  BlockValidator NOP = new NopBlockValidator();
+  BlockValidator NOOP = new NoOpBlockValidator();
 
   /**
    * Validates the block against the state prior to block processing

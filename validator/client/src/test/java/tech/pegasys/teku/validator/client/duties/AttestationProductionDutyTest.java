@@ -24,8 +24,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
-import static tech.pegasys.teku.util.async.SafeFuture.failedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
@@ -37,9 +37,9 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.logging.ValidatorLogger;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
@@ -81,7 +81,8 @@ class AttestationProductionDutyTest {
     when(validatorApiChannel.createUnsignedAttestation(SLOT, 0))
         .thenReturn(completedFuture(Optional.empty()));
 
-    final SafeFuture<Optional<Attestation>> attestationFuture = duty.addValidator(validator, 0, 5);
+    final SafeFuture<Optional<Attestation>> attestationFuture =
+        duty.addValidator(validator, 0, 5, 10);
     performAndReportDuty();
 
     assertThat(attestationFuture).isCompletedWithValue(Optional.empty());
@@ -106,16 +107,16 @@ class AttestationProductionDutyTest {
         expectSignAttestation(validator2, validator2CommitteePosition, unsignedAttestation);
 
     final SafeFuture<Optional<Attestation>> attestationResult1 =
-        duty.addValidator(validator1, validator1CommitteeIndex, validator1CommitteePosition);
+        duty.addValidator(validator1, validator1CommitteeIndex, validator1CommitteePosition, 10);
     final SafeFuture<Optional<Attestation>> attestationResult2 =
-        duty.addValidator(validator2, validator2CommitteeIndex, validator2CommitteePosition);
+        duty.addValidator(validator2, validator2CommitteeIndex, validator2CommitteePosition, 10);
 
     performAndReportDuty();
 
     assertThat(attestationResult1).isCompletedWithValue(Optional.empty());
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(unsignedAttestation));
 
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation);
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation, Optional.of(10));
     verify(validatorLogger)
         .dutyCompleted(
             duty.getProducedType(),
@@ -144,9 +145,9 @@ class AttestationProductionDutyTest {
         expectSignAttestation(validator2, validator2CommitteePosition, unsignedAttestation);
 
     final SafeFuture<Optional<Attestation>> attestationResult1 =
-        duty.addValidator(validator1, validator1CommitteeIndex, validator1CommitteePosition);
+        duty.addValidator(validator1, validator1CommitteeIndex, validator1CommitteePosition, 10);
     final SafeFuture<Optional<Attestation>> attestationResult2 =
-        duty.addValidator(validator2, validator2CommitteeIndex, validator2CommitteePosition);
+        duty.addValidator(validator2, validator2CommitteeIndex, validator2CommitteePosition, 10);
 
     performAndReportDuty();
 
@@ -154,7 +155,7 @@ class AttestationProductionDutyTest {
     assertThatThrownBy(attestationResult1::join).hasRootCause(failure);
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(unsignedAttestation));
 
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation);
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation, Optional.of(10));
 
     verify(validatorLogger)
         .dutyCompleted(
@@ -181,15 +182,15 @@ class AttestationProductionDutyTest {
         expectSignAttestation(validator2, validator2CommitteePosition, unsignedAttestation);
 
     final SafeFuture<Optional<Attestation>> attestationResult1 =
-        duty.addValidator(validator1, committeeIndex, validator1CommitteePosition);
+        duty.addValidator(validator1, committeeIndex, validator1CommitteePosition, 10);
     final SafeFuture<Optional<Attestation>> attestationResult2 =
-        duty.addValidator(validator2, committeeIndex, validator2CommitteePosition);
+        duty.addValidator(validator2, committeeIndex, validator2CommitteePosition, 10);
 
     performAndReportDuty();
     assertThat(attestationResult1).isCompletedWithValue(Optional.of(unsignedAttestation));
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(unsignedAttestation));
 
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation);
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation, Optional.of(10));
 
     verify(validatorLogger)
         .dutyCompleted(
@@ -212,11 +213,11 @@ class AttestationProductionDutyTest {
         expectSignAttestation(validator, committeePosition, unsignedAttestation);
 
     final SafeFuture<Optional<Attestation>> attestationResult =
-        duty.addValidator(validator, committeeIndex, committeePosition);
+        duty.addValidator(validator, committeeIndex, committeePosition, 10);
     performAndReportDuty();
     assertThat(attestationResult).isCompletedWithValue(Optional.of(unsignedAttestation));
 
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation);
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation, Optional.of(10));
     verify(validatorLogger)
         .dutyCompleted(
             duty.getProducedType(),
@@ -245,19 +246,19 @@ class AttestationProductionDutyTest {
         expectSignAttestation(validator3, validator3CommitteePosition, unsignedAttestation);
 
     final SafeFuture<Optional<Attestation>> attestationResult1 =
-        duty.addValidator(validator1, committeeIndex, validator1CommitteePosition);
+        duty.addValidator(validator1, committeeIndex, validator1CommitteePosition, 10);
     final SafeFuture<Optional<Attestation>> attestationResult2 =
-        duty.addValidator(validator2, committeeIndex, validator2CommitteePosition);
+        duty.addValidator(validator2, committeeIndex, validator2CommitteePosition, 10);
     final SafeFuture<Optional<Attestation>> attestationResult3 =
-        duty.addValidator(validator3, committeeIndex, validator3CommitteePosition);
+        duty.addValidator(validator3, committeeIndex, validator3CommitteePosition, 10);
     performAndReportDuty();
     assertThat(attestationResult1).isCompletedWithValue(Optional.of(unsignedAttestation));
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(unsignedAttestation));
     assertThat(attestationResult3).isCompletedWithValue(Optional.of(unsignedAttestation));
 
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation1);
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation2);
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation3);
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation1, Optional.of(10));
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation2, Optional.of(10));
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation3, Optional.of(10));
 
     // Should have only needed to create one unsigned attestation and reused it for each validator
     verify(validatorApiChannel, times(1)).createUnsignedAttestation(any(), anyInt());
@@ -291,20 +292,20 @@ class AttestationProductionDutyTest {
         expectSignAttestation(validator3, validator3CommitteePosition, unsignedAttestation1);
 
     final SafeFuture<Optional<Attestation>> attestationResult1 =
-        duty.addValidator(validator1, committeeIndex1, validator1CommitteePosition);
+        duty.addValidator(validator1, committeeIndex1, validator1CommitteePosition, 10);
     final SafeFuture<Optional<Attestation>> attestationResult2 =
-        duty.addValidator(validator2, committeeIndex2, validator2CommitteePosition);
+        duty.addValidator(validator2, committeeIndex2, validator2CommitteePosition, 10);
     final SafeFuture<Optional<Attestation>> attestationResult3 =
-        duty.addValidator(validator3, committeeIndex1, validator3CommitteePosition);
+        duty.addValidator(validator3, committeeIndex1, validator3CommitteePosition, 10);
 
     performAndReportDuty();
     assertThat(attestationResult1).isCompletedWithValue(Optional.of(unsignedAttestation1));
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(unsignedAttestation2));
     assertThat(attestationResult3).isCompletedWithValue(Optional.of(unsignedAttestation1));
 
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation1);
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation2);
-    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation3);
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation1, Optional.of(10));
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation2, Optional.of(10));
+    verify(validatorApiChannel).sendSignedAttestation(expectedAttestation3, Optional.of(10));
 
     // Need to create an unsigned attestation for each committee
     verify(validatorApiChannel, times(2)).createUnsignedAttestation(any(), anyInt());

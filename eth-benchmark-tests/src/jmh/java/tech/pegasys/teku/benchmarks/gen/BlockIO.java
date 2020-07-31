@@ -67,13 +67,14 @@ public class BlockIO {
       return Utils.fromSupplier(this);
     }
 
+    @SuppressWarnings("EmptyCatch")
     public List<SignedBeaconBlock> readAll(int limit) {
       try {
         return StreamSupport.stream(spliterator(), false).limit(limit).collect(Collectors.toList());
       } finally {
         try {
           close();
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
       }
     }

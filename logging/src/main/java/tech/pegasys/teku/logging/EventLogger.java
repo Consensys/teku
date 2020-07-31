@@ -18,6 +18,9 @@ import static tech.pegasys.teku.logging.LogFormatter.formatHashRoot;
 import static tech.pegasys.teku.logging.LoggingConfigurator.EVENT_LOGGER_NAME;
 
 import com.google.common.primitives.UnsignedLong;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -33,11 +36,20 @@ public class EventLogger {
     this.log = LogManager.getLogger(name);
   }
 
-  public void genesisEvent(final Bytes32 hashTreeRoot, final Bytes32 genesisBlockRoot) {
+  public void genesisEvent(
+      final Bytes32 hashTreeRoot, final Bytes32 genesisBlockRoot, final UnsignedLong genesisTime) {
+    final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    final String formattedGenesisTime =
+        Instant.ofEpochSecond(genesisTime.longValue()).atZone(ZoneId.of("GMT")).format(formatter);
+
     final String genesisEventLog =
         String.format(
-            "Genesis Event *** Initial state root: %s, Genesis block root: %s",
-            hashTreeRoot.toHexString(), genesisBlockRoot.toHexString());
+            "Genesis Event *** \n"
+                + "Genesis state root: %s \n"
+                + "Genesis block root: %s \n"
+                + "Genesis time: %s GMT",
+            hashTreeRoot.toHexString(), genesisBlockRoot.toHexString(), formattedGenesisTime);
     info(genesisEventLog, Color.CYAN);
   }
 
@@ -54,6 +66,14 @@ public class EventLogger {
             finalizedCheckpoint.toString(),
             formatHashRoot(finalizedRoot));
     info(epochEventLog, Color.GREEN);
+  }
+
+  public void nodeSlotsMissed(final UnsignedLong oldSlot, final UnsignedLong newSlot) {
+    final String driftEventLog =
+        String.format(
+            "Miss slots  *** Current slot: %s, previous slot: %s",
+            newSlot.toString(), oldSlot.toString());
+    info(driftEventLog, Color.WHITE);
   }
 
   public void syncEvent(

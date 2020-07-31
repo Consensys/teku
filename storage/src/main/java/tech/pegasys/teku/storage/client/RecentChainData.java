@@ -13,21 +13,23 @@
 
 package tech.pegasys.teku.storage.client;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
-import static tech.pegasys.teku.util.unsignedlong.UnsignedLongMath.max;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.primitives.UnsignedLong;
+import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.core.ForkChoiceUtil;
+import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -36,47 +38,64 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
+import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
+import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.storage.store.StoreFactory;
+import tech.pegasys.teku.storage.events.AnchorPoint;
+import tech.pegasys.teku.storage.store.EmptyStoreResults;
+import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreUpdateHandler;
-import tech.pegasys.teku.util.async.SafeFuture;
-import tech.pegasys.teku.util.config.Constants;
 
 /** This class is the ChainStorage client-side logic */
 public abstract class RecentChainData implements StoreUpdateHandler {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final BlockProvider blockProvider;
   protected final EventBus eventBus;
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
+  protected final ProtoArrayStorageChannel protoArrayStorageChannel;
   private final MetricsSystem metricsSystem;
   private final ReorgEventChannel reorgEventChannel;
 
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
   private final SafeFuture<Void> storeInitializedFuture = new SafeFuture<>();
   private final SafeFuture<Void> bestBlockInitialized = new SafeFuture<>();
+  private final Counter reorgCounter;
 
   private volatile UpdatableStore store;
-  private volatile Optional<SignedBlockAndState> chainHead = Optional.empty();
+  private volatile Optional<ProtoArrayForkChoiceStrategy> forkChoiceStrategy;
+  private volatile Optional<SignedBlockAndStateAndSlot> chainHead = Optional.empty();
   private volatile UnsignedLong genesisTime;
 
   RecentChainData(
       final MetricsSystem metricsSystem,
+      final BlockProvider blockProvider,
       final StorageUpdateChannel storageUpdateChannel,
+      final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ReorgEventChannel reorgEventChannel,
       final EventBus eventBus) {
     this.metricsSystem = metricsSystem;
+    this.blockProvider = blockProvider;
     this.reorgEventChannel = reorgEventChannel;
     this.eventBus = eventBus;
     this.storageUpdateChannel = storageUpdateChannel;
+    this.protoArrayStorageChannel = protoArrayStorageChannel;
     this.finalizedCheckpointChannel = finalizedCheckpointChannel;
+    reorgCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.BEACON,
+            "reorgs_total",
+            "Total occurrences of reorganizations of the chain");
   }
 
   public void subscribeStoreInitialized(Runnable runnable) {
@@ -88,20 +107,21 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public void initializeFromGenesis(final BeaconState genesisState) {
-    final UpdatableStore store = StoreFactory.getForkChoiceStore(metricsSystem, genesisState);
+    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisState);
+    final UpdatableStore store =
+        StoreBuilder.buildForkChoiceStore(metricsSystem, blockProvider, genesis);
     final boolean result = setStore(store);
     if (!result) {
       throw new IllegalStateException(
           "Failed to set genesis state: store has already been initialized");
     }
 
-    storageUpdateChannel.onGenesis(store);
-    eventBus.post(store);
+    storageUpdateChannel.onGenesis(genesis);
+    eventBus.post(genesis);
 
     // The genesis state is by definition finalized so just get the root from there.
-    Bytes32 headBlockRoot = store.getFinalizedCheckpoint().getRoot();
-    BeaconBlock headBlock = store.getBlock(headBlockRoot);
-    updateBestBlock(headBlockRoot, headBlock.getSlot());
+    final SignedBlockAndState headBlock = store.getLatestFinalizedBlockAndState();
+    updateBestBlock(headBlock.getRoot(), headBlock.getSlot());
   }
 
   public UnsignedLong getGenesisTime() {
@@ -128,12 +148,32 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.store = store;
     this.store.startMetrics();
     this.genesisTime = this.store.getGenesisTime();
-    storeInitializedFuture.complete(null);
+    ProtoArrayForkChoiceStrategy.initialize(this.store, protoArrayStorageChannel)
+        .thenAccept(
+            forkChoiceStrategy -> {
+              this.forkChoiceStrategy = Optional.of(forkChoiceStrategy);
+              storeInitializedFuture.complete(null);
+            })
+        .join();
     return true;
   }
 
   public UpdatableStore getStore() {
     return store;
+  }
+
+  public NavigableMap<UnsignedLong, Bytes32> getAncestorRoots(
+      final UnsignedLong startSlot, final UnsignedLong step, final UnsignedLong count) {
+    return chainHead
+        .map(
+            head ->
+                ForkChoiceUtil.getAncestors(
+                    forkChoiceStrategy.orElseThrow(), head.getRoot(), startSlot, step, count))
+        .orElseGet(TreeMap::new);
+  }
+
+  public Optional<ForkChoiceStrategy> getForkChoiceStrategy() {
+    return forkChoiceStrategy.map(Function.identity());
   }
 
   public StoreTransaction startStoreTransaction() {
@@ -145,32 +185,47 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   /**
    * Update Best Block
    *
-   * @param root
-   * @param slot
+   * @param root the new best block root
+   * @param slot the new best slot
    */
   public void updateBestBlock(Bytes32 root, UnsignedLong slot) {
+    final Optional<SignedBlockAndStateAndSlot> originalChainHead = chainHead;
+    store
+        .retrieveBlockAndState(root)
+        .thenApply(
+            headBlockAndState ->
+                headBlockAndState
+                    .map(head -> SignedBlockAndStateAndSlot.create(head, slot))
+                    .orElseThrow(
+                        () ->
+                            new IllegalStateException(
+                                String.format(
+                                    "Unable to update best block as of slot %s.  Block is unavailable: %s.",
+                                    slot, root))))
+        .thenAccept(headBlock -> updateChainHead(originalChainHead, headBlock))
+        .reportExceptions();
+  }
+
+  private void updateChainHead(
+      final Optional<SignedBlockAndStateAndSlot> originalHead,
+      final SignedBlockAndStateAndSlot newChainHead) {
     synchronized (this) {
-      final SignedBeaconBlock newBestBlock = store.getSignedBlock(root);
-      final BeaconState newBestState = store.getBlockState(root);
-      if (newBestBlock == null || newBestState == null) {
-        LOG.warn(
-            "Unable to update best block (slot={}, root={}). Corresponding {} unavailable",
-            slot,
-            root,
-            newBestBlock == null ? "block" : "state");
+      if (!chainHead.equals(originalHead)) {
+        // The chain head has been updated while we were waiting for the newChainHead
+        // Skip this update to avoid accidentally regressing the chain head
+        LOG.info("Skipping best block update to avoid potential rollback of the best block.");
         return;
       }
-      final SignedBlockAndState newChainHead = new SignedBlockAndState(newBestBlock, newBestState);
-
-      final Optional<Bytes32> originalBestRoot = chainHead.map(SignedBlockAndState::getRoot);
+      final Optional<Bytes32> originalBestRoot = originalHead.map(SignedBlockAndState::getRoot);
       final UnsignedLong originalBestSlot =
-          chainHead.map(SignedBlockAndState::getSlot).orElse(UnsignedLong.ZERO);
+          originalHead.map(SignedBlockAndStateAndSlot::getHeadSlot).orElse(UnsignedLong.ZERO);
 
       this.chainHead = Optional.of(newChainHead);
       if (originalBestRoot
           .map(original -> hasReorgedFrom(original, originalBestSlot))
           .orElse(false)) {
-        reorgEventChannel.reorgOccurred(root, newChainHead.getSlot());
+        reorgCounter.inc();
+        reorgEventChannel.reorgOccurred(newChainHead.getRoot(), newChainHead.getSlot());
       }
     }
 
@@ -283,111 +338,45 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return Optional.ofNullable(store).map(s -> s.containsBlock(root)).orElse(false);
   }
 
-  public Optional<BeaconBlock> getBlockByRoot(final Bytes32 root) {
+  public SafeFuture<Optional<BeaconBlock>> retrieveBlockByRoot(final Bytes32 root) {
     if (store == null) {
-      return Optional.empty();
+      return EmptyStoreResults.EMPTY_BLOCK_FUTURE;
     }
-    return Optional.ofNullable(store.getBlock(root));
+    return store.retrieveBlock(root);
   }
 
-  public Optional<SignedBeaconBlock> getSignedBlockByRoot(final Bytes32 root) {
+  public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlockByRoot(final Bytes32 root) {
     if (store == null) {
-      return Optional.empty();
+      return EmptyStoreResults.EMPTY_SIGNED_BLOCK_FUTURE;
     }
-    return Optional.ofNullable(store.getSignedBlock(root));
+    return store.retrieveSignedBlock(root);
   }
 
-  public Optional<BeaconState> getBlockState(final Bytes32 blockRoot) {
+  public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {
     if (store == null) {
-      return Optional.empty();
+      return EmptyStoreResults.EMPTY_STATE_FUTURE;
     }
-    return Optional.ofNullable(store.getBlockState(blockRoot));
+    return store.retrieveBlockState(blockRoot);
   }
 
-  public Optional<BeaconBlock> getBlockBySlot(final UnsignedLong slot) {
-    return getBlockRootBySlot(slot)
-        .map(blockRoot -> store.getBlock(blockRoot))
-        .filter(block -> block.getSlot().equals(slot));
-  }
-
-  public Optional<BeaconState> getStateInEffectAtSlot(final UnsignedLong slot) {
-    return getBlockRootBySlot(slot).map(blockRoot -> store.getBlockState(blockRoot));
-  }
-
-  public boolean isIncludedInBestState(final Bytes32 blockRoot) {
-    if (store == null) {
-      return false;
+  public SafeFuture<Optional<BeaconState>> retrieveStateInEffectAtSlot(final UnsignedLong slot) {
+    Optional<Bytes32> rootAtSlot = getBlockRootBySlot(slot);
+    if (rootAtSlot.isEmpty()) {
+      return EmptyStoreResults.EMPTY_STATE_FUTURE;
     }
-    final BeaconBlock block = store.getBlock(blockRoot);
-    if (block == null) {
-      return false;
-    }
-    return getBlockRootBySlot(block.getSlot())
-        .map(actualRoot -> actualRoot.equals(block.hash_tree_root()))
-        .orElse(false);
+    return store.retrieveBlockState(rootAtSlot.get());
   }
 
   public Optional<Bytes32> getBlockRootBySlot(final UnsignedLong slot) {
-    if (store == null || chainHead.isEmpty() || isHistoricalBlockRootAtSlotUnavailable(slot)) {
-      return Optional.empty();
-    }
-    return getBlockRootBySlot(slot, chainHead.get());
+    return chainHead.flatMap(head -> getBlockRootBySlot(slot, head.getRoot()));
   }
 
-  public Optional<Bytes32> getBlockRootBySlot(final UnsignedLong slot, final Bytes32 headRoot) {
-    if (store == null || isHistoricalBlockRootAtSlotUnavailable(slot)) {
-      return Optional.empty();
-    }
-    return store.getBlockAndState(headRoot).flatMap(head -> getBlockRootBySlot(slot, head));
+  public Optional<Bytes32> getBlockRootBySlot(
+      final UnsignedLong slot, final Bytes32 headBlockRoot) {
+    return forkChoiceStrategy.flatMap(strategy -> get_ancestor(strategy, headBlockRoot, slot));
   }
 
-  private boolean isHistoricalBlockRootAtSlotUnavailable(final UnsignedLong slot) {
-    // If slot is prior to genesis, it is not available
-    final UnsignedLong genesisSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
-    if (slot.compareTo(genesisSlot) < 0) {
-      return true;
-    }
-
-    // If slot is out of range of the latest finalized block, it is unavailable
-    final UnsignedLong slotsPerHistoricalRoot = UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT);
-    final UnsignedLong oldestAvailableState = store.getLatestFinalizedBlockSlot();
-    final UnsignedLong oldestAvailableRoot =
-        oldestAvailableState.compareTo(slotsPerHistoricalRoot) >= 0
-            ? oldestAvailableState.minus(slotsPerHistoricalRoot)
-            : UnsignedLong.ZERO;
-    return slot.compareTo(oldestAvailableRoot) < 0;
-  }
-
-  private Optional<Bytes32> getBlockRootBySlot(
-      final UnsignedLong slot, final SignedBlockAndState headBlock) {
-    checkNotNull(slot);
-    final UnsignedLong slotsPerHistoricalRoot = UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT);
-    // Since older blocks are pruned - query the newest queryable slot where possible
-    final UnsignedLong youngestQueryableSlot = slot.plus(slotsPerHistoricalRoot);
-
-    SignedBlockAndState currentBlock = headBlock;
-    while (currentBlock != null) {
-      if (currentBlock.getSlot().compareTo(slot) <= 0) {
-        // The current block is less than or equal to the target slot, so it must be the block in
-        // effect
-        return Optional.of(currentBlock.getRoot());
-      }
-      if (BeaconStateUtil.isBlockRootAvailableFromState(currentBlock.getState(), slot)) {
-        // The root is available from the current state
-        return Optional.of(BeaconStateUtil.get_block_root_at_slot(currentBlock.getState(), slot));
-      }
-
-      // Pull an older block to search
-      final UnsignedLong oldestQueryableSlot = currentBlock.getSlot().minus(slotsPerHistoricalRoot);
-      final UnsignedLong olderSlot = max(youngestQueryableSlot, oldestQueryableSlot);
-      final Bytes32 olderRoot = get_block_root_at_slot(currentBlock.getState(), olderSlot);
-      currentBlock = store.getBlockAndState(olderRoot).orElse(null);
-    }
-
-    return Optional.empty();
-  }
-
-  // TODO: These methods should not return zero if null. We should handle this better
+  // TODO (#2398): These methods should not return zero if null. We should handle this better
   public UnsignedLong getFinalizedEpoch() {
     return store == null ? UnsignedLong.ZERO : store.getFinalizedCheckpoint().getEpoch();
   }
@@ -403,5 +392,34 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   @Override
   public void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint) {
     finalizedCheckpointChannel.onNewFinalizedCheckpoint(finalizedCheckpoint);
+    forkChoiceStrategy.ifPresent(strategy -> strategy.maybePrune(finalizedCheckpoint.getRoot()));
+  }
+
+  public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
+    if (store == null) {
+      return EmptyStoreResults.EMPTY_STATE_FUTURE;
+    }
+
+    return store.retrieveCheckpointState(checkpoint);
+  }
+
+  private static class SignedBlockAndStateAndSlot extends SignedBlockAndState {
+    private final UnsignedLong headSlot;
+
+    public SignedBlockAndStateAndSlot(
+        SignedBeaconBlock block, BeaconState state, UnsignedLong headSlot) {
+      super(block, state);
+      this.headSlot = headSlot;
+    }
+
+    public static SignedBlockAndStateAndSlot create(
+        SignedBlockAndState blockAndState, UnsignedLong slot) {
+      return new SignedBlockAndStateAndSlot(
+          blockAndState.getBlock(), blockAndState.getState(), slot);
+    }
+
+    public UnsignedLong getHeadSlot() {
+      return headSlot;
+    }
   }
 }

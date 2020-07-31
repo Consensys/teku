@@ -15,12 +15,12 @@ package tech.pegasys.teku.networking.p2p.network;
 
 import java.util.Optional;
 import java.util.stream.Stream;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public interface P2PNetwork<T extends Peer> extends GossipNetwork {
 
@@ -39,13 +39,13 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
    * method of this same implementation.
    *
    * @param peer Peer to connect to.
-   * @return A future which completes when the connection is establish, containing the newly
+   * @return A future which completes when the connection is established, containing the newly
    *     connected peer.
    */
   SafeFuture<Peer> connect(PeerAddress peer);
 
   /**
-   * Parses a peer address in any of this networks supported formats.
+   * Parses a peer address in any of this network's supported formats.
    *
    * @param peerAddress the address to parse
    * @return a {@link PeerAddress} which is supported by {@link #connect(PeerAddress)} for
@@ -91,7 +91,7 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
   Optional<String> getDiscoveryAddress();
 
   /**
-   * starts the p2p network layer
+   * Starts the P2P network layer.
    *
    * @return
    */

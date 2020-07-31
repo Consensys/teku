@@ -1,5 +1,8 @@
 dependencies {
   testFixturesImplementation project(':data:provider')
+  testFixturesImplementation project(':data:serializer')
+  testFixturesImplementation project(':infrastructure:async')
+  testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation project(':util')
 

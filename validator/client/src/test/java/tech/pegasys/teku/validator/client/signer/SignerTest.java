@@ -28,7 +28,7 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 class SignerTest {
 
@@ -53,11 +53,11 @@ class SignerTest {
   }
 
   @Test
-  public void shouldSignBlock() {
+  public void shouldSignBlock1() {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(10);
     final BLSSignature signature = dataStructureUtil.randomSignature();
     final Bytes expectedSigningRoot =
-        Bytes.fromHexString("0x1b68e5ab8ddfd1eba92a5e1d9d2b5cd040e81dcb33d1dbe3d8a2f67e099b52b9");
+        Bytes.fromHexString("0xfa8b3cfed0268ed15e354e84db5558eb76ad30737a86d6d057615e331ff30d44");
     when(signerService.signBlock(expectedSigningRoot))
         .thenReturn(SafeFuture.completedFuture(signature));
 

@@ -2,9 +2,10 @@
 
 ## Resources
 
+* [eth2-spec]("https://github.com/ethereum/eth2.0-specs")
+* [eth2-api]("https://github.com/ethereum/eth2.0-APIs")
 * [Prysm API]("https://api.prylabs.net/#")
 * [Lighthouse API]("https://lighthouse-book.sigmaprime.io/http.html")
-* [eth2-api]("https://github.com/ethereum/eth2.0-specs")
 
 ## /node/genesis_time
 

@@ -18,14 +18,16 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedChainDataClientTest {
-
   @Override
   protected StateStorageMode getStorageMode() {
     return StateStorageMode.ARCHIVE;
@@ -83,5 +85,50 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
         testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot, effectiveBlockAtSlot);
 
     assertThat(result).isCompletedWithValue(expected);
+  }
+
+  @Test
+  public void getStateByStateRoot_shouldReturnFinalizedState()
+      throws ExecutionException, InterruptedException {
+    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
+    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+
+    // Setup chain with finalized block
+    chainUpdater.initializeGenesis();
+    chainUpdater.advanceChain();
+    chainUpdater.advanceChain(finalizedSlot);
+    final SignedBlockAndState finalizedBlock = chainUpdater.finalizeEpoch(finalizedEpoch);
+    chainUpdater.addNewBestBlock();
+
+    Optional<BeaconState> result =
+        client.getStateByStateRoot(finalizedBlock.getState().hash_tree_root()).get();
+    assertThat(result.isPresent()).isTrue();
+    assertThat(result.get()).isEqualTo(finalizedBlock.getState());
+  }
+
+  @Test
+  public void getStateByStateRoot_shouldReturnFinalizedStateAtSkippedSlot()
+      throws ExecutionException, InterruptedException {
+    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
+    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+
+    // Setup chain with finalized block
+    chainUpdater.initializeGenesis();
+    final SignedBlockAndState historicalBlock = chainUpdater.advanceChain();
+    final UnsignedLong skippedSlot = historicalBlock.getSlot().plus(UnsignedLong.ONE);
+    chainUpdater.advanceChain(skippedSlot.plus(UnsignedLong.ONE));
+    chainUpdater.advanceChain(finalizedSlot);
+    final SignedBlockAndState finalizedBlock = chainUpdater.finalizeEpoch(finalizedEpoch);
+    chainUpdater.addNewBestBlock();
+    final BeaconState skippedSlotState = client.getStateAtSlotExact(skippedSlot).join().get();
+
+    // Sanity check
+    assertThat(skippedSlot).isLessThan(finalizedBlock.getSlot());
+    assertThat(skippedSlot).isEqualTo(skippedSlotState.getSlot());
+
+    Optional<BeaconState> result =
+        client.getStateByStateRoot(skippedSlotState.hash_tree_root()).get();
+    assertThat(result.isPresent()).isTrue();
+    assertThat(result.get()).isEqualTo(skippedSlotState);
   }
 }

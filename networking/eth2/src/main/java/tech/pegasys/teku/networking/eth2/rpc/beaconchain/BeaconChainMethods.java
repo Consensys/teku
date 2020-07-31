@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain;
 
+import static tech.pegasys.teku.util.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +27,7 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BeaconBlocksByRangeMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BeaconBlocksByRootMessageHandler;
@@ -39,7 +42,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.async.AsyncRunner;
 
 public class BeaconChainMethods {
   private static final String STATUS = "/eth2/beacon_chain/req/status/1";
@@ -158,7 +160,8 @@ public class BeaconChainMethods {
           final RpcEncoding rpcEncoding) {
 
     final BeaconBlocksByRangeMessageHandler beaconBlocksByRangeHandler =
-        new BeaconBlocksByRangeMessageHandler(combinedChainDataClient);
+        new BeaconBlocksByRangeMessageHandler(
+            combinedChainDataClient, MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
     return new Eth2RpcMethod<>(
         asyncRunner,
         BEACON_BLOCKS_BY_RANGE,

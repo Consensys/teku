@@ -60,7 +60,7 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
   public IndexedAttestation(IndexedAttestation indexedAttestation) {
     this.attesting_indices = SSZList.createMutable(indexedAttestation.getAttesting_indices());
     this.data = indexedAttestation.getData();
-    this.signature = new BLSSignature(indexedAttestation.getSignature());
+    this.signature = indexedAttestation.getSignature();
   }
 
   @Override
@@ -82,7 +82,7 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
     List<Bytes> variablePartsList = new ArrayList<>();
     variablePartsList.addAll(
         List.of(
-            // TODO The below lines are a hack while Tuweni SSZ/SOS is being upgraded.
+            // TODO (#2396): The below lines are a hack while Tuweni SSZ/SOS is being upgraded.
             Bytes.fromHexString(
                 attesting_indices.stream()
                     .map(value -> SSZ.encodeUInt64(value.longValue()).toHexString().substring(2))
@@ -137,6 +137,6 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
             HashTreeUtil.hash_tree_root_list_ul(
                 attesting_indices.map(Bytes.class, item -> SSZ.encodeUInt64(item.longValue()))),
             data.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toSSZBytes())));
   }
 }

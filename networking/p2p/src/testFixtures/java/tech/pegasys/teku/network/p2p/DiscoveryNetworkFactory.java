@@ -27,6 +27,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
@@ -85,19 +87,25 @@ public class DiscoveryNetworkFactory {
                 staticPeers,
                 true,
                 bootnodes,
-                new TargetPeerRange(20, 30));
+                new TargetPeerRange(20, 30, 0));
+        final NoOpMetricsSystem metricsSystem = new NoOpMetricsSystem();
         final ReputationManager reputationManager =
             new ReputationManager(
-                StubTimeProvider.withTimeInSeconds(1000), Constants.REPUTATION_MANAGER_CAPACITY);
+                metricsSystem,
+                StubTimeProvider.withTimeInSeconds(1000),
+                Constants.REPUTATION_MANAGER_CAPACITY);
         final DiscoveryNetwork<Peer> network =
             DiscoveryNetwork.create(
+                metricsSystem,
+                DelayedExecutorAsyncRunner.create(),
                 new LibP2PNetwork(
+                    DelayedExecutorAsyncRunner.create(),
                     config,
                     reputationManager,
                     METRICS_SYSTEM,
                     Collections.emptyList(),
                     Collections.emptyList()),
-                reputationManager,
+                new SimplePeerSelectionStrategy(config.getTargetPeerRange()),
                 config);
         try {
           network.start().get(30, TimeUnit.SECONDS);

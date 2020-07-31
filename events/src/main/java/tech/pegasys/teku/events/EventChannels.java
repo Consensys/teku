@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.events;
 
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.util.channels.ChannelInterface;
+import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
 
 public class EventChannels {
 
@@ -40,11 +44,44 @@ public class EventChannels {
     this.eventChannelFactory = eventChannelFactory;
   }
 
-  public <T> T getPublisher(final Class<T> channelInterface) {
-    return getChannel(channelInterface).getPublisher();
+  /**
+   * Creates a publisher to send events to an event channel. Unless this instance was created with
+   * {@link #createSyncChannels(ChannelExceptionHandler, MetricsSystem)} calls will return
+   * immediately and the event will be processed by subscribers on their own threads.
+   *
+   * <p>As the supplied {@code channelInterface} must be a {@link VoidReturningChannelInterface} all
+   * its methods must return void.
+   *
+   * @param channelInterface the interface defining the channel
+   * @param <T> the interface type
+   * @return A publisher for the channel which implements {@code channelInterface}
+   */
+  public <T extends VoidReturningChannelInterface> T getPublisher(final Class<T> channelInterface) {
+    return getChannel(channelInterface).getPublisher(Optional.empty());
   }
 
-  public <T> EventChannels subscribe(final Class<T> channelInterface, final T subscriber) {
+  /**
+   * Creates a publisher to send events to an event channel. Unless this instance was created with
+   * {@link #createSyncChannels(ChannelExceptionHandler, MetricsSystem)} calls will return
+   * immediately and the event will be processed by subscribers on their own threads.
+   *
+   * <p>Any methods which return a future, will complete that future via {@code responseRunner}. As
+   * a result, any handlers chained to the returned future via methods like {@link
+   * tech.pegasys.teku.util.async.SafeFuture#thenApply(Function)} will be executed on one of {@code
+   * responseRunner}'s threads.
+   *
+   * @param channelInterface the interface defining the channel
+   * @param responseRunner the {@link AsyncRunner} to use when completing any returned futures
+   * @param <T> the interface type
+   * @return A publisher for the channel which implements {@code channelInterface}
+   */
+  public <T extends ChannelInterface> T getPublisher(
+      final Class<T> channelInterface, final AsyncRunner responseRunner) {
+    return getChannel(channelInterface).getPublisher(Optional.of(responseRunner));
+  }
+
+  public <T extends ChannelInterface> EventChannels subscribe(
+      final Class<T> channelInterface, final T subscriber) {
     return subscribeMultithreaded(channelInterface, subscriber, 1);
   }
 
@@ -61,14 +98,14 @@ public class EventChannels {
    * @param subscriber the subscriber to notify of events
    * @param requestedParallelism the number of threads to use to process events
    */
-  public <T> EventChannels subscribeMultithreaded(
+  public <T extends ChannelInterface> EventChannels subscribeMultithreaded(
       final Class<T> channelInterface, final T subscriber, final int requestedParallelism) {
     getChannel(channelInterface).subscribeMultithreaded(subscriber, requestedParallelism);
     return this;
   }
 
   @SuppressWarnings("unchecked")
-  private <T> EventChannel<T> getChannel(final Class<T> channelInterface) {
+  private <T extends ChannelInterface> EventChannel<T> getChannel(final Class<T> channelInterface) {
     return (EventChannel<T>) channels.computeIfAbsent(channelInterface, eventChannelFactory);
   }
 

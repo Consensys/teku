@@ -16,13 +16,13 @@ package tech.pegasys.teku.services;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainService;
 import tech.pegasys.teku.services.chainstorage.StorageService;
 import tech.pegasys.teku.services.powchain.PowchainService;
 import tech.pegasys.teku.services.timer.TimerService;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 
 public class ServiceController extends Service {

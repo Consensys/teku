@@ -13,17 +13,12 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface ResponseStream<O> {
   SafeFuture<O> expectSingleResponse();
 
   SafeFuture<Void> expectNoResponse();
 
-  SafeFuture<Void> expectMultipleResponses(ResponseListener<O> listener);
-
-  @FunctionalInterface
-  interface ResponseListener<O> {
-    void onResponse(O response);
-  }
+  SafeFuture<Void> expectMultipleResponses(ResponseStreamListener<O> listener);
 }

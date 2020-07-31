@@ -29,9 +29,9 @@ import io.netty.buffer.Unpooled;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.MockMessageApi;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class GossipHandlerTest {
   private final Topic topic = new Topic("Testing");
@@ -41,7 +41,8 @@ public class GossipHandlerTest {
 
   @BeforeEach
   public void setup() {
-    when(topicHandler.handleMessage(any())).thenReturn(ValidationResult.Valid);
+    when(topicHandler.handleMessage(any()))
+        .thenReturn(SafeFuture.completedFuture(ValidationResult.Valid));
     when(publisher.publish(any(), any())).thenReturn(SafeFuture.completedFuture(null));
   }
 
@@ -58,7 +59,8 @@ public class GossipHandlerTest {
   public void apply_invalid() {
     final Bytes data = Bytes.fromHexString("0x01");
     final MockMessageApi message = new MockMessageApi(data, topic);
-    when(topicHandler.handleMessage(any())).thenReturn(ValidationResult.Invalid);
+    when(topicHandler.handleMessage(any()))
+        .thenReturn(SafeFuture.completedFuture(ValidationResult.Invalid));
     final SafeFuture<ValidationResult> result = gossipHandler.apply(message);
 
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);

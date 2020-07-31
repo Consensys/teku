@@ -47,4 +47,32 @@ public class UnsignedLongMathTest {
     assertThat(result).isEqualTo(a);
     assertThat(result).isEqualTo(b);
   }
+
+  @Test
+  public void min_firstValueIsLarger() {
+    final UnsignedLong a = UnsignedLong.valueOf(2);
+    final UnsignedLong b = UnsignedLong.valueOf(1);
+
+    final UnsignedLong result = UnsignedLongMath.min(a, b);
+    assertThat(result).isEqualTo(b);
+  }
+
+  @Test
+  public void min_secondValueIsLarger() {
+    final UnsignedLong a = UnsignedLong.valueOf(1);
+    final UnsignedLong b = UnsignedLong.valueOf(2);
+
+    final UnsignedLong result = UnsignedLongMath.min(a, b);
+    assertThat(result).isEqualTo(a);
+  }
+
+  @Test
+  public void min_valuesAreEqual() {
+    final UnsignedLong a = UnsignedLong.valueOf(10);
+    final UnsignedLong b = UnsignedLong.valueOf(10);
+
+    final UnsignedLong result = UnsignedLongMath.min(a, b);
+    assertThat(result).isEqualTo(a);
+    assertThat(result).isEqualTo(b);
+  }
 }

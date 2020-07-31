@@ -13,61 +13,63 @@
 
 package tech.pegasys.teku.protoarray;
 
-import static com.google.common.base.Preconditions.checkState;
-import static java.lang.Math.addExact;
-import static java.lang.Math.subtractExact;
-import static java.lang.Math.toIntExact;
-
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
+import tech.pegasys.teku.datastructures.forkchoice.PrunableStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
-  private static final Logger LOG = LogManager.getLogger();
-
   private final ReadWriteLock protoArrayLock = new ReentrantReadWriteLock();
   private final ReadWriteLock votesLock = new ReentrantReadWriteLock();
   private final ReadWriteLock balancesLock = new ReentrantReadWriteLock();
   private final ProtoArray protoArray;
+  private final ProtoArrayStorageChannel storageChannel;
 
   private List<UnsignedLong> balances;
 
-  private ProtoArrayForkChoiceStrategy(ProtoArray protoArray, List<UnsignedLong> balances) {
+  private ProtoArrayForkChoiceStrategy(
+      ProtoArray protoArray,
+      List<UnsignedLong> balances,
+      ProtoArrayStorageChannel protoArrayStorageChannel) {
     this.protoArray = protoArray;
     this.balances = balances;
+    this.storageChannel = protoArrayStorageChannel;
   }
 
   // Public
-  public static ProtoArrayForkChoiceStrategy create(ReadOnlyStore store) {
+  public static SafeFuture<ProtoArrayForkChoiceStrategy> initialize(
+      PrunableStore store, ProtoArrayStorageChannel storageChannel) {
     ProtoArray protoArray =
-        new ProtoArray(
-            Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
-            store.getJustifiedCheckpoint().getEpoch(),
-            store.getFinalizedCheckpoint().getEpoch(),
-            new ArrayList<>(),
-            new HashMap<>());
+        storageChannel
+            .getProtoArraySnapshot()
+            .join()
+            .map(ProtoArraySnapshot::toProtoArray)
+            .orElse(
+                new ProtoArray(
+                    Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
+                    store.getJustifiedCheckpoint().getEpoch(),
+                    store.getFinalizedCheckpoint().getEpoch(),
+                    new ArrayList<>(),
+                    new HashMap<>()));
 
-    processBlocksInStoreAtStartup(store, protoArray);
-
-    return new ProtoArrayForkChoiceStrategy(protoArray, new ArrayList<>());
+    return processBlocksInStoreAtStartup(store, protoArray)
+        .thenApply(
+            __ -> new ProtoArrayForkChoiceStrategy(protoArray, new ArrayList<>(), storageChannel));
   }
 
   @Override
@@ -78,7 +80,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
         justifiedCheckpoint.getEpoch(),
         justifiedCheckpoint.getRoot(),
         store.getFinalizedCheckpoint().getEpoch(),
-        store.getCheckpointState(justifiedCheckpoint).getBalances().asList());
+        store.getCheckpointState(justifiedCheckpoint).orElseThrow().getBalances().asList());
   }
 
   @Override
@@ -112,6 +114,16 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
         state.getFinalized_checkpoint().getEpoch());
   }
 
+  @Override
+  public void save() {
+    protoArrayLock.readLock().lock();
+    try {
+      storageChannel.onProtoArrayUpdate(ProtoArraySnapshot.create(protoArray));
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
   public void maybePrune(Bytes32 finalizedRoot) {
     protoArrayLock.writeLock().lock();
     try {
@@ -122,23 +134,38 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   // Internal
-  private static void processBlocksInStoreAtStartup(ReadOnlyStore store, ProtoArray protoArray) {
-    store.getBlockRoots().stream()
-        .map(store::getBlock)
-        .sorted(Comparator.comparing(BeaconBlock::getSlot))
-        .forEach(block -> processBlockAtStartup(store, protoArray, block));
+  private static SafeFuture<Void> processBlocksInStoreAtStartup(
+      PrunableStore store, ProtoArray protoArray) {
+    List<Bytes32> alreadyIncludedBlockRoots =
+        protoArray.getNodes().stream().map(ProtoNode::getBlockRoot).collect(Collectors.toList());
+
+    SafeFuture<Void> future = SafeFuture.completedFuture(null);
+    for (Bytes32 blockRoot : store.getOrderedBlockRoots()) {
+      if (alreadyIncludedBlockRoots.contains(blockRoot)) {
+        continue;
+      }
+      future =
+          future.thenCompose(
+              __ ->
+                  store
+                      .retrieveBlockAndState(blockRoot)
+                      .thenAccept(
+                          blockAndState ->
+                              processBlockAtStartup(protoArray, blockAndState.orElseThrow())));
+    }
+    return future;
   }
 
   private static void processBlockAtStartup(
-      final ReadOnlyStore store, final ProtoArray protoArray, final BeaconBlock block) {
-    Bytes32 blockRoot = block.hash_tree_root();
+      final ProtoArray protoArray, final SignedBlockAndState blockAndState) {
+    final BeaconState state = blockAndState.getState();
     protoArray.onBlock(
-        block.getSlot(),
-        blockRoot,
-        block.getParent_root(),
-        block.getState_root(),
-        store.getBlockState(block.hash_tree_root()).getCurrent_justified_checkpoint().getEpoch(),
-        store.getBlockState(block.hash_tree_root()).getFinalized_checkpoint().getEpoch());
+        blockAndState.getSlot(),
+        blockAndState.getRoot(),
+        blockAndState.getParentRoot(),
+        blockAndState.getStateRoot(),
+        state.getCurrent_justified_checkpoint().getEpoch(),
+        state.getFinalized_checkpoint().getEpoch());
   }
 
   void processAttestation(
@@ -183,7 +210,9 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
       List<UnsignedLong> oldBalances = balances;
       List<UnsignedLong> newBalances = justifiedStateBalances;
 
-      List<Long> deltas = computeDeltas(store, protoArray.getIndices(), oldBalances, newBalances);
+      List<Long> deltas =
+          ProtoArrayScoreCalculator.computeDeltas(
+              store, protoArray.getIndices(), oldBalances, newBalances);
 
       protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
       balances = new ArrayList<>(newBalances);
@@ -253,88 +282,5 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
               }
               return Optional.empty();
             });
-  }
-
-  /**
-   * Returns a list of `deltas`, where there is one delta for each of the indices in
-   * `0..indices.size()`.
-   *
-   * <p>The deltas are formed by a change between `oldBalances` and `newBalances`, and/or a change
-   * of vote in `votes`.
-   *
-   * <p>## Errors
-   *
-   * <ul>
-   *   <li>If a value in `indices` is greater to or equal to `indices.size()`.
-   *   <li>If some `Bytes32` in `votes` is not a key in `indices` (except for `Bytes32.ZERO`, this
-   *       is always valid).
-   * </ul>
-   *
-   * @param indices
-   * @param store
-   * @param oldBalances
-   * @param newBalances
-   * @return
-   */
-  static List<Long> computeDeltas(
-      MutableStore store,
-      Map<Bytes32, Integer> indices,
-      List<UnsignedLong> oldBalances,
-      List<UnsignedLong> newBalances) {
-    List<Long> deltas = new ArrayList<>(Collections.nCopies(indices.size(), 0L));
-
-    for (UnsignedLong validatorIndex : store.getVotedValidatorIndices()) {
-      VoteTracker vote = store.getVote(validatorIndex);
-
-      // There is no need to create a score change if the validator has never voted
-      // or both their votes are for the zero hash (alias to the genesis block).
-      if (vote.getCurrentRoot().equals(Bytes32.ZERO) && vote.getNextRoot().equals(Bytes32.ZERO)) {
-        LOG.warn("ProtoArrayForkChoiceStrategy: Unexpected zero hashes in voted validator votes");
-        continue;
-      }
-
-      int validatorIndexInt = toIntExact(validatorIndex.longValue());
-      // If the validator was not included in the oldBalances (i.e. it did not exist yet)
-      // then say its balance was zero.
-      UnsignedLong oldBalance =
-          oldBalances.size() > validatorIndexInt
-              ? oldBalances.get(validatorIndexInt)
-              : UnsignedLong.ZERO;
-
-      // If the validator vote is not known in the newBalances, then use a balance of zero.
-      //
-      // It is possible that there is a vote for an unknown validator if we change our
-      // justified state to a new state with a higher epoch that is on a different fork
-      // because that may have on-boarded less validators than the prior fork.
-      UnsignedLong newBalance =
-          newBalances.size() > validatorIndexInt
-              ? newBalances.get(validatorIndexInt)
-              : UnsignedLong.ZERO;
-
-      if (!vote.getCurrentRoot().equals(vote.getNextRoot()) || !oldBalance.equals(newBalance)) {
-        // We ignore the vote if it is not known in `indices`. We assume that it is outside
-        // of our tree (i.e. pre-finalization) and therefore not interesting.
-        Integer currentDeltaIndex = indices.get(vote.getCurrentRoot());
-        if (currentDeltaIndex != null) {
-          checkState(
-              currentDeltaIndex < deltas.size(), "ProtoArrayForkChoice: Invalid node delta index");
-          long delta = subtractExact(deltas.get(currentDeltaIndex), oldBalance.longValue());
-          deltas.set(currentDeltaIndex, delta);
-        }
-
-        // We ignore the vote if it is not known in `indices`. We assume that it is outside
-        // of our tree (i.e. pre-finalization) and therefore not interesting.
-        Integer nextDeltaIndex = indices.get(vote.getNextRoot());
-        if (nextDeltaIndex != null) {
-          checkState(
-              nextDeltaIndex < deltas.size(), "ProtoArrayForkChoice: Invalid node delta index");
-          long delta = addExact(deltas.get(nextDeltaIndex), newBalance.longValue());
-          deltas.set(nextDeltaIndex, delta);
-        }
-
-        vote.setCurrentRoot(vote.getNextRoot());
-      }
-    }
-    return deltas;
   }
 }

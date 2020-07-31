@@ -14,13 +14,13 @@
 package tech.pegasys.teku.networking.p2p.peer;
 
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
-import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class DelegatingPeer implements Peer {
   private final Peer peer;
@@ -61,8 +61,9 @@ public class DelegatingPeer implements Peer {
   }
 
   @Override
-  public void disconnectImmediately() {
-    peer.disconnectImmediately();
+  public void disconnectImmediately(
+      final Optional<DisconnectReason> reason, final boolean locallyInitiated) {
+    peer.disconnectImmediately(reason, locallyInitiated);
   }
 
   @Override

@@ -1,0 +1,11 @@
+dependencies {
+  implementation project(":data:metrics")
+  implementation 'com.google.guava:guava'
+
+  testImplementation testFixtures(project(":data:metrics"))
+  testImplementation 'org.apache.logging.log4j:log4j-core'
+
+  testFixturesApi 'com.google.guava:guava'
+  testFixturesImplementation 'org.apache.logging.log4j:log4j-core'
+  testFixturesImplementation 'org.awaitility:awaitility'
+}

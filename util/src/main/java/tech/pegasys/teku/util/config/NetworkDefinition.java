@@ -34,46 +34,50 @@ public class NetworkDefinition {
                   .build())
           .put("mainnet", builder().constants("mainnet").snappyCompressionEnabled(true).build())
           .put(
-              "topaz",
+              "onyx",
               builder()
                   .constants("mainnet")
                   .snappyCompressionEnabled(true)
-                  .initialState(
-                      "https://github.com/eth2-clients/eth2-testnets/raw/master/prysm/Topaz(v0.11.1)/genesis.ssz")
+                  .initialStateFromClasspath("onyx-genesis.ssz")
                   .discoveryBootnodes(
-                      "enr:-Ku4QAGwOT9StqmwI5LHaIymIO4ooFKfNkEjWa0f1P8OsElgBh2Ijb-GrD_-b9W4kcPFcwmHQEy5RncqXNqdpVo1heoBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAAAAAAAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQJxCnE6v_x2ekgY_uoE1rtwzvGy40mq9eD66XfHPBWgIIN1ZHCCD6A")
-                  .eth1DepositContractAddress("0x5cA1e00004366Ac85f492887AAab12d0e6418876")
-                  .build())
-          .put(
-              "schlesi",
-              builder()
-                  .constants("schlesi")
-                  .snappyCompressionEnabled(true)
-                  .initialState(
-                      "https://github.com/goerli/schlesi/raw/master/.trash/schlesi/teku/genesis.ssz")
-                  .discoveryBootnodes(
-                      "enr:-LK4QJ-6k6QytxOn7P9BdDZHXesHz3aaglpvo-VcTGc-rfr5H4DBzjQsjg6stZoy1H-p3yK21IISkJHe742QTVwRS_IEh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCZJe_WAAAAAP__________gmlkgnY0gmlwhDMPd52Jc2VjcDI1NmsxoQINdLr6UY7y2CzshX4n_BbdYM1G40rpdEs84Mdoyv_ZyYN0Y3CCIyiDdWRwgiMo",
-                      "enr:-LK4QFO0gKFieMiNrUystSk5Xt7DmIgusloLudv-gH8Krjw9SsUDZRk---H-3hwvL9rMfsMcZwU6L5ezK2d1_dG0UgECh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCZJe_WAAAAAP__________gmlkgnY0gmlwhDMPd52Jc2VjcDI1NmsxoQPNb3TG-iN0aGTagN4peO0SEkWKklJOvloWL0He8pnB_4N0Y3CCJRyDdWRwgiUc",
-                      "enr:-LK4QJS5Rn_kkA2MQpieVDUao5vkBj3kE15S_JJepGA9MNfndwHyfBWSjmAa5T_qvkGklrDiZXqlIAahXTm_eH_IXY8Ch2F0dG5ldHOIAAAAAAAAAACEZXRoMpCZJe_WAAAAAP__________gmlkgnY0gmlwhDMPd52Jc2VjcDI1NmsxoQOS1-hRSwsxLo2PH3RKtwWdjLdT1IMX2nqkQAlHs5E7LIN0Y3CCMsiDdWRwgi7g",
-                      "enr:-LK4QC08ftWworc3AQkYAtFSzUZpbSkRrgw74WrvKPFL3BbPBozhZx-gLHw8FeBzbi_0HDmZDWqZF-oF0b0W8Q8kHFELh2F0dG5ldHOIAQAAAAAAAACEZXRoMpCZJe_WAAAAAP__________gmlkgnY0gmlwhDMPd52Jc2VjcDI1NmsxoQJyLMVEG-_6ho3DR0iYvyEVbMyOJ4o2G-pIIEsNw80nn4N0Y3CCNLyDdWRwgjDU",
-                      "enr:-KG4QEKucvfLm_Hp8Erw1rVEGerBlDblJI54LNNHvzfCY-jCAHTaoHf0UF8HLB5HsbZtJhjJ83oWkQ0aMty7c26aZy8ChGV0aDKQmSXv1gAAAAD__________4JpZIJ2NIJpcIQzD0YHiXNlY3AyNTZrMaEDggHXPlO6yT4JkCgVMOJjilj4F0ogSlHuXjPJjsiWne2DdGNwgiMog3VkcIIjKA",
-                      "enr:-KG4QBUEkcqHGnHHCZLnWfSPBocBqP5SNClDHOR1KmlzaS-YN53w0xBspt-HCzk5-FZw_ZcYIdxQKrLp8VUSO2LPSDwChGV0aDKQmSXv1gAAAAD__________4JpZIJ2NIJpcIQzD0YHiXNlY3AyNTZrMaEDMcdoZ1TJBKATCJixtLTYxGmKbe7r3ckjvhg5OP5cILeDdGNwgiUcg3VkcIIlHA")
-                  .eth1DepositContractAddress("0xA15554BF93a052669B511ae29EA21f3581677ac5")
-                  .build())
-          .put(
-              "witti",
-              builder()
-                  .constants("witti")
-                  .snappyCompressionEnabled(true)
-                  .initialStateFromClasspath("witti-genesis.ssz")
-                  .discoveryBootnodes(
-                      "enr:-Ku4QMucba73OPBz2mgyYduH1tM50mZjaiLNEXMrEmTSnrgyEWMEF0zFK0QT6URu_wFfqW04gYn1wze-VQe-jb0L8r8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhFzAVJaJc2VjcDI1NmsxoQIX4kyr2PR-bGTptaN9DbXa2A2L_rVfuIpMj7sCjPBov4N1ZHCCW8w",
-                      "enr:-Ku4QJsxkOibTc9FXfBWYmcdMAGwH4bnOOFb4BlTHfMdx_f0WN-u4IUqZcQVP9iuEyoxipFs7-Qd_rH_0HfyOQitc7IBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhLAJM9iJc2VjcDI1NmsxoQL2RyM26TKZzqnUsyycHQB4jnyg6Wi79rwLXtaZXty06YN1ZHCCW8w",
-                      "enr:-Ku4QF5CI2Ndig0cxR0fQjRolG1k6TggK0BV4Z5neog4U9LDYsTHz6Vv6qVyJ7b9L2r6S2Gu4Ek4Z7i7j-jAJBxHbmYBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhFe0zw-Jc2VjcDI1NmsxoQPD9aDKsFoUfpEMPuTgZ13qNsJZ31zMMrl3PsQXeX2cwYN1ZHCCW8w",
-                      "enr:-Ku4QLE_fTEjP6K3OII1RYRLUMUbwV9dAh7-2vr7gkZnRXLxSy2B6C-b0nVVQcFYsUvp2Tgli7GKHBYpWiknTse7rrUBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhFzAVJaJc2VjcDI1NmsxoQKxhcZJCugFnVuRMMzE4JJe0E0FS71ctmAnx1Y2wCJwKoN1ZHCCpgQ",
-                      "enr:-Ku4QKsKa3HbJjz8cZn4mEh-stIF6kACLh2rmCGscEsLUe4XUSt-xZEAx7SK6R3zqAc2WAVBpLkh5fu-r-PHr_8d4B8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhDMPd52Jc2VjcDI1NmsxoQMLvOjDnLAqnQsTKqUqNr1qcleEBgkin3KOW9BeIxAJ54N1ZHCCW8w")
-                  .eth1DepositContractAddress("0x42cc0FcEB02015F145105Cf6f19F90e9BEa76558")
+                      "enr:-Ku4QMKVC_MowDsmEa20d5uGjrChI0h8_KsKXDmgVQbIbngZV0idV6_RL7fEtZGo-kTNZ5o7_EJI_vCPJ6scrhwX0Z4Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQJxCnE6v_x2ekgY_uoE1rtwzvGy40mq9eD66XfHPBWgIIN1ZHCCD6A")
+                  .eth1DepositContractAddress("0x0f0f0fc0530007361933eab5db97d09acdd6c1c8")
+                  .eth1Endpoint("https://goerli.prylabs.net")
                   .startupTimeoutSeconds(120)
+                  .build())
+          .put(
+              "altona",
+              builder()
+                  .constants("altona")
+                  .snappyCompressionEnabled(true)
+                  .initialStateFromClasspath("altona-genesis.ssz")
+                  .eth1DepositContractAddress("0x16e82D77882A663454Ef92806b7DeCa1D394810f")
+                  .startupTimeoutSeconds(120)
+                  .discoveryBootnodes(
+                      "enr:-KG4QLkU_qJgdh-DhT5HtONGvuqwbbW99piCe27Bpk8oO_hvC0qEYgOSpmVfZ-8iJgW71HO23ajEFCNOCvEaqpcIXiUDhGV0aDKQ_co5sAAAASH__________4JpZIJ2NIJpcIQDE_KiiXNlY3AyNTZrMaEDbBoq33b6SAUh96EJZWNYOqYwjm78pVviDreLfK-aeUKDdGNwgiMog3VkcIIjKA",
+                      "enr:-LK4QFtV7Pz4reD5a7cpfi1z6yPrZ2I9eMMU5mGQpFXLnLoKZW8TXvVubShzLLpsEj6aayvVO1vFx-MApijD3HLPhlECh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD6etXjAAABIf__________gmlkgnY0gmlwhDMPYfCJc2VjcDI1NmsxoQIerw_qBc9apYfZqo2awiwS930_vvmGnW2psuHsTzrJ8YN0Y3CCIyiDdWRwgiMo",
+                      "enr:-LK4QPVkFd_MKzdW0219doTZryq40tTe8rwWYO75KDmeZM78fBskGsfCuAww9t8y3u0Q0FlhXOhjE1CWpx3SGbUaU80Ch2F0dG5ldHOIAAAAAAAAAACEZXRoMpD6etXjAAABIf__________gmlkgnY0gmlwhDMPRgeJc2VjcDI1NmsxoQNHu-QfNgzl8VxbMiPgv6wgAljojnqAOrN18tzJMuN8oYN0Y3CCIyiDdWRwgiMo",
+                      "enr:-LK4QHe52XPPrcv6-MvcmN5GqDe_sgCwo24n_2hedlfwD_oxNt7cXL3tXJ7h9aYv6CTS1C_H2G2_dkeqm_LBO9nrpiYBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD9yjmwAAABIf__________gmlkgnY0gmlwhANzD9uJc2VjcDI1NmsxoQJX7zMnRU3szfGfS8MAIfPaQKOBpu3sBVTXf4Qq0b_m-4N0Y3CCIyiDdWRwgiMo",
+                      "enr:-LK4QLkbbq7xuRa_EnWd_kc0TkQk0pd0B0cZYR5LvBsncFQBDyPbGdy8d24TzRVeK7ZWwM5_2EcSJK223f8TYUOQYfwBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD9yjmwAAABIf__________gmlkgnY0gmlwhAPsjtOJc2VjcDI1NmsxoQJNw_aZgWXl2SstD--WAjooGudjWLjEbbCIddJuEPxzWYN0Y3CCIyiDdWRwgiMo",
+                      "enr:-LK4QHy-glnxN1WTk5f6d7-xXwy_UKJLs5k7p_S4KRY9I925KTzW_kQLjfFriIpH0de7kygBwrSl726ukq9_OG_sgKMCh2F0dG5ldHOIUjEAIQEAFMiEZXRoMpD9yjmwAAABIf__________gmlkgnY0gmlwhBLmhrCJc2VjcDI1NmsxoQNlU7gT0HUvpLA41n-P5GrCgjwMwtG02YsRRO0lAmpmBYN0Y3CCIyiDdWRwgiMo",
+                      "enr:-LK4QDz0n0vpyOpuStB8e22h9ayHVcvmN7o0trC7eC0DnZV9GYGzK5uKv7WlzpMQM2nDTG43DWvF_DZYwJOZCbF4iCQBh2F0dG5ldHOI__________-EZXRoMpD9yjmwAAABIf__________gmlkgnY0gmlwhBKN136Jc2VjcDI1NmsxoQP5gcOUcaruHuMuTv8ht7ZEawp3iih7CmeLqcoY1hxOnoN0Y3CCIyiDdWRwgiMo",
+                      "enr:-LK4QOScOZ35sOXEH6CEW15lfv7I3DhqQAzCPQ_nRav95otuSh4yi9ol0AruKDiIk9qqGXyD-wQDaBAPLhwl4t-rUSQBh2F0dG5ldHOI__________-EZXRoMpD9yjmwAAABIf__________gmlkgnY0gmlwhCL68KuJc2VjcDI1NmsxoQK5fYR3Ipoc01dz0d2-EcL7m26zKQSkAbf4rwcMMM09CoN0Y3CCIyiDdWRwgiMo",
+                      "enr:-Ku4QMqmWPFkgM58F16wxB50cqWDaWaIsyANHL8wUNSB4Cy1TP9__uJQNRODvx_dvO6rY-BT3psrYTMAaxnMGXb6DuoBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQNoed9JnQh7ltcAacHEGOjwocL1BhMQbYTgaPX0kFuXtIN1ZHCCE4g")
+                  .build())
+          .put(
+              "medalla",
+              builder()
+                  .constants("medalla")
+                  .snappyCompressionEnabled(true)
+                  .startupTimeoutSeconds(120)
+                  .eth1DepositContractAddress("0x07b39F4fDE4A38bACe212b546dAc87C58DfE3fDC")
+                  .discoveryBootnodes(
+                      // PegaSys Teku
+                      "enr:-KG4QIOJRu0BBlcXJcn3lI34Ub1aBLYipbnDaxBnr2uf2q6nE1TWnKY5OAajg3eG6mHheQSfRhXLuy-a8V5rqXKSoUEChGV0aDKQGK5MywAAAAH__________4JpZIJ2NIJpcIQKAAFhiXNlY3AyNTZrMaEDESplmV9c2k73v0DjxVXJ6__2bWyP-tK28_80lf7dUhqDdGNwgiMog3VkcIIjKA",
+
+                      // Sigp Lighthouse
+                      "enr:-LK4QKWk9yZo258PQouLshTOEEGWVHH7GhKwpYmB5tmKE4eHeSfman0PZvM2Rpp54RWgoOagAsOfKoXgZSbiCYzERWABh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAAAAAAAAAAAAAAAAAAAAAAgmlkgnY0gmlwhDQlA5CJc2VjcDI1NmsxoQOYiWqrQtQksTEtS3qY6idxJE5wkm0t9wKqpzv2gCR21oN0Y3CCIyiDdWRwgiMo",
+                      "enr:-LK4QEnIS-PIxxLCadJdnp83VXuJqgKvC9ZTIWaJpWqdKlUFCiup2sHxWihF9EYGlMrQLs0mq_2IyarhNq38eoaOHUoBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAAAAAAAAAAAAAAAAAAAAAAgmlkgnY0gmlwhA37LMaJc2VjcDI1NmsxoQJ7k0mKtTd_kdEq251flOjD1HKpqgMmIETDoD-Msy_O-4N0Y3CCIyiDdWRwgiMo")
                   .build())
           .build();
 

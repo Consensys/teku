@@ -40,8 +40,8 @@ import java.util.concurrent.CompletionStage;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public class GetAttestation implements Handler {
   public static final String ROUTE = "/validator/attestation";

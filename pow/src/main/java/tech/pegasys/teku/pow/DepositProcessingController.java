@@ -21,9 +21,9 @@ import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
 public class DepositProcessingController {
@@ -78,11 +78,6 @@ public class DepositProcessingController {
     headTracker.unsubscribe(newBlockSubscription);
   }
 
-  // Inclusive
-  public synchronized SafeFuture<Void> fetchDepositsFromGenesisTo(BigInteger toBlockNumber) {
-    return depositFetcher.fetchDepositsInRange(BigInteger.ZERO, toBlockNumber);
-  }
-
   // inclusive
   public synchronized SafeFuture<Void> fetchDepositsInRange(
       final BigInteger fromBlockNumber, final BigInteger toBlockNumber) {
@@ -112,7 +107,7 @@ public class DepositProcessingController {
     active = true;
 
     fromBlock = latestSuccessfullyQueriedBlock.add(BigInteger.ONE);
-    toBlock = latestCanonicalBlockNumber;
+    toBlock = latestCanonicalBlockNumber.min(fromBlock.add(BigInteger.valueOf(500_000)));
 
     depositFetcher
         .fetchDepositsInRange(fromBlock, toBlock)

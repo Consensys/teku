@@ -14,9 +14,9 @@
 package tech.pegasys.teku.util.hashtree;
 
 import static java.lang.Long.max;
-import static java.lang.Math.toIntExact;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -276,7 +276,8 @@ public final class HashTreeUtil {
    *     Spec v0.5.1</a>
    */
   public static Bytes32 hash_tree_root_bitlist(Bitlist bitlist) {
-    // TODO The following lines are a hack and can be fixed once we shift from Bytes to a real
+    // TODO (#2396): The following lines are a hack and can be fixed once we shift from Bytes to a
+    // real
     // bitlist type.
     return mix_in_length(
         merkleize(
@@ -338,7 +339,7 @@ public final class HashTreeUtil {
   private static Bytes32 hash_tree_root_list_pubkey(SSZList<BLSPublicKey> bytes) {
     List<Bytes32> hashTreeRootList =
         bytes.stream()
-            .map(item -> hash_tree_root(SSZTypes.VECTOR_OF_BASIC, item.toBytes()))
+            .map(item -> hash_tree_root(SSZTypes.VECTOR_OF_BASIC, item.toSSZBytes()))
             .collect(Collectors.toList());
     return mix_in_length(
         merkleize(hashTreeRootList, chunk_count(SSZTypes.LIST_OF_COMPOSITE, bytes.getMaxSize())),
@@ -425,7 +426,8 @@ public final class HashTreeUtil {
         throw new UnsupportedOperationException(
             "Use chunk_count(HashTreeUtil.SSZTypes, Bytes) for BASIC SSZ types.");
       case BITLIST:
-        // TODO The following lines are a hack and can be fixed once we shift from Bytes to a real
+        // TODO (#2396): The following lines are a hack and can be fixed once we shift from Bytes to
+        // a real
         // bitlist type.
         long chunkCount = (maxSize + 255) / 256;
         return chunkCount > 0 ? chunkCount : 1;
@@ -456,11 +458,8 @@ public final class HashTreeUtil {
             merkle_root, Bytes.ofUnsignedLong(length, LITTLE_ENDIAN), Bytes.wrap(new byte[24])));
   }
 
-  public static boolean is_power_of_two(int value) {
+  @VisibleForTesting
+  static boolean is_power_of_two(int value) {
     return value > 0 && (value & (value - 1)) == 0;
-  }
-
-  public static boolean is_power_of_two(UnsignedLong value) {
-    return is_power_of_two(toIntExact(value.longValue()));
   }
 }

@@ -5,6 +5,7 @@ dependencies {
   implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
   implementation project(':events')
+  implementation project(':infrastructure:async')
   implementation project(':logging')
   implementation project(':services:serviceutils')
   implementation project(':validator:anticorruption')
@@ -21,5 +22,6 @@ dependencies {
 
   testImplementation testFixtures(project(':data:metrics'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':util'))
 }

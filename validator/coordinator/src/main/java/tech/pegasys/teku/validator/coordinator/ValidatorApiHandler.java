@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
@@ -50,21 +51,20 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
-import tech.pegasys.teku.networking.eth2.gossip.AttestationTopicSubscriber;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFunction;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.SyncStateTracker;
-import tech.pegasys.teku.util.async.ExceptionThrowingFunction;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -222,23 +222,56 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendSignedAttestation(final Attestation attestation) {
+  public void sendSignedAttestation(
+      final Attestation attestation, final Optional<Integer> expectedValidatorIndex) {
     attestationManager
         .onAttestation(ValidateableAttestation.fromAttestation(attestation))
-        .ifInvalid(
-            reason ->
-                VALIDATOR_LOGGER.producedInvalidAttestation(
-                    attestation.getData().getSlot(), reason));
+        .finish(
+            result ->
+                result.ifInvalid(
+                    reason -> {
+                      VALIDATOR_LOGGER.producedInvalidAttestation(
+                          attestation.getData().getSlot(),
+                          getValidatorIndex(attestation),
+                          expectedValidatorIndex,
+                          reason);
+                    }),
+            err ->
+                LOG.error(
+                    "Failed to send signed attestation for validator {}, slot {}, block {}",
+                    getValidatorIndex(attestation),
+                    attestation.getData().getSlot(),
+                    attestation.getData().getBeacon_block_root()));
+  }
+
+  private int getValidatorIndex(final Attestation attestation) {
+    return get_attesting_indices(
+            combinedChainDataClient.getHeadStateFromStore().orElseThrow(),
+            attestation.getData(),
+            attestation.getAggregation_bits())
+        .get(0);
+  }
+
+  @Override
+  public void sendSignedAttestation(final Attestation attestation) {
+    sendSignedAttestation(attestation, Optional.empty());
   }
 
   @Override
   public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
     attestationManager
         .onAttestation(ValidateableAttestation.fromSignedAggregate(aggregateAndProof))
-        .ifInvalid(
-            reason ->
-                VALIDATOR_LOGGER.producedInvalidAggregate(
-                    aggregateAndProof.getMessage().getAggregate().getData().getSlot(), reason));
+        .finish(
+            result ->
+                result.ifInvalid(
+                    reason ->
+                        VALIDATOR_LOGGER.producedInvalidAggregate(
+                            aggregateAndProof.getMessage().getAggregate().getData().getSlot(),
+                            reason)),
+            err ->
+                LOG.error(
+                    "Failed to send aggregate for slot {}",
+                    aggregateAndProof.getMessage().getAggregate().getData().getSlot()));
   }
 
   @Override
@@ -280,17 +313,18 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final Integer validatorIndex) {
     final List<UnsignedLong> proposerSlots =
         proposalSlotsByValidatorIndex.getOrDefault(validatorIndex, emptyList());
-    final CommitteeAssignment committeeAssignment =
-        CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex)
-            .orElseThrow();
-    return ValidatorDuties.withDuties(
-        key,
-        validatorIndex,
-        Math.toIntExact(committeeAssignment.getCommitteeIndex().longValue()),
-        committeeAssignment.getCommittee().indexOf(validatorIndex),
-        getAggregatorModulo(committeeAssignment.getCommittee().size()),
-        proposerSlots,
-        committeeAssignment.getSlot());
+    return CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex)
+        .map(
+            committeeAssignment ->
+                ValidatorDuties.withDuties(
+                    key,
+                    validatorIndex,
+                    Math.toIntExact(committeeAssignment.getCommitteeIndex().longValue()),
+                    committeeAssignment.getCommittee().indexOf(validatorIndex),
+                    getAggregatorModulo(committeeAssignment.getCommittee().size()),
+                    proposerSlots,
+                    committeeAssignment.getSlot()))
+        .orElseGet(() -> ValidatorDuties.noDuties(key));
   }
 
   private Map<Integer, List<UnsignedLong>> getBeaconProposalSlotsByValidatorIndex(

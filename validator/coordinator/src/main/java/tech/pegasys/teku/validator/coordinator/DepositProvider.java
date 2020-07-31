@@ -59,19 +59,17 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   }
 
   @Override
-  public void onDepositsFromBlock(DepositsFromBlockEvent event) {
+  public synchronized void onDepositsFromBlock(DepositsFromBlockEvent event) {
     event.getDeposits().stream()
         .map(DepositUtil::convertDepositEventToOperationDeposit)
         .forEach(
             deposit -> {
-              synchronized (DepositProvider.this) {
-                if (!recentChainData.isPreGenesis()) {
-                  LOG.debug("About to process deposit: {}", deposit.getIndex());
-                }
-
-                depositNavigableMap.put(deposit.getIndex(), deposit);
-                depositMerkleTree.add(deposit.getData().hash_tree_root());
+              if (!recentChainData.isPreGenesis()) {
+                LOG.debug("About to process deposit: {}", deposit.getIndex());
               }
+
+              depositNavigableMap.put(deposit.getIndex(), deposit);
+              depositMerkleTree.add(deposit.getData().hash_tree_root());
             });
     eth1DataCache.onBlockWithDeposit(
         event.getBlockTimestamp(),
@@ -82,14 +80,23 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   }
 
   @Override
-  public synchronized void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {
-    BeaconState finalizedState =
-        recentChainData
-            .getBlockState(checkpoint.getRoot())
-            .orElseThrow(
-                () -> new IllegalArgumentException("Finalized Checkpoint state can not be found."));
+  public void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {
+    recentChainData
+        .retrieveBlockState(checkpoint.getRoot())
+        .thenAccept(
+            finalizedState -> {
+              if (finalizedState.isEmpty()) {
+                LOG.error("Finalized checkpoint state not found.");
+                return;
+              }
+              final UnsignedLong depositIndex = finalizedState.get().getEth1_deposit_index();
+              pruneDeposits(depositIndex);
+            })
+        .reportExceptions();
+  }
 
-    depositNavigableMap.headMap(finalizedState.getEth1_deposit_index()).clear();
+  private synchronized void pruneDeposits(final UnsignedLong fromIndex) {
+    depositNavigableMap.headMap(fromIndex, false).clear();
   }
 
   @Override
@@ -100,7 +107,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
   @Override
   public void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event) {}
 
-  public SSZList<Deposit> getDeposits(BeaconState state, Eth1Data eth1Data) {
+  public synchronized SSZList<Deposit> getDeposits(BeaconState state, Eth1Data eth1Data) {
     UnsignedLong eth1DepositCount;
     if (isEnoughVotesToUpdateEth1Data(getVoteCount(state, eth1Data) + 1)) {
       eth1DepositCount = eth1Data.getDeposit_count();
@@ -140,11 +147,11 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
     }
   }
 
-  public int getDepositMapSize() {
+  public synchronized int getDepositMapSize() {
     return depositNavigableMap.size();
   }
 
-  // TODO: switch the MerkleTree to use UnsignedLongs instead of using toIntExact() here,
+  // TODO (#2395): switch the MerkleTree to use UnsignedLongs instead of using toIntExact() here,
   //  it will result in an overflow at some point
   /**
    * @param fromDepositIndex inclusive
@@ -152,9 +159,10 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
    * @param eth1DepositCount number of deposits in the merkle tree according to Eth1Data in state
    * @return
    */
-  private synchronized List<Deposit> getDepositsWithProof(
+  private List<Deposit> getDepositsWithProof(
       UnsignedLong fromDepositIndex, UnsignedLong toDepositIndex, UnsignedLong eth1DepositCount) {
-    return depositNavigableMap.subMap(fromDepositIndex, toDepositIndex).values().stream()
+    return depositNavigableMap.subMap(fromDepositIndex, true, toDepositIndex, false).values()
+        .stream()
         .map(
             deposit ->
                 new DepositWithIndex(

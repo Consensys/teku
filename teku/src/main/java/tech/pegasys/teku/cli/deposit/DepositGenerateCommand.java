@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.function.Consumer;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
-import picocli.CommandLine.Option;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 
 @Command(
@@ -36,13 +35,7 @@ public class DepositGenerateCommand implements Runnable {
   private final Consumer<Integer> shutdownFunction;
 
   @Mixin private GenerateParams generateParams;
-
-  @Option(
-      names = {"--Xconfirm-enabled"},
-      arity = "1",
-      defaultValue = "true",
-      hidden = true)
-  private boolean displayConfirmation = true;
+  @Mixin private VerboseOutputParam verboseOutputParam;
 
   public DepositGenerateCommand() {
     this.shutdownFunction =
@@ -53,15 +46,16 @@ public class DepositGenerateCommand implements Runnable {
   DepositGenerateCommand(
       final Consumer<Integer> shutdownFunction,
       final GenerateParams generateParams,
-      final boolean displayConfirmation) {
+      final VerboseOutputParam verboseOutputParam) {
     this.shutdownFunction = shutdownFunction;
     this.generateParams = generateParams;
-    this.displayConfirmation = displayConfirmation;
+    this.verboseOutputParam = verboseOutputParam;
   }
 
   @Override
   public void run() {
-    final GenerateAction generateAction = generateParams.createGenerateAction(displayConfirmation);
+    final GenerateAction generateAction =
+        generateParams.createGenerateAction(verboseOutputParam.isVerboseOutputEnabled());
     generateAction.generateKeys();
     shutdownFunction.accept(0);
   }

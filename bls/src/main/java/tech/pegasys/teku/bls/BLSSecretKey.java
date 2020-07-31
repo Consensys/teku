@@ -13,22 +13,44 @@
 
 package tech.pegasys.teku.bls;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
+import java.math.BigInteger;
+import java.nio.ByteOrder;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.teku.bls.mikuli.SecretKey;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.impl.SecretKey;
 
 public final class BLSSecretKey {
+  /**
+   * Creates a secret key instance from bytes
+   *
+   * @param bytes Should be in range [0, )
+   * @throws IllegalArgumentException if bytes are not in the valid range
+   */
+  public static BLSSecretKey fromBytes(Bytes32 bytes) throws IllegalArgumentException {
+    if (bytes.compareTo(BLSConstants.CURVE_ORDER_BYTES) >= 0) {
+      throw new IllegalArgumentException(
+          "Invalid bytes for secret key (0 <= SK < r, where r is "
+              + BLSConstants.CURVE_ORDER_BYTES
+              + "): "
+              + bytes);
+    } else {
+      return new BLSSecretKey(BLS.getBlsImpl().secretKeyFromBytes(bytes));
+    }
+  }
 
-  public static BLSSecretKey fromBytes(Bytes bytes) {
-    checkArgument(
-        bytes.size() == 32 || bytes.size() == 48,
-        "Expected 32 or 48 bytes but received %s.",
-        bytes.size());
-    final Bytes keyBytes = bytes.size() == 32 ? Bytes48.leftPad(bytes) : bytes;
-    return new BLSSecretKey(SecretKey.fromBytes(keyBytes));
+  static BLSSecretKey fromBytesModR(Bytes32 secretKeyBytes) {
+    final Bytes32 keyBytes;
+    if (secretKeyBytes.compareTo(BLSConstants.CURVE_ORDER_BYTES) >= 0) {
+      BigInteger validSK =
+          secretKeyBytes
+              .toUnsignedBigInteger(ByteOrder.BIG_ENDIAN)
+              .mod(BLSConstants.CURVE_ORDER_BI);
+      keyBytes = Bytes32.leftPad(Bytes.wrap(validSK.toByteArray()));
+    } else {
+      keyBytes = secretKeyBytes;
+    }
+    return fromBytes(keyBytes);
   }
 
   private SecretKey secretKey;
@@ -38,23 +60,25 @@ public final class BLSSecretKey {
    *
    * @param secretKey A Mikuli SecretKey
    */
-  BLSSecretKey(SecretKey secretKey) {
+  public BLSSecretKey(SecretKey secretKey) {
     this.secretKey = secretKey;
   }
 
-  public SecretKey getSecretKey() {
+  SecretKey getSecretKey() {
     return secretKey;
   }
 
-  public Bytes toBytes() {
-    final Bytes bytes = secretKey.toBytes();
-    if (bytes.size() == 48) {
-      final int paddingLength = 48 - 32;
-      if (bytes.slice(0, paddingLength).isZero()) {
-        return bytes.slice(paddingLength, 32);
-      }
-    }
-    return bytes;
+  public BLSPublicKey toPublicKey() {
+    return new BLSPublicKey(getSecretKey().derivePublicKey());
+  }
+
+  public Bytes32 toBytes() {
+    return secretKey.toBytes();
+  }
+
+  /** Overwrites the key with zeros so that it is no longer in memory */
+  public void destroy() {
+    secretKey.destroy();
   }
 
   @Override
@@ -68,5 +92,10 @@ public final class BLSSecretKey {
   @Override
   public int hashCode() {
     return Objects.hash(secretKey);
+  }
+
+  @Override
+  public String toString() {
+    return "BLSSecretKey{" + toBytes() + '}';
   }
 }

@@ -23,13 +23,12 @@ import static tech.pegasys.teku.util.config.Constants.VALID_BLOCK_SET_SIZE;
 
 import com.google.common.base.Objects;
 import com.google.common.primitives.UnsignedLong;
-import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
@@ -38,6 +37,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
 import tech.pegasys.teku.util.collections.LimitStrategy;
@@ -55,39 +55,42 @@ public class BlockValidator {
     this.stateTransition = stateTransition;
   }
 
-  public InternalValidationResult validate(SignedBeaconBlock block) {
+  public SafeFuture<InternalValidationResult> validate(SignedBeaconBlock block) {
 
     if (!blockSlotIsGreaterThanLatestFinalizedSlot(block)
         || !blockIsFirstBlockWithValidSignatureForSlot(block)) {
       LOG.trace(
           "BlockValidator: Block is either too old or is not the first block with valid signature for "
               + "its slot. It will be dropped");
-      return InternalValidationResult.IGNORE;
+      return SafeFuture.completedFuture(InternalValidationResult.IGNORE);
     }
 
-    final Optional<BeaconState> preState =
-        Optional.ofNullable(
-            recentChainData.getStore().getBlockState(block.getMessage().getParent_root()));
-    if (preState.isEmpty() || blockIsFromFutureSlot(block)) {
-      LOG.trace(
-          "BlockValidator: Either block pre state does not exist or block is from the future. "
-              + "It will be saved for future processing");
-      return InternalValidationResult.SAVE_FOR_FUTURE;
-    }
+    return recentChainData
+        .retrieveBlockState(block.getMessage().getParent_root())
+        .thenApply(
+            preState -> {
+              if (preState.isEmpty() || blockIsFromFutureSlot(block)) {
+                LOG.trace(
+                    "BlockValidator: Either block pre state does not exist or block is from the future. "
+                        + "It will be saved for future processing");
+                return InternalValidationResult.SAVE_FOR_FUTURE;
+              }
 
-    try {
-      BeaconState postState =
-          stateTransition.process_slots(preState.get(), block.getMessage().getSlot());
-      if (blockIsProposedByTheExpectedProposer(block, postState)
-          && blockSignatureIsValidWithRespectToProposerIndex(block, preState.get(), postState)) {
-        return InternalValidationResult.ACCEPT;
-      }
-    } catch (EpochProcessingException | SlotProcessingException e) {
-      LOG.error("BlockValidator: Unable to process block state.", e);
-      return InternalValidationResult.REJECT;
-    }
+              try {
+                BeaconState postState =
+                    stateTransition.process_slots(preState.get(), block.getMessage().getSlot());
+                if (blockIsProposedByTheExpectedProposer(block, postState)
+                    && blockSignatureIsValidWithRespectToProposerIndex(
+                        block, preState.get(), postState)) {
+                  return InternalValidationResult.ACCEPT;
+                }
+              } catch (EpochProcessingException | SlotProcessingException e) {
+                LOG.error("BlockValidator: Unable to process block state.", e);
+                return InternalValidationResult.REJECT;
+              }
 
-    return InternalValidationResult.REJECT;
+              return InternalValidationResult.REJECT;
+            });
   }
 
   private boolean blockIsFromFutureSlot(SignedBeaconBlock block) {
@@ -111,14 +114,14 @@ public class BlockValidator {
 
   private boolean blockSignatureIsValidWithRespectToProposerIndex(
       SignedBeaconBlock block, BeaconState preState, BeaconState postState) {
-    final Bytes domain = get_domain(preState, DOMAIN_BEACON_PROPOSER);
+    final Bytes32 domain = get_domain(preState, DOMAIN_BEACON_PROPOSER);
     final Bytes signing_root = compute_signing_root(block.getMessage(), domain);
     final BLSSignature signature = block.getSignature();
 
-    BLSPublicKey proposerPubkey =
-        ValidatorsUtil.getValidatorPubKey(postState, block.getMessage().getProposer_index());
-
-    boolean signatureValid = BLS.verify(proposerPubkey, signing_root, signature);
+    boolean signatureValid =
+        ValidatorsUtil.getValidatorPubKey(postState, block.getMessage().getProposer_index())
+            .map(publicKey -> BLS.verify(publicKey, signing_root, signature))
+            .orElse(false);
 
     return signatureValid && receivedValidBlockInfoSet.add(new SlotAndProposer(block));
   }

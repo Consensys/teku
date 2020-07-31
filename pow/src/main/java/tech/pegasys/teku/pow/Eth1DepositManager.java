@@ -22,11 +22,11 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.EthBlock;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.config.Constants;
 
 public class Eth1DepositManager {
@@ -72,8 +72,8 @@ public class Eth1DepositManager {
 
   private SafeFuture<Void> processStart(
       final EthBlock.Block headBlock, final ReplayDepositsResult replayDepositsResult) {
-    BigInteger startBlockNumber = replayDepositsResult.getBlockNumber();
-    if (headBlock.getNumber().compareTo(startBlockNumber) > 0) {
+    BigInteger startBlockNumber = replayDepositsResult.getFirstUnprocessedBlockNumber();
+    if (headBlock.getNumber().compareTo(startBlockNumber) >= 0) {
       if (isBlockAfterMinGenesis(headBlock)) {
         return headAfterMinGenesisMode(headBlock, replayDepositsResult);
       } else {
@@ -84,7 +84,8 @@ public class Eth1DepositManager {
     if (replayDepositsResult.isPastMinGenesisBlock()) {
       depositProcessingController.startSubscription(startBlockNumber);
     } else {
-      preGenesisSubscription(startBlockNumber);
+      // preGenesisSubscription starts processing from the next block
+      preGenesisSubscription(replayDepositsResult.getLastProcessedBlockNumber());
     }
     return SafeFuture.COMPLETE;
   }
@@ -93,7 +94,9 @@ public class Eth1DepositManager {
       final EthBlock.Block headBlock, final BigInteger startBlockNumber) {
     LOG.debug("Eth1DepositsManager initiating head before genesis mode");
     BigInteger headBlockNumber = headBlock.getNumber();
-    if (startBlockNumber.compareTo(headBlockNumber) < 0) {
+    // Ensure we have processed all blocks up to and including headBlock
+    // preGenesisSubscription will then pick up from the block after headBlock
+    if (startBlockNumber.compareTo(headBlockNumber) <= 0) {
       return depositProcessingController
           .fetchDepositsInRange(startBlockNumber, headBlockNumber)
           .thenRun(() -> preGenesisSubscription(headBlockNumber));
@@ -103,9 +106,9 @@ public class Eth1DepositManager {
     return SafeFuture.COMPLETE;
   }
 
-  private void preGenesisSubscription(final BigInteger headBlockNumber) {
+  private void preGenesisSubscription(final BigInteger lastProcessedBlockNumber) {
     depositProcessingController.switchToBlockByBlockMode();
-    depositProcessingController.startSubscription(headBlockNumber.add(BigInteger.ONE));
+    depositProcessingController.startSubscription(lastProcessedBlockNumber.add(BigInteger.ONE));
   }
 
   private SafeFuture<Void> headAfterMinGenesisMode(
@@ -113,17 +116,21 @@ public class Eth1DepositManager {
     LOG.debug("Eth1DepositsManager initiating head after genesis mode");
 
     if (replayDepositsResult.isPastMinGenesisBlock()) {
-      depositProcessingController.startSubscription(replayDepositsResult.getBlockNumber());
+      depositProcessingController.startSubscription(
+          replayDepositsResult.getFirstUnprocessedBlockNumber());
       return SafeFuture.COMPLETE;
     }
 
     return minimumGenesisTimeBlockFinder
-        .findMinGenesisTimeBlockInHistory(headBlock)
+        .findMinGenesisTimeBlockInHistory(headBlock.getNumber())
         .thenCompose(block -> sendDepositsUpToMinGenesis(block, replayDepositsResult))
         .thenAccept(
             minGenesisTimeBlock -> {
               notifyMinGenesisTimeBlockReached(eth1EventsChannel, minGenesisTimeBlock);
-              depositProcessingController.startSubscription(minGenesisTimeBlock.getNumber());
+              // Start the subscription from the block after min genesis as we've already processed
+              // the min genesis block
+              depositProcessingController.startSubscription(
+                  minGenesisTimeBlock.getNumber().add(BigInteger.ONE));
             });
   }
 
@@ -131,7 +138,7 @@ public class Eth1DepositManager {
       final EthBlock.Block minGenesisTimeBlock, final ReplayDepositsResult replayDepositsResult) {
     return depositProcessingController
         .fetchDepositsInRange(
-            replayDepositsResult.getBlockNumber(), minGenesisTimeBlock.getNumber())
+            replayDepositsResult.getFirstUnprocessedBlockNumber(), minGenesisTimeBlock.getNumber())
         .thenApply(__ -> minGenesisTimeBlock);
   }
 
@@ -144,7 +151,7 @@ public class Eth1DepositManager {
         .thenCompose(eth1Provider::getGuaranteedEth1Block)
         .exceptionallyCompose(
             (err) -> {
-              LOG.warn(
+              LOG.debug(
                   "Eth1DepositManager failed to get the head of Eth1: {}. Retrying in {} seconds.",
                   err.getMessage(),
                   Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT,

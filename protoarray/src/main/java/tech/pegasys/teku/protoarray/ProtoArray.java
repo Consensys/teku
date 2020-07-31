@@ -23,9 +23,10 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 
-class ProtoArray {
+public class ProtoArray {
 
   private int pruneThreshold;
+
   private UnsignedLong justifiedEpoch;
   private UnsignedLong finalizedEpoch;
 
@@ -389,5 +390,13 @@ class ProtoArray {
             || justifiedEpoch.equals(UnsignedLong.ZERO))
         && (node.getFinalizedEpoch().equals(finalizedEpoch)
             || finalizedEpoch.equals(UnsignedLong.ZERO));
+  }
+
+  public UnsignedLong getJustifiedEpoch() {
+    return justifiedEpoch;
+  }
+
+  public UnsignedLong getFinalizedEpoch() {
+    return finalizedEpoch;
   }
 }

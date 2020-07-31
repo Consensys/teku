@@ -14,7 +14,7 @@
 package tech.pegasys.teku.ssz.backing.view;
 
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.ssz.backing.VectorViewWrite;
 import tech.pegasys.teku.ssz.backing.VectorViewWriteRef;
@@ -55,7 +55,7 @@ public class VectorViewWriteImpl<
 
   @Override
   protected TreeUpdates packChanges(
-      List<Entry<Integer, ElementReadType>> newChildValues, TreeNode original) {
+      List<Map.Entry<Integer, ElementReadType>> newChildValues, TreeNode original) {
     VectorViewType<ElementReadType> type = getType();
     ViewType elementType = type.getElementType();
     int elementsPerChunk = type.getElementsPerChunk();
@@ -64,17 +64,17 @@ public class VectorViewWriteImpl<
         .collect(Collectors.groupingBy(e -> e.getKey() / elementsPerChunk))
         .entrySet()
         .stream()
-        .sorted(Entry.comparingByKey())
+        .sorted(Map.Entry.comparingByKey())
         .map(
             e -> {
               int nodeIndex = e.getKey();
-              List<Entry<Integer, ElementReadType>> nodeVals = e.getValue();
+              List<Map.Entry<Integer, ElementReadType>> nodeVals = e.getValue();
               long gIndex = type.getGeneralizedIndex(nodeIndex);
               // optimization: when all packed values changed no need to retrieve original node to
               // merge with
               TreeNode node =
                   nodeVals.size() == elementsPerChunk ? TreeUtil.ZERO_LEAF : original.get(gIndex);
-              for (Entry<Integer, ElementReadType> entry : nodeVals) {
+              for (Map.Entry<Integer, ElementReadType> entry : nodeVals) {
                 node =
                     elementType.updateBackingNode(
                         node, entry.getKey() % elementsPerChunk, entry.getValue());

@@ -20,6 +20,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,15 +35,16 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.storage.InMemoryStorageSystem;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public abstract class AbstractCombinedChainDataClientTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(2);
 
-  protected InMemoryStorageSystem storageSystem;
+  protected StorageSystem storageSystem;
   protected ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
   protected ChainUpdater chainUpdater;
   protected CombinedChainDataClient client;
@@ -56,7 +58,7 @@ public abstract class AbstractCombinedChainDataClientTest {
 
   protected abstract StateStorageMode getStorageMode();
 
-  protected InMemoryStorageSystem createStorageSystem() {
+  protected StorageSystem createStorageSystem() {
     return InMemoryStorageSystem.createEmptyV3StorageSystem(getStorageMode());
   }
 
@@ -90,7 +92,7 @@ public abstract class AbstractCombinedChainDataClientTest {
     chainUpdater.advanceChain();
 
     // Restart
-    final InMemoryStorageSystem restarted = storageSystem.restarted(getStorageMode());
+    final StorageSystem restarted = storageSystem.restarted(getStorageMode());
     final CombinedChainDataClient client = restarted.combinedChainDataClient();
     // We should now have an initialized store, but no chosen chainhead
     assertThat(restarted.recentChainData().getStore()).isNotNull();
@@ -168,13 +170,7 @@ public abstract class AbstractCombinedChainDataClientTest {
   @MethodSource("getQueryBySlotParameters")
   public <T> void queryBySlot_shouldRetrieveHeadState(
       final String caseName, final QueryBySlotTestCase<T> testCase) {
-    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
-    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
-
-    chainUpdater.initializeGenesis();
-    chainUpdater.advanceChain(finalizedSlot);
-    chainUpdater.finalizeEpoch(finalizedEpoch);
-    final SignedBlockAndState bestBlock = chainUpdater.addNewBestBlock();
+    final SignedBlockAndState bestBlock = advanceChainAndGetBestBlockAndState(2);
 
     final UnsignedLong querySlot = bestBlock.getSlot();
     final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(bestBlock);
@@ -189,13 +185,7 @@ public abstract class AbstractCombinedChainDataClientTest {
   @MethodSource("getQueryBySlotParameters")
   public <T> void queryBySlot_shouldRetrieveHeadStateWhenNewerSlotQueried(
       final String caseName, final QueryBySlotTestCase<T> testCase) {
-    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
-    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
-
-    chainUpdater.initializeGenesis();
-    chainUpdater.advanceChain(finalizedSlot);
-    chainUpdater.finalizeEpoch(finalizedEpoch);
-    final SignedBlockAndState bestBlock = chainUpdater.addNewBestBlock();
+    final SignedBlockAndState bestBlock = advanceChainAndGetBestBlockAndState(2);
 
     final UnsignedLong querySlot = bestBlock.getSlot().plus(UnsignedLong.valueOf(2));
     final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(bestBlock);
@@ -210,13 +200,7 @@ public abstract class AbstractCombinedChainDataClientTest {
   @MethodSource("getQueryBySlotParameters")
   public <T> void queryBySlot_shouldRetrieveRecentState(
       final String caseName, final QueryBySlotTestCase<T> testCase) {
-    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
-    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
-
-    chainUpdater.initializeGenesis();
-    chainUpdater.advanceChain(finalizedSlot);
-    chainUpdater.finalizeEpoch(finalizedEpoch);
-    final SignedBlockAndState recentBlock = chainUpdater.advanceChain();
+    final SignedBlockAndState recentBlock = advanceChainAndGetBestBlockAndState(2);
     final SignedBlockAndState bestBlock = chainUpdater.addNewBestBlock();
     // Sanity check
     assertThat(recentBlock.getSlot()).isLessThan(bestBlock.getSlot());
@@ -234,13 +218,7 @@ public abstract class AbstractCombinedChainDataClientTest {
   @MethodSource("getQueryBySlotParameters")
   public <T> void queryBySlot_shouldRetrieveRecentStateInEffectAtSkippedSlot(
       final String caseName, final QueryBySlotTestCase<T> testCase) {
-    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
-    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
-
-    chainUpdater.initializeGenesis();
-    chainUpdater.advanceChain(finalizedSlot);
-    chainUpdater.finalizeEpoch(finalizedEpoch);
-    final SignedBlockAndState recentBlock = chainUpdater.advanceChain();
+    final SignedBlockAndState recentBlock = advanceChainAndGetBestBlockAndState(2);
     final UnsignedLong skippedSlot = recentBlock.getSlot().plus(UnsignedLong.ONE);
     final SignedBlockAndState bestBlock =
         chainUpdater.advanceChain(skippedSlot.plus(UnsignedLong.ONE));
@@ -281,6 +259,16 @@ public abstract class AbstractCombinedChainDataClientTest {
     assertThat(result).isCompletedWithValue(Optional.empty());
   }
 
+  @Test
+  public void getStateByStateRoot_shouldReturnState()
+      throws ExecutionException, InterruptedException {
+    final SignedBlockAndState bestBlockAndState = advanceChainAndGetBestBlockAndState(2);
+    Optional<BeaconState> result =
+        client.getStateByStateRoot(bestBlockAndState.getState().hash_tree_root()).get();
+    assertThat(result.isPresent()).isTrue();
+    assertThat(result.get()).isEqualTo(bestBlockAndState.getState());
+  }
+
   public static Stream<Arguments> getQueryBySlotParameters() {
     return Stream.of(
         Arguments.of("getLatestStateAtSlot", new GetLatestStateAtSlotTestCase()),
@@ -295,6 +283,16 @@ public abstract class AbstractCombinedChainDataClientTest {
         Arguments.of("getLatestStateAtSlot", new GetLatestStateAtSlotTestCase()),
         Arguments.of(
             "getBlockAndStateInEffectAtSlot", new GetBlockAndStateInEffectAtSlotTestCase()));
+  }
+
+  protected SignedBlockAndState advanceChainAndGetBestBlockAndState(final long epoch) {
+    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(epoch);
+    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+
+    chainUpdater.initializeGenesis();
+    chainUpdater.advanceChain(finalizedSlot);
+    chainUpdater.finalizeEpoch(finalizedEpoch);
+    return chainUpdater.addNewBestBlock();
   }
 
   protected interface QueryBySlotTestCase<TResult> {

@@ -13,40 +13,61 @@
 
 package tech.pegasys.teku.bls;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Streams;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.mikuli.BLS12381;
-import tech.pegasys.teku.bls.mikuli.BLS12381.BatchSemiAggregate;
-import tech.pegasys.teku.bls.mikuli.PublicKey;
+import tech.pegasys.teku.bls.impl.BLS12381;
+import tech.pegasys.teku.bls.impl.PublicKey;
+import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
+import tech.pegasys.teku.bls.impl.blst.BlstBLS12381;
+import tech.pegasys.teku.bls.impl.mikuli.MikuliBLS12381;
 
 /**
- * Implements the standard interfaces for BLS methods as defined in
- * https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00
+ * Implements the standard BLS functions used in Eth2 as defined in
+ * https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02
+ *
+ * <p>This package strives to implement the BLS standard as used in the Eth2 specification and is
+ * the entry-point for all BLS signature operations in Teku. Do not rely on any of the classes used
+ * by this one conforming to the specification or standard.
  */
 public class BLS {
+
+  private static final Logger LOG = LogManager.getLogger();
+
+  private static final BLS12381 BlsImpl =
+      BlstBLS12381.INSTANCE.map(bls -> (BLS12381) bls).orElse(MikuliBLS12381.INSTANCE);
+
+  /*
+   * The following are the methods used directly in the Ethereum 2.0 specifications. These strictly adhere to the standard.
+   */
 
   /**
    * Generates a BLSSignature from a private key and message.
    *
-   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.2.1
+   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02#section-3.2.1
    *
    * @param secretKey The secret key, not null
    * @param message The message to sign, not null
    * @return The Signature, not null
    */
   public static BLSSignature sign(BLSSecretKey secretKey, Bytes message) {
-    return new BLSSignature(BLS12381.sign(secretKey.getSecretKey(), message));
+    return new BLSSignature(secretKey.getSecretKey().sign(message));
   }
 
   /**
    * Verifies the given BLS signature against the message bytes using the public key.
    *
-   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.2.2
+   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02#section-3.2.2
    *
    * @param publicKey The public key, not null
    * @param message The message data to verify, not null
@@ -54,38 +75,45 @@ public class BLS {
    * @return True if the verification is successful, false otherwise.
    */
   public static boolean verify(BLSPublicKey publicKey, Bytes message, BLSSignature signature) {
-    return BLS12381.verify(publicKey.getPublicKey(), message, signature.getSignature());
+    if (BLSConstants.VERIFICATION_DISABLED) {
+      LOG.warn("Skipping bls verification.");
+      return true;
+    }
+    return signature.getSignature().verify(publicKey.getPublicKey(), message);
   }
 
   /**
    * Aggregates a list of BLSSignatures into a single BLSSignature.
    *
-   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-2.7
+   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02#section-2.8
+   *
+   * <p>The standard says to return INVALID if the list of signatures is empty. We choose to throw
+   * an exception in this case. In addition, BLS12381.aggregate will throw an
+   * IllegalArgumentException if any of the signatures is not a valid G2 curve point.
    *
    * @param signatures the list of signatures to be aggregated
    * @return the aggregated signature
+   * @throws IllegalArgumentException if any of supplied signatures is invalid
    */
-  public static BLSSignature aggregate(List<BLSSignature> signatures) {
-    return aggregate(signatures.stream());
-  }
-
-  /**
-   * Aggregates a stream of BLSSignatures into a single BLSSignature.
-   *
-   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-2.7
-   *
-   * @param signatures the stream of signatures to be aggregated
-   * @return the aggregated signature
-   */
-  public static BLSSignature aggregate(final Stream<BLSSignature> signatures) {
-    return new BLSSignature(BLS12381.aggregate(signatures.map(BLSSignature::getSignature)));
+  public static BLSSignature aggregate(List<BLSSignature> signatures)
+      throws IllegalArgumentException {
+    checkArgument(signatures.size() > 0, "Aggregating zero signatures is invalid.");
+    return new BLSSignature(
+        getBlsImpl()
+            .aggregateSignatures(
+                signatures.stream().map(BLSSignature::getSignature).collect(Collectors.toList())));
   }
 
   /**
    * Verifies an aggregate BLS signature against a list of distinct messages using the list of
    * public keys.
    *
-   * <p>https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.1.1
+   * <p>https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02#section-3.1.1
+   *
+   * <p>The standard says to return INVALID, that is, false, if the list of public keys is empty.
+   * See also discussion at https://github.com/ethereum/eth2.0-specs/issues/1713
+   *
+   * <p>We also return false if any of the messages are duplicates.
    *
    * @param publicKeys The list of public keys, not null
    * @param messages The list of messages to verify, all distinct, not null
@@ -94,15 +122,28 @@ public class BLS {
    */
   public static boolean aggregateVerify(
       List<BLSPublicKey> publicKeys, List<Bytes> messages, BLSSignature signature) {
-    List<PublicKey> publicKeyObjects =
-        publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
-    return BLS12381.aggregateVerify(publicKeyObjects, messages, signature.getSignature());
+    checkArgument(
+        publicKeys.size() == messages.size(),
+        "Number of public keys and number of messages differs.");
+    if (publicKeys.isEmpty()) return false;
+    // Check that there are no duplicate messages
+    if (new HashSet<>(messages).size() != messages.size()) return false;
+    List<PublicKeyMessagePair> publicKeyMessagePairs =
+        Streams.zip(
+                publicKeys.stream(),
+                messages.stream(),
+                (pk, msg) -> new PublicKeyMessagePair(pk.getPublicKey(), msg))
+            .collect(Collectors.toList());
+    return signature.getSignature().verify(publicKeyMessagePairs);
   }
 
   /**
    * Verifies an aggregate BLS signature against a message using the list of public keys.
    *
-   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-00#section-3.3.4
+   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02#section-3.3.4
+   *
+   * <p>The standard says to return INVALID, that is, false, if the list of public keys is empty.
+   * See also discussion at https://github.com/ethereum/eth2.0-specs/issues/1713
    *
    * @param publicKeys The list of public keys, not null
    * @param message The message data to verify, not null
@@ -111,10 +152,19 @@ public class BLS {
    */
   public static boolean fastAggregateVerify(
       List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
+    if (BLSConstants.VERIFICATION_DISABLED) {
+      LOG.warn("Skipping bls verification.");
+      return true;
+    }
+    if (publicKeys.isEmpty()) return false;
     List<PublicKey> publicKeyObjects =
         publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
-    return BLS12381.fastAggregateVerify(publicKeyObjects, message, signature.getSignature());
+    return signature.getSignature().verify(publicKeyObjects, message);
   }
+
+  /*
+   * The following implement optimised versions of the above. These may or may not follow the standard.
+   */
 
   /**
    * Optimized version for verification of several BLS signatures in a single batch. See
@@ -129,6 +179,8 @@ public class BLS {
    * supplied If more than one signature passed then finds optimal parameters and delegates the call
    * to the advanced {@link #batchVerify(List, List, List, boolean, boolean)} method
    *
+   * <p>The standard says to return INVALID, that is, false, if the list of public keys is empty.
+   *
    * @return True if the verification is successful, false otherwise
    */
   public static boolean batchVerify(
@@ -139,7 +191,7 @@ public class BLS {
 
     int count = publicKeys.size();
     if (count == 0) {
-      return true;
+      return false;
     } else if (count == 1) {
       return fastAggregateVerify(publicKeys.get(0), messages.get(0), signatures.get(0));
     } else {
@@ -160,6 +212,8 @@ public class BLS {
    * (several or just a single one). See {@link #fastAggregateVerify(List, Bytes, BLSSignature)} for
    * reference.
    *
+   * <p>The standard says to return INVALID, that is, false, if the list of public keys is empty.
+   *
    * @param doublePairing if true uses the optimized version of ate pairing (ate2) which processes a
    *     pair of signatures a bit faster than with 2 separate regular ate calls Note that this
    *     option may not be optimal when a number of signatures is relatively small and the
@@ -174,10 +228,15 @@ public class BLS {
       List<BLSSignature> signatures,
       boolean doublePairing,
       boolean parallel) {
+    if (BLSConstants.VERIFICATION_DISABLED) {
+      LOG.warn("Skipping bls verification.");
+      return true;
+    }
     Preconditions.checkArgument(
         publicKeys.size() == messages.size() && publicKeys.size() == signatures.size(),
         "Different collection sizes");
     int count = publicKeys.size();
+    if (count == 0) return false;
     if (doublePairing) {
       Stream<List<Integer>> pairsStream =
           Lists.partition(IntStream.range(0, count).boxed().collect(Collectors.toList()), 2)
@@ -238,11 +297,12 @@ public class BLS {
    */
   public static BatchSemiAggregate prepareBatchVerify(
       int index, List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
-    return BLS12381.prepareBatchVerify(
-        index,
-        publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
-        message,
-        signature.getSignature());
+    return getBlsImpl()
+        .prepareBatchVerify(
+            index,
+            publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
+            message,
+            signature.getSignature());
   }
 
   /**
@@ -260,14 +320,15 @@ public class BLS {
       List<BLSPublicKey> publicKeys2,
       Bytes message2,
       BLSSignature signature2) {
-    return BLS12381.prepareBatchVerify2(
-        index,
-        publicKeys1.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
-        message1,
-        signature1.getSignature(),
-        publicKeys2.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
-        message2,
-        signature2.getSignature());
+    return getBlsImpl()
+        .prepareBatchVerify2(
+            index,
+            publicKeys1.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
+            message1,
+            signature1.getSignature(),
+            publicKeys2.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
+            message2,
+            signature2.getSignature());
   }
 
   /**
@@ -278,6 +339,14 @@ public class BLS {
    * @return True if the verification is successful, false otherwise
    */
   public static boolean completeBatchVerify(List<BatchSemiAggregate> preparedSignatures) {
-    return BLS12381.completeBatchVerify(preparedSignatures);
+    if (BLSConstants.VERIFICATION_DISABLED) {
+      LOG.warn("Skipping bls verification.");
+      return true;
+    }
+    return getBlsImpl().completeBatchVerify(preparedSignatures);
+  }
+
+  static BLS12381 getBlsImpl() {
+    return BlsImpl;
   }
 }

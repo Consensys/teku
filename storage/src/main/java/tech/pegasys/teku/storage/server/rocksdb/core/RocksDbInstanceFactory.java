@@ -20,7 +20,10 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import org.rocksdb.BlockBasedTableConfig;
+import org.rocksdb.Cache;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
@@ -28,6 +31,7 @@ import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
 import org.rocksdb.LRUCache;
 import org.rocksdb.RocksDBException;
+import org.rocksdb.Statistics;
 import org.rocksdb.TransactionDB;
 import org.rocksdb.TransactionDBOptions;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
@@ -41,16 +45,23 @@ public class RocksDbInstanceFactory {
   }
 
   public static RocksDbAccessor create(
-      final RocksDbConfiguration configuration, final Class<? extends Schema> schema)
+      final MetricsSystem metricsSystem,
+      final MetricCategory metricCategory,
+      final RocksDbConfiguration configuration,
+      final Class<? extends Schema> schema)
       throws DatabaseStorageException {
-    // Track resouces that need to be closed
-    final List<AutoCloseable> resources = new ArrayList<>();
+    // Track resources that need to be closed
 
     // Create options
     final TransactionDBOptions txOptions = new TransactionDBOptions();
-    final DBOptions dbOptions = createDBOptions(configuration);
-    final ColumnFamilyOptions columnFamilyOptions = createColumnFamilyOptions(configuration);
-    resources.addAll(List.of(txOptions, dbOptions, columnFamilyOptions));
+    final RocksDbStats rocksDbStats = new RocksDbStats(metricsSystem, metricCategory);
+    final DBOptions dbOptions = createDBOptions(configuration, rocksDbStats.getStats());
+    final LRUCache blockCache = new LRUCache(configuration.getCacheCapacity());
+    final ColumnFamilyOptions columnFamilyOptions =
+        createColumnFamilyOptions(configuration, blockCache);
+    final List<AutoCloseable> resources =
+        new ArrayList<>(
+            List.of(txOptions, dbOptions, columnFamilyOptions, rocksDbStats, blockCache));
 
     List<ColumnFamilyDescriptor> columnDescriptors =
         createColumnFamilyDescriptors(schema, columnFamilyOptions);
@@ -85,6 +96,8 @@ public class RocksDbInstanceFactory {
       final ColumnFamilyHandle defaultHandle = getDefaultHandle(columnHandles);
       resources.add(db);
 
+      rocksDbStats.registerMetrics(db);
+
       return new RocksDbInstance(db, defaultHandle, columnHandlesMap, resources);
     } catch (RocksDBException e) {
       throw new DatabaseStorageException(
@@ -106,19 +119,32 @@ public class RocksDbInstanceFactory {
         .orElseThrow(() -> new DatabaseStorageException("No default column defined"));
   }
 
-  private static DBOptions createDBOptions(final RocksDbConfiguration configuration) {
-    return new DBOptions()
-        .setCreateIfMissing(true)
-        .setMaxOpenFiles(configuration.getMaxOpenFiles())
-        .setMaxBackgroundCompactions(configuration.getMaxBackgroundCompactions())
-        .setCreateMissingColumnFamilies(true)
-        .setEnv(Env.getDefault().setBackgroundThreads(configuration.getBackgroundThreadCount()));
+  private static DBOptions createDBOptions(
+      final RocksDbConfiguration configuration, final Statistics stats) {
+    final DBOptions options =
+        new DBOptions()
+            .setCreateIfMissing(true)
+            .setBytesPerSync(1048576L)
+            .setWalBytesPerSync(1048576L)
+            .setIncreaseParallelism(Runtime.getRuntime().availableProcessors())
+            .setMaxBackgroundJobs(configuration.getMaxBackgroundJobs())
+            .setDbWriteBufferSize(configuration.getWriteBufferCapacity())
+            .setMaxOpenFiles(configuration.getMaxOpenFiles())
+            .setCreateMissingColumnFamilies(true)
+            .setEnv(Env.getDefault().setBackgroundThreads(configuration.getBackgroundThreadCount()))
+            .setStatistics(stats);
+    if (configuration.optimizeForSmallDb()) {
+      options.optimizeForSmallDb();
+    }
+    return options;
   }
 
   private static ColumnFamilyOptions createColumnFamilyOptions(
-      final RocksDbConfiguration configuration) {
+      final RocksDbConfiguration configuration, final Cache cache) {
     return new ColumnFamilyOptions()
-        .setTableFormatConfig(createBlockBasedTableConfig(configuration));
+        .setCompressionType(configuration.getCompressionType())
+        .setBottommostCompressionType(configuration.getBottomMostCompressionType())
+        .setTableFormatConfig(createBlockBasedTableConfig(cache));
   }
 
   private static List<ColumnFamilyDescriptor> createColumnFamilyDescriptors(
@@ -133,9 +159,10 @@ public class RocksDbInstanceFactory {
     return columnDescriptors;
   }
 
-  private static BlockBasedTableConfig createBlockBasedTableConfig(
-      final RocksDbConfiguration config) {
-    final LRUCache cache = new LRUCache(config.getCacheCapacity());
-    return new BlockBasedTableConfig().setBlockCache(cache);
+  private static BlockBasedTableConfig createBlockBasedTableConfig(final Cache cache) {
+    return new BlockBasedTableConfig()
+        .setBlockCache(cache)
+        .setCacheIndexAndFilterBlocks(true)
+        .setFormatVersion(4); // Use the latest format version (only applies to new tables)
   }
 }

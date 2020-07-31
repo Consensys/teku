@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -27,11 +28,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
-import tech.pegasys.teku.util.Waiter;
-import tech.pegasys.teku.util.async.SafeFuture;
 
 public abstract class Eth2IncomingRequestHandlerTest
     extends AbstractRequestHandlerTest<
@@ -51,9 +55,6 @@ public abstract class Eth2IncomingRequestHandlerTest
 
     lenient().when(state.getSlot()).thenReturn(UnsignedLong.ONE);
     lenient()
-        .when(combinedChainDataClient.getNonfinalizedBlockState(any()))
-        .thenReturn(Optional.of(state));
-    lenient()
         .when(combinedChainDataClient.getBlockAtSlotExact(any(), any()))
         .thenAnswer(i -> getBlockAtSlot(i.getArgument(0)));
   }
@@ -70,10 +71,18 @@ public abstract class Eth2IncomingRequestHandlerTest
   }
 
   @Test
-  public void shouldCloseStreamIfRequestNotReceivedInTime() {
-    // Wait for processInput to block on waiting for input
-    Waiter.waitFor(() -> assertThat(inputStream.isWaitingOnNextByteToBeDelivered()).isTrue());
+  public void testEmptyRequestMessage() {
+    Eth2IncomingRequestHandler<EmptyMessage, MetadataMessage> requestHandler =
+        beaconChainMethods.getMetadata().createIncomingRequestHandler();
+    requestHandler.complete(nodeId, rpcStream);
+    asyncRunner.executeQueuedActions();
+    // verify non-error response
+    verify(rpcStream).writeBytes(argThat(bytes -> bytes.get(0) == 0));
+    verify(rpcStream).close();
+  }
 
+  @Test
+  public void shouldCloseStreamIfRequestNotReceivedInTime() {
     verify(rpcStream, never()).close();
     verify(rpcStream, never()).closeWriteStream();
 
@@ -88,9 +97,8 @@ public abstract class Eth2IncomingRequestHandlerTest
   @Test
   public void shouldNotCloseStreamIfRequestReceivedInTime() throws Exception {
     // Deliver request and wait for it to be processed
-    inputStream.deliverBytes(requestData);
+    reqHandler.processData(nodeId, rpcStream, Utils.toByteBuf(requestData));
     Waiter.waitFor(() -> assertThat(reqHandler.hasRequestBeenReceived()).isTrue());
-    inputStream.close();
 
     // When timeout completes, we should not close stream
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);

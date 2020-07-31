@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
-import tech.pegasys.teku.util.Waiter;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 
 public class TekuDepositSender extends Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -36,7 +36,7 @@ public class TekuDepositSender extends Node {
         "generate-and-register",
         "--network",
         "minimal",
-        "--Xconfirm-enabled",
+        "--verbose-output-enabled",
         "false",
         "--encrypted-keystore-enabled",
         ENCRYPTED_KEYSTORE_ENABLED,

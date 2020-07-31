@@ -13,10 +13,11 @@
 
 package tech.pegasys.teku.sync;
 
-import static tech.pegasys.teku.util.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Throwables;
 import com.google.common.primitives.UnsignedLong;
 import java.time.Duration;
 import java.util.Comparator;
@@ -26,16 +27,17 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService.SyncSubscriber;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
-import tech.pegasys.teku.util.async.SafeFuture;
 import tech.pegasys.teku.util.events.Subscribers;
 
 public class SyncManager extends Service {
@@ -67,15 +69,16 @@ public class SyncManager extends Service {
   }
 
   public static SyncManager create(
+      final AsyncRunner asyncRunner,
       final P2PNetwork<Eth2Peer> network,
       final RecentChainData storageClient,
-      final BlockImporter blockImporter) {
-    final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
+      final BlockImporter blockImporter,
+      final MetricsSystem metricsSystem) {
     return new SyncManager(
         asyncRunner,
         network,
         storageClient,
-        new PeerSync(asyncRunner, storageClient, blockImporter));
+        new PeerSync(asyncRunner, storageClient, blockImporter, metricsSystem));
   }
 
   @Override
@@ -193,7 +196,12 @@ public class SyncManager extends Service {
             })
         .exceptionally(
             error -> {
-              LOG.error("Error during sync to peer " + syncPeer, error);
+              if (Throwables.getRootCause(error) instanceof PeerDisconnectedException) {
+                LOG.debug("Peer {} disconnected during sync", syncPeer, error);
+
+              } else {
+                LOG.error("Error during sync to peer {}", syncPeer, error);
+              }
               peersWithSyncErrors.add(syncPeer.getId());
               // Wait a little bit, clear error and retry
               asyncRunner

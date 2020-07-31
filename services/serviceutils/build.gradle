@@ -1,5 +1,7 @@
 dependencies {
+  implementation project(':data:metrics')
   implementation project(':events')
+  implementation project(':infrastructure:async')
   implementation project(':logging')
   implementation project(':storage')
   implementation project(':util')
@@ -9,4 +11,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-config'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.hyperledger.besu:plugin-api'
+
+  testImplementation testFixtures(project(':infrastructure:async'))
+  testImplementation testFixtures(project(':util'))
 }

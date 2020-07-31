@@ -27,7 +27,7 @@ public class Constants {
 
   // Non-configurable constants
   public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE;
-  public static int BASE_REWARDS_PER_EPOCH = 4;
+  public static UnsignedLong BASE_REWARDS_PER_EPOCH = UnsignedLong.valueOf(4);
   public static int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
   public static int JUSTIFICATION_BITS_LENGTH = 4;
 
@@ -43,6 +43,7 @@ public class Constants {
   public static UnsignedLong HYSTERESIS_QUOTIENT;
   public static UnsignedLong HYSTERESIS_DOWNWARD_MULTIPLIER;
   public static UnsignedLong HYSTERESIS_UPWARD_MULTIPLIER;
+  public static final int MAX_REQUEST_BLOCKS = 1024;
 
   // Gwei values
   public static long MIN_DEPOSIT_AMOUNT;
@@ -57,17 +58,17 @@ public class Constants {
   public static Bytes BLS_WITHDRAWAL_PREFIX;
 
   // Time parameters
-  public static int MIN_GENESIS_DELAY = 86400;
+  public static UnsignedLong GENESIS_DELAY;
   public static int SECONDS_PER_SLOT = 12;
   public static int MIN_ATTESTATION_INCLUSION_DELAY;
   public static int SLOTS_PER_EPOCH;
   public static int MIN_SEED_LOOKAHEAD;
   public static int MAX_SEED_LOOKAHEAD;
-  public static int MIN_EPOCHS_TO_INACTIVITY_PENALTY;
+  public static UnsignedLong MIN_EPOCHS_TO_INACTIVITY_PENALTY;
   public static int EPOCHS_PER_ETH1_VOTING_PERIOD;
   public static int SLOTS_PER_HISTORICAL_ROOT;
   public static int MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
-  public static int PERSISTENT_COMMITTEE_PERIOD;
+  public static UnsignedLong SHARD_COMMITTEE_PERIOD;
   public static int MAX_EPOCHS_PER_CROSSLINK;
 
   // State list lengths
@@ -79,8 +80,8 @@ public class Constants {
   // Reward and penalty quotients
   public static int BASE_REWARD_FACTOR;
   public static int WHISTLEBLOWER_REWARD_QUOTIENT;
-  public static int PROPOSER_REWARD_QUOTIENT;
-  public static int INACTIVITY_PENALTY_QUOTIENT;
+  public static UnsignedLong PROPOSER_REWARD_QUOTIENT;
+  public static UnsignedLong INACTIVITY_PENALTY_QUOTIENT;
   public static int MIN_SLASHING_PENALTY_QUOTIENT;
 
   // Max transactions per block
@@ -115,7 +116,7 @@ public class Constants {
   public static int EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 256;
 
   // Sync
-  public static UnsignedLong MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UnsignedLong.valueOf(200);
+  public static final UnsignedLong MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UnsignedLong.valueOf(200);
 
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");
@@ -127,16 +128,10 @@ public class Constants {
   // Teku specific
   public static final Bytes32 ZERO_HASH = Bytes32.ZERO;
   public static final double TIME_TICKER_REFRESH_RATE = 2; // per sec
-  public static final UnsignedLong GENESIS_START_DELAY = UnsignedLong.valueOf(5);
-  public static final int COMMITTEE_INDEX_SUBSCRIPTION_LENGTH = 2; // in epochs
-  public static UnsignedLong ETH1_REQUEST_BUFFER = UnsignedLong.valueOf(10); // in sec
-  public static final long ETH1_CACHE_STARTUP_RETRY_TIMEOUT = 10; // in sec
-  public static final long ETH1_CACHE_STARTUP_RETRY_GIVEUP = 5; // in #
   public static final long ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT = 500; // in milli sec
   public static final long ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = 2; // in sec
-  public static final long ETH1_SUBSCRIPTION_RETRY_TIMEOUT = 5; // in sec
   public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
-  public static final int REPUTATION_MANAGER_CAPACITY = 100;
+  public static final int REPUTATION_MANAGER_CAPACITY = 1024;
   public static final long STORAGE_REQUEST_TIMEOUT = 5; // in sec
   public static final int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
   public static final int PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD = 256;
@@ -179,7 +174,7 @@ public class Constants {
 
   private static InputStream createInputStream(final String source) throws IOException {
     return ResourceLoader.classpathUrlOrFile(
-            Constants.class, name -> name + ".yaml", "mainnet", "minimal", "schlesi", "witti")
+            Constants.class, name -> name + ".yaml", "mainnet", "minimal", "altona", "medalla")
         .load(source)
         .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
   }

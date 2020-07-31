@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.util.time.channels;
 
-import java.util.Date;
+import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
 
-public interface TimeTickChannel {
-  void onTick(Date event);
+public interface TimeTickChannel extends VoidReturningChannelInterface {
+  void onTick();
 }

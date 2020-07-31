@@ -19,17 +19,14 @@ import com.google.common.eventbus.SubscriberExceptionHandler;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.reflect.Method;
 import java.nio.channels.ClosedChannelException;
-import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.events.ChannelExceptionHandler;
 import tech.pegasys.teku.logging.StatusLogger;
+import tech.pegasys.teku.storage.server.ShuttingDownException;
 
 public final class TekuDefaultExceptionHandler
-    implements SubscriberExceptionHandler,
-        ChannelExceptionHandler,
-        UncaughtExceptionHandler,
-        Function<Throwable, Void> {
+    implements SubscriberExceptionHandler, ChannelExceptionHandler, UncaughtExceptionHandler {
   private static final Logger LOG = LogManager.getLogger();
 
   private final StatusLogger statusLog;
@@ -84,6 +81,8 @@ public final class TekuDefaultExceptionHandler
     if (exception instanceof OutOfMemoryError) {
       statusLog.fatalError(subscriberDescription, exception);
       System.exit(2);
+    } else if (exception instanceof ShuttingDownException) {
+      LOG.debug("Shutting down", exception);
     } else if (isExpectedNettyError(exception)) {
       LOG.debug("Channel unexpectedly closed", exception);
     } else if (isSpecFailure(exception)) {
@@ -99,10 +98,5 @@ public final class TekuDefaultExceptionHandler
 
   private static boolean isSpecFailure(final Throwable exception) {
     return exception instanceof IllegalArgumentException;
-  }
-
-  @Override
-  public Void apply(final Throwable throwable) {
-    return null;
   }
 }

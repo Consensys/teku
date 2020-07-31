@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.initialize_beacon_state_from_eth1;
-import static tech.pegasys.teku.util.hashtree.HashTreeUtil.is_power_of_two;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -109,7 +108,7 @@ class BeaconStateUtilTest {
             depositData.getPubkey(),
             depositData.getWithdrawal_credentials(),
             depositData.getAmount());
-    Bytes domain =
+    Bytes32 domain =
         BeaconStateUtil.get_domain(
             createBeaconState(),
             Constants.DOMAIN_DEPOSIT,
@@ -129,7 +128,7 @@ class BeaconStateUtilTest {
             depositData.getPubkey(),
             depositData.getWithdrawal_credentials(),
             depositData.getAmount());
-    Bytes domain =
+    Bytes32 domain =
         BeaconStateUtil.get_domain(
             createBeaconState(),
             Constants.DOMAIN_DEPOSIT,
@@ -265,22 +264,6 @@ class BeaconStateUtilTest {
         BeaconStateUtil.bytes_to_int(Bytes.fromHexString("0xf0debc9a78563412")));
   }
 
-  @Test
-  void isPowerOfTwo() {
-    // TODO: Only works with values that fit into an int, need to find out if that matters
-    // Not powers of two:
-    assertThat(is_power_of_two(UnsignedLong.ZERO)).isEqualTo(false);
-    assertThat(is_power_of_two(UnsignedLong.valueOf(42L))).isEqualTo(false);
-    //    assertThat(is_power_of_two(UnsignedLong.valueOf(Long.MAX_VALUE))).isEqualTo(false);
-    // Powers of two:
-    assertThat(is_power_of_two(UnsignedLong.ONE)).isEqualTo(true);
-    assertThat(is_power_of_two(UnsignedLong.ONE.plus(UnsignedLong.ONE))).isEqualTo(true);
-    assertThat(is_power_of_two(UnsignedLong.valueOf(0x040000L))).isEqualTo(true);
-    //    assertThat(is_power_of_two(UnsignedLong.valueOf(0x0100000000L))).isEqualTo(true);
-    //
-    // assertThat(is_power_of_two(UnsignedLong.fromLongBits(0x8000000000000000L))).isEqualTo(true);
-  }
-
   private BeaconState createBeaconState() {
     return createBeaconState(false, null, null);
   }
@@ -327,8 +310,6 @@ class BeaconStateUtilTest {
   }
 
   // *************** START Shuffling Tests ***************
-
-  // TODO: tests for get_shuffling() - the reference tests are out of date.
 
   // The following are just sanity checks. The real testing is against the official test vectors,
   // elsewhere.

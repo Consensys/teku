@@ -14,6 +14,7 @@
 package tech.pegasys.teku.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
@@ -27,14 +28,17 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
-import tech.pegasys.teku.util.Waiter;
 import tech.pegasys.teku.util.config.Constants;
 
 public class BlockPropagationIntegrationTest {
+  private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(3);
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
 
@@ -59,6 +63,7 @@ public class BlockPropagationIntegrationTest {
     // Setup node 1
     SyncingNodeManager node1 =
         SyncingNodeManager.create(
+            asyncRunner,
             networkFactory,
             validatorKeys,
             c -> c.rpcEncoding(encoding).gossipEncoding(gossipEncoding));
@@ -75,6 +80,7 @@ public class BlockPropagationIntegrationTest {
     // Setup node 2
     SyncingNodeManager node2 =
         SyncingNodeManager.create(
+            asyncRunner,
             networkFactory,
             validatorKeys,
             c -> c.rpcEncoding(encoding).gossipEncoding(gossipEncoding));
@@ -87,7 +93,7 @@ public class BlockPropagationIntegrationTest {
           assertThat(node1.network().getPeerCount()).isEqualTo(1);
           assertThat(node2.network().getPeerCount()).isEqualTo(1);
         });
-    // TODO: debug this - we shouldn't have to wait here
+    // TODO (#1855): debug this - we shouldn't have to wait here
     Thread.sleep(2000);
 
     // Update slot so that blocks can be imported
@@ -104,11 +110,13 @@ public class BlockPropagationIntegrationTest {
         () -> {
           for (SignedBeaconBlock block : blocksToFetch) {
             final Bytes32 blockRoot = block.getMessage().hash_tree_root();
-            assertThat(node2.storageClient().getBlockByRoot(blockRoot)).isPresent();
+            assertThatSafeFuture(node2.storageClient().retrieveBlockByRoot(blockRoot))
+                .isCompletedWithNonEmptyOptional();
           }
           // Last block should be imported as well
           final Bytes32 newBlockRoot = newBlock.getMessage().hash_tree_root();
-          assertThat(node2.storageClient().getBlockByRoot(newBlockRoot)).isPresent();
+          assertThatSafeFuture(node2.storageClient().retrieveBlockByRoot(newBlockRoot))
+              .isCompletedWithNonEmptyOptional();
         });
   }
 }

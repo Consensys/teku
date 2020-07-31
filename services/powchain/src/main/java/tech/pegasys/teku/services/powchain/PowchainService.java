@@ -16,11 +16,19 @@ package tech.pegasys.teku.services.powchain;
 import static tech.pegasys.teku.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
 import static tech.pegasys.teku.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 
+import java.util.concurrent.TimeUnit;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.pow.DepositContractAccessor;
 import tech.pegasys.teku.pow.DepositFetcher;
 import tech.pegasys.teku.pow.DepositProcessingController;
+import tech.pegasys.teku.pow.ErrorTrackingEth1Provider;
 import tech.pegasys.teku.pow.Eth1BlockFetcher;
 import tech.pegasys.teku.pow.Eth1DepositManager;
 import tech.pegasys.teku.pow.Eth1HeadTracker;
@@ -32,12 +40,12 @@ import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
-import tech.pegasys.teku.util.async.AsyncRunner;
-import tech.pegasys.teku.util.async.DelayedExecutorAsyncRunner;
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class PowchainService extends Service {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Eth1DepositManager eth1DepositManager;
   private final Eth1HeadTracker headTracker;
@@ -45,13 +53,15 @@ public class PowchainService extends Service {
   public PowchainService(final ServiceConfig config) {
     TekuConfiguration tekuConfig = config.getConfig();
 
-    AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
+    AsyncRunner asyncRunner = config.createAsyncRunner("powchain");
 
-    Web3j web3j = Web3j.build(new HttpService(tekuConfig.getEth1Endpoint()));
+    Web3j web3j = createWeb3j(tekuConfig);
 
     final Eth1Provider eth1Provider =
         new ThrottlingEth1Provider(
-            new Web3jEth1Provider(web3j, asyncRunner), MAXIMUM_CONCURRENT_ETH1_REQUESTS);
+            new ErrorTrackingEth1Provider(
+                new Web3jEth1Provider(web3j, asyncRunner), asyncRunner, config.getTimeProvider()),
+            MAXIMUM_CONCURRENT_ETH1_REQUESTS);
 
     DepositContractAccessor depositContractAccessor =
         DepositContractAccessor.create(
@@ -60,7 +70,7 @@ public class PowchainService extends Service {
     final Eth1EventsChannel eth1EventsChannel =
         config.getEventChannels().getPublisher(Eth1EventsChannel.class);
     final Eth1DepositStorageChannel eth1DepositStorageChannel =
-        config.getEventChannels().getPublisher(Eth1DepositStorageChannel.class);
+        config.getEventChannels().getPublisher(Eth1DepositStorageChannel.class, asyncRunner);
     final Eth1BlockFetcher eth1BlockFetcher =
         new Eth1BlockFetcher(
             eth1EventsChannel,
@@ -94,6 +104,26 @@ public class PowchainService extends Service {
             eth1DepositStorageChannel,
             depositProcessingController,
             new MinimumGenesisTimeBlockFinder(eth1Provider));
+  }
+
+  private Web3j createWeb3j(final TekuConfiguration tekuConfig) {
+    final HttpService web3jService =
+        new HttpService(tekuConfig.getEth1Endpoint(), createOkHttpClient());
+    web3jService.addHeader("User-Agent", VersionProvider.VERSION);
+    return Web3j.build(web3jService);
+  }
+
+  private static OkHttpClient createOkHttpClient() {
+    final OkHttpClient.Builder builder =
+        new OkHttpClient.Builder()
+            // Increased read timeout allows ETH1 nodes time to process large log requests
+            .readTimeout(1, TimeUnit.MINUTES);
+    if (LOG.isTraceEnabled()) {
+      HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
+      logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+      builder.addInterceptor(logging);
+    }
+    return builder.build();
   }
 
   @Override

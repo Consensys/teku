@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.api;
 
-import tech.pegasys.teku.util.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 /** Indicates that the request couldn't be completed because the node is currently syncing. */
 public class NodeSyncingException extends RuntimeException {

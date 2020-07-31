@@ -29,7 +29,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import java.util.zip.GZIPInputStream;
-import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -66,6 +67,7 @@ public class BlsKeyPairIO {
       return Utils.fromSupplier(this);
     }
 
+    @SuppressWarnings("EmptyCatch")
     public List<BLSKeyPair> readAll(int limit) {
       try {
         return StreamSupport.stream(withLimit(limit).spliterator(), false)
@@ -73,7 +75,7 @@ public class BlsKeyPairIO {
       } finally {
         try {
           close();
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
       }
     }
@@ -101,11 +103,9 @@ public class BlsKeyPairIO {
 
         BLSPublicKey blsPublicKey =
             BLSPublicKey.fromBytesCompressed(
-                Bytes.fromHexString(parts.substring(delimiterPos + 1)));
-        Bytes privateBytes = Bytes.fromHexString(parts.substring(0, delimiterPos));
-        BLSSecretKey blsSecretKey =
-            BLSSecretKey.fromBytes(
-                Bytes.concatenate(Bytes.wrap(new byte[48 - privateBytes.size()]), privateBytes));
+                Bytes48.fromHexString(parts.substring(delimiterPos + 1)));
+        Bytes32 privateBytes = Bytes32.fromHexString(parts.substring(0, delimiterPos));
+        BLSSecretKey blsSecretKey = BLSSecretKey.fromBytes(privateBytes);
 
         pairsToRead--;
         return new BLSKeyPair(blsPublicKey, blsSecretKey);
@@ -128,9 +128,9 @@ public class BlsKeyPairIO {
       for (int i = 0; i < count; i++) {
         BLSKeyPair blsKeyPair = generator.get();
         writer
-            .append(blsKeyPair.getSecretKey().getSecretKey().toBytes().toHexString())
+            .append(blsKeyPair.getSecretKey().toBytes().toHexString())
             .append(':')
-            .append(blsKeyPair.getPublicKey().getPublicKey().g1Point().toBytes().toHexString())
+            .append(blsKeyPair.getPublicKey().toBytesCompressed().toHexString())
             .append('\n');
       }
     }

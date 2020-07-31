@@ -36,6 +36,8 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.LoggingDestination;
 import tech.pegasys.teku.util.config.NetworkDefinition;
@@ -176,15 +178,19 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"OFF", "FATAL", "WARN", "INFO", "DEBUG", "TRACE", "ALL"})
+  @ValueSource(
+      strings = {
+        "OFF", "FATAL", "ERROR", "WARN", "INFO", "DEBUG", "TRACE", "ALL", "off", "fatal", "error",
+        "warn", "info", "debug", "trace", "all"
+      })
   public void loglevel_shouldAcceptValues(String level) {
     final String[] args = {"--logging", level};
     beaconNodeCommand.parse(args);
-    assertThat(beaconNodeCommand.getLogLevel().toString()).isEqualTo(level);
+    assertThat(beaconNodeCommand.getLogLevel().toString()).isEqualToIgnoringCase(level);
   }
 
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"Off", "Fatal", "WaRN", "InfO", "DebUG", "trACE", "all"})
+  @ValueSource(strings = {"Off", "Fatal", "eRRoR", "WaRN", "InfO", "DebUG", "trACE", "All"})
   public void loglevel_shouldAcceptValuesMixedCase(String level) {
     final String[] args = {"--logging", level};
     beaconNodeCommand.parse(args);
@@ -203,7 +209,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     final URL configFile = this.getClass().getResource("/complete_config.yaml");
     final String updatedConfig =
         Resources.toString(configFile, UTF_8)
-            .replace("data-path: \".\"", "data-path: \"" + dataPath.toString() + "\"");
+            .replace(
+                "data-path: \".\"",
+                "data-path: \"" + dataPath.toString().replace("\\", "\\\\") + "\"");
     return createTempFile(updatedConfig.getBytes(UTF_8));
   }
 
@@ -233,12 +241,17 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       "--rest-api-port", "5051",
       "--rest-api-docs-enabled", "false",
       "--rest-api-enabled", "false",
-      "--rest-api-interface", "127.0.0.1"
+      "--rest-api-interface", "127.0.0.1",
+      "--Xremote-validator-api-interface", "127.0.0.1",
+      "--Xremote-validator-api-port", "9999",
+      "--Xremote-validator-api-max-subscribers", "1000",
+      "--Xremote-validator-api-enabled", "false"
     };
   }
 
   private TekuConfigurationBuilder expectedDefaultConfigurationBuilder() {
     return expectedConfigurationBuilder()
+        .setNetwork(NetworkDefinition.fromCliArg("altona"))
         .setEth1DepositContractAddress(null)
         .setEth1Endpoint(null)
         .setMetricsCategories(
@@ -271,15 +284,13 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setP2pInterface("1.2.3.4")
         .setP2pPort(1234)
         .setP2pDiscoveryEnabled(false)
-        .setP2pDiscoveryBootnodes(Collections.emptyList())
         .setP2pAdvertisedPort(OptionalInt.of(9000))
         .setP2pAdvertisedIp(Optional.empty())
         .setP2pPrivateKeyFile("path/to/file")
-        .setP2pPeerLowerBound(20)
-        .setP2pPeerUpperBound(30)
+        .setP2pPeerLowerBound(64)
+        .setP2pPeerUpperBound(74)
         .setP2pStaticPeers(Collections.emptyList())
         .setInteropGenesisTime(1)
-        .setInitialState("")
         .setInteropOwnedValidatorStartIndex(0)
         .setInteropOwnedValidatorCount(64)
         .setInteropNumberOfValidators(64)
@@ -303,11 +314,17 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setValidatorExternalSignerTimeout(1000)
         .setDataPath(dataPath.toString())
         .setDataStorageMode(PRUNE)
+        .setDataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
+        .setDataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION.getValue())
         .setRestApiPort(5051)
         .setRestApiDocsEnabled(false)
         .setRestApiEnabled(false)
         .setRestApiInterface("127.0.0.1")
-        .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"));
+        .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"))
+        .setRemoteValidatorApiInterface("127.0.0.1")
+        .setRemoteValidatorApiMaxSubscribers(1000)
+        .setRemoteValidatorApiPort(9999)
+        .setRemoteValidatorApiEnabled(false);
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {
