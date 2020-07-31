@@ -95,7 +95,7 @@ public class DepositMessage implements SimpleOffsetSerializable, SSZContainer, M
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, pubkey.toBytes()),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, pubkey.toSSZBytes()),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, withdrawal_credentials),
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue()))));
   }

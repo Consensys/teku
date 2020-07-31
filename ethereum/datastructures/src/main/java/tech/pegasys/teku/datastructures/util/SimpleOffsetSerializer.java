@@ -496,11 +496,12 @@ public class SimpleOffsetSerializer {
         bytePointer.add(Bytes4.SIZE);
         return new Bytes4(reader.readFixedBytes(Bytes4.SIZE));
       case "BLSSignature":
-        bytePointer.add(BLSSignature.BLS_SIGNATURE_SIZE);
-        return BLSSignature.fromBytes(reader.readFixedBytes(BLSSignature.BLS_SIGNATURE_SIZE));
+        bytePointer.add(BLSSignature.SSZ_BLS_SIGNATURE_SIZE);
+        return BLSSignature.fromSSZBytes(
+            reader.readFixedBytes(BLSSignature.SSZ_BLS_SIGNATURE_SIZE));
       case "BLSPublicKey":
-        bytePointer.add(BLSPublicKey.BLS_PUBKEY_SIZE);
-        return BLSPublicKey.fromBytes(reader.readFixedBytes(BLSPublicKey.BLS_PUBKEY_SIZE));
+        bytePointer.add(BLSPublicKey.SSZ_BLS_PUBKEY_SIZE);
+        return BLSPublicKey.fromSSZBytes(reader.readFixedBytes(BLSPublicKey.SSZ_BLS_PUBKEY_SIZE));
       case "Boolean":
       case "boolean":
         bytePointer.add(BOOLEAN_SIZE);

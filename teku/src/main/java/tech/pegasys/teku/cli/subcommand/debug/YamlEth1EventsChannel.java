@@ -171,7 +171,7 @@ class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
       this.publicKey = publicKey.toBytesCompressed().toHexString();
       this.amount = amount;
       this.withdrawalCredentials = withdrawalCredentials.toHexString();
-      this.signature = signature.toBytes().toHexString();
+      this.signature = signature.toSSZBytes().toHexString();
       this.errors = errors;
     }
   }

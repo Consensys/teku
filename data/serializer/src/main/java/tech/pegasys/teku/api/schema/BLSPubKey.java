@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
 public class BLSPubKey {
@@ -36,7 +37,7 @@ public class BLSPubKey {
   }
 
   public BLSPubKey(BLSPublicKey publicKey) {
-    this(publicKey.toBytes());
+    this(publicKey.toSSZBytes());
   }
 
   @Override
@@ -62,11 +63,10 @@ public class BLSPubKey {
   }
 
   public static BLSPubKey fromHexString(String value) {
-    BLSPublicKey blsPublicKey = BLSPublicKey.fromBytes(Bytes.fromHexString(value));
-    if (blsPublicKey.isValid()) {
-      return new BLSPubKey(blsPublicKey);
-    } else {
-      throw new PublicKeyException("Public key is invalid.");
+    try {
+      return new BLSPubKey(BLSPublicKey.fromBytesCompressedValidate(Bytes48.fromHexString(value)));
+    } catch (IllegalArgumentException e) {
+      throw new PublicKeyException("Public key is invalid.", e);
     }
   }
 
@@ -83,6 +83,6 @@ public class BLSPubKey {
   }
 
   public BLSPublicKey asBLSPublicKey() {
-    return BLSPublicKey.fromBytes(bytes);
+    return BLSPublicKey.fromSSZBytes(bytes);
   }
 }

@@ -78,7 +78,7 @@ public class MikuliBLS12381 implements BLS12381 {
   }
 
   @Override
-  public PublicKey publicKeyFromCompressed(Bytes compressedPublicKeyBytes) {
+  public PublicKey publicKeyFromCompressed(Bytes48 compressedPublicKeyBytes) {
     return MikuliPublicKey.fromBytesCompressed(compressedPublicKeyBytes);
   }
 

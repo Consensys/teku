@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -98,7 +99,7 @@ public class DepositRegisterCommand implements Runnable {
     try (final RegisterAction registerAction =
         registerParams.createRegisterAction(verboseOutputParam.isVerboseOutputEnabled())) {
       final BLSPublicKey withdrawalPublicKey =
-          BLSPublicKey.fromBytesCompressed(Bytes.fromHexString(this.withdrawalKey));
+          BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString(this.withdrawalKey));
       registerAction.displayConfirmation(1);
       registerAction.sendDeposit(validatorKey, withdrawalPublicKey).get();
     } catch (final Throwable t) {

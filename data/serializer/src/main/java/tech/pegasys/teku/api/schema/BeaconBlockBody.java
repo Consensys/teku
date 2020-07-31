@@ -65,7 +65,7 @@ public class BeaconBlockBody {
   }
 
   public BeaconBlockBody(tech.pegasys.teku.datastructures.blocks.BeaconBlockBody body) {
-    this.randao_reveal = new BLSSignature(body.getRandao_reveal().toBytes());
+    this.randao_reveal = new BLSSignature(body.getRandao_reveal().toSSZBytes());
     this.eth1_data = new Eth1Data(body.getEth1_data());
     this.graffiti = body.getGraffiti();
     this.proposer_slashings =

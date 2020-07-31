@@ -19,6 +19,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.junit.BouncyCastleExtension;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -111,13 +112,13 @@ class BlockProcessorUtilTest {
     // The following deposit uses a "rogue" public key that is not in the G1 group
     BLSPublicKey pubkey =
         BLSPublicKey.fromBytesCompressed(
-            Bytes.fromHexString(
+            Bytes48.fromHexString(
                 "0x9378a6e3984e96d2cd50450c76ca14732f1300efa04aecdb805b22e6d6926a85ef409e8f3acf494a1481090bf32ce3bd"));
     Bytes32 withdrawalCredentials =
         Bytes32.fromHexString("0x79e43d39ee55749c55994a7ab2a3cb91460cec544fdbf27eb5717c43f970c1b6");
     UnsignedLong amount = UnsignedLong.valueOf(1000000000L);
     BLSSignature signature =
-        BLSSignature.fromBytes(
+        BLSSignature.fromBytesCompressed(
             Bytes.fromHexString(
                 "0xddc1ca509e29c6452441069f26da6e073589b3bd1cace50e3427426af5bfdd566d077d4bdf618e249061b9770471e3d515779aa758b8ccb4b06226a8d5ebc99e19d4c3278e5006b837985bec4e0ce39df92c1f88d1afd0f98dbae360024a390d"));
     DepositData depositInput =

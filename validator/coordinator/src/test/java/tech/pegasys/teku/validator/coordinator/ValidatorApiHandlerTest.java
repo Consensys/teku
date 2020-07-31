@@ -301,8 +301,8 @@ class ValidatorApiHandlerTest {
             AttestationUtil.getGenericAttestationData(
                 slot, state, blockAndState.getBlock(), UnsignedLong.valueOf(committeeIndex)));
     assertThat(attestation.getData().getSlot()).isEqualTo(slot);
-    assertThat(attestation.getAggregate_signature().toBytes())
-        .isEqualTo(BLSSignature.empty().toBytes());
+    assertThat(attestation.getAggregate_signature().toSSZBytes())
+        .isEqualTo(BLSSignature.empty().toSSZBytes());
   }
 
   @Test
