@@ -21,13 +21,13 @@ import java.time.Duration;
  */
 public class GossipConfig {
   public static final int DEFAULT_D = 6;
-  public static final int DEFAULT_D_LOW = 4;
+  public static final int DEFAULT_D_LOW = 5;
   public static final int DEFAULT_D_HIGH = 12;
   public static final int DEFAULT_D_LAZY = 6;
   public static final Duration DEFAULT_FANOUT_TTL = Duration.ofSeconds(60);
   public static final int DEFAULT_ADVERTISE = 3;
-  public static final int DEFAULT_HISTORY = 5;
-  public static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofSeconds(1);
+  public static final int DEFAULT_HISTORY = 6;
+  public static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(700);
 
   public static final GossipConfig DEFAULT_CONFIG =
       new GossipConfig(
