@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -58,6 +59,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
     final List<SignedBeaconBlock> blocks = mockChain(5);
 
     final BeaconBlocksByRootRequestMessage message = createRequest(blocks);
+    when(peer.wantToReceiveObjects(anyLong())).thenReturn(1L);
     handler.onIncomingMessage(peer, message, callback);
 
     for (SignedBeaconBlock block : blocks) {
@@ -72,6 +74,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
 
     // Mock callback to appear to be closed
     doThrow(new StreamClosedException()).when(callback).respond(any());
+    when(peer.wantToReceiveObjects(anyLong())).thenReturn(1L);
 
     final BeaconBlocksByRootRequestMessage message = createRequest(blocks);
     handler.onIncomingMessage(peer, message, callback);

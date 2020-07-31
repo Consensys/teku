@@ -74,7 +74,13 @@ public class BeaconBlocksByRangeMessageHandler
               "Only a maximum of " + MAX_REQUEST_BLOCKS + " blocks can be requested per request"));
       return;
     }
-    sendMatchingBlocks(message, callback, peer)
+    if (peer.wantToReceiveObjects(min(maxRequestSize, message.getCount()).longValue()) == 0L) {
+      LOG.debug("Peer {} disconnected due to rate limits", peer.getId());
+      peer.disconnectCleanly(DisconnectReason.RATE_LIMITING);
+      callback.completeWithErrorResponse(new RpcException(INVALID_REQUEST_CODE, "rate limited"));
+      return;
+    }
+    sendMatchingBlocks(message, callback)
         .finish(
             callback::completeSuccessfully,
             error -> {
@@ -95,17 +101,11 @@ public class BeaconBlocksByRangeMessageHandler
 
   private SafeFuture<?> sendMatchingBlocks(
       final BeaconBlocksByRangeRequestMessage message,
-      final ResponseCallback<SignedBeaconBlock> callback,
-      final Eth2Peer peer) {
+      final ResponseCallback<SignedBeaconBlock> callback) {
     final UnsignedLong count = min(maxRequestSize, message.getCount());
     final UnsignedLong endSlot =
         message.getStartSlot().plus(message.getStep().times(count)).minus(ONE);
 
-    if (peer.wantToReceiveObjects(count.longValue()) == 0L) {
-      LOG.debug("Peer {} disconnected due to rate limits", peer.getId());
-      peer.disconnectCleanly(DisconnectReason.RATE_LIMITING);
-      return SafeFuture.failedFuture(new RpcException(INVALID_REQUEST_CODE, "rate limited"));
-    }
     final UnsignedLong headBlockSlot =
         combinedChainDataClient.getBestBlock().map(SignedBeaconBlock::getSlot).orElse(ZERO);
     final NavigableMap<UnsignedLong, Bytes32> hotRoots;
