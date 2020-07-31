@@ -107,7 +107,8 @@ public class PowchainService extends Service {
   }
 
   private Web3j createWeb3j(final TekuConfiguration tekuConfig) {
-    final HttpService web3jService = new HttpService(tekuConfig.getEth1Endpoint(), createOkHttpClient());
+    final HttpService web3jService =
+        new HttpService(tekuConfig.getEth1Endpoint(), createOkHttpClient());
     web3jService.addHeader("User-Agent", VersionProvider.VERSION);
     return Web3j.build(web3jService);
   }
