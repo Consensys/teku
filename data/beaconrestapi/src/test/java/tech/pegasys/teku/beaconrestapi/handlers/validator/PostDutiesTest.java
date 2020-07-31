@@ -45,7 +45,7 @@ public class PostDutiesTest {
   private static final List<String> pubKeys =
       keyPairs.stream()
           .map(BLSKeyPair::getPublicKey)
-          .map(BLSPublicKey::toBytes)
+          .map(BLSPublicKey::toSSZBytes)
           .map(Bytes::toHexString)
           .collect(Collectors.toList());
   private Context context = mock(Context.class);

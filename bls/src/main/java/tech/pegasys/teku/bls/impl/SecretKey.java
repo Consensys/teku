@@ -14,6 +14,7 @@
 package tech.pegasys.teku.bls.impl;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 
 /** This class represents a BLS12-381 private key. */
 public interface SecretKey {
@@ -21,9 +22,9 @@ public interface SecretKey {
   /**
    * Returns byte secret key representation
    *
-   * @return 48 bytes
+   * @return 32 bytes
    */
-  Bytes toBytes();
+  Bytes32 toBytes();
 
   /** Creates a public key corresponding to this secret key */
   PublicKey derivePublicKey();

@@ -71,7 +71,7 @@ public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationT
   private Response post(final int epoch, final List<BLSKeyPair> publicKeys) throws IOException {
     final List<String> publicKeyStrings =
         publicKeys.stream()
-            .map(k -> k.getPublicKey().toBytes().toHexString())
+            .map(k -> k.getPublicKey().toSSZBytes().toHexString())
             .collect(Collectors.toList());
 
     final Map<String, Object> params =
