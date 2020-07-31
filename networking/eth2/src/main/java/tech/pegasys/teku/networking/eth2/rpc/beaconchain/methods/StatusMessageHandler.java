@@ -48,8 +48,7 @@ public class StatusMessageHandler
 
     final Optional<StatusMessage> localStatus = statusMessageFactory.createStatusMessage();
     if (localStatus.isPresent()) {
-      callback.respond(localStatus.get());
-      callback.completeSuccessfully();
+      callback.respondAndCompleteSuccessfully(localStatus.get());
     } else {
       LOG.warn(
           "Node is not ready to receive p2p traffic. Responding to incoming status message with an error.");

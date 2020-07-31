@@ -49,7 +49,8 @@ public class BeaconBlocksByRootMessageHandler
                     storageClient
                         .getStore()
                         .retrieveSignedBlock(blockRoot)
-                        .thenAccept(block -> block.ifPresent(callback::respond)));
+                        .thenCompose(
+                            block -> block.map(callback::respond).orElse(SafeFuture.COMPLETE)));
       }
       future.finish(callback::completeSuccessfully, callback::completeWithUnexpectedError);
     } else {
