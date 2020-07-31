@@ -3,40 +3,40 @@ meta:
 genesis: state_0.ssz
 steps:
 - checks:
-    head: '0xa3c9c0d499b17754fff3429c6993590aa16ff17011422ff7522949749879e7ee'
+    head: '0xf5a574a2f93aee8095fe9b41579c9935700315030d22888004effa742f1da85a'
 - slot: 1
 - checks:
-    head: '0xa3c9c0d499b17754fff3429c6993590aa16ff17011422ff7522949749879e7ee'
-- block: block_23.ssz
+    head: '0xf5a574a2f93aee8095fe9b41579c9935700315030d22888004effa742f1da85a'
+- block: block_61.ssz
 - checks:
-    head: '0xfee093aa244ae8bbc54c540ba3cf5d410849c69af12a7deb4971bccf8a5c9ba7'
+    head: '0x9c6679bbd7f75d60faf58ace2c451cdf8273c0b83bc875a7a8913cdb78f53ee0'
 - slot: 2
 - checks:
-    head: '0xfee093aa244ae8bbc54c540ba3cf5d410849c69af12a7deb4971bccf8a5c9ba7'
+    head: '0x9c6679bbd7f75d60faf58ace2c451cdf8273c0b83bc875a7a8913cdb78f53ee0'
 - block: block_3.ssz
 - checks:
-    head: '0xfee093aa244ae8bbc54c540ba3cf5d410849c69af12a7deb4971bccf8a5c9ba7'
+    head: '0xc36ebcbf70b171bc57a2426a7a789d3161a66405932a7286a892e17a7bc1b379'
 - slot: 3
 - checks:
-    head: '0xfee093aa244ae8bbc54c540ba3cf5d410849c69af12a7deb4971bccf8a5c9ba7'
+    head: '0xc36ebcbf70b171bc57a2426a7a789d3161a66405932a7286a892e17a7bc1b379'
 - slot: 4
 - checks:
-    head: '0xfee093aa244ae8bbc54c540ba3cf5d410849c69af12a7deb4971bccf8a5c9ba7'
-- attestation: attestation_0.ssz
+    head: '0xc36ebcbf70b171bc57a2426a7a789d3161a66405932a7286a892e17a7bc1b379'
+- attestation: attestation_4.ssz
 - checks:
-    head: '0xfee093aa244ae8bbc54c540ba3cf5d410849c69af12a7deb4971bccf8a5c9ba7'
-- attestation: attestation_1.ssz
+    head: '0xc36ebcbf70b171bc57a2426a7a789d3161a66405932a7286a892e17a7bc1b379'
+- attestation: attestation_5.ssz
 - checks:
-    head: '0xfee093aa244ae8bbc54c540ba3cf5d410849c69af12a7deb4971bccf8a5c9ba7'
-- attestation: attestation_2.ssz
+    head: '0xc36ebcbf70b171bc57a2426a7a789d3161a66405932a7286a892e17a7bc1b379'
+- attestation: attestation_6.ssz
 - checks:
-    head: '0xfee093aa244ae8bbc54c540ba3cf5d410849c69af12a7deb4971bccf8a5c9ba7'
-- attestation: attestation_3.ssz
+    head: '0xc36ebcbf70b171bc57a2426a7a789d3161a66405932a7286a892e17a7bc1b379'
+- attestation: attestation_7.ssz
 - checks:
-    head: '0xfee093aa244ae8bbc54c540ba3cf5d410849c69af12a7deb4971bccf8a5c9ba7'
+    head: '0xc36ebcbf70b171bc57a2426a7a789d3161a66405932a7286a892e17a7bc1b379'
 - slot: 5
 - checks:
-    head: '0x4ec723540c36020739185b25488407f664bc0b9c741f9b27640f1f3fdb59986c'
-- block: block_28.ssz
+    head: '0x9c6679bbd7f75d60faf58ace2c451cdf8273c0b83bc875a7a8913cdb78f53ee0'
+- block: block_66.ssz
 - checks:
-    head: '0x4ec723540c36020739185b25488407f664bc0b9c741f9b27640f1f3fdb59986c'
+    head: '0x9c6679bbd7f75d60faf58ace2c451cdf8273c0b83bc875a7a8913cdb78f53ee0'
