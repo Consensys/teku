@@ -56,7 +56,6 @@ abstract class BLSPublicKeyTest {
     }
   }
 
-
   private static final Bytes InfinityPublicKey =
       Bytes.fromHexString(
           "0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");

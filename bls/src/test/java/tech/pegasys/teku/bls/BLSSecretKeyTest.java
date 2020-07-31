@@ -52,7 +52,6 @@ public abstract class BLSSecretKeyTest {
     }
   }
 
-
   @ParameterizedTest
   @ValueSource(
       strings = {
