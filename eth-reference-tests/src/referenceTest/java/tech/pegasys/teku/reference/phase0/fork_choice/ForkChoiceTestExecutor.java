@@ -49,9 +49,6 @@ import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
-import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
-import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -272,12 +269,16 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   }
 
   private boolean processAttestation(ForkChoice fc, Attestation step) {
-    AttestationProcessingResult attestationProcessingResult = fc.onAttestation(ValidateableAttestation.fromAttestation(step)).join();
+    AttestationProcessingResult attestationProcessingResult =
+        fc.onAttestation(ValidateableAttestation.fromAttestation(step)).join();
     return attestationProcessingResult.isSuccessful();
   }
 
-  private boolean processBlock(RecentChainData recentChainData, ForkChoice fc, SignedBeaconBlock block) {
-    BlockImportResult blockImportResult = fc.onBlock(block, recentChainData.getStore().getBlockStateIfAvailable(block.getParent_root()));
+  private boolean processBlock(
+      RecentChainData recentChainData, ForkChoice fc, SignedBeaconBlock block) {
+    BlockImportResult blockImportResult =
+        fc.onBlock(
+            block, recentChainData.getStore().getBlockStateIfAvailable(block.getParent_root()));
     return blockImportResult.isSuccessful();
   }
 
