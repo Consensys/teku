@@ -44,8 +44,19 @@ public class BLS {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final BLS12381 BlsImpl =
-      BlstBLS12381.INSTANCE.map(bls -> (BLS12381) bls).orElse(MikuliBLS12381.INSTANCE);
+  private static BLS12381 BlsImpl;
+
+  static {
+    resetBlsImplementation();
+  }
+
+  public static void setBlsImplementation(BLS12381 blsImpl) {
+    BlsImpl = blsImpl;
+  }
+
+  public static void resetBlsImplementation() {
+    BlsImpl = BlstBLS12381.INSTANCE.map(bls -> (BLS12381) bls).orElse(MikuliBLS12381.INSTANCE);
+  }
 
   /*
    * The following are the methods used directly in the Ethereum 2.0 specifications. These strictly adhere to the standard.
