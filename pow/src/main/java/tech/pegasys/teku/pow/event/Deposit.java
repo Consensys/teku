@@ -18,6 +18,7 @@ import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.pow.contract.DepositContract;
@@ -32,9 +33,9 @@ public class Deposit {
 
   public Deposit(DepositContract.DepositEventEventResponse response) {
     this.merkle_tree_index = UnsignedLong.valueOf(Bytes.wrap(response.index).reverse().toLong());
-    this.pubkey = BLSPublicKey.fromBytesCompressed(Bytes.wrap(response.pubkey));
+    this.pubkey = BLSPublicKey.fromBytesCompressed(Bytes48.wrap(response.pubkey));
     this.withdrawal_credentials = Bytes32.wrap(response.withdrawal_credentials);
-    this.signature = BLSSignature.fromBytes(Bytes.wrap(response.signature));
+    this.signature = BLSSignature.fromBytesCompressed(Bytes.wrap(response.signature));
     this.amount = UnsignedLong.valueOf(Bytes.wrap(response.amount).reverse().toLong());
   }
 

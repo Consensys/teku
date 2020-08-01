@@ -278,7 +278,7 @@ public class CommitteeUtil {
   }
 
   public static boolean isAggregator(final BLSSignature slot_signature, final int modulo) {
-    return (bytes_to_int64(Hash.sha2_256(slot_signature.toBytes()).slice(0, 8)) % modulo) == 0;
+    return (bytes_to_int64(Hash.sha2_256(slot_signature.toSSZBytes()).slice(0, 8)) % modulo) == 0;
   }
 
   /**

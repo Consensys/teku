@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.impl.PublicKey;
 
 /** This class represents a BLS12-381 public key. */
@@ -137,9 +138,9 @@ public final class MikuliPublicKey implements PublicKey {
    * @return byte array representation of the public key
    */
   @Override
-  public Bytes toBytesCompressed() {
+  public Bytes48 toBytesCompressed() {
     Bytes data = rawData.get();
-    return data.size() == COMPRESSED_PK_SIZE ? data : point.get().toBytesCompressed();
+    return Bytes48.wrap(data.size() == COMPRESSED_PK_SIZE ? data : point.get().toBytesCompressed());
   }
 
   public G1Point g1Point() {

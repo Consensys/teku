@@ -67,7 +67,7 @@ public class Validator {
   }
 
   public Validator(final tech.pegasys.teku.datastructures.state.Validator validator) {
-    this.pubkey = new BLSPubKey(validator.getPubkey().toBytes());
+    this.pubkey = new BLSPubKey(validator.getPubkey().toSSZBytes());
     this.withdrawal_credentials = validator.getWithdrawal_credentials();
     this.effective_balance = validator.getEffective_balance();
     this.slashed = validator.isSlashed();

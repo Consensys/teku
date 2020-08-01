@@ -101,7 +101,7 @@ public class Validator extends AbstractImmutableContainer
       UnsignedLong withdrawable_epoch) {
     super(
         TYPE,
-        ViewUtils.createVectorFromBytes(pubkey.toBytes()),
+        ViewUtils.createVectorFromBytes(pubkey.toSSZBytes()),
         new Bytes32View(withdrawal_credentials),
         new UInt64View(effective_balance),
         new BitView(slashed),
@@ -175,7 +175,7 @@ public class Validator extends AbstractImmutableContainer
   }
 
   public BLSPublicKey getPubkey() {
-    return BLSPublicKey.fromBytes(ViewUtils.getAllBytes(getAny(0)));
+    return BLSPublicKey.fromSSZBytes(ViewUtils.getAllBytes(getAny(0)));
   }
 
   public Bytes32 getWithdrawal_credentials() {

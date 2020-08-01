@@ -17,10 +17,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.bls.BLSConstants;
 
 public class BLSSignature {
   /** The number of bytes in this value - i.e. 96 */
-  private static final int SIZE = 96;
+  private static final int SIZE = BLSConstants.BLS_SIGNATURE_SIZE;
 
   private final Bytes bytes;
 
@@ -35,7 +36,7 @@ public class BLSSignature {
   }
 
   public BLSSignature(tech.pegasys.teku.bls.BLSSignature signature) {
-    this(signature.toBytes());
+    this(signature.toBytesCompressed());
   }
 
   @Override
@@ -69,7 +70,7 @@ public class BLSSignature {
   }
 
   public static BLSSignature empty() {
-    return new BLSSignature(Bytes.wrap(new byte[SIZE]));
+    return new BLSSignature(tech.pegasys.teku.bls.BLSSignature.empty());
   }
 
   public final Bytes getBytes() {
@@ -77,6 +78,6 @@ public class BLSSignature {
   }
 
   public tech.pegasys.teku.bls.BLSSignature asInternalBLSSignature() {
-    return tech.pegasys.teku.bls.BLSSignature.fromBytes(bytes);
+    return tech.pegasys.teku.bls.BLSSignature.fromBytesCompressed(bytes);
   }
 }

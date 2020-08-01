@@ -128,6 +128,6 @@ public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer
         List.of(
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(index.longValue())),
             aggregate.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, selection_proof.toBytes())));
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, selection_proof.toSSZBytes())));
   }
 }
