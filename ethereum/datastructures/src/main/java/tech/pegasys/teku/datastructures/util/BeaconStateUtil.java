@@ -181,24 +181,28 @@ public class BeaconStateUtil {
       if (pubKeyToIndexMap == null) {
         LOG.debug("Adding new validator to state: {}", state.getValidators().size());
       }
-      state
-          .getValidators()
-          .add(
-              Validator.create(
-                  pubkey,
-                  deposit.getData().getWithdrawal_credentials(),
-                  min(
-                      amount.minus(amount.mod(Constants.EFFECTIVE_BALANCE_INCREMENT)),
-                      UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE)),
-                  false,
-                  FAR_FUTURE_EPOCH,
-                  FAR_FUTURE_EPOCH,
-                  FAR_FUTURE_EPOCH,
-                  FAR_FUTURE_EPOCH));
+      state.getValidators().add(getValidatorFromDeposit(deposit));
       state.getBalances().add(amount);
     } else {
       increase_balance(state, existingIndex.getAsInt(), amount);
     }
+  }
+
+  private static Validator getValidatorFromDeposit(Deposit deposit) {
+    final UnsignedLong amount = deposit.getData().getAmount();
+    final UnsignedLong effectiveBalance =
+        min(
+            amount.minus(amount.mod(EFFECTIVE_BALANCE_INCREMENT)),
+            UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE));
+    return new Validator(
+        deposit.getData().getPubkey(),
+        deposit.getData().getWithdrawal_credentials(),
+        effectiveBalance,
+        false,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH);
   }
 
   public static boolean is_valid_genesis_state(UnsignedLong genesisTime, int activeValidatorCount) {
@@ -255,7 +259,7 @@ public class BeaconStateUtil {
     UnsignedLong randaoIndex =
         epoch.plus(UnsignedLong.valueOf(EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD - 1));
     Bytes32 mix = get_randao_mix(state, randaoIndex);
-    Bytes epochBytes = int_to_bytes(epoch.longValue(), 8);
+    Bytes epochBytes = uint_to_bytes(epoch.longValue(), 8);
     return Hash.sha2_256(Bytes.concatenate(domain_type.getWrappedBytes(), epochBytes, mix));
   }
 
@@ -585,14 +589,13 @@ public class BeaconStateUtil {
   }
 
   /**
-   * return the number of committees at ``slot``.
+   * return the number of committees in each slot for the given `epoch`.
    *
    * @param state
-   * @param slot
+   * @param epoch
    * @return
    */
-  public static UnsignedLong get_committee_count_at_slot(BeaconState state, UnsignedLong slot) {
-    UnsignedLong epoch = compute_epoch_at_slot(slot);
+  public static UnsignedLong get_committee_count_per_slot(BeaconState state, UnsignedLong epoch) {
     List<Integer> active_validator_indices = get_active_validator_indices(state, epoch);
     return UnsignedLong.valueOf(
         Math.max(
@@ -664,7 +667,7 @@ public class BeaconStateUtil {
 
       Bytes hashBytes = Bytes.EMPTY;
       for (int i = 0; i < (list_size + 255) / 256; i++) {
-        Bytes iAsBytes4 = int_to_bytes(i, 4);
+        Bytes iAsBytes4 = uint_to_bytes(i, 4);
         hashBytes = Bytes.wrap(hashBytes, Hash.sha2_256(Bytes.wrap(seed, roundAsByte, iAsBytes4)));
       }
 
@@ -672,7 +675,7 @@ public class BeaconStateUtil {
       int pivot =
           toIntExact(
               Long.remainderUnsigned(
-                  bytes_to_int(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
+                  bytes_to_int64(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
                   list_size));
 
       for (int i = 0; i < list_size; i++) {
@@ -683,7 +686,7 @@ public class BeaconStateUtil {
           flip += list_size;
         }
 
-        int hashPosition = (indices[i] < flip) ? flip : indices[i];
+        int hashPosition = Math.max(indices[i], flip);
         byte theByte = hashBytes.get(hashPosition / 8);
         byte theMask = powerOfTwoNumbers[hashPosition % 8];
         if ((theByte & theMask) != 0) {
@@ -718,7 +721,7 @@ public class BeaconStateUtil {
                   Hash.sha2_256(
                       Bytes.concatenate(
                           get_seed(state, epoch, DOMAIN_BEACON_PROPOSER),
-                          int_to_bytes(slot.longValue(), 8)));
+                          uint_to_bytes(slot.longValue(), 8)));
               List<Integer> indices = get_active_validator_indices(state, epoch);
               return compute_proposer_index(state, indices, seed);
             });
@@ -877,7 +880,7 @@ public class BeaconStateUtil {
    * @param numBytes - The number of bytes to be returned.
    * @return The value represented as the requested number of bytes.
    */
-  public static Bytes int_to_bytes(long value, int numBytes) {
+  public static Bytes uint_to_bytes(long value, int numBytes) {
     int longBytes = Long.SIZE / 8;
     Bytes valueBytes = Bytes.ofUnsignedLong(value, ByteOrder.LITTLE_ENDIAN);
     if (numBytes <= longBytes) {
@@ -887,12 +890,12 @@ public class BeaconStateUtil {
     }
   }
 
-  public static Bytes32 int_to_bytes32(long value) {
-    return Bytes32.wrap(int_to_bytes(value, 32));
+  public static Bytes32 uint_to_bytes32(long value) {
+    return Bytes32.wrap(uint_to_bytes(value, 32));
   }
 
-  public static Bytes32 int_to_bytes32(UnsignedLong value) {
-    return int_to_bytes32(value.longValue());
+  public static Bytes32 uint_to_bytes32(UnsignedLong value) {
+    return uint_to_bytes32(value.longValue());
   }
 
   /**
@@ -901,7 +904,7 @@ public class BeaconStateUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#bytes_to_int</a>
    */
-  public static long bytes_to_int(Bytes data) {
+  public static long bytes_to_int64(Bytes data) {
     return data.toLong(ByteOrder.LITTLE_ENDIAN);
   }
 
