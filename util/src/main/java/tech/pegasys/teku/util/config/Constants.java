@@ -118,6 +118,8 @@ public class Constants {
   // Sync
   public static final UnsignedLong MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UnsignedLong.valueOf(200);
 
+  public static int DEPOSIT_CHAIN_ID;
+  public static int DEPOSIT_NETWORK_ID;
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");
 
