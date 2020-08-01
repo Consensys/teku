@@ -15,7 +15,7 @@ package tech.pegasys.teku.storage.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
@@ -281,12 +281,12 @@ public class CombinedChainDataClient {
     return !recentChainData.isPreGenesis() && !recentChainData.isPreForkChoice();
   }
 
-  public List<CommitteeAssignment> getCommitteesFromState(
-      BeaconState state, UnsignedLong startingSlot) {
+  public List<CommitteeAssignment> getCommitteesFromState(BeaconState state, UnsignedLong epoch) {
     List<CommitteeAssignment> result = new ArrayList<>();
+    final UnsignedLong startingSlot = compute_start_slot_at_epoch(epoch);
+    int committeeCount = get_committee_count_per_slot(state, epoch).intValue();
     for (int i = 0; i < SLOTS_PER_EPOCH; i++) {
       UnsignedLong slot = startingSlot.plus(UnsignedLong.valueOf(i));
-      int committeeCount = get_committee_count_at_slot(state, slot).intValue();
       for (int j = 0; j < committeeCount; j++) {
         UnsignedLong idx = UnsignedLong.valueOf(j);
         List<Integer> committee = CommitteeUtil.get_beacon_committee(state, slot, idx);

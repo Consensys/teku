@@ -250,15 +250,19 @@ public class ForkChoiceUtil {
     final Checkpoint finalizedCheckpoint = state.getFinalized_checkpoint();
     if (finalizedCheckpoint.getEpoch().compareTo(store.getFinalizedCheckpoint().getEpoch()) > 0) {
       store.setFinalizedCheckpoint(finalizedCheckpoint);
-      // Update justified if new justified is later than store justified
-      // or if store justified is not in chain with finalized checkpoint
-      if (state
-                  .getCurrent_justified_checkpoint()
-                  .getEpoch()
-                  .compareTo(store.getJustifiedCheckpoint().getEpoch())
-              > 0
-          || !isFinalizedAncestorOfJustified(forkChoiceStrategy, store)) {
-        store.setJustifiedCheckpoint(state.getCurrent_justified_checkpoint());
+
+      // Potentially update justified if different from store
+      if (!store.getJustifiedCheckpoint().equals(state.getCurrent_justified_checkpoint())) {
+        // Update justified if new justified is later than store justified
+        // or if store justified is not in chain with finalized checkpoint
+        if (state
+                    .getCurrent_justified_checkpoint()
+                    .getEpoch()
+                    .compareTo(store.getJustifiedCheckpoint().getEpoch())
+                > 0
+            || !isFinalizedAncestorOfJustified(forkChoiceStrategy, store)) {
+          store.setJustifiedCheckpoint(state.getCurrent_justified_checkpoint());
+        }
       }
     }
 

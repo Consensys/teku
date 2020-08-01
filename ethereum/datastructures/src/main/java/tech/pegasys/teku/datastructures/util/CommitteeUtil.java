@@ -15,11 +15,11 @@ package tech.pegasys.teku.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.bytes_to_int;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.bytes_to_int64;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_seed;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.int_to_bytes;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.uint_to_bytes;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
@@ -68,7 +68,7 @@ public class CommitteeUtil {
       int pivot =
           toIntExact(
               Long.remainderUnsigned(
-                  bytes_to_int(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
+                  bytes_to_int64(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
                   index_count));
       int flip = Math.floorMod(pivot - indexRet, index_count);
       if (flip < 0) {
@@ -78,7 +78,7 @@ public class CommitteeUtil {
 
       int position = Math.max(indexRet, flip);
 
-      Bytes positionDiv256 = int_to_bytes(Math.floorDiv(position, 256), 4);
+      Bytes positionDiv256 = uint_to_bytes(Math.floorDiv(position, 256), 4);
       Bytes source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, positionDiv256));
 
       // The byte type is signed in Java, but the right shift should be fine as we just use bit 0.
@@ -118,18 +118,18 @@ public class CommitteeUtil {
       int pivot =
           toIntExact(
               Long.remainderUnsigned(
-                  bytes_to_int(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
+                  bytes_to_int64(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
                   list_size));
 
       int mirror = (pivot + 1) >> 1;
-      Bytes source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, int_to_bytes(pivot >> 8, 4)));
+      Bytes source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, uint_to_bytes(pivot >> 8, 4)));
       byte byte_v = source.get((pivot & 0xFF) >> 3);
 
       for (int i = 0; i < mirror; i++) {
         int j = pivot - i;
 
         if ((j & 0xff) == 0xff) {
-          source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, int_to_bytes(j >> 8, 4)));
+          source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, uint_to_bytes(j >> 8, 4)));
         }
 
         if ((j & 0x07) == 0x07) {
@@ -146,7 +146,7 @@ public class CommitteeUtil {
       mirror = (pivot + list_size + 1) >> 1;
       int end = list_size - 1;
 
-      source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, int_to_bytes(end >> 8, 4)));
+      source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, uint_to_bytes(end >> 8, 4)));
       byte_v = source.get((end & 0xff) >> 3);
 
       for (int i = pivot + 1, loop_iter = 0; i < mirror; i++, loop_iter++) {
@@ -154,7 +154,7 @@ public class CommitteeUtil {
         int j = end - loop_iter;
 
         if ((j & 0xff) == 0xff) {
-          source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, int_to_bytes(j >> 8, 4)));
+          source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, uint_to_bytes(j >> 8, 4)));
         }
 
         if ((j & 0x07) == 0x07) {
@@ -183,12 +183,12 @@ public class CommitteeUtil {
     checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
     UnsignedLong MAX_RANDOM_BYTE = UnsignedLong.valueOf(255); // Math.pow(2, 8) - 1;
     int i = 0;
+    final int total = indices.size();
     Bytes32 hash = null;
     while (true) {
-      int candidate_index =
-          indices.get(compute_shuffled_index(i % indices.size(), indices.size(), seed));
+      int candidate_index = indices.get(compute_shuffled_index(i % total, total, seed));
       if (i % 32 == 0) {
-        hash = Hash.sha2_256(Bytes.concatenate(seed, int_to_bytes(Math.floorDiv(i, 32), 8)));
+        hash = Hash.sha2_256(Bytes.concatenate(seed, uint_to_bytes(Math.floorDiv(i, 32), 8)));
       }
       int random_byte = UnsignedBytes.toInt(hash.get(i % 32));
       UnsignedLong effective_balance =
@@ -252,7 +252,7 @@ public class CommitteeUtil {
             Pair.of(slot, index),
             p -> {
               UnsignedLong epoch = compute_epoch_at_slot(slot);
-              UnsignedLong committees_per_slot = get_committee_count_at_slot(state, slot);
+              UnsignedLong committees_per_slot = get_committee_count_per_slot(state, epoch);
               int committeeIndex =
                   toIntExact(
                       slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
@@ -278,7 +278,7 @@ public class CommitteeUtil {
   }
 
   public static boolean isAggregator(final BLSSignature slot_signature, final int modulo) {
-    return (bytes_to_int(Hash.sha2_256(slot_signature.toSSZBytes()).slice(0, 8)) % modulo) == 0;
+    return (bytes_to_int64(Hash.sha2_256(slot_signature.toSSZBytes()).slice(0, 8)) % modulo) == 0;
   }
 
   /**
@@ -305,7 +305,8 @@ public class CommitteeUtil {
     final UnsignedLong slotsSinceEpochStart =
         attestationSlot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
     final UnsignedLong committeesSinceEpochStart =
-        get_committee_count_at_slot(state, attestationSlot).times(slotsSinceEpochStart);
+        get_committee_count_per_slot(state, compute_epoch_at_slot(attestationSlot))
+            .times(slotsSinceEpochStart);
     return toIntExact(
         committeesSinceEpochStart
             .plus(committeeIndex)

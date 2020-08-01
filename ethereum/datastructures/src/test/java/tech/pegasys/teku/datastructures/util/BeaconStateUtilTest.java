@@ -209,59 +209,60 @@ class BeaconStateUtilTest {
   @Test
   void intToBytes() {
     long value = 0x0123456789abcdefL;
-    assertEquals(Bytes.EMPTY, BeaconStateUtil.int_to_bytes(value, 0));
-    assertEquals(Bytes.fromHexString("0xef"), BeaconStateUtil.int_to_bytes(value, 1));
-    assertEquals(Bytes.fromHexString("0xefcd"), BeaconStateUtil.int_to_bytes(value, 2));
-    assertEquals(Bytes.fromHexString("0xefcdab89"), BeaconStateUtil.int_to_bytes(value, 4));
-    assertEquals(Bytes.fromHexString("0xefcdab8967452301"), BeaconStateUtil.int_to_bytes(value, 8));
+    assertEquals(Bytes.EMPTY, BeaconStateUtil.uint_to_bytes(value, 0));
+    assertEquals(Bytes.fromHexString("0xef"), BeaconStateUtil.uint_to_bytes(value, 1));
+    assertEquals(Bytes.fromHexString("0xefcd"), BeaconStateUtil.uint_to_bytes(value, 2));
+    assertEquals(Bytes.fromHexString("0xefcdab89"), BeaconStateUtil.uint_to_bytes(value, 4));
+    assertEquals(
+        Bytes.fromHexString("0xefcdab8967452301"), BeaconStateUtil.uint_to_bytes(value, 8));
     assertEquals(
         Bytes.fromHexString("0xefcdab89674523010000000000000000"),
-        BeaconStateUtil.int_to_bytes(value, 16));
+        BeaconStateUtil.uint_to_bytes(value, 16));
     assertEquals(
         Bytes.fromHexString("0xefcdab8967452301000000000000000000000000000000000000000000000000"),
-        BeaconStateUtil.int_to_bytes(value, 32));
+        BeaconStateUtil.uint_to_bytes(value, 32));
   }
 
   @Test
   void intToBytes32Long() {
     assertEquals(
         Bytes32.fromHexString("0x0000000000000000000000000000000000000000000000000000000000000000"),
-        BeaconStateUtil.int_to_bytes32(0L));
+        BeaconStateUtil.uint_to_bytes32(0L));
     assertEquals(
         Bytes32.fromHexString("0x0100000000000000000000000000000000000000000000000000000000000000"),
-        BeaconStateUtil.int_to_bytes32(1L));
+        BeaconStateUtil.uint_to_bytes32(1L));
     assertEquals(
         Bytes32.fromHexString("0xffffffffffffffff000000000000000000000000000000000000000000000000"),
-        BeaconStateUtil.int_to_bytes32(-1L));
+        BeaconStateUtil.uint_to_bytes32(-1L));
     assertEquals(
         Bytes32.fromHexString("0xefcdab8967452301000000000000000000000000000000000000000000000000"),
-        BeaconStateUtil.int_to_bytes32(0x0123456789abcdefL));
+        BeaconStateUtil.uint_to_bytes32(0x0123456789abcdefL));
   }
 
   @Test
   void intToBytes32UnsignedLong() {
     assertEquals(
         Bytes32.fromHexString("0x0000000000000000000000000000000000000000000000000000000000000000"),
-        BeaconStateUtil.int_to_bytes32(UnsignedLong.ZERO));
+        BeaconStateUtil.uint_to_bytes32(UnsignedLong.ZERO));
     assertEquals(
         Bytes32.fromHexString("0x0100000000000000000000000000000000000000000000000000000000000000"),
-        BeaconStateUtil.int_to_bytes32(UnsignedLong.ONE));
+        BeaconStateUtil.uint_to_bytes32(UnsignedLong.ONE));
     assertEquals(
         Bytes32.fromHexString("0xffffffffffffffff000000000000000000000000000000000000000000000000"),
-        BeaconStateUtil.int_to_bytes32(UnsignedLong.MAX_VALUE));
+        BeaconStateUtil.uint_to_bytes32(UnsignedLong.MAX_VALUE));
     assertEquals(
         Bytes32.fromHexString("0xefcdab8967452301000000000000000000000000000000000000000000000000"),
-        BeaconStateUtil.int_to_bytes32(UnsignedLong.valueOf(0x0123456789abcdefL)));
+        BeaconStateUtil.uint_to_bytes32(UnsignedLong.valueOf(0x0123456789abcdefL)));
   }
 
   @Test
   void bytesToInt() {
-    assertEquals(0L, BeaconStateUtil.bytes_to_int(Bytes.fromHexString("0x00")));
-    assertEquals(1L, BeaconStateUtil.bytes_to_int(Bytes.fromHexString("0x01")));
-    assertEquals(1L, BeaconStateUtil.bytes_to_int(Bytes.fromHexString("0x0100000000000000")));
+    assertEquals(0L, BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x00")));
+    assertEquals(1L, BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x01")));
+    assertEquals(1L, BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0x0100000000000000")));
     assertEquals(
         0x123456789abcdef0L,
-        BeaconStateUtil.bytes_to_int(Bytes.fromHexString("0xf0debc9a78563412")));
+        BeaconStateUtil.bytes_to_int64(Bytes.fromHexString("0xf0debc9a78563412")));
   }
 
   private BeaconState createBeaconState() {
