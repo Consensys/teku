@@ -69,6 +69,7 @@ public class NetworkDefinition {
               builder()
                   .constants("medalla")
                   .snappyCompressionEnabled(true)
+                  .initialStateFromClasspath("medalla-genesis.ssz")
                   .startupTimeoutSeconds(120)
                   .eth1DepositContractAddress("0x07b39F4fDE4A38bACe212b546dAc87C58DfE3fDC")
                   .discoveryBootnodes(
