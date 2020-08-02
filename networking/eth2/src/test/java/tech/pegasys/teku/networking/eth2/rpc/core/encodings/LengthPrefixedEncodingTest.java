@@ -20,6 +20,7 @@ import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
 
 import com.google.common.primitives.UnsignedLong;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -246,6 +248,20 @@ class LengthPrefixedEncodingTest {
         encoding.encodePayload(new BeaconBlocksByRootRequestMessage(singletonList(Bytes32.ZERO)));
     // Just the length prefix and the hash itself.
     assertThat(encoded).isEqualTo(Bytes.wrap(Bytes.fromHexString("0x20"), Bytes32.ZERO));
+  }
+
+  @Test
+  void encodePayload_shouldReturnZeroBytesForEmptyMessages() {
+    final Bytes result = encoding.encodePayload(new EmptyMessage());
+    assertThat(result).isEqualTo(Bytes.EMPTY);
+  }
+
+  @Test
+  void shouldDecodeEmptyMessage() throws Exception {
+    final RpcByteBufDecoder<EmptyMessage> decoder = encoding.createDecoder(EmptyMessage.class);
+    final Optional<EmptyMessage> message =
+        decoder.decodeOneMessage(Unpooled.wrappedBuffer(new byte[0]));
+    assertThat(message).contains(EmptyMessage.EMPTY_MESSAGE);
   }
 
   @Test
