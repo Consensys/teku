@@ -14,7 +14,8 @@
 package tech.pegasys.teku.benchmarks.gen;
 
 import static org.mockito.Mockito.mock;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
 
 import com.google.common.eventbus.EventBus;
@@ -144,7 +145,7 @@ public class Generator {
   }
 
   String getCommittees(BeaconState state) {
-    UnsignedLong cnt = get_committee_count_at_slot(state, state.getSlot());
+    UnsignedLong cnt = get_committee_count_per_slot(state, get_current_epoch(state));
     List<List<Integer>> committees = new ArrayList<>();
     for (UnsignedLong index = UnsignedLong.ZERO;
         index.compareTo(cnt) < 0;

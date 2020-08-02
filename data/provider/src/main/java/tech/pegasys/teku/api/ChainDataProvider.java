@@ -97,7 +97,7 @@ public class ChainDataProvider {
             maybeResult ->
                 maybeResult.map(
                     result ->
-                        combinedChainDataClient.getCommitteesFromState(result.getState(), slot)
+                        combinedChainDataClient.getCommitteesFromState(result.getState(), epoch)
                             .stream()
                             .map(Committee::new)
                             .collect(Collectors.toList())));

@@ -16,9 +16,10 @@ package tech.pegasys.teku.validator.coordinator;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
 import static tech.pegasys.teku.logging.ValidatorLogger.VALIDATOR_LOGGER;
@@ -178,7 +179,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         blockAndState -> {
           final BeaconState state = blockAndState.getState();
           final BeaconBlock block = blockAndState.getBlock();
-          final int committeeCount = get_committee_count_at_slot(state, slot).intValue();
+          final int committeeCount =
+              get_committee_count_per_slot(state, compute_epoch_at_slot(slot)).intValue();
 
           if (committeeIndex < 0 || committeeIndex >= committeeCount) {
             throw new IllegalArgumentException(

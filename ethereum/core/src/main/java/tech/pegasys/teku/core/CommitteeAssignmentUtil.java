@@ -15,7 +15,7 @@ package tech.pegasys.teku.core;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
@@ -46,14 +46,13 @@ public class CommitteeAssignmentUtil {
         epoch.compareTo(next_epoch) <= 0, "get_committee_assignment: Epoch number too high");
 
     UnsignedLong start_slot = compute_start_slot_at_epoch(epoch);
-
+    final UnsignedLong committeeCountPerSlot = get_committee_count_per_slot(state, epoch);
     for (UnsignedLong slot = start_slot;
         slot.compareTo(start_slot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH))) < 0;
         slot = slot.plus(UnsignedLong.ONE)) {
 
-      final UnsignedLong committeeCountAtSlot = get_committee_count_at_slot(state, slot);
       for (UnsignedLong index = UnsignedLong.ZERO;
-          index.compareTo(committeeCountAtSlot) < 0;
+          index.compareTo(committeeCountPerSlot) < 0;
           index = index.plus(UnsignedLong.ONE)) {
         final List<Integer> committee = get_beacon_committee(state, slot, index);
         if (committee.contains(validator_index)) {
