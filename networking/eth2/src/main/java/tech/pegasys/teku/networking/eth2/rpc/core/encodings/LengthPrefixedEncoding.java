@@ -54,6 +54,9 @@ public class LengthPrefixedEncoding implements RpcEncoding {
   @Override
   @SuppressWarnings("unchecked")
   public <T> Bytes encodePayload(final T message) {
+    if (message instanceof EmptyMessage) {
+      return Bytes.EMPTY;
+    }
     final RpcPayloadEncoder<T> payloadEncoder =
         payloadEncoders.getEncoder((Class<T>) message.getClass());
     final Bytes payload = payloadEncoder.encode(message);
