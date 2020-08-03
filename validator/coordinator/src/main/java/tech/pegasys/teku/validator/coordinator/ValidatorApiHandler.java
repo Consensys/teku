@@ -116,9 +116,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     if (publicKeys.isEmpty()) {
       return SafeFuture.completedFuture(Optional.of(emptyList()));
     }
-    final UnsignedLong slot =
-        compute_start_slot_at_epoch(
-            epoch.compareTo(UnsignedLong.ZERO) > 0 ? epoch.minus(UnsignedLong.ONE) : epoch);
+    final UnsignedLong slot = CommitteeUtil.getEarliestQueryableSlot(epoch);
     LOG.trace("Retrieving duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient
         .getLatestStateAtSlot(slot)
