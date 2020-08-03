@@ -18,9 +18,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 public interface ResponseCallback<T> {
   SafeFuture<Void> respond(T data);
 
-  default void respondAndCompleteSuccessfully(T data) {
-    respond(data).thenRun(this::completeSuccessfully).reportExceptions();
-  }
+  void respondAndCompleteSuccessfully(T data);
 
   void completeSuccessfully();
 
