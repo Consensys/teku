@@ -14,7 +14,6 @@
 package tech.pegasys.teku.protoarray;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.int_to_bytes32;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
@@ -22,13 +21,14 @@ import tech.pegasys.teku.datastructures.forkchoice.MutablePrunableStore;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 
 public class ProtoArrayTestUtil {
   private static final TestStoreFactory STORE_FACTORY = new TestStoreFactory();
 
   // Gives a deterministic hash for a given integer
   public static Bytes32 getHash(int i) {
-    return int_to_bytes32(Integer.toUnsignedLong(i + 1));
+    return BeaconStateUtil.uint_to_bytes32(Integer.toUnsignedLong(i + 1));
   }
 
   public static ProtoArrayForkChoiceStrategy createProtoArrayForkChoiceStrategy(

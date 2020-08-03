@@ -29,6 +29,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.impl.BLS12381;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
+import tech.pegasys.teku.bls.impl.blst.BlstBLS12381;
 import tech.pegasys.teku.bls.impl.mikuli.MikuliBLS12381;
 
 /**
@@ -43,7 +44,8 @@ public class BLS {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static BLS12381 BlsImpl = MikuliBLS12381.INSTANCE;
+  private static final BLS12381 BlsImpl =
+      BlstBLS12381.INSTANCE.map(bls -> (BLS12381) bls).orElse(MikuliBLS12381.INSTANCE);
 
   /*
    * The following are the methods used directly in the Ethereum 2.0 specifications. These strictly adhere to the standard.
@@ -91,8 +93,10 @@ public class BLS {
    *
    * @param signatures the list of signatures to be aggregated
    * @return the aggregated signature
+   * @throws IllegalArgumentException if any of supplied signatures is invalid
    */
-  public static BLSSignature aggregate(List<BLSSignature> signatures) {
+  public static BLSSignature aggregate(List<BLSSignature> signatures)
+      throws IllegalArgumentException {
     checkArgument(signatures.size() > 0, "Aggregating zero signatures is invalid.");
     return new BLSSignature(
         getBlsImpl()

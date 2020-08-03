@@ -53,7 +53,7 @@ class ValidatorLoaderTest {
         ValidatorLoader.initializeValidators(tekuConfiguration);
 
     assertThat(validators).hasSize(1);
-    final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
+    final BLSPublicKey key = BLSPublicKey.fromSSZBytes(Bytes.fromHexString(PUBLIC_KEY1));
     final Validator validator = validators.get(key);
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(key);
@@ -77,7 +77,7 @@ class ValidatorLoaderTest {
         ValidatorLoader.initializeValidators(tekuConfiguration);
 
     assertThat(validators).hasSize(1);
-    final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
+    final BLSPublicKey key = BLSPublicKey.fromSSZBytes(Bytes.fromHexString(PUBLIC_KEY1));
     final Validator validator = validators.get(key);
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(key);
@@ -104,14 +104,14 @@ class ValidatorLoaderTest {
 
     assertThat(validators).hasSize(2);
 
-    final BLSPublicKey key1 = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
+    final BLSPublicKey key1 = BLSPublicKey.fromSSZBytes(Bytes.fromHexString(PUBLIC_KEY1));
     final Validator validator1 = validators.get(key1);
     assertThat(validator1).isNotNull();
     assertThat(validator1.getPublicKey()).isEqualTo(key1);
     assertThat(validator1.getSigner().getMessageSignerService())
         .isInstanceOf(LocalMessageSignerService.class);
 
-    final BLSPublicKey key2 = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY2));
+    final BLSPublicKey key2 = BLSPublicKey.fromSSZBytes(Bytes.fromHexString(PUBLIC_KEY2));
     final Validator validator2 = validators.get(key2);
     assertThat(validator2).isNotNull();
     assertThat(validator2.getPublicKey()).isEqualTo(key2);
@@ -140,7 +140,7 @@ class ValidatorLoaderTest {
     assertThat(validators).hasSize(1);
 
     // Local validators are listed first
-    final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
+    final BLSPublicKey key = BLSPublicKey.fromSSZBytes(Bytes.fromHexString(PUBLIC_KEY1));
     final Validator validator = validators.get(key);
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(key);

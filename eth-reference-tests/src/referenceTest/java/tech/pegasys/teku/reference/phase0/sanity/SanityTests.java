@@ -22,5 +22,6 @@ public class SanityTests {
       ImmutableMap.<String, TestExecutor>builder()
           .put("sanity/blocks", new SanityBlocksTestExecutor())
           .put("sanity/slots", new SanitySlotsTestExecutor())
+          .put("finality/finality", new SanityBlocksTestExecutor())
           .build();
 }

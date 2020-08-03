@@ -73,7 +73,7 @@ public class ExternalMessageSignerService implements MessageSignerService {
   }
 
   private SafeFuture<BLSSignature> sign(final Bytes signingRoot) {
-    final String publicKey = blsPublicKey.getPublicKey().toString();
+    final String publicKey = blsPublicKey.toBytesCompressed().toString();
     return SafeFuture.ofComposed(
         () -> {
           final String requestBody = createSigningRequestBody(signingRoot);
@@ -115,7 +115,7 @@ public class ExternalMessageSignerService implements MessageSignerService {
 
     try {
       final Bytes signature = Bytes.fromHexString(response.body());
-      return BLSSignature.fromBytes(signature);
+      return BLSSignature.fromBytesCompressed(signature);
     } catch (final IllegalArgumentException e) {
       throw new ExternalSignerException(
           "External signer returned an invalid signature: " + e.getMessage(), e);

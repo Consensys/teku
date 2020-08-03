@@ -160,7 +160,7 @@ public class ValidatorDataProviderTest {
     Attestation attestation = result.join().orElseThrow();
     assertThat(attestation.data.index).isEqualTo(internalAttestation.getData().getIndex());
     assertThat(attestation.signature.toHexString())
-        .isEqualTo(internalAttestation.getAggregate_signature().toBytes().toHexString());
+        .isEqualTo(internalAttestation.getAggregate_signature().toSSZBytes().toHexString());
     assertThat(attestation.data.slot).isEqualTo(internalAttestation.getData().getSlot());
     assertThat(attestation.data.beacon_block_root)
         .isEqualTo(internalAttestation.getData().getBeacon_block_root());
