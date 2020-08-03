@@ -36,12 +36,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.GetBlockResponse;
+import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BeaconHead;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.BeaconValidators;
 import tech.pegasys.teku.api.schema.Committee;
-import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorWithIndex;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
@@ -417,22 +417,26 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void getFork_shouldThrowIfNoBlockRoot() {
+  public void getForkInfo_shouldThrowIfNoBlockRoot() {
     ChainDataProvider provider =
         new ChainDataProvider(mockRecentChainData, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
     when(mockRecentChainData.getBestState()).thenReturn(Optional.empty());
-    assertThatThrownBy(provider::getFork).isInstanceOf(ChainDataUnavailableException.class);
+    assertThatThrownBy(provider::getForkInfo).isInstanceOf(ChainDataUnavailableException.class);
   }
 
   @Test
-  public void getFork_shouldHaveForkIfBlockRootNotEmpty() {
+  public void getForkInfo_shouldHaveForkIfBlockRootNotEmpty() {
     final ChainDataProvider provider =
         new ChainDataProvider(mockRecentChainData, mockCombinedChainDataClient);
     when(mockCombinedChainDataClient.isStoreAvailable()).thenReturn(true);
     when(mockRecentChainData.getBestState()).thenReturn(Optional.of(beaconStateInternal));
-    final Fork result = provider.getFork();
+    final GetForkResponse result = provider.getForkInfo();
     verify(mockCombinedChainDataClient).isStoreAvailable();
-    assertThat(result).isEqualToComparingFieldByField(beaconState.fork);
+
+    assertThat(result.previous_version).isEqualTo(beaconState.fork.previous_version);
+    assertThat(result.current_version).isEqualTo(beaconState.fork.current_version);
+    assertThat(result.epoch).isEqualTo(beaconState.fork.epoch);
+    assertThat(result.genesis_validators_root).isEqualTo(beaconState.genesis_validators_root);
   }
 }
