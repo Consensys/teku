@@ -30,7 +30,6 @@ public class MetadataMessageHandler
   @Override
   public void onIncomingMessage(
       Eth2Peer peer, EmptyMessage message, ResponseCallback<MetadataMessage> callback) {
-    callback.respond(metadataMessagesFactory.createMetadataMessage());
-    callback.completeSuccessfully();
+    callback.respondAndCompleteSuccessfully(metadataMessagesFactory.createMetadataMessage());
   }
 }

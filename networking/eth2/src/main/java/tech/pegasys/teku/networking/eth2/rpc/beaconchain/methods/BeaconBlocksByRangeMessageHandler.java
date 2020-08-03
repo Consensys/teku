@@ -120,35 +120,43 @@ public class BeaconBlocksByRangeMessageHandler
   }
 
   private SafeFuture<RequestState> sendNextBlock(final RequestState requestState) {
-    SafeFuture<Optional<SignedBeaconBlock>> blockFuture = requestState.loadNextBlock();
+    SafeFuture<Boolean> blockFuture = processNextBlock(requestState);
     // Avoid risk of StackOverflowException by iterating when the block future is already complete
     // Using thenCompose on the completed future would execute immediately and recurse back into
     // this method to send the next block.  When not already complete, thenCompose is executed
     // on a separate thread so doesn't recurse on the same stack.
     while (blockFuture.isDone() && !blockFuture.isCompletedExceptionally()) {
-      final boolean complete = handleLoadedBlock(requestState, blockFuture.join());
-      if (complete) {
+      if (blockFuture.join()) {
         return completedFuture(requestState);
       }
-      blockFuture = requestState.loadNextBlock();
+      blockFuture = processNextBlock(requestState);
     }
     return blockFuture.thenCompose(
-        maybeBlock ->
-            handleLoadedBlock(requestState, maybeBlock)
-                ? completedFuture(requestState)
-                : sendNextBlock(requestState));
+        complete -> complete ? completedFuture(requestState) : sendNextBlock(requestState));
+  }
+
+  private SafeFuture<Boolean> processNextBlock(final RequestState requestState) {
+    // Ensure blocks are loaded off of the event thread
+    return requestState
+        .loadNextBlock()
+        .thenCompose(block -> handleLoadedBlock(requestState, block));
   }
 
   /** Sends the block and returns true if the request is now complete. */
-  private boolean handleLoadedBlock(
+  private SafeFuture<Boolean> handleLoadedBlock(
       final RequestState requestState, final Optional<SignedBeaconBlock> block) {
-    block.ifPresent(requestState::sendBlock);
-    if (requestState.isComplete()) {
-      return true;
-    } else {
-      requestState.incrementCurrentSlot();
-      return false;
-    }
+    return block
+        .map(requestState::sendBlock)
+        .orElse(SafeFuture.COMPLETE)
+        .thenApply(
+            __ -> {
+              if (requestState.isComplete()) {
+                return true;
+              } else {
+                requestState.incrementCurrentSlot();
+                return false;
+              }
+            });
   }
 
   private class RequestState {
@@ -188,8 +196,8 @@ public class BeaconBlocksByRangeMessageHandler
       return !needsMoreBlocks() || hasReachedHeadSlot();
     }
 
-    void sendBlock(final SignedBeaconBlock block) {
-      callback.respond(block);
+    SafeFuture<Void> sendBlock(final SignedBeaconBlock block) {
+      return callback.respond(block);
     }
 
     void incrementCurrentSlot() {

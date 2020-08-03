@@ -68,8 +68,7 @@ class StatusMessageHandlerTest {
     handler.onIncomingMessage(peer, REMOTE_STATUS, callback);
 
     verify(peer).updateStatus(PEER_STATUS);
-    verify(callback).respond(LOCAL_STATUS);
-    verify(callback).completeSuccessfully();
+    verify(callback).respondAndCompleteSuccessfully(LOCAL_STATUS);
     verifyNoMoreInteractions(callback);
   }
 
