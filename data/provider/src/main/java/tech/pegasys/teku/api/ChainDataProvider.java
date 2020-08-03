@@ -24,14 +24,15 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.GetBlockResponse;
+import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.schema.BeaconChainHead;
 import tech.pegasys.teku.api.schema.BeaconHead;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.BeaconValidators;
 import tech.pegasys.teku.api.schema.Committee;
-import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
+import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -66,14 +67,16 @@ public class ChainDataProvider {
     return recentChainData.getBestBlockAndState().map(BeaconHead::new);
   }
 
-  public Fork getFork() {
+  public GetForkResponse getForkInfo() {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
     }
 
     tech.pegasys.teku.datastructures.state.BeaconState bestBlockRootState =
         recentChainData.getBestState().orElseThrow(ChainDataUnavailableException::new);
-    return new Fork(bestBlockRootState.getFork());
+
+    final ForkInfo forkInfo = bestBlockRootState.getForkInfo();
+    return new GetForkResponse(forkInfo);
   }
 
   public SafeFuture<Optional<List<Committee>>> getCommitteesAtEpoch(final UnsignedLong epoch) {
