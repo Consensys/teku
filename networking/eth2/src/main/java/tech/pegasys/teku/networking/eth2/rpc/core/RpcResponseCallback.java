@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ServerErrorException;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
@@ -31,8 +32,8 @@ class RpcResponseCallback<TResponse> implements ResponseCallback<TResponse> {
   }
 
   @Override
-  public void respond(final TResponse data) {
-    rpcStream.writeBytes(rpcEncoder.encodeSuccessfulResponse(data)).reportExceptions();
+  public SafeFuture<Void> respond(final TResponse data) {
+    return rpcStream.writeBytes(rpcEncoder.encodeSuccessfulResponse(data));
   }
 
   @Override
