@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -166,6 +167,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final UnsignedLong count = UnsignedLong.valueOf(MAX_REQUEST_BLOCKS);
     final int skip = 5;
 
+    when(peer.wantToReceiveObjects(any(), anyLong())).thenReturn(true);
     final SignedBeaconBlock headBlock = BLOCKS.get(5);
 
     withCanonicalHeadBlock(headBlock);
@@ -188,6 +190,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final UnsignedLong count = UnsignedLong.valueOf(MAX_REQUEST_BLOCKS);
     final int skip = 0;
 
+    when(peer.wantToReceiveObjects(any(), anyLong())).thenReturn(true);
     final SignedBeaconBlock headBlock = BLOCKS.get(5);
 
     withCanonicalHeadBlock(headBlock);
@@ -211,6 +214,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final UnsignedLong count = MAX_REQUEST_SIZE.plus(ONE);
     final int skip = 1;
 
+    when(peer.wantToReceiveObjects(any(), anyLong())).thenReturn(true);
     final SignedBeaconBlock headBlock = BLOCKS.get(10);
 
     withCanonicalHeadBlock(headBlock);
@@ -254,7 +258,9 @@ class BeaconBlocksByRangeMessageHandlerTest {
     verifyBlocksReturned(1, 2, 3, 4, 5);
   }
 
-  private void requestBlocks(final int startBlock, final int count, final int skip) {
+  private void requestBlocks(final int startBlock, final long count, final int skip) {
+
+    when(peer.wantToReceiveObjects(any(), anyLong())).thenReturn(true);
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(

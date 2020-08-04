@@ -301,6 +301,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
         .setStartupTargetPeerCount(networkOptions.getStartupTargetPeerCount())
         .setStartupTimeoutSeconds(networkOptions.getStartupTimeoutSeconds())
+        .setPeerRateLimit(networkOptions.getPeerRateLimit())
         .setP2pEnabled(p2POptions.isP2pEnabled())
         .setP2pInterface(p2POptions.getP2pInterface())
         .setP2pPort(p2POptions.getP2pPort())
