@@ -116,7 +116,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     if (publicKeys.isEmpty()) {
       return SafeFuture.completedFuture(Optional.of(emptyList()));
     }
-    final UnsignedLong slot = CommitteeUtil.getEarliestQueryableSlot(epoch);
+    final UnsignedLong slot = CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
     LOG.trace("Retrieving duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient
         .getLatestStateAtSlot(slot)
@@ -128,7 +128,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private BeaconState processSlots(final BeaconState startingState, final UnsignedLong targetSlot) {
-    if (startingState.getSlot().equals(targetSlot)) {
+    if (startingState.getSlot().compareTo(targetSlot) >= 0) {
       return startingState;
     }
     try {
@@ -177,8 +177,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         blockAndState -> {
           final BeaconState state = blockAndState.getState();
           final BeaconBlock block = blockAndState.getBlock();
+
+          final UnsignedLong querySlot = CommitteeUtil.getEarliestQueryableSlotForTargetSlot(slot);
+          final BeaconState queryableState = processSlots(state, querySlot);
+
           final int committeeCount =
-              get_committee_count_per_slot(state, compute_epoch_at_slot(slot)).intValue();
+              get_committee_count_per_slot(queryableState, compute_epoch_at_slot(slot)).intValue();
 
           if (committeeIndex < 0 || committeeIndex >= committeeCount) {
             throw new IllegalArgumentException(
@@ -189,9 +193,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
           }
           final UnsignedLong committeeIndexUnsigned = UnsignedLong.valueOf(committeeIndex);
           final AttestationData attestationData =
-              AttestationUtil.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
+              AttestationUtil.getGenericAttestationData(
+                  slot, queryableState, block, committeeIndexUnsigned);
           final List<Integer> committee =
-              CommitteeUtil.get_beacon_committee(state, slot, committeeIndexUnsigned);
+              CommitteeUtil.get_beacon_committee(queryableState, slot, committeeIndexUnsigned);
 
           final Bitlist aggregationBits =
               new Bitlist(committee.size(), MAX_VALIDATORS_PER_COMMITTEE);
