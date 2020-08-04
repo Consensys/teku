@@ -41,7 +41,6 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
@@ -286,7 +285,6 @@ class ValidatorApiHandlerTest {
     final BeaconState state = createStateWithActiveValidators(PREVIOUS_EPOCH_START_SLOT);
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(state.getSlot(), state);
-    final SignedBlockAndState blockAndState = new SignedBlockAndState(block, state);
 
     final CheckpointState checkpointState = mock(CheckpointState.class);
     when(checkpointState.getState()).thenReturn(state);

@@ -31,8 +31,8 @@ public abstract class CheckpointStateGenerator {
     checkArgument(
         blockAndState.getRoot().equals(checkpoint.getRoot()), "Block must match checkpoint root");
 
-    final BeaconState state = regenerateCheckpointState(checkpoint, blockAndState.getState());
     // Derive checkpoint state
+    final BeaconState state = regenerateCheckpointState(checkpoint, blockAndState.getState());
     return new CheckpointState(checkpoint, blockAndState.getBlock(), state);
   }
 
