@@ -14,15 +14,11 @@
 package tech.pegasys.teku.core.signatures;
 
 import com.google.common.primitives.UnsignedLong;
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -32,10 +28,13 @@ public class FlatFileSlashingProtection implements SlashingProtectionChannel {
   private final Map<BLSPublicKey, UnsignedLong> lastSignedBlock = new HashMap<>();
   private final Map<BLSPublicKey, SignedAttestationRecord> lastSignedAttestation = new HashMap<>();
 
+  private final SyncDataAccessor dataWriter;
   private final Path lastSignedBlocksDir;
   private final Path lastSignedAttestationsDir;
 
-  public FlatFileSlashingProtection(final Path slashingProtectionBaseDir) {
+  public FlatFileSlashingProtection(
+      final SyncDataAccessor dataWriter, final Path slashingProtectionBaseDir) {
+    this.dataWriter = dataWriter;
     this.lastSignedBlocksDir = slashingProtectionBaseDir.resolve("blocks");
     this.lastSignedAttestationsDir = slashingProtectionBaseDir.resolve("attestations");
   }
@@ -71,7 +70,7 @@ public class FlatFileSlashingProtection implements SlashingProtectionChannel {
 
   private void writeBlockSlot(final BLSPublicKey publicKey, final UnsignedLong slot)
       throws IOException {
-    syncedWrite(SSZ.encodeUInt64(slot.longValue()), blockSlotFile(publicKey));
+    dataWriter.syncedWrite(blockSlotFile(publicKey), SSZ.encodeUInt64(slot.longValue()));
     lastSignedBlock.put(publicKey, slot);
   }
 
@@ -82,12 +81,7 @@ public class FlatFileSlashingProtection implements SlashingProtectionChannel {
   private Optional<UnsignedLong> loadLastSignedBlockSlot(final BLSPublicKey publicKey)
       throws IOException {
     final Path path = blockSlotFile(publicKey);
-    if (path.toFile().exists()) {
-      return Optional.of(
-          UnsignedLong.fromLongBits(SSZ.decodeUInt64(Bytes.wrap(Files.readAllBytes(path)))));
-    } else {
-      return Optional.empty();
-    }
+    return dataWriter.read(path).map(data -> UnsignedLong.fromLongBits(SSZ.decodeUInt64(data)));
   }
 
   @Override
@@ -119,40 +113,15 @@ public class FlatFileSlashingProtection implements SlashingProtectionChannel {
   private Optional<SignedAttestationRecord> loadLastSignedAttestationRecord(
       final BLSPublicKey validator) throws IOException {
     final Path recordPath = signedAttestationFile(validator);
-    if (!recordPath.toFile().exists()) {
-      return Optional.empty();
-    }
-    final Bytes data = Bytes.wrap(Files.readAllBytes(recordPath));
-    return Optional.of(
-        SSZ.decode(
-            data,
-            reader -> {
-              final UnsignedLong sourceEpoch = UnsignedLong.fromLongBits(reader.readUInt64());
-              final UnsignedLong targetEpoch = UnsignedLong.fromLongBits(reader.readUInt64());
-              return new SignedAttestationRecord(sourceEpoch, targetEpoch);
-            }));
+    return dataWriter.read(recordPath).map(SignedAttestationRecord::fromBytes);
   }
 
   private void writeAttestationRecord(
       final BLSPublicKey validator, final UnsignedLong sourceEpoch, final UnsignedLong targetEpoch)
       throws IOException {
-    final Bytes data =
-        SSZ.encode(
-            writer -> {
-              writer.writeUInt64(sourceEpoch.longValue());
-              writer.writeUInt64(targetEpoch.longValue());
-            });
-    final Path path = signedAttestationFile(validator);
-    syncedWrite(data, path);
-    lastSignedAttestation.put(validator, new SignedAttestationRecord(sourceEpoch, targetEpoch));
-  }
-
-  private void syncedWrite(final Bytes data, final Path path) throws IOException {
-    final File parentDirectory = path.getParent().toFile();
-    if (!parentDirectory.mkdirs() && !parentDirectory.isDirectory()) {
-      throw new IOException("Unable to create slashing protection directory " + parentDirectory);
-    }
-    Files.write(path, data.toArrayUnsafe(), StandardOpenOption.SYNC, StandardOpenOption.CREATE);
+    final SignedAttestationRecord record = new SignedAttestationRecord(sourceEpoch, targetEpoch);
+    dataWriter.syncedWrite(signedAttestationFile(validator), record.toBytes());
+    lastSignedAttestation.put(validator, record);
   }
 
   private Path signedAttestationFile(final BLSPublicKey validator) {

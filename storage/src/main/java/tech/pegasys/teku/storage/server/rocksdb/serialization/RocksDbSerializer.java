@@ -25,7 +25,6 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
-import tech.pegasys.teku.storage.server.slashingprotection.SignedAttestationRecord;
 
 public interface RocksDbSerializer<T> {
   RocksDbSerializer<UnsignedLong> UNSIGNED_LONG_SERIALIZER = new UnsignedLongSerializer();
@@ -44,8 +43,6 @@ public interface RocksDbSerializer<T> {
       new ProtoArraySnapshotSerializer();
   RocksDbSerializer<SlotAndBlockRoot> SLOT_AND_BLOCK_ROOT_SERIALIZER =
       new SlotAndBlockRootSerializer();
-  RocksDbSerializer<SignedAttestationRecord> SIGNED_ATTESTATION_RECORD_SERIALIZER =
-      new SignedAttestationRecordSerializer();
 
   T deserialize(final byte[] data);
 

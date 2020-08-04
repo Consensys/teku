@@ -15,7 +15,6 @@ package tech.pegasys.teku.services.chainstorage;
 
 import static tech.pegasys.teku.util.config.Constants.STORAGE_QUERY_CHANNEL_PARALLELISM;
 
-import tech.pegasys.teku.core.signatures.SlashingProtectionChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
@@ -29,7 +28,6 @@ import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.ProtoArrayStorage;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
-import tech.pegasys.teku.storage.server.slashingprotection.SlashingProtectionStorage;
 
 public class StorageService extends Service {
   private volatile ChainStorage chainStorage;
@@ -62,16 +60,12 @@ public class StorageService extends Service {
                   serviceConfig.getConfig().isEth1DepositsFromStorageEnabled());
           protoArrayStorage = new ProtoArrayStorage(database);
 
-          final SlashingProtectionStorage slashingProtectionStorage =
-              new SlashingProtectionStorage(database);
-
           serviceConfig
               .getEventChannels()
               .subscribe(Eth1DepositStorageChannel.class, depositStorage)
               .subscribe(Eth1EventsChannel.class, depositStorage)
               .subscribe(StorageUpdateChannel.class, chainStorage)
               .subscribe(ProtoArrayStorageChannel.class, protoArrayStorage)
-              .subscribe(SlashingProtectionChannel.class, slashingProtectionStorage)
               .subscribeMultithreaded(
                   StorageQueryChannel.class, chainStorage, STORAGE_QUERY_CHANNEL_PARALLELISM);
 

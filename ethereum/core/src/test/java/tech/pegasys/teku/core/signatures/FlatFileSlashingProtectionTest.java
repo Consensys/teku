@@ -11,32 +11,44 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.slashingprotection;
+package tech.pegasys.teku.core.signatures;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.Mockito;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.storage.server.Database;
 
-class SlashingProtectionStorageTest {
+class FlatFileSlashingProtectionTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   private final BLSPublicKey validator = dataStructureUtil.randomPublicKey();
-  private final Database database = Mockito.mock(Database.class);
+  private final SyncDataAccessor dataWriter = mock(SyncDataAccessor.class);
 
-  private final SlashingProtectionStorage slashingProtectionStorage =
-      new SlashingProtectionStorage(database);
+  private final Path baseDir = Path.of("/data");
+  private final Path attestationRecordPath =
+      baseDir
+          .resolve("attestations")
+          .resolve(validator.toBytesCompressed().toUnprefixedHexString());
+  private final Path blockRecordPath =
+      baseDir.resolve("blocks").resolve(validator.toBytesCompressed().toUnprefixedHexString());
+
+  private final FlatFileSlashingProtection slashingProtectionStorage =
+      new FlatFileSlashingProtection(dataWriter, baseDir);
 
   @ParameterizedTest(name = "maySignBlock({0})")
   @MethodSource("blockCases")
@@ -44,7 +56,8 @@ class SlashingProtectionStorageTest {
       @SuppressWarnings("unused") final String name,
       final Optional<UnsignedLong> lastSignedRecord,
       final UnsignedLong slot,
-      final boolean allowed) {
+      final boolean allowed)
+      throws Exception {
     if (allowed) {
       assertBlockSigningAllowed(lastSignedRecord, slot);
     } else {
@@ -67,7 +80,8 @@ class SlashingProtectionStorageTest {
       final Optional<SignedAttestationRecord> lastSignedRecord,
       final UnsignedLong sourceEpoch,
       final UnsignedLong targetEpoch,
-      final boolean allowed) {
+      final boolean allowed)
+      throws Exception {
     if (allowed) {
       assertAttestationSigningAllowed(lastSignedRecord, sourceEpoch, targetEpoch);
     } else {
@@ -115,46 +129,54 @@ class SlashingProtectionStorageTest {
   private void assertAttestationSigningAllowed(
       final Optional<SignedAttestationRecord> lastSignedAttestation,
       final UnsignedLong sourceEpoch,
-      final UnsignedLong targetEpoch) {
-    when(database.getLastSignedAttestationRecord(validator)).thenReturn(lastSignedAttestation);
+      final UnsignedLong targetEpoch)
+      throws Exception {
+    when(dataWriter.read(attestationRecordPath))
+        .thenReturn(lastSignedAttestation.map(SignedAttestationRecord::toBytes));
 
     assertThat(slashingProtectionStorage.maySignAttestation(validator, sourceEpoch, targetEpoch))
         .isCompletedWithValue(true);
-    verify(database)
-        .recordLastSignedAttestation(
-            validator, new SignedAttestationRecord(sourceEpoch, targetEpoch));
+    verify(dataWriter)
+        .syncedWrite(
+            attestationRecordPath, new SignedAttestationRecord(sourceEpoch, targetEpoch).toBytes());
   }
 
   private void assertAttestationSigningDisallowed(
       final Optional<SignedAttestationRecord> lastSignedAttestation,
       final UnsignedLong sourceEpoch,
-      final UnsignedLong targetEpoch) {
-    when(database.getLastSignedAttestationRecord(validator)).thenReturn(lastSignedAttestation);
+      final UnsignedLong targetEpoch)
+      throws IOException {
+    when(dataWriter.read(attestationRecordPath))
+        .thenReturn(lastSignedAttestation.map(SignedAttestationRecord::toBytes));
 
     assertThat(slashingProtectionStorage.maySignAttestation(validator, sourceEpoch, targetEpoch))
         .isCompletedWithValue(false);
-    verify(database, never())
-        .recordLastSignedAttestation(
-            validator, new SignedAttestationRecord(sourceEpoch, targetEpoch));
+    verify(dataWriter, never()).syncedWrite(any(), any());
   }
 
   private void assertBlockSigningAllowed(
-      final Optional<UnsignedLong> lastSignedBlockSlot, final UnsignedLong newBlockSlot) {
-    when(database.getLatestSignedBlockSlot(validator)).thenReturn(lastSignedBlockSlot);
+      final Optional<UnsignedLong> lastSignedBlockSlot, final UnsignedLong newBlockSlot)
+      throws Exception {
+    when(dataWriter.read(blockRecordPath)).thenReturn(lastSignedBlockSlot.map(this::serializeSlot));
 
     assertThat(slashingProtectionStorage.maySignBlock(validator, newBlockSlot))
         .isCompletedWithValue(true);
 
-    verify(database).recordLastSignedBlock(validator, newBlockSlot);
+    verify(dataWriter).syncedWrite(blockRecordPath, serializeSlot(newBlockSlot));
   }
 
   private void assertBlockSigningDisallowed(
-      final Optional<UnsignedLong> lastSignedBlockSlot, final UnsignedLong newBlockSlot) {
-    when(database.getLatestSignedBlockSlot(validator)).thenReturn(lastSignedBlockSlot);
+      final Optional<UnsignedLong> lastSignedBlockSlot, final UnsignedLong newBlockSlot)
+      throws Exception {
+    when(dataWriter.read(blockRecordPath)).thenReturn(lastSignedBlockSlot.map(this::serializeSlot));
 
     assertThat(slashingProtectionStorage.maySignBlock(validator, newBlockSlot))
         .isCompletedWithValue(false);
 
-    verify(database, never()).recordLastSignedBlock(validator, newBlockSlot);
+    verify(dataWriter, never()).syncedWrite(any(), any());
+  }
+
+  private Bytes serializeSlot(final UnsignedLong slot) {
+    return SSZ.encodeUInt64(slot.longValue());
   }
 }

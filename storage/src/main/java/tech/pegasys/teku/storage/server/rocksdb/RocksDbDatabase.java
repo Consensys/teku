@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.stategenerator.StateGenerator;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -64,7 +63,6 @@ import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V4HotRocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
-import tech.pegasys.teku.storage.server.slashingprotection.SignedAttestationRecord;
 import tech.pegasys.teku.storage.server.state.StateRootRecorder;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -331,34 +329,6 @@ public class RocksDbDatabase implements Database {
   public void putProtoArraySnapshot(final ProtoArraySnapshot protoArraySnapshot) {
     try (final RocksDbProtoArrayDao.ProtoArrayUpdater updater = protoArrayDao.protoArrayUpdater()) {
       updater.putProtoArraySnapshot(protoArraySnapshot);
-      updater.commit();
-    }
-  }
-
-  @Override
-  public Optional<UnsignedLong> getLatestSignedBlockSlot(final BLSPublicKey validator) {
-    return hotDao.getLatestSignedBlockSlot(validator);
-  }
-
-  @Override
-  public void recordLastSignedBlock(final BLSPublicKey validator, final UnsignedLong slot) {
-    try (final HotUpdater updater = hotDao.hotUpdater()) {
-      updater.setLastSignedBlock(validator, slot);
-      updater.commit();
-    }
-  }
-
-  @Override
-  public Optional<SignedAttestationRecord> getLastSignedAttestationRecord(
-      final BLSPublicKey validator) {
-    return hotDao.getLastSignedAttestationRecord(validator);
-  }
-
-  @Override
-  public void recordLastSignedAttestation(
-      final BLSPublicKey validator, final SignedAttestationRecord record) {
-    try (final HotUpdater updater = hotDao.hotUpdater()) {
-      updater.setLastSignedAttestationRecord(validator, record);
       updater.commit();
     }
   }

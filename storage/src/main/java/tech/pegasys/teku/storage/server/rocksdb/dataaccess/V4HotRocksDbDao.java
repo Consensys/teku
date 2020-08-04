@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -34,7 +33,6 @@ import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor.RocksDbTransaction;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
-import tech.pegasys.teku.storage.server.slashingprotection.SignedAttestationRecord;
 
 public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbProtoArrayDao {
   // Persistent data
@@ -129,17 +127,6 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
   }
 
   @Override
-  public Optional<UnsignedLong> getLatestSignedBlockSlot(final BLSPublicKey validator) {
-    return db.get(V4SchemaHot.PUBLIC_KEY_TO_LAST_SIGNED_BLOCK_SLOT, validator);
-  }
-
-  @Override
-  public Optional<SignedAttestationRecord> getLastSignedAttestationRecord(
-      final BLSPublicKey validator) {
-    return db.get(V4SchemaHot.PUBLIC_KEY_TO_SIGNED_ATTESTATION_RECORD, validator);
-  }
-
-  @Override
   @MustBeClosed
   public Eth1Updater eth1Updater() {
     return new V4HotUpdater(db);
@@ -225,17 +212,6 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     @Override
     public void deleteHotBlock(final Bytes32 blockRoot) {
       transaction.delete(V4SchemaHot.HOT_BLOCKS_BY_ROOT, blockRoot);
-    }
-
-    @Override
-    public void setLastSignedBlock(final BLSPublicKey validator, final UnsignedLong slot) {
-      transaction.put(V4SchemaHot.PUBLIC_KEY_TO_LAST_SIGNED_BLOCK_SLOT, validator, slot);
-    }
-
-    @Override
-    public void setLastSignedAttestationRecord(
-        final BLSPublicKey validator, final SignedAttestationRecord record) {
-      transaction.put(V4SchemaHot.PUBLIC_KEY_TO_SIGNED_ATTESTATION_RECORD, validator, record);
     }
 
     @Override

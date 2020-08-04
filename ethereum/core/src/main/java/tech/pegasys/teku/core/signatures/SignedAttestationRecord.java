@@ -16,6 +16,8 @@ package tech.pegasys.teku.core.signatures;
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.ssz.SSZ;
 
 class SignedAttestationRecord {
   private final UnsignedLong sourceEpoch;
@@ -24,6 +26,24 @@ class SignedAttestationRecord {
   public SignedAttestationRecord(final UnsignedLong sourceEpoch, final UnsignedLong targetEpoch) {
     this.sourceEpoch = sourceEpoch;
     this.targetEpoch = targetEpoch;
+  }
+
+  public static SignedAttestationRecord fromBytes(final Bytes data) {
+    return SSZ.decode(
+        data,
+        reader -> {
+          final UnsignedLong sourceEpoch = UnsignedLong.fromLongBits(reader.readUInt64());
+          final UnsignedLong targetEpoch = UnsignedLong.fromLongBits(reader.readUInt64());
+          return new SignedAttestationRecord(sourceEpoch, targetEpoch);
+        });
+  }
+
+  public Bytes toBytes() {
+    return SSZ.encode(
+        writer -> {
+          writer.writeUInt64(sourceEpoch.longValue());
+          writer.writeUInt64(targetEpoch.longValue());
+        });
   }
 
   public UnsignedLong getSourceEpoch() {
