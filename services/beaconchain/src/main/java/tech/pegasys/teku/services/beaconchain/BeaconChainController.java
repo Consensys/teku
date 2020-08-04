@@ -524,7 +524,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     } else {
       UnsignedLong timeUntilGenesis = genesisTime.minus(currentTime);
       genesisTimeTracker = currentTime;
-      STATUS_LOG.timeUntilGenesis(timeUntilGenesis.longValue());
+      STATUS_LOG.timeUntilGenesis(timeUntilGenesis.longValue(), p2pNetwork.getPeerCount());
     }
     slotProcessor.setCurrentSlot(currentSlot);
   }
@@ -544,7 +544,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       // notify every 10 minutes
       if (genesisTimeTracker.plus(UnsignedLong.valueOf(600L)).compareTo(currentTime) <= 0) {
         genesisTimeTracker = currentTime;
-        STATUS_LOG.timeUntilGenesis(genesisTime.minus(currentTime).longValue());
+        STATUS_LOG.timeUntilGenesis(
+            genesisTime.minus(currentTime).longValue(), p2pNetwork.getPeerCount());
       }
     }
 
