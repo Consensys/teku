@@ -14,6 +14,7 @@
 package tech.pegasys.teku.api;
 
 import static tech.pegasys.teku.api.DataProviderFailures.chainUnavailable;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -29,9 +30,6 @@ import tech.pegasys.teku.api.schema.BeaconValidators;
 import tech.pegasys.teku.api.schema.Committee;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
-import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
-import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
@@ -44,7 +42,6 @@ public class ChainDataProvider {
   private final CombinedChainDataClient combinedChainDataClient;
 
   private final RecentChainData recentChainData;
-  private final StateTransition stateTransition = new StateTransition();
 
   public ChainDataProvider(
       final RecentChainData recentChainData,
@@ -91,19 +88,17 @@ public class ChainDataProvider {
       return SafeFuture.completedFuture(Optional.empty());
     }
 
+    final UnsignedLong queryEpoch = compute_epoch_at_slot(earliestQueryableSlot);
     return combinedChainDataClient
-        .getBlockAndStateInEffectAtSlot(earliestQueryableSlot)
+        .getCheckpointStateAtEpoch(queryEpoch)
         .thenApply(
             maybeResult ->
                 maybeResult.map(
-                    result -> {
-                      final tech.pegasys.teku.datastructures.state.BeaconState queryableState =
-                          processSlots(result.getState(), earliestQueryableSlot);
-                      return combinedChainDataClient.getCommitteesFromState(queryableState, epoch)
-                          .stream()
-                          .map(Committee::new)
-                          .collect(Collectors.toList());
-                    }));
+                    checkpointState ->
+                        combinedChainDataClient
+                            .getCommitteesFromState(checkpointState.getState(), epoch).stream()
+                            .map(Committee::new)
+                            .collect(Collectors.toList())));
   }
 
   public SafeFuture<Optional<GetBlockResponse>> getBlockBySlot(final UnsignedLong slot) {
@@ -218,18 +213,5 @@ public class ChainDataProvider {
       throw new ChainDataUnavailableException();
     }
     return recentChainData.getBestBlockAndState().map(BeaconChainHead::new);
-  }
-
-  private tech.pegasys.teku.datastructures.state.BeaconState processSlots(
-      final tech.pegasys.teku.datastructures.state.BeaconState startingState,
-      final UnsignedLong targetSlot) {
-    if (startingState.getSlot().compareTo(targetSlot) >= 0) {
-      return startingState;
-    }
-    try {
-      return stateTransition.process_slots(startingState, targetSlot);
-    } catch (SlotProcessingException | EpochProcessingException e) {
-      throw new IllegalStateException("Unable to process slots", e);
-    }
   }
 }
