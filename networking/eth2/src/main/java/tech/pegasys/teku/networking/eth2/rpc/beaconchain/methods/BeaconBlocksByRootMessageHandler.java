@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BeaconBlocksByRootMessageHandler
@@ -42,6 +43,12 @@ public class BeaconBlocksByRootMessageHandler
         "Peer {} requested BeaconBlocks with roots: {}", peer.getId(), message.getBlockRoots());
     if (storageClient.getStore() != null) {
       SafeFuture<Void> future = SafeFuture.COMPLETE;
+      if (!peer.wantToMakeRequest()
+          || !peer.wantToReceiveObjects(callback, message.getBlockRoots().size())) {
+        peer.disconnectCleanly(DisconnectReason.RATE_LIMITING);
+        return;
+      }
+
       for (Bytes32 blockRoot : message.getBlockRoots()) {
         future =
             future.thenCompose(
@@ -49,7 +56,8 @@ public class BeaconBlocksByRootMessageHandler
                     storageClient
                         .getStore()
                         .retrieveSignedBlock(blockRoot)
-                        .thenAccept(block -> block.ifPresent(callback::respond)));
+                        .thenCompose(
+                            block -> block.map(callback::respond).orElse(SafeFuture.COMPLETE)));
       }
       future.finish(callback::completeSuccessfully, callback::completeWithUnexpectedError);
     } else {

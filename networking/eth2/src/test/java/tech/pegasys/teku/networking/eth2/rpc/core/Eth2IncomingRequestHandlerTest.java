@@ -20,6 +20,7 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
@@ -57,6 +58,7 @@ public abstract class Eth2IncomingRequestHandlerTest
     lenient()
         .when(combinedChainDataClient.getBlockAtSlotExact(any(), any()))
         .thenAnswer(i -> getBlockAtSlot(i.getArgument(0)));
+    when(peer.wantToMakeRequest()).thenReturn(true);
   }
 
   @Override

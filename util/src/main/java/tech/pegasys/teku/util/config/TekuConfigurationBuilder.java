@@ -25,6 +25,8 @@ public class TekuConfigurationBuilder {
   private String constants;
   private Integer startupTargetPeerCount;
   private Integer startupTimeoutSeconds;
+  private Integer peerRateLimit;
+  private Integer peerRequestLimit;
   private boolean p2pEnabled;
   private String p2pInterface;
   private int p2pPort;
@@ -96,6 +98,16 @@ public class TekuConfigurationBuilder {
 
   public TekuConfigurationBuilder setStartupTimeoutSeconds(final Integer startupTimeoutSeconds) {
     this.startupTimeoutSeconds = startupTimeoutSeconds;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setPeerRateLimit(final Integer peerRateLimit) {
+    this.peerRateLimit = peerRateLimit;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setPeerRequestLimit(final Integer peerRequestLimit) {
+    this.peerRequestLimit = peerRequestLimit;
     return this;
   }
 
@@ -430,6 +442,8 @@ public class TekuConfigurationBuilder {
         constants,
         startupTargetPeerCount,
         startupTimeoutSeconds,
+        peerRateLimit,
+        peerRequestLimit,
         p2pEnabled,
         p2pInterface,
         p2pPort,

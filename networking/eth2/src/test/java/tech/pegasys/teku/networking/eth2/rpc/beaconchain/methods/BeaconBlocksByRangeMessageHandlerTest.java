@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -32,6 +33,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
@@ -62,6 +64,12 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
   private final BeaconBlocksByRangeMessageHandler handler =
       new BeaconBlocksByRangeMessageHandler(combinedChainDataClient, MAX_REQUEST_SIZE);
+
+  @BeforeEach
+  public void setup() {
+    when(peer.wantToMakeRequest()).thenReturn(true);
+    when(peer.wantToReceiveObjects(any(), anyLong())).thenReturn(true);
+  }
 
   @Test
   public void shouldReturnNoBlocksWhenThereAreNoBlocksAtOrAfterStartSlot() {
@@ -254,7 +262,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
     verifyBlocksReturned(1, 2, 3, 4, 5);
   }
 
-  private void requestBlocks(final int startBlock, final int count, final int skip) {
+  private void requestBlocks(final int startBlock, final long count, final int skip) {
+
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(

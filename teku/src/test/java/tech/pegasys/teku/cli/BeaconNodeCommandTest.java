@@ -245,7 +245,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       "--Xremote-validator-api-interface", "127.0.0.1",
       "--Xremote-validator-api-port", "9999",
       "--Xremote-validator-api-max-subscribers", "1000",
-      "--Xremote-validator-api-enabled", "false"
+      "--Xremote-validator-api-enabled", "false",
+      "--Xpeer-rate-limit", "500",
+      "--Xpeer-request-limit", "50"
     };
   }
 
@@ -262,6 +264,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setP2pPort(9000)
         .setP2pPrivateKeyFile(null)
         .setInteropEnabled(false)
+        .setPeerRateLimit(500)
+        .setPeerRequestLimit(50)
         .setInteropGenesisTime(0)
         .setInteropOwnedValidatorCount(0)
         .setLogDestination(DEFAULT_BOTH)
@@ -282,6 +286,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setNetwork(NetworkDefinition.fromCliArg("minimal"))
         .setP2pEnabled(false)
         .setP2pInterface("1.2.3.4")
+        .setPeerRateLimit(500)
+        .setPeerRequestLimit(50)
         .setP2pPort(1234)
         .setP2pDiscoveryEnabled(false)
         .setP2pAdvertisedPort(OptionalInt.of(9000))
