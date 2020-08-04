@@ -315,6 +315,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setLogFile(DEFAULT_LOG_FILE)
         .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN)
         .setLogIncludeEventsEnabled(true)
+        .setLogIncludeValidatorDutiesEnabled(true)
         .setValidatorKeystoreFiles(Collections.emptyList())
         .setValidatorKeystorePasswordFiles(Collections.emptyList())
         .setValidatorExternalSignerTimeout(1000)
