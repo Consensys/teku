@@ -52,7 +52,7 @@ class SlashingProtectionStorageTest {
     }
   }
 
-  private static List<Arguments> blockCases() {
+  static List<Arguments> blockCases() {
     return List.of(
         Arguments.of("noExistingRecord", Optional.empty(), UnsignedLong.valueOf(1), true),
         Arguments.of("=", Optional.of(UnsignedLong.valueOf(3)), UnsignedLong.valueOf(3), false),
@@ -75,7 +75,7 @@ class SlashingProtectionStorageTest {
     }
   }
 
-  private static List<Arguments> attestationCases() {
+  static List<Arguments> attestationCases() {
     final Optional<SignedAttestationRecord> existingRecord =
         Optional.of(new SignedAttestationRecord(UnsignedLong.valueOf(4), UnsignedLong.valueOf(6)));
     return List.of(
