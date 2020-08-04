@@ -66,7 +66,8 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   private final AtomicBoolean chainValidated = new AtomicBoolean(false);
   private final AtomicInteger outstandingRequests = new AtomicInteger(0);
   private final AtomicInteger outstandingPings = new AtomicInteger();
-  private final RateTracker rateTracker;
+  private final RateTracker blockRequestTracker;
+  private final RateTracker requestTracker;
 
   public Eth2Peer(
       final Peer peer,
@@ -74,12 +75,14 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
       final TimeProvider timeProvider,
-      final int peerRateLimit) {
+      final int peerRateLimit,
+      final int peerRequestLimit) {
     super(peer);
     this.rpcMethods = rpcMethods;
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
-    this.rateTracker = new RateTracker(peerRateLimit, 60, timeProvider);
+    this.blockRequestTracker = new RateTracker(peerRateLimit, 60, timeProvider);
+    this.requestTracker = new RateTracker(peerRequestLimit, 60, timeProvider);
   }
 
   public void updateStatus(final PeerStatus status) {
@@ -197,10 +200,19 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
 
   public boolean wantToReceiveObjects(
       final ResponseCallback<SignedBeaconBlock> callback, final long objectCount) {
-    if (rateTracker.wantToRequestObjects(objectCount) == 0L) {
-      LOG.debug("Peer {} disconnected due to rate limits", getId());
+    if (blockRequestTracker.wantToRequestObjects(objectCount) == 0L) {
+      LOG.debug("Peer {} disconnected due to block rate limits", getId());
       callback.completeWithErrorResponse(
           new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
+      disconnectCleanly(DisconnectReason.RATE_LIMITING);
+      return false;
+    }
+    return true;
+  }
+
+  public boolean wantToMakeRequest() {
+    if (requestTracker.wantToRequestObjects(1L) == 0L) {
+      LOG.debug("Peer {} disconnected due to request rate limits", getId());
       disconnectCleanly(DisconnectReason.RATE_LIMITING);
       return false;
     }

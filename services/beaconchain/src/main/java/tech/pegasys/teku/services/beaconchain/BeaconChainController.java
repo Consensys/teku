@@ -419,6 +419,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .timeProvider(timeProvider)
               .asyncRunner(networkAsyncRunner)
               .peerRateLimit(config.getPeerRateLimit())
+              .peerRequestLimit(config.getPeerRequestLimit())
               .build();
     }
   }

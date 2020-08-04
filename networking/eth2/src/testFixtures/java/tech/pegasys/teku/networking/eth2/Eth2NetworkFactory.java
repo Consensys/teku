@@ -164,7 +164,8 @@ public class Eth2NetworkFactory {
                 eth2RpcOutstandingPingThreshold,
                 eth2StatusUpdateInterval,
                 StubTimeProvider.withTimeInSeconds(1000),
-                500);
+                500,
+                50);
 
         List<RpcMethod> rpcMethods =
             eth2PeerManager.getBeaconChainMethods().all().stream()
