@@ -38,6 +38,7 @@ public class TekuConfiguration implements MetricsConfig {
   private final Integer startupTargetPeerCount;
   private final Integer startupTimeoutSeconds;
   private final Integer peerRateLimit;
+  private final Integer peerRequestLimit;
 
   // P2P
   private final boolean p2pEnabled;
@@ -125,6 +126,7 @@ public class TekuConfiguration implements MetricsConfig {
       final Integer startupTargetPeerCount,
       final Integer startupTimeoutSeconds,
       final Integer peerRateLimit,
+      final Integer peerRequestLimit,
       final boolean p2pEnabled,
       final String p2pInterface,
       final int p2pPort,
@@ -186,6 +188,7 @@ public class TekuConfiguration implements MetricsConfig {
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.peerRateLimit = peerRateLimit;
+    this.peerRequestLimit = peerRequestLimit;
     this.p2pEnabled = p2pEnabled;
     this.p2pInterface = p2pInterface;
     this.p2pPort = p2pPort;
@@ -259,6 +262,10 @@ public class TekuConfiguration implements MetricsConfig {
 
   public int getPeerRateLimit() {
     return peerRateLimit;
+  }
+
+  public int getPeerRequestLimit() {
+    return peerRequestLimit;
   }
 
   public boolean isP2pEnabled() {

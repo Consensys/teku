@@ -55,6 +55,15 @@ public class NetworkOptions {
       hidden = true)
   private Integer peerRateLimit = 500;
 
+  @Option(
+      names = {"--Xpeer-request-limit"},
+      paramLabel = "<NUMBER>",
+      description =
+          "The number of requests per peer to allow per minute before disconnecting the peer.",
+      arity = "1",
+      hidden = true)
+  private Integer peerRequestLimit = 50;
+
   public String getNetwork() {
     return network;
   }
@@ -73,5 +82,9 @@ public class NetworkOptions {
 
   public Integer getPeerRateLimit() {
     return peerRateLimit;
+  }
+
+  public Integer getPeerRequestLimit() {
+    return peerRequestLimit;
   }
 }

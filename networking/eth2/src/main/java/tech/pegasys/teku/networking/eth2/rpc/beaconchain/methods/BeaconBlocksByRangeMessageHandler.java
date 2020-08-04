@@ -73,7 +73,9 @@ public class BeaconBlocksByRangeMessageHandler
               "Only a maximum of " + MAX_REQUEST_BLOCKS + " blocks can be requested per request"));
       return;
     }
-    if (!peer.wantToReceiveObjects(callback, min(maxRequestSize, message.getCount()).longValue())) {
+    if (!peer.wantToMakeRequest()
+        || !peer.wantToReceiveObjects(
+            callback, min(maxRequestSize, message.getCount()).longValue())) {
       return;
     }
 
