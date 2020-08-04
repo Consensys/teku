@@ -24,7 +24,6 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
@@ -43,7 +42,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<Optional<Attestation>> createUnsignedAttestation(
       UnsignedLong slot, int committeeIndex);
 
-  SafeFuture<Optional<Attestation>> createAggregate(AttestationData attestationData);
+  SafeFuture<Optional<Attestation>> createAggregate(Bytes32 attestationHashTreeRoot);
 
   void subscribeToBeaconCommitteeForAggregation(int committeeIndex, UnsignedLong aggregationSlot);
 
