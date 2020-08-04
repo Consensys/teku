@@ -16,6 +16,8 @@ package tech.pegasys.teku.datastructures.state;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -77,5 +79,33 @@ public class CheckpointState {
   /** @return The checkpoint state which is advanced to the checkpoint epoch boundary */
   public BeaconState getState() {
     return state;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (!(o instanceof CheckpointState)) {
+      return false;
+    }
+    final CheckpointState that = (CheckpointState) o;
+    return Objects.equals(checkpoint, that.checkpoint)
+        && Objects.equals(block, that.block)
+        && Objects.equals(state, that.state);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(checkpoint, block, state);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("checkpoint", checkpoint)
+        .add("block", block)
+        .add("state", state)
+        .toString();
   }
 }
