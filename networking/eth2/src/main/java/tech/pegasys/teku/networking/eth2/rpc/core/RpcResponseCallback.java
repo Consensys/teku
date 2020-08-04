@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
+import java.nio.channels.ClosedChannelException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.async.RootCauseExceptionHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ServerErrorException;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
@@ -34,6 +36,18 @@ class RpcResponseCallback<TResponse> implements ResponseCallback<TResponse> {
   @Override
   public SafeFuture<Void> respond(final TResponse data) {
     return rpcStream.writeBytes(rpcEncoder.encodeSuccessfulResponse(data));
+  }
+
+  @Override
+  public void respondAndCompleteSuccessfully(TResponse data) {
+    respond(data)
+        .thenRun(this::completeSuccessfully)
+        .finish(
+            RootCauseExceptionHandler.builder()
+                .addCatch(
+                    ClosedChannelException.class,
+                    err -> LOG.trace("Failed to write because channel was closed", err))
+                .defaultCatch(err -> LOG.error("Failed to write req/resp response", err)));
   }
 
   @Override
