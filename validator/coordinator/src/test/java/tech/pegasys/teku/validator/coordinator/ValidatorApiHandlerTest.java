@@ -18,6 +18,7 @@ import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -309,7 +310,8 @@ class ValidatorApiHandlerTest {
   public void createAggregate_shouldFailWhenNodeIsSyncing() {
     when(syncStateTracker.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
     final SafeFuture<Optional<Attestation>> result =
-        validatorApiHandler.createAggregate(dataStructureUtil.randomAttestationData());
+        validatorApiHandler.createAggregate(
+            dataStructureUtil.randomAttestationData().hashTreeRoot());
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -319,10 +321,10 @@ class ValidatorApiHandlerTest {
   public void createAggregate_shouldReturnAggregateFromAttestationPool() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final Optional<Attestation> aggregate = Optional.of(dataStructureUtil.randomAttestation());
-    when(attestationPool.createAggregateFor(attestationData))
+    when(attestationPool.createAggregateFor(eq(attestationData.hashTreeRoot())))
         .thenReturn(aggregate.map(ValidateableAttestation::fromAttestation));
 
-    assertThat(validatorApiHandler.createAggregate(attestationData))
+    assertThat(validatorApiHandler.createAggregate(attestationData.hashTreeRoot()))
         .isCompletedWithValue(aggregate);
   }
 
