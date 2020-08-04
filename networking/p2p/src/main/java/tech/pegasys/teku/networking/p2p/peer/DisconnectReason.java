@@ -24,7 +24,8 @@ public enum DisconnectReason {
   TOO_MANY_PEERS(GoodbyeMessage.REASON_TOO_MANY_PEERS, false),
   REMOTE_FAULT(GoodbyeMessage.REASON_FAULT_ERROR, false),
   UNRESPONSIVE(GoodbyeMessage.REASON_FAULT_ERROR, false),
-  SHUTTING_DOWN(GoodbyeMessage.REASON_CLIENT_SHUT_DOWN, false);
+  SHUTTING_DOWN(GoodbyeMessage.REASON_CLIENT_SHUT_DOWN, false),
+  RATE_LIMITING(GoodbyeMessage.REASON_RATE_LIMITING, false);
 
   private final UnsignedLong reasonCode;
   private final boolean isPermanent;
