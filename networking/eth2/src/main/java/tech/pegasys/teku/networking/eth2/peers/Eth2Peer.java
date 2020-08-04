@@ -42,13 +42,16 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessage
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcMethod;
+import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStream;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamImpl;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.peer.DelegatingPeer;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.util.time.TimeProvider;
 
 public class Eth2Peer extends DelegatingPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -63,16 +66,20 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   private final AtomicBoolean chainValidated = new AtomicBoolean(false);
   private final AtomicInteger outstandingRequests = new AtomicInteger(0);
   private final AtomicInteger outstandingPings = new AtomicInteger();
+  private final RateTracker rateTracker;
 
   public Eth2Peer(
       final Peer peer,
       final BeaconChainMethods rpcMethods,
       final StatusMessageFactory statusMessageFactory,
-      final MetadataMessagesFactory metadataMessagesFactory) {
+      final MetadataMessagesFactory metadataMessagesFactory,
+      final TimeProvider timeProvider,
+      final int peerRateLimit) {
     super(peer);
     this.rpcMethods = rpcMethods;
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
+    this.rateTracker = new RateTracker(peerRateLimit, 60, timeProvider);
   }
 
   public void updateStatus(final PeerStatus status) {
@@ -186,6 +193,18 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
 
   public SafeFuture<MetadataMessage> requestMetadata() {
     return requestSingleItem(rpcMethods.getMetadata(), EmptyMessage.EMPTY_MESSAGE);
+  }
+
+  public boolean wantToReceiveObjects(
+      final ResponseCallback<SignedBeaconBlock> callback, final long objectCount) {
+    if (rateTracker.wantToRequestObjects(objectCount) == 0L) {
+      LOG.debug("Peer {} disconnected due to rate limits", getId());
+      callback.completeWithErrorResponse(
+          new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
+      disconnectCleanly(DisconnectReason.RATE_LIMITING);
+      return false;
+    }
+    return true;
   }
 
   public SafeFuture<UnsignedLong> sendPing() {
