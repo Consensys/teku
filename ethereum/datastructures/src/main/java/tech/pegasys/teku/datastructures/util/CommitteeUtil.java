@@ -276,19 +276,32 @@ public class CommitteeUtil {
   }
 
   private static void validateStateForCommitteeQuery(BeaconState state, UnsignedLong slot) {
-    final UnsignedLong currentEpoch = compute_epoch_at_slot(slot);
+    final UnsignedLong oldestQueryableSlot = getEarliestQueryableSlotForTargetSlot(slot);
     checkArgument(
-        state.getSlot().compareTo(getEarliestQueryableSlot(currentEpoch)) >= 0,
-        "Committee information must be derived from a state no older than the previous epoch");
+        state.getSlot().compareTo(oldestQueryableSlot) >= 0,
+        "Committee information must be derived from a state no older than the previous epoch. State at slot %s is older than cutoff slot %s",
+        state.getSlot(),
+        oldestQueryableSlot);
   }
 
   /**
-   * Given the current epoch, calculates the earliest slot queryable for assignments at this epoch
+   * Calculates the earliest slot queryable for assignments at the given slot
+   *
+   * @param slot The slot for which we want to retrieve committee information
+   * @return The earliest slot from which we can query committee assignments
+   */
+  public static UnsignedLong getEarliestQueryableSlotForTargetSlot(final UnsignedLong slot) {
+    final UnsignedLong epoch = compute_epoch_at_slot(slot);
+    return getEarliestQueryableSlotForTargetEpoch(epoch);
+  }
+
+  /**
+   * Calculates the earliest slot queryable for assignments at the given epoch
    *
    * @param epoch The epoch for which we want to retrieve committee information
    * @return The earliest slot from which we can query committee assignments
    */
-  public static UnsignedLong getEarliestQueryableSlot(final UnsignedLong epoch) {
+  public static UnsignedLong getEarliestQueryableSlotForTargetEpoch(final UnsignedLong epoch) {
     final UnsignedLong previousEpoch =
         epoch.compareTo(UnsignedLong.ZERO) > 0 ? epoch.minus(UnsignedLong.ONE) : epoch;
     return compute_start_slot_at_epoch(previousEpoch);
