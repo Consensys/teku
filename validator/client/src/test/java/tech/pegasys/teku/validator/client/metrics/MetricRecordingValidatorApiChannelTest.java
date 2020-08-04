@@ -168,7 +168,7 @@ class MetricRecordingValidatorApiChannelTest {
             dataStructureUtil.randomAttestation()),
         requestDataTest(
             "createAggregate",
-            channel -> channel.createAggregate(attestationData),
+            channel -> channel.createAggregate(attestationData.hashTreeRoot()),
             MetricRecordingValidatorApiChannel.AGGREGATE_REQUESTS_COUNTER_NAME,
             dataStructureUtil.randomAttestation()));
   }
