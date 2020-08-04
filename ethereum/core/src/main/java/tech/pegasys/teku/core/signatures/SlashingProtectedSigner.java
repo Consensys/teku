@@ -26,8 +26,7 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 /**
- * A wrapper for a {@link Signer} which adds slashing protection based on
- * https://hackmd.io/u8MTIe5IRmybzVz38-sGdQ?view.
+ * A wrapper for a {@link Signer} which adds slashing protection.
  *
  * <p>A validator can only be slashed because of the blocks or attestations they sign, so all other
  * methods are delegated without any checks.
