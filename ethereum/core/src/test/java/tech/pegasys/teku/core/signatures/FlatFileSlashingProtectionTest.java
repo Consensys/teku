@@ -26,7 +26,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.SSZ;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -34,18 +33,18 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 
 class FlatFileSlashingProtectionTest {
+
+  private static final UnsignedLong ATTESTATION_TEST_BLOCK_SLOT = UnsignedLong.valueOf(3);
+  private static final UnsignedLong BLOCK_TEST_SOURCE_EPOCH = UnsignedLong.valueOf(12);
+  private static final UnsignedLong BLOCK_TEST_TARGET_EPOCH = UnsignedLong.valueOf(15);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   private final BLSPublicKey validator = dataStructureUtil.randomPublicKey();
   private final SyncDataAccessor dataWriter = mock(SyncDataAccessor.class);
 
   private final Path baseDir = Path.of("/data");
-  private final Path attestationRecordPath =
-      baseDir
-          .resolve("attestations")
-          .resolve(validator.toBytesCompressed().toUnprefixedHexString());
-  private final Path blockRecordPath =
-      baseDir.resolve("blocks").resolve(validator.toBytesCompressed().toUnprefixedHexString());
+  private final Path signingRecordPath =
+      baseDir.resolve(validator.toBytesCompressed().toUnprefixedHexString());
 
   private final FlatFileSlashingProtection slashingProtectionStorage =
       new FlatFileSlashingProtection(dataWriter, baseDir);
@@ -77,7 +76,7 @@ class FlatFileSlashingProtectionTest {
   @MethodSource("attestationCases")
   void maySignAttestation(
       @SuppressWarnings("unused") final String name,
-      final Optional<SignedAttestationRecord> lastSignedRecord,
+      final Optional<ValidatorSigningRecord> lastSignedRecord,
       final UnsignedLong sourceEpoch,
       final UnsignedLong targetEpoch,
       final boolean allowed)
@@ -90,8 +89,10 @@ class FlatFileSlashingProtectionTest {
   }
 
   static List<Arguments> attestationCases() {
-    final Optional<SignedAttestationRecord> existingRecord =
-        Optional.of(new SignedAttestationRecord(UnsignedLong.valueOf(4), UnsignedLong.valueOf(6)));
+    final Optional<ValidatorSigningRecord> existingRecord =
+        Optional.of(
+            new ValidatorSigningRecord(
+                ATTESTATION_TEST_BLOCK_SLOT, UnsignedLong.valueOf(4), UnsignedLong.valueOf(6)));
     return List.of(
         // No record
         Arguments.of(
@@ -114,7 +115,7 @@ class FlatFileSlashingProtectionTest {
   private static Arguments attestationArguments(
       final String sourceEpochDescription,
       final String targetEpochDescription,
-      final Optional<SignedAttestationRecord> lastSignedRecord,
+      final Optional<ValidatorSigningRecord> lastSignedRecord,
       final int sourceEpoch,
       final int targetEpoch,
       final boolean allowed) {
@@ -127,27 +128,31 @@ class FlatFileSlashingProtectionTest {
   }
 
   private void assertAttestationSigningAllowed(
-      final Optional<SignedAttestationRecord> lastSignedAttestation,
+      final Optional<ValidatorSigningRecord> lastSignedAttestation,
       final UnsignedLong sourceEpoch,
       final UnsignedLong targetEpoch)
       throws Exception {
-    when(dataWriter.read(attestationRecordPath))
-        .thenReturn(lastSignedAttestation.map(SignedAttestationRecord::toBytes));
+    when(dataWriter.read(signingRecordPath))
+        .thenReturn(lastSignedAttestation.map(ValidatorSigningRecord::toBytes));
 
     assertThat(slashingProtectionStorage.maySignAttestation(validator, sourceEpoch, targetEpoch))
         .isCompletedWithValue(true);
-    verify(dataWriter)
-        .syncedWrite(
-            attestationRecordPath, new SignedAttestationRecord(sourceEpoch, targetEpoch).toBytes());
+
+    final ValidatorSigningRecord updatedRecord =
+        new ValidatorSigningRecord(
+            lastSignedAttestation.isPresent() ? ATTESTATION_TEST_BLOCK_SLOT : UnsignedLong.ZERO,
+            sourceEpoch,
+            targetEpoch);
+    verify(dataWriter).syncedWrite(signingRecordPath, updatedRecord.toBytes());
   }
 
   private void assertAttestationSigningDisallowed(
-      final Optional<SignedAttestationRecord> lastSignedAttestation,
+      final Optional<ValidatorSigningRecord> lastSignedAttestation,
       final UnsignedLong sourceEpoch,
       final UnsignedLong targetEpoch)
       throws IOException {
-    when(dataWriter.read(attestationRecordPath))
-        .thenReturn(lastSignedAttestation.map(SignedAttestationRecord::toBytes));
+    when(dataWriter.read(signingRecordPath))
+        .thenReturn(lastSignedAttestation.map(ValidatorSigningRecord::toBytes));
 
     assertThat(slashingProtectionStorage.maySignAttestation(validator, sourceEpoch, targetEpoch))
         .isCompletedWithValue(false);
@@ -157,26 +162,37 @@ class FlatFileSlashingProtectionTest {
   private void assertBlockSigningAllowed(
       final Optional<UnsignedLong> lastSignedBlockSlot, final UnsignedLong newBlockSlot)
       throws Exception {
-    when(dataWriter.read(blockRecordPath)).thenReturn(lastSignedBlockSlot.map(this::serializeSlot));
+    when(dataWriter.read(signingRecordPath))
+        .thenReturn(lastSignedBlockSlot.map(this::blockTestSigningRecord));
 
     assertThat(slashingProtectionStorage.maySignBlock(validator, newBlockSlot))
         .isCompletedWithValue(true);
 
-    verify(dataWriter).syncedWrite(blockRecordPath, serializeSlot(newBlockSlot));
+    final Bytes updatedRecord =
+        lastSignedBlockSlot.isPresent()
+            ? blockTestSigningRecord(newBlockSlot)
+            : new ValidatorSigningRecord(
+                    newBlockSlot,
+                    ValidatorSigningRecord.NEVER_SIGNED,
+                    ValidatorSigningRecord.NEVER_SIGNED)
+                .toBytes();
+    verify(dataWriter).syncedWrite(signingRecordPath, updatedRecord);
+  }
+
+  private Bytes blockTestSigningRecord(final UnsignedLong blockSlot) {
+    return new ValidatorSigningRecord(blockSlot, BLOCK_TEST_SOURCE_EPOCH, BLOCK_TEST_TARGET_EPOCH)
+        .toBytes();
   }
 
   private void assertBlockSigningDisallowed(
       final Optional<UnsignedLong> lastSignedBlockSlot, final UnsignedLong newBlockSlot)
       throws Exception {
-    when(dataWriter.read(blockRecordPath)).thenReturn(lastSignedBlockSlot.map(this::serializeSlot));
+    when(dataWriter.read(signingRecordPath))
+        .thenReturn(lastSignedBlockSlot.map(this::blockTestSigningRecord));
 
     assertThat(slashingProtectionStorage.maySignBlock(validator, newBlockSlot))
         .isCompletedWithValue(false);
 
     verify(dataWriter, never()).syncedWrite(any(), any());
-  }
-
-  private Bytes serializeSlot(final UnsignedLong slot) {
-    return SSZ.encodeUInt64(slot.longValue());
   }
 }
