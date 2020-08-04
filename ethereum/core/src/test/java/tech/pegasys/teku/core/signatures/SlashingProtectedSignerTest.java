@@ -38,8 +38,7 @@ class SlashingProtectedSignerTest {
   private final BLSSignature signature = dataStructureUtil.randomSignature();
   private final SafeFuture<BLSSignature> signatureFuture = SafeFuture.completedFuture(signature);
   private final Signer delegate = mock(Signer.class);
-  private final SlashingProtector slashingProtector =
-      mock(SlashingProtector.class);
+  private final SlashingProtector slashingProtector = mock(SlashingProtector.class);
 
   private final SlashingProtectedSigner signer =
       new SlashingProtectedSigner(publicKey, slashingProtector, delegate);

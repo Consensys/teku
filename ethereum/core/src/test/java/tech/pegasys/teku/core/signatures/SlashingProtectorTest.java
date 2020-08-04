@@ -32,7 +32,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 
-class FlatFileSlashingProtectionTest {
+class SlashingProtectorTest {
 
   private static final UnsignedLong ATTESTATION_TEST_BLOCK_SLOT = UnsignedLong.valueOf(3);
   private static final UnsignedLong BLOCK_TEST_SOURCE_EPOCH = UnsignedLong.valueOf(12);
@@ -46,8 +46,8 @@ class FlatFileSlashingProtectionTest {
   private final Path signingRecordPath =
       baseDir.resolve(validator.toBytesCompressed().toUnprefixedHexString());
 
-  private final FlatFileSlashingProtection slashingProtectionStorage =
-      new FlatFileSlashingProtection(dataWriter, baseDir);
+  private final SlashingProtector slashingProtectionStorage =
+      new SlashingProtector(dataWriter, baseDir);
 
   @ParameterizedTest(name = "maySignBlock({0})")
   @MethodSource("blockCases")

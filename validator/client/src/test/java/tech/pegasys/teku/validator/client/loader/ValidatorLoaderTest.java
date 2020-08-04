@@ -40,8 +40,7 @@ class ValidatorLoaderTest {
       "- {privkey: '0x25295f0d1d592a90b333e26e85149708208e9f8e8bc18f6c77bd62f8ad7a6866',\n"
           + "  pubkey: '0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44c'}";
 
-  private final SlashingProtector slashingProtector =
-      mock(SlashingProtector.class);
+  private final SlashingProtector slashingProtector = mock(SlashingProtector.class);
 
   private final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector);
 

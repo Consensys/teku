@@ -14,14 +14,80 @@
 package tech.pegasys.teku.core.signatures;
 
 import com.google.common.primitives.UnsignedLong;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.util.channels.ChannelInterface;
 
-public interface SlashingProtector extends ChannelInterface {
+public class SlashingProtector {
 
-  SafeFuture<Boolean> maySignBlock(BLSPublicKey validator, UnsignedLong slot);
+  private final Map<BLSPublicKey, ValidatorSigningRecord> signingRecords = new HashMap<>();
 
-  SafeFuture<Boolean> maySignAttestation(
-      BLSPublicKey validator, UnsignedLong sourceEpoch, UnsignedLong targetEpoch);
+  private final SyncDataAccessor dataAccessor;
+  private final Path slashingProtectionBaseDir;
+
+  public SlashingProtector(
+      final SyncDataAccessor dataAccessor, final Path slashingProtectionBaseDir) {
+    this.dataAccessor = dataAccessor;
+    this.slashingProtectionBaseDir = slashingProtectionBaseDir;
+  }
+
+  public synchronized SafeFuture<Boolean> maySignBlock(
+      final BLSPublicKey validator, final UnsignedLong slot) {
+    return SafeFuture.of(
+        () -> {
+          final ValidatorSigningRecord signingRecord = loadSigningRecord(validator);
+          return handleResult(validator, signingRecord.maySignBlock(slot));
+        });
+  }
+
+  public synchronized SafeFuture<Boolean> maySignAttestation(
+      final BLSPublicKey validator,
+      final UnsignedLong sourceEpoch,
+      final UnsignedLong targetEpoch) {
+    return SafeFuture.of(
+        () -> {
+          final ValidatorSigningRecord signingRecord = loadSigningRecord(validator);
+          return handleResult(
+              validator, signingRecord.maySignAttestation(sourceEpoch, targetEpoch));
+        });
+  }
+
+  private Boolean handleResult(
+      final BLSPublicKey validator, final Optional<ValidatorSigningRecord> newRecord)
+      throws IOException {
+    if (newRecord.isEmpty()) {
+      return false;
+    }
+    writeSigningRecord(validator, newRecord.get());
+    return true;
+  }
+
+  private ValidatorSigningRecord loadSigningRecord(final BLSPublicKey validator)
+      throws IOException {
+    ValidatorSigningRecord record = signingRecords.get(validator);
+    if (record != null) {
+      return record;
+    }
+    record =
+        dataAccessor
+            .read(validatorRecordPath(validator))
+            .map(ValidatorSigningRecord::fromBytes)
+            .orElseGet(ValidatorSigningRecord::new);
+    signingRecords.put(validator, record);
+    return record;
+  }
+
+  private void writeSigningRecord(final BLSPublicKey validator, final ValidatorSigningRecord record)
+      throws IOException {
+    dataAccessor.syncedWrite(validatorRecordPath(validator), record.toBytes());
+    signingRecords.put(validator, record);
+  }
+
+  private Path validatorRecordPath(final BLSPublicKey validator) {
+    return slashingProtectionBaseDir.resolve(validator.toBytesCompressed().toUnprefixedHexString());
+  }
 }

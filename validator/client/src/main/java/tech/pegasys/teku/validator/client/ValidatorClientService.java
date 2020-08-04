@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Random;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.signatures.FlatFileSlashingProtection;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.core.signatures.SyncDataAccessor;
 import tech.pegasys.teku.events.EventChannels;
@@ -49,7 +48,7 @@ public class ValidatorClientService extends Service {
     final MetricsSystem metricsSystem = config.getMetricsSystem();
     final AsyncRunner asyncRunner = config.createAsyncRunner("validator");
     final SlashingProtector slashingProtector =
-        new FlatFileSlashingProtection(
+        new SlashingProtector(
             new SyncDataAccessor(), Path.of(config.getConfig().getDataPath(), "validators"));
     final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector);
     final Map<BLSPublicKey, Validator> validators =
