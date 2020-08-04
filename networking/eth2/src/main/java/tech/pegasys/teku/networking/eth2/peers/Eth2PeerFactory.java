@@ -24,13 +24,13 @@ public class Eth2PeerFactory {
   private final StatusMessageFactory statusMessageFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
   private final TimeProvider timeProvider;
-  private final Integer peerRateLimit;
+  private final int peerRateLimit;
 
   public Eth2PeerFactory(
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
       final TimeProvider timeProvider,
-      final Integer peerRateLimit) {
+      final int peerRateLimit) {
     this.timeProvider = timeProvider;
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;

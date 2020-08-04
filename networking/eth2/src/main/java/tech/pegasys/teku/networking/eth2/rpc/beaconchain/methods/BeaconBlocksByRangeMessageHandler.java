@@ -34,7 +34,6 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
-import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -74,12 +73,10 @@ public class BeaconBlocksByRangeMessageHandler
               "Only a maximum of " + MAX_REQUEST_BLOCKS + " blocks can be requested per request"));
       return;
     }
-    if (peer.wantToReceiveObjects(min(maxRequestSize, message.getCount()).longValue()) == 0L) {
-      LOG.debug("Peer {} disconnected due to rate limits", peer.getId());
-      peer.disconnectCleanly(DisconnectReason.RATE_LIMITING);
-      callback.completeWithErrorResponse(new RpcException(INVALID_REQUEST_CODE, "rate limited"));
+    if (!peer.wantToReceiveObjects(callback, min(maxRequestSize, message.getCount()).longValue())) {
       return;
     }
+
     sendMatchingBlocks(message, callback)
         .finish(
             callback::completeSuccessfully,

@@ -50,7 +50,7 @@ public class NetworkOptions {
       names = {"--Xpeer-rate-limit"},
       paramLabel = "<NUMBER>",
       description =
-          "the number of requested objects per peer to allow before disconnecting the peer.",
+          "The number of requested objects per peer to allow per minute before disconnecting the peer.",
       arity = "1",
       hidden = true)
   private Integer peerRateLimit = 500;

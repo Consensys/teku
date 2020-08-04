@@ -59,7 +59,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
     final List<SignedBeaconBlock> blocks = mockChain(5);
 
     final BeaconBlocksByRootRequestMessage message = createRequest(blocks);
-    when(peer.wantToReceiveObjects(anyLong())).thenReturn(1L);
+    when(peer.wantToReceiveObjects(any(), anyLong())).thenReturn(true);
     handler.onIncomingMessage(peer, message, callback);
 
     for (SignedBeaconBlock block : blocks) {
@@ -74,7 +74,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
 
     // Mock callback to appear to be closed
     doThrow(new StreamClosedException()).when(callback).respond(any());
-    when(peer.wantToReceiveObjects(anyLong())).thenReturn(1L);
+    when(peer.wantToReceiveObjects(any(), anyLong())).thenReturn(true);
 
     final BeaconBlocksByRootRequestMessage message = createRequest(blocks);
     handler.onIncomingMessage(peer, message, callback);

@@ -22,7 +22,7 @@ public class RateTracker {
   private final NavigableMap<UnsignedLong, Long> requestCount;
   private final int peerRateLimit;
   private final UnsignedLong timeoutSeconds;
-  private Long requestsWithinWindow;
+  private long requestsWithinWindow = 0L;
   private final TimeProvider timeProvider;
 
   public RateTracker(
@@ -31,7 +31,6 @@ public class RateTracker {
     requestCount = new TreeMap<>();
     this.peerRateLimit = peerRateLimit;
     this.timeProvider = timeProvider;
-    this.requestsWithinWindow = 0L;
   }
 
   // boundary: if a request comes in and remaining capacity is at least 1, then

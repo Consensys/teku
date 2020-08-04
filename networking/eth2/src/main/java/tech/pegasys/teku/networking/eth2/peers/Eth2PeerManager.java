@@ -107,7 +107,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final int eth2RpcOutstandingPingThreshold,
       final Duration eth2StatusUpdateInterval,
       final TimeProvider timeProvider,
-      final Integer peerRateLimit) {
+      final int peerRateLimit) {
 
     final PeerValidatorFactory peerValidatorFactory =
         (peer, status) ->

@@ -42,11 +42,13 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessage
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcMethod;
+import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStream;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamImpl;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.peer.DelegatingPeer;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.util.time.TimeProvider;
@@ -72,7 +74,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
       final TimeProvider timeProvider,
-      final Integer peerRateLimit) {
+      final int peerRateLimit) {
     super(peer);
     this.rpcMethods = rpcMethods;
     this.statusMessageFactory = statusMessageFactory;
@@ -193,8 +195,16 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     return requestSingleItem(rpcMethods.getMetadata(), EmptyMessage.EMPTY_MESSAGE);
   }
 
-  public long wantToReceiveObjects(final long objectCount) {
-    return rateTracker.wantToRequestObjects(objectCount);
+  public boolean wantToReceiveObjects(
+      final ResponseCallback<SignedBeaconBlock> callback, final long objectCount) {
+    if (rateTracker.wantToRequestObjects(objectCount) == 0L) {
+      LOG.debug("Peer {} disconnected due to rate limits", getId());
+      callback.completeWithErrorResponse(
+          new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
+      disconnectCleanly(DisconnectReason.RATE_LIMITING);
+      return false;
+    }
+    return true;
   }
 
   public SafeFuture<UnsignedLong> sendPing() {

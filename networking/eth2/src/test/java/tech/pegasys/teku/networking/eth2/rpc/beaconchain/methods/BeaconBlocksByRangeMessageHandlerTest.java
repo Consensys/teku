@@ -167,7 +167,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final UnsignedLong count = UnsignedLong.valueOf(MAX_REQUEST_BLOCKS);
     final int skip = 5;
 
-    when(peer.wantToReceiveObjects(anyLong())).thenReturn(1L);
+    when(peer.wantToReceiveObjects(any(), anyLong())).thenReturn(true);
     final SignedBeaconBlock headBlock = BLOCKS.get(5);
 
     withCanonicalHeadBlock(headBlock);
@@ -190,7 +190,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final UnsignedLong count = UnsignedLong.valueOf(MAX_REQUEST_BLOCKS);
     final int skip = 0;
 
-    when(peer.wantToReceiveObjects(anyLong())).thenReturn(1L);
+    when(peer.wantToReceiveObjects(any(), anyLong())).thenReturn(true);
     final SignedBeaconBlock headBlock = BLOCKS.get(5);
 
     withCanonicalHeadBlock(headBlock);
@@ -214,7 +214,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final UnsignedLong count = MAX_REQUEST_SIZE.plus(ONE);
     final int skip = 1;
 
-    when(peer.wantToReceiveObjects(anyLong())).thenReturn(1L);
+    when(peer.wantToReceiveObjects(any(), anyLong())).thenReturn(true);
     final SignedBeaconBlock headBlock = BLOCKS.get(10);
 
     withCanonicalHeadBlock(headBlock);
@@ -260,7 +260,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
   private void requestBlocks(final int startBlock, final long count, final int skip) {
 
-    when(peer.wantToReceiveObjects(anyLong())).thenReturn(1L);
+    when(peer.wantToReceiveObjects(any(), anyLong())).thenReturn(true);
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(

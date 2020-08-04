@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -23,7 +21,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -46,12 +43,11 @@ public class BeaconBlocksByRootMessageHandler
         "Peer {} requested BeaconBlocks with roots: {}", peer.getId(), message.getBlockRoots());
     if (storageClient.getStore() != null) {
       SafeFuture<Void> future = SafeFuture.COMPLETE;
-      if (peer.wantToReceiveObjects(message.getBlockRoots().size()) == 0L) {
-        LOG.debug("Peer {} disconnected due to rate limits", peer.getId());
+      if (!peer.wantToReceiveObjects(callback, message.getBlockRoots().size())) {
         peer.disconnectCleanly(DisconnectReason.RATE_LIMITING);
-        callback.completeWithErrorResponse(new RpcException(INVALID_REQUEST_CODE, "rate limited"));
         return;
       }
+
       for (Bytes32 blockRoot : message.getBlockRoots()) {
         future =
             future.thenCompose(
