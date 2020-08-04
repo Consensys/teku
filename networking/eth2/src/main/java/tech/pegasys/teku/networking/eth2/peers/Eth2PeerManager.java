@@ -107,7 +107,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final int eth2RpcOutstandingPingThreshold,
       final Duration eth2StatusUpdateInterval,
       final TimeProvider timeProvider,
-      final int peerRateLimit) {
+      final int peerRateLimit,
+      final int peerRequestLimit) {
 
     final PeerValidatorFactory peerValidatorFactory =
         (peer, status) ->
@@ -122,7 +123,11 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         recentChainData,
         metricsSystem,
         new Eth2PeerFactory(
-            statusMessageFactory, metadataMessagesFactory, timeProvider, peerRateLimit),
+            statusMessageFactory,
+            metadataMessagesFactory,
+            timeProvider,
+            peerRateLimit,
+            peerRequestLimit),
         peerValidatorFactory,
         statusMessageFactory,
         metadataMessagesFactory,

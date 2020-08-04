@@ -25,16 +25,19 @@ public class Eth2PeerFactory {
   private final MetadataMessagesFactory metadataMessagesFactory;
   private final TimeProvider timeProvider;
   private final int peerRateLimit;
+  private final int peerRequestLimit;
 
   public Eth2PeerFactory(
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
       final TimeProvider timeProvider,
-      final int peerRateLimit) {
+      final int peerRateLimit,
+      final int peerRequestLimit) {
     this.timeProvider = timeProvider;
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
     this.peerRateLimit = peerRateLimit;
+    this.peerRequestLimit = peerRequestLimit;
   }
 
   public Eth2Peer create(final Peer peer, final BeaconChainMethods rpcMethods) {
@@ -44,6 +47,7 @@ public class Eth2PeerFactory {
         statusMessageFactory,
         metadataMessagesFactory,
         timeProvider,
-        peerRateLimit);
+        peerRateLimit,
+        peerRequestLimit);
   }
 }
