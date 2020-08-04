@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.loader;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,6 +26,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.SlashingProtectionChannel;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.validator.client.Validator;
 
@@ -38,6 +40,11 @@ class ValidatorLoaderTest {
       "- {privkey: '0x25295f0d1d592a90b333e26e85149708208e9f8e8bc18f6c77bd62f8ad7a6866',\n"
           + "  pubkey: '0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44c'}";
 
+  private final SlashingProtectionChannel slashingProtectionChannel =
+      mock(SlashingProtectionChannel.class);
+
+  private final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtectionChannel);
+
   @Test
   void initializeValidatorsWithExternalMessageSignerWhenConfigHasExternalSigningPublicKeys() {
     final TekuConfiguration tekuConfiguration =
@@ -48,7 +55,7 @@ class ValidatorLoaderTest {
             .setValidatorKeystorePasswordFiles(emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        ValidatorLoader.initializeValidators(tekuConfiguration);
+        validatorLoader.initializeValidators(tekuConfiguration);
 
     assertThat(validators).hasSize(1);
     final BLSPublicKey key = BLSPublicKey.fromSSZBytes(Bytes.fromHexString(PUBLIC_KEY1));
@@ -71,7 +78,7 @@ class ValidatorLoaderTest {
             .setValidatorKeystorePasswordFiles(emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        ValidatorLoader.initializeValidators(tekuConfiguration);
+        validatorLoader.initializeValidators(tekuConfiguration);
 
     assertThat(validators).hasSize(1);
     final BLSPublicKey key = BLSPublicKey.fromSSZBytes(Bytes.fromHexString(PUBLIC_KEY1));
@@ -96,7 +103,7 @@ class ValidatorLoaderTest {
             .setValidatorKeystorePasswordFiles(emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        ValidatorLoader.initializeValidators(tekuConfiguration);
+        validatorLoader.initializeValidators(tekuConfiguration);
 
     assertThat(validators).hasSize(2);
 
@@ -128,7 +135,7 @@ class ValidatorLoaderTest {
             .setValidatorKeystorePasswordFiles(emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        ValidatorLoader.initializeValidators(tekuConfiguration);
+        validatorLoader.initializeValidators(tekuConfiguration);
 
     // Both local and external validators get loaded.
     assertThat(validators).hasSize(1);
@@ -152,7 +159,7 @@ class ValidatorLoaderTest {
             .setValidatorKeystorePasswordFiles(emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        ValidatorLoader.initializeValidators(tekuConfiguration);
+        validatorLoader.initializeValidators(tekuConfiguration);
 
     assertThat(validators).hasSize(ownedValidatorCount);
   }
@@ -168,7 +175,7 @@ class ValidatorLoaderTest {
             .setValidatorKeystorePasswordFiles(emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        ValidatorLoader.initializeValidators(tekuConfiguration);
+        validatorLoader.initializeValidators(tekuConfiguration);
 
     assertThat(validators).isEmpty();
   }

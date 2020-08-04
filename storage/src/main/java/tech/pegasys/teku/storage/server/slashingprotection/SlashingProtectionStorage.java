@@ -16,11 +16,11 @@ package tech.pegasys.teku.storage.server.slashingprotection;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.signatures.SlashingProtection;
+import tech.pegasys.teku.core.signatures.SlashingProtectionChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.server.Database;
 
-public class SlashingProtectionStorage implements SlashingProtection {
+public class SlashingProtectionStorage implements SlashingProtectionChannel {
 
   private static final SafeFuture<Boolean> SIGNING_DISALLOWED = SafeFuture.completedFuture(false);
   private static final SafeFuture<Boolean> SIGNING_ALLOWED = SafeFuture.completedFuture(true);

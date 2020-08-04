@@ -41,21 +41,21 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 public class SlashingProtectedSigner implements Signer {
 
   private final BLSPublicKey validatorPublicKey;
-  private final SlashingProtection slashingProtection;
+  private final SlashingProtectionChannel slashingProtectionChannel;
   private final Signer delegate;
 
   public SlashingProtectedSigner(
       final BLSPublicKey validatorPublicKey,
-      final SlashingProtection slashingProtection,
+      final SlashingProtectionChannel slashingProtectionChannel,
       final Signer delegate) {
     this.validatorPublicKey = validatorPublicKey;
-    this.slashingProtection = slashingProtection;
+    this.slashingProtectionChannel = slashingProtectionChannel;
     this.delegate = delegate;
   }
 
   @Override
   public SafeFuture<BLSSignature> signBlock(final BeaconBlock block, final ForkInfo forkInfo) {
-    return slashingProtection
+    return slashingProtectionChannel
         .maySignBlock(validatorPublicKey, block.getSlot())
         .thenAccept(verifySigningAllowed(slashableBlockMessage(block)))
         .thenCompose(__ -> delegate.signBlock(block, forkInfo));
@@ -64,7 +64,7 @@ public class SlashingProtectedSigner implements Signer {
   @Override
   public SafeFuture<BLSSignature> signAttestationData(
       final AttestationData attestationData, final ForkInfo forkInfo) {
-    return slashingProtection
+    return slashingProtectionChannel
         .maySignAttestation(
             validatorPublicKey,
             attestationData.getSource().getEpoch(),
