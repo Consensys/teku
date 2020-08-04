@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -24,6 +25,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.storage.server.slashingprotection.SignedAttestationRecord;
 
 public interface RocksDbSerializer<T> {
   RocksDbSerializer<UnsignedLong> UNSIGNED_LONG_SERIALIZER = new UnsignedLongSerializer();
@@ -33,6 +35,7 @@ public interface RocksDbSerializer<T> {
   RocksDbSerializer<BeaconState> STATE_SERIALIZER = new SszSerializer<>(BeaconStateImpl.class);
   RocksDbSerializer<Checkpoint> CHECKPOINT_SERIALIZER = new SszSerializer<>(Checkpoint.class);
   RocksDbSerializer<VoteTracker> VOTES_SERIALIZER = new SszSerializer<>(VoteTracker.class);
+  RocksDbSerializer<BLSPublicKey> PUBLIC_KEY_SERIALIZER = new SszSerializer<>(BLSPublicKey.class);
   RocksDbSerializer<DepositsFromBlockEvent> DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER =
       new DepositsFromBlockEventSerializer();
   RocksDbSerializer<MinGenesisTimeBlockEvent> MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER =
@@ -41,6 +44,8 @@ public interface RocksDbSerializer<T> {
       new ProtoArraySnapshotSerializer();
   RocksDbSerializer<SlotAndBlockRoot> SLOT_AND_BLOCK_ROOT_SERIALIZER =
       new SlotAndBlockRootSerializer();
+  RocksDbSerializer<SignedAttestationRecord> SIGNED_ATTESTATION_RECORD_SERIALIZER =
+      new SignedAttestationRecordSerializer();
 
   T deserialize(final byte[] data);
 

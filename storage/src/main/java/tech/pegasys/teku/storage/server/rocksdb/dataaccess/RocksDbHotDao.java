@@ -20,12 +20,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.storage.server.slashingprotection.SignedAttestationRecord;
 
 /**
  * Provides an abstract "data access object" interface for working with hot data (non-finalized)
@@ -59,6 +60,10 @@ public interface RocksDbHotDao extends AutoCloseable {
 
   HotUpdater hotUpdater();
 
+  Optional<UnsignedLong> getLatestSignedBlockSlot(BLSPublicKey validator);
+
+  Optional<SignedAttestationRecord> getLastSignedAttestationRecord(BLSPublicKey validator);
+
   interface HotUpdater extends AutoCloseable {
 
     void setGenesisTime(final UnsignedLong genesisTime);
@@ -83,7 +88,9 @@ public interface RocksDbHotDao extends AutoCloseable {
 
     void deleteHotBlock(final Bytes32 blockRoot);
 
-    void putProtoArraySnapshot(final ProtoArraySnapshot protoArraySnapshot);
+    void setLastSignedBlock(BLSPublicKey validator, UnsignedLong slot);
+
+    void setLastSignedAttestationRecord(BLSPublicKey validator, SignedAttestationRecord record);
 
     void commit();
 

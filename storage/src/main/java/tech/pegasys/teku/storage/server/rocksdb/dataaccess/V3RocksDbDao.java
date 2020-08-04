@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor.RocksDbTransaction;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
+import tech.pegasys.teku.storage.server.slashingprotection.SignedAttestationRecord;
 
 public class V3RocksDbDao
     implements RocksDbHotDao, RocksDbFinalizedDao, RocksDbEth1Dao, RocksDbProtoArrayDao {
@@ -175,6 +177,17 @@ public class V3RocksDbDao
   }
 
   @Override
+  public Optional<UnsignedLong> getLatestSignedBlockSlot(final BLSPublicKey validator) {
+    return db.get(V3Schema.PUBLIC_KEY_TO_LAST_SIGNED_BLOCK_SLOT, validator);
+  }
+
+  @Override
+  public Optional<SignedAttestationRecord> getLastSignedAttestationRecord(
+      final BLSPublicKey validator) {
+    return db.get(V3Schema.PUBLIC_KEY_TO_SIGNED_ATTESTATION_RECORD, validator);
+  }
+
+  @Override
   @MustBeClosed
   public HotUpdater hotUpdater() {
     return new V3Updater(db);
@@ -304,6 +317,17 @@ public class V3RocksDbDao
     @Override
     public void putProtoArraySnapshot(ProtoArraySnapshot newProtoArray) {
       transaction.put(V3Schema.PROTO_ARRAY_SNAPSHOT, newProtoArray);
+    }
+
+    @Override
+    public void setLastSignedBlock(final BLSPublicKey validator, final UnsignedLong slot) {
+      transaction.put(V3Schema.PUBLIC_KEY_TO_LAST_SIGNED_BLOCK_SLOT, validator, slot);
+    }
+
+    @Override
+    public void setLastSignedAttestationRecord(
+        final BLSPublicKey validator, final SignedAttestationRecord record) {
+      transaction.put(V3Schema.PUBLIC_KEY_TO_SIGNED_ATTESTATION_RECORD, validator, record);
     }
 
     @Override

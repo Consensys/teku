@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.server.slashingprotection.SignedAttestationRecord;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 
 public class NoOpDatabase implements Database {
@@ -126,6 +128,24 @@ public class NoOpDatabase implements Database {
 
   @Override
   public void putProtoArraySnapshot(final ProtoArraySnapshot protoArray) {}
+
+  @Override
+  public Optional<UnsignedLong> getLatestSignedBlockSlot(final BLSPublicKey validator) {
+    return Optional.empty();
+  }
+
+  @Override
+  public void recordLastSignedBlock(final BLSPublicKey validator, final UnsignedLong slot) {}
+
+  @Override
+  public Optional<SignedAttestationRecord> getLastSignedAttestationRecord(
+      final BLSPublicKey validator) {
+    return Optional.empty();
+  }
+
+  @Override
+  public void recordLastSignedAttestation(
+      final BLSPublicKey validator, final SignedAttestationRecord signedAttestationRecord) {}
 
   @Override
   public void close() {}

@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.LocalMessageSignerService;
-import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.core.signatures.UnprotectedSigner;
 import tech.pegasys.teku.util.bytes.KeyFormatter;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.validator.client.Validator;
@@ -59,7 +59,7 @@ public class ValidatorLoader {
             blsKeyPair ->
                 new Validator(
                     blsKeyPair.getPublicKey(),
-                    new Signer(new LocalMessageSignerService(blsKeyPair)),
+                    new UnprotectedSigner(new LocalMessageSignerService(blsKeyPair)),
                     Optional.ofNullable(config.getGraffiti())))
         .collect(toMap(Validator::getPublicKey, Function.identity()));
   }
@@ -72,7 +72,7 @@ public class ValidatorLoader {
             publicKey ->
                 new Validator(
                     publicKey,
-                    new Signer(
+                    new UnprotectedSigner(
                         new ExternalMessageSignerService(
                             config.getValidatorExternalSignerUrl(), publicKey, timeout)),
                     Optional.ofNullable(config.getGraffiti())))

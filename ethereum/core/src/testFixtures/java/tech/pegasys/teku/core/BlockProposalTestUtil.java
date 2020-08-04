@@ -25,7 +25,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.signatures.MessageSignerService;
-import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.core.signatures.UnprotectedSigner;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists;
@@ -64,7 +64,7 @@ public class BlockProposalTestUtil {
 
     final UnsignedLong newEpoch = compute_epoch_at_slot(newSlot);
     final BLSSignature randaoReveal =
-        new Signer(signer).createRandaoReveal(newEpoch, state.getForkInfo()).join();
+        new UnprotectedSigner(signer).createRandaoReveal(newEpoch, state.getForkInfo()).join();
 
     final BeaconBlockAndState newBlockAndState =
         blockProposalUtil.createNewUnsignedBlock(
@@ -83,7 +83,8 @@ public class BlockProposalTestUtil {
 
     // Sign block and set block signature
     final BeaconBlock block = newBlockAndState.getBlock();
-    BLSSignature blockSignature = new Signer(signer).signBlock(block, state.getForkInfo()).join();
+    BLSSignature blockSignature =
+        new UnprotectedSigner(signer).signBlock(block, state.getForkInfo()).join();
 
     final SignedBeaconBlock signedBlock = new SignedBeaconBlock(block, blockSignature);
     return new SignedBlockAndState(signedBlock, newBlockAndState.getState());

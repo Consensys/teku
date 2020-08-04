@@ -18,6 +18,8 @@ import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSeri
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.PROTO_ARRAY_SNAPSHOT_SERIALIZER;
+import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.PUBLIC_KEY_SERIALIZER;
+import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.SIGNED_ATTESTATION_RECORD_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.SIGNED_BLOCK_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.SLOT_AND_BLOCK_ROOT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.STATE_SERIALIZER;
@@ -26,6 +28,7 @@ import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSeri
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -34,6 +37,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.storage.server.slashingprotection.SignedAttestationRecord;
 
 public interface V4SchemaHot extends Schema {
   RocksDbColumn<Bytes32, SignedBeaconBlock> HOT_BLOCKS_BY_ROOT =
@@ -47,6 +51,10 @@ public interface V4SchemaHot extends Schema {
       RocksDbColumn.create(4, UNSIGNED_LONG_SERIALIZER, DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER);
   RocksDbColumn<Bytes32, SlotAndBlockRoot> STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT =
       RocksDbColumn.create(5, BYTES32_SERIALIZER, SLOT_AND_BLOCK_ROOT_SERIALIZER);
+  RocksDbColumn<BLSPublicKey, UnsignedLong> PUBLIC_KEY_TO_LAST_SIGNED_BLOCK_SLOT =
+      RocksDbColumn.create(6, PUBLIC_KEY_SERIALIZER, UNSIGNED_LONG_SERIALIZER);
+  RocksDbColumn<BLSPublicKey, SignedAttestationRecord> PUBLIC_KEY_TO_SIGNED_ATTESTATION_RECORD =
+      RocksDbColumn.create(7, PUBLIC_KEY_SERIALIZER, SIGNED_ATTESTATION_RECORD_SERIALIZER);
 
   // Variables
   RocksDbVariable<UnsignedLong> GENESIS_TIME = RocksDbVariable.create(1, UNSIGNED_LONG_SERIALIZER);

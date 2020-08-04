@@ -41,6 +41,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.core.ChainProperties;
@@ -54,6 +55,7 @@ import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.events.AnchorPoint;
+import tech.pegasys.teku.storage.server.slashingprotection.SignedAttestationRecord;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StorePruningOptions;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -532,6 +534,43 @@ public abstract class AbstractDatabaseTest {
     database.pruneHotStateRoots(database.getStateRootsBeforeSlot(UnsignedLong.valueOf(2L)));
     assertThat(database.getStateRootsBeforeSlot(UnsignedLong.valueOf(10L)))
         .containsExactlyInAnyOrder(twoStateRoot, threeStateRoot);
+  }
+
+  @Test
+  void getLatestSignedBlockSlot_shouldReturnEmptyWhenNoPreviousRecord() {
+    assertThat(
+            database.getLatestSignedBlockSlot(
+                chainBuilder.getValidatorKeys().get(0).getPublicKey()))
+        .isEmpty();
+  }
+
+  @Test
+  void getLatestSignedBlockSlot_shouldRecordLastSignedBlockByPublicKey() {
+    final BLSPublicKey validator0 = chainBuilder.getValidatorKeys().get(0).getPublicKey();
+    final BLSPublicKey validator1 = chainBuilder.getValidatorKeys().get(1).getPublicKey();
+    final UnsignedLong expectedValue = UnsignedLong.valueOf(5);
+    database.recordLastSignedBlock(validator0, expectedValue);
+    assertThat(database.getLatestSignedBlockSlot(validator0)).contains(expectedValue);
+    assertThat(database.getLatestSignedBlockSlot(validator1)).isEmpty();
+  }
+
+  @Test
+  void getLatestSignedAttestationRecord_shouldReturnEmptyWhenNoPreviousRecord() {
+    assertThat(
+            database.getLastSignedAttestationRecord(
+                chainBuilder.getValidatorKeys().get(0).getPublicKey()))
+        .isEmpty();
+  }
+
+  @Test
+  void getLatestSignedAttestationRecord_shouldRecordLastSignedAttestationByPublicKey() {
+    final BLSPublicKey validator0 = chainBuilder.getValidatorKeys().get(0).getPublicKey();
+    final BLSPublicKey validator1 = chainBuilder.getValidatorKeys().get(1).getPublicKey();
+    final SignedAttestationRecord expectedValue =
+        new SignedAttestationRecord(UnsignedLong.valueOf(5), UnsignedLong.valueOf(8));
+    database.recordLastSignedAttestation(validator0, expectedValue);
+    assertThat(database.getLastSignedAttestationRecord(validator0)).contains(expectedValue);
+    assertThat(database.getLastSignedAttestationRecord(validator1)).isEmpty();
   }
 
   protected Bytes32 insertRandomSlotAndBlock(

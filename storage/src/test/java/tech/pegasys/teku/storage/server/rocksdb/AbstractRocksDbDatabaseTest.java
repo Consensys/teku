@@ -31,6 +31,7 @@ import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbEth1Dao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbFinalizedDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbHotDao;
+import tech.pegasys.teku.storage.server.slashingprotection.SignedAttestationRecord;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
@@ -164,6 +165,51 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
     assertThatThrownBy(
             () -> database.getLatestAvailableFinalizedState(genesisCheckpoint.getEpochStartSlot()))
+        .isInstanceOf(ShuttingDownException.class);
+  }
+
+  @Test
+  void shouldThrowIfClosedDatabaseIsRead_getLatestSignedBlockSlot() throws Exception {
+    database.close();
+
+    assertThatThrownBy(
+            () ->
+                database.getLatestSignedBlockSlot(
+                    chainBuilder.getValidatorKeys().get(0).getPublicKey()))
+        .isInstanceOf(ShuttingDownException.class);
+  }
+
+  @Test
+  void shouldThrowIfClosedDatabaseIsRead_getLatestSignedAttestationRecord() throws Exception {
+    database.close();
+
+    assertThatThrownBy(
+            () ->
+                database.getLastSignedAttestationRecord(
+                    chainBuilder.getValidatorKeys().get(0).getPublicKey()))
+        .isInstanceOf(ShuttingDownException.class);
+  }
+
+  @Test
+  void shouldThrowIfClosedDatabaseIsUsed_recordLastSignedBlock() throws Exception {
+    database.close();
+
+    assertThatThrownBy(
+            () ->
+                database.recordLastSignedBlock(
+                    chainBuilder.getValidatorKeys().get(0).getPublicKey(), UnsignedLong.ONE))
+        .isInstanceOf(ShuttingDownException.class);
+  }
+
+  @Test
+  void shouldThrowIfClosedDatabaseIsUsed_recordLastSignedAttestation() throws Exception {
+    database.close();
+
+    assertThatThrownBy(
+            () ->
+                database.recordLastSignedAttestation(
+                    chainBuilder.getValidatorKeys().get(0).getPublicKey(),
+                    new SignedAttestationRecord(UnsignedLong.ZERO, UnsignedLong.ONE)))
         .isInstanceOf(ShuttingDownException.class);
   }
 }

@@ -25,10 +25,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.signatures.LocalMessageSignerService;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.validator.client.Validator;
-import tech.pegasys.teku.validator.client.signer.ExternalMessageSignerService;
 
 class ValidatorLoaderTest {
 
@@ -57,8 +55,7 @@ class ValidatorLoaderTest {
     final Validator validator = validators.get(key);
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(key);
-    assertThat(validator.getSigner().getMessageSignerService())
-        .isInstanceOf(ExternalMessageSignerService.class);
+    assertThat(validator.getSigner().isLocal()).isFalse();
   }
 
   @Test
@@ -81,8 +78,7 @@ class ValidatorLoaderTest {
     final Validator validator = validators.get(key);
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(key);
-    assertThat(validator.getSigner().getMessageSignerService())
-        .isInstanceOf(LocalMessageSignerService.class);
+    assertThat(validator.getSigner().isLocal()).isTrue();
   }
 
   @Test
@@ -108,15 +104,13 @@ class ValidatorLoaderTest {
     final Validator validator1 = validators.get(key1);
     assertThat(validator1).isNotNull();
     assertThat(validator1.getPublicKey()).isEqualTo(key1);
-    assertThat(validator1.getSigner().getMessageSignerService())
-        .isInstanceOf(LocalMessageSignerService.class);
+    assertThat(validator1.getSigner().isLocal()).isTrue();
 
     final BLSPublicKey key2 = BLSPublicKey.fromSSZBytes(Bytes.fromHexString(PUBLIC_KEY2));
     final Validator validator2 = validators.get(key2);
     assertThat(validator2).isNotNull();
     assertThat(validator2.getPublicKey()).isEqualTo(key2);
-    assertThat(validator2.getSigner().getMessageSignerService())
-        .isInstanceOf(ExternalMessageSignerService.class);
+    assertThat(validator2.getSigner().isLocal()).isFalse();
   }
 
   @Test
@@ -144,8 +138,7 @@ class ValidatorLoaderTest {
     final Validator validator = validators.get(key);
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(key);
-    assertThat(validator.getSigner().getMessageSignerService())
-        .isInstanceOf(ExternalMessageSignerService.class);
+    assertThat(validator.getSigner().isLocal()).isFalse();
   }
 
   @Test

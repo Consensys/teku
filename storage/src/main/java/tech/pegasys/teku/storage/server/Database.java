@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
+import tech.pegasys.teku.storage.server.slashingprotection.SignedAttestationRecord;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 
 public interface Database extends AutoCloseable {
@@ -101,4 +103,13 @@ public interface Database extends AutoCloseable {
   void addDepositsFromBlockEvent(final DepositsFromBlockEvent event);
 
   void putProtoArraySnapshot(final ProtoArraySnapshot protoArray);
+
+  Optional<UnsignedLong> getLatestSignedBlockSlot(BLSPublicKey validator);
+
+  void recordLastSignedBlock(BLSPublicKey validator, UnsignedLong slot);
+
+  Optional<SignedAttestationRecord> getLastSignedAttestationRecord(BLSPublicKey validator);
+
+  void recordLastSignedAttestation(
+      BLSPublicKey validator, SignedAttestationRecord signedAttestationRecord);
 }

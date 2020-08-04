@@ -13,23 +13,15 @@
 
 package tech.pegasys.teku.core.signatures;
 
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.BLSSignature;
+import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.util.channels.ChannelInterface;
 
-public interface MessageSignerService {
+public interface SlashingProtection extends ChannelInterface {
 
-  SafeFuture<BLSSignature> signBlock(Bytes signingRoot);
+  SafeFuture<Boolean> maySignBlock(BLSPublicKey validator, UnsignedLong slot);
 
-  SafeFuture<BLSSignature> signAttestation(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signAggregationSlot(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signAggregateAndProof(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signRandaoReveal(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signVoluntaryExit(Bytes signingRoot);
-
-  boolean isLocal();
+  SafeFuture<Boolean> maySignAttestation(
+      BLSPublicKey validator, UnsignedLong sourceEpoch, UnsignedLong targetEpoch);
 }
