@@ -20,6 +20,15 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
 
+/**
+ * Holds the key information required to prevent a validator from being slashed.
+ *
+ * <p>For blocks, the slot of the last signed block is recorded and signing is only allowed if the
+ * slot is greater than the previous.
+ *
+ * <p>For attestations, the last source epoch and target epoch are recorded. An attestation may only
+ * be signed if source >= previousSource AND target > previousTarget
+ */
 class ValidatorSigningRecord {
 
   static final UnsignedLong NEVER_SIGNED = UnsignedLong.MAX_VALUE;
@@ -60,7 +69,14 @@ class ValidatorSigningRecord {
         });
   }
 
-  public Optional<ValidatorSigningRecord> signBlock(final UnsignedLong slot) {
+  /**
+   * Determine if it is safe to sign a block at the specified slot.
+   *
+   * @param slot the slot of the block being signed
+   * @return an Optional containing an updated {@link ValidatorSigningRecord} with the state after
+   *     the block is signed or empty if it is not safe to sign the block.
+   */
+  public Optional<ValidatorSigningRecord> maySignBlock(final UnsignedLong slot) {
     // We never allow signing a block at slot 0 because we shouldn't be signing the genesis block.
     if (blockSlot.compareTo(slot) < 0) {
       return Optional.of(
@@ -69,7 +85,15 @@ class ValidatorSigningRecord {
     return Optional.empty();
   }
 
-  public Optional<ValidatorSigningRecord> signAttestation(
+  /**
+   * Determine if it is safe to sign an attestation with the specified source and target epochs.
+   *
+   * @param sourceEpoch the source epoch of the attestation to sign
+   * @param targetEpoch the target epoch of the attestation to sign
+   * @return an Optional containing an updated {@link ValidatorSigningRecord} with the state after
+   *     the attestation is signed or empty if it is not safe to sign the attestation.
+   */
+  public Optional<ValidatorSigningRecord> maySignAttestation(
       final UnsignedLong sourceEpoch, final UnsignedLong targetEpoch) {
     if (isSafeSourceEpoch(sourceEpoch) && isSafeTargetEpoch(targetEpoch)) {
       return Optional.of(new ValidatorSigningRecord(blockSlot, sourceEpoch, targetEpoch));

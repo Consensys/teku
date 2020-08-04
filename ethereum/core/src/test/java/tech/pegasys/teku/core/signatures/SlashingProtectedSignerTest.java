@@ -38,16 +38,16 @@ class SlashingProtectedSignerTest {
   private final BLSSignature signature = dataStructureUtil.randomSignature();
   private final SafeFuture<BLSSignature> signatureFuture = SafeFuture.completedFuture(signature);
   private final Signer delegate = mock(Signer.class);
-  private final SlashingProtectionChannel slashingProtectionChannel =
-      mock(SlashingProtectionChannel.class);
+  private final SlashingProtector slashingProtector =
+      mock(SlashingProtector.class);
 
   private final SlashingProtectedSigner signer =
-      new SlashingProtectedSigner(publicKey, slashingProtectionChannel, delegate);
+      new SlashingProtectedSigner(publicKey, slashingProtector, delegate);
 
   @Test
   void signBlock_shouldSignWhenSlashingProtectionAllowsIt() {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(6);
-    when(slashingProtectionChannel.maySignBlock(publicKey, block.getSlot()))
+    when(slashingProtector.maySignBlock(publicKey, block.getSlot()))
         .thenReturn(SafeFuture.completedFuture(true));
     when(delegate.signBlock(block, forkInfo)).thenReturn(signatureFuture);
 
@@ -57,7 +57,7 @@ class SlashingProtectedSignerTest {
   @Test
   void signBlock_shouldNotSignWhenSlashingProtectionRejects() {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(6);
-    when(slashingProtectionChannel.maySignBlock(publicKey, block.getSlot()))
+    when(slashingProtector.maySignBlock(publicKey, block.getSlot()))
         .thenReturn(SafeFuture.completedFuture(false));
     when(delegate.signBlock(block, forkInfo)).thenReturn(signatureFuture);
 
@@ -68,7 +68,7 @@ class SlashingProtectedSignerTest {
   @Test
   void signAttestationData_shouldSignWhenSlashingProtectionAllowsIt() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
-    when(slashingProtectionChannel.maySignAttestation(
+    when(slashingProtector.maySignAttestation(
             publicKey,
             attestationData.getSource().getEpoch(),
             attestationData.getTarget().getEpoch()))
@@ -82,7 +82,7 @@ class SlashingProtectedSignerTest {
   @Test
   void signAttestationData_shouldNotSignWhenSlashingProtectionRejects() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
-    when(slashingProtectionChannel.maySignAttestation(
+    when(slashingProtector.maySignAttestation(
             publicKey,
             attestationData.getSource().getEpoch(),
             attestationData.getTarget().getEpoch()))

@@ -32,7 +32,7 @@ class ValidatorSigningRecordTest {
       final UnsignedLong slot,
       final Optional<ValidatorSigningRecord> expectedResult)
       throws Exception {
-    assertThat(input.signBlock(slot)).isEqualTo(expectedResult);
+    assertThat(input.maySignBlock(slot)).isEqualTo(expectedResult);
   }
 
   static List<Arguments> blockCases() {
@@ -68,7 +68,7 @@ class ValidatorSigningRecordTest {
       final UnsignedLong sourceEpoch,
       final UnsignedLong targetEpoch,
       final Optional<ValidatorSigningRecord> expectedResult) {
-    assertThat(input.signAttestation(sourceEpoch, targetEpoch)).isEqualTo(expectedResult);
+    assertThat(input.maySignAttestation(sourceEpoch, targetEpoch)).isEqualTo(expectedResult);
   }
 
   static List<Arguments> attestationCases() {

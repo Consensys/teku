@@ -31,7 +31,7 @@ import tech.pegasys.teku.core.signatures.LocalMessageSignerService;
 import tech.pegasys.teku.core.signatures.MessageSignerService;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.core.signatures.SlashingProtectedSigner;
-import tech.pegasys.teku.core.signatures.SlashingProtectionChannel;
+import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.core.signatures.UnprotectedSigner;
 import tech.pegasys.teku.util.bytes.KeyFormatter;
 import tech.pegasys.teku.util.config.TekuConfiguration;
@@ -40,10 +40,10 @@ import tech.pegasys.teku.validator.client.signer.ExternalMessageSignerService;
 
 public class ValidatorLoader {
 
-  private final SlashingProtectionChannel slashingProtectionChannel;
+  private final SlashingProtector slashingProtector;
 
-  public ValidatorLoader(final SlashingProtectionChannel slashingProtectionChannel) {
-    this.slashingProtectionChannel = slashingProtectionChannel;
+  public ValidatorLoader(final SlashingProtector slashingProtector) {
+    this.slashingProtector = slashingProtector;
   }
 
   public Map<BLSPublicKey, Validator> initializeValidators(TekuConfiguration config) {
@@ -93,7 +93,7 @@ public class ValidatorLoader {
   private Signer createSigner(
       final BLSPublicKey publicKey, final MessageSignerService messageSignerService) {
     return new SlashingProtectedSigner(
-        publicKey, slashingProtectionChannel, new UnprotectedSigner(messageSignerService));
+        publicKey, slashingProtector, new UnprotectedSigner(messageSignerService));
   }
 
   private static Collection<BLSKeyPair> loadValidatorKeys(final TekuConfiguration config) {

@@ -31,30 +31,27 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
  * <p>A validator can only be slashed because of the blocks or attestations they sign, so all other
  * methods are delegated without any checks.
  *
- * <p>For blocks, the slot of the last signed block is recorded and signing is only allowed if the
- * slot is greater than the previous.
- *
- * <p>For attestations, the last source epoch and target epoch are recorded. An attestation may only
- * be signed if source >= previousSource AND target > previousTarget
+ * <p>Blocks and attestations check with the specified {@link SlashingProtector} before signing and
+ * throw {@link SlashableConditionException} if signing is disallowed.
  */
 public class SlashingProtectedSigner implements Signer {
 
   private final BLSPublicKey validatorPublicKey;
-  private final SlashingProtectionChannel slashingProtectionChannel;
+  private final SlashingProtector slashingProtector;
   private final Signer delegate;
 
   public SlashingProtectedSigner(
       final BLSPublicKey validatorPublicKey,
-      final SlashingProtectionChannel slashingProtectionChannel,
+      final SlashingProtector slashingProtector,
       final Signer delegate) {
     this.validatorPublicKey = validatorPublicKey;
-    this.slashingProtectionChannel = slashingProtectionChannel;
+    this.slashingProtector = slashingProtector;
     this.delegate = delegate;
   }
 
   @Override
   public SafeFuture<BLSSignature> signBlock(final BeaconBlock block, final ForkInfo forkInfo) {
-    return slashingProtectionChannel
+    return slashingProtector
         .maySignBlock(validatorPublicKey, block.getSlot())
         .thenAccept(verifySigningAllowed(slashableBlockMessage(block)))
         .thenCompose(__ -> delegate.signBlock(block, forkInfo));
@@ -63,7 +60,7 @@ public class SlashingProtectedSigner implements Signer {
   @Override
   public SafeFuture<BLSSignature> signAttestationData(
       final AttestationData attestationData, final ForkInfo forkInfo) {
-    return slashingProtectionChannel
+    return slashingProtector
         .maySignAttestation(
             validatorPublicKey,
             attestationData.getSource().getEpoch(),

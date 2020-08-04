@@ -21,8 +21,20 @@ import java.nio.file.StandardOpenOption;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 
+/**
+ * A wrapper class for reading and writing files, ensuring that the contents is immediately flushed
+ * to disk.
+ */
 public class SyncDataAccessor {
 
+  /**
+   * Reads the content of the specified path, if it exists.
+   *
+   * @param path the path to read
+   * @return Optional containing the entire file contents or empty optional if the file does not
+   *     exist
+   * @throws IOException if an IO error occurs while reading
+   */
   public Optional<Bytes> read(final Path path) throws IOException {
     if (path.toFile().exists()) {
       return Optional.of(Bytes.wrap(Files.readAllBytes(path)));
@@ -31,6 +43,14 @@ public class SyncDataAccessor {
     }
   }
 
+  /**
+   * Writes data to the specified path, ensuring both the file content and metadata is immediately
+   * flushed to hardware storage. If the file exists it is overwritten, otherwise it is created.
+   *
+   * @param path the path to write to
+   * @param data the data to write
+   * @exception IOException if an IO error occurs while writing
+   */
   public void syncedWrite(final Path path, final Bytes data) throws IOException {
     final File parentDirectory = path.getParent().toFile();
     if (!parentDirectory.mkdirs() && !parentDirectory.isDirectory()) {

@@ -22,16 +22,16 @@ import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-public class FlatFileSlashingProtection implements SlashingProtectionChannel {
+public class FlatFileSlashingProtection implements SlashingProtector {
 
   private final Map<BLSPublicKey, ValidatorSigningRecord> signingRecords = new HashMap<>();
 
-  private final SyncDataAccessor dataWriter;
+  private final SyncDataAccessor dataAccessor;
   private final Path slashingProtectionBaseDir;
 
   public FlatFileSlashingProtection(
-      final SyncDataAccessor dataWriter, final Path slashingProtectionBaseDir) {
-    this.dataWriter = dataWriter;
+      final SyncDataAccessor dataAccessor, final Path slashingProtectionBaseDir) {
+    this.dataAccessor = dataAccessor;
     this.slashingProtectionBaseDir = slashingProtectionBaseDir;
   }
 
@@ -41,7 +41,7 @@ public class FlatFileSlashingProtection implements SlashingProtectionChannel {
     return SafeFuture.of(
         () -> {
           final ValidatorSigningRecord signingRecord = loadSigningRecord(validator);
-          return handleResult(validator, signingRecord.signBlock(slot));
+          return handleResult(validator, signingRecord.maySignBlock(slot));
         });
   }
 
@@ -53,7 +53,7 @@ public class FlatFileSlashingProtection implements SlashingProtectionChannel {
     return SafeFuture.of(
         () -> {
           final ValidatorSigningRecord signingRecord = loadSigningRecord(validator);
-          return handleResult(validator, signingRecord.signAttestation(sourceEpoch, targetEpoch));
+          return handleResult(validator, signingRecord.maySignAttestation(sourceEpoch, targetEpoch));
         });
   }
 
@@ -74,7 +74,7 @@ public class FlatFileSlashingProtection implements SlashingProtectionChannel {
       return record;
     }
     record =
-        dataWriter
+        dataAccessor
             .read(validatorRecordPath(validator))
             .map(ValidatorSigningRecord::fromBytes)
             .orElseGet(ValidatorSigningRecord::new);
@@ -84,7 +84,7 @@ public class FlatFileSlashingProtection implements SlashingProtectionChannel {
 
   private void writeSigningRecord(final BLSPublicKey validator, final ValidatorSigningRecord record)
       throws IOException {
-    dataWriter.syncedWrite(validatorRecordPath(validator), record.toBytes());
+    dataAccessor.syncedWrite(validatorRecordPath(validator), record.toBytes());
     signingRecords.put(validator, record);
   }
 

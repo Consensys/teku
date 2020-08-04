@@ -18,7 +18,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.util.channels.ChannelInterface;
 
-public interface SlashingProtectionChannel extends ChannelInterface {
+public interface SlashingProtector extends ChannelInterface {
 
   SafeFuture<Boolean> maySignBlock(BLSPublicKey validator, UnsignedLong slot);
 
