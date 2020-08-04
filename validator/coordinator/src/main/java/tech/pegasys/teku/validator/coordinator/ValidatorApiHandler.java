@@ -202,13 +202,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<Attestation>> createAggregate(final AttestationData attestationData) {
+  public SafeFuture<Optional<Attestation>> createAggregate(final Bytes32 attestationHashTreeRoot) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
     return SafeFuture.completedFuture(
         attestationPool
-            .createAggregateFor(attestationData)
+            .createAggregateFor(attestationHashTreeRoot)
             .map(ValidateableAttestation::getAttestation));
   }
 
