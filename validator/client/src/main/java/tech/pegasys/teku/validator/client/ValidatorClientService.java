@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.validator.client;
 
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Random;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.FlatFileSlashingProtection;
 import tech.pegasys.teku.core.signatures.SlashingProtectionChannel;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -46,7 +48,7 @@ public class ValidatorClientService extends Service {
     final MetricsSystem metricsSystem = config.getMetricsSystem();
     final AsyncRunner asyncRunner = config.createAsyncRunner("validator");
     final SlashingProtectionChannel slashingProtectionChannel =
-        eventChannels.getPublisher(SlashingProtectionChannel.class, asyncRunner);
+        new FlatFileSlashingProtection(Path.of(config.getConfig().getDataPath(), "validators"));
     final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtectionChannel);
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(config.getConfig());
