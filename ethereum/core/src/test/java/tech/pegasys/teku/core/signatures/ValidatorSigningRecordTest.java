@@ -18,11 +18,32 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.core.signatures.record.ValidatorSigningRecord;
 
 class ValidatorSigningRecordTest {
+
+  @Test
+  void shouldRoundTripDefaultValuesToBytes() {
+    final ValidatorSigningRecord record = new ValidatorSigningRecord();
+    final Bytes bytes = record.toBytes();
+    final ValidatorSigningRecord result = ValidatorSigningRecord.fromBytes(bytes);
+    assertThat(result).isEqualToComparingFieldByField(record);
+  }
+
+  @Test
+  void shouldRoundTripToBytes() {
+    final ValidatorSigningRecord record =
+        new ValidatorSigningRecord(
+            UnsignedLong.valueOf(10), UnsignedLong.valueOf(20), UnsignedLong.valueOf(30));
+    final Bytes bytes = record.toBytes();
+    final ValidatorSigningRecord result = ValidatorSigningRecord.fromBytes(bytes);
+    assertThat(result).isEqualToComparingFieldByField(record);
+  }
 
   @ParameterizedTest(name = "signBlock({0})")
   @MethodSource("blockCases")
@@ -30,8 +51,7 @@ class ValidatorSigningRecordTest {
       @SuppressWarnings("unused") final String name,
       final ValidatorSigningRecord input,
       final UnsignedLong slot,
-      final Optional<ValidatorSigningRecord> expectedResult)
-      throws Exception {
+      final Optional<ValidatorSigningRecord> expectedResult) {
     assertThat(input.maySignBlock(slot)).isEqualTo(expectedResult);
   }
 

@@ -30,6 +30,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.record.ValidatorSigningRecord;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 
 class SlashingProtectorTest {

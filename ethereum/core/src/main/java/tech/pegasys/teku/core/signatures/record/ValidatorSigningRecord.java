@@ -11,14 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.signatures;
+package tech.pegasys.teku.core.signatures.record;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.ssz.SSZ;
 
 /**
  * Holds the key information required to prevent a validator from being slashed.
@@ -29,11 +28,14 @@ import org.apache.tuweni.ssz.SSZ;
  * <p>For attestations, the last source epoch and target epoch are recorded. An attestation may only
  * be signed if source >= previousSource AND target > previousTarget
  */
-class ValidatorSigningRecord {
+public class ValidatorSigningRecord {
 
-  static final UnsignedLong NEVER_SIGNED = UnsignedLong.MAX_VALUE;
+  public static final UnsignedLong NEVER_SIGNED = UnsignedLong.MAX_VALUE;
+
   private final UnsignedLong blockSlot;
+
   private final UnsignedLong attestationSourceEpoch;
+
   private final UnsignedLong attestationTargetEpoch;
 
   public ValidatorSigningRecord() {
@@ -50,23 +52,11 @@ class ValidatorSigningRecord {
   }
 
   public static ValidatorSigningRecord fromBytes(final Bytes data) {
-    return SSZ.decode(
-        data,
-        reader -> {
-          final UnsignedLong blockSlot = UnsignedLong.fromLongBits(reader.readUInt64());
-          final UnsignedLong sourceEpoch = UnsignedLong.fromLongBits(reader.readUInt64());
-          final UnsignedLong targetEpoch = UnsignedLong.fromLongBits(reader.readUInt64());
-          return new ValidatorSigningRecord(blockSlot, sourceEpoch, targetEpoch);
-        });
+    return ValidatorSigningRecordSerialization.readRecord(data);
   }
 
   public Bytes toBytes() {
-    return SSZ.encode(
-        writer -> {
-          writer.writeUInt64(blockSlot.longValue());
-          writer.writeUInt64(attestationSourceEpoch.longValue());
-          writer.writeUInt64(attestationTargetEpoch.longValue());
-        });
+    return ValidatorSigningRecordSerialization.writeRecord(this);
   }
 
   /**
@@ -109,6 +99,18 @@ class ValidatorSigningRecord {
   private boolean isSafeTargetEpoch(final UnsignedLong targetEpoch) {
     return attestationTargetEpoch.equals(NEVER_SIGNED)
         || attestationTargetEpoch.compareTo(targetEpoch) < 0;
+  }
+
+  UnsignedLong getBlockSlot() {
+    return blockSlot;
+  }
+
+  UnsignedLong getAttestationSourceEpoch() {
+    return attestationSourceEpoch;
+  }
+
+  UnsignedLong getAttestationTargetEpoch() {
+    return attestationTargetEpoch;
   }
 
   @Override

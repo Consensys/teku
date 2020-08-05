@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.signatures.record.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class SlashingProtector {
@@ -88,6 +89,7 @@ public class SlashingProtector {
   }
 
   private Path validatorRecordPath(final BLSPublicKey validator) {
-    return slashingProtectionBaseDir.resolve(validator.toBytesCompressed().toUnprefixedHexString());
+    return slashingProtectionBaseDir.resolve(
+        validator.toBytesCompressed().toUnprefixedHexString() + ".yml");
   }
 }
