@@ -18,8 +18,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 
 public class CheckpointState {
@@ -37,35 +35,10 @@ public class CheckpointState {
     checkArgument(
         state.getSlot().equals(checkpoint.getEpochStartSlot()),
         "State must be advanced to checkpoint epoch boundary slot");
-    validateState(checkpoint, state);
 
     this.checkpoint = checkpoint;
     this.block = block;
     this.state = state;
-  }
-
-  private static void validateState(final Checkpoint checkpoint, final BeaconState state) {
-    final Bytes32 blockRootFromState = deriveBlockHeaderFromState(state).hash_tree_root();
-    checkArgument(
-        blockRootFromState.equals(checkpoint.getRoot()), "State must derive from checkpoint block");
-  }
-
-  private static BeaconBlockHeader deriveBlockHeaderFromState(final BeaconState state) {
-    BeaconBlockHeader latestHeader = state.getLatest_block_header();
-
-    if (latestHeader.getState_root().isZero()) {
-      // If the state root is empty, replace it with the current state root
-      final Bytes32 stateRoot = state.hash_tree_root();
-      latestHeader =
-          new BeaconBlockHeader(
-              latestHeader.getSlot(),
-              latestHeader.getProposer_index(),
-              latestHeader.getParent_root(),
-              stateRoot,
-              latestHeader.getBody_root());
-    }
-
-    return latestHeader;
   }
 
   public Checkpoint getCheckpoint() {
