@@ -13,23 +13,12 @@
 
 package tech.pegasys.teku.core.signatures;
 
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-
-public interface MessageSignerService {
-
-  SafeFuture<BLSSignature> signBlock(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signAttestation(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signAggregationSlot(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signAggregateAndProof(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signRandaoReveal(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signVoluntaryExit(Bytes signingRoot);
-
-  boolean isLocal();
+/**
+ * Thrown to indicate that a signing request has been refused because it may violate a slashable
+ * condition.
+ */
+public class SlashableConditionException extends RuntimeException {
+  public SlashableConditionException(final String message) {
+    super(message);
+  }
 }

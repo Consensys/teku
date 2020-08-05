@@ -57,6 +57,11 @@ public class TestMessageSignerService implements MessageSignerService {
     return sign(signingRoot);
   }
 
+  @Override
+  public boolean isLocal() {
+    return true;
+  }
+
   private SafeFuture<BLSSignature> sign(final Bytes signingRoot) {
     return SafeFuture.completedFuture(BLS.sign(blsKeyPair.getSecretKey(), signingRoot));
   }
