@@ -55,7 +55,8 @@ class AggregatingAttestationPoolTest {
   @Test
   public void createAggregateFor_shouldReturnEmptyWhenNoAttestationsMatchGivenData() {
     final Optional<ValidateableAttestation> result =
-        aggregatingPool.createAggregateFor(dataStructureUtil.randomAttestationData());
+        aggregatingPool.createAggregateFor(
+            dataStructureUtil.randomAttestationData().hashTreeRoot());
     assertThat(result).isEmpty();
   }
 
@@ -66,7 +67,7 @@ class AggregatingAttestationPoolTest {
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 4, 6);
 
     final Optional<ValidateableAttestation> result =
-        aggregatingPool.createAggregateFor(attestationData);
+        aggregatingPool.createAggregateFor(attestationData.hashTreeRoot());
     assertThat(result.map(ValidateableAttestation::getAttestation))
         .contains(aggregateAttestations(attestation1, attestation2));
   }
@@ -79,7 +80,7 @@ class AggregatingAttestationPoolTest {
     addAttestationFromValidators(attestationData, 2, 3, 9);
 
     final Optional<ValidateableAttestation> result =
-        aggregatingPool.createAggregateFor(attestationData);
+        aggregatingPool.createAggregateFor(attestationData.hashTreeRoot());
     assertThat(result.map(ValidateableAttestation::getAttestation))
         .contains(aggregateAttestations(attestation1, attestation2));
   }
@@ -145,6 +146,25 @@ class AggregatingAttestationPoolTest {
 
     assertThat(aggregatingPool.getAttestationsForBlock(dataStructureUtil.randomBeaconState()))
         .containsExactlyInAnyOrder(aggregateAttestations(attestation1, attestation2), attestation3);
+  }
+
+  @Test
+  void getAttestationsForBlock_shouldIncludeMoreRecentAttestationsFirst() {
+    final AttestationData attestationData1 =
+        dataStructureUtil.randomAttestationData(UnsignedLong.valueOf(5));
+    final AttestationData attestationData2 =
+        dataStructureUtil.randomAttestationData(UnsignedLong.valueOf(6));
+    final AttestationData attestationData3 =
+        dataStructureUtil.randomAttestationData(UnsignedLong.valueOf(7));
+    final Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2);
+    final Attestation attestation2 = addAttestationFromValidators(attestationData2, 3, 4);
+    final Attestation attestation3 = addAttestationFromValidators(attestationData3, 5, 6);
+
+    final BeaconState stateAtBlockSlot =
+        dataStructureUtil.randomBeaconState(UnsignedLong.valueOf(10));
+
+    assertThat(aggregatingPool.getAttestationsForBlock(stateAtBlockSlot))
+        .containsExactly(attestation3, attestation2, attestation1);
   }
 
   @Test
