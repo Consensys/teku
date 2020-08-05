@@ -45,7 +45,7 @@ class SlashingProtectorTest {
 
   private final Path baseDir = Path.of("/data");
   private final Path signingRecordPath =
-      baseDir.resolve(validator.toBytesCompressed().toUnprefixedHexString());
+      baseDir.resolve(validator.toBytesCompressed().toUnprefixedHexString() + ".yml");
 
   private final SlashingProtector slashingProtectionStorage =
       new SlashingProtector(dataWriter, baseDir);
