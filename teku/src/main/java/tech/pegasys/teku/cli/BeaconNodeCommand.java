@@ -259,7 +259,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
     } catch (InvalidConfigurationException | DatabaseStorageException ex) {
       reportUserError(ex);
     } catch (CompletionException e) {
-      if (Throwables.getRootCause(e) instanceof InvalidConfigurationException) {
+      if (Throwables.getRootCause(e) instanceof InvalidConfigurationException
+          || Throwables.getRootCause(e) instanceof DatabaseStorageException) {
         reportUserError(Throwables.getRootCause(e));
       } else {
         reportUnexpectedError(e);
