@@ -72,12 +72,16 @@ class RecentChainDataTest {
 
   @BeforeEach
   public void setup() {
-    storageClient.initializeFromGenesis(genesisState);
+    final SafeFuture<Void> initialized = storageClient.initializeFromGenesis(genesisState);
+    assertThat(initialized).isCompleted();
   }
 
   @Test
   public void initialize_setupInitialState() {
-    preGenesisStorageClient.initializeFromGenesis(genesisState);
+    final SafeFuture<Void> initialized =
+        preGenesisStorageClient.initializeFromGenesis(genesisState);
+    assertThat(initialized).isCompleted();
+
     assertThat(preGenesisStorageClient.getGenesisTime()).isEqualTo(genesisState.getGenesis_time());
     assertThat(preGenesisStorageClient.getBestSlot())
         .isEqualTo(UnsignedLong.valueOf(Constants.GENESIS_SLOT));
@@ -144,8 +148,9 @@ class RecentChainDataTest {
 
   @Test
   public void startStoreTransaction_mutateFinalizedCheckpoint() {
-    final BeaconState genesisState = chainBuilder.getStateAtSlot(Constants.GENESIS_SLOT);
-    preGenesisStorageClient.initializeFromGenesis(genesisState);
+    final SafeFuture<Void> initialized =
+        preGenesisStorageClient.initializeFromGenesis(genesisState);
+    assertThat(initialized).isCompleted();
 
     final Checkpoint originalCheckpoint =
         preGenesisStorageClient.getStore().getFinalizedCheckpoint();
@@ -187,7 +192,10 @@ class RecentChainDataTest {
 
   @Test
   public void updateBestBlock_noReorgEventWhenBestBlockFirstSet() {
-    preGenesisStorageClient.initializeFromGenesis(genesisState);
+    final SafeFuture<Void> initialized =
+        preGenesisStorageClient.initializeFromGenesis(genesisState);
+    assertThat(initialized).isCompleted();
+
     assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
     assertThat(getReorgCountMetric(preGenesisStorageSystem)).isZero();
   }
@@ -196,7 +204,10 @@ class RecentChainDataTest {
   public void updateBestBlock_noReorgEventWhenChainAdvances() throws Exception {
     final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(1));
     chainBuilder.generateGenesis();
-    preGenesisStorageClient.initializeFromGenesis(chainBuilder.getStateAtSlot(0));
+    final SafeFuture<Void> initialized =
+        preGenesisStorageClient.initializeFromGenesis(chainBuilder.getStateAtSlot(0));
+    assertThat(initialized).isCompleted();
+
     assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
 
     chainBuilder.generateBlocksUpToSlot(2);
@@ -212,7 +223,9 @@ class RecentChainDataTest {
   public void updateBestBlock_reorgEventWhenBlockFillsEmptyHeadSlot() throws Exception {
     final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(1));
     chainBuilder.generateGenesis();
-    preGenesisStorageClient.initializeFromGenesis(chainBuilder.getStateAtSlot(0));
+    final SafeFuture<Void> initialized =
+        preGenesisStorageClient.initializeFromGenesis(chainBuilder.getStateAtSlot(0));
+    assertThat(initialized).isCompleted();
     assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
 
     final SignedBlockAndState slot1Block = chainBuilder.generateBlockAtSlot(1);
@@ -236,7 +249,9 @@ class RecentChainDataTest {
   public void updateBestBlock_reorgEventWhenChainSwitchesToNewBlockAtSameSlot() throws Exception {
     final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
     chainBuilder.generateGenesis();
-    preGenesisStorageClient.initializeFromGenesis(chainBuilder.getStateAtSlot(0));
+    final SafeFuture<Void> initialized =
+        preGenesisStorageClient.initializeFromGenesis(chainBuilder.getStateAtSlot(0));
+    assertThat(initialized).isCompleted();
     assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
 
     chainBuilder.generateBlockAtSlot(1);
@@ -276,7 +291,9 @@ class RecentChainDataTest {
   public void updateBestBlock_reorgEventWhenChainSwitchesToNewBlockAtLaterSlot() throws Exception {
     final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
     chainBuilder.generateGenesis();
-    preGenesisStorageClient.initializeFromGenesis(chainBuilder.getStateAtSlot(0));
+    final SafeFuture<Void> initialized =
+        preGenesisStorageClient.initializeFromGenesis(chainBuilder.getStateAtSlot(0));
+    assertThat(initialized).isCompleted();
     assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
 
     chainBuilder.generateBlockAtSlot(1);

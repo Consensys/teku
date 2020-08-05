@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.client;
 
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -118,13 +119,22 @@ public class StorageBackedRecentChainData extends RecentChainData {
 
   private SafeFuture<RecentChainData> processStoreFuture(
       SafeFuture<Optional<StoreBuilder>> storeFuture) {
-    return storeFuture.thenApply(
-        maybeStore -> {
-          maybeStore
-              .map(builder -> builder.blockProvider(blockProvider).build())
-              .ifPresent(this::setStore);
-          STATUS_LOG.finishInitializingChainData();
-          return this;
+    return storeFuture.thenCompose(
+        maybeStoreBuilder -> {
+          if (maybeStoreBuilder.isEmpty()) {
+            STATUS_LOG.finishInitializingChainData();
+            return completedFuture(this);
+          }
+          return maybeStoreBuilder
+              .get()
+              .blockProvider(blockProvider)
+              .build()
+              .thenApply(
+                  store -> {
+                    setStore(store);
+                    STATUS_LOG.finishInitializingChainData();
+                    return this;
+                  });
         });
   }
 

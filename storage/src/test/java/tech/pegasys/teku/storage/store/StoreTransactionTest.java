@@ -35,7 +35,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
   @Test
   public void getLatestFinalizedBlockAndState_fromUnderlyingStore() {
-    final Store store = createGenesisStore();
+    final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState expected = store.getLatestFinalizedBlockAndState();
 
     final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
@@ -44,7 +44,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
   @Test
   public void getLatestFinalizedBlockAndState_withNewFinalizedCheckpoint_blockInUnderlyingStore() {
-    final Store store = createGenesisStore();
+    final UpdatableStore store = createGenesisStore();
 
     // Create some blocks that we can finalize
     final UnsignedLong epoch = UnsignedLong.ONE;
@@ -62,7 +62,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
   @Test
   public void getLatestFinalizedBlockAndState_withNewFinalizedCheckpoint_blockAddedToTx() {
-    final Store store = createGenesisStore();
+    final UpdatableStore store = createGenesisStore();
 
     // Create some blocks that we can finalize
     final UnsignedLong epoch = UnsignedLong.ONE;
@@ -93,7 +93,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
   @Test
   public void retrieveSignedBlock_fromTx() throws Exception {
-    final Store store = createGenesisStore();
+    final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
     UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.putBlockAndState(blockAndState);
@@ -120,7 +120,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
   @Test
   public void retrieveBlock_fromTx() throws Exception {
-    final Store store = createGenesisStore();
+    final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
     UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.putBlockAndState(blockAndState);
@@ -146,7 +146,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
   @Test
   public void retrieveBlockAndState_fromTx() throws Exception {
-    final Store store = createGenesisStore();
+    final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
     UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.putBlockAndState(blockAndState);
@@ -172,7 +172,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
   @Test
   public void retrieveBlockState_fromTx() throws Exception {
-    final Store store = createGenesisStore();
+    final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState blockAndState = chainBuilder.generateNextBlock();
     UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     tx.putBlockAndState(blockAndState);
@@ -197,7 +197,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
   @Test
   public void getCheckpointState_fromBlockInTx() throws Exception {
-    final Store store = createGenesisStore();
+    final UpdatableStore store = createGenesisStore();
     final UnsignedLong epoch = UnsignedLong.ONE;
     final UnsignedLong epochStartSlot = compute_start_slot_at_epoch(epoch);
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(epochStartSlot);
@@ -212,7 +212,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
   @Test
   public void getOrderedBlockRoots_withNewBlocks() {
-    final Store store = createGenesisStore();
+    final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState genesis = chainBuilder.getBlockAndStateAtSlot(Constants.GENESIS_SLOT);
 
     final ChainBuilder fork = chainBuilder.fork();
