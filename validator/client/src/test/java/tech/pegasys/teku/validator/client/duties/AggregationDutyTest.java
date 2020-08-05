@@ -113,7 +113,7 @@ class AggregationDutyTest {
         attestationCommitteeIndex,
         completedFuture(Optional.of(unsignedAttestation)));
 
-    when(validatorApiChannel.createAggregate(unsignedAttestation.getData()))
+    when(validatorApiChannel.createAggregate(unsignedAttestation.getData().hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(aggregate)));
 
     final AggregateAndProof expectedAggregateAndProof =
@@ -156,9 +156,11 @@ class AggregationDutyTest {
         validator2CommitteeIndex,
         completedFuture(Optional.of(committee2UnsignedAttestation)));
 
-    when(validatorApiChannel.createAggregate(committee1UnsignedAttestation.getData()))
+    when(validatorApiChannel.createAggregate(
+            committee1UnsignedAttestation.getData().hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(committee1Aggregate)));
-    when(validatorApiChannel.createAggregate(committee2UnsignedAttestation.getData()))
+    when(validatorApiChannel.createAggregate(
+            committee2UnsignedAttestation.getData().hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(committee2Aggregate)));
 
     final AggregateAndProof aggregateAndProof1 =
@@ -210,7 +212,7 @@ class AggregationDutyTest {
         committeeIndex,
         completedFuture(Optional.of(unsignedAttestation)));
 
-    when(validatorApiChannel.createAggregate(unsignedAttestation.getData()))
+    when(validatorApiChannel.createAggregate(unsignedAttestation.getData().hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(aggregate)));
 
     final AggregateAndProof aggregateAndProof =
@@ -265,7 +267,7 @@ class AggregationDutyTest {
         dataStructureUtil.randomSignature(),
         2,
         completedFuture(Optional.of(unsignedAttestation)));
-    when(validatorApiChannel.createAggregate(unsignedAttestation.getData()))
+    when(validatorApiChannel.createAggregate(unsignedAttestation.getData().hashTreeRoot()))
         .thenReturn(completedFuture(Optional.empty()));
 
     assertThat(duty.performDuty()).isCompleted();
@@ -284,7 +286,7 @@ class AggregationDutyTest {
         dataStructureUtil.randomSignature(),
         2,
         completedFuture(Optional.of(unsignedAttestation)));
-    when(validatorApiChannel.createAggregate(unsignedAttestation.getData()))
+    when(validatorApiChannel.createAggregate(unsignedAttestation.getData().hashTreeRoot()))
         .thenReturn(failedFuture(exception));
 
     performAndReportDuty();

@@ -106,7 +106,7 @@ public class AggregationDuty implements Duty {
                     new IllegalStateException(
                         "Unable to perform aggregation for committee because no attestation was produced"))
             .getData();
-    return validatorApiChannel.createAggregate(attestationData);
+    return validatorApiChannel.createAggregate(attestationData.hashTreeRoot());
   }
 
   private SafeFuture<DutyResult> sendAggregate(
