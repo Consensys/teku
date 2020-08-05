@@ -148,45 +148,36 @@ class RecentChainDataTest {
 
   @Test
   public void startStoreTransaction_mutateFinalizedCheckpoint() {
-    final SafeFuture<Void> initialized =
-        preGenesisStorageClient.initializeFromGenesis(genesisState);
-    assertThat(initialized).isCompleted();
-
-    final Checkpoint originalCheckpoint =
-        preGenesisStorageClient.getStore().getFinalizedCheckpoint();
+    final Checkpoint originalCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
 
     // Add a new finalized checkpoint
-    final SignedBlockAndState newBlock = advanceChain(preGenesisStorageClient);
+    final SignedBlockAndState newBlock = advanceChain(storageClient);
     final UnsignedLong finalizedEpoch = originalCheckpoint.getEpoch().plus(ONE);
     final Checkpoint newCheckpoint = new Checkpoint(finalizedEpoch, newBlock.getRoot());
     assertThat(originalCheckpoint).isNotEqualTo(newCheckpoint); // Sanity check
 
-    final StoreTransaction tx = preGenesisStorageClient.startStoreTransaction();
+    final StoreTransaction tx = storageClient.startStoreTransaction();
     tx.setFinalizedCheckpoint(newCheckpoint);
 
     tx.commit().reportExceptions();
 
     // Check that store was updated
-    final Checkpoint currentCheckpoint =
-        preGenesisStorageClient.getStore().getFinalizedCheckpoint();
+    final Checkpoint currentCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
     assertThat(currentCheckpoint).isEqualTo(newCheckpoint);
   }
 
   @Test
   public void startStoreTransaction_doNotMutateFinalizedCheckpoint() {
-    final EventBus eventBus = preGenesisStorageSystem.eventBus();
+    final EventBus eventBus = storageSystem.eventBus();
     final List<Checkpoint> checkpointEvents = EventSink.capture(eventBus, Checkpoint.class);
-    preGenesisStorageSystem.chainUpdater().initializeGenesis();
-    final Checkpoint originalCheckpoint =
-        preGenesisStorageClient.getStore().getFinalizedCheckpoint();
+    final Checkpoint originalCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
 
-    final StoreTransaction tx = preGenesisStorageClient.startStoreTransaction();
+    final StoreTransaction tx = storageClient.startStoreTransaction();
     tx.setTime(UnsignedLong.valueOf(11L));
     tx.commit().reportExceptions();
     assertThat(checkpointEvents).isEmpty();
 
-    final Checkpoint currentCheckpoint =
-        preGenesisStorageClient.getStore().getFinalizedCheckpoint();
+    final Checkpoint currentCheckpoint = storageClient.getStore().getFinalizedCheckpoint();
     assertThat(currentCheckpoint).isEqualTo(originalCheckpoint);
   }
 
@@ -202,55 +193,38 @@ class RecentChainDataTest {
 
   @Test
   public void updateBestBlock_noReorgEventWhenChainAdvances() throws Exception {
-    final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(1));
-    chainBuilder.generateGenesis();
-    final SafeFuture<Void> initialized =
-        preGenesisStorageClient.initializeFromGenesis(chainBuilder.getStateAtSlot(0));
-    assertThat(initialized).isCompleted();
-
-    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
-
     chainBuilder.generateBlocksUpToSlot(2);
-    importBlocksAndStates(chainBuilder);
+    importBlocksAndStates(storageClient, chainBuilder);
 
     final SignedBlockAndState latestBlockAndState = chainBuilder.getLatestBlockAndState();
-    preGenesisStorageClient.updateBestBlock(
-        latestBlockAndState.getRoot(), latestBlockAndState.getSlot());
-    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    storageClient.updateBestBlock(latestBlockAndState.getRoot(), latestBlockAndState.getSlot());
+    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
   }
 
   @Test
   public void updateBestBlock_reorgEventWhenBlockFillsEmptyHeadSlot() throws Exception {
-    final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(1));
-    chainBuilder.generateGenesis();
-    final SafeFuture<Void> initialized =
-        preGenesisStorageClient.initializeFromGenesis(chainBuilder.getStateAtSlot(0));
-    assertThat(initialized).isCompleted();
-    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
-
     final SignedBlockAndState slot1Block = chainBuilder.generateBlockAtSlot(1);
-    importBlocksAndStates(chainBuilder);
-    preGenesisStorageClient.updateBestBlock(slot1Block.getRoot(), UnsignedLong.valueOf(2));
-    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
-    assertThat(getReorgCountMetric(preGenesisStorageSystem)).isZero();
+    importBlocksAndStates(storageClient, chainBuilder);
+    storageClient.updateBestBlock(slot1Block.getRoot(), UnsignedLong.valueOf(2));
+    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+    assertThat(getReorgCountMetric(storageSystem)).isZero();
 
     final SignedBlockAndState slot2Block = chainBuilder.generateBlockAtSlot(2);
-    importBlocksAndStates(chainBuilder);
-    preGenesisStorageClient.updateBestBlock(slot2Block.getRoot(), slot2Block.getSlot());
-    final List<ReorgEvent> reorgEvents =
-        preGenesisStorageSystem.reorgEventChannel().getReorgEvents();
+    importBlocksAndStates(storageClient, chainBuilder);
+    storageClient.updateBestBlock(slot2Block.getRoot(), slot2Block.getSlot());
+    final List<ReorgEvent> reorgEvents = storageSystem.reorgEventChannel().getReorgEvents();
     assertThat(reorgEvents).hasSize(1);
     assertThat(reorgEvents.get(0).getBestBlockRoot()).isEqualTo(slot2Block.getRoot());
     assertThat(reorgEvents.get(0).getBestSlot()).isEqualTo(slot2Block.getSlot());
-    assertThat(getReorgCountMetric(preGenesisStorageSystem)).isEqualTo(1);
+    assertThat(getReorgCountMetric(storageSystem)).isEqualTo(1);
   }
 
   @Test
   public void updateBestBlock_reorgEventWhenChainSwitchesToNewBlockAtSameSlot() throws Exception {
     final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
-    chainBuilder.generateGenesis();
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     final SafeFuture<Void> initialized =
-        preGenesisStorageClient.initializeFromGenesis(chainBuilder.getStateAtSlot(0));
+        preGenesisStorageClient.initializeFromGenesis(genesis.getState());
     assertThat(initialized).isCompleted();
     assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
 
@@ -269,7 +243,7 @@ class RecentChainDataTest {
         chainBuilder.generateBlockAtSlot(UnsignedLong.valueOf(2), blockOptions.get(0));
     final SignedBlockAndState latestForkBlockAndState =
         forkBuilder.generateBlockAtSlot(UnsignedLong.valueOf(2), blockOptions.get(1));
-    importBlocksAndStates(chainBuilder, forkBuilder);
+    importBlocksAndStates(preGenesisStorageClient, chainBuilder, forkBuilder);
 
     // Update to head block of original chain.
     preGenesisStorageClient.updateBestBlock(
@@ -290,9 +264,9 @@ class RecentChainDataTest {
   @Test
   public void updateBestBlock_reorgEventWhenChainSwitchesToNewBlockAtLaterSlot() throws Exception {
     final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
-    chainBuilder.generateGenesis();
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     final SafeFuture<Void> initialized =
-        preGenesisStorageClient.initializeFromGenesis(chainBuilder.getStateAtSlot(0));
+        preGenesisStorageClient.initializeFromGenesis(genesis.getState());
     assertThat(initialized).isCompleted();
     assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
 
@@ -314,7 +288,7 @@ class RecentChainDataTest {
 
     // Fork extends a slot further
     final SignedBlockAndState latestForkBlockAndState = forkBuilder.generateBlockAtSlot(3);
-    importBlocksAndStates(chainBuilder, forkBuilder);
+    importBlocksAndStates(preGenesisStorageClient, chainBuilder, forkBuilder);
 
     // Update to head block of original chain.
     preGenesisStorageClient.updateBestBlock(
@@ -678,14 +652,15 @@ class RecentChainDataTest {
     }
   }
 
-  private void importBlocksAndStates(final ChainBuilder... chainBuilders) {
-    final StoreTransaction transaction = preGenesisStorageClient.startStoreTransaction();
+  private void importBlocksAndStates(
+      final RecentChainData client, final ChainBuilder... chainBuilders) {
+    final StoreTransaction transaction = client.startStoreTransaction();
     Stream.of(chainBuilders)
         .flatMap(ChainBuilder::streamBlocksAndStates)
         .forEach(
             blockAndState -> {
               transaction.putBlockAndState(blockAndState);
-              preGenesisStorageClient
+              client
                   .getForkChoiceStrategy()
                   .orElseThrow()
                   .onBlock(blockAndState.getBlock().getMessage(), blockAndState.getState());
