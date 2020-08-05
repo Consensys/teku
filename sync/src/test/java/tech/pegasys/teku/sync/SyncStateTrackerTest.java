@@ -103,7 +103,7 @@ class SyncStateTrackerTest {
     final SyncStateTracker tracker =
         new SyncStateTracker(
             asyncRunner, syncService, network, STARTUP_TARGET_PEER_COUNT, Duration.ofSeconds(0));
-    tracker.start();
+    tracker.start().join();
 
     final ArgumentCaptor<SyncSubscriber> syncSubscriberArgumentCaptor =
         ArgumentCaptor.forClass(SyncSubscriber.class);
