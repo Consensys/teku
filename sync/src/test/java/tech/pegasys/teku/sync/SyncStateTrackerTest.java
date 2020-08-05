@@ -15,6 +15,7 @@ package tech.pegasys.teku.sync;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -94,6 +95,26 @@ class SyncStateTrackerTest {
     assertSyncState(SyncState.SYNCING);
     syncSubscriber.onSyncingChange(false);
     assertSyncState(SyncState.START_UP);
+  }
+
+  @Test
+  void shouldReturnToInSyncAfterSyncCompletesIfStartupModeIsDisabled() {
+    reset(syncService);
+    final SyncStateTracker tracker =
+        new SyncStateTracker(
+            asyncRunner, syncService, network, STARTUP_TARGET_PEER_COUNT, Duration.ofSeconds(0));
+    tracker.start();
+
+    final ArgumentCaptor<SyncSubscriber> syncSubscriberArgumentCaptor =
+        ArgumentCaptor.forClass(SyncSubscriber.class);
+    verify(syncService).subscribeToSyncChanges(syncSubscriberArgumentCaptor.capture());
+    syncSubscriber = syncSubscriberArgumentCaptor.getValue();
+
+    assertThat(tracker.getCurrentSyncState()).isEqualTo(SyncState.IN_SYNC);
+    syncSubscriber.onSyncingChange(true);
+    assertThat(tracker.getCurrentSyncState()).isEqualTo(SyncState.SYNCING);
+    syncSubscriber.onSyncingChange(false);
+    assertThat(tracker.getCurrentSyncState()).isEqualTo(SyncState.IN_SYNC);
   }
 
   @Test
