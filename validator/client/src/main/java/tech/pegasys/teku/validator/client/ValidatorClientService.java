@@ -49,7 +49,8 @@ public class ValidatorClientService extends Service {
     final AsyncRunner asyncRunner = config.createAsyncRunner("validator");
     final SlashingProtector slashingProtector =
         new SlashingProtector(
-            new SyncDataAccessor(), Path.of(config.getConfig().getDataPath(), "validators"));
+            new SyncDataAccessor(),
+            Path.of(config.getConfig().getDataPath(), "validators", "slashprotection"));
     final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector);
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(config.getConfig());
