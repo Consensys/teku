@@ -51,10 +51,6 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
     return new DepositStorage(eth1EventsChannel, database, eth1DepositsFromStorageEnabled);
   }
 
-  public void start() {}
-
-  public void stop() {}
-
   @Override
   public SafeFuture<ReplayDepositsResult> replayDepositEvents() {
     return replayResult.get();

@@ -13,15 +13,7 @@
 
 package tech.pegasys.teku.core.signatures;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_SELECTION_PROOF;
-
 import com.google.common.primitives.UnsignedLong;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
@@ -29,87 +21,21 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.util.config.Constants;
 
-public class Signer {
-  private final MessageSignerService signerService;
+public interface Signer {
 
-  public Signer(final MessageSignerService signerService) {
-    this.signerService = signerService;
-  }
+  SafeFuture<BLSSignature> createRandaoReveal(UnsignedLong epoch, ForkInfo forkInfo);
 
-  public SafeFuture<BLSSignature> createRandaoReveal(
-      final UnsignedLong epoch, final ForkInfo forkInfo) {
-    Bytes32 domain =
-        get_domain(
-            Constants.DOMAIN_RANDAO,
-            epoch,
-            forkInfo.getFork(),
-            forkInfo.getGenesisValidatorsRoot());
-    Bytes signing_root = compute_signing_root(epoch.longValue(), domain);
-    return signerService.signRandaoReveal(signing_root);
-  }
+  SafeFuture<BLSSignature> signBlock(BeaconBlock block, ForkInfo forkInfo);
 
-  public SafeFuture<BLSSignature> signBlock(final BeaconBlock block, final ForkInfo forkInfo) {
-    final Bytes32 domain =
-        get_domain(
-            Constants.DOMAIN_BEACON_PROPOSER,
-            compute_epoch_at_slot(block.getSlot()),
-            forkInfo.getFork(),
-            forkInfo.getGenesisValidatorsRoot());
-    final Bytes signing_root = compute_signing_root(block, domain);
-    return signerService.signBlock(signing_root);
-  }
+  SafeFuture<BLSSignature> signAttestationData(AttestationData attestationData, ForkInfo forkInfo);
 
-  public SafeFuture<BLSSignature> signAttestationData(
-      final AttestationData attestationData, final ForkInfo forkInfo) {
-    final Bytes32 domain =
-        get_domain(
-            DOMAIN_BEACON_ATTESTER,
-            attestationData.getTarget().getEpoch(),
-            forkInfo.getFork(),
-            forkInfo.getGenesisValidatorsRoot());
-    final Bytes signingRoot = compute_signing_root(attestationData, domain);
-    return signerService.signAttestation(signingRoot);
-  }
+  SafeFuture<BLSSignature> signAggregationSlot(UnsignedLong slot, ForkInfo forkInfo);
 
-  public SafeFuture<BLSSignature> signAggregationSlot(
-      final UnsignedLong slot, final ForkInfo forkInfo) {
-    final Bytes32 domain =
-        get_domain(
-            DOMAIN_SELECTION_PROOF,
-            compute_epoch_at_slot(slot),
-            forkInfo.getFork(),
-            forkInfo.getGenesisValidatorsRoot());
-    final Bytes signingRoot = compute_signing_root(slot.longValue(), domain);
-    return signerService.signAggregationSlot(signingRoot);
-  }
+  SafeFuture<BLSSignature> signAggregateAndProof(
+      AggregateAndProof aggregateAndProof, ForkInfo forkInfo);
 
-  public SafeFuture<BLSSignature> signAggregateAndProof(
-      final AggregateAndProof aggregateAndProof, final ForkInfo forkInfo) {
-    final Bytes32 domain =
-        get_domain(
-            Constants.DOMAIN_AGGREGATE_AND_PROOF,
-            compute_epoch_at_slot(aggregateAndProof.getAggregate().getData().getSlot()),
-            forkInfo.getFork(),
-            forkInfo.getGenesisValidatorsRoot());
-    final Bytes signingRoot = compute_signing_root(aggregateAndProof, domain);
-    return signerService.signAggregateAndProof(signingRoot);
-  }
+  SafeFuture<BLSSignature> signVoluntaryExit(VoluntaryExit voluntaryExit, ForkInfo forkInfo);
 
-  public SafeFuture<BLSSignature> signVoluntaryExit(
-      final VoluntaryExit voluntaryExit, final ForkInfo forkInfo) {
-    final Bytes32 domain =
-        get_domain(
-            Constants.DOMAIN_VOLUNTARY_EXIT,
-            voluntaryExit.getEpoch(),
-            forkInfo.getFork(),
-            forkInfo.getGenesisValidatorsRoot());
-    final Bytes signingRoot = compute_signing_root(voluntaryExit, domain);
-    return signerService.signVoluntaryExit(signingRoot);
-  }
-
-  public MessageSignerService getMessageSignerService() {
-    return signerService;
-  }
+  boolean isLocal();
 }

@@ -23,6 +23,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.LocalMessageSignerService;
 import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.core.signatures.UnprotectedSigner;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -57,7 +58,7 @@ public class AggregateGenerator {
   }
 
   private Signer getSignerForValidatorIndex(final int validatorIndex) {
-    return new Signer(new LocalMessageSignerService(validatorKeys.get(validatorIndex)));
+    return new UnprotectedSigner(new LocalMessageSignerService(validatorKeys.get(validatorIndex)));
   }
 
   public class Generator {

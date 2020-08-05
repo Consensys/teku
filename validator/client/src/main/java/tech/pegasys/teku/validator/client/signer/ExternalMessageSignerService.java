@@ -72,6 +72,11 @@ public class ExternalMessageSignerService implements MessageSignerService {
     return sign(signingRoot);
   }
 
+  @Override
+  public boolean isLocal() {
+    return false;
+  }
+
   private SafeFuture<BLSSignature> sign(final Bytes signingRoot) {
     final String publicKey = blsPublicKey.toBytesCompressed().toString();
     return SafeFuture.ofComposed(
