@@ -72,6 +72,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.Eth1Address;
 
 public final class DataStructureUtil {
 
@@ -101,6 +102,10 @@ public final class DataStructureUtil {
 
   public UnsignedLong randomUnsignedLong() {
     return UnsignedLong.fromLongBits(randomLong());
+  }
+
+  public Eth1Address randomEth1Address() {
+    return new Eth1Address(randomBytes32().slice(0, 20));
   }
 
   private Bytes4 randomBytes4() {

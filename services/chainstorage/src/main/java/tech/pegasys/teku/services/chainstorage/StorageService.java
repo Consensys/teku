@@ -50,7 +50,8 @@ public class StorageService extends Service {
                   serviceConfig.getConfig().getDataPath(),
                   serviceConfig.getConfig().getDataStorageMode(),
                   serviceConfig.getConfig().getDataStorageCreateDbVersion(),
-                  serviceConfig.getConfig().getDataStorageFrequency());
+                  serviceConfig.getConfig().getDataStorageFrequency(),
+                  serviceConfig.getConfig().getEth1DepositContractAddress());
           database = dbFactory.createDatabase();
 
           chainStorage = ChainStorage.create(serviceConfig.getEventBus(), database);
