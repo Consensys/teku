@@ -318,4 +318,16 @@ public class SyncManagerTest {
     assertThat(syncManager.isSyncActive()).isTrue();
     verifyNoMoreInteractions(syncSubscriber);
   }
+
+  @Test
+  void subscribeToSyncChanges_notNotifiedWhenSyncFailsToFindPeersToSyncTo() {
+    syncManager.subscribeToSyncChanges(syncSubscriber);
+
+    when(network.streamPeers()).thenReturn(Stream.empty());
+
+    final SafeFuture<PeerSyncResult> sync1Future = new SafeFuture<>();
+    when(peerSync.sync(peer)).thenReturn(sync1Future);
+    assertThat(syncManager.start()).isCompleted();
+    verifyNoInteractions(syncSubscriber);
+  }
 }
