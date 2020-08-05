@@ -57,7 +57,6 @@ public class DepositStorageTest {
 
     storageSystem.chainUpdater().initializeGenesis();
     depositStorage = storageSystem.createDepositStorage(true);
-    depositStorage.start();
   }
 
   @ParameterizedTest(name = "{0}")
@@ -88,7 +87,6 @@ public class DepositStorageTest {
       throws ExecutionException, InterruptedException {
     setup(storageSystemSupplier);
     depositStorage = DepositStorage.create(eventsChannel, database, false);
-    depositStorage.start();
 
     database.addMinGenesisTimeBlock(genesis_100);
     database.addDepositsFromBlockEvent(block_101);
@@ -107,7 +105,6 @@ public class DepositStorageTest {
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
       throws ExecutionException, InterruptedException {
     setup(storageSystemSupplier);
-    depositStorage.start();
 
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
     assertThat(future.isDone()).isTrue();
@@ -126,7 +123,6 @@ public class DepositStorageTest {
       throws ExecutionException, InterruptedException {
     setup(storageSystemSupplier);
     database.addDepositsFromBlockEvent(block_100);
-    depositStorage.start();
 
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
     assertThat(future.isDone()).isTrue();
@@ -151,7 +147,6 @@ public class DepositStorageTest {
       throws ExecutionException, InterruptedException {
     setup(storageSystemSupplier);
     database.addDepositsFromBlockEvent(block_100);
-    depositStorage.start();
 
     SafeFuture<ReplayDepositsResult> firstReplay = depositStorage.replayDepositEvents();
     assertThat(firstReplay).isCompleted();
