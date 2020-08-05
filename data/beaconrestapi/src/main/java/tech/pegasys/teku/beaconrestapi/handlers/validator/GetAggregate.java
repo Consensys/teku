@@ -69,7 +69,7 @@ public class GetAggregate implements Handler {
         @OpenApiParam(
             name = ATTESTATION_DATA_ROOT,
             description =
-                "`String` HashTreeRoot of AttestationData that validator want's aggregated.",
+                "`String` HashTreeRoot of AttestationData that validator wants aggregated.",
             required = true),
         @OpenApiParam(
             name = SLOT,
