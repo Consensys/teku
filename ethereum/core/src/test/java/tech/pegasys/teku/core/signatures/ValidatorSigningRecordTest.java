@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.core.signatures;
 
+import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.primitives.UnsignedLong;
@@ -63,21 +64,15 @@ class ValidatorSigningRecordTest {
         Arguments.of(
             "noExistingRecord",
             new ValidatorSigningRecord(),
-            UnsignedLong.ONE,
+            ONE,
             Optional.of(
                 new ValidatorSigningRecord(
-                    UnsignedLong.ONE,
+                    ONE,
                     ValidatorSigningRecord.NEVER_SIGNED,
                     ValidatorSigningRecord.NEVER_SIGNED))),
         Arguments.of("=", startingRecord, UnsignedLong.valueOf(3), Optional.empty()),
         Arguments.of("<", startingRecord, UnsignedLong.valueOf(2), Optional.empty()),
-        Arguments.of(
-            ">",
-            startingRecord,
-            UnsignedLong.valueOf(4),
-            Optional.of(
-                new ValidatorSigningRecord(
-                    UnsignedLong.valueOf(4), UnsignedLong.valueOf(6), UnsignedLong.valueOf(7)))));
+        Arguments.of(">", startingRecord, UnsignedLong.valueOf(4), allowed(4, 6, 7)));
   }
 
   @ParameterizedTest(name = "maySignAttestation({0})")
@@ -93,44 +88,33 @@ class ValidatorSigningRecordTest {
 
   static List<Arguments> attestationCases() {
     final ValidatorSigningRecord startingRecord =
-        new ValidatorSigningRecord(
-            UnsignedLong.ONE, UnsignedLong.valueOf(4), UnsignedLong.valueOf(6));
+        new ValidatorSigningRecord(ONE, UnsignedLong.valueOf(4), UnsignedLong.valueOf(6));
     return List.of(
         // No record
         attestationArguments(
-            "NEVER_SIGNED",
-            "NEVER_SIGNED",
-            new ValidatorSigningRecord(),
-            1,
-            2,
-            Optional.of(
-                new ValidatorSigningRecord(
-                    UnsignedLong.ZERO, UnsignedLong.valueOf(1), UnsignedLong.valueOf(2)))),
-        attestationArguments("=", "=", startingRecord, 4, 6, Optional.empty()),
-        attestationArguments("=", "<", startingRecord, 4, 5, Optional.empty()),
-        attestationArguments(
-            "=",
-            ">",
-            startingRecord,
-            4,
-            7,
-            Optional.of(
-                new ValidatorSigningRecord(
-                    UnsignedLong.ONE, UnsignedLong.valueOf(4), UnsignedLong.valueOf(7)))),
-        attestationArguments("<", "=", startingRecord, 3, 6, Optional.empty()),
-        attestationArguments("<", "<", startingRecord, 3, 5, Optional.empty()),
-        attestationArguments("<", ">", startingRecord, 3, 7, Optional.empty()),
-        attestationArguments(">", "=", startingRecord, 5, 6, Optional.empty()),
-        attestationArguments(">", "<", startingRecord, 5, 5, Optional.empty()),
-        attestationArguments(
-            ">",
-            ">",
-            startingRecord,
-            5,
-            7,
-            Optional.of(
-                new ValidatorSigningRecord(
-                    UnsignedLong.ONE, UnsignedLong.valueOf(5), UnsignedLong.valueOf(7)))));
+            "NEVER_SIGNED", "NEVER_SIGNED", new ValidatorSigningRecord(), 1, 2, allowed(0, 1, 2)),
+        attestationArguments("=", "=", startingRecord, 4, 6, disallowed()),
+        attestationArguments("=", "<", startingRecord, 4, 5, disallowed()),
+        attestationArguments("=", ">", startingRecord, 4, 7, allowed(1, 4, 7)),
+        attestationArguments("<", "=", startingRecord, 3, 6, disallowed()),
+        attestationArguments("<", "<", startingRecord, 3, 5, disallowed()),
+        attestationArguments("<", ">", startingRecord, 3, 7, disallowed()),
+        attestationArguments(">", "=", startingRecord, 5, 6, disallowed()),
+        attestationArguments(">", "<", startingRecord, 5, 5, disallowed()),
+        attestationArguments(">", ">", startingRecord, 5, 7, allowed(1, 5, 7)));
+  }
+
+  private static Optional<ValidatorSigningRecord> disallowed() {
+    return Optional.empty();
+  }
+
+  private static Optional<ValidatorSigningRecord> allowed(
+      final int blockSlot, final int sourceEpoch, final int targetEpoch) {
+    return Optional.of(
+        new ValidatorSigningRecord(
+            UnsignedLong.valueOf(blockSlot),
+            UnsignedLong.valueOf(sourceEpoch),
+            UnsignedLong.valueOf(targetEpoch)));
   }
 
   private static Arguments attestationArguments(
