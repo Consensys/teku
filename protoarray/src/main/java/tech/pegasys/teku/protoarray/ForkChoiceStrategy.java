@@ -20,10 +20,15 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 
 public interface ForkChoiceStrategy {
 
-  Bytes32 findHead(final MutableStore store);
+  Bytes32 findHead(
+      final MutableStore store,
+      final Checkpoint finalizedCheckpoint,
+      final Checkpoint justifiedCheckpoint,
+      final BeaconState justifiedCheckpointState);
 
   void onAttestation(final MutableStore store, final IndexedAttestation attestation);
 
