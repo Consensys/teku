@@ -57,6 +57,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
+import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAggregate;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAttestation;
@@ -222,6 +223,7 @@ public class BeaconRestApi {
     app.get(GetAttestation.ROUTE, new GetAttestation(validatorDataProvider, jsonProvider));
     app.get(GetValidators.ROUTE, new GetValidators(provider, jsonProvider));
     app.get(GetNewBlock.ROUTE, new GetNewBlock(dataProvider, jsonProvider));
+    app.get(GetAggregate.ROUTE, new GetAggregate(validatorDataProvider, jsonProvider));
 
     app.post(PostAttestation.ROUTE, new PostAttestation(dataProvider, jsonProvider));
     app.post(
