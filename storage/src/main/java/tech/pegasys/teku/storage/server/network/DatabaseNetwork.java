@@ -57,7 +57,7 @@ public class DatabaseNetwork {
       final DatabaseNetwork databaseNetwork =
           objectMapper.readerFor(DatabaseNetwork.class).readValue(source);
 
-      if (!databaseNetwork.forkVersion.equals(forkVersionString)) {
+      if (!forkVersionString.equals(databaseNetwork.forkVersion)) {
         throw new DatabaseStorageException(
             formatMessage("fork version", forkVersionString, databaseNetwork.forkVersion));
       }
