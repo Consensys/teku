@@ -184,4 +184,10 @@ public class ValidatorDataProvider {
                   responseCode, blockImportResult.getFailureCause(), Optional.ofNullable(hashRoot));
             });
   }
+
+  public SafeFuture<Optional<Attestation>> createAggregate(final Bytes32 attestationHashTreeRoot) {
+    return validatorApiChannel
+        .createAggregate(attestationHashTreeRoot)
+        .thenApply(maybeAttestation -> maybeAttestation.map(Attestation::new));
+  }
 }

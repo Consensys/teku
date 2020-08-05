@@ -24,6 +24,7 @@ public class RestApiConstants {
   public static final String COMMITTEE_INDEX = "committee_index";
   public static final String RANDAO_REVEAL = "randao_reveal";
   public static final String GRAFFITI = "graffiti";
+  public static final String ATTESTATION_DATA_ROOT = "attestation_data_root";
 
   public static final String TAG_ADMIN = "Admin";
   public static final String TAG_BEACON = "Beacon";
@@ -37,6 +38,7 @@ public class RestApiConstants {
   public static final String RES_ACCEPTED = "202"; // SC_ACCEPTED
   public static final String RES_NO_CONTENT = "204"; // SC_NO_CONTENT
   public static final String RES_BAD_REQUEST = "400"; // SC_BAD_REQUEST
+  public static final String RES_FORBIDDEN = "403"; // SC_FORBIDDEN
   public static final String RES_NOT_FOUND = "404"; // SC_NOT_FOUND
   public static final String RES_CONFLICT = "406"; // SC_CONFLICT
   public static final String RES_INTERNAL_ERROR = "500"; // SC_INTERNAL_SERVER_ERROR
