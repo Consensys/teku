@@ -28,7 +28,6 @@ import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParam
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 
 import com.google.common.base.Throwables;
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -99,8 +98,9 @@ public class GetAggregate implements Handler {
             String.format("Please specify both %s and %s", ATTESTATION_DATA_ROOT, SLOT));
       }
       Bytes32 beacon_block_root = getParameterValueAsBytes32(parameters, ATTESTATION_DATA_ROOT);
-      @SuppressWarnings("unused")
-      UnsignedLong slot = getParameterValueAsUnsignedLong(parameters, SLOT);
+      // Teku isn't using this parameter at the moment. We are enforcing it to stay compatible with
+      // the standard api
+      getParameterValueAsUnsignedLong(parameters, SLOT);
 
       ctx.result(
           provider
@@ -126,7 +126,7 @@ public class GetAggregate implements Handler {
   }
 
   /*
-   At the moment we aren't handling the error:
+   At the moment we aren't enforcing:
    `Beacon node was not assigned to aggregate on that subnet` that should return a status code 403
   */
   private CompletionStage<String> handleError(final Context ctx, final Throwable error) {
