@@ -51,7 +51,7 @@ public class LoggingOptions {
       description = "Whether events are logged when validators perform duties",
       fallbackValue = "true",
       arity = "0..1")
-  private boolean logIncludeValidatorDutiesEnabled = false;
+  private boolean logIncludeValidatorDutiesEnabled = true;
 
   @CommandLine.Option(
       names = {"--log-destination"},

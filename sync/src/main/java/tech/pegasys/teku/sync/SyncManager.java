@@ -52,6 +52,14 @@ public class SyncManager extends Service {
 
   private boolean syncActive = false;
   private boolean syncQueued = false;
+  /**
+   * Tracks the last state we notified subscribers of. It differs from syncActive at the start of a
+   * sync because we set syncActive as soon as we begin, but only notify subscribers once we've
+   * actually found a valid peer to sync off to avoid briefly toggling to syncing and back off each
+   * time we look for sync targets.
+   */
+  private boolean subscribersSyncActive = false;
+
   private volatile long peerConnectSubscriptionId;
 
   private final AsyncRunner asyncRunner;
@@ -110,7 +118,6 @@ public class SyncManager extends Service {
         return;
       }
       syncActive = true;
-      syncSubscribers.deliver(SyncSubscriber::onSyncingChange, syncActive);
     }
 
     startSync();
@@ -126,7 +133,10 @@ public class SyncManager extends Service {
                   startSync();
                 } else {
                   syncActive = false;
-                  syncSubscribers.deliver(SyncSubscriber::onSyncingChange, syncActive);
+                  if (subscribersSyncActive) {
+                    subscribersSyncActive = false;
+                    syncSubscribers.deliver(SyncSubscriber::onSyncingChange, false);
+                  }
                 }
               }
             },
@@ -181,6 +191,12 @@ public class SyncManager extends Service {
 
   private SafeFuture<Void> syncToPeer(final Eth2Peer syncPeer) {
     LOG.trace("Sync to peer {}", syncPeer.getId());
+    synchronized (this) {
+      if (!subscribersSyncActive) {
+        subscribersSyncActive = true;
+        syncSubscribers.deliver(SyncSubscriber::onSyncingChange, true);
+      }
+    }
     return peerSync
         .sync(syncPeer)
         .thenCompose(

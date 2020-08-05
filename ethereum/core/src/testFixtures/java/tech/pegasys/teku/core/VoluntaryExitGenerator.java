@@ -20,7 +20,7 @@ import java.util.List;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.LocalMessageSignerService;
-import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.core.signatures.UnprotectedSigner;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -39,7 +39,7 @@ public class VoluntaryExitGenerator {
     VoluntaryExit exit = new VoluntaryExit(epoch, UnsignedLong.valueOf(validatorIndex));
 
     BLSSignature exitSignature =
-        new Signer(new LocalMessageSignerService(getKeypair(validatorIndex, valid)))
+        new UnprotectedSigner(new LocalMessageSignerService(getKeypair(validatorIndex, valid)))
             .signVoluntaryExit(exit, forkInfo)
             .join();
 

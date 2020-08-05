@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -108,7 +109,10 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   public synchronized SSZList<Attestation> getAttestationsForBlock(
       final BeaconState stateAtBlockSlot) {
     final SSZMutableList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
-    attestationGroupByDataHash.values().stream()
+    dataHashBySlot.descendingMap().values().stream()
+        .flatMap(Collection::stream)
+        .map(attestationGroupByDataHash::get)
+        .filter(Objects::nonNull)
         .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
         .flatMap(MatchingDataAttestationGroup::stream)
         .limit(attestations.getMaxSize())
@@ -123,8 +127,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   public synchronized Optional<ValidateableAttestation> createAggregateFor(
-      final AttestationData attestationData) {
-    return Optional.ofNullable(attestationGroupByDataHash.get(attestationData.hash_tree_root()))
+      final Bytes32 attestationHashTreeRoot) {
+    return Optional.ofNullable(attestationGroupByDataHash.get(attestationHashTreeRoot))
         .flatMap(attestations -> attestations.stream().findFirst());
   }
 }
