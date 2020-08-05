@@ -149,6 +149,25 @@ class AggregatingAttestationPoolTest {
   }
 
   @Test
+  void getAttestationsForBlock_shouldIncludeMoreRecentAttestationsFirst() {
+    final AttestationData attestationData1 =
+        dataStructureUtil.randomAttestationData(UnsignedLong.valueOf(5));
+    final AttestationData attestationData2 =
+        dataStructureUtil.randomAttestationData(UnsignedLong.valueOf(6));
+    final AttestationData attestationData3 =
+        dataStructureUtil.randomAttestationData(UnsignedLong.valueOf(7));
+    final Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2);
+    final Attestation attestation2 = addAttestationFromValidators(attestationData2, 3, 4);
+    final Attestation attestation3 = addAttestationFromValidators(attestationData3, 5, 6);
+
+    final BeaconState stateAtBlockSlot =
+        dataStructureUtil.randomBeaconState(UnsignedLong.valueOf(10));
+
+    assertThat(aggregatingPool.getAttestationsForBlock(stateAtBlockSlot))
+        .containsExactly(attestation3, attestation2, attestation1);
+  }
+
+  @Test
   public void getAttestationsForBlock_shouldNotAddMoreAttestationsThanAllowedInBlock() {
     final BeaconState state = dataStructureUtil.randomBeaconState();
     Constants.MAX_ATTESTATIONS = 2;
