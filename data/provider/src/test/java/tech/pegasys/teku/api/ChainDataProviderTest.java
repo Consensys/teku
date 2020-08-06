@@ -45,8 +45,11 @@ import tech.pegasys.teku.api.schema.Committee;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorWithIndex;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
+import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -118,8 +121,17 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     final List<CommitteeAssignment> committeeAssignments =
         List.of(new CommitteeAssignment(List.of(1), ZERO, ONE));
-    final UnsignedLong currentEpoch =
-        bestBlock.getSlot().dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
+    final UnsignedLong currentEpoch = compute_epoch_at_slot(bestBlock.getSlot());
+
+    // Setup data
+    final UnsignedLong queryEpoch =
+        currentEpoch.equals(ZERO) ? currentEpoch : currentEpoch.minus(ONE);
+    final Checkpoint checkpoint =
+        storageSystem.chainBuilder().getCurrentCheckpointForEpoch(queryEpoch);
+    final SignedBlockAndState checkpointBlockAndState =
+        storageSystem.chainBuilder().getBlockAndState(checkpoint.getRoot()).orElseThrow();
+    final CheckpointState checkpointState =
+        CheckpointStateGenerator.generate(checkpoint, checkpointBlockAndState);
 
     final ChainDataProvider provider =
         new ChainDataProvider(mockRecentChainData, mockCombinedChainDataClient);
@@ -129,8 +141,8 @@ public class ChainDataProviderTest {
     when(mockCombinedChainDataClient.getCommitteesFromState(any(), any()))
         .thenReturn(committeeAssignments);
     when(mockRecentChainData.getBestSlot()).thenReturn(bestBlock.getSlot());
-    when(mockCombinedChainDataClient.getBlockAndStateInEffectAtSlot(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(bestBlock.toUnsigned())));
+    when(mockCombinedChainDataClient.getCheckpointStateAtEpoch(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(checkpointState)));
     final SafeFuture<Optional<List<Committee>>> future =
         provider.getCommitteesAtEpoch(currentEpoch);
 

@@ -31,11 +31,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -134,11 +137,16 @@ public class CombinedChainDataClient {
 
   public SafeFuture<Optional<BeaconBlockAndState>> getBlockAndStateInEffectAtSlot(
       final UnsignedLong slot) {
+    return getSignedBlockAndStateInEffectAtSlot(slot)
+        .thenApply(result -> result.map(SignedBlockAndState::toUnsigned));
+  }
+
+  public SafeFuture<Optional<SignedBlockAndState>> getSignedBlockAndStateInEffectAtSlot(
+      final UnsignedLong slot) {
     return getBlockInEffectAtSlot(slot)
         .thenCompose(
             maybeBlock ->
                 maybeBlock
-                    .map(SignedBeaconBlock::getMessage)
                     .map(this::getStateForBlock)
                     .orElseGet(() -> SafeFuture.completedFuture(Optional.empty())));
   }
@@ -151,9 +159,36 @@ public class CombinedChainDataClient {
                     blockAndState -> regenerateBeaconState(blockAndState.getState(), slot)));
   }
 
-  private SafeFuture<Optional<BeaconBlockAndState>> getStateForBlock(final BeaconBlock block) {
-    return getStateByBlockRoot(block.hash_tree_root())
-        .thenApply(maybeState -> maybeState.map(state -> new BeaconBlockAndState(block, state)));
+  public SafeFuture<Optional<CheckpointState>> getCheckpointStateAtEpoch(final UnsignedLong epoch) {
+    final UnsignedLong epochSlot = compute_start_slot_at_epoch(epoch);
+    return getSignedBlockAndStateInEffectAtSlot(epochSlot)
+        .thenCompose(
+            maybeBlockAndState -> {
+              if (maybeBlockAndState.isEmpty()) {
+                return completedFuture(Optional.empty());
+              }
+              final SignedBlockAndState blockAndState = maybeBlockAndState.get();
+              final Checkpoint checkpoint = new Checkpoint(epoch, blockAndState.getRoot());
+              return recentChainData
+                  .getStore()
+                  .retrieveCheckpointState(checkpoint)
+                  .thenApply(
+                      checkpointState -> {
+                        if (checkpointState.isEmpty()) {
+                          return Optional.of(
+                              CheckpointStateGenerator.generate(checkpoint, blockAndState));
+                        }
+                        final SignedBeaconBlock block = blockAndState.getBlock();
+                        return checkpointState.map(
+                            state -> new CheckpointState(checkpoint, block, state));
+                      });
+            });
+  }
+
+  private SafeFuture<Optional<SignedBlockAndState>> getStateForBlock(
+      final SignedBeaconBlock block) {
+    return getStateByBlockRoot(block.getRoot())
+        .thenApply(maybeState -> maybeState.map(state -> new SignedBlockAndState(block, state)));
   }
 
   public boolean isFinalized(final UnsignedLong slot) {
