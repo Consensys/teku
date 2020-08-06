@@ -136,6 +136,14 @@ public class AttestationManager extends Service implements SlotEventsChannel {
                       attestation::hash_tree_root);
                   pendingAttestations.add(attestation);
                   break;
+                case DEFER_FORK_CHOICE_PROCESSING:
+                  LOG.trace(
+                      "Defer fork choice processing of attestation {}",
+                      attestation::hash_tree_root);
+                  notifySubscribers(attestation);
+                  futureAttestations.add(attestation);
+                  aggregatingAttestationPool.add(attestation);
+                  break;
                 case SAVED_FOR_FUTURE:
                   LOG.trace(
                       "Deferring attestation {} until a future slot", attestation::hash_tree_root);
