@@ -28,7 +28,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-class TestStoreImpl implements MutablePrunableStore {
+class TestStoreImpl implements MutableStore {
   protected UnsignedLong time;
   protected UnsignedLong genesis_time;
   protected Checkpoint justified_checkpoint;

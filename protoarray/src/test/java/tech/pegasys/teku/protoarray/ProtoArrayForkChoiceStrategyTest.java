@@ -25,14 +25,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.forkchoice.MutablePrunableStore;
+import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class ProtoArrayForkChoiceStrategyTest {
-  private final MutablePrunableStore store = new TestStoreFactory().createGenesisStore();
+  private final MutableStore store = new TestStoreFactory().createGenesisStore();
   private final SignedBlockAndState genesis =
       store.retrieveBlockAndState(store.getFinalizedCheckpoint().getRoot()).join().get();
   private final ProtoArrayStorageChannel storageChannel = new StubProtoArrayStorageChannel();
