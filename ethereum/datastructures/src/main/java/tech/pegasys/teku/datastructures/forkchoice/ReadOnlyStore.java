@@ -15,11 +15,9 @@ package tech.pegasys.teku.datastructures.forkchoice;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 
 public interface ReadOnlyStore {
@@ -53,8 +51,6 @@ public interface ReadOnlyStore {
    *     than child roots
    */
   List<Bytes32> getOrderedBlockRoots();
-
-  Optional<BeaconState> getCheckpointState(Checkpoint checkpoint);
 
   Set<UnsignedLong> getVotedValidatorIndices();
 }
