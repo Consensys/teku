@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel.ReorgEvent;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
@@ -42,7 +43,8 @@ class ForkChoiceTest {
 
   @BeforeEach
   public void setup() {
-    recentChainData.initializeFromGenesis(genesis.getState());
+    final SafeFuture<Void> initialized = recentChainData.initializeFromGenesis(genesis.getState());
+    assertThat(initialized).isCompleted();
   }
 
   @Test

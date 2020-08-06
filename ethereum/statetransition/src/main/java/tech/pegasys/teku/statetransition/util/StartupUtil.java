@@ -92,10 +92,15 @@ public final class StartupUtil {
               genesisTime, validatorKeyPairs, signDeposits);
     }
 
-    recentChainData.initializeFromGenesis(initialState);
-    EVENT_LOG.genesisEvent(
-        initialState.hashTreeRoot(),
-        recentChainData.getBestBlockRoot().orElseThrow(),
-        initialState.getGenesis_time());
+    recentChainData
+        .initializeFromGenesis(initialState)
+        .thenAccept(
+            __ -> {
+              EVENT_LOG.genesisEvent(
+                  initialState.hashTreeRoot(),
+                  recentChainData.getBestBlockRoot().orElseThrow(),
+                  initialState.getGenesis_time());
+            })
+        .reportExceptions();
   }
 }

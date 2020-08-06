@@ -32,19 +32,19 @@ import tech.pegasys.teku.util.config.Constants;
 public class TestStoreFactory {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
-  public MutablePrunableStore createGenesisStore() {
+  public MutableStore createGenesisStore() {
     final BeaconState genesisState = createRandomGenesisState();
     return getForkChoiceStore(genesisState);
   }
 
-  public MutablePrunableStore createGenesisStore(final BeaconState genesisState) {
+  public MutableStore createGenesisStore(final BeaconState genesisState) {
     checkArgument(
         genesisState.getSlot().equals(UnsignedLong.valueOf(Constants.GENESIS_SLOT)),
         "Genesis state has invalid slot.");
     return getForkChoiceStore(genesisState);
   }
 
-  public MutablePrunableStore createEmptyStore() {
+  public MutableStore createEmptyStore() {
     return new TestStoreImpl(
         UnsignedLong.ZERO,
         UnsignedLong.ZERO,
@@ -57,7 +57,7 @@ public class TestStoreFactory {
         new HashMap<>());
   }
 
-  private MutablePrunableStore getForkChoiceStore(final BeaconState anchorState) {
+  private MutableStore getForkChoiceStore(final BeaconState anchorState) {
     final BeaconBlock anchorBlock = new BeaconBlock(anchorState.hash_tree_root());
     final SignedBeaconBlock signedAnchorBlock =
         new SignedBeaconBlock(anchorBlock, BLSSignature.empty());

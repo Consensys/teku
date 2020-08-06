@@ -25,7 +25,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
-import tech.pegasys.teku.datastructures.forkchoice.PrunableStore;
+import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -53,7 +53,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
 
   // Public
   public static SafeFuture<ProtoArrayForkChoiceStrategy> initialize(
-      PrunableStore store, ProtoArrayStorageChannel storageChannel) {
+      ReadOnlyStore store, ProtoArrayStorageChannel storageChannel) {
     ProtoArray protoArray =
         storageChannel
             .getProtoArraySnapshot()
@@ -73,14 +73,17 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   @Override
-  public Bytes32 findHead(final MutableStore store) {
-    Checkpoint justifiedCheckpoint = store.getJustifiedCheckpoint();
+  public Bytes32 findHead(
+      final MutableStore store,
+      final Checkpoint finalizedCheckpoint,
+      final Checkpoint justifiedCheckpoint,
+      final BeaconState justifiedCheckpointState) {
     return findHead(
         store,
         justifiedCheckpoint.getEpoch(),
         justifiedCheckpoint.getRoot(),
-        store.getFinalizedCheckpoint().getEpoch(),
-        store.getCheckpointState(justifiedCheckpoint).orElseThrow().getBalances().asList());
+        finalizedCheckpoint.getEpoch(),
+        justifiedCheckpointState.getBalances().asList());
   }
 
   @Override
@@ -135,7 +138,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
 
   // Internal
   private static SafeFuture<Void> processBlocksInStoreAtStartup(
-      PrunableStore store, ProtoArray protoArray) {
+      ReadOnlyStore store, ProtoArray protoArray) {
     List<Bytes32> alreadyIncludedBlockRoots =
         protoArray.getNodes().stream().map(ProtoNode::getBlockRoot).collect(Collectors.toList());
 

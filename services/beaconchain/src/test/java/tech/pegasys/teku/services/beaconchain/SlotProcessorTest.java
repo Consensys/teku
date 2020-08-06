@@ -32,6 +32,7 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.logging.EventLogger;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
@@ -74,7 +75,8 @@ public class SlotProcessorTest {
 
   @BeforeEach
   public void setup() {
-    recentChainData.initializeFromGenesis(beaconState);
+    final SafeFuture<Void> initialized = recentChainData.initializeFromGenesis(beaconState);
+    assertThat(initialized).isCompleted();
   }
 
   @Test
