@@ -23,6 +23,8 @@ public class AttestationProcessingResult {
       new AttestationProcessingResult(Status.SUCCESSFUL, Optional.empty());
   public static final AttestationProcessingResult SAVED_FOR_FUTURE =
       new AttestationProcessingResult(Status.SAVED_FOR_FUTURE, Optional.empty());
+  public static final AttestationProcessingResult DEFER_FOR_FORK_CHOICE =
+      new AttestationProcessingResult(Status.DEFER_FORK_CHOICE_PROCESSING, Optional.empty());
   public static final AttestationProcessingResult UNKNOWN_BLOCK =
       new AttestationProcessingResult(Status.UNKNOWN_BLOCK, Optional.empty());
 
@@ -71,6 +73,7 @@ public class AttestationProcessingResult {
     SUCCESSFUL,
     UNKNOWN_BLOCK,
     SAVED_FOR_FUTURE,
+    DEFER_FORK_CHOICE_PROCESSING,
     INVALID
   }
 }
