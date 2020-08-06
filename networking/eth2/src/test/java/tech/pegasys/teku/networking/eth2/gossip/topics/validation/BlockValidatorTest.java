@@ -24,7 +24,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.core.signatures.UnprotectedSigner;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -93,7 +93,7 @@ public class BlockValidatorTest {
             signedBlock.getMessage().getBody());
 
     BLSSignature blockSignature =
-        new Signer(beaconChainUtil.getSigner(proposerIndex.intValue()))
+        new UnprotectedSigner(beaconChainUtil.getSigner(proposerIndex.intValue()))
             .signBlock(block, recentChainData.getBestState().get().getForkInfo())
             .join();
     final SignedBeaconBlock blockWithNoParent = new SignedBeaconBlock(block, blockSignature);
@@ -132,7 +132,7 @@ public class BlockValidatorTest {
             signedBlock.getMessage().getBody());
 
     BLSSignature blockSignature =
-        new Signer(beaconChainUtil.getSigner(invalidProposerIndex.intValue()))
+        new UnprotectedSigner(beaconChainUtil.getSigner(invalidProposerIndex.intValue()))
             .signBlock(block, recentChainData.getBestState().get().getForkInfo())
             .join();
     final SignedBeaconBlock invalidProposerSignedBlock =

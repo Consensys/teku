@@ -30,4 +30,6 @@ public interface MessageSignerService {
   SafeFuture<BLSSignature> signRandaoReveal(Bytes signingRoot);
 
   SafeFuture<BLSSignature> signVoluntaryExit(Bytes signingRoot);
+
+  boolean isLocal();
 }

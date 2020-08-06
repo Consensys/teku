@@ -116,9 +116,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     if (publicKeys.isEmpty()) {
       return SafeFuture.completedFuture(Optional.of(emptyList()));
     }
-    final UnsignedLong slot =
-        compute_start_slot_at_epoch(
-            epoch.compareTo(UnsignedLong.ZERO) > 0 ? epoch.minus(UnsignedLong.ONE) : epoch);
+    final UnsignedLong slot = CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
     LOG.trace("Retrieving duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient
         .getLatestStateAtSlot(slot)
@@ -130,7 +128,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private BeaconState processSlots(final BeaconState startingState, final UnsignedLong targetSlot) {
-    if (startingState.getSlot().equals(targetSlot)) {
+    if (startingState.getSlot().compareTo(targetSlot) >= 0) {
       return startingState;
     }
     try {
@@ -174,41 +172,53 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
-    return createFromBlockAndState(
-        slot,
-        blockAndState -> {
-          final BeaconState state = blockAndState.getState();
-          final BeaconBlock block = blockAndState.getBlock();
-          final int committeeCount =
-              get_committee_count_per_slot(state, compute_epoch_at_slot(slot)).intValue();
 
-          if (committeeIndex < 0 || committeeIndex >= committeeCount) {
-            throw new IllegalArgumentException(
-                "Invalid committee index "
-                    + committeeIndex
-                    + " - expected between 0 and "
-                    + (committeeCount - 1));
-          }
-          final UnsignedLong committeeIndexUnsigned = UnsignedLong.valueOf(committeeIndex);
-          final AttestationData attestationData =
-              AttestationUtil.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
-          final List<Integer> committee =
-              CommitteeUtil.get_beacon_committee(state, slot, committeeIndexUnsigned);
+    final UnsignedLong querySlot = CommitteeUtil.getEarliestQueryableSlotForTargetSlot(slot);
+    final UnsignedLong epoch = compute_epoch_at_slot(querySlot);
 
-          final Bitlist aggregationBits =
-              new Bitlist(committee.size(), MAX_VALIDATORS_PER_COMMITTEE);
-          return new Attestation(aggregationBits, attestationData, BLSSignature.empty());
-        });
+    return combinedChainDataClient
+        .getCheckpointStateAtEpoch(epoch)
+        .thenApply(
+            result ->
+                result.map(
+                    checkpointState -> {
+                      final BeaconBlock block = checkpointState.getBlock().getMessage();
+                      final BeaconState state = checkpointState.getState();
+
+                      final int committeeCount =
+                          get_committee_count_per_slot(state, compute_epoch_at_slot(slot))
+                              .intValue();
+
+                      if (committeeIndex < 0 || committeeIndex >= committeeCount) {
+                        throw new IllegalArgumentException(
+                            "Invalid committee index "
+                                + committeeIndex
+                                + " - expected between 0 and "
+                                + (committeeCount - 1));
+                      }
+                      final UnsignedLong committeeIndexUnsigned =
+                          UnsignedLong.valueOf(committeeIndex);
+                      final AttestationData attestationData =
+                          AttestationUtil.getGenericAttestationData(
+                              slot, state, block, committeeIndexUnsigned);
+                      final List<Integer> committee =
+                          CommitteeUtil.get_beacon_committee(state, slot, committeeIndexUnsigned);
+
+                      final Bitlist aggregationBits =
+                          new Bitlist(committee.size(), MAX_VALIDATORS_PER_COMMITTEE);
+                      return new Attestation(
+                          aggregationBits, attestationData, BLSSignature.empty());
+                    }));
   }
 
   @Override
-  public SafeFuture<Optional<Attestation>> createAggregate(final AttestationData attestationData) {
+  public SafeFuture<Optional<Attestation>> createAggregate(final Bytes32 attestationHashTreeRoot) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
     return SafeFuture.completedFuture(
         attestationPool
-            .createAggregateFor(attestationData)
+            .createAggregateFor(attestationHashTreeRoot)
             .map(ValidateableAttestation::getAttestation));
   }
 

@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.MessageSignerService;
 import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.core.signatures.UnprotectedSigner;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
@@ -36,7 +37,7 @@ class SignerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
 
-  private final Signer signer = new Signer(signerService);
+  private final Signer signer = new UnprotectedSigner(signerService);
 
   @Test
   public void shouldCreateRandaoReveal() {
