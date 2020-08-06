@@ -22,9 +22,10 @@ import tech.pegasys.teku.util.cli.GraffitiConverter;
 public class ValidatorOptions {
 
   @Option(
-      names = {"--validators-unencrypted-key-file"},
+      names = {"--Xvalidators-unencrypted-key-file"},
       paramLabel = "<FILENAME>",
       description = "The file to load unencrypted validator keys from",
+      hidden = true,
       arity = "1")
   private String validatorKeyFile = null;
 
