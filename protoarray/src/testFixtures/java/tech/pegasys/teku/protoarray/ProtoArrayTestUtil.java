@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.forkchoice.MutablePrunableStore;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -36,7 +35,7 @@ public class ProtoArrayTestUtil {
       UnsignedLong finalizedBlockSlot,
       UnsignedLong finalizedCheckpointEpoch,
       UnsignedLong justifiedCheckpointEpoch) {
-    MutablePrunableStore store = STORE_FACTORY.createEmptyStore();
+    MutableStore store = STORE_FACTORY.createEmptyStore();
     store.setJustifiedCheckpoint(new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO));
     store.setFinalizedCheckpoint(new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO));
 

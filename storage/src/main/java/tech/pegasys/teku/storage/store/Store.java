@@ -352,12 +352,6 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public Optional<BeaconState> getCheckpointState(Checkpoint checkpoint) {
-    // TODO(#2291) - replace this with retrieveCheckpointState
-    return retrieveCheckpointState(checkpoint).join();
-  }
-
-  @Override
   public boolean containsBlock(Bytes32 blockRoot) {
     readLock.lock();
     try {
@@ -854,11 +848,6 @@ class Store implements UpdatableStore {
     @Override
     public Set<UnsignedLong> getVotedValidatorIndices() {
       return Sets.union(votes.keySet(), Store.this.getVotedValidatorIndices());
-    }
-
-    @Override
-    public Optional<BeaconState> getCheckpointState(final Checkpoint checkpoint) {
-      return retrieveCheckpointState(checkpoint).join();
     }
   }
 

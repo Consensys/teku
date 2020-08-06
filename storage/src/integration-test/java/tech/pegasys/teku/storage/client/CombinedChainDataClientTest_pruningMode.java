@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
@@ -25,7 +24,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -80,25 +78,5 @@ public class CombinedChainDataClientTest_pruningMode extends AbstractCombinedCha
     final SafeFuture<Optional<BeaconBlockAndState>> result =
         client.getBlockAndStateInEffectAtSlot(targetBlock.getSlot());
     assertThat(result).isCompletedWithValue(Optional.empty());
-  }
-
-  @Test
-  public void getCheckpointStateAtEpoch_historicalCheckpointWithSkippedBoundarySlot() {
-    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(3);
-    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
-    final UnsignedLong nextEpoch = finalizedEpoch.plus(UnsignedLong.ONE);
-
-    chainUpdater.initializeGenesis();
-    // Setup chain at epoch to be queried
-    chainUpdater.advanceChain(finalizedSlot.minus(UnsignedLong.ONE));
-    chainUpdater.finalizeEpoch(finalizedEpoch);
-    // Bury queried epoch behind another finalized epoch
-    chainUpdater.advanceChain(compute_start_slot_at_epoch(nextEpoch));
-    chainUpdater.finalizeEpoch(nextEpoch);
-    chainUpdater.addNewBestBlock();
-
-    final SafeFuture<Optional<CheckpointState>> actual =
-        client.getCheckpointStateAtEpoch(finalizedEpoch);
-    assertThatSafeFuture(actual).isCompletedWithEmptyOptional();
   }
 }
