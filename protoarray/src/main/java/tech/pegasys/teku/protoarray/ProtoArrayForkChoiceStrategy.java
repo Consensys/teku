@@ -73,14 +73,17 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   @Override
-  public Bytes32 findHead(final MutableStore store) {
-    Checkpoint justifiedCheckpoint = store.getJustifiedCheckpoint();
+  public Bytes32 findHead(
+      final MutableStore store,
+      final Checkpoint finalizedCheckpoint,
+      final Checkpoint justifiedCheckpoint,
+      final BeaconState justifiedCheckpointState) {
     return findHead(
         store,
         justifiedCheckpoint.getEpoch(),
         justifiedCheckpoint.getRoot(),
-        store.getFinalizedCheckpoint().getEpoch(),
-        store.getCheckpointState(justifiedCheckpoint).orElseThrow().getBalances().asList());
+        finalizedCheckpoint.getEpoch(),
+        justifiedCheckpointState.getBalances().asList());
   }
 
   @Override

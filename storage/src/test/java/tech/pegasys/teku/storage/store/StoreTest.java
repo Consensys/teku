@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.store;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -95,20 +96,6 @@ class StoreTest extends AbstractStoreTest {
   }
 
   @Test
-  public void getCheckpointState_withLimitedCache() {
-    processCheckpointsWithLimitedCache(
-        (store, checkpointState) -> {
-          final Optional<BeaconState> result =
-              store.getCheckpointState(checkpointState.getCheckpoint());
-          assertThat(result)
-              .withFailMessage(
-                  "Expected checkpoint state for checkpoint %s", checkpointState.getCheckpoint())
-              .isNotEmpty();
-          assertThat(result).contains(checkpointState.getState());
-        });
-  }
-
-  @Test
   public void retrieveCheckpointState_withLimitedCache() {
     processCheckpointsWithLimitedCache(
         (store, checkpointState) -> {
@@ -132,7 +119,7 @@ class StoreTest extends AbstractStoreTest {
   }
 
   @Test
-  public void getCheckpointState_shouldGenerateCheckpointStates() {
+  public void retrieveCheckpointState_shouldGenerateCheckpointStates() {
     final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
     final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
     final BlockProvider blockProvider = blockProviderFromChainBuilder();
@@ -140,16 +127,19 @@ class StoreTest extends AbstractStoreTest {
     final UpdatableStore store =
         StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis);
     final Checkpoint checkpoint = new Checkpoint(UnsignedLong.ONE, genesisBlockAndState.getRoot());
-    final BeaconState checkpointState = store.getCheckpointState(checkpoint).orElseThrow();
-    assertThat(checkpointState).isNotNull();
+
+    final SafeFuture<Optional<BeaconState>> result = store.retrieveCheckpointState(checkpoint);
+    assertThatSafeFuture(result).isCompletedWithNonEmptyOptional();
+    final BeaconState checkpointState = result.join().get();
     assertThat(checkpointState.getSlot()).isEqualTo(checkpoint.getEpochStartSlot());
     assertThat(checkpointState.getLatest_block_header().hash_tree_root())
         .isEqualTo(checkpoint.getRoot());
   }
 
   @Test
-  public void getCheckpointState_shouldThrowInvalidCheckpointExceptionWhenEpochBeforeBlockRoot()
-      throws Exception {
+  public void
+      retrieveCheckpointState_shouldThrowInvalidCheckpointExceptionWhenEpochBeforeBlockRoot()
+          throws Exception {
     final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
     final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
     final BlockProvider blockProvider = blockProviderFromChainBuilder();
@@ -166,8 +156,9 @@ class StoreTest extends AbstractStoreTest {
     tx.commit().join();
 
     final Checkpoint checkpoint = new Checkpoint(UnsignedLong.ONE, futureRoot);
-    assertThatThrownBy(() -> store.getCheckpointState(checkpoint))
-        .hasCauseInstanceOf(InvalidCheckpointException.class);
+    final SafeFuture<Optional<BeaconState>> result = store.retrieveCheckpointState(checkpoint);
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get).hasCauseInstanceOf(InvalidCheckpointException.class);
   }
 
   public void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction) {

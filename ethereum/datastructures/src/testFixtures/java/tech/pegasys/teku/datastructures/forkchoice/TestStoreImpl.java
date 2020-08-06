@@ -133,8 +133,7 @@ class TestStoreImpl implements MutablePrunableStore {
     return block_states.get(blockRoot);
   }
 
-  @Override
-  public Optional<BeaconState> getCheckpointState(final Checkpoint checkpoint) {
+  private Optional<BeaconState> getCheckpointState(final Checkpoint checkpoint) {
     return Optional.ofNullable(checkpoint_states.get(checkpoint));
   }
 

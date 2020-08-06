@@ -20,11 +20,16 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 
 public class StubForkChoiceStrategy implements ForkChoiceStrategy {
 
   @Override
-  public Bytes32 findHead(final MutableStore store) {
+  public Bytes32 findHead(
+      final MutableStore store,
+      final Checkpoint finalizedCheckpoint,
+      final Checkpoint justifiedCheckpoint,
+      final BeaconState justifiedCheckpointState) {
     return Bytes32.ZERO;
   }
 
