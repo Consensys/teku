@@ -125,7 +125,7 @@ class StoreTest extends AbstractStoreTest {
     final BlockProvider blockProvider = blockProviderFromChainBuilder();
 
     final UpdatableStore store =
-        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis);
+        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis).join();
     final Checkpoint checkpoint = new Checkpoint(UnsignedLong.ONE, genesisBlockAndState.getRoot());
 
     final SafeFuture<Optional<BeaconState>> result = store.retrieveCheckpointState(checkpoint);
@@ -149,7 +149,7 @@ class StoreTest extends AbstractStoreTest {
             .getRoot();
 
     final UpdatableStore store =
-        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis);
+        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis).join();
     // Add blocks
     final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
     chainBuilder.streamBlocksAndStates().forEach(tx::putBlockAndState);
@@ -169,7 +169,7 @@ class StoreTest extends AbstractStoreTest {
     final BlockProvider blockProvider = blockProviderFromChainBuilder();
 
     final UpdatableStore store =
-        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis);
+        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis).join();
     final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();
     final UnsignedLong initialTime = store.getTime();
     final UnsignedLong genesisTime = store.getGenesisTime();

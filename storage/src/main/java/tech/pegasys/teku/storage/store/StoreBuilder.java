@@ -26,6 +26,7 @@ import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 
 public class StoreBuilder {
@@ -47,7 +48,7 @@ public class StoreBuilder {
     return new StoreBuilder();
   }
 
-  public static UpdatableStore buildForkChoiceStore(
+  public static SafeFuture<UpdatableStore> buildForkChoiceStore(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
       final AnchorPoint anchor) {
@@ -78,9 +79,9 @@ public class StoreBuilder {
         .votes(new HashMap<>());
   }
 
-  public UpdatableStore build() {
+  public SafeFuture<UpdatableStore> build() {
     assertValid();
-    return new Store(
+    return Store.create(
         metricsSystem,
         blockProvider,
         time,

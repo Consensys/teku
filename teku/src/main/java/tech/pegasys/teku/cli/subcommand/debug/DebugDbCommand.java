@@ -135,7 +135,7 @@ public class DebugDbCommand implements Runnable {
       final Optional<BeaconState> state =
           database
               .createMemoryStore()
-              .map(builder -> builder.blockProvider(BlockProvider.NOOP).build())
+              .map(builder -> builder.blockProvider(BlockProvider.NOOP).build().join())
               .map(store -> store.getLatestFinalizedBlockAndState().getState());
       return writeState(outputFile, state);
     }
