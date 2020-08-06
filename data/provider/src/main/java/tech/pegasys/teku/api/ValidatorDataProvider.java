@@ -28,6 +28,7 @@ import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
+import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.ValidatorDuties;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties.Duties;
 
 public class ValidatorDataProvider {
+
   public static final String CANNOT_PRODUCE_FAR_FUTURE_BLOCK =
       "Cannot produce a block more than " + SLOTS_PER_EPOCH + " slots in the future.";
   public static final String CANNOT_PRODUCE_HISTORIC_BLOCK =
@@ -189,5 +191,10 @@ public class ValidatorDataProvider {
     return validatorApiChannel
         .createAggregate(attestationHashTreeRoot)
         .thenApply(maybeAttestation -> maybeAttestation.map(Attestation::new));
+  }
+
+  public void sendAggregateAndProof(SignedAggregateAndProof aggregateAndProof) {
+    validatorApiChannel.sendAggregateAndProof(
+        aggregateAndProof.asInternalSignedAggregateAndProof());
   }
 }

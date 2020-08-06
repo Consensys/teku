@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.api;
 
+import static com.google.common.primitives.UnsignedLong.ONE;
+import static com.google.common.primitives.UnsignedLong.ZERO;
 import static tech.pegasys.teku.api.DataProviderFailures.chainUnavailable;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.primitives.UnsignedLong;
 import java.util.List;
@@ -32,11 +34,11 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.config.Constants;
 
 public class ChainDataProvider {
   private final CombinedChainDataClient combinedChainDataClient;
@@ -81,22 +83,25 @@ public class ChainDataProvider {
     if (!combinedChainDataClient.isChainDataFullyAvailable()) {
       return chainUnavailable();
     }
+    final UnsignedLong committeesCalculatedAtEpoch = epoch.equals(ZERO) ? ZERO : epoch.minus(ONE);
+    final UnsignedLong startingSlot = compute_start_slot_at_epoch(committeesCalculatedAtEpoch);
+    final UnsignedLong slot = compute_start_slot_at_epoch(epoch);
 
-    final UnsignedLong earliestQueryableSlot =
-        CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
-    if (recentChainData.getBestSlot().compareTo(earliestQueryableSlot) < 0) {
+    // one epoch in future is available, beyond that cannot be calculated
+    if (slot.compareTo(
+            recentChainData.getBestSlot().plus(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH)))
+        > 0) {
       return SafeFuture.completedFuture(Optional.empty());
     }
 
-    final UnsignedLong queryEpoch = compute_epoch_at_slot(earliestQueryableSlot);
     return combinedChainDataClient
-        .getCheckpointStateAtEpoch(queryEpoch)
+        .getBlockAndStateInEffectAtSlot(startingSlot)
         .thenApply(
             maybeResult ->
                 maybeResult.map(
-                    checkpointState ->
-                        combinedChainDataClient
-                            .getCommitteesFromState(checkpointState.getState(), epoch).stream()
+                    result ->
+                        combinedChainDataClient.getCommitteesFromState(result.getState(), epoch)
+                            .stream()
                             .map(Committee::new)
                             .collect(Collectors.toList())));
   }
