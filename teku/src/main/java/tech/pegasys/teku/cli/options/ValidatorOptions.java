@@ -22,13 +22,6 @@ import tech.pegasys.teku.util.cli.GraffitiConverter;
 public class ValidatorOptions {
 
   @Option(
-      names = {"--validators-unencrypted-key-file"},
-      paramLabel = "<FILENAME>",
-      description = "The file to load unencrypted validator keys from",
-      arity = "1")
-  private String validatorKeyFile = null;
-
-  @Option(
       names = {"--validators-key-files"},
       paramLabel = "<FILENAMES>",
       description = "The list of encrypted keystore files to load the validator keys from",
@@ -74,10 +67,6 @@ public class ValidatorOptions {
           "Graffiti to include during block creation (gets converted to bytes and padded to Bytes32).",
       arity = "1")
   private Bytes32 graffiti;
-
-  public String getValidatorKeyFile() {
-    return validatorKeyFile;
-  }
 
   public List<String> getValidatorKeystoreFiles() {
     return validatorKeystoreFiles;
