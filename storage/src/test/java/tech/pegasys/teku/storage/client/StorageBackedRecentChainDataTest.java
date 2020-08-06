@@ -90,7 +90,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
-    assertThat(client.get().getStore()).isEqualTo(genesisStoreBuilder.build());
+    assertThat(client.get().getStore()).isEqualTo(genesisStoreBuilder.build().join());
   }
 
   @Test
@@ -125,10 +125,12 @@ public class StorageBackedRecentChainDataTest {
     // Now set the genesis state
     final UpdatableStore genesisStore =
         StoreBuilder.buildForkChoiceStore(
-            new StubMetricsSystem(),
-            BlockProvider.NOOP,
-            AnchorPoint.fromGenesisState(INITIAL_STATE));
-    client.get().initializeFromGenesis(INITIAL_STATE);
+                new StubMetricsSystem(),
+                BlockProvider.NOOP,
+                AnchorPoint.fromGenesisState(INITIAL_STATE))
+            .join();
+    final SafeFuture<Void> initialized = client.get().initializeFromGenesis(INITIAL_STATE);
+    assertThat(initialized).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
     assertThat(client.get().getStore()).isEqualTo(genesisStore);
@@ -172,7 +174,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
-    assertThat(client.get().getStore()).isEqualTo(genesisStoreBuilder.build());
+    assertThat(client.get().getStore()).isEqualTo(genesisStoreBuilder.build().join());
   }
 
   @Test
@@ -217,8 +219,10 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client.getStore()).isNotNull();
 
     // With a store set, we shouldn't be allowed to overwrite the store by setting the genesis state
-    assertThatThrownBy(() -> client.initializeFromGenesis(INITIAL_STATE))
-        .isInstanceOf(IllegalStateException.class)
+    final SafeFuture<Void> initialized = client.initializeFromGenesis(INITIAL_STATE);
+    assertThat(initialized).isCompletedExceptionally();
+    assertThatThrownBy(initialized::get)
+        .hasCauseInstanceOf(IllegalStateException.class)
         .hasMessageContaining("Failed to set genesis state: store has already been initialized");
   }
 }
