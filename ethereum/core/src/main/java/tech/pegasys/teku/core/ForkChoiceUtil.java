@@ -462,14 +462,17 @@ public class ForkChoiceUtil {
 
     // Attestations can only affect the fork choice of subsequent slots.
     // Delay consideration in the fork choice until their slot is in the past.
-    if (get_current_slot(store).compareTo(attestation.getData().getSlot()) <= 0) {
+    final UnsignedLong currentSlot = get_current_slot(store);
+    if (currentSlot.compareTo(attestation.getData().getSlot()) < 0) {
       return AttestationProcessingResult.SAVED_FOR_FUTURE;
+    }
+    if (currentSlot.compareTo(attestation.getData().getSlot()) == 0) {
+      return AttestationProcessingResult.DEFER_FOR_FORK_CHOICE;
     }
 
     // Attestations cannot be from future epochs. If they are, delay consideration until the epoch
     // arrives
-    if (get_current_slot(store).compareTo(attestation.getData().getTarget().getEpochStartSlot())
-        < 0) {
+    if (currentSlot.compareTo(attestation.getData().getTarget().getEpochStartSlot()) < 0) {
       return AttestationProcessingResult.SAVED_FOR_FUTURE;
     }
     return SUCCESSFUL;
