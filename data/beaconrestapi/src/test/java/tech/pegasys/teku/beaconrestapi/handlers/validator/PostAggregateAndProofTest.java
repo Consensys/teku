@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.validator;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -83,11 +84,18 @@ class PostAggregateAndProofTest {
     final tech.pegasys.teku.api.schema.SignedAggregateAndProof schemaSignedAggregateAndProof =
         new tech.pegasys.teku.api.schema.SignedAggregateAndProof(signedAggregateAndProof);
 
-    when(context.body()).thenReturn(jsonProvider.objectToJSON(schemaSignedAggregateAndProof));
+    String signedAggregateAndProofAsJson = jsonProvider.objectToJSON(schemaSignedAggregateAndProof);
+    when(context.body()).thenReturn(signedAggregateAndProofAsJson);
 
     handler.handle(context);
 
-    verify(provider).sendAggregateAndProof(any());
+    ArgumentCaptor<tech.pegasys.teku.api.schema.SignedAggregateAndProof> captor =
+        ArgumentCaptor.forClass(tech.pegasys.teku.api.schema.SignedAggregateAndProof.class);
+
+    verify(provider).sendAggregateAndProof(captor.capture());
     verify(context).status(SC_OK);
+
+    assertThat(jsonProvider.objectToJSON(captor.getValue()))
+        .isEqualTo(signedAggregateAndProofAsJson);
   }
 }
