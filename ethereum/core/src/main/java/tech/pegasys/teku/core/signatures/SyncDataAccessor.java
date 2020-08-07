@@ -56,6 +56,11 @@ public class SyncDataAccessor {
     if (!parentDirectory.mkdirs() && !parentDirectory.isDirectory()) {
       throw new IOException("Unable to create directory " + parentDirectory);
     }
-    Files.write(path, data.toArrayUnsafe(), StandardOpenOption.SYNC, StandardOpenOption.CREATE);
+    Files.write(
+        path,
+        data.toArrayUnsafe(),
+        StandardOpenOption.SYNC,
+        StandardOpenOption.CREATE,
+        StandardOpenOption.TRUNCATE_EXISTING);
   }
 }
