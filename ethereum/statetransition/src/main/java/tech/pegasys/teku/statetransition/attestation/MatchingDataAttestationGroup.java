@@ -58,8 +58,8 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
    *
    * @param attestation the attestation to add
    */
-  public void add(final ValidateableAttestation attestation) {
-    attestationsByValidatorCount
+  public boolean add(final ValidateableAttestation attestation) {
+    return attestationsByValidatorCount
         .computeIfAbsent(
             attestation.getAttestation().getAggregation_bits().getBitCount(),
             count -> new HashSet<>())
@@ -103,9 +103,10 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
    *
    * @param attestation the attestation to logically remove from the pool.
    */
-  public void remove(final Attestation attestation) {
+  public int remove(final Attestation attestation) {
     final Collection<Set<ValidateableAttestation>> attestationSets =
         attestationsByValidatorCount.values();
+    int numRemoved = 0;
     for (Iterator<Set<ValidateableAttestation>> i = attestationSets.iterator(); i.hasNext(); ) {
       final Set<ValidateableAttestation> candidates = i.next();
       candidates.removeIf(
@@ -115,8 +116,10 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
                   .isSuperSetOf(candidate.getAttestation().getAggregation_bits()));
       if (candidates.isEmpty()) {
         i.remove();
+        numRemoved++;
       }
     }
+    return numRemoved;
   }
 
   private class AggregatingIterator implements Iterator<ValidateableAttestation> {

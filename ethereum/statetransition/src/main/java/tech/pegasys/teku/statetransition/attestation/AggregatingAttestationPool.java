@@ -51,8 +51,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
       new HashMap<>();
   private final NavigableMap<UnsignedLong, Set<Bytes>> dataHashBySlot = new TreeMap<>();
   private final AttestationDataStateTransitionValidator attestationDataValidator;
-  AtomicInteger size = new AtomicInteger(0);
-
+  private final AtomicInteger size = new AtomicInteger(0);
 
   public AggregatingAttestationPool(
       final AttestationDataStateTransitionValidator attestationDataValidator) {
@@ -62,11 +61,13 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   public synchronized void add(final ValidateableAttestation attestation) {
     final AttestationData attestationData = attestation.getAttestation().getData();
     final Bytes32 dataRoot = attestationData.hash_tree_root();
-    size.getAndIncrement();
-    attestationGroupByDataHash
-        .computeIfAbsent(dataRoot, key -> new MatchingDataAttestationGroup(attestationData))
-        .add(attestation);
-
+    final boolean add =
+        attestationGroupByDataHash
+            .computeIfAbsent(dataRoot, key -> new MatchingDataAttestationGroup(attestationData))
+            .add(attestation);
+    if (add) {
+      size.incrementAndGet();
+    }
     dataHashBySlot
         .computeIfAbsent(attestationData.getSlot(), slot -> new HashSet<>())
         .add(dataRoot);
@@ -93,8 +94,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     if (attestations == null) {
       return;
     }
-    attestations.remove(attestation);
-    size.decrementAndGet();
+    final int numRemoved = attestations.remove(attestation);
+    size.addAndGet(-numRemoved);
     if (attestations.isEmpty()) {
       attestationGroupByDataHash.remove(dataRoot);
       removeFromSlotMappings(attestationData.getSlot(), dataRoot);

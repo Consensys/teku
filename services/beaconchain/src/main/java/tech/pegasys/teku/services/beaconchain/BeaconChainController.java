@@ -466,7 +466,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             p2pNetwork,
             syncService,
             eventChannels.getPublisher(ValidatorApiChannel.class, asyncRunner),
-            blockImporter);
+            blockImporter,
+            attestationPool);
     if (config.isRestApiEnabled()) {
       beaconRestAPI = Optional.of(new BeaconRestApi(dataProvider, config));
     } else {
