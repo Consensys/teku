@@ -163,25 +163,27 @@ public class CombinedChainDataClient {
     final UnsignedLong epochSlot = compute_start_slot_at_epoch(epoch);
     return getSignedBlockAndStateInEffectAtSlot(epochSlot)
         .thenCompose(
-            maybeBlockAndState -> {
-              if (maybeBlockAndState.isEmpty()) {
-                return completedFuture(Optional.empty());
+            maybeBlockAndState ->
+                maybeBlockAndState
+                    .map(
+                        blockAndState ->
+                            getCheckpointState(epoch, blockAndState).thenApply(Optional::of))
+                    .orElse(SafeFuture.completedFuture(Optional.empty())));
+  }
+
+  public SafeFuture<CheckpointState> getCheckpointState(
+      final UnsignedLong epoch, final SignedBlockAndState latestBlockAndState) {
+    final Checkpoint checkpoint = new Checkpoint(epoch, latestBlockAndState.getRoot());
+    return recentChainData
+        .getStore()
+        .retrieveCheckpointState(checkpoint)
+        .thenApply(
+            checkpointState -> {
+              if (checkpointState.isEmpty()) {
+                return CheckpointStateGenerator.generate(checkpoint, latestBlockAndState);
               }
-              final SignedBlockAndState blockAndState = maybeBlockAndState.get();
-              final Checkpoint checkpoint = new Checkpoint(epoch, blockAndState.getRoot());
-              return recentChainData
-                  .getStore()
-                  .retrieveCheckpointState(checkpoint)
-                  .thenApply(
-                      checkpointState -> {
-                        if (checkpointState.isEmpty()) {
-                          return Optional.of(
-                              CheckpointStateGenerator.generate(checkpoint, blockAndState));
-                        }
-                        final SignedBeaconBlock block = blockAndState.getBlock();
-                        return checkpointState.map(
-                            state -> new CheckpointState(checkpoint, block, state));
-                      });
+              final SignedBeaconBlock block = latestBlockAndState.getBlock();
+              return new CheckpointState(checkpoint, block, checkpointState.get());
             });
   }
 

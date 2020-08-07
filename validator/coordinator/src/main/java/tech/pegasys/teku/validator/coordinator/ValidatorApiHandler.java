@@ -48,6 +48,7 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
@@ -173,42 +174,59 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return NodeSyncingException.failedFuture();
     }
 
-    final UnsignedLong querySlot = CommitteeUtil.getEarliestQueryableSlotForTargetSlot(slot);
-    final UnsignedLong epoch = compute_epoch_at_slot(querySlot);
+    final UnsignedLong minQuerySlot = CommitteeUtil.getEarliestQueryableSlotForTargetSlot(slot);
 
     return combinedChainDataClient
-        .getCheckpointStateAtEpoch(epoch)
-        .thenApply(
-            result ->
-                result.map(
-                    checkpointState -> {
-                      final BeaconBlock block = checkpointState.getBlock().getMessage();
-                      final BeaconState state = checkpointState.getState();
+        .getSignedBlockAndStateInEffectAtSlot(slot)
+        .thenCompose(
+            maybeBlockAndState -> {
+              if (maybeBlockAndState.isEmpty()) {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+              final SignedBlockAndState blockAndState = maybeBlockAndState.get();
+              final BeaconBlock block = blockAndState.getBlock().getMessage();
+              if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
+                // The current effective block is too far in the past - so roll the state
+                // forward to the minimum epoch
+                final UnsignedLong epoch = compute_epoch_at_slot(minQuerySlot);
+                return combinedChainDataClient
+                    .getCheckpointState(epoch, blockAndState)
+                    .thenApply(
+                        checkpointState ->
+                            Optional.of(
+                                createAttestation(
+                                    block, checkpointState.getState(), slot, committeeIndex)));
+              } else {
+                final Attestation attestation =
+                    createAttestation(block, blockAndState.getState(), slot, committeeIndex);
+                return SafeFuture.completedFuture(Optional.of(attestation));
+              }
+            });
+  }
 
-                      final int committeeCount =
-                          get_committee_count_per_slot(state, compute_epoch_at_slot(slot))
-                              .intValue();
+  private Attestation createAttestation(
+      final BeaconBlock block,
+      final BeaconState state,
+      final UnsignedLong slot,
+      final int committeeIndex) {
+    final int committeeCount =
+        get_committee_count_per_slot(state, compute_epoch_at_slot(slot)).intValue();
 
-                      if (committeeIndex < 0 || committeeIndex >= committeeCount) {
-                        throw new IllegalArgumentException(
-                            "Invalid committee index "
-                                + committeeIndex
-                                + " - expected between 0 and "
-                                + (committeeCount - 1));
-                      }
-                      final UnsignedLong committeeIndexUnsigned =
-                          UnsignedLong.valueOf(committeeIndex);
-                      final AttestationData attestationData =
-                          AttestationUtil.getGenericAttestationData(
-                              slot, state, block, committeeIndexUnsigned);
-                      final List<Integer> committee =
-                          CommitteeUtil.get_beacon_committee(state, slot, committeeIndexUnsigned);
+    if (committeeIndex < 0 || committeeIndex >= committeeCount) {
+      throw new IllegalArgumentException(
+          "Invalid committee index "
+              + committeeIndex
+              + " - expected between 0 and "
+              + (committeeCount - 1));
+    }
+    final UnsignedLong committeeIndexUnsigned = UnsignedLong.valueOf(committeeIndex);
+    final AttestationData attestationData =
+        AttestationUtil.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
+    final List<Integer> committee =
+        CommitteeUtil.get_beacon_committee(state, slot, committeeIndexUnsigned);
 
-                      final Bitlist aggregationBits =
-                          new Bitlist(committee.size(), MAX_VALIDATORS_PER_COMMITTEE);
-                      return new Attestation(
-                          aggregationBits, attestationData, BLSSignature.empty());
-                    }));
+    final Bitlist aggregationBits = new Bitlist(committee.size(), MAX_VALIDATORS_PER_COMMITTEE);
+    return new Attestation(aggregationBits, attestationData, BLSSignature.empty());
   }
 
   @Override
