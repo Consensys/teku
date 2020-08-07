@@ -33,6 +33,10 @@ public class ChainUpdater {
     this.chainBuilder = chainBuilder;
   }
 
+  public UnsignedLong getHeadSlot() {
+    return recentChainData.getBestSlot();
+  }
+
   public void setCurrentSlot(final UnsignedLong currentSlot) {
     checkState(!recentChainData.isPreGenesis(), "Cannot set current slot before genesis");
     setTime(getSlotTime(currentSlot));
