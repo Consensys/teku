@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.HashMap;
@@ -60,7 +59,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
     if (currentUnsubscriptionSlot.equals(ZERO)) {
       eth2Network.subscribeToAttestationSubnetId(subnetId);
     }
-    subnetIdToUnsubscribeSlot.put(subnetId, max(currentUnsubscriptionSlot, aggregationSlot));
+    subnetIdToUnsubscribeSlot.put(subnetId, currentUnsubscriptionSlot.max(aggregationSlot));
   }
 
   public synchronized void subscribeToPersistentSubnets(
@@ -80,7 +79,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
               });
 
       subnetIdToUnsubscribeSlot.put(
-          subnetId, max(existingUnsubscriptionSlot, subnetSubscription.getUnsubscriptionSlot()));
+          subnetId, existingUnsubscriptionSlot.max(subnetSubscription.getUnsubscriptionSlot()));
     }
 
     if (shouldUpdateENR) {

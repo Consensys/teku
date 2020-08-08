@@ -25,7 +25,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_total_ac
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_total_balance;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_validator_churn_limit;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.initiate_validator_exit;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_active_validator;
@@ -331,10 +330,9 @@ public final class EpochProcessorUtil {
                 .getEffective_balance()
                 .dividedBy(increment)
                 .times(
-                    min(
-                        UInt64.valueOf(
-                            state.getSlashings().stream().mapToLong(UInt64::longValue).sum() * 3),
-                        total_balance));
+                    UInt64.valueOf(
+                            state.getSlashings().stream().mapToLong(UInt64::longValue).sum() * 3)
+                        .min(total_balance));
         UInt64 penalty = penalty_numerator.dividedBy(total_balance).times(increment);
         decrease_balance(state, index, penalty);
       }
@@ -375,9 +373,9 @@ public final class EpochProcessorUtil {
             .set(
                 index,
                 validator.withEffective_balance(
-                    min(
-                        balance.minus(balance.mod(EFFECTIVE_BALANCE_INCREMENT)),
-                        UInt64.valueOf(MAX_EFFECTIVE_BALANCE))));
+                    balance
+                        .minus(balance.mod(EFFECTIVE_BALANCE_INCREMENT))
+                        .min(UInt64.valueOf(MAX_EFFECTIVE_BALANCE))));
       }
     }
 
