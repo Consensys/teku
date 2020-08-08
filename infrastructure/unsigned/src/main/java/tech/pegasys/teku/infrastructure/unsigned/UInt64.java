@@ -155,6 +155,14 @@ public final class UInt64 implements Comparable<UInt64> {
     return fromLongBits(Long.remainderUnsigned(dividendBits, divisorBits));
   }
 
+  public UInt64 max(final UInt64 other) {
+    return compareTo(other) >= 0 ? this : other;
+  }
+
+  public UInt64 min(final UInt64 other) {
+    return compareTo(other) >= 0 ? other : this;
+  }
+
   public long longValue() {
     return value;
   }
