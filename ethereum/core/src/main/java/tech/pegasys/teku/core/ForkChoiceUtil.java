@@ -127,7 +127,9 @@ public class ForkChoiceUtil {
       final Optional<UInt64> maybeSlot) {
     maybeSlot.ifPresent(
         slot -> {
-          if (slot.compareTo(endSlot) <= 0 && slot.minus(startSlot).mod(step).equals(UInt64.ZERO)) {
+          if (slot.compareTo(endSlot) <= 0
+              && slot.compareTo(startSlot) >= 0
+              && slot.minus(startSlot).mod(step).equals(UInt64.ZERO)) {
             roots.put(slot, root);
           }
         });
