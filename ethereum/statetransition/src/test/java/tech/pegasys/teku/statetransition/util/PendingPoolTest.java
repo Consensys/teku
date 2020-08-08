@@ -16,7 +16,6 @@ package tech.pegasys.teku.statetransition.util;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
@@ -25,14 +24,15 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class PendingPoolTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final UnsignedLong historicalTolerance = UnsignedLong.valueOf(5);
-  private final UnsignedLong futureTolerance = UnsignedLong.valueOf(2);
+  private final UInt64 historicalTolerance = UInt64.valueOf(5);
+  private final UInt64 futureTolerance = UInt64.valueOf(2);
   private final PendingPool<SignedBeaconBlock> pendingPool =
       PendingPool.createForBlocks(historicalTolerance, futureTolerance);
-  private UnsignedLong currentSlot = historicalTolerance.times(UnsignedLong.valueOf(2));
+  private UInt64 currentSlot = historicalTolerance.times(UInt64.valueOf(2));
   private List<Bytes32> requiredRootEvents = new ArrayList<>();
   private List<Bytes32> requiredRootDroppedEvents = new ArrayList<>();
 
@@ -45,10 +45,10 @@ public class PendingPoolTest {
   }
 
   private void setSlot(final long slot) {
-    setSlot(UnsignedLong.valueOf(slot));
+    setSlot(UInt64.valueOf(slot));
   }
 
-  private void setSlot(final UnsignedLong slot) {
+  private void setSlot(final UInt64 slot) {
     currentSlot = slot;
     pendingPool.onSlot(slot);
   }
@@ -69,7 +69,7 @@ public class PendingPoolTest {
 
   @Test
   public void add_historicalBlockWithinWindow() {
-    final UnsignedLong slot = currentSlot.minus(historicalTolerance);
+    final UInt64 slot = currentSlot.minus(historicalTolerance);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
     pendingPool.add(block);
 
@@ -83,7 +83,7 @@ public class PendingPoolTest {
 
   @Test
   public void add_historicalBlockOutsideWindow() {
-    final UnsignedLong slot = currentSlot.minus(historicalTolerance).minus(UnsignedLong.ONE);
+    final UInt64 slot = currentSlot.minus(historicalTolerance).minus(UInt64.ONE);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
     pendingPool.add(block);
 
@@ -96,7 +96,7 @@ public class PendingPoolTest {
 
   @Test
   public void add_futureBlockWithinWindow() {
-    final UnsignedLong slot = currentSlot.plus(futureTolerance);
+    final UInt64 slot = currentSlot.plus(futureTolerance);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
     pendingPool.add(block);
 
@@ -110,7 +110,7 @@ public class PendingPoolTest {
 
   @Test
   public void add_futureBlockOutsideWindow() {
-    final UnsignedLong slot = currentSlot.plus(futureTolerance).plus(UnsignedLong.ONE);
+    final UInt64 slot = currentSlot.plus(futureTolerance).plus(UInt64.ONE);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
     pendingPool.add(block);
 
@@ -127,7 +127,7 @@ public class PendingPoolTest {
     final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
     pendingPool.onNewFinalizedCheckpoint(checkpoint);
 
-    final UnsignedLong slot = checkpoint.getEpochStartSlot().plus(UnsignedLong.ONE);
+    final UInt64 slot = checkpoint.getEpochStartSlot().plus(UInt64.ONE);
     setSlot(slot);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
 
@@ -160,7 +160,7 @@ public class PendingPoolTest {
   }
 
   private Checkpoint finalizedCheckpoint(SignedBeaconBlock block) {
-    final UnsignedLong epoch = compute_epoch_at_slot(block.getSlot()).plus(UnsignedLong.ONE);
+    final UInt64 epoch = compute_epoch_at_slot(block.getSlot()).plus(UInt64.ONE);
     final Bytes32 root = block.getMessage().hash_tree_root();
 
     return new Checkpoint(epoch, root);
@@ -357,16 +357,16 @@ public class PendingPoolTest {
     assertThat(pendingPool.contains(blockA)).isTrue();
     assertThat(pendingPool.contains(blockB)).isTrue();
 
-    UnsignedLong newSlot = currentSlot;
+    UInt64 newSlot = currentSlot;
     for (int i = 0; i < historicalTolerance.intValue() - 1; i++) {
-      newSlot = newSlot.plus(UnsignedLong.ONE);
+      newSlot = newSlot.plus(UInt64.ONE);
       pendingPool.onSlot(newSlot);
       assertThat(pendingPool.contains(blockA)).isTrue();
       assertThat(pendingPool.contains(blockB)).isTrue();
     }
 
     // Next slot should prune blockA
-    pendingPool.onSlot(newSlot.plus(UnsignedLong.ONE));
+    pendingPool.onSlot(newSlot.plus(UInt64.ONE));
 
     assertThat(pendingPool.contains(blockA)).isFalse();
     assertThat(pendingPool.contains(blockB)).isTrue();

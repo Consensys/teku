@@ -15,13 +15,13 @@ package tech.pegasys.teku.util.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ConstantsReaderTest {
   private static final List<String> ZERO_FIELDS = List.of("GENESIS_SLOT", "GENESIS_EPOCH");
@@ -76,7 +76,7 @@ class ConstantsReaderTest {
       if (!ZERO_FIELDS.contains(field.getName())) {
         assertThat(value).describedAs(field.getName()).isNotEqualTo(0);
         assertThat(value).describedAs(field.getName()).isNotEqualTo(0L);
-        assertThat(value).describedAs(field.getName()).isNotEqualTo(UnsignedLong.ZERO);
+        assertThat(value).describedAs(field.getName()).isNotEqualTo(UInt64.ZERO);
       }
     }
   }

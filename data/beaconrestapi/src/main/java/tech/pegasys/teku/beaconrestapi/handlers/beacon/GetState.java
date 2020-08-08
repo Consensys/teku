@@ -29,10 +29,9 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.STATE_ROOT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.STATE_ROOT_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
+import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -49,6 +48,7 @@ import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetState extends AbstractHandler implements Handler {
@@ -94,8 +94,8 @@ public class GetState extends AbstractHandler implements Handler {
       if (parameters.containsKey(ROOT)) {
         future = provider.getStateByBlockRoot(getParameterValueAsBytes32(parameters, ROOT));
       } else if (parameters.containsKey(SLOT)) {
-        final UnsignedLong slot = getParameterValueAsUnsignedLong(parameters, SLOT);
-        future = provider.getStateAtSlot(getParameterValueAsUnsignedLong(parameters, SLOT));
+        final UInt64 slot = getParameterValueAsUInt64(parameters, SLOT);
+        future = provider.getStateAtSlot(getParameterValueAsUInt64(parameters, SLOT));
         isFinalizedState = provider.isFinalized(slot);
       } else if (parameters.containsKey(STATE_ROOT)) {
         future = provider.getStateByStateRoot(getParameterValueAsBytes32(parameters, STATE_ROOT));

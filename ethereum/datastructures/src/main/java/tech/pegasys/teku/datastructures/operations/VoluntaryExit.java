@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.util.hashtree.HashTreeUtil;
@@ -31,10 +31,10 @@ public class VoluntaryExit implements Merkleizable, SimpleOffsetSerializable, SS
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
 
-  private final UnsignedLong epoch;
-  private final UnsignedLong validator_index;
+  private final UInt64 epoch;
+  private final UInt64 validator_index;
 
-  public VoluntaryExit(UnsignedLong epoch, UnsignedLong validator_index) {
+  public VoluntaryExit(UInt64 epoch, UInt64 validator_index) {
     this.epoch = epoch;
     this.validator_index = validator_index;
   }
@@ -75,11 +75,11 @@ public class VoluntaryExit implements Merkleizable, SimpleOffsetSerializable, SS
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getEpoch() {
+  public UInt64 getEpoch() {
     return epoch;
   }
 
-  public UnsignedLong getValidator_index() {
+  public UInt64 getValidator_index() {
     return validator_index;
   }
 

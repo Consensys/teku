@@ -15,7 +15,6 @@ package tech.pegasys.teku.datastructures.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
@@ -24,12 +23,13 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class MockStartBeaconStateGeneratorTest {
 
   @Test
   public void shouldCreateInitialBeaconChainState() {
-    final UnsignedLong genesisTime = UnsignedLong.valueOf(498294294824924924L);
+    final UInt64 genesisTime = UInt64.valueOf(498294294824924924L);
     final int validatorCount = 10;
 
     final List<BLSKeyPair> validatorKeyPairs =

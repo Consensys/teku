@@ -14,20 +14,20 @@
 package tech.pegasys.teku.datastructures.forkchoice;
 
 import com.google.common.base.Objects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
 public class VoteTracker implements SimpleOffsetSerializable {
 
   private Bytes32 currentRoot;
   private Bytes32 nextRoot;
-  private UnsignedLong nextEpoch;
+  private UInt64 nextEpoch;
 
-  public VoteTracker(Bytes32 currentRoot, Bytes32 nextRoot, UnsignedLong nextEpoch) {
+  public VoteTracker(Bytes32 currentRoot, Bytes32 nextRoot, UInt64 nextEpoch) {
     this.currentRoot = currentRoot;
     this.nextRoot = nextRoot;
     this.nextEpoch = nextEpoch;
@@ -38,7 +38,7 @@ public class VoteTracker implements SimpleOffsetSerializable {
   }
 
   public static VoteTracker Default() {
-    return new VoteTracker(Bytes32.ZERO, Bytes32.ZERO, UnsignedLong.ZERO);
+    return new VoteTracker(Bytes32.ZERO, Bytes32.ZERO, UInt64.ZERO);
   }
 
   @Override
@@ -90,7 +90,7 @@ public class VoteTracker implements SimpleOffsetSerializable {
     this.nextRoot = nextRoot;
   }
 
-  public void setNextEpoch(UnsignedLong nextEpoch) {
+  public void setNextEpoch(UInt64 nextEpoch) {
     this.nextEpoch = nextEpoch;
   }
 
@@ -102,7 +102,7 @@ public class VoteTracker implements SimpleOffsetSerializable {
     return nextRoot;
   }
 
-  public UnsignedLong getNextEpoch() {
+  public UInt64 getNextEpoch() {
     return nextEpoch;
   }
 }

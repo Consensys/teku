@@ -16,13 +16,13 @@ package tech.pegasys.teku.datastructures.state;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ValidatorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -30,12 +30,12 @@ class ValidatorTest {
   private int seed = 100;
   private BLSPublicKey pubkey = BLSPublicKey.random(seed);
   private Bytes32 withdrawalCredentials = dataStructureUtil.randomBytes32();
-  private UnsignedLong activationEligibilityEpoch = dataStructureUtil.randomUnsignedLong();
-  private UnsignedLong activationEpoch = dataStructureUtil.randomUnsignedLong();
-  private UnsignedLong exitEpoch = dataStructureUtil.randomUnsignedLong();
-  private UnsignedLong withdrawalEpoch = dataStructureUtil.randomUnsignedLong();
+  private UInt64 activationEligibilityEpoch = dataStructureUtil.randomUInt64();
+  private UInt64 activationEpoch = dataStructureUtil.randomUInt64();
+  private UInt64 exitEpoch = dataStructureUtil.randomUInt64();
+  private UInt64 withdrawalEpoch = dataStructureUtil.randomUInt64();
   private boolean slashed = false;
-  private UnsignedLong effectiveBalance = dataStructureUtil.randomUnsignedLong();
+  private UInt64 effectiveBalance = dataStructureUtil.randomUInt64();
 
   private Validator validator =
       Validator.create(
@@ -114,7 +114,7 @@ class ValidatorTest {
             effectiveBalance,
             slashed,
             activationEligibilityEpoch,
-            activationEpoch.plus(dataStructureUtil.randomUnsignedLong()),
+            activationEpoch.plus(dataStructureUtil.randomUInt64()),
             exitEpoch,
             withdrawalEpoch);
 
@@ -131,7 +131,7 @@ class ValidatorTest {
             slashed,
             activationEligibilityEpoch,
             activationEpoch,
-            exitEpoch.plus(dataStructureUtil.randomUnsignedLong()),
+            exitEpoch.plus(dataStructureUtil.randomUInt64()),
             withdrawalEpoch);
 
     assertNotEquals(validator, testValidator);
@@ -148,7 +148,7 @@ class ValidatorTest {
             activationEligibilityEpoch,
             activationEpoch,
             exitEpoch,
-            withdrawalEpoch.plus(dataStructureUtil.randomUnsignedLong()));
+            withdrawalEpoch.plus(dataStructureUtil.randomUInt64()));
 
     assertNotEquals(validator, testValidator);
   }

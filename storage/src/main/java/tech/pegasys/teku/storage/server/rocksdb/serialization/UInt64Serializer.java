@@ -11,17 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.unsignedlong;
+package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
-import com.google.common.primitives.UnsignedLong;
+import com.google.common.primitives.Longs;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class UnsignedLongMath {
+public class UInt64Serializer implements RocksDbSerializer<UInt64> {
 
-  public static UnsignedLong max(final UnsignedLong a, final UnsignedLong b) {
-    return a.compareTo(b) >= 0 ? a : b;
+  @Override
+  public UInt64 deserialize(final byte[] data) {
+    return UInt64.fromLongBits(Longs.fromByteArray(data));
   }
 
-  public static UnsignedLong min(final UnsignedLong a, final UnsignedLong b) {
-    return a.compareTo(b) <= 0 ? a : b;
+  @Override
+  public byte[] serialize(final UInt64 value) {
+    return Longs.toByteArray(value.longValue());
   }
 }

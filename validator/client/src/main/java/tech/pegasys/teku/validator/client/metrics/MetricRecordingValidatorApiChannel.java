@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.client.metrics;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -30,6 +29,7 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
@@ -128,20 +128,20 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
-      final UnsignedLong epoch, final Collection<BLSPublicKey> publicKeys) {
+      final UInt64 epoch, final Collection<BLSPublicKey> publicKeys) {
     return countRequest(delegate.getDuties(epoch, publicKeys), dutiesRequestCounter);
   }
 
   @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
-      final UnsignedLong slot, final BLSSignature randaoReveal, Optional<Bytes32> graffiti) {
+      final UInt64 slot, final BLSSignature randaoReveal, Optional<Bytes32> graffiti) {
     return countRequest(
         delegate.createUnsignedBlock(slot, randaoReveal, graffiti), unsignedBlockRequestsCounter);
   }
 
   @Override
   public SafeFuture<Optional<Attestation>> createUnsignedAttestation(
-      final UnsignedLong slot, final int committeeIndex) {
+      final UInt64 slot, final int committeeIndex) {
     return countRequest(
         delegate.createUnsignedAttestation(slot, committeeIndex),
         unsignedAttestationRequestsCounter);
@@ -155,7 +155,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public void subscribeToBeaconCommitteeForAggregation(
-      final int committeeIndex, final UnsignedLong aggregationSlot) {
+      final int committeeIndex, final UInt64 aggregationSlot) {
     subscribeAggregationRequestCounter.inc();
     delegate.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot);
   }

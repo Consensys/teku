@@ -15,7 +15,6 @@ package tech.pegasys.teku.datastructures.attestation;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Suppliers;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -25,6 +24,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidateableAttestation {
   private final Attestation attestation;
@@ -82,7 +82,7 @@ public class ValidateableAttestation {
     return attestation.getData();
   }
 
-  public UnsignedLong getEarliestSlotForForkChoiceProcessing() {
+  public UInt64 getEarliestSlotForForkChoiceProcessing() {
     return attestation.getEarliestSlotForForkChoiceProcessing();
   }
 

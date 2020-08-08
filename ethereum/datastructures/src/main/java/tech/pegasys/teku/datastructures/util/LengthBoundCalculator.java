@@ -138,7 +138,7 @@ public class LengthBoundCalculator {
 
   private static int getPrimitiveLength(final Class<?> classInfo) {
     switch (classInfo.getSimpleName()) {
-      case "UnsignedLong":
+      case "UInt64":
         return UNSIGNED_LONG_SIZE;
       case "ArrayWrappingBytes32":
       case "Bytes32":

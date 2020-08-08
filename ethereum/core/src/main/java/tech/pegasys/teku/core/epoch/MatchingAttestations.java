@@ -19,36 +19,36 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_ro
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.Map;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public class MatchingAttestations {
 
   private final BeaconState state;
-  private final Map<UnsignedLong, SSZList<PendingAttestation>> matchingSourceAttestationsByEpoch =
+  private final Map<UInt64, SSZList<PendingAttestation>> matchingSourceAttestationsByEpoch =
       new HashMap<>();
-  private final Map<UnsignedLong, SSZList<PendingAttestation>> matchingTargetAttestationsByEpoch =
+  private final Map<UInt64, SSZList<PendingAttestation>> matchingTargetAttestationsByEpoch =
       new HashMap<>();
 
   public MatchingAttestations(final BeaconState state) {
     this.state = state;
   }
 
-  public SSZList<PendingAttestation> getMatchingSourceAttestations(final UnsignedLong epoch) {
+  public SSZList<PendingAttestation> getMatchingSourceAttestations(final UInt64 epoch) {
     return matchingSourceAttestationsByEpoch.computeIfAbsent(
         epoch, this::calculateMatchingSourceAttestations);
   }
 
-  public SSZList<PendingAttestation> getMatchingTargetAttestations(final UnsignedLong epoch) {
+  public SSZList<PendingAttestation> getMatchingTargetAttestations(final UInt64 epoch) {
     return matchingTargetAttestationsByEpoch.computeIfAbsent(
         epoch, this::calculateMatchingTargetAttestations);
   }
 
-  public SSZList<PendingAttestation> getMatchingHeadAttestations(final UnsignedLong epoch) {
+  public SSZList<PendingAttestation> getMatchingHeadAttestations(final UInt64 epoch) {
     // Only called once so no need to cache.
     return calculateMatchingHeadAttestations(epoch);
   }
@@ -62,7 +62,7 @@ public class MatchingAttestations {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
    */
-  private SSZList<PendingAttestation> calculateMatchingSourceAttestations(UnsignedLong epoch)
+  private SSZList<PendingAttestation> calculateMatchingSourceAttestations(UInt64 epoch)
       throws IllegalArgumentException {
     checkArgument(
         get_current_epoch(state).equals(epoch) || get_previous_epoch(state).equals(epoch),
@@ -82,7 +82,7 @@ public class MatchingAttestations {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
    */
-  private SSZList<PendingAttestation> calculateMatchingTargetAttestations(UnsignedLong epoch)
+  private SSZList<PendingAttestation> calculateMatchingTargetAttestations(UInt64 epoch)
       throws IllegalArgumentException {
     return getMatchingSourceAttestations(epoch)
         .filter(a -> a.getData().getTarget().getRoot().equals(get_block_root(state, epoch)));
@@ -96,7 +96,7 @@ public class MatchingAttestations {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
    */
-  private SSZList<PendingAttestation> calculateMatchingHeadAttestations(UnsignedLong epoch)
+  private SSZList<PendingAttestation> calculateMatchingHeadAttestations(UInt64 epoch)
       throws IllegalArgumentException {
     return getMatchingTargetAttestations(epoch)
         .filter(

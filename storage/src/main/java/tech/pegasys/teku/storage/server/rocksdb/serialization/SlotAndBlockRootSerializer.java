@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SlotAndBlockRootSerializer implements RocksDbSerializer<SlotAndBlockRoot> {
   @Override
@@ -25,7 +25,7 @@ public class SlotAndBlockRootSerializer implements RocksDbSerializer<SlotAndBloc
     return SSZ.decode(
         Bytes.of(data),
         reader -> {
-          final UnsignedLong slot = UnsignedLong.fromLongBits(reader.readUInt64());
+          final UInt64 slot = UInt64.fromLongBits(reader.readUInt64());
           final Bytes32 blockRoot = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           return new SlotAndBlockRoot(slot, blockRoot);
         });

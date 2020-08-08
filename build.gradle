@@ -532,8 +532,8 @@ subprojects {
     testFixturesImplementation 'org.assertj:assertj-core'
   }
 
-  if (project.name != "unsigned") {
-    dependencies.compileClasspath(project(':infrastructure:unsigned'))
+  if (project.name != 'unsigned' && project.name != 'errorprone-checks') {
+    dependencies.implementation(project(':infrastructure:unsigned'))
   }
 
   task integrationTest(type: Test, dependsOn:["compileIntegrationTestJava"]){

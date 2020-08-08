@@ -14,11 +14,11 @@
 package tech.pegasys.teku.datastructures.state;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -43,7 +43,7 @@ public class Fork extends AbstractImmutableContainer
   private final Bytes4 current_version = null; // This is a Version type, aliased as a Bytes4
 
   @SuppressWarnings("unused")
-  private final UnsignedLong epoch = null;
+  private final UInt64 epoch = null;
 
   public static final ContainerViewType<Fork> TYPE =
       new ContainerViewType<>(
@@ -55,7 +55,7 @@ public class Fork extends AbstractImmutableContainer
     super(type, backingNode);
   }
 
-  public Fork(Bytes4 previous_version, Bytes4 current_version, UnsignedLong epoch) {
+  public Fork(Bytes4 previous_version, Bytes4 current_version, UInt64 epoch) {
     super(
         TYPE,
         new Bytes4View(previous_version),
@@ -89,7 +89,7 @@ public class Fork extends AbstractImmutableContainer
     return ((Bytes4View) get(1)).get();
   }
 
-  public UnsignedLong getEpoch() {
+  public UInt64 getEpoch() {
     return ((UInt64View) get(2)).get();
   }
 

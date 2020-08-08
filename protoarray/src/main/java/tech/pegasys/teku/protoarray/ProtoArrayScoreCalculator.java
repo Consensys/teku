@@ -18,7 +18,6 @@ import static java.lang.Math.addExact;
 import static java.lang.Math.subtractExact;
 import static java.lang.Math.toIntExact;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ProtoArrayScoreCalculator {
   private static final Logger LOG = LogManager.getLogger();
@@ -56,11 +56,11 @@ class ProtoArrayScoreCalculator {
   static List<Long> computeDeltas(
       MutableStore store,
       Map<Bytes32, Integer> indices,
-      List<UnsignedLong> oldBalances,
-      List<UnsignedLong> newBalances) {
+      List<UInt64> oldBalances,
+      List<UInt64> newBalances) {
     List<Long> deltas = new ArrayList<>(Collections.nCopies(indices.size(), 0L));
 
-    for (UnsignedLong validatorIndex : store.getVotedValidatorIndices()) {
+    for (UInt64 validatorIndex : store.getVotedValidatorIndices()) {
       VoteTracker vote = store.getVote(validatorIndex);
 
       // There is no need to create a score change if the validator has never voted
@@ -73,20 +73,16 @@ class ProtoArrayScoreCalculator {
       int validatorIndexInt = toIntExact(validatorIndex.longValue());
       // If the validator was not included in the oldBalances (i.e. it did not exist yet)
       // then say its balance was zero.
-      UnsignedLong oldBalance =
-          oldBalances.size() > validatorIndexInt
-              ? oldBalances.get(validatorIndexInt)
-              : UnsignedLong.ZERO;
+      UInt64 oldBalance =
+          oldBalances.size() > validatorIndexInt ? oldBalances.get(validatorIndexInt) : UInt64.ZERO;
 
       // If the validator vote is not known in the newBalances, then use a balance of zero.
       //
       // It is possible that there is a vote for an unknown validator if we change our
       // justified state to a new state with a higher epoch that is on a different fork
       // because that may have on-boarded less validators than the prior fork.
-      UnsignedLong newBalance =
-          newBalances.size() > validatorIndexInt
-              ? newBalances.get(validatorIndexInt)
-              : UnsignedLong.ZERO;
+      UInt64 newBalance =
+          newBalances.size() > validatorIndexInt ? newBalances.get(validatorIndexInt) : UInt64.ZERO;
 
       if (!vote.getCurrentRoot().equals(vote.getNextRoot()) || !oldBalance.equals(newBalance)) {
         // We ignore the vote if it is not known in `indices`. We assume that it is outside

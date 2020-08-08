@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.server.noop;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
@@ -46,22 +46,22 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Optional<UnsignedLong> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
+  public Optional<UInt64> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
     return Optional.empty();
   }
 
   @Override
-  public Optional<UnsignedLong> getSlotForFinalizedStateRoot(final Bytes32 stateRoot) {
+  public Optional<UInt64> getSlotForFinalizedStateRoot(final Bytes32 stateRoot) {
     return Optional.empty();
   }
 
   @Override
-  public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UnsignedLong slot) {
+  public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
     return Optional.empty();
   }
 
   @Override
-  public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UnsignedLong slot) {
+  public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     return Optional.empty();
   }
 
@@ -77,12 +77,12 @@ public class NoOpDatabase implements Database {
 
   @Override
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
-      final UnsignedLong startSlot, final UnsignedLong endSlot) {
+      final UInt64 startSlot, final UInt64 endSlot) {
     return Stream.empty();
   }
 
   @Override
-  public List<Bytes32> getStateRootsBeforeSlot(final UnsignedLong slot) {
+  public List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot) {
     return Collections.emptyList();
   }
 
@@ -99,7 +99,7 @@ public class NoOpDatabase implements Database {
   public void pruneHotStateRoots(final List<Bytes32> stateRoots) {}
 
   @Override
-  public Optional<BeaconState> getLatestAvailableFinalizedState(final UnsignedLong maxSlot) {
+  public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     return Optional.empty();
   }
 

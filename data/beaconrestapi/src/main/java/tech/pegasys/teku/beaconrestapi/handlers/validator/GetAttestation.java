@@ -22,10 +22,9 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
+import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64;
 
 import com.google.common.base.Throwables;
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -41,6 +40,7 @@ import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetAttestation implements Handler {
@@ -62,7 +62,7 @@ public class GetAttestation implements Handler {
       queryParams = {
         @OpenApiParam(
             name = SLOT,
-            description = "`UnsignedLong` Non-finalized slot for which to create the attestation.",
+            description = "`UInt64` Non-finalized slot for which to create the attestation.",
             required = true),
         @OpenApiParam(
             name = COMMITTEE_INDEX,
@@ -93,7 +93,7 @@ public class GetAttestation implements Handler {
         throw new IllegalArgumentException(
             String.format("Please specify both %s and %s", SLOT, COMMITTEE_INDEX));
       }
-      UnsignedLong slot = getParameterValueAsUnsignedLong(parameters, SLOT);
+      UInt64 slot = getParameterValueAsUInt64(parameters, SLOT);
       int committeeIndex = getParameterValueAsInt(parameters, COMMITTEE_INDEX);
       if (committeeIndex < 0) {
         throw new IllegalArgumentException(

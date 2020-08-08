@@ -281,7 +281,6 @@ class UInt64Test {
     assertThatThrownBy(() -> UInt64.ONE.dividedBy(-1)).isInstanceOf(IllegalArgumentException.class);
   }
 
-
   @Test
   public void max_firstValueIsLarger() {
     final UInt64 a = UInt64.valueOf(2);

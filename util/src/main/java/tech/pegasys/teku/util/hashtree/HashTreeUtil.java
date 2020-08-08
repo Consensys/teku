@@ -17,7 +17,6 @@ import static java.lang.Long.max;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZImmutableCollection;
@@ -149,7 +149,7 @@ public final class HashTreeUtil {
     return hash_tree_root_list_of_unsigned_long(bytes);
   }
 
-  public static Bytes32 hash_tree_root_vector_unsigned_long(SSZVector<UnsignedLong> vector) {
+  public static Bytes32 hash_tree_root_vector_unsigned_long(SSZVector<UInt64> vector) {
     List<Bytes> bytes =
         vector.stream().map(i -> SSZ.encodeUInt64(i.longValue())).collect(Collectors.toList());
     return merkleize(separateIntoChunks(bytes.toArray(new Bytes[0])));

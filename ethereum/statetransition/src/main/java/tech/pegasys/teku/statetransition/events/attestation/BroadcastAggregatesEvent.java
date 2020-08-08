@@ -13,18 +13,18 @@
 
 package tech.pegasys.teku.statetransition.events.attestation;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BroadcastAggregatesEvent {
 
-  private final UnsignedLong slot;
+  private final UInt64 slot;
 
-  public BroadcastAggregatesEvent(final UnsignedLong slot) {
+  public BroadcastAggregatesEvent(final UInt64 slot) {
     this.slot = slot;
   }
 
-  public UnsignedLong getSlot() {
+  public UInt64 getSlot() {
     return slot;
   }
 

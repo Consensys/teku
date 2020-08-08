@@ -13,12 +13,12 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
@@ -125,9 +125,9 @@ public interface BeaconState
   static BeaconState create(
 
       // Versioning
-      UnsignedLong genesis_time,
+      UInt64 genesis_time,
       Bytes32 genesis_validators_root,
-      UnsignedLong slot,
+      UInt64 slot,
       Fork fork,
 
       // History
@@ -139,17 +139,17 @@ public interface BeaconState
       // Eth1
       Eth1Data eth1_data,
       SSZList<Eth1Data> eth1_data_votes,
-      UnsignedLong eth1_deposit_index,
+      UInt64 eth1_deposit_index,
 
       // Registry
       SSZList<? extends Validator> validators,
-      SSZList<UnsignedLong> balances,
+      SSZList<UInt64> balances,
 
       // Randomness
       SSZVector<Bytes32> randao_mixes,
 
       // Slashings
-      SSZVector<UnsignedLong> slashings,
+      SSZVector<UInt64> slashings,
 
       // Attestations
       SSZList<PendingAttestation> previous_epoch_attestations,
@@ -189,7 +189,7 @@ public interface BeaconState
   }
 
   // Versioning
-  default UnsignedLong getGenesis_time() {
+  default UInt64 getGenesis_time() {
     return ((UInt64View) get(GENESIS_TIME_FIELD.getIndex())).get();
   }
 
@@ -197,7 +197,7 @@ public interface BeaconState
     return ((Bytes32View) get(GENESIS_VALIDATORS_ROOT_FIELD.getIndex())).get();
   }
 
-  default UnsignedLong getSlot() {
+  default UInt64 getSlot() {
     return ((UInt64View) get(SLOT_FIELD.getIndex())).get();
   }
 
@@ -251,7 +251,7 @@ public interface BeaconState
         Function.identity());
   }
 
-  default UnsignedLong getEth1_deposit_index() {
+  default UInt64 getEth1_deposit_index() {
     return ((UInt64View) get(ETH1_DEPOSIT_INDEX_FIELD.getIndex())).get();
   }
 
@@ -264,12 +264,9 @@ public interface BeaconState
         Function.identity());
   }
 
-  default SSZList<UnsignedLong> getBalances() {
+  default SSZList<UInt64> getBalances() {
     return new SSZBackingList<>(
-        UnsignedLong.class,
-        getAny(BALANCES_FIELD.getIndex()),
-        UInt64View::new,
-        AbstractBasicView::get);
+        UInt64.class, getAny(BALANCES_FIELD.getIndex()), UInt64View::new, AbstractBasicView::get);
   }
 
   default SSZVector<Bytes32> getRandao_mixes() {
@@ -281,12 +278,9 @@ public interface BeaconState
   }
 
   // Slashings
-  default SSZVector<UnsignedLong> getSlashings() {
+  default SSZVector<UInt64> getSlashings() {
     return new SSZBackingVector<>(
-        UnsignedLong.class,
-        getAny(SLASHINGS_FIELD.getIndex()),
-        UInt64View::new,
-        AbstractBasicView::get);
+        UInt64.class, getAny(SLASHINGS_FIELD.getIndex()), UInt64View::new, AbstractBasicView::get);
   }
 
   // Attestations

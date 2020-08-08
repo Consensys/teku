@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -31,6 +30,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
 import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
@@ -49,10 +49,10 @@ public class BeaconChainMethodsTest {
       new StatusMessage(
           new Bytes4(Bytes.of(0, 0, 0, 0)),
           Bytes32.ZERO,
-          UnsignedLong.ZERO,
+          UInt64.ZERO,
           Bytes32.fromHexString(
               "0x30A903798306695D21D1FAA76363A0070677130835E503760B0E84479B7819E6"),
-          UnsignedLong.ZERO);
+          UInt64.ZERO);
 
   private final PeerLookup peerLookup = mock(PeerLookup.class);
   final AsyncRunner asyncRunner = new StubAsyncRunner();
@@ -70,9 +70,9 @@ public class BeaconChainMethodsTest {
         new StatusMessage(
             Bytes4.rightPad(Bytes.of(4)),
             Bytes32.random(),
-            UnsignedLong.ZERO,
+            UInt64.ZERO,
             Bytes32.random(),
-            UnsignedLong.ZERO);
+            UInt64.ZERO);
 
     final Bytes encoded = methods.status().encodeRequest(expected);
     final RpcRequestDecoder<StatusMessage> decoder = methods.status().createRequestDecoder();

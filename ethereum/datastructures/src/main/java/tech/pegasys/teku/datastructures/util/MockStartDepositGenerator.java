@@ -16,10 +16,10 @@ package tech.pegasys.teku.datastructures.util;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.datastructures.operations.DepositData;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class MockStartDepositGenerator {
   private final DepositGenerator depositGenerator;
@@ -38,6 +38,6 @@ public class MockStartDepositGenerator {
 
   private DepositData createDepositData(final BLSKeyPair keyPair) {
     return depositGenerator.createDepositData(
-        keyPair, UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE), keyPair.getPublicKey());
+        keyPair, UInt64.valueOf(MAX_EFFECTIVE_BALANCE), keyPair.getPublicKey());
   }
 }

@@ -15,16 +15,16 @@ package tech.pegasys.teku.api.schema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.primitives.UnsignedLong;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Committee {
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong slot;
+  public final UInt64 slot;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong index;
+  public final UInt64 index;
 
   public final List<Integer> committee;
 
@@ -36,8 +36,8 @@ public class Committee {
 
   @JsonCreator
   public Committee(
-      @JsonProperty("slot") final UnsignedLong slot,
-      @JsonProperty("index") final UnsignedLong index,
+      @JsonProperty("slot") final UInt64 slot,
+      @JsonProperty("index") final UInt64 index,
       @JsonProperty("committee") final List<Integer> committee) {
     this.slot = slot;
     this.index = index;

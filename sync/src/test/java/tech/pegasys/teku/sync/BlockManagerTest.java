@@ -18,7 +18,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
@@ -31,6 +30,7 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.ImportedBlocks;
@@ -47,8 +47,8 @@ public class BlockManagerTest {
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(2);
   private final EventBus localEventBus = new EventBus();
   private final EventBus remoteEventBus = new EventBus();
-  private final UnsignedLong historicalBlockTolerance = UnsignedLong.valueOf(5);
-  private final UnsignedLong futureBlockTolerance = UnsignedLong.valueOf(2);
+  private final UInt64 historicalBlockTolerance = UInt64.valueOf(5);
+  private final UInt64 futureBlockTolerance = UInt64.valueOf(2);
   private final PendingPool<SignedBeaconBlock> pendingBlocks =
       PendingPool.createForBlocks(historicalBlockTolerance, futureBlockTolerance);
   private final FutureItems<SignedBeaconBlock> futureBlocks =
@@ -77,8 +77,8 @@ public class BlockManagerTest {
           futureBlocks,
           recentBlockFetcher);
 
-  private final UnsignedLong genesisSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
-  private UnsignedLong currentSlot = genesisSlot;
+  private final UInt64 genesisSlot = UInt64.valueOf(Constants.GENESIS_SLOT);
+  private UInt64 currentSlot = genesisSlot;
 
   @BeforeEach
   public void setup() {
@@ -97,7 +97,7 @@ public class BlockManagerTest {
 
   @Test
   public void onGossipedBlock_shouldImport() throws Exception {
-    final UnsignedLong nextSlot = genesisSlot.plus(UnsignedLong.ONE);
+    final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock = localChain.createBlockAtSlot(nextSlot);
     incrementSlot();
 
@@ -109,8 +109,8 @@ public class BlockManagerTest {
 
   @Test
   public void onGossipedBlock_unattachedBlock() throws Exception {
-    final UnsignedLong nextSlot = genesisSlot.plus(UnsignedLong.ONE);
-    final UnsignedLong nextNextSlot = nextSlot.plus(UnsignedLong.ONE);
+    final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
+    final UInt64 nextNextSlot = nextSlot.plus(UInt64.ONE);
     // Create 2 blocks
     remoteChain.createAndImportBlockAtSlot(nextSlot);
     final SignedBeaconBlock nextNextBlock = remoteChain.createAndImportBlockAtSlot(nextNextSlot);
@@ -126,7 +126,7 @@ public class BlockManagerTest {
 
   @Test
   public void onGossipedBlock_futureBlock() throws Exception {
-    final UnsignedLong nextSlot = genesisSlot.plus(UnsignedLong.ONE);
+    final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock = remoteChain.createAndImportBlockAtSlot(nextSlot);
 
     localEventBus.post(new GossipedBlockEvent(nextBlock));
@@ -138,8 +138,8 @@ public class BlockManagerTest {
 
   @Test
   public void onGossipedBlock_unattachedFutureBlock() throws Exception {
-    final UnsignedLong nextSlot = genesisSlot.plus(UnsignedLong.ONE);
-    final UnsignedLong nextNextSlot = nextSlot.plus(UnsignedLong.ONE);
+    final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
+    final UInt64 nextNextSlot = nextSlot.plus(UInt64.ONE);
     // Create 2 blocks
     remoteChain.createAndImportBlockAtSlot(nextSlot);
     final SignedBeaconBlock nextNextBlock = remoteChain.createAndImportBlockAtSlot(nextNextSlot);
@@ -158,7 +158,7 @@ public class BlockManagerTest {
     final List<SignedBeaconBlock> blocks = new ArrayList<>(blockCount);
 
     for (int i = 0; i < blockCount; i++) {
-      final UnsignedLong nextSlot = incrementSlot();
+      final UInt64 nextSlot = incrementSlot();
       blocks.add(remoteChain.createAndImportBlockAtSlot(nextSlot));
     }
 
@@ -184,7 +184,7 @@ public class BlockManagerTest {
         remoteChain.createBlockAtSlotFromInvalidProposer(incrementSlot());
     Bytes32 parentBlockRoot = invalidBlock.getMessage().hash_tree_root();
     for (int i = 0; i < invalidChainDepth; i++) {
-      final UnsignedLong nextSlot = incrementSlot();
+      final UInt64 nextSlot = incrementSlot();
       final SignedBeaconBlock block =
           dataStructureUtil.randomSignedBeaconBlock(nextSlot.longValue(), parentBlockRoot);
       invalidBlockDescendants.add(block);
@@ -216,7 +216,7 @@ public class BlockManagerTest {
         remoteChain.createBlockAtSlotFromInvalidProposer(incrementSlot());
     Bytes32 parentBlockRoot = invalidBlock.getMessage().hash_tree_root();
     for (int i = 0; i < invalidChainDepth; i++) {
-      final UnsignedLong nextSlot = incrementSlot();
+      final UInt64 nextSlot = incrementSlot();
       final SignedBeaconBlock block =
           dataStructureUtil.randomSignedBeaconBlock(nextSlot.longValue(), parentBlockRoot);
       invalidBlockDescendants.add(block);
@@ -255,7 +255,7 @@ public class BlockManagerTest {
     // Update local slot to match the first new block
     incrementSlot();
     for (int i = 0; i < blockCount; i++) {
-      final UnsignedLong nextSlot = genesisSlot.plus(UnsignedLong.valueOf(i + 1));
+      final UInt64 nextSlot = genesisSlot.plus(UInt64.valueOf(i + 1));
       blocks.add(remoteChain.createAndImportBlockAtSlot(nextSlot));
     }
 
@@ -286,8 +286,8 @@ public class BlockManagerTest {
     assertThat(futureBlocks.size()).isEqualTo(0);
   }
 
-  private UnsignedLong incrementSlot() {
-    currentSlot = currentSlot.plus(UnsignedLong.ONE);
+  private UInt64 incrementSlot() {
+    currentSlot = currentSlot.plus(UInt64.ONE);
     localChain.setSlot(currentSlot);
     blockManager.onSlot(currentSlot);
     return currentSlot;

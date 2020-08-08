@@ -13,16 +13,15 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -30,6 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
@@ -70,7 +70,7 @@ public class StableSubnetSubscriberTest {
 
     stableSubnetSubscriber.updateValidatorCount(1);
 
-    stableSubnetSubscriber.onSlot(UnsignedLong.ONE);
+    stableSubnetSubscriber.onSlot(UInt64.ONE);
     verifyNoMoreInteractions(validatorApiChannel);
   }
 
@@ -101,14 +101,14 @@ public class StableSubnetSubscriberTest {
         new StableSubnetSubscriber(
             validatorApiChannel, new Random(), Constants.ATTESTATION_SUBNET_COUNT + 2);
 
-    UnsignedLong slot = UnsignedLong.valueOf(15);
+    UInt64 slot = UInt64.valueOf(15);
     stableSubnetSubscriber.onSlot(slot);
 
     ArgumentCaptor<Set<SubnetSubscription>> subnetSubcriptions = ArgumentCaptor.forClass(Set.class);
     verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubcriptions.capture());
     assertThat(subnetSubcriptions.getValue()).hasSize(Constants.ATTESTATION_SUBNET_COUNT);
     assertSubnetsAreDistinct(subnetSubcriptions.getValue());
-    assertUnsubscribeSlotsAreInBound(subnetSubcriptions.getValue(), UnsignedLong.valueOf(15));
+    assertUnsubscribeSlotsAreInBound(subnetSubcriptions.getValue(), UInt64.valueOf(15));
   }
 
   @Test
@@ -126,7 +126,7 @@ public class StableSubnetSubscriberTest {
     assertThat(subnetSubcriptions.getValue()).hasSize(Constants.ATTESTATION_SUBNET_COUNT);
 
     stableSubnetSubscriber.updateValidatorCount(Constants.ATTESTATION_SUBNET_COUNT);
-    stableSubnetSubscriber.onSlot(UnsignedLong.valueOf(2));
+    stableSubnetSubscriber.onSlot(UInt64.valueOf(2));
 
     verifyNoMoreInteractions(validatorApiChannel);
   }
@@ -138,7 +138,7 @@ public class StableSubnetSubscriberTest {
     StableSubnetSubscriber stableSubnetSubscriber =
         new StableSubnetSubscriber(validatorApiChannel, new Random(), 1);
 
-    stableSubnetSubscriber.onSlot(UnsignedLong.valueOf(0));
+    stableSubnetSubscriber.onSlot(UInt64.valueOf(0));
 
     ArgumentCaptor<Set<SubnetSubscription>> firstSubscriptionUpdate =
         ArgumentCaptor.forClass(Set.class);
@@ -149,10 +149,10 @@ public class StableSubnetSubscriberTest {
 
     assertThat(firstSubscriptionUpdate.getValue()).hasSize(1);
 
-    UnsignedLong firstUnsubscriptionSlot =
+    UInt64 firstUnsubscriptionSlot =
         firstSubscriptionUpdate.getValue().stream().findFirst().get().getUnsubscriptionSlot();
 
-    stableSubnetSubscriber.onSlot(firstUnsubscriptionSlot.minus(UnsignedLong.ONE));
+    stableSubnetSubscriber.onSlot(firstUnsubscriptionSlot.minus(UInt64.ONE));
 
     verifyNoMoreInteractions(validatorApiChannel);
     stableSubnetSubscriber.onSlot(firstUnsubscriptionSlot);
@@ -160,7 +160,7 @@ public class StableSubnetSubscriberTest {
     verify(validatorApiChannel, times(2))
         .subscribeToPersistentSubnets(secondSubscriptionUpdate.capture());
 
-    UnsignedLong secondUnsubscriptionSlot =
+    UInt64 secondUnsubscriptionSlot =
         secondSubscriptionUpdate.getValue().stream().findFirst().get().getUnsubscriptionSlot();
 
     assertThat(firstUnsubscriptionSlot).isNotEqualByComparingTo(secondUnsubscriptionSlot);
@@ -185,14 +185,14 @@ public class StableSubnetSubscriberTest {
   }
 
   private void assertUnsubscribeSlotsAreInBound(
-      Set<SubnetSubscription> subnetSubscriptions, UnsignedLong currentSlot) {
-    UnsignedLong lowerBound =
+      Set<SubnetSubscription> subnetSubscriptions, UInt64 currentSlot) {
+    UInt64 lowerBound =
         currentSlot.plus(
-            UnsignedLong.valueOf(
+            UInt64.valueOf(
                 Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION * Constants.SLOTS_PER_EPOCH));
-    UnsignedLong upperBound =
+    UInt64 upperBound =
         currentSlot.plus(
-            UnsignedLong.valueOf(
+            UInt64.valueOf(
                 2 * Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION * Constants.SLOTS_PER_EPOCH));
     subnetSubscriptions.forEach(
         subnetSubscription -> {

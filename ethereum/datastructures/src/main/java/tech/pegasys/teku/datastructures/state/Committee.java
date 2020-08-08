@@ -13,21 +13,21 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Committee {
 
-  private final UnsignedLong index;
+  private final UInt64 index;
   private final List<Integer> committee;
 
-  public Committee(UnsignedLong index, List<Integer> committee) {
+  public Committee(UInt64 index, List<Integer> committee) {
     this.index = index;
     this.committee = committee;
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getIndex() {
+  public UInt64 getIndex() {
     return index;
   }
 

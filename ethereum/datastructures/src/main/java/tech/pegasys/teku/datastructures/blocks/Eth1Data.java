@@ -14,11 +14,11 @@
 package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
@@ -45,7 +45,7 @@ public class Eth1Data extends AbstractImmutableContainer
   private final Bytes32 deposit_root = null;
 
   @SuppressWarnings("unused")
-  private final UnsignedLong deposit_count = null;
+  private final UInt64 deposit_count = null;
 
   @SuppressWarnings("unused")
   private final Bytes32 block_hash = null;
@@ -54,7 +54,7 @@ public class Eth1Data extends AbstractImmutableContainer
     super(type, backingNode);
   }
 
-  public Eth1Data(Bytes32 deposit_root, UnsignedLong deposit_count, Bytes32 block_hash) {
+  public Eth1Data(Bytes32 deposit_root, UInt64 deposit_count, Bytes32 block_hash) {
     super(
         TYPE,
         new Bytes32View(deposit_root),
@@ -92,7 +92,7 @@ public class Eth1Data extends AbstractImmutableContainer
     return ((Bytes32View) get(0)).get();
   }
 
-  public UnsignedLong getDeposit_count() {
+  public UInt64 getDeposit_count() {
     return ((UInt64View) get(1)).get();
   }
 

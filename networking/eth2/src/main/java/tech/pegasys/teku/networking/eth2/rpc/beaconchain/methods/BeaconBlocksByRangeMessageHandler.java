@@ -13,15 +13,13 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
-import static tech.pegasys.teku.util.unsignedlong.UnsignedLongMath.min;
 
 import com.google.common.base.Throwables;
-import com.google.common.primitives.UnsignedLong;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -30,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
@@ -42,10 +41,10 @@ public class BeaconBlocksByRangeMessageHandler
   private static final org.apache.logging.log4j.Logger LOG = LogManager.getLogger();
 
   private final CombinedChainDataClient combinedChainDataClient;
-  private final UnsignedLong maxRequestSize;
+  private final UInt64 maxRequestSize;
 
   public BeaconBlocksByRangeMessageHandler(
-      final CombinedChainDataClient combinedChainDataClient, final UnsignedLong maxRequestSize) {
+      final CombinedChainDataClient combinedChainDataClient, final UInt64 maxRequestSize) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.maxRequestSize = maxRequestSize;
   }
@@ -66,7 +65,7 @@ public class BeaconBlocksByRangeMessageHandler
           new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero"));
       return;
     }
-    if (message.getCount().compareTo(UnsignedLong.valueOf(MAX_REQUEST_BLOCKS)) > 0) {
+    if (message.getCount().compareTo(UInt64.valueOf(MAX_REQUEST_BLOCKS)) > 0) {
       callback.completeWithErrorResponse(
           new RpcException(
               INVALID_REQUEST_CODE,
@@ -75,7 +74,7 @@ public class BeaconBlocksByRangeMessageHandler
     }
     if (!peer.wantToMakeRequest()
         || !peer.wantToReceiveObjects(
-            callback, min(maxRequestSize, message.getCount()).longValue())) {
+            callback, maxRequestSize.min(message.getCount()).longValue())) {
       return;
     }
 
@@ -101,13 +100,12 @@ public class BeaconBlocksByRangeMessageHandler
   private SafeFuture<?> sendMatchingBlocks(
       final BeaconBlocksByRangeRequestMessage message,
       final ResponseCallback<SignedBeaconBlock> callback) {
-    final UnsignedLong count = min(maxRequestSize, message.getCount());
-    final UnsignedLong endSlot =
-        message.getStartSlot().plus(message.getStep().times(count)).minus(ONE);
+    final UInt64 count = maxRequestSize.min(message.getCount());
+    final UInt64 endSlot = message.getStartSlot().plus(message.getStep().times(count)).minus(ONE);
 
-    final UnsignedLong headBlockSlot =
+    final UInt64 headBlockSlot =
         combinedChainDataClient.getBestBlock().map(SignedBeaconBlock::getSlot).orElse(ZERO);
-    final NavigableMap<UnsignedLong, Bytes32> hotRoots;
+    final NavigableMap<UInt64, Bytes32> hotRoots;
     if (combinedChainDataClient.isFinalized(endSlot)) {
       // All blocks are finalized so skip scanning the protoarray
       hotRoots = new TreeMap<>();
@@ -119,7 +117,7 @@ public class BeaconBlocksByRangeMessageHandler
     // Don't send anything past the last slot found in protoarray to ensure blocks are consistent
     // If we didn't find any blocks in protoarray, every block in the range must be finalized
     // so we don't need to worry about inconsistent blocks
-    final UnsignedLong headSlot = hotRoots.isEmpty() ? headBlockSlot : hotRoots.lastKey();
+    final UInt64 headSlot = hotRoots.isEmpty() ? headBlockSlot : hotRoots.lastKey();
     return sendNextBlock(
         new RequestState(
             message.getStartSlot(), message.getStep(), count, headSlot, hotRoots, callback));
@@ -166,19 +164,19 @@ public class BeaconBlocksByRangeMessageHandler
   }
 
   private class RequestState {
-    private final UnsignedLong headSlot;
+    private final UInt64 headSlot;
     private final ResponseCallback<SignedBeaconBlock> callback;
-    private final UnsignedLong step;
-    private final NavigableMap<UnsignedLong, Bytes32> knownBlockRoots;
-    private UnsignedLong currentSlot;
-    private UnsignedLong remainingBlocks;
+    private final UInt64 step;
+    private final NavigableMap<UInt64, Bytes32> knownBlockRoots;
+    private UInt64 currentSlot;
+    private UInt64 remainingBlocks;
 
     RequestState(
-        final UnsignedLong startSlot,
-        final UnsignedLong step,
-        final UnsignedLong count,
-        final UnsignedLong headSlot,
-        final NavigableMap<UnsignedLong, Bytes32> knownBlockRoots,
+        final UInt64 startSlot,
+        final UInt64 step,
+        final UInt64 count,
+        final UInt64 headSlot,
+        final NavigableMap<UInt64, Bytes32> knownBlockRoots,
         final ResponseCallback<SignedBeaconBlock> callback) {
       this.currentSlot = startSlot;
       this.knownBlockRoots = knownBlockRoots;
@@ -212,7 +210,7 @@ public class BeaconBlocksByRangeMessageHandler
     }
 
     SafeFuture<Optional<SignedBeaconBlock>> loadNextBlock() {
-      final UnsignedLong slot = this.currentSlot;
+      final UInt64 slot = this.currentSlot;
       final Bytes32 knownBlockRoot = knownBlockRoots.get(slot);
       if (knownBlockRoot != null) {
         // Known root so lookup by root

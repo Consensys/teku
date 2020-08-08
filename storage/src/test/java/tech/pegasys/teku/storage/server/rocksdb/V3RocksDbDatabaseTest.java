@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.server.rocksdb;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.collect.Streams;
-import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
@@ -30,6 +29,7 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystem;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -77,8 +77,7 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
     // Primary chain's next block is at 7
     final SignedBlockAndState finalizedBlock = primaryChain.generateBlockAtSlot(7);
     final Checkpoint finalizedCheckpoint = getCheckpointForBlock(primaryChain.getBlockAtSlot(7));
-    final UnsignedLong firstHotBlockSlot =
-        finalizedCheckpoint.getEpochStartSlot().plus(UnsignedLong.ONE);
+    final UInt64 firstHotBlockSlot = finalizedCheckpoint.getEpochStartSlot().plus(UInt64.ONE);
     primaryChain.generateBlockAtSlot(firstHotBlockSlot);
     // Fork chain's next block is at 6
     forkChain.generateBlockAtSlot(6);
@@ -112,7 +111,7 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
             .streamBlocksAndStates(4, firstHotBlockSlot.longValue())
             .map(SignedBlockAndState::getRoot)
             .collect(Collectors.toList());
-    final List<UnsignedLong> unavailableBlockSlots =
+    final List<UInt64> unavailableBlockSlots =
         forkChain
             .streamBlocksAndStates(4, firstHotBlockSlot.longValue())
             .map(SignedBlockAndState::getSlot)
@@ -130,7 +129,7 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
     SignedBlockAndState finalizedBlock = chainBuilder.getBlockAndStateAtSlot(finalizedSlot);
     final Checkpoint finalizedCheckpoint = getCheckpointForBlock(finalizedBlock.getBlock());
     final long firstHotBlockSlot =
-        finalizedCheckpoint.getEpochStartSlot().plus(UnsignedLong.ONE).longValue();
+        finalizedCheckpoint.getEpochStartSlot().plus(UInt64.ONE).longValue();
     for (int i = 0; i < hotBlockCount; i++) {
       chainBuilder.generateBlockAtSlot(firstHotBlockSlot + i);
     }

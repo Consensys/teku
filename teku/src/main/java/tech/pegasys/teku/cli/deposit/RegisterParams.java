@@ -16,7 +16,6 @@ package tech.pegasys.teku.cli.deposit;
 import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -32,6 +31,7 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
 import picocli.CommandLine.TypeConversionException;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.NetworkDefinition;
@@ -67,10 +67,10 @@ public class RegisterParams {
   @Option(
       names = {"--deposit-amount-gwei"},
       paramLabel = "<GWEI>",
-      converter = UnsignedLongConverter.class,
+      converter = UInt64Converter.class,
       description =
           "Deposit amount in Gwei. Defaults to the amount required to activate a validator on the specified network.")
-  private UnsignedLong amount;
+  private UInt64 amount;
 
   private final IntConsumer shutdownFunction;
   private final ConsoleAdapter consoleAdapter;
@@ -105,8 +105,8 @@ public class RegisterParams {
         consoleAdapter);
   }
 
-  UnsignedLong getAmount() {
-    return Optional.ofNullable(this.amount).orElse(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE));
+  UInt64 getAmount() {
+    return Optional.ofNullable(this.amount).orElse(UInt64.valueOf(MAX_EFFECTIVE_BALANCE));
   }
 
   private Eth1Address getContractAddress(final NetworkDefinition networkDefinition) {
@@ -156,11 +156,11 @@ public class RegisterParams {
     }
   }
 
-  private static class UnsignedLongConverter implements CommandLine.ITypeConverter<UnsignedLong> {
+  private static class UInt64Converter implements CommandLine.ITypeConverter<UInt64> {
     @Override
-    public UnsignedLong convert(final String value) {
+    public UInt64 convert(final String value) {
       try {
-        return UnsignedLong.valueOf(value);
+        return UInt64.valueOf(value);
       } catch (final NumberFormatException e) {
         throw new TypeConversionException(
             "Invalid format: must be a numeric value but was " + value);

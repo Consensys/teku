@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.storage.server.state;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import com.google.common.base.Throwables;
 import com.google.common.cache.CacheBuilder;
@@ -21,7 +21,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalCause;
 import com.google.common.cache.RemovalNotification;
-import com.google.common.primitives.UnsignedLong;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.NavigableSet;
 import java.util.Optional;
@@ -30,6 +29,7 @@ import java.util.stream.Stream;
 import tech.pegasys.teku.core.StreamingStateRegenerator;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.Database;
 
 public class FinalizedStateCache {
@@ -38,15 +38,15 @@ public class FinalizedStateCache {
    * before the stateCache is actually updated and removed slightly after they are evicted from the
    * cache.
    */
-  private final NavigableSet<UnsignedLong> availableSlots = new ConcurrentSkipListSet<>();
+  private final NavigableSet<UInt64> availableSlots = new ConcurrentSkipListSet<>();
 
-  private final LoadingCache<UnsignedLong, BeaconState> stateCache;
+  private final LoadingCache<UInt64, BeaconState> stateCache;
   private final Database database;
 
   public FinalizedStateCache(
       final Database database, final int maximumCacheSize, final boolean useSoftReferences) {
     this.database = database;
-    final CacheBuilder<UnsignedLong, BeaconState> cacheBuilder =
+    final CacheBuilder<UInt64, BeaconState> cacheBuilder =
         CacheBuilder.newBuilder()
             .maximumSize(maximumCacheSize)
             .removalListener(this::onRemovedFromCache);
@@ -57,13 +57,13 @@ public class FinalizedStateCache {
   }
 
   private void onRemovedFromCache(
-      final RemovalNotification<UnsignedLong, BeaconState> removalNotification) {
+      final RemovalNotification<UInt64, BeaconState> removalNotification) {
     if (removalNotification.getCause() != RemovalCause.REPLACED) {
       availableSlots.remove(removalNotification.getKey());
     }
   }
 
-  public Optional<BeaconState> getFinalizedState(final UnsignedLong slot) {
+  public Optional<BeaconState> getFinalizedState(final UInt64 slot) {
     try {
       return Optional.of(stateCache.getUnchecked(slot));
     } catch (final UncheckedExecutionException e) {
@@ -74,24 +74,24 @@ public class FinalizedStateCache {
     }
   }
 
-  private Optional<BeaconState> getLatestStateFromCache(final UnsignedLong slot) {
+  private Optional<BeaconState> getLatestStateFromCache(final UInt64 slot) {
     return Optional.ofNullable(availableSlots.floor(slot)).map(stateCache::getIfPresent);
   }
 
-  private class StateCacheLoader extends CacheLoader<UnsignedLong, BeaconState> {
+  private class StateCacheLoader extends CacheLoader<UInt64, BeaconState> {
 
     @Override
-    public BeaconState load(final UnsignedLong key) {
+    public BeaconState load(final UInt64 key) {
       return regenerateState(key).orElseThrow(StateUnavailableException::new);
     }
 
-    private Optional<BeaconState> regenerateState(final UnsignedLong slot) {
+    private Optional<BeaconState> regenerateState(final UInt64 slot) {
       return database
           .getLatestAvailableFinalizedState(slot)
           .map(state -> regenerateState(slot, state));
     }
 
-    private BeaconState regenerateState(final UnsignedLong slot, final BeaconState stateFromDisk) {
+    private BeaconState regenerateState(final UInt64 slot, final BeaconState stateFromDisk) {
       final Optional<BeaconState> latestStateFromCache = getLatestStateFromCache(slot);
       final BeaconState preState =
           latestStateFromCache
@@ -113,7 +113,7 @@ public class FinalizedStateCache {
 
   /**
    * Cache doesn't allow returning null but we may not be able to regenerate a state so throw this
-   * exception and catch it in {@link #getFinalizedState(UnsignedLong)}
+   * exception and catch it in {@link #getFinalizedState(UInt64)}
    */
   private static class StateUnavailableException extends RuntimeException {}
 }
