@@ -100,9 +100,9 @@ public class GenesisGenerator {
     }
     UInt64 balance = state.getBalances().get(index);
     UInt64 effective_balance =
-        BeaconStateUtil.min(
-            balance.minus(balance.mod(EFFECTIVE_BALANCE_INCREMENT)),
-            UInt64.valueOf(MAX_EFFECTIVE_BALANCE));
+        balance
+            .minus(balance.mod(EFFECTIVE_BALANCE_INCREMENT))
+            .min(UInt64.valueOf(MAX_EFFECTIVE_BALANCE));
 
     UInt64 activation_eligibility_epoch = validator.getActivation_eligibility_epoch();
     UInt64 activation_epoch = validator.getActivation_epoch();

@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.max;
-
 import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
 import java.util.List;
@@ -117,7 +115,7 @@ public class AttestationData extends AbstractImmutableContainer
   public UInt64 getEarliestSlotForForkChoice() {
     // Attestations can't be processed by fork choice until their slot is in the past and until we
     // are in the same epoch as their target.
-    return max(getSlot().plus(UInt64.ONE), getTarget().getEpochStartSlot());
+    return getSlot().plus(UInt64.ONE).max(getTarget().getEpochStartSlot());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */

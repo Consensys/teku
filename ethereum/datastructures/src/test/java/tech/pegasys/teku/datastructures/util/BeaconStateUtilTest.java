@@ -51,28 +51,28 @@ class BeaconStateUtilTest {
 
   @Test
   void minReturnsMin() {
-    UInt64 actual = BeaconStateUtil.min(UInt64.valueOf(13L), UInt64.valueOf(12L));
+    UInt64 actual = UInt64.valueOf(13L).min(UInt64.valueOf(12L));
     UInt64 expected = UInt64.valueOf(12L);
     assertEquals(expected, actual);
   }
 
   @Test
   void minReturnsMinWhenEqual() {
-    UInt64 actual = BeaconStateUtil.min(UInt64.valueOf(12L), UInt64.valueOf(12L));
+    UInt64 actual = UInt64.valueOf(12L).min(UInt64.valueOf(12L));
     UInt64 expected = UInt64.valueOf(12L);
     assertEquals(expected, actual);
   }
 
   @Test
   void maxReturnsMax() {
-    UInt64 actual = BeaconStateUtil.max(UInt64.valueOf(13L), UInt64.valueOf(12L));
+    UInt64 actual = UInt64.valueOf(13L).max(UInt64.valueOf(12L));
     UInt64 expected = UInt64.valueOf(13L);
     assertEquals(expected, actual);
   }
 
   @Test
   void maxReturnsMaxWhenEqual() {
-    UInt64 actual = BeaconStateUtil.max(UInt64.valueOf(13L), UInt64.valueOf(13L));
+    UInt64 actual = UInt64.valueOf(13L).max(UInt64.valueOf(13L));
     UInt64 expected = UInt64.valueOf(13L);
     assertEquals(expected, actual);
   }

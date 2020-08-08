@@ -190,9 +190,9 @@ public class BeaconStateUtil {
   private static Validator getValidatorFromDeposit(Deposit deposit) {
     final UInt64 amount = deposit.getData().getAmount();
     final UInt64 effectiveBalance =
-        min(
-            amount.minus(amount.mod(EFFECTIVE_BALANCE_INCREMENT)),
-            UInt64.valueOf(MAX_EFFECTIVE_BALANCE));
+        amount
+            .minus(amount.mod(EFFECTIVE_BALANCE_INCREMENT))
+            .min(UInt64.valueOf(MAX_EFFECTIVE_BALANCE));
     return new Validator(
         deposit.getData().getPubkey(),
         deposit.getData().getWithdrawal_credentials(),
@@ -278,7 +278,7 @@ public class BeaconStateUtil {
     for (Integer index : indices) {
       sum = sum.plus(validator_registry.get(index).getEffective_balance());
     }
-    return max(sum, EFFECTIVE_BALANCE_INCREMENT);
+    return sum.max(EFFECTIVE_BALANCE_INCREMENT);
   }
 
   /**
@@ -537,9 +537,9 @@ public class BeaconStateUtil {
             validator
                 .withSlashed(true)
                 .withWithdrawable_epoch(
-                    max(
-                        validator.getWithdrawable_epoch(),
-                        epoch.plus(UInt64.valueOf(EPOCHS_PER_SLASHINGS_VECTOR)))));
+                    validator
+                        .getWithdrawable_epoch()
+                        .max(epoch.plus(UInt64.valueOf(EPOCHS_PER_SLASHINGS_VECTOR)))));
 
     int index = epoch.mod(UInt64.valueOf(EPOCHS_PER_SLASHINGS_VECTOR)).intValue();
     state
@@ -721,36 +721,6 @@ public class BeaconStateUtil {
   }
 
   /**
-   * Return the min of two UInt64 values
-   *
-   * @param value1
-   * @param value2
-   * @return
-   */
-  public static UInt64 min(UInt64 value1, UInt64 value2) {
-    if (value1.compareTo(value2) <= 0) {
-      return value1;
-    } else {
-      return value2;
-    }
-  }
-
-  /**
-   * Return the max of two UInt64 values
-   *
-   * @param value1
-   * @param value2
-   * @return
-   */
-  public static UInt64 max(UInt64 value1, UInt64 value2) {
-    if (value1.compareTo(value2) >= 0) {
-      return value1;
-    } else {
-      return value2;
-    }
-  }
-
-  /**
    * Return the signature domain (fork version concatenated with domain type) of a message.
    *
    * @param state
@@ -814,9 +784,8 @@ public class BeaconStateUtil {
   public static UInt64 get_validator_churn_limit(BeaconState state) {
     List<Integer> active_validator_indices =
         get_active_validator_indices(state, get_current_epoch(state));
-    return max(
-        UInt64.valueOf(MIN_PER_EPOCH_CHURN_LIMIT),
-        UInt64.valueOf(active_validator_indices.size() / CHURN_LIMIT_QUOTIENT));
+    return UInt64.valueOf(MIN_PER_EPOCH_CHURN_LIMIT)
+        .max(UInt64.valueOf(active_validator_indices.size() / CHURN_LIMIT_QUOTIENT));
   }
 
   /**

@@ -20,7 +20,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.max;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
 import static tech.pegasys.teku.logging.ValidatorLogger.VALIDATOR_LOGGER;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
@@ -330,7 +329,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BeaconState state, final UInt64 epoch) {
     final UInt64 epochStartSlot = compute_start_slot_at_epoch(epoch);
     // Don't calculate a proposer for the genesis slot
-    final UInt64 startSlot = max(epochStartSlot, UInt64.valueOf(GENESIS_SLOT + 1));
+    final UInt64 startSlot = epochStartSlot.max(UInt64.valueOf(GENESIS_SLOT + 1));
     final UInt64 endSlot = epochStartSlot.plus(UInt64.valueOf(Constants.SLOTS_PER_EPOCH));
     final Map<Integer, List<UInt64>> proposalSlotsByValidatorIndex = new HashMap<>();
     for (UInt64 slot = startSlot; slot.compareTo(endSlot) < 0; slot = slot.plus(UInt64.ONE)) {
