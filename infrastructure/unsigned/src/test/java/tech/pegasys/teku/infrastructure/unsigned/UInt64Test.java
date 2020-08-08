@@ -281,6 +281,63 @@ class UInt64Test {
     assertThatThrownBy(() -> UInt64.ONE.dividedBy(-1)).isInstanceOf(IllegalArgumentException.class);
   }
 
+
+  @Test
+  public void max_firstValueIsLarger() {
+    final UInt64 a = UInt64.valueOf(2);
+    final UInt64 b = UInt64.valueOf(1);
+
+    final UInt64 result = a.max(b);
+    assertThat(result).isEqualTo(a);
+  }
+
+  @Test
+  public void max_secondValueIsLarger() {
+    final UInt64 a = UInt64.valueOf(1);
+    final UInt64 b = UInt64.valueOf(2);
+
+    final UInt64 result = a.max(b);
+    assertThat(result).isEqualTo(b);
+  }
+
+  @Test
+  public void max_valuesAreEqual() {
+    final UInt64 a = UInt64.valueOf(10);
+    final UInt64 b = UInt64.valueOf(10);
+
+    final UInt64 result = a.max(b);
+    assertThat(result).isEqualTo(a);
+    assertThat(result).isEqualTo(b);
+  }
+
+  @Test
+  public void min_firstValueIsLarger() {
+    final UInt64 a = UInt64.valueOf(2);
+    final UInt64 b = UInt64.valueOf(1);
+
+    final UInt64 result = a.min(b);
+    assertThat(result).isEqualTo(b);
+  }
+
+  @Test
+  public void min_secondValueIsLarger() {
+    final UInt64 a = UInt64.valueOf(1);
+    final UInt64 b = UInt64.valueOf(2);
+
+    final UInt64 result = a.min(b);
+    assertThat(result).isEqualTo(a);
+  }
+
+  @Test
+  public void min_valuesAreEqual() {
+    final UInt64 a = UInt64.valueOf(10);
+    final UInt64 b = UInt64.valueOf(10);
+
+    final UInt64 result = a.min(b);
+    assertThat(result).isEqualTo(a);
+    assertThat(result).isEqualTo(b);
+  }
+
   static List<Arguments> timesOverflowCases() {
     return List.of(
         Arguments.of(-1L, 2L),
@@ -313,7 +370,7 @@ class UInt64Test {
         Arguments.of(-3252523523L, -1, -3252523523L));
   }
 
-  private static List<Arguments> multiplicationNumbers() {
+  static List<Arguments> multiplicationNumbers() {
     return List.of(
         Arguments.of(0, 0, 0),
         Arguments.of(1, 0, 0),
