@@ -532,6 +532,10 @@ subprojects {
     testFixturesImplementation 'org.assertj:assertj-core'
   }
 
+  if (project.name != "unsigned") {
+    dependencies.compileClasspath(project(':infrastructure:unsigned'))
+  }
+
   task integrationTest(type: Test, dependsOn:["compileIntegrationTestJava"]){
     group = "verification"
     description = "Runs the Teku integration tests"
