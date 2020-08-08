@@ -133,7 +133,7 @@ public class GetValidators extends AbstractHandler implements Handler {
         this.handlePossiblyMissingResult(
             ctx, future, getResultProcessor(activeOnly, pageSize, pageToken));
       }
-    } catch (final IllegalArgumentException e) {
+    } catch (final IllegalArgumentException | ArithmeticException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }

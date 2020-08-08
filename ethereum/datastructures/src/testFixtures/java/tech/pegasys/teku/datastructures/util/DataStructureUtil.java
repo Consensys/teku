@@ -183,8 +183,16 @@ public final class DataStructureUtil {
     return new Eth1Data(randomBytes32(), randomUInt64(), randomBytes32());
   }
 
+  /**
+   * A random UInt64 that is within a reasonable bound for an epoch number. The maximum value
+   * returned won't be reached for another 12,000 years or so.
+   */
+  public UInt64 randomEpoch() {
+    return UInt64.valueOf(new Random(nextSeed()).nextInt(1_000_000_000));
+  }
+
   public Checkpoint randomCheckpoint() {
-    return new Checkpoint(randomUInt64(), randomBytes32());
+    return new Checkpoint(randomEpoch(), randomBytes32());
   }
 
   public AttestationData randomAttestationData() {

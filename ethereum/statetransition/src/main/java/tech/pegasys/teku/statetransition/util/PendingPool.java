@@ -293,12 +293,9 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   }
 
   private UInt64 calculateItemAgeLimit() {
-    final UInt64 ageLimit = currentSlot.minus(UInt64.ONE).minus(historicalSlotTolerance);
-    if (ageLimit.compareTo(currentSlot) > 0) {
-      // If subtraction caused overflow, return genesis slot
-      return GENESIS_SLOT;
-    }
-    return ageLimit;
+    return currentSlot.compareTo(historicalSlotTolerance.plus(UInt64.ONE)) > 0
+        ? currentSlot.minus(UInt64.ONE).minus(historicalSlotTolerance)
+        : GENESIS_SLOT;
   }
 
   private UInt64 calculateFutureItemLimit() {

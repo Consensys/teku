@@ -25,8 +25,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class BeaconChainHeadTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private BeaconState beaconState = dataStructureUtil.randomBeaconState();
-  private BeaconBlockAndState blockAndState = dataStructureUtil.randomBlockAndState(1, beaconState);
+  private final BeaconState beaconState = dataStructureUtil.randomBeaconState();
+  private final BeaconBlockAndState blockAndState =
+      dataStructureUtil.randomBlockAndState(1, beaconState);
 
   @Test
   public void shouldCreateFromBlockAndState() {

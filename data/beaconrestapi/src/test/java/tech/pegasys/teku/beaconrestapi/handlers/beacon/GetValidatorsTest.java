@@ -48,7 +48,7 @@ import tech.pegasys.teku.util.config.Constants;
 public class GetValidatorsTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private Context context = mock(Context.class);
-  private final UInt64 epoch = dataStructureUtil.randomUInt64();
+  private final UInt64 epoch = dataStructureUtil.randomEpoch();
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
   private final tech.pegasys.teku.datastructures.state.BeaconState beaconStateInternal =
@@ -275,17 +275,27 @@ public class GetValidatorsTest {
   }
 
   @Test
+  public void shouldReturnBadRequestWhenTooBigEpochParameterSpecified() throws Exception {
+    final GetValidators handler = new GetValidators(provider, jsonProvider);
+    // It's a valid uint64 but is too big to be converted to a slot
+    final String tooBigEpoch = Constants.FAR_FUTURE_EPOCH.toString();
+    when(context.queryParamMap())
+        .thenReturn(Map.of(ACTIVE, List.of("true"), EPOCH, List.of(tooBigEpoch)));
+    when(provider.isStoreAvailable()).thenReturn(true);
+    when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
+
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
+  }
+
+  @Test
   public void shouldReturnEmptyListWhenQueryByActiveAndFarFutureEpoch() throws Exception {
     final GetValidators handler = new GetValidators(provider, jsonProvider);
-    final UInt64 farFutureSlot =
-        BeaconStateUtil.compute_start_slot_at_epoch(Constants.FAR_FUTURE_EPOCH);
+    final UInt64 futureEpoch = UInt64.valueOf(294829482492L);
+    final UInt64 farFutureSlot = BeaconStateUtil.compute_start_slot_at_epoch(futureEpoch);
     when(context.queryParamMap())
-        .thenReturn(
-            Map.of(
-                ACTIVE,
-                List.of("true"),
-                EPOCH,
-                List.of(String.valueOf(Constants.FAR_FUTURE_EPOCH))));
+        .thenReturn(Map.of(ACTIVE, List.of("true"), EPOCH, List.of(futureEpoch.toString())));
     when(provider.isStoreAvailable()).thenReturn(true);
     when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     when(provider.getStateAtSlot(farFutureSlot))

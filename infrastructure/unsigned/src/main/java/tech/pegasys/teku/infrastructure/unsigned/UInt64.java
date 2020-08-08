@@ -113,14 +113,20 @@ public final class UInt64 implements Comparable<UInt64> {
     }
     if (longBits1 < 0 || longBits2 < 0) {
       // Already in the upper half of the range so multiplying by anything except 0 or 1 overflows
-      throw new ArithmeticException("uint64 overflow");
+      throw new ArithmeticException(
+          String.format(
+              "uint64 overflow (%s * %s)",
+              Long.toUnsignedString(longBits1), Long.toUnsignedString(longBits2)));
     }
     // Overflow is a possibility (but not guaranteed, use the slower approach)
     final BigInteger value1 = toUnsignedBigInteger(longBits1);
     final BigInteger value2 = toUnsignedBigInteger(longBits2);
     final BigInteger result = value1.multiply(value2);
     if (result.bitLength() > Long.SIZE) {
-      throw new ArithmeticException("uint64 overflow");
+      throw new ArithmeticException(
+          String.format(
+              "uint64 overflow (%s * %s)",
+              Long.toUnsignedString(longBits1), Long.toUnsignedString(longBits2)));
     }
     return fromLongBits(result.longValue());
   }
