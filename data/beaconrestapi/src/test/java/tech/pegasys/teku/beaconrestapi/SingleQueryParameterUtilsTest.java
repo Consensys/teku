@@ -19,16 +19,16 @@ import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParam
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsLong;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
+import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.validateQueryParameter;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SingleQueryParameterUtilsTest {
 
@@ -82,16 +82,16 @@ public class SingleQueryParameterUtilsTest {
   }
 
   @Test
-  public void getParameterAsUnsignedLong_shouldReturnValue() {
+  public void getParameterAsUInt64_shouldReturnValue() {
     Map<String, List<String>> data = Map.of(KEY, List.of("1"));
-    UnsignedLong result = getParameterValueAsUnsignedLong(data, KEY);
-    assertEquals(UnsignedLong.ONE, result);
+    UInt64 result = getParameterValueAsUInt64(data, KEY);
+    assertEquals(UInt64.ONE, result);
   }
 
   @Test
-  public void getParameterAsUnsignedLong_shouldThrowIfCannotParse() {
+  public void getParameterAsUInt64_shouldThrowIfCannotParse() {
     assertThrows(
-        IllegalArgumentException.class, () -> getParameterValueAsUnsignedLong(INVALID_DATA, KEY));
+        IllegalArgumentException.class, () -> getParameterValueAsUInt64(INVALID_DATA, KEY));
   }
 
   @Test

@@ -25,9 +25,8 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
+import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64;
 
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -43,6 +42,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetStateRoot implements Handler {
@@ -85,7 +85,7 @@ public class GetStateRoot implements Handler {
       }
 
       if (parameters.containsKey(SLOT)) {
-        UnsignedLong slot = getParameterValueAsUnsignedLong(parameters, SLOT);
+        UInt64 slot = getParameterValueAsUInt64(parameters, SLOT);
         future = queryBySlot(slot);
         ctx.result(
             future.thenApplyChecked(
@@ -106,7 +106,7 @@ public class GetStateRoot implements Handler {
     }
   }
 
-  private SafeFuture<Optional<Bytes32>> queryBySlot(final UnsignedLong slot) {
+  private SafeFuture<Optional<Bytes32>> queryBySlot(final UInt64 slot) {
     return provider.getStateRootAtSlot(slot);
   }
 }

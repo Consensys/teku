@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.dataaccess;
 
-import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -21,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /**
  * Provides an abstract "data access object" interface for working with finalized data from the
@@ -32,18 +32,18 @@ public interface RocksDbFinalizedDao extends AutoCloseable {
 
   FinalizedUpdater finalizedUpdater();
 
-  Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(UnsignedLong slot);
+  Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(UInt64 slot);
 
-  Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(UnsignedLong slot);
+  Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(UInt64 slot);
 
-  Optional<BeaconState> getLatestAvailableFinalizedState(UnsignedLong maxSlot);
+  Optional<BeaconState> getLatestAvailableFinalizedState(UInt64 maxSlot);
 
   @MustBeClosed
-  Stream<SignedBeaconBlock> streamFinalizedBlocks(UnsignedLong startSlot, UnsignedLong endSlot);
+  Stream<SignedBeaconBlock> streamFinalizedBlocks(UInt64 startSlot, UInt64 endSlot);
 
-  Optional<UnsignedLong> getSlotForFinalizedBlockRoot(Bytes32 blockRoot);
+  Optional<UInt64> getSlotForFinalizedBlockRoot(Bytes32 blockRoot);
 
-  Optional<UnsignedLong> getSlotForFinalizedStateRoot(Bytes32 stateRoot);
+  Optional<UInt64> getSlotForFinalizedStateRoot(Bytes32 stateRoot);
 
   Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(Bytes32 stateRoot);
 
@@ -53,7 +53,7 @@ public interface RocksDbFinalizedDao extends AutoCloseable {
 
     void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
 
-    void addFinalizedStateRoot(final Bytes32 stateRoot, final UnsignedLong slot);
+    void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot);
 
     void commit();
 

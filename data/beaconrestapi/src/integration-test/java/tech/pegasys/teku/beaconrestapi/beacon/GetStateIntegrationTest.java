@@ -15,7 +15,6 @@ package tech.pegasys.teku.beaconrestapi.beacon;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +26,7 @@ import tech.pegasys.teku.beaconrestapi.RestApiConstants;
 import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetState;
 import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -63,10 +63,9 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
     final int targetSlot = 20;
     final int finalizedSlot = 20 + Constants.SLOTS_PER_HISTORICAL_ROOT;
     createBlocksAtSlots(targetSlot, finalizedSlot);
-    final UnsignedLong finalizedEpoch =
-        ChainProperties.computeBestEpochFinalizableAtSlot(finalizedSlot);
+    final UInt64 finalizedEpoch = ChainProperties.computeBestEpochFinalizableAtSlot(finalizedSlot);
     final SignedBlockAndState finalizedBlock = finalizeChainAtEpoch(finalizedEpoch);
-    assertThat(finalizedBlock.getSlot()).isEqualTo(UnsignedLong.valueOf(finalizedSlot));
+    assertThat(finalizedBlock.getSlot()).isEqualTo(UInt64.valueOf(finalizedSlot));
 
     final Response response = getBySlot(targetSlot);
     assertGone(response);
@@ -79,10 +78,9 @@ public class GetStateIntegrationTest extends AbstractDataBackedRestAPIIntegratio
     final int targetSlot = 20;
     final int finalizedSlot = 21;
     final List<SignedBlockAndState> blocks = createBlocksAtSlots(targetSlot, finalizedSlot);
-    final UnsignedLong finalizedEpoch =
-        ChainProperties.computeBestEpochFinalizableAtSlot(finalizedSlot);
+    final UInt64 finalizedEpoch = ChainProperties.computeBestEpochFinalizableAtSlot(finalizedSlot);
     final SignedBlockAndState finalizedBlock = finalizeChainAtEpoch(finalizedEpoch);
-    assertThat(finalizedBlock.getSlot()).isEqualTo(UnsignedLong.valueOf(finalizedSlot));
+    assertThat(finalizedBlock.getSlot()).isEqualTo(UInt64.valueOf(finalizedSlot));
 
     final Response response = getByRoot(blocks.get(0).getRoot());
     assertNotFound(response);

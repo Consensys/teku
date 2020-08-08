@@ -18,16 +18,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_FINALIZED;
 
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetGenesisTimeTest {
   private Context context = mock(Context.class);
-  private final UnsignedLong genesisTime = UnsignedLong.valueOf(51234);
+  private final UInt64 genesisTime = UInt64.valueOf(51234);
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ChainDataProvider provider = mock(ChainDataProvider.class);
 

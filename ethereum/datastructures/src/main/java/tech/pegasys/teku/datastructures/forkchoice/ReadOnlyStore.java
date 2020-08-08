@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.forkchoice;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -24,12 +23,13 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface ReadOnlyStore {
 
-  UnsignedLong getTime();
+  UInt64 getTime();
 
-  UnsignedLong getGenesisTime();
+  UInt64 getGenesisTime();
 
   Checkpoint getJustifiedCheckpoint();
 
@@ -41,7 +41,7 @@ public interface ReadOnlyStore {
    *
    * @return the slot of the latest finalized block.
    */
-  UnsignedLong getLatestFinalizedBlockSlot();
+  UInt64 getLatestFinalizedBlockSlot();
 
   SignedBlockAndState getLatestFinalizedBlockAndState();
 
@@ -57,7 +57,7 @@ public interface ReadOnlyStore {
    */
   List<Bytes32> getOrderedBlockRoots();
 
-  Set<UnsignedLong> getVotedValidatorIndices();
+  Set<UInt64> getVotedValidatorIndices();
 
   /**
    * Returns a block state only if it is immediately available (not pruned).

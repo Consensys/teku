@@ -18,7 +18,6 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.Interna
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
 import static tech.pegasys.teku.util.config.Constants.VALID_VALIDATOR_SET_SIZE;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
@@ -29,6 +28,7 @@ import tech.pegasys.teku.core.operationvalidators.OperationInvalidReason;
 import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
 import tech.pegasys.teku.util.collections.LimitStrategy;
@@ -37,7 +37,7 @@ public class ProposerSlashingValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;
-  private final Set<UnsignedLong> receivedValidSlashingForProposerSet =
+  private final Set<UInt64> receivedValidSlashingForProposerSet =
       ConcurrentLimitedSet.create(
           VALID_VALIDATOR_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
   private final ProposerSlashingStateTransitionValidator transitionValidator;

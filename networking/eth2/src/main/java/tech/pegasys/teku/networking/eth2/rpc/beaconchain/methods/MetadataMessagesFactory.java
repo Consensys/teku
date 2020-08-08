@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.atomic.AtomicLong;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.PingMessage;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.events.ValueObserver;
@@ -30,7 +30,7 @@ public class MetadataMessagesFactory implements ValueObserver<Iterable<Integer>>
   public void onValueChanged(Iterable<Integer> subnetIds) {
     currentMessage =
         new MetadataMessage(
-            UnsignedLong.valueOf(seqNumberGenerator.incrementAndGet()),
+            UInt64.valueOf(seqNumberGenerator.incrementAndGet()),
             new Bitvector(subnetIds, Constants.ATTESTATION_SUBNET_COUNT));
   }
 

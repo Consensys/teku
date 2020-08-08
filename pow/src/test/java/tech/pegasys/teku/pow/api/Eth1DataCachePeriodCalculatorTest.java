@@ -15,19 +15,19 @@ package tech.pegasys.teku.pow.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class Eth1DataCachePeriodCalculatorTest {
   @Test
   void shouldCalculateCachePeriodForMinimalConstantsFromFollowDistance() {
     assertThat(Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToFollowDistance())
-        .isEqualTo(UnsignedLong.valueOf(470));
+        .isEqualTo(UInt64.valueOf(470));
   }
 
   @Test
   void shouldCalculateCachePeriodForMinimalConstantsFromCurrentTime() {
     assertThat(Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime())
-        .isEqualTo(UnsignedLong.valueOf(694));
+        .isEqualTo(UInt64.valueOf(694));
   }
 }

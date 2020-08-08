@@ -13,13 +13,12 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,24 +26,25 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 
 public class Eth1DataCacheTest {
 
-  private static final UnsignedLong CACHE_DURATION = UnsignedLong.valueOf(10_000);
+  private static final UInt64 CACHE_DURATION = UInt64.valueOf(10_000);
 
   // Note: The slot and genesis time won't line up with the voting period start and end
   // This is semi-deliberate - if you use the Eth1VotingPeriod instance it all works,
   // if you duplicate the logic to do the math or depend on some property of that math, it will fail
   // It also saves us doing a bunch of math in this test...
-  private static final UnsignedLong VOTING_PERIOD_START = UnsignedLong.valueOf(50_000);
-  private static final UnsignedLong VOTING_PERIOD_END = UnsignedLong.valueOf(55_000);
-  private static final UnsignedLong SLOT = UnsignedLong.valueOf(125);
-  private static final UnsignedLong GENESIS_TIME = UnsignedLong.valueOf(77777);
-  public static final UnsignedLong IN_RANGE_TIMESTAMP_1 = UnsignedLong.valueOf(51_000);
-  public static final UnsignedLong IN_RANGE_TIMESTAMP_2 = UnsignedLong.valueOf(52_000);
-  public static final UnsignedLong IN_RANGE_TIMESTAMP_3 = UnsignedLong.valueOf(53_000);
+  private static final UInt64 VOTING_PERIOD_START = UInt64.valueOf(50_000);
+  private static final UInt64 VOTING_PERIOD_END = UInt64.valueOf(55_000);
+  private static final UInt64 SLOT = UInt64.valueOf(125);
+  private static final UInt64 GENESIS_TIME = UInt64.valueOf(77777);
+  public static final UInt64 IN_RANGE_TIMESTAMP_1 = UInt64.valueOf(51_000);
+  public static final UInt64 IN_RANGE_TIMESTAMP_2 = UInt64.valueOf(52_000);
+  public static final UInt64 IN_RANGE_TIMESTAMP_3 = UInt64.valueOf(53_000);
   private static final int STATE_DEPOSIT_COUNT = 10;
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -204,10 +204,10 @@ public class Eth1DataCacheTest {
 
   @Test
   void shouldPruneOldBlocksWhenNewerOnesReceived() {
-    final UnsignedLong olderBlockTimestamp = ZERO;
-    final UnsignedLong oldBlockTimestamp = olderBlockTimestamp.plus(ONE);
-    final UnsignedLong newBlockTimestamp = oldBlockTimestamp.plus(CACHE_DURATION).plus(ONE);
-    final UnsignedLong newerBlockTimestamp = newBlockTimestamp.plus(CACHE_DURATION);
+    final UInt64 olderBlockTimestamp = ZERO;
+    final UInt64 oldBlockTimestamp = olderBlockTimestamp.plus(ONE);
+    final UInt64 newBlockTimestamp = oldBlockTimestamp.plus(CACHE_DURATION).plus(ONE);
+    final UInt64 newerBlockTimestamp = newBlockTimestamp.plus(CACHE_DURATION);
 
     eth1DataCache.onBlockWithDeposit(olderBlockTimestamp, createEth1Data(STATE_DEPOSIT_COUNT));
     eth1DataCache.onBlockWithDeposit(oldBlockTimestamp, createEth1Data(STATE_DEPOSIT_COUNT));
@@ -237,10 +237,10 @@ public class Eth1DataCacheTest {
   }
 
   private Eth1Data createEth1Data(final int depositCount) {
-    return createEth1Data(UnsignedLong.valueOf(depositCount));
+    return createEth1Data(UInt64.valueOf(depositCount));
   }
 
-  private Eth1Data createEth1Data(final UnsignedLong depositCount) {
+  private Eth1Data createEth1Data(final UInt64 depositCount) {
     return new Eth1Data(
         dataStructureUtil.randomBytes32(), depositCount, dataStructureUtil.randomBytes32());
   }

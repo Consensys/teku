@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -22,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.Copyable;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -63,10 +63,10 @@ public class PendingAttestation extends AbstractImmutableContainer
   private final AttestationData data = null;
 
   @SuppressWarnings("unused")
-  private final UnsignedLong inclusion_delay = null;
+  private final UInt64 inclusion_delay = null;
 
   @SuppressWarnings("unused")
-  private final UnsignedLong proposer_index = null;
+  private final UInt64 proposer_index = null;
 
   private PendingAttestation(ContainerViewType<PendingAttestation> type, TreeNode backingNode) {
     super(type, backingNode);
@@ -75,8 +75,8 @@ public class PendingAttestation extends AbstractImmutableContainer
   public PendingAttestation(
       Bitlist aggregation_bitfield,
       AttestationData data,
-      UnsignedLong inclusion_delay,
-      UnsignedLong proposer_index) {
+      UInt64 inclusion_delay,
+      UInt64 proposer_index) {
     super(
         TYPE,
         ViewUtils.createBitlistView(aggregation_bitfield),
@@ -153,11 +153,11 @@ public class PendingAttestation extends AbstractImmutableContainer
     return getAny(1);
   }
 
-  public UnsignedLong getInclusion_delay() {
+  public UInt64 getInclusion_delay() {
     return ((UInt64View) get(2)).get();
   }
 
-  public UnsignedLong getProposer_index() {
+  public UInt64 getProposer_index() {
     return ((UInt64View) get(3)).get();
   }
 

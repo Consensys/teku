@@ -17,13 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.api.schema.BeaconValidators.PAGE_SIZE_DEFAULT;
 import static tech.pegasys.teku.api.schema.BeaconValidators.PAGE_TOKEN_DEFAULT;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -169,8 +169,8 @@ class BeaconValidatorsTest {
     Validator v =
         dataStructureUtil
             .randomValidator()
-            .withActivation_eligibility_epoch(UnsignedLong.ZERO)
-            .withActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
+            .withActivation_eligibility_epoch(UInt64.ZERO)
+            .withActivation_epoch(UInt64.valueOf(Constants.GENESIS_EPOCH));
 
     BeaconState beaconStateW = beaconState.updated(state -> state.getValidators().add(v));
 

@@ -15,7 +15,6 @@ package tech.pegasys.teku.sync;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.google.common.primitives.UnsignedLong;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
@@ -95,7 +95,7 @@ public class BlockManager extends Service implements SlotEventsChannel {
   }
 
   @Override
-  public void onSlot(final UnsignedLong slot) {
+  public void onSlot(final UInt64 slot) {
     pendingBlocks.onSlot(slot);
     futureBlocks.prune(slot).forEach(this::importBlock);
   }

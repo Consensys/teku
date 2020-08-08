@@ -19,7 +19,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.COMPLETE;
 
-import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
@@ -29,6 +28,7 @@ import org.mockito.InOrder;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
@@ -69,7 +69,7 @@ class Eth1DepositManagerTest {
 
   @BeforeAll
   static void setConstants() {
-    Constants.MIN_GENESIS_TIME = UnsignedLong.valueOf(10_000).plus(Constants.GENESIS_DELAY);
+    Constants.MIN_GENESIS_TIME = UInt64.valueOf(10_000).plus(Constants.GENESIS_DELAY);
   }
 
   @AfterAll
@@ -147,8 +147,8 @@ class Eth1DepositManagerTest {
         .verify(eth1EventsChannel)
         .onMinGenesisTimeBlock(
             new MinGenesisTimeBlockEvent(
-                UnsignedLong.valueOf(MIN_GENESIS_BLOCK_TIMESTAMP),
-                UnsignedLong.valueOf(minGenesisBlockNumber),
+                UInt64.valueOf(MIN_GENESIS_BLOCK_TIMESTAMP),
+                UInt64.valueOf(minGenesisBlockNumber),
                 Bytes32.ZERO));
 
     // Then start the subscription to process any blocks after min genesis
@@ -183,8 +183,8 @@ class Eth1DepositManagerTest {
         .verify(eth1EventsChannel)
         .onMinGenesisTimeBlock(
             new MinGenesisTimeBlockEvent(
-                UnsignedLong.valueOf(MIN_GENESIS_BLOCK_TIMESTAMP),
-                UnsignedLong.valueOf(minGenesisBlockNumber),
+                UInt64.valueOf(MIN_GENESIS_BLOCK_TIMESTAMP),
+                UInt64.valueOf(minGenesisBlockNumber),
                 Bytes32.ZERO));
 
     // Then start the subscription to process any blocks after min genesis
@@ -267,7 +267,7 @@ class Eth1DepositManagerTest {
         block(number.add(Constants.ETH1_FOLLOW_DISTANCE.bigIntegerValue()), timestamp + 100000);
     final Block followDistanceHead = block(number, timestamp);
     when(eth1Provider.getLatestEth1Block()).thenReturn(SafeFuture.completedFuture(latestBlock));
-    when(eth1Provider.getGuaranteedEth1Block(UnsignedLong.valueOf(number)))
+    when(eth1Provider.getGuaranteedEth1Block(UInt64.valueOf(number)))
         .thenReturn(SafeFuture.completedFuture(followDistanceHead));
   }
 

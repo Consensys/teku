@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.google.common.collect.Streams;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -41,6 +40,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class StateGeneratorTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
@@ -54,8 +54,7 @@ public class StateGeneratorTest {
     chainBuilder.generateBlocksUpToSlot(10);
     final List<SignedBlockAndState> newBlocksAndStates =
         chainBuilder
-            .streamBlocksAndStates(
-                genesis.getSlot().plus(UnsignedLong.ONE), chainBuilder.getLatestSlot())
+            .streamBlocksAndStates(genesis.getSlot().plus(UInt64.ONE), chainBuilder.getLatestSlot())
             .collect(Collectors.toList());
 
     testRegenerateAllStates(cacheSize, blockBatchSize, genesis, 0, newBlocksAndStates);
@@ -71,7 +70,7 @@ public class StateGeneratorTest {
     final List<SignedBlockAndState> newBlocksAndStates =
         chainBuilder
             .streamBlocksAndStates(
-                baseBlock.getSlot().plus(UnsignedLong.ONE), chainBuilder.getLatestSlot())
+                baseBlock.getSlot().plus(UInt64.ONE), chainBuilder.getLatestSlot())
             .collect(Collectors.toList());
 
     testRegenerateAllStates(cacheSize, blockBatchSize, baseBlock, 0, newBlocksAndStates);
@@ -96,11 +95,11 @@ public class StateGeneratorTest {
     final List<SignedBlockAndState> newBlocksAndStates =
         chainBuilder
             .streamBlocksAndStates(
-                baseBlock.getSlot().plus(UnsignedLong.ONE), chainBuilder.getLatestSlot())
+                baseBlock.getSlot().plus(UInt64.ONE), chainBuilder.getLatestSlot())
             .collect(Collectors.toList());
     final List<SignedBeaconBlock> newForkBlocks =
         fork.streamBlocksAndStates(
-                baseBlock.getSlot().plus(UnsignedLong.ONE), chainBuilder.getLatestSlot())
+                baseBlock.getSlot().plus(UInt64.ONE), chainBuilder.getLatestSlot())
             .map(SignedBlockAndState::getBlock)
             .collect(Collectors.toList());
 
@@ -125,9 +124,9 @@ public class StateGeneratorTest {
     final List<SignedBlockAndState> newBlocksAndStates =
         chainBuilder
             .streamBlocksAndStates(
-                baseBlock.getSlot().plus(UnsignedLong.ONE), chainBuilder.getLatestSlot())
+                baseBlock.getSlot().plus(UInt64.ONE), chainBuilder.getLatestSlot())
             .collect(Collectors.toList());
-    fork.streamBlocksAndStates(baseBlock.getSlot().plus(UnsignedLong.ONE), fork.getLatestSlot())
+    fork.streamBlocksAndStates(baseBlock.getSlot().plus(UInt64.ONE), fork.getLatestSlot())
         .forEach(newBlocksAndStates::add);
 
     testRegenerateAllStates(cacheSize, blockBatchSize, baseBlock, 1, newBlocksAndStates);
@@ -158,15 +157,15 @@ public class StateGeneratorTest {
     final List<SignedBlockAndState> newBlocksAndStates =
         Streams.concat(
                 chainBuilder.streamBlocksAndStates(
-                    baseBlock.getSlot().plus(UnsignedLong.ONE), chainBuilder.getLatestSlot()),
+                    baseBlock.getSlot().plus(UInt64.ONE), chainBuilder.getLatestSlot()),
                 fork.streamBlocksAndStates(
-                    baseBlock.getSlot().plus(UnsignedLong.ONE), fork.getLatestSlot()),
+                    baseBlock.getSlot().plus(UInt64.ONE), fork.getLatestSlot()),
                 fork2.streamBlocksAndStates(
-                    forkBase.getSlot().plus(UnsignedLong.ONE), fork2.getLatestSlot()),
+                    forkBase.getSlot().plus(UInt64.ONE), fork2.getLatestSlot()),
                 fork3.streamBlocksAndStates(
-                    forkBase.getSlot().plus(UnsignedLong.ONE), fork3.getLatestSlot()),
+                    forkBase.getSlot().plus(UInt64.ONE), fork3.getLatestSlot()),
                 fork4.streamBlocksAndStates(
-                    forkBase.getSlot().plus(UnsignedLong.ONE), fork4.getLatestSlot()))
+                    forkBase.getSlot().plus(UInt64.ONE), fork4.getLatestSlot()))
             .collect(Collectors.toList());
 
     testRegenerateAllStates(cacheSize, blockBatchSize, baseBlock, 2, newBlocksAndStates);
@@ -212,7 +211,7 @@ public class StateGeneratorTest {
     testGeneratorWithMissingBlock(
         (generator, missingBlock) -> {
           SignedBlockAndState target =
-              chainBuilder.getBlockAndStateAtSlot(missingBlock.getSlot().minus(UnsignedLong.ONE));
+              chainBuilder.getBlockAndStateAtSlot(missingBlock.getSlot().minus(UInt64.ONE));
           SafeFuture<SignedBlockAndState> result =
               generator.regenerateStateForBlock(target.getRoot());
           assertThat(result).isCompletedWithValue(target);
@@ -234,7 +233,7 @@ public class StateGeneratorTest {
         HashTree.builder().rootHash(genesis.getRoot()).blocks(blockMap.values()).build();
     // Create block provider that is missing some blocks
     final SignedBeaconBlock missingBlock =
-        chainBuilder.getBlockAtSlot(genesis.getSlot().plus(UnsignedLong.valueOf(2)));
+        chainBuilder.getBlockAtSlot(genesis.getSlot().plus(UInt64.valueOf(2)));
     blockMap.remove(missingBlock.getRoot());
     final BlockProvider blockProvider = BlockProvider.fromMap(blockMap);
 

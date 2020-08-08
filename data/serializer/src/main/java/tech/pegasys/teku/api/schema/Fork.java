@@ -17,8 +17,8 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES4;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.primitives.UnsignedLong;
 import io.swagger.v3.oas.annotations.media.Schema;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class Fork {
@@ -29,13 +29,13 @@ public class Fork {
   public Bytes4 current_version;
 
   @Schema(type = "string", format = "uint64")
-  public UnsignedLong epoch;
+  public UInt64 epoch;
 
   @JsonCreator
   public Fork(
       @JsonProperty("previous_version") final Bytes4 previous_version,
       @JsonProperty("current_version") final Bytes4 current_version,
-      @JsonProperty("epoch") final UnsignedLong epoch) {
+      @JsonProperty("epoch") final UInt64 epoch) {
     this.previous_version = previous_version;
     this.current_version = current_version;
     this.epoch = epoch;

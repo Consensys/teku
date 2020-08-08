@@ -18,9 +18,9 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES48;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.primitives.UnsignedLong;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Validator {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES48)
@@ -30,32 +30,32 @@ public class Validator {
   public final Bytes32 withdrawal_credentials;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong effective_balance;
+  public final UInt64 effective_balance;
 
   public final boolean slashed;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong activation_eligibility_epoch;
+  public final UInt64 activation_eligibility_epoch;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong activation_epoch;
+  public final UInt64 activation_epoch;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong exit_epoch;
+  public final UInt64 exit_epoch;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong withdrawable_epoch;
+  public final UInt64 withdrawable_epoch;
 
   @JsonCreator
   public Validator(
       @JsonProperty("pubkey") final BLSPubKey pubkey,
       @JsonProperty("withdrawal_credentials") final Bytes32 withdrawal_credentials,
-      @JsonProperty("effective_balance") final UnsignedLong effective_balance,
+      @JsonProperty("effective_balance") final UInt64 effective_balance,
       @JsonProperty("slashed") final boolean slashed,
-      @JsonProperty("activation_eligibility_epoch") final UnsignedLong activation_eligibility_epoch,
-      @JsonProperty("activation_epoch") final UnsignedLong activation_epoch,
-      @JsonProperty("exit_epoch") final UnsignedLong exit_epoch,
-      @JsonProperty("withdrawable_epoch") final UnsignedLong withdrawable_epoch) {
+      @JsonProperty("activation_eligibility_epoch") final UInt64 activation_eligibility_epoch,
+      @JsonProperty("activation_epoch") final UInt64 activation_epoch,
+      @JsonProperty("exit_epoch") final UInt64 exit_epoch,
+      @JsonProperty("withdrawable_epoch") final UInt64 withdrawable_epoch) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.effective_balance = effective_balance;

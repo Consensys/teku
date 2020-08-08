@@ -18,7 +18,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -30,6 +29,7 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class SignerTest {
 
@@ -46,8 +46,7 @@ class SignerTest {
         Bytes.fromHexString("0xf133dca1e6b9f68ed8388345e1a3f833fcaed6567c44788cae15815c1b2f95d7");
     when(signerService.signRandaoReveal(expectedSigningRoot))
         .thenReturn(SafeFuture.completedFuture(signature));
-    final SafeFuture<BLSSignature> reveal =
-        signer.createRandaoReveal(UnsignedLong.valueOf(7), fork);
+    final SafeFuture<BLSSignature> reveal = signer.createRandaoReveal(UInt64.valueOf(7), fork);
 
     verify(signerService).signRandaoReveal(expectedSigningRoot);
     assertThat(reveal).isCompletedWithValue(signature);

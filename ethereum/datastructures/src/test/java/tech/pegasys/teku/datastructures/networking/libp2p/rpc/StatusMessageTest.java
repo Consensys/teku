@@ -15,11 +15,11 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 class StatusMessageTest {
@@ -29,9 +29,9 @@ class StatusMessageTest {
         new StatusMessage(
             Constants.GENESIS_FORK_VERSION,
             Bytes32.fromHexStringLenient("0x01"),
-            UnsignedLong.valueOf(2),
+            UInt64.valueOf(2),
             Bytes32.fromHexStringLenient("0x03"),
-            UnsignedLong.valueOf(4));
+            UInt64.valueOf(4));
 
     final Bytes data = SimpleOffsetSerializer.serialize(message);
     final StatusMessage result = SimpleOffsetSerializer.deserialize(data, StatusMessage.class);

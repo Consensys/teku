@@ -14,10 +14,10 @@
 package tech.pegasys.teku.core.signatures.record;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /**
  * Holds the key information required to prevent a validator from being slashed.
@@ -30,22 +30,22 @@ import org.apache.tuweni.bytes.Bytes;
  */
 public class ValidatorSigningRecord {
 
-  public static final UnsignedLong NEVER_SIGNED = UnsignedLong.MAX_VALUE;
+  public static final UInt64 NEVER_SIGNED = UInt64.MAX_VALUE;
 
-  private final UnsignedLong blockSlot;
+  private final UInt64 blockSlot;
 
-  private final UnsignedLong attestationSourceEpoch;
+  private final UInt64 attestationSourceEpoch;
 
-  private final UnsignedLong attestationTargetEpoch;
+  private final UInt64 attestationTargetEpoch;
 
   public ValidatorSigningRecord() {
-    this(UnsignedLong.ZERO, NEVER_SIGNED, NEVER_SIGNED);
+    this(UInt64.ZERO, NEVER_SIGNED, NEVER_SIGNED);
   }
 
   public ValidatorSigningRecord(
-      final UnsignedLong blockSlot,
-      final UnsignedLong attestationSourceEpoch,
-      final UnsignedLong attestationTargetEpoch) {
+      final UInt64 blockSlot,
+      final UInt64 attestationSourceEpoch,
+      final UInt64 attestationTargetEpoch) {
     this.blockSlot = blockSlot;
     this.attestationSourceEpoch = attestationSourceEpoch;
     this.attestationTargetEpoch = attestationTargetEpoch;
@@ -66,7 +66,7 @@ public class ValidatorSigningRecord {
    * @return an Optional containing an updated {@link ValidatorSigningRecord} with the state after
    *     the block is signed or empty if it is not safe to sign the block.
    */
-  public Optional<ValidatorSigningRecord> maySignBlock(final UnsignedLong slot) {
+  public Optional<ValidatorSigningRecord> maySignBlock(final UInt64 slot) {
     // We never allow signing a block at slot 0 because we shouldn't be signing the genesis block.
     if (blockSlot.compareTo(slot) < 0) {
       return Optional.of(
@@ -84,32 +84,32 @@ public class ValidatorSigningRecord {
    *     the attestation is signed or empty if it is not safe to sign the attestation.
    */
   public Optional<ValidatorSigningRecord> maySignAttestation(
-      final UnsignedLong sourceEpoch, final UnsignedLong targetEpoch) {
+      final UInt64 sourceEpoch, final UInt64 targetEpoch) {
     if (isSafeSourceEpoch(sourceEpoch) && isSafeTargetEpoch(targetEpoch)) {
       return Optional.of(new ValidatorSigningRecord(blockSlot, sourceEpoch, targetEpoch));
     }
     return Optional.empty();
   }
 
-  private boolean isSafeSourceEpoch(final UnsignedLong sourceEpoch) {
+  private boolean isSafeSourceEpoch(final UInt64 sourceEpoch) {
     return attestationSourceEpoch.equals(NEVER_SIGNED)
         || attestationSourceEpoch.compareTo(sourceEpoch) <= 0;
   }
 
-  private boolean isSafeTargetEpoch(final UnsignedLong targetEpoch) {
+  private boolean isSafeTargetEpoch(final UInt64 targetEpoch) {
     return attestationTargetEpoch.equals(NEVER_SIGNED)
         || attestationTargetEpoch.compareTo(targetEpoch) < 0;
   }
 
-  UnsignedLong getBlockSlot() {
+  UInt64 getBlockSlot() {
     return blockSlot;
   }
 
-  UnsignedLong getAttestationSourceEpoch() {
+  UInt64 getAttestationSourceEpoch() {
     return attestationSourceEpoch;
   }
 
-  UnsignedLong getAttestationTargetEpoch() {
+  UInt64 getAttestationTargetEpoch() {
     return attestationTargetEpoch;
   }
 

@@ -17,13 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.assertThatProtoArrayMatches;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArraySnapshotTest {
@@ -34,21 +34,21 @@ public class ProtoArraySnapshotTest {
     ProtoArray protoArray1 =
         new ProtoArray(
             Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
-            UnsignedLong.valueOf(10),
-            UnsignedLong.valueOf(9),
+            UInt64.valueOf(10),
+            UInt64.valueOf(9),
             nodes,
             new HashMap<>());
 
     ProtoNode protoNode1 =
         new ProtoNode(
-            UnsignedLong.valueOf(10000),
+            UInt64.valueOf(10000),
             Bytes32.ZERO,
             Bytes32.fromHexString("0xdeadbeef"),
             Bytes32.ZERO,
             Optional.empty(),
-            UnsignedLong.valueOf(10),
-            UnsignedLong.valueOf(9),
-            UnsignedLong.ZERO,
+            UInt64.valueOf(10),
+            UInt64.valueOf(9),
+            UInt64.ZERO,
             Optional.empty(),
             Optional.empty());
 
@@ -75,34 +75,34 @@ public class ProtoArraySnapshotTest {
     ProtoArray protoArray1 =
         new ProtoArray(
             Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD,
-            UnsignedLong.valueOf(10),
-            UnsignedLong.valueOf(9),
+            UInt64.valueOf(10),
+            UInt64.valueOf(9),
             nodes,
             new HashMap<>());
 
     ProtoNode protoNode1 =
         new ProtoNode(
-            UnsignedLong.valueOf(10000),
+            UInt64.valueOf(10000),
             Bytes32.ZERO,
             Bytes32.fromHexString("0xdeadbeef"),
             Bytes32.ZERO,
             Optional.empty(),
-            UnsignedLong.valueOf(10),
-            UnsignedLong.valueOf(9),
-            UnsignedLong.ZERO,
+            UInt64.valueOf(10),
+            UInt64.valueOf(9),
+            UInt64.ZERO,
             Optional.empty(),
             Optional.empty());
 
     ProtoNode protoNode2 =
         new ProtoNode(
-            UnsignedLong.valueOf(10000),
+            UInt64.valueOf(10000),
             Bytes32.ZERO,
             Bytes32.fromHexString("0x1234"),
             Bytes32.ZERO,
             Optional.empty(),
-            UnsignedLong.valueOf(10),
-            UnsignedLong.valueOf(9),
-            UnsignedLong.ZERO,
+            UInt64.valueOf(10),
+            UInt64.valueOf(9),
+            UInt64.ZERO,
             Optional.empty(),
             Optional.empty());
 

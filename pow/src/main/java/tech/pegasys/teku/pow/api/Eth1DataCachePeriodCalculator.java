@@ -19,11 +19,11 @@ import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_ETH1_BLOCK;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Eth1DataCachePeriodCalculator {
 
-  public static UnsignedLong calculateEth1DataCacheDurationPriorToFollowDistance() {
+  public static UInt64 calculateEth1DataCacheDurationPriorToFollowDistance() {
     // Worst case we're in the very last moment of the current slot
     long cacheDurationSeconds = SECONDS_PER_SLOT;
 
@@ -36,10 +36,10 @@ public class Eth1DataCachePeriodCalculator {
 
     // And we want to be able to create blocks for at least the past epoch
     cacheDurationSeconds += SLOTS_PER_EPOCH * SECONDS_PER_SLOT;
-    return UnsignedLong.valueOf(cacheDurationSeconds);
+    return UInt64.valueOf(cacheDurationSeconds);
   }
 
-  public static UnsignedLong calculateEth1DataCacheDurationPriorToCurrentTime() {
+  public static UInt64 calculateEth1DataCacheDurationPriorToCurrentTime() {
     // Add in the difference between current time and a block ETH1_FOLLOW_DISTANCE behind.
     return calculateEth1DataCacheDurationPriorToFollowDistance()
         .plus(SECONDS_PER_ETH1_BLOCK.times(ETH1_FOLLOW_DISTANCE));

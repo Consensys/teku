@@ -13,21 +13,21 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.time.TimeProvider;
 
 public class RateTracker {
-  private final NavigableMap<UnsignedLong, Long> requestCount;
+  private final NavigableMap<UInt64, Long> requestCount;
   private final int peerRateLimit;
-  private final UnsignedLong timeoutSeconds;
+  private final UInt64 timeoutSeconds;
   private long requestsWithinWindow = 0L;
   private final TimeProvider timeProvider;
 
   public RateTracker(
       final int peerRateLimit, final long timeoutSeconds, final TimeProvider timeProvider) {
-    this.timeoutSeconds = UnsignedLong.valueOf(timeoutSeconds);
+    this.timeoutSeconds = UInt64.valueOf(timeoutSeconds);
     requestCount = new TreeMap<>();
     this.peerRateLimit = peerRateLimit;
     this.timeProvider = timeProvider;
@@ -49,7 +49,7 @@ public class RateTracker {
   }
 
   void pruneRequests() {
-    final NavigableMap<UnsignedLong, Long> headMap =
+    final NavigableMap<UInt64, Long> headMap =
         requestCount.headMap(timeProvider.getTimeInSeconds().minus(timeoutSeconds), false);
     headMap.values().forEach(value -> requestsWithinWindow -= value);
     headMap.clear();

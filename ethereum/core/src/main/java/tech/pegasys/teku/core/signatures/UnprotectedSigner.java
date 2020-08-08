@@ -19,7 +19,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_SELECTION_PROOF;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -29,6 +28,7 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 public class UnprotectedSigner implements Signer {
@@ -39,8 +39,7 @@ public class UnprotectedSigner implements Signer {
   }
 
   @Override
-  public SafeFuture<BLSSignature> createRandaoReveal(
-      final UnsignedLong epoch, final ForkInfo forkInfo) {
+  public SafeFuture<BLSSignature> createRandaoReveal(final UInt64 epoch, final ForkInfo forkInfo) {
     Bytes32 domain =
         get_domain(
             Constants.DOMAIN_RANDAO,
@@ -77,8 +76,7 @@ public class UnprotectedSigner implements Signer {
   }
 
   @Override
-  public SafeFuture<BLSSignature> signAggregationSlot(
-      final UnsignedLong slot, final ForkInfo forkInfo) {
+  public SafeFuture<BLSSignature> signAggregationSlot(final UInt64 slot, final ForkInfo forkInfo) {
     final Bytes32 domain =
         get_domain(
             DOMAIN_SELECTION_PROOF,

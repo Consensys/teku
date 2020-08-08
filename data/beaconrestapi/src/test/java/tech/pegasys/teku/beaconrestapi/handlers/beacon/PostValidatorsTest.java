@@ -25,7 +25,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import java.util.List;
@@ -39,6 +38,7 @@ import tech.pegasys.teku.api.schema.BeaconValidators;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class PostValidatorsTest {
@@ -49,7 +49,7 @@ public class PostValidatorsTest {
   private final JsonProvider jsonProvider = new JsonProvider();
   private final BLSPubKey pubKey = new BLSPubKey(new DataStructureUtil().randomPublicKey());
   private final ValidatorsRequest smallRequest =
-      new ValidatorsRequest(UnsignedLong.ZERO, List.of(pubKey));
+      new ValidatorsRequest(UInt64.ZERO, List.of(pubKey));
 
   private PostValidators handler;
 

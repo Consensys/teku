@@ -15,7 +15,7 @@ package tech.pegasys.teku.validator.client.duties;
 
 import static tech.pegasys.teku.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
-import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -31,15 +31,15 @@ public class ValidatorDutyFactory {
   }
 
   public BlockProductionDuty createBlockProductionDuty(
-      final UnsignedLong slot, final Validator validator) {
+      final UInt64 slot, final Validator validator) {
     return new BlockProductionDuty(validator, slot, forkProvider, validatorApiChannel);
   }
 
-  public AttestationProductionDuty createAttestationProductionDuty(final UnsignedLong slot) {
+  public AttestationProductionDuty createAttestationProductionDuty(final UInt64 slot) {
     return new AttestationProductionDuty(slot, forkProvider, validatorApiChannel);
   }
 
-  public AggregationDuty createAggregationDuty(final UnsignedLong slot) {
+  public AggregationDuty createAggregationDuty(final UInt64 slot) {
     return new AggregationDuty(slot, validatorApiChannel, forkProvider, VALIDATOR_LOGGER);
   }
 }

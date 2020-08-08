@@ -24,10 +24,9 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBLSSignature;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
+import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64;
 
 import com.google.common.base.Throwables;
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -46,6 +45,7 @@ import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
@@ -72,7 +72,7 @@ public class GetNewBlock implements Handler {
       queryParams = {
         @OpenApiParam(
             name = SLOT,
-            description = "`UnsignedLong` Slot in which to create the beacon block.",
+            description = "`UInt64` Slot in which to create the beacon block.",
             required = true),
         @OpenApiParam(
             name = RANDAO_REVEAL,
@@ -96,7 +96,7 @@ public class GetNewBlock implements Handler {
     try {
       final Map<String, List<String>> queryParamMap = ctx.queryParamMap();
       BLSSignature randao = getParameterValueAsBLSSignature(queryParamMap, RANDAO_REVEAL);
-      UnsignedLong slot = getParameterValueAsUnsignedLong(queryParamMap, SLOT);
+      UInt64 slot = getParameterValueAsUInt64(queryParamMap, SLOT);
       Optional<Bytes32> graffiti = getOptionalParameterValueAsBytes32(queryParamMap, GRAFFITI);
       ctx.result(
           provider

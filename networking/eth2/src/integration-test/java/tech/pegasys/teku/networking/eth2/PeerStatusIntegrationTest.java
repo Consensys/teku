@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import java.time.Duration;
 import java.util.List;
 import java.util.stream.Stream;
@@ -30,6 +29,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -188,9 +188,9 @@ public class PeerStatusIntegrationTest {
       final PeerStatus status,
       final Bytes4 forkDigest,
       final Bytes32 finalizedRoot,
-      final UnsignedLong finalizedEpoch,
+      final UInt64 finalizedEpoch,
       final Bytes32 headRoot,
-      final UnsignedLong headSlot) {
+      final UInt64 headSlot) {
     assertThat(status.getForkDigest()).isEqualTo(forkDigest);
     assertThat(status.getFinalizedRoot()).isEqualTo(finalizedRoot);
     assertThat(status.getFinalizedEpoch()).isEqualTo(finalizedEpoch);

@@ -15,7 +15,6 @@ package tech.pegasys.teku.datastructures.operations;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Sets;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -26,6 +25,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
@@ -60,7 +60,7 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
         new Bitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
   }
 
-  public UnsignedLong getEarliestSlotForForkChoiceProcessing() {
+  public UInt64 getEarliestSlotForForkChoiceProcessing() {
     return data.getEarliestSlotForForkChoice();
   }
 
