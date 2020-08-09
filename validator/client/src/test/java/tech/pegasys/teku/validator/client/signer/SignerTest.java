@@ -31,7 +31,7 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-class ΩSignerTest {
+class SignerTest {
 
   private final MessageSignerService signerService = mock(MessageSignerService.class);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
