@@ -485,7 +485,7 @@ public class SimpleOffsetSerializer {
       Class classInfo, SSZReader reader, MutableInt bytePointer) {
     switch (classInfo.getSimpleName()) {
       case "UInt64":
-        bytePointer.add(UInt64.SIZE);
+        bytePointer.add(UInt64.BYTES);
         return UInt64.fromLongBits(reader.readUInt64());
       case "ArrayWrappingBytes32":
       case "Bytes32":

@@ -22,7 +22,7 @@ public final class UInt64 implements Comparable<UInt64> {
 
   private static final long UNSIGNED_MASK = 0x7fffffffffffffffL;
 
-  public static final int SIZE = 64;
+  public static final int BYTES = 8;
 
   public static final UInt64 ZERO = new UInt64(0);
   public static final UInt64 ONE = new UInt64(1);
