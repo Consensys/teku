@@ -184,7 +184,7 @@ public final class DataStructureUtil {
   }
 
   /**
-   * A random UnsignedLong that is within a reasonable bound for an epoch number. The maximum value
+   * A random UInt64 that is within a reasonable bound for an epoch number. The maximum value
    * returned won't be reached for another 12,000 years or so.
    */
   public UInt64 randomEpoch() {
