@@ -37,7 +37,7 @@ class UInt64Test {
 
   @ParameterizedTest
   @ValueSource(ints = {0, 1, 1341341252, Integer.MAX_VALUE})
-  void intValue_shouldReturnIntValueOnlyForValuesThatFitInAPositiveInt(final int value) {
+  void intValue_shouldReturnIntValueForValuesThatFitInAPositiveInt(final int value) {
     final UInt64 uInt64 = UInt64.valueOf(value);
     assertThat(uInt64.intValue()).isEqualTo(value);
   }
@@ -145,6 +145,54 @@ class UInt64Test {
   @Test
   void compareTo_shouldBeEqualWhenEqual() {
     assertThat(UInt64.fromLongBits(-675)).isEqualByComparingTo(UInt64.fromLongBits(-675));
+  }
+
+  @ParameterizedTest
+  @MethodSource("comparableNumbers")
+  void greaterThan_shouldReturnTrueWhenNumberIsStrictlyGreater(
+      final UInt64 smaller, final UInt64 bigger) {
+    assertThat(smaller.isGreaterThan(bigger)).isFalse();
+    assertThat(bigger.isGreaterThan(smaller)).isTrue();
+
+    // Must be strictly greater than
+    assertThat(smaller.isGreaterThan(smaller)).isFalse();
+    assertThat(bigger.isGreaterThan(bigger)).isFalse();
+  }
+
+  @ParameterizedTest
+  @MethodSource("comparableNumbers")
+  void greaterThanOrEqualTo_shouldReturnTrueWhenNumberIsGreaterOrEqual(
+      final UInt64 smaller, final UInt64 bigger) {
+    assertThat(smaller.isGreaterThanOrEqualTo(bigger)).isFalse();
+    assertThat(bigger.isGreaterThanOrEqualTo(smaller)).isTrue();
+
+    // True when equal
+    assertThat(smaller.isGreaterThanOrEqualTo(smaller)).isTrue();
+    assertThat(bigger.isGreaterThanOrEqualTo(bigger)).isTrue();
+  }
+
+  @ParameterizedTest
+  @MethodSource("comparableNumbers")
+  void lessThan_shouldReturnTrueWhenNumberIsStrictlyLessThan(
+      final UInt64 smaller, final UInt64 bigger) {
+    assertThat(smaller.isLessThan(bigger)).isTrue();
+    assertThat(bigger.isLessThan(smaller)).isFalse();
+
+    // Must be strictly greater than
+    assertThat(smaller.isLessThan(smaller)).isFalse();
+    assertThat(bigger.isLessThan(bigger)).isFalse();
+  }
+
+  @ParameterizedTest
+  @MethodSource("comparableNumbers")
+  void lessThanOrEqualTo_shouldReturnTrueWhenNumberIsLessThanOrEqual(
+      final UInt64 smaller, final UInt64 bigger) {
+    assertThat(smaller.isLessThanOrEqualTo(bigger)).isTrue();
+    assertThat(bigger.isLessThanOrEqualTo(smaller)).isFalse();
+
+    // Must be strictly greater than
+    assertThat(smaller.isLessThanOrEqualTo(smaller)).isTrue();
+    assertThat(bigger.isLessThanOrEqualTo(bigger)).isTrue();
   }
 
   @Test
@@ -385,5 +433,17 @@ class UInt64Test {
             UInt64.SQRT_MAX_VALUE,
             UInt64.SQRT_MAX_VALUE,
             Long.parseUnsignedLong("18446744065119617025")));
+  }
+
+  static List<Arguments> comparableNumbers() {
+    // (Smaller Number, Bigger Number)
+    return List.of(
+        Arguments.of(UInt64.ZERO, UInt64.ONE),
+        Arguments.of(UInt64.ZERO, UInt64.valueOf(Long.MAX_VALUE)),
+        Arguments.of(UInt64.ZERO, UInt64.MAX_VALUE),
+        Arguments.of(UInt64.fromLongBits(-2), UInt64.MAX_VALUE),
+        Arguments.of(UInt64.fromLongBits(-445), UInt64.fromLongBits(-444)),
+        Arguments.of(UInt64.valueOf(22244), UInt64.valueOf(22245)),
+        Arguments.of(UInt64.valueOf(Long.MAX_VALUE), UInt64.fromLongBits(Long.MIN_VALUE)));
   }
 }
