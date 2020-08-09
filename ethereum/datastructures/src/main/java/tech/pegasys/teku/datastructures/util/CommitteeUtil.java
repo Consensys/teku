@@ -107,8 +107,8 @@ public class CommitteeUtil {
    */
   public static void shuffle_list(int[] input, Bytes32 seed) {
 
-    int list_size = input.length;
-    if (list_size == 0) {
+    int listSize = input.length;
+    if (listSize == 0) {
       return;
     }
 
@@ -121,11 +121,11 @@ public class CommitteeUtil {
           toIntExact(
               Long.remainderUnsigned(
                   bytes_to_int64(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
-                  list_size));
+                  listSize));
 
       Bytes hashBytes = Bytes.EMPTY;
       int mirror1 = (pivot + 2) / 2;
-      int mirror2 = (pivot + list_size) / 2;
+      int mirror2 = (pivot + listSize) / 2;
       for (int i = mirror1; i <= mirror2; i++) {
 
         int flip, bitIndex;
@@ -136,7 +136,7 @@ public class CommitteeUtil {
             hashBytes = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, uint_to_bytes(i / 256, 4)));
           }
         } else {
-          flip = pivot + list_size - i;
+          flip = pivot + listSize - i;
           bitIndex = flip & 0xff;
           if (bitIndex == 0xff || i == pivot + 1) {
             hashBytes = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, uint_to_bytes(flip / 256, 4)));
