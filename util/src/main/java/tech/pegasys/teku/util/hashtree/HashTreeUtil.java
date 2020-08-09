@@ -146,10 +146,10 @@ public final class HashTreeUtil {
   }
 
   public static Bytes32 hash_tree_root_list_ul(SSZList<Bytes> bytes) {
-    return hash_tree_root_list_of_unsigned_long(bytes);
+    return hash_tree_root_list_of_uint64(bytes);
   }
 
-  public static Bytes32 hash_tree_root_vector_unsigned_long(SSZVector<UInt64> vector) {
+  public static Bytes32 hash_tree_root_vector_uint64(SSZVector<UInt64> vector) {
     List<Bytes> bytes =
         vector.stream().map(i -> SSZ.encodeUInt64(i.longValue())).collect(Collectors.toList());
     return merkleize(separateIntoChunks(bytes.toArray(new Bytes[0])));
@@ -311,11 +311,9 @@ public final class HashTreeUtil {
    *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
    *     Spec v0.5.1</a>
    */
-  private static Bytes32 hash_tree_root_list_of_unsigned_long(SSZList<? extends Bytes> bytes) {
+  private static Bytes32 hash_tree_root_list_of_uint64(SSZList<? extends Bytes> bytes) {
     return mix_in_length(
-        merkleize(
-            separateIntoChunks(bytes.toArray()),
-            chunk_count_list_unsigned_long(bytes.getMaxSize())),
+        merkleize(separateIntoChunks(bytes.toArray()), chunk_count_list_uint64(bytes.getMaxSize())),
         bytes.size());
   }
 
@@ -416,7 +414,7 @@ public final class HashTreeUtil {
     return chunkifiedBytes;
   }
 
-  private static long chunk_count_list_unsigned_long(long maxSize) {
+  private static long chunk_count_list_uint64(long maxSize) {
     return (maxSize * 8 + 31) / 32;
   }
 
@@ -435,7 +433,7 @@ public final class HashTreeUtil {
         return (maxSize + 255) / 256;
       case LIST_OF_BASIC:
         throw new UnsupportedOperationException(
-            "Use chunk_count_list_unsigned_long(int, Bytes) for List of uint64 SSZ types.");
+            "Use chunk_count_list_uint64(int, Bytes) for List of uint64 SSZ types.");
       case VECTOR_OF_BASIC:
         throw new UnsupportedOperationException(
             "Use chunk_count(HashTreeUtil.SSZTypes, Bytes) for VECTORS of BASIC SSZ types.");
