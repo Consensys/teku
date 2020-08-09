@@ -81,7 +81,6 @@ import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class SimpleOffsetSerializer {
 
-  static final int UNSIGNED_LONG_SIZE = 8;
   static final int BOOLEAN_SIZE = 1;
   public static HashMap<Class, ReflectionInformation> classReflectionInfo = new HashMap<>();
   public static HashMap<Class, LengthBounds> classLengthBounds = new HashMap<>();
@@ -486,7 +485,7 @@ public class SimpleOffsetSerializer {
       Class classInfo, SSZReader reader, MutableInt bytePointer) {
     switch (classInfo.getSimpleName()) {
       case "UInt64":
-        bytePointer.add(UNSIGNED_LONG_SIZE);
+        bytePointer.add(UInt64.SIZE);
         return UInt64.fromLongBits(reader.readUInt64());
       case "ArrayWrappingBytes32":
       case "Bytes32":

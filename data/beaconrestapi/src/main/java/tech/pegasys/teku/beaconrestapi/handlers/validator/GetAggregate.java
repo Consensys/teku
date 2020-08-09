@@ -72,7 +72,7 @@ public class GetAggregate implements Handler {
             required = true),
         @OpenApiParam(
             name = SLOT,
-            description = "`UInt64` Non-finalized slot for which to create the aggregation.",
+            description = "`uint64` Non-finalized slot for which to create the aggregation.",
             required = true)
       },
       description = "Aggregates all attestations matching given attestation data root and slot.",

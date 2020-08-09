@@ -62,7 +62,7 @@ public class GetAttestation implements Handler {
       queryParams = {
         @OpenApiParam(
             name = SLOT,
-            description = "`UInt64` Non-finalized slot for which to create the attestation.",
+            description = "`uint64` Non-finalized slot for which to create the attestation.",
             required = true),
         @OpenApiParam(
             name = COMMITTEE_INDEX,
