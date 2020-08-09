@@ -90,8 +90,7 @@ public class RpcException extends Exception {
   }
 
   public RpcException(final byte responseCode, final RpcErrorMessage errorMessage) {
-    this.responseCode = responseCode;
-    this.errorMessage = errorMessage.toString();
+    this(responseCode, errorMessage.toString());
   }
 
   public byte getResponseCode() {

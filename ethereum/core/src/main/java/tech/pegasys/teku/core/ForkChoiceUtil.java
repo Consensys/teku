@@ -129,6 +129,7 @@ public class ForkChoiceUtil {
     maybeSlot.ifPresent(
         slot -> {
           if (slot.compareTo(endSlot) <= 0
+              && slot.compareTo(startSlot) >= 0
               && slot.minus(startSlot).mod(step).equals(UnsignedLong.ZERO)) {
             roots.put(slot, root);
           }
