@@ -46,6 +46,8 @@ public class SyncManager extends Service {
   private static final Duration SHORT_DELAY = Duration.ofSeconds(5);
   private static final Duration LONG_DELAY = Duration.ofSeconds(20);
   private static final UInt64 SYNC_THRESHOLD_IN_EPOCHS = UInt64.ONE;
+  private static final UInt64 SYNC_THRESHOLD_IN_SLOTS =
+      SYNC_THRESHOLD_IN_EPOCHS.times(SLOTS_PER_EPOCH);
 
   private static final Logger LOG = LogManager.getLogger();
   private final P2PNetwork<Eth2Peer> network;
@@ -285,8 +287,7 @@ public class SyncManager extends Service {
 
   private boolean isPeerHeadSlotAhead(final PeerStatus peerStatus) {
     final UInt64 ourHeadSlot = storageClient.getBestSlot();
-    final UInt64 headSlotThreshold =
-        ourHeadSlot.plus(SYNC_THRESHOLD_IN_EPOCHS.times(SLOTS_PER_EPOCH));
+    final UInt64 headSlotThreshold = ourHeadSlot.plus(SYNC_THRESHOLD_IN_SLOTS);
 
     return peerStatus.getHeadSlot().compareTo(headSlotThreshold) > 0;
   }
