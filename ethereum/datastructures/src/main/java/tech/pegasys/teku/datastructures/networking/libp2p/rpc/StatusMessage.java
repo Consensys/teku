@@ -16,12 +16,12 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
@@ -31,16 +31,16 @@ public class StatusMessage implements RpcRequest, SimpleOffsetSerializable, SSZC
 
   private final Bytes4 forkDigest;
   private final Bytes32 finalizedRoot;
-  private final UnsignedLong finalizedEpoch;
+  private final UInt64 finalizedEpoch;
   private final Bytes32 headRoot;
-  private final UnsignedLong headSlot;
+  private final UInt64 headSlot;
 
   public StatusMessage(
       Bytes4 forkDigest,
       Bytes32 finalizedRoot,
-      UnsignedLong finalizedEpoch,
+      UInt64 finalizedEpoch,
       Bytes32 headRoot,
-      UnsignedLong headSlot) {
+      UInt64 headSlot) {
     this.forkDigest = forkDigest;
     this.finalizedRoot = finalizedRoot;
     this.finalizedEpoch = finalizedEpoch;
@@ -50,11 +50,7 @@ public class StatusMessage implements RpcRequest, SimpleOffsetSerializable, SSZC
 
   public static StatusMessage createPreGenesisStatus() {
     return new StatusMessage(
-        createPreGenesisForkDigest(),
-        Bytes32.ZERO,
-        UnsignedLong.ZERO,
-        Bytes32.ZERO,
-        UnsignedLong.ZERO);
+        createPreGenesisForkDigest(), Bytes32.ZERO, UInt64.ZERO, Bytes32.ZERO, UInt64.ZERO);
   }
 
   private static Bytes4 createPreGenesisForkDigest() {
@@ -114,7 +110,7 @@ public class StatusMessage implements RpcRequest, SimpleOffsetSerializable, SSZC
     return finalizedRoot;
   }
 
-  public UnsignedLong getFinalizedEpoch() {
+  public UInt64 getFinalizedEpoch() {
     return finalizedEpoch;
   }
 
@@ -122,7 +118,7 @@ public class StatusMessage implements RpcRequest, SimpleOffsetSerializable, SSZC
     return headRoot;
   }
 
-  public UnsignedLong getHeadSlot() {
+  public UInt64 getHeadSlot() {
     return headSlot;
   }
 

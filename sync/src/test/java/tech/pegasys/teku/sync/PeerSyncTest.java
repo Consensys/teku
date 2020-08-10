@@ -23,7 +23,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
@@ -41,6 +40,7 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
@@ -57,8 +57,8 @@ public class PeerSyncTest {
 
   private static final SignedBeaconBlock BLOCK = new DataStructureUtil().randomSignedBeaconBlock(1);
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");
-  private static final UnsignedLong PEER_HEAD_SLOT = UnsignedLong.valueOf(30);
-  private static final UnsignedLong PEER_FINALIZED_EPOCH = UnsignedLong.valueOf(3);
+  private static final UInt64 PEER_HEAD_SLOT = UInt64.valueOf(30);
+  private static final UInt64 PEER_FINALIZED_EPOCH = UInt64.valueOf(3);
 
   private static final PeerStatus PEER_STATUS =
       PeerStatus.fromStatusMessage(
@@ -80,7 +80,7 @@ public class PeerSyncTest {
 
   @BeforeEach
   public void setUp() {
-    when(storageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
+    when(storageClient.getFinalizedEpoch()).thenReturn(UInt64.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
     // By default set up block import to succeed
     final BlockProcessingRecord processingRecord = mock(BlockProcessingRecord.class);
@@ -123,7 +123,7 @@ public class PeerSyncTest {
 
     verify(peer)
         .requestBlocksByRange(
-            any(), any(), eq(UnsignedLong.ONE), responseListenerArgumentCaptor.capture());
+            any(), any(), eq(UInt64.ONE), responseListenerArgumentCaptor.capture());
 
     // Respond with blocks and check they're passed to the block importer.
     final ResponseStreamListener<SignedBeaconBlock> responseListener =
@@ -156,8 +156,8 @@ public class PeerSyncTest {
 
   @Test
   void sync_stoppedBeforeBlockImport() {
-    UnsignedLong step = UnsignedLong.ONE;
-    UnsignedLong startHere = UnsignedLong.ONE;
+    UInt64 step = UInt64.ONE;
+    UInt64 startHere = UInt64.ONE;
     final SafeFuture<Void> requestFuture = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any(), any())).thenReturn(requestFuture);
 
@@ -191,7 +191,7 @@ public class PeerSyncTest {
     assertThat(result).isEqualByComparingTo(PeerSyncResult.CANCELLED);
 
     // check startingSlot
-    UnsignedLong startingSlot = peerSync.getStartingSlot();
+    UInt64 startingSlot = peerSync.getStartingSlot();
     assertThat(startingSlot).isEqualTo(startHere);
   }
 
@@ -205,7 +205,7 @@ public class PeerSyncTest {
 
     verify(peer)
         .requestBlocksByRange(
-            any(), any(), eq(UnsignedLong.ONE), responseListenerArgumentCaptor.capture());
+            any(), any(), eq(UInt64.ONE), responseListenerArgumentCaptor.capture());
 
     // Respond with blocks and check they're passed to the block importer.
     final ResponseStreamListener<SignedBeaconBlock> responseListener =
@@ -219,8 +219,7 @@ public class PeerSyncTest {
 
     // Now that we've imported the block, our finalized epoch has updated but hasn't reached what
     // the peer claimed
-    when(storageClient.getFinalizedEpoch())
-        .thenReturn(PEER_FINALIZED_EPOCH.minus(UnsignedLong.ONE));
+    when(storageClient.getFinalizedEpoch()).thenReturn(PEER_FINALIZED_EPOCH.minus(UInt64.ONE));
 
     // Signal the request for data from the peer is complete.
     requestFuture.complete(null);
@@ -232,8 +231,8 @@ public class PeerSyncTest {
 
   @Test
   void sync_longSyncWithTwoRequests() {
-    final UnsignedLong secondRequestSize = UnsignedLong.ONE;
-    UnsignedLong peerHeadSlot = Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(secondRequestSize);
+    final UInt64 secondRequestSize = UInt64.ONE;
+    UInt64 peerHeadSlot = Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(secondRequestSize);
 
     withPeerHeadSlot(peerHeadSlot);
 
@@ -246,23 +245,23 @@ public class PeerSyncTest {
     final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isNotDone();
 
-    final UnsignedLong startSlot = UnsignedLong.ONE;
+    final UInt64 startSlot = UInt64.ONE;
     verify(peer)
         .requestBlocksByRange(
             eq(startSlot),
             eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
-            eq(UnsignedLong.ONE),
+            eq(UInt64.ONE),
             responseListenerArgumentCaptor.capture());
 
     final int lastReceivedBlockSlot = peerHeadSlot.intValue() - secondRequestSize.intValue();
     completeRequestWithBlockAtSlot(requestFuture1, lastReceivedBlockSlot);
 
-    final UnsignedLong nextSlotStart = UnsignedLong.valueOf(lastReceivedBlockSlot + 1);
+    final UInt64 nextSlotStart = UInt64.valueOf(lastReceivedBlockSlot + 1);
     verify(peer)
         .requestBlocksByRange(
             eq(nextSlotStart),
             eq(secondRequestSize),
-            eq(UnsignedLong.ONE),
+            eq(UInt64.ONE),
             responseListenerArgumentCaptor.capture());
 
     when(storageClient.getFinalizedEpoch()).thenReturn(PEER_FINALIZED_EPOCH);
@@ -277,8 +276,8 @@ public class PeerSyncTest {
 
   @Test
   void sync_handleEmptyResponse() {
-    final UnsignedLong secondRequestSize = UnsignedLong.valueOf(5);
-    UnsignedLong peerHeadSlot = Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(secondRequestSize);
+    final UInt64 secondRequestSize = UInt64.valueOf(5);
+    UInt64 peerHeadSlot = Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(secondRequestSize);
 
     withPeerHeadSlot(peerHeadSlot);
 
@@ -293,12 +292,12 @@ public class PeerSyncTest {
     final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isNotDone();
 
-    final UnsignedLong startSlot = UnsignedLong.ONE;
+    final UInt64 startSlot = UInt64.ONE;
     verify(peer)
         .requestBlocksByRange(
             eq(startSlot),
             eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
-            eq(UnsignedLong.ONE),
+            eq(UInt64.ONE),
             responseListenerArgumentCaptor.capture());
 
     // Complete request with no returned blocks
@@ -306,16 +305,16 @@ public class PeerSyncTest {
     verify(blockImporter, never()).importBlock(any());
 
     // check startingSlot
-    final UnsignedLong syncStatusStartingSlot = peerSync.getStartingSlot();
+    final UInt64 syncStatusStartingSlot = peerSync.getStartingSlot();
     assertThat(syncStatusStartingSlot).isEqualTo(startSlot);
 
     asyncRunner.executeQueuedActions();
-    final UnsignedLong nextSlotStart = startSlot.plus(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
+    final UInt64 nextSlotStart = startSlot.plus(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
     verify(peer)
         .requestBlocksByRange(
             eq(nextSlotStart),
             eq(secondRequestSize),
-            eq(UnsignedLong.ONE),
+            eq(UInt64.ONE),
             responseListenerArgumentCaptor.capture());
 
     when(storageClient.getFinalizedEpoch()).thenReturn(PEER_FINALIZED_EPOCH);
@@ -325,26 +324,24 @@ public class PeerSyncTest {
     assertThat(syncFuture).isCompleted();
 
     // check startingSlot is still where it was
-    final UnsignedLong syncStatusStartingSlot2 = peerSync.getStartingSlot();
+    final UInt64 syncStatusStartingSlot2 = peerSync.getStartingSlot();
     assertThat(syncStatusStartingSlot2).isEqualTo(startSlot);
 
     // do another sync and check that things are further along.
-    UnsignedLong thirdRequestSize = UnsignedLong.valueOf(6);
+    UInt64 thirdRequestSize = UInt64.valueOf(6);
     withPeerHeadSlot(peerHeadSlot.plus(thirdRequestSize));
     final SafeFuture<PeerSyncResult> syncFuture2 = peerSync.sync(peer);
     assertThat(syncFuture2).isNotDone();
 
     // first non-finalized slot after syncing with peer
-    final UnsignedLong secondSyncStartingSlot =
-        PEER_FINALIZED_EPOCH
-            .times(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH))
-            .plus(UnsignedLong.ONE);
+    final UInt64 secondSyncStartingSlot =
+        PEER_FINALIZED_EPOCH.times(UInt64.valueOf(Constants.SLOTS_PER_EPOCH)).plus(UInt64.ONE);
 
     verify(peer)
         .requestBlocksByRange(
             eq(secondSyncStartingSlot),
             any(),
-            eq(UnsignedLong.ONE),
+            eq(UInt64.ONE),
             responseListenerArgumentCaptor.capture());
 
     // Signal that second sync is complete
@@ -356,14 +353,14 @@ public class PeerSyncTest {
     verify(peer, never()).disconnectCleanly(any());
 
     // check that starting slot for second sync is the first slot after peer's finalized epoch
-    final UnsignedLong syncStatusStartingSlot3 = peerSync.getStartingSlot();
+    final UInt64 syncStatusStartingSlot3 = peerSync.getStartingSlot();
     assertThat(syncStatusStartingSlot3).isEqualTo(secondSyncStartingSlot);
   }
 
   @Test
   void sync_failSyncIfPeerThrottlesTooAggressively() {
-    final UnsignedLong startSlot = UnsignedLong.ONE;
-    UnsignedLong peerHeadSlot = Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(startSlot);
+    final UInt64 startSlot = UInt64.ONE;
+    UInt64 peerHeadSlot = Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(startSlot);
 
     withPeerHeadSlot(peerHeadSlot);
 
@@ -380,7 +377,7 @@ public class PeerSyncTest {
         .requestBlocksByRange(
             eq(startSlot),
             eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
-            eq(UnsignedLong.ONE),
+            eq(UInt64.ONE),
             responseListenerArgumentCaptor.capture());
 
     // Peer only returns a couple of blocks
@@ -395,8 +392,8 @@ public class PeerSyncTest {
 
   @Test
   void sync_continueSyncIfPeerThrottlesAReasonableAmount() {
-    final UnsignedLong startSlot = UnsignedLong.ONE;
-    UnsignedLong peerHeadSlot = UnsignedLong.valueOf(1000000);
+    final UInt64 startSlot = UInt64.ONE;
+    UInt64 peerHeadSlot = UInt64.valueOf(1000000);
 
     withPeerHeadSlot(peerHeadSlot);
 
@@ -413,7 +410,7 @@ public class PeerSyncTest {
         .requestBlocksByRange(
             eq(startSlot),
             eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
-            eq(UnsignedLong.ONE),
+            eq(UInt64.ONE),
             responseListenerArgumentCaptor.capture());
 
     // Peer only returns some blocks but not as many as were requested
@@ -425,9 +422,9 @@ public class PeerSyncTest {
     // Next request should start after the last received block
     verify(peer)
         .requestBlocksByRange(
-            eq(UnsignedLong.valueOf(lastReceivedBlockSlot + 1)),
+            eq(UInt64.valueOf(lastReceivedBlockSlot + 1)),
             eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
-            eq(UnsignedLong.ONE),
+            eq(UInt64.ONE),
             any());
 
     verify(peer, never()).disconnectCleanly(any());
@@ -456,7 +453,7 @@ public class PeerSyncTest {
     return blocks;
   }
 
-  private void withPeerHeadSlot(final UnsignedLong peerHeadSlot) {
+  private void withPeerHeadSlot(final UInt64 peerHeadSlot) {
     final PeerStatus peer_status =
         PeerStatus.fromStatusMessage(
             new StatusMessage(

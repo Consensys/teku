@@ -14,7 +14,6 @@
 package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -22,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.util.hashtree.HashTreeUtil;
@@ -34,8 +34,8 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
   public static final int SSZ_FIELD_COUNT = 4;
 
   // Header
-  private UnsignedLong slot;
-  private UnsignedLong proposer_index;
+  private UInt64 slot;
+  private UInt64 proposer_index;
   private Bytes32 parent_root;
   private Bytes32 state_root;
 
@@ -43,8 +43,8 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
   private BeaconBlockBody body;
 
   public BeaconBlock(
-      UnsignedLong slot,
-      UnsignedLong proposer_index,
+      UInt64 slot,
+      UInt64 proposer_index,
       Bytes32 parent_root,
       Bytes32 state_root,
       BeaconBlockBody body) {
@@ -56,16 +56,16 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
   }
 
   public BeaconBlock() {
-    this.slot = UnsignedLong.ZERO;
-    this.proposer_index = UnsignedLong.ZERO;
+    this.slot = UInt64.ZERO;
+    this.proposer_index = UInt64.ZERO;
     this.parent_root = Bytes32.ZERO;
     this.state_root = Bytes32.ZERO;
     this.body = new BeaconBlockBody();
   }
 
   public BeaconBlock(Bytes32 state_root) {
-    this.slot = UnsignedLong.ZERO;
-    this.proposer_index = UnsignedLong.ZERO;
+    this.slot = UInt64.ZERO;
+    this.proposer_index = UInt64.ZERO;
     this.parent_root = Bytes32.ZERO;
     this.state_root = state_root;
     this.body = new BeaconBlockBody();
@@ -136,11 +136,11 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
     return parent_root;
   }
 
-  public UnsignedLong getSlot() {
+  public UInt64 getSlot() {
     return slot;
   }
 
-  public UnsignedLong getProposer_index() {
+  public UInt64 getProposer_index() {
     return proposer_index;
   }
 

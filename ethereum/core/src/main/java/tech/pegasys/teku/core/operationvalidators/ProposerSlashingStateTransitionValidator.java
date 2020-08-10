@@ -19,12 +19,12 @@ import static tech.pegasys.teku.core.operationvalidators.OperationInvalidReason.
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_slashable_validator;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ProposerSlashingStateTransitionValidator
     implements OperationStateTransitionValidator<ProposerSlashing> {
@@ -49,8 +49,7 @@ public class ProposerSlashingStateTransitionValidator
                 ProposerSlashingInvalidReason.SAME_HEADER),
         () ->
             check(
-                UnsignedLong.valueOf(state.getValidators().size())
-                        .compareTo(header1.getProposer_index())
+                UInt64.valueOf(state.getValidators().size()).compareTo(header1.getProposer_index())
                     > 0,
                 ProposerSlashingInvalidReason.INVALID_PROPOSER),
         () ->

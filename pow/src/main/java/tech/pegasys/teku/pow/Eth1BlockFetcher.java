@@ -13,10 +13,9 @@
 
 package tech.pegasys.teku.pow;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static com.google.common.primitives.UnsignedLong.ZERO;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
 import java.util.NavigableSet;
 import java.util.TreeSet;
@@ -25,6 +24,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.util.time.TimeProvider;
 
@@ -33,9 +33,9 @@ public class Eth1BlockFetcher {
 
   private final Eth1Provider eth1Provider;
   private final TimeProvider timeProvider;
-  private final UnsignedLong cacheDuration;
+  private final UInt64 cacheDuration;
   private final Eth1EventsChannel eth1EventsChannel;
-  private final NavigableSet<UnsignedLong> blocksToRequest = new TreeSet<>();
+  private final NavigableSet<UInt64> blocksToRequest = new TreeSet<>();
   private boolean requestInProgress = false;
   private boolean active = false;
 
@@ -43,14 +43,14 @@ public class Eth1BlockFetcher {
       final Eth1EventsChannel eth1EventsChannel,
       final Eth1Provider eth1Provider,
       final TimeProvider timeProvider,
-      final UnsignedLong cacheDuration) {
+      final UInt64 cacheDuration) {
     this.eth1EventsChannel = eth1EventsChannel;
     this.eth1Provider = eth1Provider;
     this.timeProvider = timeProvider;
     this.cacheDuration = cacheDuration;
   }
 
-  public synchronized void onInSync(final UnsignedLong latestCanonicalBlockNumber) {
+  public synchronized void onInSync(final UInt64 latestCanonicalBlockNumber) {
     if (active) {
       return;
     }
@@ -69,14 +69,14 @@ public class Eth1BlockFetcher {
       for (BigInteger block = fromBlock;
           block.compareTo(toBlock) <= 0;
           block = block.add(BigInteger.ONE)) {
-        blocksToRequest.add(UnsignedLong.valueOf(block));
+        blocksToRequest.add(UInt64.valueOf(block));
       }
     }
     requestNextBlockIfRequired();
   }
 
   private void requestNextBlockIfRequired() {
-    UnsignedLong blockToRequest;
+    UInt64 blockToRequest;
     synchronized (this) {
       if (requestInProgress || blocksToRequest.isEmpty()) {
         return;
@@ -95,7 +95,7 @@ public class Eth1BlockFetcher {
             });
   }
 
-  private SafeFuture<Void> requestBlock(final UnsignedLong blockNumberToRequest) {
+  private SafeFuture<Void> requestBlock(final UInt64 blockNumberToRequest) {
     // Note: Not using guaranteed requests here - if the Eth1 chain is temporarily unavailable
     // we may miss some blocks but that's better than potentially getting stuck retrying a block
     LOG.debug("Requesting block {}", blockNumberToRequest);
@@ -103,7 +103,7 @@ public class Eth1BlockFetcher {
         .getEth1Block(blockNumberToRequest)
         .thenAccept(
             block -> {
-              if (isAboveLowerBound(UnsignedLong.valueOf(block.getTimestamp()))) {
+              if (isAboveLowerBound(UInt64.valueOf(block.getTimestamp()))) {
                 postBlock(block);
               } else {
                 // Every block before the one we just fetched must be outside of the range
@@ -122,16 +122,16 @@ public class Eth1BlockFetcher {
 
   private void postBlock(final Block block) {
     eth1EventsChannel.onEth1Block(
-        Bytes32.fromHexString(block.getHash()), UnsignedLong.valueOf(block.getTimestamp()));
+        Bytes32.fromHexString(block.getHash()), UInt64.valueOf(block.getTimestamp()));
   }
 
-  private void backfillEth1Blocks(final UnsignedLong nextBlockToRequest) {
+  private void backfillEth1Blocks(final UInt64 nextBlockToRequest) {
     // Walk backwards from blockNumber until we reach the start of the voting period
     eth1Provider
         .getGuaranteedEth1Block(nextBlockToRequest)
         .finish(
             block -> {
-              if (isAboveLowerBound(UnsignedLong.valueOf(block.getTimestamp()))) {
+              if (isAboveLowerBound(UInt64.valueOf(block.getTimestamp()))) {
                 postBlock(block);
                 if (!nextBlockToRequest.equals(ZERO)) {
                   backfillEth1Blocks(nextBlockToRequest.minus(ONE));
@@ -143,11 +143,11 @@ public class Eth1BlockFetcher {
             error -> LOG.error("Unexpected error while back-filling ETH1 blocks", error));
   }
 
-  private boolean isAboveLowerBound(UnsignedLong timestamp) {
+  private boolean isAboveLowerBound(UInt64 timestamp) {
     return timestamp.compareTo(getCacheRangeLowerBound(timeProvider.getTimeInSeconds())) >= 0;
   }
 
-  private UnsignedLong getCacheRangeLowerBound(UnsignedLong currentTime) {
+  private UInt64 getCacheRangeLowerBound(UInt64 currentTime) {
     return currentTime.compareTo(cacheDuration) > 0 ? currentTime.minus(cacheDuration) : ZERO;
   }
 }

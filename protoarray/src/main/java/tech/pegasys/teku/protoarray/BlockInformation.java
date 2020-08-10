@@ -14,26 +14,26 @@
 package tech.pegasys.teku.protoarray;
 
 import com.google.common.base.Objects;
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BlockInformation {
-  private final UnsignedLong blockSlot;
+  private final UInt64 blockSlot;
   private final Bytes32 blockRoot;
   private final Bytes32 parentRoot;
   private final Bytes32 stateRoot;
-  private final UnsignedLong justifiedEpoch;
-  private final UnsignedLong finalizedEpoch;
+  private final UInt64 justifiedEpoch;
+  private final UInt64 finalizedEpoch;
 
   public BlockInformation(
-      final UnsignedLong blockSlot,
+      final UInt64 blockSlot,
       final Bytes32 blockRoot,
       final Bytes32 parentRoot,
       final Bytes32 stateRoot,
-      final UnsignedLong justifiedEpoch,
-      final UnsignedLong finalizedEpoch) {
+      final UInt64 justifiedEpoch,
+      final UInt64 finalizedEpoch) {
     this.blockSlot = blockSlot;
     this.blockRoot = blockRoot;
     this.parentRoot = parentRoot;
@@ -58,18 +58,18 @@ public class BlockInformation {
     return SSZ.decode(
         data,
         reader -> {
-          final UnsignedLong blockSlot = UnsignedLong.fromLongBits(reader.readUInt64());
+          final UInt64 blockSlot = UInt64.fromLongBits(reader.readUInt64());
           final Bytes32 blockRoot = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final Bytes32 parentRoot = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final Bytes32 stateRoot = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
-          final UnsignedLong justifiedEpoch = UnsignedLong.fromLongBits(reader.readUInt64());
-          final UnsignedLong finalizedEpoch = UnsignedLong.fromLongBits(reader.readUInt64());
+          final UInt64 justifiedEpoch = UInt64.fromLongBits(reader.readUInt64());
+          final UInt64 finalizedEpoch = UInt64.fromLongBits(reader.readUInt64());
           return new BlockInformation(
               blockSlot, blockRoot, parentRoot, stateRoot, justifiedEpoch, finalizedEpoch);
         });
   }
 
-  public UnsignedLong getBlockSlot() {
+  public UInt64 getBlockSlot() {
     return blockSlot;
   }
 
@@ -85,11 +85,11 @@ public class BlockInformation {
     return stateRoot;
   }
 
-  public UnsignedLong getJustifiedEpoch() {
+  public UInt64 getJustifiedEpoch() {
     return justifiedEpoch;
   }
 
-  public UnsignedLong getFinalizedEpoch() {
+  public UInt64 getFinalizedEpoch() {
     return finalizedEpoch;
   }
 

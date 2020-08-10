@@ -16,12 +16,12 @@ package tech.pegasys.teku.api.schema;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
-import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class BeaconChainHeadTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -32,8 +32,8 @@ class BeaconChainHeadTest {
   @Test
   public void shouldCreateFromBlockAndState() {
     final BeaconChainHead beaconChainHead = new BeaconChainHead(blockAndState);
-    final UnsignedLong latestSlot = blockAndState.getSlot();
-    final UnsignedLong headEpoch = compute_epoch_at_slot(latestSlot);
+    final UInt64 latestSlot = blockAndState.getSlot();
+    final UInt64 headEpoch = compute_epoch_at_slot(latestSlot);
 
     assertThat(beaconChainHead.head_block_root).isEqualTo(blockAndState.getRoot());
     assertThat(beaconChainHead.head_epoch).isEqualTo(headEpoch);

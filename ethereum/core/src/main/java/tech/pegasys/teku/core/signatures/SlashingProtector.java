@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.core.signatures;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -22,6 +21,7 @@ import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.record.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SlashingProtector {
 
@@ -37,7 +37,7 @@ public class SlashingProtector {
   }
 
   public synchronized SafeFuture<Boolean> maySignBlock(
-      final BLSPublicKey validator, final UnsignedLong slot) {
+      final BLSPublicKey validator, final UInt64 slot) {
     return SafeFuture.of(
         () -> {
           final ValidatorSigningRecord signingRecord = loadSigningRecord(validator);
@@ -46,9 +46,7 @@ public class SlashingProtector {
   }
 
   public synchronized SafeFuture<Boolean> maySignAttestation(
-      final BLSPublicKey validator,
-      final UnsignedLong sourceEpoch,
-      final UnsignedLong targetEpoch) {
+      final BLSPublicKey validator, final UInt64 sourceEpoch, final UInt64 targetEpoch) {
     return SafeFuture.of(
         () -> {
           final ValidatorSigningRecord signingRecord = loadSigningRecord(validator);

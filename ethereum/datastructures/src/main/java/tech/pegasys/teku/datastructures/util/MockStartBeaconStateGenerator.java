@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.util;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class MockStartBeaconStateGenerator {
 
@@ -33,11 +33,11 @@ public class MockStartBeaconStateGenerator {
   }
 
   public BeaconState createInitialBeaconState(
-      final UnsignedLong genesisTime, final List<DepositData> initialDepositData) {
+      final UInt64 genesisTime, final List<DepositData> initialDepositData) {
     final List<DepositWithIndex> deposits = new ArrayList<>();
     for (int index = 0; index < initialDepositData.size(); index++) {
       final DepositData data = initialDepositData.get(index);
-      DepositWithIndex deposit = new DepositWithIndex(data, UnsignedLong.valueOf(index));
+      DepositWithIndex deposit = new DepositWithIndex(data, UInt64.valueOf(index));
       deposits.add(deposit);
     }
     final BeaconState initialState =

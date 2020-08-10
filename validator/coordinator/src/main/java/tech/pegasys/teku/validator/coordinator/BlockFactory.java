@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -32,6 +31,7 @@ import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -71,13 +71,13 @@ public class BlockFactory {
   public BeaconBlock createUnsignedBlock(
       final BeaconState previousState,
       final BeaconBlock previousBlock,
-      final UnsignedLong newSlot,
+      final UInt64 newSlot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti)
       throws EpochProcessingException, SlotProcessingException, StateTransitionException {
 
     // Process empty slots up to the one before the new block slot
-    final UnsignedLong slotBeforeBlock = newSlot.minus(UnsignedLong.ONE);
+    final UInt64 slotBeforeBlock = newSlot.minus(UInt64.ONE);
     BeaconState blockPreState;
     if (previousState.getSlot().equals(slotBeforeBlock)) {
       blockPreState = previousState;

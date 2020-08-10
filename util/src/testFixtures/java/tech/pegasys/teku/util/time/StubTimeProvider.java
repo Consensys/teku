@@ -13,30 +13,30 @@
 
 package tech.pegasys.teku.util.time;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.TimeUnit;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class StubTimeProvider implements TimeProvider {
 
-  private UnsignedLong timeInMillis;
+  private UInt64 timeInMillis;
 
-  private StubTimeProvider(final UnsignedLong timeInMillis) {
+  private StubTimeProvider(final UInt64 timeInMillis) {
     this.timeInMillis = timeInMillis;
   }
 
   public static StubTimeProvider withTimeInSeconds(final long timeInSeconds) {
-    return withTimeInSeconds(UnsignedLong.valueOf(timeInSeconds));
+    return withTimeInSeconds(UInt64.valueOf(timeInSeconds));
   }
 
-  public static StubTimeProvider withTimeInSeconds(final UnsignedLong timeInSeconds) {
+  public static StubTimeProvider withTimeInSeconds(final UInt64 timeInSeconds) {
     return withTimeInMillis(timeInSeconds.times(MILLIS_PER_SECOND));
   }
 
   public static StubTimeProvider withTimeInMillis(final long timeInMillis) {
-    return withTimeInMillis(UnsignedLong.valueOf(timeInMillis));
+    return withTimeInMillis(UInt64.valueOf(timeInMillis));
   }
 
-  public static StubTimeProvider withTimeInMillis(final UnsignedLong timeInMillis) {
+  public static StubTimeProvider withTimeInMillis(final UInt64 timeInMillis) {
     return new StubTimeProvider(timeInMillis);
   }
 
@@ -45,11 +45,11 @@ public class StubTimeProvider implements TimeProvider {
   }
 
   public void advanceTimeByMillis(final long millis) {
-    this.timeInMillis = timeInMillis.plus(UnsignedLong.valueOf(millis));
+    this.timeInMillis = timeInMillis.plus(UInt64.valueOf(millis));
   }
 
   @Override
-  public UnsignedLong getTimeInMillis() {
+  public UInt64 getTimeInMillis() {
     return timeInMillis;
   }
 }

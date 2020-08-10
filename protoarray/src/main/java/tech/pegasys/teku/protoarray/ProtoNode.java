@@ -14,37 +14,37 @@
 package tech.pegasys.teku.protoarray;
 
 import com.google.common.base.Objects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ProtoNode {
 
   // The `slot` and `stateRoot` is not necessary for `ProtoArray`, it just exists so external
   // components can
   // easily query the block slot. This is useful for upstream fork choice logic.
-  private final UnsignedLong blockSlot;
+  private final UInt64 blockSlot;
   private final Bytes32 stateRoot;
 
   private final Bytes32 blockRoot;
   private final Bytes32 parentRoot;
-  private final UnsignedLong justifiedEpoch;
-  private final UnsignedLong finalizedEpoch;
+  private final UInt64 justifiedEpoch;
+  private final UInt64 finalizedEpoch;
 
-  private UnsignedLong weight;
+  private UInt64 weight;
   private Optional<Integer> parentIndex;
   private Optional<Integer> bestChildIndex;
   private Optional<Integer> bestDescendantIndex;
 
   ProtoNode(
-      final UnsignedLong blockSlot,
+      final UInt64 blockSlot,
       final Bytes32 stateRoot,
       final Bytes32 blockRoot,
       final Bytes32 parentRoot,
       final Optional<Integer> parentIndex,
-      final UnsignedLong justifiedEpoch,
-      final UnsignedLong finalizedEpoch,
-      final UnsignedLong weight,
+      final UInt64 justifiedEpoch,
+      final UInt64 finalizedEpoch,
+      final UInt64 weight,
       final Optional<Integer> bestChildIndex,
       final Optional<Integer> bestDescendantIndex) {
     this.blockSlot = blockSlot;
@@ -61,14 +61,14 @@ public class ProtoNode {
 
   public void adjustWeight(long delta) {
     if (delta < 0) {
-      UnsignedLong deltaAbsoluteValue = UnsignedLong.valueOf(Math.abs(delta));
+      UInt64 deltaAbsoluteValue = UInt64.valueOf(Math.abs(delta));
       if (deltaAbsoluteValue.compareTo(weight) > 0) {
         throw new RuntimeException(
             "ProtoNode: Delta to be subtracted is greater than node weight.");
       }
       weight = weight.minus(deltaAbsoluteValue);
     } else {
-      weight = weight.plus(UnsignedLong.valueOf(delta));
+      weight = weight.plus(UInt64.valueOf(delta));
     }
   }
 
@@ -76,11 +76,11 @@ public class ProtoNode {
     return parentRoot;
   }
 
-  public UnsignedLong getWeight() {
+  public UInt64 getWeight() {
     return weight;
   }
 
-  public UnsignedLong getBlockSlot() {
+  public UInt64 getBlockSlot() {
     return blockSlot;
   }
 
@@ -96,11 +96,11 @@ public class ProtoNode {
     return parentIndex;
   }
 
-  public UnsignedLong getJustifiedEpoch() {
+  public UInt64 getJustifiedEpoch() {
     return justifiedEpoch;
   }
 
-  public UnsignedLong getFinalizedEpoch() {
+  public UInt64 getFinalizedEpoch() {
     return finalizedEpoch;
   }
 

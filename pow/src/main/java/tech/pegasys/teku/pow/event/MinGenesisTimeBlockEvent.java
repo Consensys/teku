@@ -13,28 +13,27 @@
 
 package tech.pegasys.teku.pow.event;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class MinGenesisTimeBlockEvent {
 
-  private final UnsignedLong timestamp;
-  private final UnsignedLong blockNumber;
+  private final UInt64 timestamp;
+  private final UInt64 blockNumber;
   private final Bytes32 blockHash;
 
-  public MinGenesisTimeBlockEvent(
-      UnsignedLong timestamp, UnsignedLong blockNumber, Bytes32 blockHash) {
+  public MinGenesisTimeBlockEvent(UInt64 timestamp, UInt64 blockNumber, Bytes32 blockHash) {
     this.timestamp = timestamp;
     this.blockNumber = blockNumber;
     this.blockHash = blockHash;
   }
 
-  public UnsignedLong getTimestamp() {
+  public UInt64 getTimestamp() {
     return timestamp;
   }
 
-  public UnsignedLong getBlockNumber() {
+  public UInt64 getBlockNumber() {
     return blockNumber;
   }
 

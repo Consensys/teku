@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,8 +25,9 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +43,7 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
@@ -105,10 +105,10 @@ class DutySchedulerTest {
 
   @Test
   public void shouldFetchDutiesForCurrentAndNextEpoch() {
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(UnsignedLong.ONE));
+    dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.ONE));
 
-    verify(validatorApiChannel).getDuties(UnsignedLong.ONE, VALIDATOR_KEYS);
-    verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(2), VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(UInt64.ONE, VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(UInt64.valueOf(2), VALIDATOR_KEYS);
   }
 
   @Test
@@ -116,28 +116,28 @@ class DutySchedulerTest {
     dutyScheduler.onSlot(ZERO);
 
     verify(validatorApiChannel).getDuties(ZERO, VALIDATOR_KEYS);
-    verify(validatorApiChannel).getDuties(UnsignedLong.ONE, VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(UInt64.ONE, VALIDATOR_KEYS);
 
     // Process each slot up to the start of epoch 1
-    final UnsignedLong epoch1Start = compute_start_slot_at_epoch(UnsignedLong.ONE);
+    final UInt64 epoch1Start = compute_start_slot_at_epoch(UInt64.ONE);
     for (int slot = 0; slot <= epoch1Start.intValue(); slot++) {
-      dutyScheduler.onSlot(UnsignedLong.valueOf(slot));
+      dutyScheduler.onSlot(UInt64.valueOf(slot));
     }
-    verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(2), VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(UInt64.valueOf(2), VALIDATOR_KEYS);
   }
 
   @Test
   public void shouldNotRefetchDutiesWhichHaveAlreadyBeenRetrieved() {
     when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(UnsignedLong.ONE));
+    dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.ONE));
 
-    verify(validatorApiChannel).getDuties(UnsignedLong.ONE, VALIDATOR_KEYS);
-    verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(2), VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(UInt64.ONE, VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(UInt64.valueOf(2), VALIDATOR_KEYS);
 
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(UnsignedLong.valueOf(2)));
+    dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(2)));
 
     // Requests the next epoch, but not the current one because we already have that
-    verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(3), VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(UInt64.valueOf(3), VALIDATOR_KEYS);
     verifyNoMoreInteractions(validatorApiChannel);
   }
 
@@ -160,19 +160,19 @@ class DutySchedulerTest {
   public void shouldRetryWhenRequestingDutiesFails() {
     final SafeFuture<Optional<List<ValidatorDuties>>> request1 = new SafeFuture<>();
     final SafeFuture<Optional<List<ValidatorDuties>>> request2 = new SafeFuture<>();
-    when(validatorApiChannel.getDuties(UnsignedLong.ONE, VALIDATOR_KEYS))
+    when(validatorApiChannel.getDuties(UInt64.ONE, VALIDATOR_KEYS))
         .thenReturn(request1)
         .thenReturn(request2);
 
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(UnsignedLong.ONE));
-    verify(validatorApiChannel, times(1)).getDuties(UnsignedLong.ONE, VALIDATOR_KEYS);
+    dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.ONE));
+    verify(validatorApiChannel, times(1)).getDuties(UInt64.ONE, VALIDATOR_KEYS);
 
     request1.completeExceptionally(new RuntimeException("Nope"));
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
 
     // Should retry request
-    verify(validatorApiChannel, times(2)).getDuties(UnsignedLong.ONE, VALIDATOR_KEYS);
+    verify(validatorApiChannel, times(2)).getDuties(UInt64.ONE, VALIDATOR_KEYS);
 
     // And not have any more retries scheduled
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
@@ -181,46 +181,46 @@ class DutySchedulerTest {
   @Test
   public void shouldRefetchDutiesAfterReorg() {
     when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(UnsignedLong.ONE));
+    dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.ONE));
 
-    verify(validatorApiChannel).getDuties(UnsignedLong.ONE, VALIDATOR_KEYS);
-    verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(2), VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(UInt64.ONE, VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(UInt64.valueOf(2), VALIDATOR_KEYS);
 
-    dutyScheduler.onChainReorg(compute_start_slot_at_epoch(UnsignedLong.valueOf(2)));
+    dutyScheduler.onChainReorg(compute_start_slot_at_epoch(UInt64.valueOf(2)));
 
     // Re-requests epoch 2 and also requests epoch 3 as the new chain is far enough along for that
-    verify(validatorApiChannel, times(2)).getDuties(UnsignedLong.valueOf(2), VALIDATOR_KEYS);
-    verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(3), VALIDATOR_KEYS);
+    verify(validatorApiChannel, times(2)).getDuties(UInt64.valueOf(2), VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(UInt64.valueOf(3), VALIDATOR_KEYS);
     verifyNoMoreInteractions(validatorApiChannel);
   }
 
   @Test
   public void shouldRefetchDutiesAfterBlockImportedFromTwoOrMoreEpochsBefore() {
     when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(UnsignedLong.valueOf(5)));
+    dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(5)));
 
-    verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(5), VALIDATOR_KEYS);
-    verify(validatorApiChannel).getDuties(UnsignedLong.valueOf(6), VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(UInt64.valueOf(5), VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(UInt64.valueOf(6), VALIDATOR_KEYS);
     verifyNoMoreInteractions(validatorApiChannel);
 
-    dutyScheduler.onBlockImportedForSlot(compute_start_slot_at_epoch(UnsignedLong.valueOf(4)));
+    dutyScheduler.onBlockImportedForSlot(compute_start_slot_at_epoch(UInt64.valueOf(4)));
 
     // Duties are invalidated but not yet re-requested as we might be importing a batch of blocks
     verifyNoMoreInteractions(validatorApiChannel);
 
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(UnsignedLong.valueOf(5)).plus(ONE));
+    dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(5)).plus(ONE));
     // Re-requests epoch 6 which may have been changed by the new block
-    verify(validatorApiChannel, times(2)).getDuties(UnsignedLong.valueOf(6), VALIDATOR_KEYS);
+    verify(validatorApiChannel, times(2)).getDuties(UInt64.valueOf(6), VALIDATOR_KEYS);
     // Epoch 5 is unchanged so not re-requested
     verifyNoMoreInteractions(validatorApiChannel);
   }
 
   @Test
   public void shouldScheduleBlockProposalDuty() {
-    final UnsignedLong blockProposerSlot = UnsignedLong.valueOf(5);
+    final UInt64 blockProposerSlot = UInt64.valueOf(5);
     final ValidatorDuties validator1Duties =
         ValidatorDuties.withDuties(
-            VALIDATOR1_KEY, 5, 3, 6, 0, List.of(blockProposerSlot), UnsignedLong.valueOf(7));
+            VALIDATOR1_KEY, 5, 3, 6, 0, List.of(blockProposerSlot), UInt64.valueOf(7));
     when(validatorApiChannel.getDuties(eq(ZERO), any()))
         .thenReturn(completedFuture(Optional.of(List.of(validator1Duties))));
 
@@ -276,10 +276,10 @@ class DutySchedulerTest {
 
   @Test
   public void shouldNotPerformDutiesForSameSlotTwice() {
-    final UnsignedLong blockProposerSlot = UnsignedLong.valueOf(5);
+    final UInt64 blockProposerSlot = UInt64.valueOf(5);
     final ValidatorDuties validator1Duties =
         ValidatorDuties.withDuties(
-            VALIDATOR1_KEY, 5, 3, 6, 0, List.of(blockProposerSlot), UnsignedLong.valueOf(7));
+            VALIDATOR1_KEY, 5, 3, 6, 0, List.of(blockProposerSlot), UInt64.valueOf(7));
     when(validatorApiChannel.getDuties(eq(ZERO), any()))
         .thenReturn(completedFuture(Optional.of(List.of(validator1Duties))));
 
@@ -303,7 +303,7 @@ class DutySchedulerTest {
 
   @Test
   public void shouldScheduleAttestationDuties() {
-    final UnsignedLong attestationSlot = UnsignedLong.valueOf(5);
+    final UInt64 attestationSlot = UInt64.valueOf(5);
     final int validator1Index = 5;
     final int validator1Committee = 3;
     final int validator1CommitteePosition = 9;
@@ -353,7 +353,7 @@ class DutySchedulerTest {
 
   @Test
   public void shouldScheduleAttestationDutiesWhenBlockIsImported() {
-    final UnsignedLong attestationSlot = UnsignedLong.valueOf(5);
+    final UInt64 attestationSlot = UInt64.valueOf(5);
     final int validator1Index = 5;
     final int validator1Committee = 3;
     final int validator1CommitteePosition = 9;
@@ -403,7 +403,7 @@ class DutySchedulerTest {
 
   @Test
   public void shouldNotScheduleAttestationDutiesTwice() {
-    final UnsignedLong attestationSlot = UnsignedLong.valueOf(5);
+    final UInt64 attestationSlot = UInt64.valueOf(5);
     final int validator1Index = 5;
     final int validator1Committee = 3;
     final int validator1CommitteePosition = 9;
@@ -456,7 +456,7 @@ class DutySchedulerTest {
 
   @Test
   public void shouldScheduleAggregationDuties() {
-    final UnsignedLong attestationSlot = UnsignedLong.valueOf(13);
+    final UInt64 attestationSlot = UInt64.valueOf(13);
     final int validator1Index = 5;
     final int validator1Committee = 3;
     final int validator1CommitteePosition = 9;
@@ -501,7 +501,7 @@ class DutySchedulerTest {
         .thenReturn(unsignedAttestationFuture);
 
     // Load duties
-    final UnsignedLong epochStartSlot = compute_start_slot_at_epoch(ONE);
+    final UInt64 epochStartSlot = compute_start_slot_at_epoch(ONE);
     dutyScheduler.onSlot(epochStartSlot);
 
     // Only validator1 should have had an aggregation duty created for it

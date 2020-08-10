@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class CacheControlUtils {
   public static final String CACHE_NONE = "max-age=0";
@@ -29,12 +29,12 @@ public class CacheControlUtils {
     return provider.isFinalized(signedBeaconBlock) ? CACHE_FINALIZED : CACHE_NONE;
   }
 
-  public static String getMaxAgeForSlot(ChainDataProvider provider, UnsignedLong slot) {
+  public static String getMaxAgeForSlot(ChainDataProvider provider, UInt64 slot) {
     return provider.isFinalized(slot) ? CACHE_FINALIZED : CACHE_NONE;
   }
 
-  public static String getMaxAgeForEpoch(ChainDataProvider provider, UnsignedLong epoch) {
-    UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+  public static String getMaxAgeForEpoch(ChainDataProvider provider, UInt64 epoch) {
+    UInt64 slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
     return getMaxAgeForSlot(provider, slot);
   }
 

@@ -17,7 +17,6 @@ import static tech.pegasys.teku.core.lookup.BlockProvider.fromDynamicMap;
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
 
 import com.google.common.collect.Sets;
-import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +52,7 @@ import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.metrics.SettableGauge;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -79,28 +79,28 @@ class Store implements UpdatableStore {
   private final BlockProvider blockProvider;
 
   HashTree blockTree;
-  UnsignedLong time;
-  UnsignedLong genesis_time;
+  UInt64 time;
+  UInt64 genesis_time;
   Checkpoint justified_checkpoint;
   Checkpoint finalized_checkpoint;
   Checkpoint best_justified_checkpoint;
   Map<Bytes32, SignedBeaconBlock> blocks;
   Map<Bytes32, BeaconState> block_states;
   Map<Checkpoint, BeaconState> checkpoint_states;
-  Map<UnsignedLong, VoteTracker> votes;
+  Map<UInt64, VoteTracker> votes;
   SignedBlockAndState finalizedBlockAndState;
 
   private Store(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
-      final UnsignedLong time,
-      final UnsignedLong genesis_time,
+      final UInt64 time,
+      final UInt64 genesis_time,
       final Checkpoint justified_checkpoint,
       final Checkpoint finalized_checkpoint,
       final Checkpoint best_justified_checkpoint,
       final HashTree blockTree,
       final SignedBlockAndState finalizedBlockAndState,
-      final Map<UnsignedLong, VoteTracker> votes,
+      final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final Map<Bytes32, BeaconState> block_states,
       final Map<Checkpoint, BeaconState> checkpoint_states) {
@@ -157,14 +157,14 @@ class Store implements UpdatableStore {
   public static SafeFuture<UpdatableStore> create(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
-      final UnsignedLong time,
-      final UnsignedLong genesisTime,
+      final UInt64 time,
+      final UInt64 genesisTime,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
       final Map<Bytes32, Bytes32> childToParentRoot,
       final SignedBlockAndState finalizedBlockAndState,
-      final Map<UnsignedLong, VoteTracker> votes,
+      final Map<UInt64, VoteTracker> votes,
       final StorePruningOptions pruningOptions) {
 
     // Create limited collections for non-final data
@@ -282,7 +282,7 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public UnsignedLong getTime() {
+  public UInt64 getTime() {
     readLock.lock();
     try {
       return time;
@@ -292,7 +292,7 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public UnsignedLong getGenesisTime() {
+  public UInt64 getGenesisTime() {
     readLock.lock();
     try {
       return genesis_time;
@@ -332,7 +332,7 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public UnsignedLong getLatestFinalizedBlockSlot() {
+  public UInt64 getLatestFinalizedBlockSlot() {
     readLock.lock();
     try {
       return finalizedBlockAndState.getSlot();
@@ -482,7 +482,7 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public Set<UnsignedLong> getVotedValidatorIndices() {
+  public Set<UInt64> getVotedValidatorIndices() {
     readLock.lock();
     try {
       return votes.keySet();
@@ -624,15 +624,15 @@ class Store implements UpdatableStore {
   class Transaction implements StoreTransaction {
 
     private final StorageUpdateChannel storageUpdateChannel;
-    Optional<UnsignedLong> time = Optional.empty();
-    Optional<UnsignedLong> genesis_time = Optional.empty();
+    Optional<UInt64> time = Optional.empty();
+    Optional<UInt64> genesis_time = Optional.empty();
     Optional<Checkpoint> justified_checkpoint = Optional.empty();
     Optional<Checkpoint> finalized_checkpoint = Optional.empty();
     Optional<Checkpoint> best_justified_checkpoint = Optional.empty();
     Map<Bytes32, SlotAndBlockRoot> stateRoots = new HashMap<>();
     Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
     Map<Bytes32, BeaconState> block_states = new HashMap<>();
-    Map<UnsignedLong, VoteTracker> votes = new ConcurrentHashMap<>();
+    Map<UInt64, VoteTracker> votes = new ConcurrentHashMap<>();
     private final StoreUpdateHandler updateHandler;
 
     Transaction(
@@ -656,12 +656,12 @@ class Store implements UpdatableStore {
     }
 
     @Override
-    public void setTime(UnsignedLong time) {
+    public void setTime(UInt64 time) {
       this.time = Optional.of(time);
     }
 
     @Override
-    public void setGenesis_time(UnsignedLong genesis_time) {
+    public void setGenesis_time(UInt64 genesis_time) {
       this.genesis_time = Optional.of(genesis_time);
     }
 
@@ -681,7 +681,7 @@ class Store implements UpdatableStore {
     }
 
     @Override
-    public VoteTracker getVote(UnsignedLong validatorIndex) {
+    public VoteTracker getVote(UInt64 validatorIndex) {
       VoteTracker vote = votes.get(validatorIndex);
       if (vote == null) {
         vote = Store.this.votes.get(validatorIndex);
@@ -732,12 +732,12 @@ class Store implements UpdatableStore {
     }
 
     @Override
-    public UnsignedLong getTime() {
+    public UInt64 getTime() {
       return time.orElseGet(Store.this::getTime);
     }
 
     @Override
-    public UnsignedLong getGenesisTime() {
+    public UInt64 getGenesisTime() {
       return genesis_time.orElseGet(Store.this::getGenesisTime);
     }
 
@@ -762,7 +762,7 @@ class Store implements UpdatableStore {
     }
 
     @Override
-    public UnsignedLong getLatestFinalizedBlockSlot() {
+    public UInt64 getLatestFinalizedBlockSlot() {
       return getLatestFinalizedBlockAndState().getSlot();
     }
 
@@ -846,7 +846,7 @@ class Store implements UpdatableStore {
     }
 
     @Override
-    public Set<UnsignedLong> getVotedValidatorIndices() {
+    public Set<UInt64> getVotedValidatorIndices() {
       return Sets.union(votes.keySet(), Store.this.getVotedValidatorIndices());
     }
   }

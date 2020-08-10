@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 
 public class MinGenesisTimeBlockEventSerializer
@@ -26,8 +26,8 @@ public class MinGenesisTimeBlockEventSerializer
     return SSZ.decode(
         Bytes.of(data),
         reader -> {
-          final UnsignedLong timestamp = UnsignedLong.fromLongBits(reader.readUInt64());
-          final UnsignedLong blockNumber = UnsignedLong.fromLongBits(reader.readUInt64());
+          final UInt64 timestamp = UInt64.fromLongBits(reader.readUInt64());
+          final UInt64 blockNumber = UInt64.fromLongBits(reader.readUInt64());
           final Bytes32 blockHash = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           return new MinGenesisTimeBlockEvent(timestamp, blockNumber, blockHash);
         });

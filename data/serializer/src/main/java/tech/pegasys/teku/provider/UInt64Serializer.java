@@ -16,13 +16,13 @@ package tech.pegasys.teku.provider;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class UnsignedLongSerializer extends JsonSerializer<UnsignedLong> {
+public class UInt64Serializer extends JsonSerializer<UInt64> {
   @Override
-  public void serialize(UnsignedLong value, JsonGenerator gen, SerializerProvider serializers)
+  public void serialize(UInt64 value, JsonGenerator gen, SerializerProvider serializers)
       throws IOException {
-    gen.writeString(value.toString(10));
+    gen.writeString(value.toString());
   }
 }

@@ -22,13 +22,13 @@ import static tech.pegasys.teku.util.config.Constants.VALIDATOR_REGISTRY_LIMIT;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.primitives.UnsignedLong;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
@@ -36,12 +36,12 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class BeaconState {
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong genesis_time;
+  public final UInt64 genesis_time;
 
   public final Bytes32 genesis_validators_root;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong slot;
+  public final UInt64 slot;
 
   public final Fork fork;
   public final BeaconBlockHeader latest_block_header;
@@ -62,19 +62,19 @@ public class BeaconState {
   public final List<Eth1Data> eth1_data_votes;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong eth1_deposit_index;
+  public final UInt64 eth1_deposit_index;
 
   public final List<Validator> validators;
 
   @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
-  public final List<UnsignedLong> balances;
+  public final List<UInt64> balances;
 
   @ArraySchema(
       schema = @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32))
   public final List<Bytes32> randao_mixes;
 
   @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
-  public final List<UnsignedLong> slashings;
+  public final List<UInt64> slashings;
 
   public final List<PendingAttestation> previous_epoch_attestations;
   public final List<PendingAttestation> current_epoch_attestations;
@@ -88,9 +88,9 @@ public class BeaconState {
 
   @JsonCreator
   public BeaconState(
-      @JsonProperty("genesis_time") final UnsignedLong genesis_time,
+      @JsonProperty("genesis_time") final UInt64 genesis_time,
       @JsonProperty("genesis_validators_root") final Bytes32 genesis_validators_root,
-      @JsonProperty("slot") final UnsignedLong slot,
+      @JsonProperty("slot") final UInt64 slot,
       @JsonProperty("fork") final Fork fork,
       @JsonProperty("latest_block_header") final BeaconBlockHeader latest_block_header,
       @JsonProperty("block_roots") final List<Bytes32> block_roots,
@@ -98,11 +98,11 @@ public class BeaconState {
       @JsonProperty("historical_roots") final List<Bytes32> historical_roots,
       @JsonProperty("eth1_data") final Eth1Data eth1_data,
       @JsonProperty("eth1_data_votes") final List<Eth1Data> eth1_data_votes,
-      @JsonProperty("eth1_deposit_index") final UnsignedLong eth1_deposit_index,
+      @JsonProperty("eth1_deposit_index") final UInt64 eth1_deposit_index,
       @JsonProperty("validators") final List<Validator> validators,
-      @JsonProperty("balances") final List<UnsignedLong> balances,
+      @JsonProperty("balances") final List<UInt64> balances,
       @JsonProperty("randao_mixes") final List<Bytes32> randao_mixes,
-      @JsonProperty("slashings") final List<UnsignedLong> slashings,
+      @JsonProperty("slashings") final List<UInt64> slashings,
       @JsonProperty("previous_epoch_attestations")
           final List<PendingAttestation> previous_epoch_attestations,
       @JsonProperty("current_epoch_attestations")
@@ -192,9 +192,9 @@ public class BeaconState {
             validators.stream().map(Validator::asInternalValidator).collect(Collectors.toList()),
             Constants.VALIDATOR_REGISTRY_LIMIT,
             tech.pegasys.teku.datastructures.state.Validator.class),
-        SSZList.createMutable(balances, VALIDATOR_REGISTRY_LIMIT, UnsignedLong.class),
+        SSZList.createMutable(balances, VALIDATOR_REGISTRY_LIMIT, UInt64.class),
         SSZVector.createMutable(randao_mixes, Bytes32.class),
-        SSZVector.createMutable(slashings, UnsignedLong.class),
+        SSZVector.createMutable(slashings, UInt64.class),
         SSZList.createMutable(
             previous_epoch_attestations.stream()
                 .map(PendingAttestation::asInternalPendingAttestation)

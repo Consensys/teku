@@ -14,12 +14,12 @@
 package tech.pegasys.teku.validator.client;
 
 import com.google.common.base.Throwables;
-import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
@@ -35,14 +35,14 @@ public class RetryingDutyLoader implements DutyLoader {
   }
 
   @Override
-  public SafeFuture<ScheduledDuties> loadDutiesForEpoch(final UnsignedLong epoch) {
+  public SafeFuture<ScheduledDuties> loadDutiesForEpoch(final UInt64 epoch) {
     final SafeFuture<ScheduledDuties> duties = new SafeFuture<>();
     requestDuties(epoch, duties).propagateTo(duties);
     return duties;
   }
 
   private SafeFuture<ScheduledDuties> requestDuties(
-      final UnsignedLong epoch, final SafeFuture<ScheduledDuties> cancellable) {
+      final UInt64 epoch, final SafeFuture<ScheduledDuties> cancellable) {
     return delegate
         .loadDutiesForEpoch(epoch)
         .exceptionallyCompose(

@@ -14,11 +14,11 @@
 package tech.pegasys.teku.validator.api;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidatorDuties {
   private final BLSPublicKey publicKey;
@@ -35,8 +35,8 @@ public class ValidatorDuties {
       final int attestationCommitteeIndex,
       final int attestationCommitteePosition,
       final int aggregatorModulo,
-      final List<UnsignedLong> blockProposalSlots,
-      final UnsignedLong attestationSlot) {
+      final List<UInt64> blockProposalSlots,
+      final UInt64 attestationSlot) {
     return new ValidatorDuties(
         publicKey,
         Optional.of(
@@ -91,16 +91,16 @@ public class ValidatorDuties {
     private final int attestationCommitteeIndex;
     private final int attestationCommitteePosition;
     private final int aggregatorModulo;
-    private final List<UnsignedLong> blockProposalSlots;
-    private final UnsignedLong attestationSlot;
+    private final List<UInt64> blockProposalSlots;
+    private final UInt64 attestationSlot;
 
     public Duties(
         final int validatorIndex,
         final int attestationCommitteeIndex,
         final int attestationCommitteePosition,
         final int aggregatorModulo,
-        final List<UnsignedLong> blockProposalSlots,
-        final UnsignedLong attestationSlot) {
+        final List<UInt64> blockProposalSlots,
+        final UInt64 attestationSlot) {
       this.validatorIndex = validatorIndex;
       this.attestationCommitteeIndex = attestationCommitteeIndex;
       this.attestationCommitteePosition = attestationCommitteePosition;
@@ -125,11 +125,11 @@ public class ValidatorDuties {
       return aggregatorModulo;
     }
 
-    public List<UnsignedLong> getBlockProposalSlots() {
+    public List<UInt64> getBlockProposalSlots() {
       return blockProposalSlots;
     }
 
-    public UnsignedLong getAttestationSlot() {
+    public UInt64 getAttestationSlot() {
       return attestationSlot;
     }
 

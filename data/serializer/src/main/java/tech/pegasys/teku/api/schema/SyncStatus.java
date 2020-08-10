@@ -13,23 +13,20 @@
 
 package tech.pegasys.teku.api.schema;
 
-import com.google.common.primitives.UnsignedLong;
 import io.swagger.v3.oas.annotations.media.Schema;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SyncStatus {
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong startingSlot;
+  public final UInt64 startingSlot;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong currentSlot;
+  public final UInt64 currentSlot;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong highestSlot;
+  public final UInt64 highestSlot;
 
-  public SyncStatus(
-      final UnsignedLong startingSlot,
-      final UnsignedLong currentSlot,
-      final UnsignedLong highestSlot) {
+  public SyncStatus(final UInt64 startingSlot, final UInt64 currentSlot, final UInt64 highestSlot) {
     this.startingSlot = startingSlot;
     this.currentSlot = currentSlot;
     this.highestSlot = highestSlot;

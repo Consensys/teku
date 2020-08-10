@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.services.remotevalidator;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BeaconChainEvent {
 
@@ -25,9 +25,9 @@ public class BeaconChainEvent {
   public static final String REORG_OCCURRED = "ReorgOccurredEvent";
 
   private String name;
-  private UnsignedLong data;
+  private UInt64 data;
 
-  public BeaconChainEvent(final String name, final UnsignedLong data) {
+  public BeaconChainEvent(final String name, final UInt64 data) {
     this.name = name;
     this.data = data;
   }
@@ -42,11 +42,11 @@ public class BeaconChainEvent {
     this.name = name;
   }
 
-  public UnsignedLong getData() {
+  public UInt64 getData() {
     return data;
   }
 
-  public void setData(final UnsignedLong data) {
+  public void setData(final UInt64 data) {
     this.data = data;
   }
 

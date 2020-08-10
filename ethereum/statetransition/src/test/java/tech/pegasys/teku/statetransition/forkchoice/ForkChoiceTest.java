@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
