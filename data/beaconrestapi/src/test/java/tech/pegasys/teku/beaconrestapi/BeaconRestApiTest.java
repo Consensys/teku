@@ -49,6 +49,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAggregateAndProof;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToBeaconCommittee;
+import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToPersistentSubnets;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -57,6 +58,7 @@ import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
 class BeaconRestApiTest {
+
   private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(new EventBus());
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
@@ -200,6 +202,14 @@ class BeaconRestApiTest {
   public void shouldHaveSubscribeToBeaconCommitteeEndpoint() {
     verify(app)
         .post(eq(PostSubscribeToBeaconCommittee.ROUTE), any(PostSubscribeToBeaconCommittee.class));
+  }
+
+  @Test
+  public void shouldHaveSubscribeToPersistentSubnetsEndpoint() {
+    verify(app)
+        .post(
+            eq(PostSubscribeToPersistentSubnets.ROUTE),
+            any(PostSubscribeToPersistentSubnets.class));
   }
 
   @Test
