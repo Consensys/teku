@@ -24,6 +24,7 @@ dependencies {
   testImplementation 'org.apache.logging.log4j:log4j-core'
 
   testFixturesApi 'com.google.guava:guava'
+  testFixturesApi project(':infrastructure:unsigned')
 
   testFixturesImplementation 'org.apache.logging.log4j:log4j-core'
   testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'

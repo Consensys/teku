@@ -17,7 +17,6 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -37,6 +36,7 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -60,7 +60,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   private final StatusMessageFactory statusMessageFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
   private volatile Optional<PeerStatus> remoteStatus = Optional.empty();
-  private volatile Optional<UnsignedLong> remoteMetadataSeqNumber = Optional.empty();
+  private volatile Optional<UInt64> remoteMetadataSeqNumber = Optional.empty();
   private volatile Optional<Bitvector> remoteAttSubnets = Optional.empty();
   private final SafeFuture<PeerStatus> initialStatus = new SafeFuture<>();
   private final AtomicBoolean chainValidated = new AtomicBoolean(false);
@@ -90,8 +90,8 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     initialStatus.complete(status);
   }
 
-  public void updateMetadataSeqNumber(final UnsignedLong seqNumber) {
-    Optional<UnsignedLong> curValue = this.remoteMetadataSeqNumber;
+  public void updateMetadataSeqNumber(final UInt64 seqNumber) {
+    Optional<UInt64> curValue = this.remoteMetadataSeqNumber;
     remoteMetadataSeqNumber = Optional.of(seqNumber);
     if (curValue.isEmpty() || seqNumber.compareTo(curValue.get()) > 0) {
       requestMetadata()
@@ -119,7 +119,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     return remoteAttSubnets;
   }
 
-  public UnsignedLong finalizedEpoch() {
+  public UInt64 finalizedEpoch() {
     return getStatus().getFinalizedEpoch();
   }
 
@@ -152,7 +152,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
         .thenPeek(this::updateStatus);
   }
 
-  SafeFuture<Void> sendGoodbye(final UnsignedLong reason) {
+  SafeFuture<Void> sendGoodbye(final UInt64 reason) {
     final Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> goodByeMethod = rpcMethods.goodBye();
     return sendMessage(goodByeMethod, new GoodbyeMessage(reason));
   }
@@ -169,11 +169,11 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     return requestStream(blockByRoot, new BeaconBlocksByRootRequestMessage(blockRoots), listener);
   }
 
-  public SafeFuture<SignedBeaconBlock> requestBlockBySlot(final UnsignedLong slot) {
+  public SafeFuture<SignedBeaconBlock> requestBlockBySlot(final UInt64 slot) {
     final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> blocksByRange =
         rpcMethods.beaconBlocksByRange();
     final BeaconBlocksByRangeRequestMessage request =
-        new BeaconBlocksByRangeRequestMessage(slot, UnsignedLong.ONE, UnsignedLong.ONE);
+        new BeaconBlocksByRangeRequestMessage(slot, UInt64.ONE, UInt64.ONE);
     return requestSingleItem(blocksByRange, request);
   }
 
@@ -184,9 +184,9 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public SafeFuture<Void> requestBlocksByRange(
-      final UnsignedLong startSlot,
-      final UnsignedLong count,
-      final UnsignedLong step,
+      final UInt64 startSlot,
+      final UInt64 count,
+      final UInt64 step,
       final ResponseStreamListener<SignedBeaconBlock> listener) {
     final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> blocksByRange =
         rpcMethods.beaconBlocksByRange();
@@ -219,7 +219,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     return true;
   }
 
-  public SafeFuture<UnsignedLong> sendPing() {
+  public SafeFuture<UInt64> sendPing() {
     outstandingPings.getAndIncrement();
     return requestSingleItem(rpcMethods.ping(), metadataMessagesFactory.createPingMessage())
         .thenApply(PingMessage::getSeqNumber)

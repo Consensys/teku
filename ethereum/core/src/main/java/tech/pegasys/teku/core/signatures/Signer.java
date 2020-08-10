@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.core.signatures;
 
-import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
@@ -21,16 +20,17 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface Signer {
 
-  SafeFuture<BLSSignature> createRandaoReveal(UnsignedLong epoch, ForkInfo forkInfo);
+  SafeFuture<BLSSignature> createRandaoReveal(UInt64 epoch, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signBlock(BeaconBlock block, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signAttestationData(AttestationData attestationData, ForkInfo forkInfo);
 
-  SafeFuture<BLSSignature> signAggregationSlot(UnsignedLong slot, ForkInfo forkInfo);
+  SafeFuture<BLSSignature> signAggregationSlot(UInt64 slot, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signAggregateAndProof(
       AggregateAndProof aggregateAndProof, ForkInfo forkInfo);

@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
@@ -24,7 +24,6 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.Interna
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -40,6 +39,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -123,7 +123,7 @@ class AttestationValidatorTest {
         attestationGenerator.validAttestation(recentChainData.getBestBlockAndState().orElseThrow());
 
     // In the first slot after
-    final UnsignedLong slot = ATTESTATION_PROPAGATION_SLOT_RANGE.plus(ONE);
+    final UInt64 slot = ATTESTATION_PROPAGATION_SLOT_RANGE.plus(ONE);
     chainUpdater.setCurrentSlot(slot);
     // Add one more second to get past the MAXIMUM_GOSSIP_CLOCK_DISPARITY
     chainUpdater.setTime(recentChainData.getStore().getTime().plus(ONE));
@@ -138,7 +138,7 @@ class AttestationValidatorTest {
 
     // At the very start of the first slot the attestation isn't allowed, but still within
     // the MAXIMUM_GOSSIP_CLOCK_DISPARITY so should be allowed.
-    final UnsignedLong slot = ATTESTATION_PROPAGATION_SLOT_RANGE.plus(ONE);
+    final UInt64 slot = ATTESTATION_PROPAGATION_SLOT_RANGE.plus(ONE);
     chainUpdater.setCurrentSlot(slot);
 
     assertThat(validate(attestation)).isEqualTo(ACCEPT);
@@ -210,7 +210,7 @@ class AttestationValidatorTest {
   public void shouldAcceptAttestationForSameValidatorButDifferentTargetEpoch() throws Exception {
     final BeaconBlockAndState genesis = recentChainData.getBestBlockAndState().orElseThrow();
     final SignedBeaconBlock nextEpochBlock =
-        chainUpdater.advanceChain(UnsignedLong.valueOf(SLOTS_PER_EPOCH + 1)).getBlock();
+        chainUpdater.advanceChain(UInt64.valueOf(SLOTS_PER_EPOCH + 1)).getBlock();
 
     // Slot 0 attestation
     final Attestation attestation1 = attestationGenerator.validAttestation(genesis);

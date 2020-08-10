@@ -17,13 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
-import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class CheckpointStateGeneratorTest {
   private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
@@ -48,8 +48,8 @@ public class CheckpointStateGeneratorTest {
 
   @Test
   public void generate_withBlockAtEpochBoundary() {
-    final UnsignedLong epoch = UnsignedLong.valueOf(2);
-    final UnsignedLong epochStartSlot = compute_start_slot_at_epoch(epoch);
+    final UInt64 epoch = UInt64.valueOf(2);
+    final UInt64 epochStartSlot = compute_start_slot_at_epoch(epoch);
 
     chainBuilder.generateBlocksUpToSlot(epochStartSlot);
 
@@ -65,8 +65,8 @@ public class CheckpointStateGeneratorTest {
 
   @Test
   public void generate_withInvalidBlockPastTheEpochBoundary() {
-    final UnsignedLong epoch = UnsignedLong.valueOf(2);
-    final UnsignedLong epochStartSlot = compute_start_slot_at_epoch(epoch);
+    final UInt64 epoch = UInt64.valueOf(2);
+    final UInt64 epochStartSlot = compute_start_slot_at_epoch(epoch);
 
     chainBuilder.generateBlocksUpToSlot(epochStartSlot);
 

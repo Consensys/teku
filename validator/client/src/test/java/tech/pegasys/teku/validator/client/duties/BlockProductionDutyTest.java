@@ -24,7 +24,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
@@ -37,13 +36,14 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.logging.ValidatorLogger;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
 
 class BlockProductionDutyTest {
-  private static final UnsignedLong SLOT = UnsignedLong.valueOf(498294);
+  private static final UInt64 SLOT = UInt64.valueOf(498294);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ForkProvider forkProvider = mock(ForkProvider.class);

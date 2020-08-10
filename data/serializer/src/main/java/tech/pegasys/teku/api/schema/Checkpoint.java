@@ -17,13 +17,13 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.primitives.UnsignedLong;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Checkpoint {
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong epoch;
+  public final UInt64 epoch;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 root;
@@ -35,7 +35,7 @@ public class Checkpoint {
 
   @JsonCreator
   public Checkpoint(
-      @JsonProperty("epoch") final UnsignedLong epoch, @JsonProperty("root") final Bytes32 root) {
+      @JsonProperty("epoch") final UInt64 epoch, @JsonProperty("root") final Bytes32 root) {
     this.epoch = epoch;
     this.root = root;
   }

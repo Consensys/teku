@@ -21,12 +21,12 @@ import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_active_val
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.SHARD_COMMITTEE_PERIOD;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class VoluntaryExitStateTransitionValidator
     implements OperationStateTransitionValidator<SignedVoluntaryExit> {
@@ -38,8 +38,7 @@ public class VoluntaryExitStateTransitionValidator
     return firstOf(
         () ->
             check(
-                UnsignedLong.valueOf(state.getValidators().size())
-                        .compareTo(exit.getValidator_index())
+                UInt64.valueOf(state.getValidators().size()).compareTo(exit.getValidator_index())
                     > 0,
                 ExitInvalidReason.INVALID_VALIDATOR_INDEX),
         () ->

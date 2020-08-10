@@ -21,7 +21,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.is_valid_merkle_branch;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -40,6 +39,7 @@ import tech.pegasys.teku.datastructures.util.DepositUtil;
 import tech.pegasys.teku.datastructures.util.MerkleTree;
 import tech.pegasys.teku.datastructures.util.OptimizedMerkleTree;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
@@ -102,7 +102,7 @@ public class DepositProviderTest {
     mockDepositsFromEth1Block(10, 30);
 
     int enoughVoteCount = Constants.EPOCHS_PER_ETH1_VOTING_PERIOD * Constants.SLOTS_PER_EPOCH;
-    UnsignedLong newDepositCount = UnsignedLong.valueOf(30);
+    UInt64 newDepositCount = UInt64.valueOf(30);
     Eth1Data newEth1Data = new Eth1Data(Bytes32.ZERO, newDepositCount, Bytes32.ZERO);
     SSZMutableList<Eth1Data> et1hDataVotes = SSZList.createMutable(Eth1Data.class, 50);
     IntStream.range(0, enoughVoteCount).forEach(__ -> et1hDataVotes.add(newEth1Data));
@@ -138,7 +138,7 @@ public class DepositProviderTest {
 
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(20);
 
-    depositProvider.onNewFinalizedCheckpoint(new Checkpoint(UnsignedLong.ONE, finalizedBlockRoot));
+    depositProvider.onNewFinalizedCheckpoint(new Checkpoint(UInt64.ONE, finalizedBlockRoot));
 
     assertThat(depositProvider.getDepositMapSize()).isEqualTo(10);
   }
@@ -146,7 +146,7 @@ public class DepositProviderTest {
   @Test
   void shouldDelegateOnEth1BlockToEth1DataCache() {
     final Bytes32 blockHash = dataStructureUtil.randomBytes32();
-    final UnsignedLong blockTimestamp = dataStructureUtil.randomUnsignedLong();
+    final UInt64 blockTimestamp = dataStructureUtil.randomUInt64();
     depositProvider.onEth1Block(blockHash, blockTimestamp);
     verify(eth1DataCache).onEth1Block(blockHash, blockTimestamp);
   }
@@ -154,12 +154,12 @@ public class DepositProviderTest {
   @Test
   void shouldNotifyEth1DataCacheOfDepositBlocks() {
     final tech.pegasys.teku.pow.event.Deposit deposit =
-        dataStructureUtil.randomDepositEvent(UnsignedLong.ZERO);
+        dataStructureUtil.randomDepositEvent(UInt64.ZERO);
     final DepositsFromBlockEvent event =
         new DepositsFromBlockEvent(
-            dataStructureUtil.randomUnsignedLong(),
+            dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomUnsignedLong(),
+            dataStructureUtil.randomUInt64(),
             List.of(deposit));
     depositProvider.onDepositsFromBlock(event);
 
@@ -168,7 +168,7 @@ public class DepositProviderTest {
     verify(eth1DataCache)
         .onBlockWithDeposit(
             event.getBlockTimestamp(),
-            new Eth1Data(depositMerkleTree.getRoot(), UnsignedLong.ONE, event.getBlockHash()));
+            new Eth1Data(depositMerkleTree.getRoot(), UInt64.ONE, event.getBlockHash()));
   }
 
   @Test
@@ -218,7 +218,7 @@ public class DepositProviderTest {
   private void createDepositEvents(int n) {
     allSeenDepositsList =
         IntStream.range(0, n)
-            .mapToObj(i -> dataStructureUtil.randomDepositEvent(UnsignedLong.valueOf(i)))
+            .mapToObj(i -> dataStructureUtil.randomDepositEvent(UInt64.valueOf(i)))
             .collect(Collectors.toList());
   }
 
@@ -238,11 +238,11 @@ public class DepositProviderTest {
   private void mockEth1DataDepositCount(int n) {
     Eth1Data eth1Data = mock(Eth1Data.class);
     when(state.getEth1_data()).thenReturn(eth1Data);
-    when(eth1Data.getDeposit_count()).thenReturn(UnsignedLong.valueOf(n));
+    when(eth1Data.getDeposit_count()).thenReturn(UInt64.valueOf(n));
   }
 
   private void mockStateEth1DepositIndex(int n) {
-    when(state.getEth1_deposit_index()).thenReturn(UnsignedLong.valueOf(n));
+    when(state.getEth1_deposit_index()).thenReturn(UInt64.valueOf(n));
   }
 
   private void mockStateEth1DataVotes() {

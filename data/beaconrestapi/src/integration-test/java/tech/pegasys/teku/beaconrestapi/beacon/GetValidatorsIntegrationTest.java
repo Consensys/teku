@@ -15,7 +15,6 @@ package tech.pegasys.teku.beaconrestapi.beacon;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.Map;
 import okhttp3.Response;
@@ -25,6 +24,7 @@ import tech.pegasys.teku.beaconrestapi.RestApiConstants;
 import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetValidators;
 import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -68,12 +68,11 @@ public class GetValidatorsIntegrationTest extends AbstractDataBackedRestAPIInteg
     final int outOfRangeSlot = 20;
     final int finalizedSlot = 20 + Constants.SLOTS_PER_HISTORICAL_ROOT;
     createBlocksAtSlots(outOfRangeSlot, finalizedSlot);
-    final UnsignedLong finalizedEpoch =
-        ChainProperties.computeBestEpochFinalizableAtSlot(finalizedSlot);
+    final UInt64 finalizedEpoch = ChainProperties.computeBestEpochFinalizableAtSlot(finalizedSlot);
     final SignedBlockAndState finalizedBlock = finalizeChainAtEpoch(finalizedEpoch);
-    assertThat(finalizedBlock.getSlot()).isEqualTo(UnsignedLong.valueOf(finalizedSlot));
+    assertThat(finalizedBlock.getSlot()).isEqualTo(UInt64.valueOf(finalizedSlot));
 
-    final int targetEpoch = finalizedEpoch.minus(UnsignedLong.ONE).intValue();
+    final int targetEpoch = finalizedEpoch.minus(UInt64.ONE).intValue();
     final Response response = getByEpoch(targetEpoch);
     assertGone(response);
   }

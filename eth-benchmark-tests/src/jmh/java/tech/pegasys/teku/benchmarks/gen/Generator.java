@@ -19,7 +19,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,6 +36,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -70,7 +70,7 @@ public class Generator {
     localChain.initializeStorage();
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
 
-    UnsignedLong currentSlot = localStorage.getBestSlot();
+    UInt64 currentSlot = localStorage.getBestSlot();
     List<Attestation> attestations = Collections.emptyList();
 
     String blocksFile =
@@ -81,7 +81,7 @@ public class Generator {
       for (int j = 0; j < 50; j++) {
         for (int i = 0; i < Constants.SLOTS_PER_EPOCH; i++) {
           long s = System.currentTimeMillis();
-          currentSlot = currentSlot.plus(UnsignedLong.ONE);
+          currentSlot = currentSlot.plus(UInt64.ONE);
 
           final SignedBeaconBlock block =
               localChain.createAndImportBlockAtSlotWithAttestations(
@@ -94,7 +94,7 @@ public class Generator {
                   .orElseThrow();
 
           attestations =
-              UnsignedLong.ONE.equals(currentSlot)
+              UInt64.ONE.equals(currentSlot)
                   ? Collections.emptyList()
                   : attestationGenerator.getAttestationsForSlot(
                       postState, block.getMessage(), currentSlot);
@@ -145,11 +145,9 @@ public class Generator {
   }
 
   String getCommittees(BeaconState state) {
-    UnsignedLong cnt = get_committee_count_per_slot(state, get_current_epoch(state));
+    UInt64 cnt = get_committee_count_per_slot(state, get_current_epoch(state));
     List<List<Integer>> committees = new ArrayList<>();
-    for (UnsignedLong index = UnsignedLong.ZERO;
-        index.compareTo(cnt) < 0;
-        index = index.plus(UnsignedLong.ONE)) {
+    for (UInt64 index = UInt64.ZERO; index.compareTo(cnt) < 0; index = index.plus(UInt64.ONE)) {
 
       committees.add(get_beacon_committee(state, state.getSlot(), index));
     }

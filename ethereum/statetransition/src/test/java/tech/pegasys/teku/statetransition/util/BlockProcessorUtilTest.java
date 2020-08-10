@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -37,6 +36,7 @@ import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.MerkleTree;
 import tech.pegasys.teku.datastructures.util.OptimizedMerkleTree;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.util.config.Constants;
@@ -52,7 +52,7 @@ class BlockProcessorUtilTest {
     DepositData depositInput = dataStructureUtil.randomDepositData();
     BLSPublicKey pubkey = depositInput.getPubkey();
     Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
-    UnsignedLong amount = depositInput.getAmount();
+    UInt64 amount = depositInput.getAmount();
 
     BeaconState preState = createBeaconState();
 
@@ -82,7 +82,7 @@ class BlockProcessorUtilTest {
     DepositData depositInput = dataStructureUtil.randomDepositData();
     BLSPublicKey pubkey = depositInput.getPubkey();
     Bytes32 withdrawalCredentials = depositInput.getWithdrawal_credentials();
-    UnsignedLong amount = depositInput.getAmount();
+    UInt64 amount = depositInput.getAmount();
 
     Validator knownValidator = makeValidator(pubkey, withdrawalCredentials);
 
@@ -103,7 +103,7 @@ class BlockProcessorUtilTest {
         "A new balance was added to the validator balances, but should not have been.");
     assertEquals(knownValidator, postState.getValidators().get(originalValidatorRegistrySize - 1));
     assertEquals(
-        amount.times(UnsignedLong.valueOf(2L)),
+        amount.times(UInt64.valueOf(2L)),
         postState.getBalances().get(originalValidatorBalancesSize - 1));
   }
 
@@ -116,7 +116,7 @@ class BlockProcessorUtilTest {
                 "0x9378a6e3984e96d2cd50450c76ca14732f1300efa04aecdb805b22e6d6926a85ef409e8f3acf494a1481090bf32ce3bd"));
     Bytes32 withdrawalCredentials =
         Bytes32.fromHexString("0x79e43d39ee55749c55994a7ab2a3cb91460cec544fdbf27eb5717c43f970c1b6");
-    UnsignedLong amount = UnsignedLong.valueOf(1000000000L);
+    UInt64 amount = UInt64.valueOf(1000000000L);
     BLSSignature signature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromHexString(
@@ -149,21 +149,21 @@ class BlockProcessorUtilTest {
     return createBeaconState(false, null, null);
   }
 
-  private BeaconState createBeaconState(UnsignedLong amount, Validator knownValidator) {
+  private BeaconState createBeaconState(UInt64 amount, Validator knownValidator) {
     return createBeaconState(true, amount, knownValidator);
   }
 
   private BeaconState createBeaconState(
-      boolean addToList, UnsignedLong amount, Validator knownValidator) {
+      boolean addToList, UInt64 amount, Validator knownValidator) {
     return BeaconState.createEmpty()
         .updated(
             beaconState -> {
-              beaconState.setSlot(dataStructureUtil.randomUnsignedLong());
+              beaconState.setSlot(dataStructureUtil.randomUInt64());
               beaconState.setFork(
                   new Fork(
                       Constants.GENESIS_FORK_VERSION,
                       Constants.GENESIS_FORK_VERSION,
-                      UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
+                      UInt64.valueOf(Constants.GENESIS_EPOCH)));
 
               SSZMutableList<Validator> validatorList =
                   SSZList.createMutable(
@@ -173,14 +173,14 @@ class BlockProcessorUtilTest {
                           dataStructureUtil.randomValidator()),
                       Constants.VALIDATOR_REGISTRY_LIMIT,
                       Validator.class);
-              SSZMutableList<UnsignedLong> balanceList =
+              SSZMutableList<UInt64> balanceList =
                   SSZList.createMutable(
                       Arrays.asList(
-                          dataStructureUtil.randomUnsignedLong(),
-                          dataStructureUtil.randomUnsignedLong(),
-                          dataStructureUtil.randomUnsignedLong()),
+                          dataStructureUtil.randomUInt64(),
+                          dataStructureUtil.randomUInt64(),
+                          dataStructureUtil.randomUInt64()),
                       Constants.VALIDATOR_REGISTRY_LIMIT,
-                      UnsignedLong.class);
+                      UInt64.class);
 
               if (addToList) {
                 validatorList.add(knownValidator);
@@ -203,13 +203,12 @@ class BlockProcessorUtilTest {
         beaconState.updated(
             state ->
                 state.setEth1_data(
-                    new Eth1Data(
-                        depositMerkleTree.getRoot(), UnsignedLong.valueOf(1), Bytes32.ZERO)));
+                    new Eth1Data(depositMerkleTree.getRoot(), UInt64.valueOf(1), Bytes32.ZERO)));
 
     SSZMutableList<DepositWithIndex> deposits =
         SSZList.createMutable(DepositWithIndex.class, Constants.MAX_DEPOSITS);
     deposits.add(
-        new DepositWithIndex(depositMerkleTree.getProof(0), depositData, UnsignedLong.valueOf(0)));
+        new DepositWithIndex(depositMerkleTree.getProof(0), depositData, UInt64.valueOf(0)));
 
     // Attempt to process deposit with above data.
     return beaconState.updated(state -> BlockProcessorUtil.process_deposits(state, deposits));
@@ -219,7 +218,7 @@ class BlockProcessorUtilTest {
     return Validator.create(
         pubkey,
         withdrawalCredentials,
-        UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
+        UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
         false,
         Constants.FAR_FUTURE_EPOCH,
         Constants.FAR_FUTURE_EPOCH,

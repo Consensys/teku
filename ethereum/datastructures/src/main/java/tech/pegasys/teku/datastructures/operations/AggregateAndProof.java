@@ -14,7 +14,6 @@
 package tech.pegasys.teku.datastructures.operations;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -24,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.util.hashtree.HashTreeUtil;
@@ -35,19 +35,18 @@ public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 1;
 
-  private final UnsignedLong index;
+  private final UInt64 index;
   private final Attestation aggregate;
   private final BLSSignature selection_proof;
 
-  public AggregateAndProof(
-      UnsignedLong index, Attestation aggregate, BLSSignature selection_proof) {
+  public AggregateAndProof(UInt64 index, Attestation aggregate, BLSSignature selection_proof) {
     this.index = index;
     this.selection_proof = selection_proof;
     this.aggregate = aggregate;
   }
 
   public AggregateAndProof() {
-    this.index = UnsignedLong.ZERO;
+    this.index = UInt64.ZERO;
     this.selection_proof = BLSSignature.empty();
     this.aggregate = new Attestation();
   }
@@ -110,7 +109,7 @@ public class AggregateAndProof implements SimpleOffsetSerializable, SSZContainer
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getIndex() {
+  public UInt64 getIndex() {
     return index;
   }
 

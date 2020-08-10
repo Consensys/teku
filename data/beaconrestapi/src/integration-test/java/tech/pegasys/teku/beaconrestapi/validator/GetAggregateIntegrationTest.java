@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Map;
 import java.util.Optional;
 import okhttp3.Response;
@@ -28,6 +27,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAggregate;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetAggregateIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
@@ -44,7 +44,7 @@ public class GetAggregateIntegrationTest extends AbstractDataBackedRestAPIIntegr
     final Map<String, String> params =
         Map.of(
             "attestation_data_root", attestation.hash_tree_root().toHexString(),
-            "slot", UnsignedLong.valueOf(1).toString());
+            "slot", UInt64.valueOf(1).toString());
 
     when(validatorApiChannel.createAggregate(eq(attestation.hash_tree_root())))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
@@ -59,7 +59,7 @@ public class GetAggregateIntegrationTest extends AbstractDataBackedRestAPIIntegr
     final Map<String, String> params =
         Map.of(
             "attestation_data_root", attestation.hash_tree_root().toHexString(),
-            "slot", UnsignedLong.valueOf(1).toString());
+            "slot", UInt64.valueOf(1).toString());
 
     when(validatorApiChannel.createAggregate(eq(attestation.hash_tree_root())))
         .thenReturn(SafeFuture.completedFuture(Optional.of(attestation)));

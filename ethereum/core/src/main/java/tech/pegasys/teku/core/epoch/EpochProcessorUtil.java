@@ -25,7 +25,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_total_ac
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_total_balance;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_validator_churn_limit;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.initiate_validator_exit;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.min;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.decrease_balance;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.increase_balance;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_active_validator;
@@ -45,7 +44,6 @@ import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -61,6 +59,7 @@ import tech.pegasys.teku.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
@@ -109,7 +108,7 @@ public final class EpochProcessorUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#helper-functions-1</a>
    */
-  private static UnsignedLong get_attesting_balance(
+  private static UInt64 get_attesting_balance(
       BeaconState state, SSZList<PendingAttestation> attestations) {
     return get_total_balance(state, get_unslashed_attesting_indices(state, attestations));
   }
@@ -125,14 +124,12 @@ public final class EpochProcessorUtil {
       MutableBeaconState state, MatchingAttestations matchingAttestations)
       throws EpochProcessingException {
     try {
-      if (get_current_epoch(state)
-              .compareTo(UnsignedLong.valueOf(GENESIS_EPOCH).plus(UnsignedLong.ONE))
-          <= 0) {
+      if (get_current_epoch(state).compareTo(UInt64.valueOf(GENESIS_EPOCH).plus(UInt64.ONE)) <= 0) {
         return;
       }
 
-      UnsignedLong previous_epoch = get_previous_epoch(state);
-      UnsignedLong current_epoch = get_current_epoch(state);
+      UInt64 previous_epoch = get_previous_epoch(state);
+      UInt64 current_epoch = get_current_epoch(state);
       Checkpoint old_previous_justified_checkpoint = state.getPrevious_justified_checkpoint();
       Checkpoint old_current_justified_checkpoint = state.getCurrent_justified_checkpoint();
 
@@ -143,8 +140,8 @@ public final class EpochProcessorUtil {
       SSZList<PendingAttestation> matching_target_attestations =
           matchingAttestations.getMatchingTargetAttestations(previous_epoch);
       if (get_attesting_balance(state, matching_target_attestations)
-              .times(UnsignedLong.valueOf(3))
-              .compareTo(get_total_active_balance(state).times(UnsignedLong.valueOf(2)))
+              .times(UInt64.valueOf(3))
+              .compareTo(get_total_active_balance(state).times(UInt64.valueOf(2)))
           >= 0) {
         Checkpoint newCheckpoint =
             new Checkpoint(previous_epoch, get_block_root(state, previous_epoch));
@@ -154,8 +151,8 @@ public final class EpochProcessorUtil {
       matching_target_attestations =
           matchingAttestations.getMatchingTargetAttestations(current_epoch);
       if (get_attesting_balance(state, matching_target_attestations)
-              .times(UnsignedLong.valueOf(3))
-              .compareTo(get_total_active_balance(state).times(UnsignedLong.valueOf(2)))
+              .times(UInt64.valueOf(3))
+              .compareTo(get_total_active_balance(state).times(UInt64.valueOf(2)))
           >= 0) {
         Checkpoint newCheckpoint =
             new Checkpoint(current_epoch, get_block_root(state, current_epoch));
@@ -171,7 +168,7 @@ public final class EpochProcessorUtil {
       if (all(justificationBits, 1, 4)
           && old_previous_justified_checkpoint
               .getEpoch()
-              .plus(UnsignedLong.valueOf(3))
+              .plus(UInt64.valueOf(3))
               .equals(current_epoch)) {
         state.setFinalized_checkpoint(old_previous_justified_checkpoint);
       }
@@ -179,7 +176,7 @@ public final class EpochProcessorUtil {
       if (all(justificationBits, 1, 3)
           && old_previous_justified_checkpoint
               .getEpoch()
-              .plus(UnsignedLong.valueOf(2))
+              .plus(UInt64.valueOf(2))
               .equals(current_epoch)) {
         state.setFinalized_checkpoint(old_previous_justified_checkpoint);
       }
@@ -187,7 +184,7 @@ public final class EpochProcessorUtil {
       if (all(justificationBits, 0, 3)
           && old_current_justified_checkpoint
               .getEpoch()
-              .plus(UnsignedLong.valueOf(2))
+              .plus(UInt64.valueOf(2))
               .equals(current_epoch)) {
         state.setFinalized_checkpoint(old_current_justified_checkpoint);
       }
@@ -195,7 +192,7 @@ public final class EpochProcessorUtil {
       if (all(justificationBits, 0, 2)
           && old_current_justified_checkpoint
               .getEpoch()
-              .plus(UnsignedLong.valueOf(1))
+              .plus(UInt64.valueOf(1))
               .equals(current_epoch)) {
         state.setFinalized_checkpoint(old_current_justified_checkpoint);
       }
@@ -216,7 +213,7 @@ public final class EpochProcessorUtil {
       MutableBeaconState state, MatchingAttestations matchingAttestations)
       throws EpochProcessingException {
     try {
-      if (get_current_epoch(state).equals(UnsignedLong.valueOf(GENESIS_EPOCH))) {
+      if (get_current_epoch(state).equals(UInt64.valueOf(GENESIS_EPOCH))) {
         return;
       }
 
@@ -253,12 +250,11 @@ public final class EpochProcessorUtil {
           validators.set(
               index,
               validator.withActivation_eligibility_epoch(
-                  get_current_epoch(state).plus(UnsignedLong.ONE)));
+                  get_current_epoch(state).plus(UInt64.ONE)));
         }
 
         if (is_active_validator(validator, get_current_epoch(state))
-            && validator.getEffective_balance().compareTo(UnsignedLong.valueOf(EJECTION_BALANCE))
-                <= 0) {
+            && validator.getEffective_balance().compareTo(UInt64.valueOf(EJECTION_BALANCE)) <= 0) {
           initiate_validator_exit(state, index);
         }
       }
@@ -318,28 +314,26 @@ public final class EpochProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#slashings</a>
    */
   public static void process_slashings(MutableBeaconState state) {
-    UnsignedLong epoch = get_current_epoch(state);
-    UnsignedLong total_balance = get_total_active_balance(state);
+    UInt64 epoch = get_current_epoch(state);
+    UInt64 total_balance = get_total_active_balance(state);
 
     SSZList<Validator> validators = state.getValidators();
     for (int index = 0; index < validators.size(); index++) {
       Validator validator = validators.get(index);
       if (validator.isSlashed()
           && epoch
-              .plus(UnsignedLong.valueOf(EPOCHS_PER_SLASHINGS_VECTOR / 2))
+              .plus(UInt64.valueOf(EPOCHS_PER_SLASHINGS_VECTOR / 2))
               .equals(validator.getWithdrawable_epoch())) {
-        UnsignedLong increment = EFFECTIVE_BALANCE_INCREMENT;
-        UnsignedLong penalty_numerator =
+        UInt64 increment = EFFECTIVE_BALANCE_INCREMENT;
+        UInt64 penalty_numerator =
             validator
                 .getEffective_balance()
                 .dividedBy(increment)
                 .times(
-                    min(
-                        UnsignedLong.valueOf(
-                            state.getSlashings().stream().mapToLong(UnsignedLong::longValue).sum()
-                                * 3),
-                        total_balance));
-        UnsignedLong penalty = penalty_numerator.dividedBy(total_balance).times(increment);
+                    UInt64.valueOf(
+                            state.getSlashings().stream().mapToLong(UInt64::longValue).sum() * 3)
+                        .min(total_balance));
+        UInt64 penalty = penalty_numerator.dividedBy(total_balance).times(increment);
         decrease_balance(state, index, penalty);
       }
     }
@@ -353,29 +347,25 @@ public final class EpochProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#final-updates</a>
    */
   public static void process_final_updates(MutableBeaconState state) {
-    UnsignedLong current_epoch = get_current_epoch(state);
-    UnsignedLong next_epoch = current_epoch.plus(UnsignedLong.ONE);
+    UInt64 current_epoch = get_current_epoch(state);
+    UInt64 next_epoch = current_epoch.plus(UInt64.ONE);
 
     // Reset eth1 data votes
-    if (next_epoch
-        .mod(UnsignedLong.valueOf(EPOCHS_PER_ETH1_VOTING_PERIOD))
-        .equals(UnsignedLong.ZERO)) {
+    if (next_epoch.mod(UInt64.valueOf(EPOCHS_PER_ETH1_VOTING_PERIOD)).equals(UInt64.ZERO)) {
       state.getEth1_data_votes().clear();
     }
 
     // Update effective balances with hysteresis
     SSZMutableList<Validator> validators = state.getValidators();
-    SSZList<UnsignedLong> balances = state.getBalances();
+    SSZList<UInt64> balances = state.getBalances();
     for (int index = 0; index < validators.size(); index++) {
       Validator validator = validators.get(index);
-      UnsignedLong balance = balances.get(index);
+      UInt64 balance = balances.get(index);
 
-      final UnsignedLong hysteresis_increment =
+      final UInt64 hysteresis_increment =
           EFFECTIVE_BALANCE_INCREMENT.dividedBy(HYSTERESIS_QUOTIENT);
-      final UnsignedLong downward_threshold =
-          hysteresis_increment.times(HYSTERESIS_DOWNWARD_MULTIPLIER);
-      final UnsignedLong upward_threshold =
-          hysteresis_increment.times(HYSTERESIS_UPWARD_MULTIPLIER);
+      final UInt64 downward_threshold = hysteresis_increment.times(HYSTERESIS_DOWNWARD_MULTIPLIER);
+      final UInt64 upward_threshold = hysteresis_increment.times(HYSTERESIS_UPWARD_MULTIPLIER);
       if (balance.plus(downward_threshold).compareTo(validator.getEffective_balance()) < 0
           || validator.getEffective_balance().plus(upward_threshold).compareTo(balance) < 0) {
         state
@@ -383,25 +373,25 @@ public final class EpochProcessorUtil {
             .set(
                 index,
                 validator.withEffective_balance(
-                    min(
-                        balance.minus(balance.mod(EFFECTIVE_BALANCE_INCREMENT)),
-                        UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))));
+                    balance
+                        .minus(balance.mod(EFFECTIVE_BALANCE_INCREMENT))
+                        .min(UInt64.valueOf(MAX_EFFECTIVE_BALANCE))));
       }
     }
 
     // Reset slashings
-    int index = next_epoch.mod(UnsignedLong.valueOf(EPOCHS_PER_SLASHINGS_VECTOR)).intValue();
-    state.getSlashings().set(index, UnsignedLong.ZERO);
+    int index = next_epoch.mod(UInt64.valueOf(EPOCHS_PER_SLASHINGS_VECTOR)).intValue();
+    state.getSlashings().set(index, UInt64.ZERO);
 
     // Set randao mix
     final int randaoIndex =
-        toIntExact(next_epoch.mod(UnsignedLong.valueOf(EPOCHS_PER_HISTORICAL_VECTOR)).longValue());
+        toIntExact(next_epoch.mod(UInt64.valueOf(EPOCHS_PER_HISTORICAL_VECTOR)).longValue());
     state.getRandao_mixes().set(randaoIndex, get_randao_mix(state, current_epoch));
 
     // Set historical root accumulator
     if (next_epoch
-        .mod(UnsignedLong.valueOf(SLOTS_PER_HISTORICAL_ROOT / SLOTS_PER_EPOCH))
-        .equals(UnsignedLong.ZERO)) {
+        .mod(UInt64.valueOf(SLOTS_PER_HISTORICAL_ROOT / SLOTS_PER_EPOCH))
+        .equals(UInt64.ZERO)) {
       HistoricalBatch historical_batch =
           new HistoricalBatch(state.getBlock_roots(), state.getState_roots());
       state.getHistorical_roots().add(historical_batch.hash_tree_root());

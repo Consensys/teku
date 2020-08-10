@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
-import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
 import java.util.Comparator;
 import java.util.List;
@@ -34,6 +33,7 @@ import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.contract.DepositContract;
 import tech.pegasys.teku.pow.contract.DepositContract.DepositEventEventResponse;
@@ -159,9 +159,9 @@ public class DepositFetcher {
       final EthBlock.Block block,
       final List<DepositContract.DepositEventEventResponse> groupedDepositEventResponse) {
     return new DepositsFromBlockEvent(
-        UnsignedLong.valueOf(block.getNumber()),
+        UInt64.valueOf(block.getNumber()),
         Bytes32.fromHexString(block.getHash()),
-        UnsignedLong.valueOf(block.getTimestamp()),
+        UInt64.valueOf(block.getTimestamp()),
         groupedDepositEventResponse.stream()
             .map(Deposit::new)
             .sorted(Comparator.comparing(Deposit::getMerkle_tree_index))

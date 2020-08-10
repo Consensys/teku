@@ -16,10 +16,10 @@ package tech.pegasys.teku.storage.client;
 import static com.google.common.base.Preconditions.checkState;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -33,16 +33,16 @@ public class ChainUpdater {
     this.chainBuilder = chainBuilder;
   }
 
-  public UnsignedLong getHeadSlot() {
+  public UInt64 getHeadSlot() {
     return recentChainData.getBestSlot();
   }
 
-  public void setCurrentSlot(final UnsignedLong currentSlot) {
+  public void setCurrentSlot(final UInt64 currentSlot) {
     checkState(!recentChainData.isPreGenesis(), "Cannot set current slot before genesis");
     setTime(getSlotTime(currentSlot));
   }
 
-  public void setTime(final UnsignedLong time) {
+  public void setTime(final UInt64 time) {
     checkState(!recentChainData.isPreGenesis(), "Cannot set time before genesis");
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.setTime(time);
@@ -67,10 +67,10 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState finalizeEpoch(final long epoch) {
-    return finalizeEpoch(UnsignedLong.valueOf(epoch));
+    return finalizeEpoch(UInt64.valueOf(epoch));
   }
 
-  public SignedBlockAndState finalizeEpoch(final UnsignedLong epoch) {
+  public SignedBlockAndState finalizeEpoch(final UInt64 epoch) {
 
     final SignedBlockAndState blockAndState =
         chainBuilder.getLatestBlockAndStateAtEpochBoundary(epoch);
@@ -96,10 +96,10 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState advanceChain(final long slot) {
-    return advanceChain(UnsignedLong.valueOf(slot));
+    return advanceChain(UInt64.valueOf(slot));
   }
 
-  public SignedBlockAndState advanceChain(final UnsignedLong slot) {
+  public SignedBlockAndState advanceChain(final UInt64 slot) {
     final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slot);
     saveBlock(block);
     return block;
@@ -115,14 +115,14 @@ public class ChainUpdater {
         .onBlock(block.getBlock().getMessage(), block.getState());
 
     // Make sure time is consistent with block
-    final UnsignedLong blockTime = getSlotTime(block.getSlot());
+    final UInt64 blockTime = getSlotTime(block.getSlot());
     if (blockTime.compareTo(recentChainData.getStore().getTime()) > 0) {
       setTime(blockTime);
     }
   }
 
-  protected UnsignedLong getSlotTime(final UnsignedLong slot) {
-    final UnsignedLong secPerSlot = UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT);
+  protected UInt64 getSlotTime(final UInt64 slot) {
+    final UInt64 secPerSlot = UInt64.valueOf(Constants.SECONDS_PER_SLOT);
     return recentChainData.getGenesisTime().plus(slot.times(secPerSlot));
   }
 }

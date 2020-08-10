@@ -16,7 +16,7 @@ package tech.pegasys.teku.core;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
-import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ChainProperties {
 
@@ -28,8 +28,8 @@ public class ChainProperties {
    * @param slot The slot we want to finalize.
    * @return The earliest epoch that can be finalized at this slot.
    */
-  public static UnsignedLong computeBestEpochFinalizableAtSlot(long slot) {
-    return computeBestEpochFinalizableAtSlot(UnsignedLong.valueOf(slot));
+  public static UInt64 computeBestEpochFinalizableAtSlot(long slot) {
+    return computeBestEpochFinalizableAtSlot(UInt64.valueOf(slot));
   }
 
   /**
@@ -40,11 +40,9 @@ public class ChainProperties {
    * @param slot The slot we want to finalize.
    * @return The earliest epoch that can be finalized at this slot.
    */
-  public static UnsignedLong computeBestEpochFinalizableAtSlot(UnsignedLong slot) {
-    final UnsignedLong currentEpoch = compute_epoch_at_slot(slot);
-    final UnsignedLong startSlotAtCurrentEpoch = compute_start_slot_at_epoch(currentEpoch);
-    return startSlotAtCurrentEpoch.equals(slot)
-        ? currentEpoch
-        : currentEpoch.plus(UnsignedLong.ONE);
+  public static UInt64 computeBestEpochFinalizableAtSlot(UInt64 slot) {
+    final UInt64 currentEpoch = compute_epoch_at_slot(slot);
+    final UInt64 startSlotAtCurrentEpoch = compute_start_slot_at_epoch(currentEpoch);
+    return startSlotAtCurrentEpoch.equals(slot) ? currentEpoch : currentEpoch.plus(UInt64.ONE);
   }
 }

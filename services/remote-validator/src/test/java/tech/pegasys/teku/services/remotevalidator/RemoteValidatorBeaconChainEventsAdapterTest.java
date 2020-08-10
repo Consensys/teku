@@ -24,13 +24,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.events.EventChannels;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
@@ -80,9 +80,9 @@ class RemoteValidatorBeaconChainEventsAdapterTest {
 
   @Test
   public void onBroadcastAttestationEvent_EventAdapterShouldInvokeListenerAndAdaptEvent() {
-    final BroadcastAttestationEvent event = new BroadcastAttestationEvent(UnsignedLong.ONE);
+    final BroadcastAttestationEvent event = new BroadcastAttestationEvent(UInt64.ONE);
     final BeaconChainEvent expectedAdaptedEvent =
-        new BeaconChainEvent(BeaconChainEvent.ATTESTATION, UnsignedLong.ONE);
+        new BeaconChainEvent(BeaconChainEvent.ATTESTATION, UInt64.ONE);
 
     eventsAdapter.onBroadcastAttestationEvent(event);
     verify(listener).onEvent(beaconChainEventArgCaptor.capture());
@@ -92,9 +92,9 @@ class RemoteValidatorBeaconChainEventsAdapterTest {
 
   @Test
   public void onAggregationEvent_EventAdapterShouldInvokeListenerAndAdaptEvent() {
-    final BroadcastAggregatesEvent event = new BroadcastAggregatesEvent(UnsignedLong.ONE);
+    final BroadcastAggregatesEvent event = new BroadcastAggregatesEvent(UInt64.ONE);
     final BeaconChainEvent expectedAdaptedEvent =
-        new BeaconChainEvent(BeaconChainEvent.AGGREGATION, UnsignedLong.ONE);
+        new BeaconChainEvent(BeaconChainEvent.AGGREGATION, UInt64.ONE);
 
     eventsAdapter.onAggregationEvent(event);
     verify(listener).onEvent(beaconChainEventArgCaptor.capture());
@@ -105,10 +105,10 @@ class RemoteValidatorBeaconChainEventsAdapterTest {
   @Test
   public void onImportedBlockEvent_EventAdapterShouldInvokeListenerAndAdaptEvent() {
     final SignedBeaconBlock signedBeaconBlock = mock(SignedBeaconBlock.class);
-    when(signedBeaconBlock.getSlot()).thenReturn(UnsignedLong.ONE);
+    when(signedBeaconBlock.getSlot()).thenReturn(UInt64.ONE);
     final ImportedBlockEvent event = new ImportedBlockEvent(signedBeaconBlock);
     final BeaconChainEvent expectedAdaptedEvent =
-        new BeaconChainEvent(BeaconChainEvent.IMPORTED_BLOCK, UnsignedLong.ONE);
+        new BeaconChainEvent(BeaconChainEvent.IMPORTED_BLOCK, UInt64.ONE);
 
     eventsAdapter.onImportedBlockEvent(event);
     verify(listener).onEvent(beaconChainEventArgCaptor.capture());
@@ -118,7 +118,7 @@ class RemoteValidatorBeaconChainEventsAdapterTest {
 
   @Test
   public void onSlot_EventAdapterShouldInvokeListenerAndAdaptEvent() {
-    final UnsignedLong slot = UnsignedLong.ONE;
+    final UInt64 slot = UInt64.ONE;
     final BeaconChainEvent expectedAdaptedEvent =
         new BeaconChainEvent(BeaconChainEvent.ON_SLOT, slot);
 
@@ -130,7 +130,7 @@ class RemoteValidatorBeaconChainEventsAdapterTest {
 
   @Test
   public void reorgOccurred_EventAdapterShouldInvokeListenerAndAdaptEvent() {
-    final UnsignedLong slot = UnsignedLong.ONE;
+    final UInt64 slot = UInt64.ONE;
     final BeaconChainEvent expectedAdaptedEvent =
         new BeaconChainEvent(BeaconChainEvent.REORG_OCCURRED, slot);
 

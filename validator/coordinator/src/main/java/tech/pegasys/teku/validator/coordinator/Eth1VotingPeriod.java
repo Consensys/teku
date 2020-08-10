@@ -19,53 +19,50 @@ import static tech.pegasys.teku.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_ETH1_BLOCK;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 public class Eth1VotingPeriod {
 
-  private final UnsignedLong cacheDuration;
+  private final UInt64 cacheDuration;
 
   public Eth1VotingPeriod() {
     cacheDuration = calculateEth1DataCacheDurationPriorToFollowDistance();
   }
 
-  public UnsignedLong getSpecRangeLowerBound(
-      final UnsignedLong slot, final UnsignedLong genesisTime) {
+  public UInt64 getSpecRangeLowerBound(final UInt64 slot, final UInt64 genesisTime) {
     return secondsBeforeCurrentVotingPeriodStartTime(
         slot,
         genesisTime,
-        ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK).times(UnsignedLong.valueOf(2)));
+        ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK).times(UInt64.valueOf(2)));
   }
 
-  public UnsignedLong getSpecRangeUpperBound(
-      final UnsignedLong slot, final UnsignedLong genesisTime) {
+  public UInt64 getSpecRangeUpperBound(final UInt64 slot, final UInt64 genesisTime) {
     return secondsBeforeCurrentVotingPeriodStartTime(
         slot, genesisTime, ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK));
   }
 
-  private UnsignedLong secondsBeforeCurrentVotingPeriodStartTime(
-      final UnsignedLong slot, final UnsignedLong genesisTime, final UnsignedLong valueToSubtract) {
-    final UnsignedLong currentVotingPeriodStartTime = getVotingPeriodStartTime(slot, genesisTime);
+  private UInt64 secondsBeforeCurrentVotingPeriodStartTime(
+      final UInt64 slot, final UInt64 genesisTime, final UInt64 valueToSubtract) {
+    final UInt64 currentVotingPeriodStartTime = getVotingPeriodStartTime(slot, genesisTime);
     if (currentVotingPeriodStartTime.compareTo(valueToSubtract) > 0) {
       return currentVotingPeriodStartTime.minus(valueToSubtract);
     } else {
-      return UnsignedLong.ZERO;
+      return UInt64.ZERO;
     }
   }
 
-  private UnsignedLong getVotingPeriodStartTime(
-      final UnsignedLong slot, final UnsignedLong genesisTime) {
-    final UnsignedLong eth1VotingPeriodStartSlot =
-        slot.minus(slot.mod(UnsignedLong.valueOf(EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH)));
+  private UInt64 getVotingPeriodStartTime(final UInt64 slot, final UInt64 genesisTime) {
+    final UInt64 eth1VotingPeriodStartSlot =
+        slot.minus(slot.mod(UInt64.valueOf(EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH)));
     return computeTimeAtSlot(eth1VotingPeriodStartSlot, genesisTime);
   }
 
-  private UnsignedLong computeTimeAtSlot(final UnsignedLong slot, final UnsignedLong genesisTime) {
-    return genesisTime.plus(slot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
+  private UInt64 computeTimeAtSlot(final UInt64 slot, final UInt64 genesisTime) {
+    return genesisTime.plus(slot.times(UInt64.valueOf(Constants.SECONDS_PER_SLOT)));
   }
 
-  public UnsignedLong getCacheDurationInSeconds() {
+  public UInt64 getCacheDurationInSeconds() {
     return cacheDuration;
   }
 }

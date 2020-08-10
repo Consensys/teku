@@ -13,17 +13,17 @@
 
 package tech.pegasys.teku.datastructures.util;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class CommitteeUtilTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -44,12 +44,11 @@ public class CommitteeUtilTest {
 
   @Test
   public void getBeaconCommittee_stateIsTooOld() {
-    final UnsignedLong epoch = ONE;
-    final UnsignedLong epochSlot = compute_start_slot_at_epoch(epoch);
+    final UInt64 epoch = ONE;
+    final UInt64 epochSlot = compute_start_slot_at_epoch(epoch);
     final BeaconState state = dataStructureUtil.randomBeaconState(epochSlot);
 
-    final UnsignedLong outOfRangeSlot =
-        compute_start_slot_at_epoch(epoch.plus(UnsignedLong.valueOf(2)));
+    final UInt64 outOfRangeSlot = compute_start_slot_at_epoch(epoch.plus(UInt64.valueOf(2)));
     assertThatThrownBy(() -> CommitteeUtil.get_beacon_committee(state, outOfRangeSlot, ONE))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(
@@ -58,12 +57,11 @@ public class CommitteeUtilTest {
 
   @Test
   public void getBeaconCommittee_stateFromEpochThatIsTooOld() {
-    final UnsignedLong epoch = UnsignedLong.ONE;
-    final UnsignedLong epochSlot = compute_start_slot_at_epoch(epoch.plus(ONE)).minus(ONE);
+    final UInt64 epoch = ONE;
+    final UInt64 epochSlot = compute_start_slot_at_epoch(epoch.plus(ONE)).minus(ONE);
     final BeaconState state = dataStructureUtil.randomBeaconState(epochSlot);
 
-    final UnsignedLong outOfRangeSlot =
-        compute_start_slot_at_epoch(epoch.plus(UnsignedLong.valueOf(2)));
+    final UInt64 outOfRangeSlot = compute_start_slot_at_epoch(epoch.plus(UInt64.valueOf(2)));
     assertThatThrownBy(() -> CommitteeUtil.get_beacon_committee(state, outOfRangeSlot, ONE))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(
@@ -72,23 +70,22 @@ public class CommitteeUtilTest {
 
   @Test
   public void getBeaconCommittee_stateIsJustNewEnough() {
-    final UnsignedLong epoch = ONE;
-    final UnsignedLong epochSlot = compute_start_slot_at_epoch(epoch);
+    final UInt64 epoch = ONE;
+    final UInt64 epochSlot = compute_start_slot_at_epoch(epoch);
     final BeaconState state = dataStructureUtil.randomBeaconState(epochSlot);
 
-    final UnsignedLong outOfRangeSlot =
-        compute_start_slot_at_epoch(epoch.plus(UnsignedLong.valueOf(2)));
-    final UnsignedLong inRangeSlot = outOfRangeSlot.minus(ONE);
+    final UInt64 outOfRangeSlot = compute_start_slot_at_epoch(epoch.plus(UInt64.valueOf(2)));
+    final UInt64 inRangeSlot = outOfRangeSlot.minus(ONE);
     assertDoesNotThrow(() -> CommitteeUtil.get_beacon_committee(state, inRangeSlot, ONE));
   }
 
   @Test
   public void getBeaconCommittee_stateIsNewerThanSlot() {
-    final UnsignedLong epoch = ONE;
-    final UnsignedLong epochSlot = compute_start_slot_at_epoch(epoch);
+    final UInt64 epoch = ONE;
+    final UInt64 epochSlot = compute_start_slot_at_epoch(epoch);
     final BeaconState state = dataStructureUtil.randomBeaconState(epochSlot);
 
-    final UnsignedLong oldSlot = epochSlot.minus(ONE);
+    final UInt64 oldSlot = epochSlot.minus(ONE);
     assertDoesNotThrow(() -> CommitteeUtil.get_beacon_committee(state, oldSlot, ONE));
   }
 }

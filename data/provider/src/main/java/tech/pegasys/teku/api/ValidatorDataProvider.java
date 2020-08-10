@@ -18,7 +18,6 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +35,7 @@ import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -67,20 +67,20 @@ public class ValidatorDataProvider {
     return combinedChainDataClient.isStoreAvailable();
   }
 
-  public boolean isEpochFinalized(final UnsignedLong epoch) {
+  public boolean isEpochFinalized(final UInt64 epoch) {
     return combinedChainDataClient.isFinalizedEpoch(epoch);
   }
 
   public SafeFuture<Optional<BeaconBlock>> getUnsignedBeaconBlockAtSlot(
-      UnsignedLong slot, BLSSignature randao, Optional<Bytes32> graffiti) {
+      UInt64 slot, BLSSignature randao, Optional<Bytes32> graffiti) {
     if (slot == null) {
       throw new IllegalArgumentException(NO_SLOT_PROVIDED);
     }
     if (randao == null) {
       throw new IllegalArgumentException(NO_RANDAO_PROVIDED);
     }
-    UnsignedLong bestSlot = combinedChainDataClient.getBestSlot();
-    if (bestSlot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).compareTo(slot) < 0) {
+    UInt64 bestSlot = combinedChainDataClient.getBestSlot();
+    if (bestSlot.plus(UInt64.valueOf(SLOTS_PER_EPOCH)).compareTo(slot) < 0) {
       throw new IllegalArgumentException(CANNOT_PRODUCE_FAR_FUTURE_BLOCK);
     }
     if (bestSlot.compareTo(slot) > 0) {
@@ -96,7 +96,7 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<Optional<Attestation>> createUnsignedAttestationAtSlot(
-      UnsignedLong slot, int committeeIndex) {
+      UInt64 slot, int committeeIndex) {
     if (!isStoreAvailable()) {
       return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }

@@ -17,13 +17,13 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.primitives.UnsignedLong;
 import io.swagger.v3.oas.annotations.media.Schema;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class AggregateAndProof {
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong index;
+  public final UInt64 index;
 
   public final Attestation attestation;
 
@@ -32,7 +32,7 @@ public class AggregateAndProof {
 
   @JsonCreator
   public AggregateAndProof(
-      @JsonProperty("index") final UnsignedLong index,
+      @JsonProperty("index") final UInt64 index,
       @JsonProperty("attestation") final Attestation attestation,
       @JsonProperty("selection_proof") final BLSSignature selection_proof) {
     this.index = index;

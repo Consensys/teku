@@ -14,7 +14,6 @@
 package tech.pegasys.teku.datastructures.state;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,6 +26,7 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
@@ -51,13 +51,13 @@ public class BeaconStateImpl extends ContainerViewReadImpl
 
   // Versioning
   @SuppressWarnings("unused")
-  private final UnsignedLong genesis_time = null;
+  private final UInt64 genesis_time = null;
 
   @SuppressWarnings("unused")
   private final Bytes32 genesis_validators_root = null;
 
   @SuppressWarnings("unused")
-  private final UnsignedLong slot = null;
+  private final UInt64 slot = null;
 
   @SuppressWarnings("unused")
   private final Fork fork = null; // For versioning hard forks
@@ -96,7 +96,7 @@ public class BeaconStateImpl extends ContainerViewReadImpl
   // SLOTS_PER_PERIOD
 
   @SuppressWarnings("unused")
-  private final UnsignedLong eth1_deposit_index = null;
+  private final UInt64 eth1_deposit_index = null;
 
   // Validator registry
   @SuppressWarnings("unused")
@@ -106,9 +106,9 @@ public class BeaconStateImpl extends ContainerViewReadImpl
           Constants.VALIDATOR_REGISTRY_LIMIT); // List Bounded by VALIDATOR_REGISTRY_LIMIT
 
   @SuppressWarnings("unused")
-  private final SSZList<UnsignedLong> balances =
+  private final SSZList<UInt64> balances =
       SSZList.createMutable(
-          UnsignedLong.class,
+          UInt64.class,
           Constants.VALIDATOR_REGISTRY_LIMIT); // List Bounded by VALIDATOR_REGISTRY_LIMIT
 
   @SuppressWarnings("unused")
@@ -119,9 +119,9 @@ public class BeaconStateImpl extends ContainerViewReadImpl
 
   // Slashings
   @SuppressWarnings("unused")
-  private final SSZVector<UnsignedLong> slashings =
+  private final SSZVector<UInt64> slashings =
       SSZVector.createMutable(
-          UnsignedLong.class,
+          UInt64.class,
           Constants.EPOCHS_PER_SLASHINGS_VECTOR); // Vector of length EPOCHS_PER_SLASHINGS_VECTOR
 
   // Attestations
@@ -175,9 +175,9 @@ public class BeaconStateImpl extends ContainerViewReadImpl
 
   public BeaconStateImpl(
       // Versioning
-      UnsignedLong genesis_time,
+      UInt64 genesis_time,
       Bytes32 genesis_validators_root,
-      UnsignedLong slot,
+      UInt64 slot,
       Fork fork,
 
       // History
@@ -189,17 +189,17 @@ public class BeaconStateImpl extends ContainerViewReadImpl
       // Eth1
       Eth1Data eth1_data,
       SSZList<Eth1Data> eth1_data_votes,
-      UnsignedLong eth1_deposit_index,
+      UInt64 eth1_deposit_index,
 
       // Registry
       SSZList<? extends Validator> validators,
-      SSZList<UnsignedLong> balances,
+      SSZList<UInt64> balances,
 
       // Randomness
       SSZVector<Bytes32> randao_mixes,
 
       // Slashings
-      SSZVector<UnsignedLong> slashings,
+      SSZVector<UInt64> slashings,
 
       // Attestations
       SSZList<PendingAttestation> previous_epoch_attestations,

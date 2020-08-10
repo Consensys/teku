@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZBackingVector;
@@ -37,7 +37,7 @@ public interface MutableBeaconState extends BeaconState, ContainerViewWriteRef {
 
   // Versioning
 
-  default void setGenesis_time(UnsignedLong genesis_time) {
+  default void setGenesis_time(UInt64 genesis_time) {
     set(0, new UInt64View(genesis_time));
   }
 
@@ -45,7 +45,7 @@ public interface MutableBeaconState extends BeaconState, ContainerViewWriteRef {
     set(1, new Bytes32View(genesis_validators_root));
   }
 
-  default void setSlot(UnsignedLong slot) {
+  default void setSlot(UInt64 slot) {
     set(2, new UInt64View(slot));
   }
 
@@ -87,7 +87,7 @@ public interface MutableBeaconState extends BeaconState, ContainerViewWriteRef {
         Eth1Data.class, getAnyByRef(9), Function.identity(), Function.identity());
   }
 
-  default void setEth1_deposit_index(UnsignedLong eth1_deposit_index) {
+  default void setEth1_deposit_index(UInt64 eth1_deposit_index) {
     set(10, new UInt64View(eth1_deposit_index));
   }
 
@@ -99,9 +99,9 @@ public interface MutableBeaconState extends BeaconState, ContainerViewWriteRef {
   }
 
   @Override
-  default SSZMutableList<UnsignedLong> getBalances() {
+  default SSZMutableList<UInt64> getBalances() {
     return new SSZBackingList<>(
-        UnsignedLong.class, getAnyByRef(12), UInt64View::new, AbstractBasicView::get);
+        UInt64.class, getAnyByRef(12), UInt64View::new, AbstractBasicView::get);
   }
 
   @Override
@@ -112,9 +112,9 @@ public interface MutableBeaconState extends BeaconState, ContainerViewWriteRef {
 
   // Slashings
   @Override
-  default SSZMutableVector<UnsignedLong> getSlashings() {
+  default SSZMutableVector<UInt64> getSlashings() {
     return new SSZBackingVector<>(
-        UnsignedLong.class, getAnyByRef(14), UInt64View::new, AbstractBasicView::get);
+        UInt64.class, getAnyByRef(14), UInt64View::new, AbstractBasicView::get);
   }
 
   // Attestations

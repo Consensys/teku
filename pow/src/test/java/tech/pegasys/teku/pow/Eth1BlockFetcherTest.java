@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.pow;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static java.util.stream.Collectors.toMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -22,8 +20,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Map;
@@ -33,20 +32,21 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.util.time.StubTimeProvider;
 
 class Eth1BlockFetcherTest {
 
-  private static final UnsignedLong CACHE_DURATION = UnsignedLong.valueOf(10_000);
-  private static final UnsignedLong TWO = UnsignedLong.valueOf(2);
+  private static final UInt64 CACHE_DURATION = UInt64.valueOf(10_000);
+  private static final UInt64 TWO = UInt64.valueOf(2);
   private static final int CURRENT_TIME = 50_000;
-  private static final UnsignedLong BEFORE_CACHE_PERIOD =
-      UnsignedLong.valueOf(CURRENT_TIME).minus(CACHE_DURATION).minus(ONE);
-  private static final UnsignedLong IN_CACHE_PERIOD_1 =
-      UnsignedLong.valueOf(CURRENT_TIME).minus(CACHE_DURATION).plus(ONE);
-  private static final UnsignedLong IN_CACHE_PERIOD_2 = IN_CACHE_PERIOD_1.plus(ONE);
-  private static final UnsignedLong IN_CACHE_PERIOD_3 = IN_CACHE_PERIOD_2.plus(ONE);
+  private static final UInt64 BEFORE_CACHE_PERIOD =
+      UInt64.valueOf(CURRENT_TIME).minus(CACHE_DURATION).minus(ONE);
+  private static final UInt64 IN_CACHE_PERIOD_1 =
+      UInt64.valueOf(CURRENT_TIME).minus(CACHE_DURATION).plus(ONE);
+  private static final UInt64 IN_CACHE_PERIOD_2 = IN_CACHE_PERIOD_1.plus(ONE);
+  private static final UInt64 IN_CACHE_PERIOD_3 = IN_CACHE_PERIOD_2.plus(ONE);
 
   private final Random random = new Random(2424);
   private final Eth1EventsChannel eth1EventsChannel = mock(Eth1EventsChannel.class);
@@ -72,21 +72,21 @@ class Eth1BlockFetcherTest {
             block(97, timeProvider.getTimeInSeconds().minus(CACHE_DURATION).minus(ONE)),
             block(96, timeProvider.getTimeInSeconds().minus(CACHE_DURATION).minus(TWO)));
 
-    blockFetcher.onInSync(UnsignedLong.valueOf(100));
+    blockFetcher.onInSync(UInt64.valueOf(100));
 
     verifyBlockSent(blocks.get(100));
     verifyBlockSent(blocks.get(99));
     verifyBlockSent(blocks.get(98));
     verifyNoMoreBlocksSent();
     // Requested block 97 but never sent it because it was outside the cache period
-    verify(eth1Provider).getGuaranteedEth1Block(UnsignedLong.valueOf(97));
+    verify(eth1Provider).getGuaranteedEth1Block(UInt64.valueOf(97));
     // And never requested block 96 because it must be outside the cache period.
     verifyBlockNotRequested(96);
   }
 
   @Test
   void shouldNotBackfillMultipleTimes() {
-    final UnsignedLong blockNumber = UnsignedLong.valueOf(100);
+    final UInt64 blockNumber = UInt64.valueOf(100);
     // First block is outside the cache range so it's the only thing we should request.
     withBlocks(
         block(
@@ -139,7 +139,7 @@ class Eth1BlockFetcherTest {
   @Test
   void shouldNotFetchAnyBlocksIfStartIsAfterEnd() {
     withBlocks(block(0, BEFORE_CACHE_PERIOD));
-    blockFetcher.onInSync(UnsignedLong.valueOf(0));
+    blockFetcher.onInSync(UInt64.valueOf(0));
     verify(eth1Provider).getGuaranteedEth1Block(ZERO);
 
     blockFetcher.fetch(BigInteger.valueOf(7), BigInteger.valueOf(5));
@@ -174,7 +174,7 @@ class Eth1BlockFetcherTest {
 
     // Download the latest block first and since it's before the cache period, skip the rest
     blockFetcher.fetch(BigInteger.valueOf(3), BigInteger.valueOf(5));
-    verify(eth1Provider).getEth1Block(UnsignedLong.valueOf(5));
+    verify(eth1Provider).getEth1Block(UInt64.valueOf(5));
     verifyNoMoreInteractions(eth1Provider);
     verifyNoMoreBlocksSent();
   }
@@ -187,15 +187,15 @@ class Eth1BlockFetcherTest {
     final Block block6 = block(6, IN_CACHE_PERIOD_1);
 
     when(eth1Provider.getGuaranteedEth1Block(ZERO)).thenReturn(new SafeFuture<>());
-    when(eth1Provider.getEth1Block(UnsignedLong.valueOf(5))).thenReturn(block5Future);
-    when(eth1Provider.getEth1Block(UnsignedLong.valueOf(6))).thenReturn(block6Future);
+    when(eth1Provider.getEth1Block(UInt64.valueOf(5))).thenReturn(block5Future);
+    when(eth1Provider.getEth1Block(UInt64.valueOf(6))).thenReturn(block6Future);
 
     blockFetcher.onInSync(ZERO);
     verify(eth1Provider).getGuaranteedEth1Block(ZERO);
 
     // Fetch blocks 3-5 which will all be before cache period.
     blockFetcher.fetch(BigInteger.valueOf(3), BigInteger.valueOf(5));
-    verify(eth1Provider).getEth1Block(UnsignedLong.valueOf(5));
+    verify(eth1Provider).getEth1Block(UInt64.valueOf(5));
 
     // Before that completes, also ask to fetch block 6 which is in the cache period.
     blockFetcher.fetch(BigInteger.valueOf(6), BigInteger.valueOf(6));
@@ -203,7 +203,7 @@ class Eth1BlockFetcherTest {
 
     // When block 5 complete, it should request block 6
     block5Future.complete(block5);
-    verify(eth1Provider).getEth1Block(UnsignedLong.valueOf(6));
+    verify(eth1Provider).getEth1Block(UInt64.valueOf(6));
     verifyNoMoreInteractions(eth1Provider);
 
     // But we shouldn't go back to get blocks 3 & 4 because we know they're too early
@@ -214,8 +214,8 @@ class Eth1BlockFetcherTest {
   }
 
   private void verifyBlockNotRequested(final int blockNumber) {
-    verify(eth1Provider, never()).getEth1Block(UnsignedLong.valueOf(blockNumber));
-    verify(eth1Provider, never()).getGuaranteedEth1Block(UnsignedLong.valueOf(blockNumber));
+    verify(eth1Provider, never()).getEth1Block(UInt64.valueOf(blockNumber));
+    verify(eth1Provider, never()).getGuaranteedEth1Block(UInt64.valueOf(blockNumber));
   }
 
   private void verifyNoMoreBlocksSent() {
@@ -224,13 +224,12 @@ class Eth1BlockFetcherTest {
 
   private void verifyBlockSent(final Block block) {
     verify(eth1EventsChannel)
-        .onEth1Block(
-            Bytes32.fromHexString(block.getHash()), UnsignedLong.valueOf(block.getTimestamp()));
+        .onEth1Block(Bytes32.fromHexString(block.getHash()), UInt64.valueOf(block.getTimestamp()));
   }
 
   private Map<Integer, Block> withBlocks(final Block... blocks) {
     for (Block block : blocks) {
-      final UnsignedLong blockNumber = UnsignedLong.valueOf(block.getNumber());
+      final UInt64 blockNumber = UInt64.valueOf(block.getNumber());
       when(eth1Provider.getEth1Block(blockNumber)).thenReturn(SafeFuture.completedFuture(block));
       when(eth1Provider.getGuaranteedEth1Block(blockNumber))
           .thenReturn(SafeFuture.completedFuture(block));
@@ -239,12 +238,11 @@ class Eth1BlockFetcherTest {
         .collect(toMap(block -> block.getNumber().intValueExact(), Function.identity()));
   }
 
-  private Block block(final int blockNumber, final UnsignedLong blockTimestamp) {
+  private Block block(final int blockNumber, final UInt64 blockTimestamp) {
     return block(blockNumber, blockTimestamp, Bytes32.random(random));
   }
 
-  private Block block(
-      final int blockNumber, final UnsignedLong blockTimestamp, final Bytes32 blockHash) {
+  private Block block(final int blockNumber, final UInt64 blockTimestamp, final Bytes32 blockHash) {
     final Block block = new Block();
     block.setNumber("0x" + Integer.toHexString(blockNumber));
     block.setTimestamp("0x" + Long.toHexString(blockTimestamp.longValue()));

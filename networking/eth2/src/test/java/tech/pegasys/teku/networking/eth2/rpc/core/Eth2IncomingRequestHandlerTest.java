@@ -22,7 +22,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +33,7 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -44,7 +44,7 @@ public abstract class Eth2IncomingRequestHandlerTest
 
   private final BeaconState state = mock(BeaconState.class);
   private final BeaconBlocksByRangeRequestMessage request =
-      new BeaconBlocksByRangeRequestMessage(UnsignedLong.ONE, UnsignedLong.ONE, UnsignedLong.ONE);
+      new BeaconBlocksByRangeRequestMessage(UInt64.ONE, UInt64.ONE, UInt64.ONE);
 
   private Bytes requestData;
 
@@ -54,7 +54,7 @@ public abstract class Eth2IncomingRequestHandlerTest
     super.setup();
     requestData = beaconChainMethods.beaconBlocksByRange().encodeRequest(request);
 
-    lenient().when(state.getSlot()).thenReturn(UnsignedLong.ONE);
+    lenient().when(state.getSlot()).thenReturn(UInt64.ONE);
     lenient()
         .when(combinedChainDataClient.getBlockAtSlotExact(any(), any()))
         .thenAnswer(i -> getBlockAtSlot(i.getArgument(0)));
@@ -67,7 +67,7 @@ public abstract class Eth2IncomingRequestHandlerTest
     return beaconChainMethods.beaconBlocksByRange().createIncomingRequestHandler();
   }
 
-  private SafeFuture<Optional<SignedBeaconBlock>> getBlockAtSlot(final UnsignedLong slot) {
+  private SafeFuture<Optional<SignedBeaconBlock>> getBlockAtSlot(final UInt64 slot) {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
     return SafeFuture.completedFuture(Optional.of(block));
   }

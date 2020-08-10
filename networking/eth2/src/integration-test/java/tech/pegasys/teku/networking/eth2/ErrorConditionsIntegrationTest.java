@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
@@ -29,6 +28,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcMethod;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -88,12 +88,7 @@ public class ErrorConditionsIntegrationTest {
   private static class InvalidStatusMessage extends StatusMessage {
 
     public InvalidStatusMessage() {
-      super(
-          Constants.GENESIS_FORK_VERSION,
-          Bytes32.ZERO,
-          UnsignedLong.ZERO,
-          Bytes32.ZERO,
-          UnsignedLong.ZERO);
+      super(Constants.GENESIS_FORK_VERSION, Bytes32.ZERO, UInt64.ZERO, Bytes32.ZERO, UInt64.ZERO);
     }
 
     @Override

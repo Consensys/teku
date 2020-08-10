@@ -13,15 +13,14 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +30,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -79,9 +79,9 @@ public class ValidatorApiHandlerIntegrationTest {
 
   @Test
   public void createUnsignedAttestation_withRecentBlockAvailable() {
-    final UnsignedLong targetEpoch = UnsignedLong.valueOf(3);
-    final UnsignedLong targetEpochStartSlot = compute_start_slot_at_epoch(targetEpoch);
-    final UnsignedLong targetSlot = targetEpochStartSlot.plus(UnsignedLong.valueOf(2));
+    final UInt64 targetEpoch = UInt64.valueOf(3);
+    final UInt64 targetEpochStartSlot = compute_start_slot_at_epoch(targetEpoch);
+    final UInt64 targetSlot = targetEpochStartSlot.plus(UInt64.valueOf(2));
 
     final SignedBlockAndState genesis = chainUpdater.initializeGenesis();
     final Checkpoint genesisCheckpoint = genesis.getState().getFinalized_checkpoint();
@@ -111,11 +111,11 @@ public class ValidatorApiHandlerIntegrationTest {
 
   @Test
   public void createUnsignedAttestation_withLatestBlockFromAnOldEpoch() {
-    final UnsignedLong latestEpoch = UnsignedLong.valueOf(2);
-    final UnsignedLong latestSlot = compute_start_slot_at_epoch(latestEpoch).plus(ONE);
-    final UnsignedLong targetEpoch = UnsignedLong.valueOf(latestEpoch.longValue() + 3);
-    final UnsignedLong targetEpochStartSlot = compute_start_slot_at_epoch(targetEpoch);
-    final UnsignedLong targetSlot = targetEpochStartSlot.plus(UnsignedLong.valueOf(2));
+    final UInt64 latestEpoch = UInt64.valueOf(2);
+    final UInt64 latestSlot = compute_start_slot_at_epoch(latestEpoch).plus(ONE);
+    final UInt64 targetEpoch = UInt64.valueOf(latestEpoch.longValue() + 3);
+    final UInt64 targetEpochStartSlot = compute_start_slot_at_epoch(targetEpoch);
+    final UInt64 targetSlot = targetEpochStartSlot.plus(UInt64.valueOf(2));
 
     final SignedBlockAndState genesis = chainUpdater.initializeGenesis();
     final Checkpoint genesisCheckpoint = genesis.getState().getFinalized_checkpoint();
