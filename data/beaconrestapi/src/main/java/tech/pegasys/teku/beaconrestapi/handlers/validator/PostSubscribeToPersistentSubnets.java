@@ -21,6 +21,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERRO
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -29,19 +30,20 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
+import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.provider.JsonProvider;
 
-public class PostSubscribeToBeaconCommittee implements Handler {
+public class PostSubscribeToPersistentSubnets implements Handler {
 
-  public static final String ROUTE = "/validator/beacon_committee_subscription";
+  public static final String ROUTE = "/validator/persistent_subnets_subscription";
 
   private final ValidatorDataProvider provider;
   private final JsonProvider jsonProvider;
 
-  public PostSubscribeToBeaconCommittee(
+  public PostSubscribeToPersistentSubnets(
       final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
     this.provider = provider;
@@ -50,32 +52,23 @@ public class PostSubscribeToBeaconCommittee implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.POST,
-      summary = "Subscribe beacon node to committee attestation subnet.",
+      summary = "Subscribe beacon node persistently to a list of subnets.",
       tags = {TAG_VALIDATOR},
       requestBody =
           @OpenApiRequestBody(
-              content = {@OpenApiContent(from = SubscribeToBeaconCommitteeRequest.class)}),
-      description =
-          "After Beacon node receives this request it has to:\n"
-              + "- add subnet to ENR\n"
-              + "- announce subnet topic subscription on gossipsub\n"
-              + "- search using discv5 for peers related to this subnet and replace current peers with those ones if neccessary\n"
-              + "- aggregate attestations received on that subnet\n",
+              content = {@OpenApiContent(from = SubnetSubscription.class, isArray = true)}),
       responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            description =
-                "Slot signature is valid and beacon node is subscribed to given committee attestation subnet."),
+        @OpenApiResponse(status = RES_OK, description = "Subscribed to subnets."),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid request syntax."),
         @OpenApiResponse(status = RES_INTERNAL_ERROR, description = "Beacon node internal error.")
       })
   @Override
   public void handle(Context ctx) throws Exception {
     try {
-      final SubscribeToBeaconCommitteeRequest request =
-          jsonProvider.jsonToObject(ctx.body(), SubscribeToBeaconCommitteeRequest.class);
+      final List<SubnetSubscription> request =
+          jsonProvider.getObjectMapper().readValue(ctx.body(), new TypeReference<>() {});
 
-      provider.subscribeToBeaconCommitteeForAggregation(request);
+      provider.subscribeToPersistentSubnets(request);
       ctx.status(SC_OK);
     } catch (final JsonMappingException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
