@@ -38,7 +38,6 @@ import static tech.pegasys.teku.util.config.Constants.MIN_SEED_LOOKAHEAD;
 import static tech.pegasys.teku.util.config.Constants.MIN_SLASHING_PENALTY_QUOTIENT;
 import static tech.pegasys.teku.util.config.Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
 import static tech.pegasys.teku.util.config.Constants.PROPOSER_REWARD_QUOTIENT;
-import static tech.pegasys.teku.util.config.Constants.SHUFFLE_ROUND_COUNT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.teku.util.config.Constants.TARGET_COMMITTEE_SIZE;
@@ -612,83 +611,6 @@ public class BeaconStateUtil {
   public static Bytes32 get_randao_mix(BeaconState state, UInt64 epoch) {
     int index = epoch.mod(UInt64.valueOf(EPOCHS_PER_HISTORICAL_VECTOR)).intValue();
     return state.getRandao_mixes().get(index);
-  }
-
-  /**
-   * Return shuffled indices in a pseudorandom permutation `0...list_size-1` with ``seed`` as
-   * entropy.
-   *
-   * <p>Utilizes 'swap or not' shuffling found in
-   * https://link.springer.com/content/pdf/10.1007%2F978-3-642-32009-5_1.pdf See the 'generalized
-   * domain' algorithm on page 3.
-   *
-   * <p>The result of this should be the same as calling get_permuted_index() for each index in the
-   * list
-   *
-   * @param list_size The size of the list from which the element is taken. Must not exceed 2^31.
-   * @param seed Initial seed value used for randomization.
-   * @return The permuted arrays of indices
-   */
-  public static int[] shuffle(int list_size, Bytes32 seed) {
-
-    if (list_size == 0) {
-      return new int[0];
-    }
-
-    //  In the following, great care is needed around signed and unsigned values.
-    //  Note that the % (modulo) operator in Java behaves differently from the
-    //  modulo operator in python:
-    //    Python -1 % 13 = 12
-    //    Java   -1 % 13 = -1
-
-    //  Using UInt64 doesn't help us as some quantities can legitimately be negative.
-
-    // Note: this should be faster than manually creating the list in a for loop
-    // https://stackoverflow.com/questions/10242380/how-can-i-generate-a-list-or-array-of-sequential-integers-in-java
-    int[] indices = IntStream.rangeClosed(0, list_size - 1).toArray();
-
-    // int[] indices = new int[list_size];
-    // for (int i = 0; i < list_size; i++) {
-    //   indices[i] = i;
-    // }
-
-    byte[] powerOfTwoNumbers = {1, 2, 4, 8, 16, 32, 64, (byte) 128};
-
-    for (int round = 0; round < SHUFFLE_ROUND_COUNT; round++) {
-
-      Bytes roundAsByte = Bytes.of((byte) round);
-
-      Bytes hashBytes = Bytes.EMPTY;
-      for (int i = 0; i < (list_size + 255) / 256; i++) {
-        Bytes iAsBytes4 = uint_to_bytes(i, 4);
-        hashBytes = Bytes.wrap(hashBytes, Hash.sha2_256(Bytes.wrap(seed, roundAsByte, iAsBytes4)));
-      }
-
-      // This needs to be unsigned modulo.
-      int pivot =
-          toIntExact(
-              Long.remainderUnsigned(
-                  bytes_to_int64(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
-                  list_size));
-
-      for (int i = 0; i < list_size; i++) {
-
-        int flip = (pivot - indices[i]) % list_size;
-        if (flip < 0) {
-          // Account for flip being negative
-          flip += list_size;
-        }
-
-        int hashPosition = Math.max(indices[i], flip);
-        byte theByte = hashBytes.get(hashPosition / 8);
-        byte theMask = powerOfTwoNumbers[hashPosition % 8];
-        if ((theByte & theMask) != 0) {
-          indices[i] = flip;
-        }
-      }
-    }
-
-    return indices;
   }
 
   /**
