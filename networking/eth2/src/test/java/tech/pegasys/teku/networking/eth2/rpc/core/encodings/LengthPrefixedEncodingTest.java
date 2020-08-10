@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
 
-import com.google.common.primitives.UnsignedLong;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
@@ -30,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ChunkTooLongException;
@@ -299,9 +299,9 @@ class LengthPrefixedEncodingTest {
         new StatusMessage(
             new Bytes4(Bytes.of(0, 0, 0, 0)),
             Bytes32.ZERO,
-            UnsignedLong.ZERO,
+            UInt64.ZERO,
             Bytes32.ZERO,
-            UnsignedLong.ZERO));
+            UInt64.ZERO));
   }
 
   private ByteBuf inputByteBuffer(final Bytes... data) {

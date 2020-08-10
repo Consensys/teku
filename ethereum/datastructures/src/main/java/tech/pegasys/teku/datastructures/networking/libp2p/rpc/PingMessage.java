@@ -13,20 +13,20 @@
 
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
 /** https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata */
 public class PingMessage implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
 
-  private final UnsignedLong seqNumber;
+  private final UInt64 seqNumber;
 
-  public PingMessage(UnsignedLong seqNumber) {
+  public PingMessage(UInt64 seqNumber) {
     this.seqNumber = seqNumber;
   }
 
@@ -40,7 +40,7 @@ public class PingMessage implements RpcRequest, SimpleOffsetSerializable, SSZCon
     return List.of(SSZ.encodeUInt64(seqNumber.longValue()));
   }
 
-  public UnsignedLong getSeqNumber() {
+  public UInt64 getSeqNumber() {
     return seqNumber;
   }
 

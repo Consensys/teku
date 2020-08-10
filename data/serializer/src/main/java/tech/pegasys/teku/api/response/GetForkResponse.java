@@ -18,11 +18,11 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES4;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.primitives.UnsignedLong;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class GetForkResponse {
@@ -33,7 +33,7 @@ public class GetForkResponse {
   public Bytes4 current_version;
 
   @Schema(type = "string", format = "uint64")
-  public UnsignedLong epoch;
+  public UInt64 epoch;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 genesis_validators_root;
@@ -42,7 +42,7 @@ public class GetForkResponse {
   public GetForkResponse(
       @JsonProperty("previous_version") final Bytes4 previous_version,
       @JsonProperty("current_version") final Bytes4 current_version,
-      @JsonProperty("epoch") final UnsignedLong epoch,
+      @JsonProperty("epoch") final UInt64 epoch,
       @JsonProperty("genesis_validators_root") final Bytes32 genesis_validators_root) {
     this.previous_version = previous_version;
     this.current_version = current_version;

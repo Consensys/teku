@@ -14,22 +14,22 @@
 package tech.pegasys.teku.protoarray;
 
 import com.google.common.base.Objects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArraySnapshot {
 
-  private final UnsignedLong justifiedEpoch;
-  private final UnsignedLong finalizedEpoch;
+  private final UInt64 justifiedEpoch;
+  private final UInt64 finalizedEpoch;
   private final List<BlockInformation> blockInformationList;
 
   public ProtoArraySnapshot(
-      final UnsignedLong justifiedEpoch,
-      final UnsignedLong finalizedEpoch,
+      final UInt64 justifiedEpoch,
+      final UInt64 finalizedEpoch,
       final List<BlockInformation> blockInformationList) {
     this.justifiedEpoch = justifiedEpoch;
     this.finalizedEpoch = finalizedEpoch;
@@ -41,8 +41,8 @@ public class ProtoArraySnapshot {
         protoArray.getNodes().stream()
             .map(ProtoNode::createBlockInformation)
             .collect(Collectors.toList());
-    UnsignedLong justifiedEpoch = protoArray.getJustifiedEpoch();
-    UnsignedLong finalizedEpoch = protoArray.getFinalizedEpoch();
+    UInt64 justifiedEpoch = protoArray.getJustifiedEpoch();
+    UInt64 finalizedEpoch = protoArray.getFinalizedEpoch();
     return new ProtoArraySnapshot(justifiedEpoch, finalizedEpoch, nodes);
   }
 
@@ -67,11 +67,11 @@ public class ProtoArraySnapshot {
     return protoArray;
   }
 
-  public UnsignedLong getJustifiedEpoch() {
+  public UInt64 getJustifiedEpoch() {
     return justifiedEpoch;
   }
 
-  public UnsignedLong getFinalizedEpoch() {
+  public UInt64 getFinalizedEpoch() {
     return finalizedEpoch;
   }
 

@@ -15,21 +15,21 @@ package tech.pegasys.teku.pow.event;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class DepositsFromBlockEvent {
-  private final UnsignedLong blockNumber;
+  private final UInt64 blockNumber;
   private final Bytes32 blockHash;
   private final List<Deposit> deposits;
-  private final UnsignedLong blockTimestamp;
+  private final UInt64 blockTimestamp;
 
   public DepositsFromBlockEvent(
-      final UnsignedLong blockNumber,
+      final UInt64 blockNumber,
       final Bytes32 blockHash,
-      final UnsignedLong blockTimestamp,
+      final UInt64 blockTimestamp,
       final List<Deposit> deposits) {
     this.blockTimestamp = blockTimestamp;
     Preconditions.checkArgument(!deposits.isEmpty(), "Attempting to notify no events in a block");
@@ -38,15 +38,15 @@ public class DepositsFromBlockEvent {
     this.deposits = deposits;
   }
 
-  public UnsignedLong getFirstDepositIndex() {
+  public UInt64 getFirstDepositIndex() {
     return deposits.get(0).getMerkle_tree_index();
   }
 
-  public UnsignedLong getLastDepositIndex() {
+  public UInt64 getLastDepositIndex() {
     return deposits.get(deposits.size() - 1).getMerkle_tree_index();
   }
 
-  public UnsignedLong getBlockNumber() {
+  public UInt64 getBlockNumber() {
     return blockNumber;
   }
 
@@ -54,7 +54,7 @@ public class DepositsFromBlockEvent {
     return blockHash;
   }
 
-  public UnsignedLong getBlockTimestamp() {
+  public UInt64 getBlockTimestamp() {
     return blockTimestamp;
   }
 

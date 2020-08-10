@@ -29,7 +29,6 @@ import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +43,7 @@ import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
@@ -121,11 +121,11 @@ class AttestationManagerTest {
     assertThat(pendingAttestations.size()).isEqualTo(0);
 
     // Shouldn't try to process the attestation until after it's slot.
-    attestationManager.onSlot(UnsignedLong.valueOf(100));
+    attestationManager.onSlot(UInt64.valueOf(100));
     assertThat(futureAttestations.size()).isEqualTo(1);
     verify(attestationProcessor, never()).applyIndexedAttestationToForkChoice(any());
 
-    attestationManager.onSlot(UnsignedLong.valueOf(101));
+    attestationManager.onSlot(UInt64.valueOf(101));
     verify(attestationProcessor).applyIndexedAttestationToForkChoice(eq(randomIndexedAttestation));
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
@@ -150,7 +150,7 @@ class AttestationManagerTest {
     assertThat(pendingAttestations.size()).isEqualTo(1);
 
     // Slots progressing shouldn't cause the attestation to be processed
-    attestationManager.onSlot(UnsignedLong.valueOf(100));
+    attestationManager.onSlot(UInt64.valueOf(100));
     verifyNoMoreInteractions(attestationProcessor);
 
     // Importing a different block shouldn't cause the attestation to be processed
@@ -212,11 +212,11 @@ class AttestationManagerTest {
     return new Attestation(
         new Bitlist(1, 1),
         new AttestationData(
-            UnsignedLong.valueOf(slot),
-            UnsignedLong.ZERO,
+            UInt64.valueOf(slot),
+            UInt64.ZERO,
             Bytes32.ZERO,
-            new Checkpoint(UnsignedLong.ZERO, Bytes32.ZERO),
-            new Checkpoint(UnsignedLong.ZERO, targetRoot)),
+            new Checkpoint(UInt64.ZERO, Bytes32.ZERO),
+            new Checkpoint(UInt64.ZERO, targetRoot)),
         BLSSignature.empty());
   }
 

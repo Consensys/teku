@@ -22,6 +22,8 @@ public final class UInt64 implements Comparable<UInt64> {
 
   private static final long UNSIGNED_MASK = 0x7fffffffffffffffL;
 
+  public static final int BYTES = 8;
+
   public static final UInt64 ZERO = new UInt64(0);
   public static final UInt64 ONE = new UInt64(1);
   public static final UInt64 MAX_VALUE = new UInt64(-1L);

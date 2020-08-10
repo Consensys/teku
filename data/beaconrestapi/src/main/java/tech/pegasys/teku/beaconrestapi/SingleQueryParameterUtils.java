@@ -13,12 +13,12 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SingleQueryParameterUtils {
 
@@ -63,12 +63,12 @@ public class SingleQueryParameterUtils {
     }
   }
 
-  public static UnsignedLong getParameterValueAsUnsignedLong(
+  public static UInt64 getParameterValueAsUInt64(
       final Map<String, List<String>> parameterMap, final String key)
       throws IllegalArgumentException {
     String stringValue = validateQueryParameter(parameterMap, key);
     try {
-      return UnsignedLong.valueOf(stringValue);
+      return UInt64.valueOf(stringValue);
     } catch (IllegalArgumentException ex) {
       throw new IllegalArgumentException(INVALID_NUMERIC_VALUE);
     }

@@ -18,7 +18,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
-import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -29,6 +28,7 @@ import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class SlashingProtectedSignerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -94,17 +94,16 @@ class SlashingProtectedSignerTest {
 
   @Test
   void createRandaoReveal_shouldAlwaysSign() {
-    when(delegate.createRandaoReveal(UnsignedLong.ONE, forkInfo)).thenReturn(signatureFuture);
+    when(delegate.createRandaoReveal(UInt64.ONE, forkInfo)).thenReturn(signatureFuture);
 
-    assertThat(signer.createRandaoReveal(UnsignedLong.ONE, forkInfo))
-        .isCompletedWithValue(signature);
+    assertThat(signer.createRandaoReveal(UInt64.ONE, forkInfo)).isCompletedWithValue(signature);
   }
 
   @Test
   void signAggregationSlot_shouldAlwaysSign() {
-    when(delegate.signAggregationSlot(UnsignedLong.ONE, forkInfo)).thenReturn(signatureFuture);
+    when(delegate.signAggregationSlot(UInt64.ONE, forkInfo)).thenReturn(signatureFuture);
 
-    assertThatSafeFuture(signer.signAggregationSlot(UnsignedLong.ONE, forkInfo))
+    assertThatSafeFuture(signer.signAggregationSlot(UInt64.ONE, forkInfo))
         .isCompletedWithValue(signature);
   }
 

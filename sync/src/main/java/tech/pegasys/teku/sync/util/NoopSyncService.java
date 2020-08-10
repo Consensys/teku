@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.sync.util;
 
-import static com.google.common.primitives.UnsignedLong.ZERO;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.sync.SyncService;

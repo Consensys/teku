@@ -11,20 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.rocksdb.serialization;
+package tech.pegasys.teku.provider;
 
-import com.google.common.primitives.Longs;
-import com.google.common.primitives.UnsignedLong;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import java.io.IOException;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class UnsignedLongSerializer implements RocksDbSerializer<UnsignedLong> {
+public class UInt64Deserializer extends JsonDeserializer<UInt64> {
 
   @Override
-  public UnsignedLong deserialize(final byte[] data) {
-    return UnsignedLong.fromLongBits(Longs.fromByteArray(data));
-  }
-
-  @Override
-  public byte[] serialize(final UnsignedLong value) {
-    return Longs.toByteArray(value.longValue());
+  public UInt64 deserialize(JsonParser p, DeserializationContext ctxt)
+      throws IOException, JsonProcessingException {
+    return UInt64.valueOf(p.getValueAsString());
   }
 }

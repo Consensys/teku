@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.client;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -25,6 +24,7 @@ import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class CombinedChainDataClientTest_pruningMode extends AbstractCombinedChainDataClientTest {
@@ -38,8 +38,8 @@ public class CombinedChainDataClientTest_pruningMode extends AbstractCombinedCha
   @MethodSource("getStateBySlotParameters")
   public <T> void queryBySlot_shouldReturnEmptyResponseForHistoricalState(
       final String caseName, final QueryBySlotTestCase<T> testCase) {
-    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
-    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+    final UInt64 finalizedEpoch = UInt64.valueOf(2);
+    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
     // Setup chain with finalized block
     chainUpdater.initializeGenesis();
@@ -51,7 +51,7 @@ public class CombinedChainDataClientTest_pruningMode extends AbstractCombinedCha
     // Sanity check
     assertThat(historicalBlock.getSlot()).isLessThan(finalizedBlock.getSlot());
 
-    final UnsignedLong querySlot = historicalBlock.getSlot();
+    final UInt64 querySlot = historicalBlock.getSlot();
     final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.empty();
     final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
     final Optional<T> expected =
@@ -71,7 +71,7 @@ public class CombinedChainDataClientTest_pruningMode extends AbstractCombinedCha
     // Sanity check
     assertThat(bestBlock.getSlot()).isGreaterThan(targetBlock.getSlot());
     // Finalize best block so that state is pruned
-    final UnsignedLong finalizedEpoch =
+    final UInt64 finalizedEpoch =
         ChainProperties.computeBestEpochFinalizableAtSlot(bestBlock.getSlot());
     chainUpdater.finalizeEpoch(finalizedEpoch);
 

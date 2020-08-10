@@ -20,7 +20,6 @@ import static tech.pegasys.teku.util.config.Constants.GENESIS_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
 import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +36,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.util.config.Constants;
@@ -56,24 +56,22 @@ public class GenesisGenerator {
 
   public GenesisGenerator() {
     Bytes32 latestBlockRoot = new BeaconBlockBody().hash_tree_root();
-    final UnsignedLong genesisSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
+    final UInt64 genesisSlot = UInt64.valueOf(Constants.GENESIS_SLOT);
     BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(
-            genesisSlot, UnsignedLong.ZERO, Bytes32.ZERO, Bytes32.ZERO, latestBlockRoot);
+            genesisSlot, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, latestBlockRoot);
     state.setLatest_block_header(beaconBlockHeader);
     state.setFork(
-        new Fork(GENESIS_FORK_VERSION, GENESIS_FORK_VERSION, UnsignedLong.valueOf(GENESIS_EPOCH)));
+        new Fork(GENESIS_FORK_VERSION, GENESIS_FORK_VERSION, UInt64.valueOf(GENESIS_EPOCH)));
   }
 
   public void updateCandidateState(
-      Bytes32 eth1BlockHash, UnsignedLong eth1Timestamp, List<? extends Deposit> deposits) {
+      Bytes32 eth1BlockHash, UInt64 eth1Timestamp, List<? extends Deposit> deposits) {
     updateGenesisTime(eth1Timestamp);
 
     state.setEth1_data(
         new Eth1Data(
-            Bytes32.ZERO,
-            UnsignedLong.valueOf(depositDataList.size() + deposits.size()),
-            eth1BlockHash));
+            Bytes32.ZERO, UInt64.valueOf(depositDataList.size() + deposits.size()), eth1BlockHash));
 
     // Process deposits
     deposits.forEach(
@@ -96,22 +94,22 @@ public class GenesisGenerator {
       return;
     }
     Validator validator = state.getValidators().get(index);
-    if (validator.getActivation_epoch().equals(UnsignedLong.valueOf(GENESIS_EPOCH))) {
+    if (validator.getActivation_epoch().equals(UInt64.valueOf(GENESIS_EPOCH))) {
       // Validator is already activated (and thus already has the max effective balance)
       return;
     }
-    UnsignedLong balance = state.getBalances().get(index);
-    UnsignedLong effective_balance =
-        BeaconStateUtil.min(
-            balance.minus(balance.mod(EFFECTIVE_BALANCE_INCREMENT)),
-            UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE));
+    UInt64 balance = state.getBalances().get(index);
+    UInt64 effective_balance =
+        balance
+            .minus(balance.mod(EFFECTIVE_BALANCE_INCREMENT))
+            .min(UInt64.valueOf(MAX_EFFECTIVE_BALANCE));
 
-    UnsignedLong activation_eligibility_epoch = validator.getActivation_eligibility_epoch();
-    UnsignedLong activation_epoch = validator.getActivation_epoch();
+    UInt64 activation_eligibility_epoch = validator.getActivation_eligibility_epoch();
+    UInt64 activation_epoch = validator.getActivation_epoch();
 
-    if (validator.getEffective_balance().equals(UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE))) {
-      activation_eligibility_epoch = UnsignedLong.valueOf(GENESIS_EPOCH);
-      activation_epoch = UnsignedLong.valueOf(GENESIS_EPOCH);
+    if (validator.getEffective_balance().equals(UInt64.valueOf(MAX_EFFECTIVE_BALANCE))) {
+      activation_eligibility_epoch = UInt64.valueOf(GENESIS_EPOCH);
+      activation_epoch = UInt64.valueOf(GENESIS_EPOCH);
       activeValidatorCount++;
     }
 
@@ -133,7 +131,7 @@ public class GenesisGenerator {
     return activeValidatorCount;
   }
 
-  public UnsignedLong getGenesisTime() {
+  public UInt64 getGenesisTime() {
     return state.getGenesis_time();
   }
 
@@ -164,8 +162,8 @@ public class GenesisGenerator {
             eth1Data.getBlock_hash()));
   }
 
-  private void updateGenesisTime(final UnsignedLong eth1Timestamp) {
-    UnsignedLong genesisTime = eth1Timestamp.plus(Constants.GENESIS_DELAY);
+  private void updateGenesisTime(final UInt64 eth1Timestamp) {
+    UInt64 genesisTime = eth1Timestamp.plus(Constants.GENESIS_DELAY);
     state.setGenesis_time(genesisTime);
   }
 }

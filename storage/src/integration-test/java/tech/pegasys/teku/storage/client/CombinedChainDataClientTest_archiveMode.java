@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.client;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
@@ -25,6 +24,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedChainDataClientTest {
@@ -37,8 +37,8 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
   @MethodSource("getQueryBySlotParameters")
   public <T> void queryBySlot_shouldRetrieveHistoricalState(
       final String caseName, final QueryBySlotTestCase<T> testCase) {
-    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
-    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+    final UInt64 finalizedEpoch = UInt64.valueOf(2);
+    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
     // Setup chain with finalized block
     chainUpdater.initializeGenesis();
@@ -50,7 +50,7 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
     // Sanity check
     assertThat(historicalBlock.getSlot()).isLessThan(finalizedBlock.getSlot());
 
-    final UnsignedLong querySlot = historicalBlock.getSlot();
+    final UInt64 querySlot = historicalBlock.getSlot();
     final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(historicalBlock);
     final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
     final Optional<T> expected =
@@ -63,14 +63,14 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
   @MethodSource("getQueryBySlotParameters")
   public <T> void queryBySlot_shouldRetrieveHistoricalStateInEffectAtSkippedSlot(
       final String caseName, final QueryBySlotTestCase<T> testCase) {
-    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
-    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+    final UInt64 finalizedEpoch = UInt64.valueOf(2);
+    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
     // Setup chain with finalized block
     chainUpdater.initializeGenesis();
     final SignedBlockAndState historicalBlock = chainUpdater.advanceChain();
-    final UnsignedLong skippedSlot = historicalBlock.getSlot().plus(UnsignedLong.ONE);
-    chainUpdater.advanceChain(skippedSlot.plus(UnsignedLong.ONE));
+    final UInt64 skippedSlot = historicalBlock.getSlot().plus(UInt64.ONE);
+    chainUpdater.advanceChain(skippedSlot.plus(UInt64.ONE));
     chainUpdater.advanceChain(finalizedSlot);
     final SignedBlockAndState finalizedBlock = chainUpdater.finalizeEpoch(finalizedEpoch);
     chainUpdater.addNewBestBlock();
@@ -78,7 +78,7 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
     // Sanity check
     assertThat(skippedSlot).isLessThan(finalizedBlock.getSlot());
 
-    final UnsignedLong querySlot = skippedSlot;
+    final UInt64 querySlot = skippedSlot;
     final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(historicalBlock);
     final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
     final Optional<T> expected =
@@ -90,8 +90,8 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
   @Test
   public void getStateByStateRoot_shouldReturnFinalizedState()
       throws ExecutionException, InterruptedException {
-    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
-    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+    final UInt64 finalizedEpoch = UInt64.valueOf(2);
+    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
     // Setup chain with finalized block
     chainUpdater.initializeGenesis();
@@ -109,14 +109,14 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
   @Test
   public void getStateByStateRoot_shouldReturnFinalizedStateAtSkippedSlot()
       throws ExecutionException, InterruptedException {
-    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
-    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+    final UInt64 finalizedEpoch = UInt64.valueOf(2);
+    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
     // Setup chain with finalized block
     chainUpdater.initializeGenesis();
     final SignedBlockAndState historicalBlock = chainUpdater.advanceChain();
-    final UnsignedLong skippedSlot = historicalBlock.getSlot().plus(UnsignedLong.ONE);
-    chainUpdater.advanceChain(skippedSlot.plus(UnsignedLong.ONE));
+    final UInt64 skippedSlot = historicalBlock.getSlot().plus(UInt64.ONE);
+    chainUpdater.advanceChain(skippedSlot.plus(UInt64.ONE));
     chainUpdater.advanceChain(finalizedSlot);
     final SignedBlockAndState finalizedBlock = chainUpdater.finalizeEpoch(finalizedEpoch);
     chainUpdater.addNewBestBlock();

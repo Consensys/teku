@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.events;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -24,6 +23,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 /**
@@ -44,12 +44,12 @@ public class AnchorPoint {
     this.checkpoint = checkpoint;
     this.block = block;
     this.state = state;
-    this.isGenesis = checkpoint.getEpoch().equals(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
+    this.isGenesis = checkpoint.getEpoch().equals(UInt64.valueOf(Constants.GENESIS_EPOCH));
   }
 
   public static AnchorPoint fromGenesisState(final BeaconState genesisState) {
     checkArgument(
-        genesisState.getSlot().equals(UnsignedLong.valueOf(Constants.GENESIS_SLOT)),
+        genesisState.getSlot().equals(UInt64.valueOf(Constants.GENESIS_SLOT)),
         "Invalid genesis state supplied");
 
     final BeaconBlock genesisBlock = new BeaconBlock(genesisState.hash_tree_root());
@@ -57,7 +57,7 @@ public class AnchorPoint {
         new SignedBeaconBlock(genesisBlock, BLSSignature.empty());
 
     final Bytes32 genesisBlockRoot = genesisBlock.hash_tree_root();
-    final UnsignedLong genesisEpoch = BeaconStateUtil.get_current_epoch(genesisState);
+    final UInt64 genesisEpoch = BeaconStateUtil.get_current_epoch(genesisState);
     final Checkpoint genesisCheckpoint = new Checkpoint(genesisEpoch, genesisBlockRoot);
 
     return new AnchorPoint(genesisCheckpoint, signedGenesisBlock, genesisState);

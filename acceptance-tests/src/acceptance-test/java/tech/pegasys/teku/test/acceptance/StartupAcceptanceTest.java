@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
@@ -34,7 +34,7 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
   public void shouldProgressChainAfterStartingFromDisk() throws Exception {
     final TekuNode node1 = createTekuNode();
     node1.start();
-    final UnsignedLong genesisTime = node1.getGenesisTime();
+    final UInt64 genesisTime = node1.getGenesisTime();
     File dataDirectory = node1.getDataDirectoryFromContainer();
     node1.stop();
 

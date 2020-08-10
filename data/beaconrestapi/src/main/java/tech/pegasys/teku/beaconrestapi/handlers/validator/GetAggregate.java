@@ -25,7 +25,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
+import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64;
 
 import com.google.common.base.Throwables;
 import io.javalin.http.Context;
@@ -72,7 +72,7 @@ public class GetAggregate implements Handler {
             required = true),
         @OpenApiParam(
             name = SLOT,
-            description = "`UnsignedLong` Non-finalized slot for which to create the aggregation.",
+            description = "`uint64` Non-finalized slot for which to create the aggregation.",
             required = true)
       },
       description = "Aggregates all attestations matching given attestation data root and slot.",
@@ -100,7 +100,7 @@ public class GetAggregate implements Handler {
       Bytes32 beacon_block_root = getParameterValueAsBytes32(parameters, ATTESTATION_DATA_ROOT);
       // Teku isn't using this parameter at the moment. We are enforcing it to stay compatible with
       // the standard api
-      getParameterValueAsUnsignedLong(parameters, SLOT);
+      getParameterValueAsUInt64(parameters, SLOT);
 
       ctx.result(
           provider

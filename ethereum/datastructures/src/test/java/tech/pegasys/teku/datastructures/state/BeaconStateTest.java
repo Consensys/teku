@@ -16,7 +16,6 @@ package tech.pegasys.teku.datastructures.state;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.junit.BouncyCastleExtension;
@@ -24,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 @ExtendWith(BouncyCastleExtension.class)
@@ -46,24 +46,24 @@ class BeaconStateTest {
 
   @Test
   void simpleMutableBeaconStateTest() {
-    UnsignedLong val1 = UnsignedLong.valueOf(0x3333);
+    UInt64 val1 = UInt64.valueOf(0x3333);
     BeaconState stateR1 =
         BeaconState.createEmpty()
             .updated(
                 state -> {
                   state.getBalances().add(val1);
                 });
-    UnsignedLong v1 = stateR1.getBalances().get(0);
+    UInt64 v1 = stateR1.getBalances().get(0);
 
     assertThat(stateR1.getBalances().size()).isEqualTo(1);
-    assertThat(stateR1.getBalances().get(0)).isEqualTo(UnsignedLong.valueOf(0x3333));
+    assertThat(stateR1.getBalances().get(0)).isEqualTo(UInt64.valueOf(0x3333));
 
     BeaconState stateR2 =
         stateR1.updated(
             state -> {
-              state.getBalances().add(UnsignedLong.valueOf(0x4444));
+              state.getBalances().add(UInt64.valueOf(0x4444));
             });
-    UnsignedLong v2 = stateR2.getBalances().get(0);
+    UInt64 v2 = stateR2.getBalances().get(0);
 
     // check that view caching is effectively works and the value
     // is not recreated from tree node without need

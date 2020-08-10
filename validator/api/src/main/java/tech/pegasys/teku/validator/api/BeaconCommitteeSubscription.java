@@ -14,14 +14,14 @@
 package tech.pegasys.teku.validator.api;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BeaconCommitteeSubscription {
   private final int committeeIndex;
-  private final UnsignedLong slot;
+  private final UInt64 slot;
 
-  public BeaconCommitteeSubscription(final int committeeIndex, final UnsignedLong slot) {
+  public BeaconCommitteeSubscription(final int committeeIndex, final UInt64 slot) {
     this.committeeIndex = committeeIndex;
     this.slot = slot;
   }
@@ -30,7 +30,7 @@ public class BeaconCommitteeSubscription {
     return committeeIndex;
   }
 
-  public UnsignedLong getSlot() {
+  public UInt64 getSlot() {
     return slot;
   }
 

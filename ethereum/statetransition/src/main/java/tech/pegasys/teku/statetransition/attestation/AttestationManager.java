@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,6 +24,7 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.util.FutureItems;
@@ -81,7 +81,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   }
 
   @Override
-  public void onSlot(final UnsignedLong slot) {
+  public void onSlot(final UInt64 slot) {
     List<ValidateableAttestation> attestations = futureAttestations.prune(slot);
     attestations.stream()
         .map(ValidateableAttestation::getIndexedAttestation)
