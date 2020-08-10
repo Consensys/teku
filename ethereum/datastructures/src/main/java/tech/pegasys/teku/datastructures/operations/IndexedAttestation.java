@@ -18,7 +18,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -79,13 +78,8 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
   @Override
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
-    variablePartsList.addAll(
-        List.of(
-            // TODO (#2396): The below lines are a hack while Tuweni SSZ/SOS is being upgraded.
-            Bytes.fromHexString(
-                attesting_indices.stream()
-                    .map(value -> SSZ.encodeUInt64(value.longValue()).toHexString().substring(2))
-                    .collect(Collectors.joining()))));
+    variablePartsList.add(
+        SSZ.encodeUInt64List(attesting_indices.stream().mapToLong(UInt64::longValue).toArray()));
     variablePartsList.addAll(Collections.nCopies(data.getSSZFieldCount(), Bytes.EMPTY));
     variablePartsList.addAll(Collections.nCopies(signature.getSSZFieldCount(), Bytes.EMPTY));
     return variablePartsList;
