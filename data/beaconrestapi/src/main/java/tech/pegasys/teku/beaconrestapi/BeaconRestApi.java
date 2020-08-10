@@ -61,6 +61,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAggregate;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetNewBlock;
+import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAggregateAndProof;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostDuties;
@@ -234,6 +235,9 @@ public class BeaconRestApi {
         PostBlock.ROUTE,
         new PostBlock(validatorDataProvider, dataProvider.getSyncDataProvider(), jsonProvider));
     app.post(PostDuties.ROUTE, new PostDuties(validatorDataProvider, jsonProvider));
+    app.post(
+        PostAggregateAndProof.ROUTE,
+        new PostAggregateAndProof(validatorDataProvider, jsonProvider));
   }
 
   private void addNetworkHandlers(NetworkDataProvider networkDataProvider) {

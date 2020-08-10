@@ -16,7 +16,6 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
@@ -27,8 +26,10 @@ import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -51,24 +52,38 @@ public class ForkChoice {
     processHead(Optional.empty());
   }
 
-  public synchronized void processHead(UnsignedLong nodeSlot) {
+  public synchronized void processHead(UInt64 nodeSlot) {
     processHead(Optional.of(nodeSlot));
   }
 
-  private synchronized void processHead(Optional<UnsignedLong> nodeSlot) {
-    StoreTransaction transaction = recentChainData.startStoreTransaction();
-    final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
-    Bytes32 headBlockRoot = forkChoiceStrategy.findHead(transaction);
-    transaction.commit(() -> {}, "Failed to persist validator vote changes.");
-    recentChainData.updateBestBlock(
-        headBlockRoot,
-        nodeSlot.orElse(
-            forkChoiceStrategy
-                .blockSlot(headBlockRoot)
-                .orElseThrow(
-                    () ->
-                        new IllegalStateException(
-                            "Unable to retrieve the slot of fork choice head"))));
+  private synchronized void processHead(Optional<UInt64> nodeSlot) {
+    final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
+    final Checkpoint justifiedCheckpoint = recentChainData.getStore().getJustifiedCheckpoint();
+    recentChainData
+        .retrieveCheckpointState(justifiedCheckpoint)
+        .thenAccept(
+            justifiedCheckpointState -> {
+              StoreTransaction transaction = recentChainData.startStoreTransaction();
+              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+              Bytes32 headBlockRoot =
+                  forkChoiceStrategy.findHead(
+                      transaction,
+                      finalizedCheckpoint,
+                      justifiedCheckpoint,
+                      justifiedCheckpointState.orElseThrow());
+              transaction.commit(() -> {}, "Failed to persist validator vote changes.");
+
+              recentChainData.updateBestBlock(
+                  headBlockRoot,
+                  nodeSlot.orElse(
+                      forkChoiceStrategy
+                          .blockSlot(headBlockRoot)
+                          .orElseThrow(
+                              () ->
+                                  new IllegalStateException(
+                                      "Unable to retrieve the slot of fork choice head"))));
+            })
+        .join();
   }
 
   public synchronized BlockImportResult onBlock(

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.core.signatures;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -24,6 +23,7 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /**
  * A wrapper for a {@link Signer} which adds slashing protection.
@@ -96,14 +96,12 @@ public class SlashingProtectedSigner implements Signer {
   }
 
   @Override
-  public SafeFuture<BLSSignature> createRandaoReveal(
-      final UnsignedLong epoch, final ForkInfo forkInfo) {
+  public SafeFuture<BLSSignature> createRandaoReveal(final UInt64 epoch, final ForkInfo forkInfo) {
     return delegate.createRandaoReveal(epoch, forkInfo);
   }
 
   @Override
-  public SafeFuture<BLSSignature> signAggregationSlot(
-      final UnsignedLong slot, final ForkInfo forkInfo) {
+  public SafeFuture<BLSSignature> signAggregationSlot(final UInt64 slot, final ForkInfo forkInfo) {
     return delegate.signAggregationSlot(slot, forkInfo);
   }
 

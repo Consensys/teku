@@ -22,7 +22,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +35,7 @@ import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
@@ -85,7 +85,7 @@ public class GetAttestationTest {
     Map<String, List<String>> params = Map.of(SLOT, List.of("1"), COMMITTEE_INDEX, List.of("1"));
 
     when(context.queryParamMap()).thenReturn(params);
-    when(provider.createUnsignedAttestationAtSlot(UnsignedLong.ONE, 1))
+    when(provider.createUnsignedAttestationAtSlot(UInt64.ONE, 1))
         .thenReturn(SafeFuture.failedFuture(new ChainDataUnavailableException()));
     handler.handle(context);
 
@@ -101,7 +101,7 @@ public class GetAttestationTest {
 
     when(context.queryParamMap()).thenReturn(params);
     when(provider.isStoreAvailable()).thenReturn(true);
-    when(provider.createUnsignedAttestationAtSlot(UnsignedLong.ONE, 1))
+    when(provider.createUnsignedAttestationAtSlot(UInt64.ONE, 1))
         .thenReturn(SafeFuture.completedFuture(Optional.of(attestation)));
     handler.handle(context);
 

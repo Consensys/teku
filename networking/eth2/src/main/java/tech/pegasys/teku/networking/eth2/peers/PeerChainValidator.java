@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.eth2.peers;
 import static tech.pegasys.teku.core.ForkChoiceUtil.get_current_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -29,6 +28,7 @@ import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -138,17 +138,17 @@ public class PeerChainValidator {
           peer);
       return SafeFuture.completedFuture(false);
     }
-    final UnsignedLong remoteFinalizedEpoch = status.getFinalizedEpoch();
+    final UInt64 remoteFinalizedEpoch = status.getFinalizedEpoch();
     // Only require fork digest to match if only genesis is finalized
-    if (remoteFinalizedEpoch.equals(UnsignedLong.ZERO)) {
+    if (remoteFinalizedEpoch.equals(UInt64.ZERO)) {
       return SafeFuture.completedFuture(true);
     }
 
     // Check finalized checkpoint compatibility
     final Checkpoint finalizedCheckpoint =
         storageClient.getBestState().orElseThrow().getFinalized_checkpoint();
-    final UnsignedLong finalizedEpoch = finalizedCheckpoint.getEpoch();
-    final UnsignedLong currentEpoch = getCurrentEpoch();
+    final UInt64 finalizedEpoch = finalizedCheckpoint.getEpoch();
+    final UInt64 currentEpoch = getCurrentEpoch();
 
     // Make sure remote finalized epoch is reasonable
     if (remoteEpochIsInvalid(currentEpoch, remoteFinalizedEpoch)) {
@@ -186,18 +186,18 @@ public class PeerChainValidator {
     }
   }
 
-  private UnsignedLong getCurrentEpoch() {
-    final UnsignedLong currentSlot = get_current_slot(storageClient.getStore());
+  private UInt64 getCurrentEpoch() {
+    final UInt64 currentSlot = get_current_slot(storageClient.getStore());
     return compute_epoch_at_slot(currentSlot);
   }
 
   private boolean remoteEpochIsInvalid(
-      final UnsignedLong currentEpoch, final UnsignedLong remoteFinalizedEpoch) {
+      final UInt64 currentEpoch, final UInt64 remoteFinalizedEpoch) {
     // Remote finalized epoch is invalid if it is from the future
     return remoteFinalizedEpoch.compareTo(currentEpoch) > 0
         // Remote finalized epoch is invalid if is from the current epoch (unless we're at genesis)
         || (remoteFinalizedEpoch.compareTo(currentEpoch) == 0
-            && !remoteFinalizedEpoch.equals(UnsignedLong.valueOf(Constants.GENESIS_EPOCH)));
+            && !remoteFinalizedEpoch.equals(UInt64.valueOf(Constants.GENESIS_EPOCH)));
   }
 
   private SafeFuture<Boolean> verifyFinalizedCheckpointsAreTheSame(Checkpoint finalizedCheckpoint) {
@@ -208,7 +208,7 @@ public class PeerChainValidator {
 
   private SafeFuture<Boolean> verifyPeersFinalizedCheckpointIsCanonical() {
     final Checkpoint remoteFinalizedCheckpoint = status.getFinalizedCheckpoint();
-    final UnsignedLong remoteFinalizedSlot = remoteFinalizedCheckpoint.getEpochStartSlot();
+    final UInt64 remoteFinalizedSlot = remoteFinalizedCheckpoint.getEpochStartSlot();
     return historicalChainData
         .getLatestFinalizedBlockAtSlot(remoteFinalizedSlot)
         .thenApply(maybeBlock -> toBlock(remoteFinalizedSlot, maybeBlock))
@@ -217,8 +217,8 @@ public class PeerChainValidator {
 
   private SafeFuture<Boolean> verifyPeerAgreesWithOurFinalizedCheckpoint(
       Checkpoint finalizedCheckpoint) {
-    final UnsignedLong finalizedEpochSlot = finalizedCheckpoint.getEpochStartSlot();
-    if (finalizedEpochSlot.equals(UnsignedLong.valueOf(Constants.GENESIS_SLOT))) {
+    final UInt64 finalizedEpochSlot = finalizedCheckpoint.getEpochStartSlot();
+    if (finalizedEpochSlot.equals(UInt64.valueOf(Constants.GENESIS_SLOT))) {
       // Assume that our genesis blocks match because we've already verified the fork
       // digest.
       return SafeFuture.completedFuture(true);
@@ -228,7 +228,7 @@ public class PeerChainValidator {
         .thenApply(maybeBlock -> blockToSlot(finalizedEpochSlot, maybeBlock))
         .thenCompose(
             blockSlot -> {
-              if (blockSlot.equals(UnsignedLong.valueOf(Constants.GENESIS_SLOT))) {
+              if (blockSlot.equals(UInt64.valueOf(Constants.GENESIS_SLOT))) {
                 // Assume that our genesis blocks match because we've already verified the fork
                 // digest. Need to repeat this check in case we finalized a later epoch without
                 // producing blocks (eg the genesis block is still the one in effect at epoch 2)
@@ -240,14 +240,12 @@ public class PeerChainValidator {
             });
   }
 
-  private SignedBeaconBlock toBlock(
-      UnsignedLong lookupSlot, Optional<SignedBeaconBlock> maybeBlock) {
+  private SignedBeaconBlock toBlock(UInt64 lookupSlot, Optional<SignedBeaconBlock> maybeBlock) {
     return maybeBlock.orElseThrow(
         () -> new IllegalStateException("Missing finalized block at slot " + lookupSlot));
   }
 
-  private UnsignedLong blockToSlot(
-      UnsignedLong lookupSlot, Optional<SignedBeaconBlock> maybeBlock) {
+  private UInt64 blockToSlot(UInt64 lookupSlot, Optional<SignedBeaconBlock> maybeBlock) {
     return maybeBlock
         .map(SignedBeaconBlock::getSlot)
         .orElseThrow(

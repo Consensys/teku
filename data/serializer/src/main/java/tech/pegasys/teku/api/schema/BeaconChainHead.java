@@ -18,63 +18,63 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.primitives.UnsignedLong;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BeaconChainHead {
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong head_slot;
+  public final UInt64 head_slot;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong head_epoch;
+  public final UInt64 head_epoch;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 head_block_root;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong finalized_slot;
+  public final UInt64 finalized_slot;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong finalized_epoch;
+  public final UInt64 finalized_epoch;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 finalized_block_root;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong justified_slot;
+  public final UInt64 justified_slot;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong justified_epoch;
+  public final UInt64 justified_epoch;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 justified_block_root;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong previous_justified_slot;
+  public final UInt64 previous_justified_slot;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong previous_justified_epoch;
+  public final UInt64 previous_justified_epoch;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 previous_justified_block_root;
 
   @JsonCreator
   public BeaconChainHead(
-      @JsonProperty("head_slot") final UnsignedLong head_slot,
-      @JsonProperty("head_epoch") final UnsignedLong head_epoch,
+      @JsonProperty("head_slot") final UInt64 head_slot,
+      @JsonProperty("head_epoch") final UInt64 head_epoch,
       @JsonProperty("head_block_root") final Bytes32 head_block_root,
-      @JsonProperty("finalized_slot") final UnsignedLong finalized_slot,
-      @JsonProperty("finalized_epoch") final UnsignedLong finalized_epoch,
+      @JsonProperty("finalized_slot") final UInt64 finalized_slot,
+      @JsonProperty("finalized_epoch") final UInt64 finalized_epoch,
       @JsonProperty("finalized_block_root") final Bytes32 finalized_block_root,
-      @JsonProperty("justified_slot") final UnsignedLong justified_slot,
-      @JsonProperty("justified_epoch") final UnsignedLong justified_epoch,
+      @JsonProperty("justified_slot") final UInt64 justified_slot,
+      @JsonProperty("justified_epoch") final UInt64 justified_epoch,
       @JsonProperty("justified_block_root") final Bytes32 justified_block_root,
-      @JsonProperty("previous_justified_slot") final UnsignedLong previous_justified_slot,
-      @JsonProperty("previous_justified_epoch") final UnsignedLong previous_justified_epoch,
+      @JsonProperty("previous_justified_slot") final UInt64 previous_justified_slot,
+      @JsonProperty("previous_justified_epoch") final UInt64 previous_justified_epoch,
       @JsonProperty("previous_justified_block_root") final Bytes32 previous_justified_block_root) {
     this.head_slot = head_slot;
     this.head_epoch = head_epoch;

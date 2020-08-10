@@ -11,6 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.datastructures.forkchoice;
+package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
-public interface MutablePrunableStore extends PrunableStore, MutableStore {}
+import com.google.common.primitives.Longs;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
+public class UInt64Serializer implements RocksDbSerializer<UInt64> {
+
+  @Override
+  public UInt64 deserialize(final byte[] data) {
+    return UInt64.fromLongBits(Longs.fromByteArray(data));
+  }
+
+  @Override
+  public byte[] serialize(final UInt64 value) {
+    return Longs.toByteArray(value.longValue());
+  }
+}

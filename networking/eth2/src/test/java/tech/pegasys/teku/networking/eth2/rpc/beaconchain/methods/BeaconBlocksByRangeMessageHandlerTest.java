@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -22,10 +21,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -41,6 +40,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -48,7 +48,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 class BeaconBlocksByRangeMessageHandlerTest {
 
-  private static final UnsignedLong MAX_REQUEST_SIZE = UnsignedLong.valueOf(8);
+  private static final UInt64 MAX_REQUEST_SIZE = UInt64.valueOf(8);
   private static final List<SignedBeaconBlock> BLOCKS =
       IntStream.rangeClosed(0, 10)
           .mapToObj(slot -> new DataStructureUtil(slot).randomSignedBeaconBlock(slot))
@@ -171,7 +171,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   @Test
   public void shouldStopAtBestSlot() {
     final int startBlock = 15;
-    final UnsignedLong count = UnsignedLong.valueOf(MAX_REQUEST_BLOCKS);
+    final UInt64 count = UInt64.valueOf(MAX_REQUEST_BLOCKS);
     final int skip = 5;
 
     final SignedBeaconBlock headBlock = BLOCKS.get(5);
@@ -182,7 +182,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            UnsignedLong.valueOf(startBlock), count, UnsignedLong.valueOf(skip)),
+            UInt64.valueOf(startBlock), count, UInt64.valueOf(skip)),
         listener);
 
     verifyNoBlocksReturned();
@@ -193,7 +193,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   @Test
   public void shouldRejectRequestWhenStepIsZero() {
     final int startBlock = 15;
-    final UnsignedLong count = UnsignedLong.valueOf(MAX_REQUEST_BLOCKS);
+    final UInt64 count = UInt64.valueOf(MAX_REQUEST_BLOCKS);
     final int skip = 0;
 
     final SignedBeaconBlock headBlock = BLOCKS.get(5);
@@ -203,7 +203,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            UnsignedLong.valueOf(startBlock), count, UnsignedLong.valueOf(skip)),
+            UInt64.valueOf(startBlock), count, UInt64.valueOf(skip)),
         listener);
 
     verify(listener)
@@ -216,7 +216,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   @Test
   void shouldLimitNumberOfBlocksReturned() {
     final int startBlock = 1;
-    final UnsignedLong count = MAX_REQUEST_SIZE.plus(ONE);
+    final UInt64 count = MAX_REQUEST_SIZE.plus(ONE);
     final int skip = 1;
 
     final SignedBeaconBlock headBlock = BLOCKS.get(10);
@@ -228,7 +228,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            UnsignedLong.valueOf(startBlock), count, UnsignedLong.valueOf(skip)),
+            UInt64.valueOf(startBlock), count, UInt64.valueOf(skip)),
         listener);
 
     verifyBlocksReturned(1, 2, 3, 6, 7, 8);
@@ -267,9 +267,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     handler.onIncomingMessage(
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            UnsignedLong.valueOf(startBlock),
-            UnsignedLong.valueOf(count),
-            UnsignedLong.valueOf(skip)),
+            UInt64.valueOf(startBlock), UInt64.valueOf(count), UInt64.valueOf(skip)),
         listener);
   }
 
@@ -290,25 +288,23 @@ class BeaconBlocksByRangeMessageHandlerTest {
       final int startBlock,
       final int count,
       final int skip,
-      final NavigableMap<UnsignedLong, Bytes32> blockRoots) {
+      final NavigableMap<UInt64, Bytes32> blockRoots) {
     when(combinedChainDataClient.getAncestorRoots(
-            UnsignedLong.valueOf(startBlock),
-            UnsignedLong.valueOf(skip),
-            UnsignedLong.valueOf(count)))
+            UInt64.valueOf(startBlock), UInt64.valueOf(skip), UInt64.valueOf(count)))
         .thenReturn(blockRoots);
   }
 
-  private NavigableMap<UnsignedLong, Bytes32> allBlocks() {
+  private NavigableMap<UInt64, Bytes32> allBlocks() {
     return hotBlocks(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
   }
 
-  private NavigableMap<UnsignedLong, Bytes32> hotBlocks(final int... slots) {
-    final NavigableMap<UnsignedLong, Bytes32> blockRoots = new TreeMap<>();
+  private NavigableMap<UInt64, Bytes32> hotBlocks(final int... slots) {
+    final NavigableMap<UInt64, Bytes32> blockRoots = new TreeMap<>();
     IntStream.of(slots)
         .forEach(
             slot -> {
               final SignedBeaconBlock block = BLOCKS.get(slot);
-              blockRoots.put(UnsignedLong.valueOf(slot), block.getRoot());
+              blockRoots.put(UInt64.valueOf(slot), block.getRoot());
               when(combinedChainDataClient.getBlockByBlockRoot(block.getRoot()))
                   .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
             });

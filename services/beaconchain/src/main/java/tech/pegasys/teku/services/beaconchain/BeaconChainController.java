@@ -13,13 +13,12 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_tick;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
@@ -48,6 +47,7 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Config;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkBuilder;
@@ -130,7 +130,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
 
   private SyncStateTracker syncStateTracker;
-  private UnsignedLong genesisTimeTracker = ZERO;
+  private UInt64 genesisTimeTracker = ZERO;
 
   public BeaconChainController(final ServiceConfig serviceConfig) {
     this.asyncRunner = serviceConfig.createAsyncRunner("beaconchain");
@@ -517,14 +517,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void onStoreInitialized() {
-    UnsignedLong genesisTime = recentChainData.getGenesisTime();
-    UnsignedLong currentTime = timeProvider.getTimeInSeconds();
-    UnsignedLong currentSlot = ZERO;
+    UInt64 genesisTime = recentChainData.getGenesisTime();
+    UInt64 currentTime = timeProvider.getTimeInSeconds();
+    UInt64 currentSlot = ZERO;
     if (currentTime.compareTo(genesisTime) >= 0) {
-      UnsignedLong deltaTime = currentTime.minus(genesisTime);
-      currentSlot = deltaTime.dividedBy(UnsignedLong.valueOf(SECONDS_PER_SLOT));
+      UInt64 deltaTime = currentTime.minus(genesisTime);
+      currentSlot = deltaTime.dividedBy(UInt64.valueOf(SECONDS_PER_SLOT));
     } else {
-      UnsignedLong timeUntilGenesis = genesisTime.minus(currentTime);
+      UInt64 timeUntilGenesis = genesisTime.minus(currentTime);
       genesisTimeTracker = currentTime;
       STATUS_LOG.timeUntilGenesis(timeUntilGenesis.longValue(), p2pNetwork.getPeerCount());
     }
@@ -536,15 +536,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     if (recentChainData.isPreGenesis()) {
       return;
     }
-    final UnsignedLong currentTime = timeProvider.getTimeInSeconds();
+    final UInt64 currentTime = timeProvider.getTimeInSeconds();
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     on_tick(transaction, currentTime);
     transaction.commit().join();
 
-    final UnsignedLong genesisTime = recentChainData.getGenesisTime();
+    final UInt64 genesisTime = recentChainData.getGenesisTime();
     if (genesisTime.compareTo(currentTime) > 0) {
       // notify every 10 minutes
-      if (genesisTimeTracker.plus(UnsignedLong.valueOf(600L)).compareTo(currentTime) <= 0) {
+      if (genesisTimeTracker.plus(UInt64.valueOf(600L)).compareTo(currentTime) <= 0) {
         genesisTimeTracker = currentTime;
         STATUS_LOG.timeUntilGenesis(
             genesisTime.minus(currentTime).longValue(), p2pNetwork.getPeerCount());

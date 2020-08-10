@@ -14,9 +14,10 @@
 package tech.pegasys.teku.api;
 
 import static tech.pegasys.teku.api.DataProviderFailures.chainUnavailable;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -32,11 +33,12 @@ import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.config.Constants;
 
 public class ChainDataProvider {
   private final CombinedChainDataClient combinedChainDataClient;
@@ -50,7 +52,7 @@ public class ChainDataProvider {
     this.recentChainData = recentChainData;
   }
 
-  public UnsignedLong getGenesisTime() {
+  public UInt64 getGenesisTime() {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
     }
@@ -77,31 +79,34 @@ public class ChainDataProvider {
     return new GetForkResponse(forkInfo);
   }
 
-  public SafeFuture<Optional<List<Committee>>> getCommitteesAtEpoch(final UnsignedLong epoch) {
+  public SafeFuture<Optional<List<Committee>>> getCommitteesAtEpoch(final UInt64 epoch) {
     if (!combinedChainDataClient.isChainDataFullyAvailable()) {
       return chainUnavailable();
     }
+    final UInt64 committeesCalculatedAtEpoch = epoch.equals(ZERO) ? ZERO : epoch.minus(ONE);
+    final UInt64 startingSlot = compute_start_slot_at_epoch(committeesCalculatedAtEpoch);
+    final UInt64 slot = compute_start_slot_at_epoch(epoch);
 
-    final UnsignedLong earliestQueryableSlot =
-        CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
-    if (recentChainData.getBestSlot().compareTo(earliestQueryableSlot) < 0) {
+    // one epoch in future is available, beyond that cannot be calculated
+    if (slot.compareTo(
+            recentChainData.getBestSlot().plus(UInt64.valueOf(Constants.SLOTS_PER_EPOCH)))
+        > 0) {
       return SafeFuture.completedFuture(Optional.empty());
     }
 
-    final UnsignedLong queryEpoch = compute_epoch_at_slot(earliestQueryableSlot);
     return combinedChainDataClient
-        .getCheckpointStateAtEpoch(queryEpoch)
+        .getBlockAndStateInEffectAtSlot(startingSlot)
         .thenApply(
             maybeResult ->
                 maybeResult.map(
-                    checkpointState ->
-                        combinedChainDataClient
-                            .getCommitteesFromState(checkpointState.getState(), epoch).stream()
+                    result ->
+                        combinedChainDataClient.getCommitteesFromState(result.getState(), epoch)
+                            .stream()
                             .map(Committee::new)
                             .collect(Collectors.toList())));
   }
 
-  public SafeFuture<Optional<GetBlockResponse>> getBlockBySlot(final UnsignedLong slot) {
+  public SafeFuture<Optional<GetBlockResponse>> getBlockBySlot(final UInt64 slot) {
     if (!isStoreAvailable()) {
       return chainUnavailable();
     }
@@ -145,7 +150,7 @@ public class ChainDataProvider {
         .thenApply(state -> state.map(BeaconState::new));
   }
 
-  public SafeFuture<Optional<BeaconState>> getStateAtSlot(final UnsignedLong slot) {
+  public SafeFuture<Optional<BeaconState>> getStateAtSlot(final UInt64 slot) {
     if (!combinedChainDataClient.isChainDataFullyAvailable()) {
       return chainUnavailable();
     }
@@ -155,7 +160,7 @@ public class ChainDataProvider {
         .thenApply(stateInternal -> stateInternal.map(BeaconState::new));
   }
 
-  public SafeFuture<Optional<Bytes32>> getStateRootAtSlot(final UnsignedLong slot) {
+  public SafeFuture<Optional<Bytes32>> getStateRootAtSlot(final UInt64 slot) {
     if (!combinedChainDataClient.isChainDataFullyAvailable()) {
       return chainUnavailable();
     }
@@ -182,7 +187,7 @@ public class ChainDataProvider {
 
     return SafeFuture.of(
         () -> {
-          UnsignedLong slot =
+          UInt64 slot =
               request.epoch == null
                   ? combinedChainDataClient.getBestSlot()
                   : BeaconStateUtil.compute_start_slot_at_epoch(request.epoch);
@@ -200,11 +205,11 @@ public class ChainDataProvider {
     return combinedChainDataClient.isFinalized(signedBeaconBlock.message.slot);
   }
 
-  public boolean isFinalized(final UnsignedLong slot) {
+  public boolean isFinalized(final UInt64 slot) {
     return combinedChainDataClient.isFinalized(slot);
   }
 
-  public boolean isFinalizedEpoch(final UnsignedLong epoch) {
+  public boolean isFinalizedEpoch(final UInt64 epoch) {
     return combinedChainDataClient.isFinalizedEpoch(epoch);
   }
 

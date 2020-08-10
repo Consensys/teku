@@ -13,25 +13,25 @@
 
 package tech.pegasys.teku.datastructures.blocks;
 
-import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class NodeSlot {
-  private volatile UnsignedLong value;
+  private volatile UInt64 value;
 
-  public NodeSlot(UnsignedLong value) {
+  public NodeSlot(UInt64 value) {
     this.value = value;
   }
 
-  public UnsignedLong getValue() {
+  public UInt64 getValue() {
     return value;
   }
 
-  public UnsignedLong inc() {
-    value = value.plus(UnsignedLong.ONE);
+  public UInt64 inc() {
+    value = value.plus(UInt64.ONE);
     return value;
   }
 
-  public void setValue(UnsignedLong value) {
+  public void setValue(UInt64 value) {
     this.value = value;
   }
 

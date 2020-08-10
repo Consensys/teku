@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.ssz.backing.view;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 
@@ -33,13 +33,13 @@ public class BasicViews {
     }
   }
 
-  public static class UInt64View extends AbstractBasicView<UnsignedLong, UInt64View> {
+  public static class UInt64View extends AbstractBasicView<UInt64, UInt64View> {
 
     public static UInt64View fromLong(long val) {
-      return new UInt64View(UnsignedLong.fromLongBits(val));
+      return new UInt64View(UInt64.fromLongBits(val));
     }
 
-    public UInt64View(UnsignedLong val) {
+    public UInt64View(UInt64 val) {
       super(val, BasicViewTypes.UINT64_TYPE);
     }
 

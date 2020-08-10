@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -31,14 +30,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -69,7 +66,7 @@ public abstract class AbstractCombinedChainDataClientTest {
   @MethodSource("getQueryBySlotParameters")
   public <T> void queryBySlot_preGenesis(
       final String caseName, final QueryBySlotTestCase<T> testCase) {
-    final UnsignedLong querySlot = UnsignedLong.ZERO;
+    final UInt64 querySlot = UInt64.ZERO;
     final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
     final Optional<T> expected =
         testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot, Optional.empty());
@@ -83,12 +80,11 @@ public abstract class AbstractCombinedChainDataClientTest {
       final String caseName, final QueryBySlotTestCase<T> testCase) {
     // Initialize genesis and build small chain with finalization
     chainUpdater.initializeGenesis();
-    final UnsignedLong historicalSlot = chainUpdater.advanceChain().getSlot();
-    final UnsignedLong finalizedSlot = UnsignedLong.valueOf(10);
+    final UInt64 historicalSlot = chainUpdater.advanceChain().getSlot();
+    final UInt64 finalizedSlot = UInt64.valueOf(10);
     chainUpdater.advanceChain(finalizedSlot);
-    final UnsignedLong finalizedEpoch = compute_epoch_at_slot(finalizedSlot).plus(UnsignedLong.ONE);
-    final UnsignedLong recentSlot =
-        compute_start_slot_at_epoch(finalizedEpoch).plus(UnsignedLong.ONE);
+    final UInt64 finalizedEpoch = compute_epoch_at_slot(finalizedSlot).plus(UInt64.ONE);
+    final UInt64 recentSlot = compute_start_slot_at_epoch(finalizedEpoch).plus(UInt64.ONE);
     chainUpdater.finalizeEpoch(finalizedEpoch);
     // Add some recent blocks
     chainUpdater.advanceChain(recentSlot);
@@ -102,14 +98,14 @@ public abstract class AbstractCombinedChainDataClientTest {
     assertThat(restarted.recentChainData().getBestBlockRoot()).isEmpty();
 
     // Check recent slot
-    final UnsignedLong querySlot = recentSlot;
+    final UInt64 querySlot = recentSlot;
     final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
     final Optional<T> expected =
         testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot, Optional.empty());
     assertThat(result).isCompletedWithValue(expected);
 
     // Check historical slot
-    final UnsignedLong querySlot2 = historicalSlot;
+    final UInt64 querySlot2 = historicalSlot;
     final SafeFuture<Optional<T>> result2 = testCase.executeQueryBySlot(client, querySlot2);
     final Optional<T> expected2 =
         testCase.mapEffectiveBlockAtSlotToExpectedResult(querySlot2, Optional.empty());
@@ -121,7 +117,7 @@ public abstract class AbstractCombinedChainDataClientTest {
   public <T> void queryBySlot_atGenesis_genesisSlot(
       final String caseName, final QueryBySlotTestCase<T> testCase) {
     final SignedBlockAndState genesis = chainUpdater.initializeGenesis();
-    final UnsignedLong querySlot = genesis.getSlot();
+    final UInt64 querySlot = genesis.getSlot();
 
     final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
     final Optional<T> expected =
@@ -135,7 +131,7 @@ public abstract class AbstractCombinedChainDataClientTest {
   public <T> void queryBySlot_atGenesis_postGenesisSlot(
       final String caseName, final QueryBySlotTestCase<T> testCase) {
     final SignedBlockAndState genesis = chainUpdater.initializeGenesis();
-    final UnsignedLong querySlot = genesis.getSlot().plus(UnsignedLong.ONE);
+    final UInt64 querySlot = genesis.getSlot().plus(UInt64.ONE);
 
     final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
     final Optional<T> expected =
@@ -148,8 +144,8 @@ public abstract class AbstractCombinedChainDataClientTest {
   @MethodSource("getQueryBySlotParameters")
   public <T> void queryBySlot_shouldRetrieveLatestFinalizedState(
       final String caseName, final QueryBySlotTestCase<T> testCase) {
-    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
-    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+    final UInt64 finalizedEpoch = UInt64.valueOf(2);
+    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
     // Setup chain with finalized block
     chainUpdater.initializeGenesis();
@@ -160,7 +156,7 @@ public abstract class AbstractCombinedChainDataClientTest {
     // Sanity check
     assertThat(blockAtEpoch).isEqualTo(finalizedBlock);
 
-    final UnsignedLong querySlot = finalizedSlot;
+    final UInt64 querySlot = finalizedSlot;
     final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(blockAtEpoch);
     final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
     final Optional<T> expected =
@@ -175,7 +171,7 @@ public abstract class AbstractCombinedChainDataClientTest {
       final String caseName, final QueryBySlotTestCase<T> testCase) {
     final SignedBlockAndState bestBlock = advanceChainAndGetBestBlockAndState(2);
 
-    final UnsignedLong querySlot = bestBlock.getSlot();
+    final UInt64 querySlot = bestBlock.getSlot();
     final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(bestBlock);
     final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
     final Optional<T> expected =
@@ -190,7 +186,7 @@ public abstract class AbstractCombinedChainDataClientTest {
       final String caseName, final QueryBySlotTestCase<T> testCase) {
     final SignedBlockAndState bestBlock = advanceChainAndGetBestBlockAndState(2);
 
-    final UnsignedLong querySlot = bestBlock.getSlot().plus(UnsignedLong.valueOf(2));
+    final UInt64 querySlot = bestBlock.getSlot().plus(UInt64.valueOf(2));
     final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(bestBlock);
     final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
     final Optional<T> expected =
@@ -208,7 +204,7 @@ public abstract class AbstractCombinedChainDataClientTest {
     // Sanity check
     assertThat(recentBlock.getSlot()).isLessThan(bestBlock.getSlot());
 
-    final UnsignedLong querySlot = recentBlock.getSlot();
+    final UInt64 querySlot = recentBlock.getSlot();
     final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(recentBlock);
     final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
     final Optional<T> expected =
@@ -222,12 +218,11 @@ public abstract class AbstractCombinedChainDataClientTest {
   public <T> void queryBySlot_shouldRetrieveRecentStateInEffectAtSkippedSlot(
       final String caseName, final QueryBySlotTestCase<T> testCase) {
     final SignedBlockAndState recentBlock = advanceChainAndGetBestBlockAndState(2);
-    final UnsignedLong skippedSlot = recentBlock.getSlot().plus(UnsignedLong.ONE);
-    final SignedBlockAndState bestBlock =
-        chainUpdater.advanceChain(skippedSlot.plus(UnsignedLong.ONE));
+    final UInt64 skippedSlot = recentBlock.getSlot().plus(UInt64.ONE);
+    final SignedBlockAndState bestBlock = chainUpdater.advanceChain(skippedSlot.plus(UInt64.ONE));
     chainUpdater.updateBestBlock(bestBlock);
 
-    final UnsignedLong querySlot = skippedSlot;
+    final UInt64 querySlot = skippedSlot;
     final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(recentBlock);
     final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
     final Optional<T> expected =
@@ -255,7 +250,7 @@ public abstract class AbstractCombinedChainDataClientTest {
   @Test
   public void getBlockAtSlotExact_unknownRoot() {
     final SignedBlockAndState genesis = chainUpdater.initializeGenesis();
-    final UnsignedLong querySlot = genesis.getSlot().plus(UnsignedLong.ONE);
+    final UInt64 querySlot = genesis.getSlot().plus(UInt64.ONE);
 
     final SafeFuture<Optional<SignedBeaconBlock>> result =
         client.getBlockAtSlotExact(querySlot, Bytes32.ZERO);
@@ -270,49 +265,6 @@ public abstract class AbstractCombinedChainDataClientTest {
         client.getStateByStateRoot(bestBlockAndState.getState().hash_tree_root()).get();
     assertThat(result.isPresent()).isTrue();
     assertThat(result.get()).isEqualTo(bestBlockAndState.getState());
-  }
-
-  @Test
-  public void getCheckpointStateAtEpoch_recentEpochWithSkippedBoundarySlot() {
-    final UnsignedLong epoch = UnsignedLong.valueOf(3);
-    final UnsignedLong epochSlot = compute_start_slot_at_epoch(epoch);
-    final UnsignedLong nextEpoch = epoch.plus(UnsignedLong.ONE);
-
-    chainUpdater.initializeGenesis();
-    // Setup chain at epoch to be queried
-    final SignedBlockAndState checkpointBlockAndState =
-        chainUpdater.advanceChain(epochSlot.minus(UnsignedLong.valueOf(2)));
-    // Bury queried epoch behind additional blocks
-    chainUpdater.advanceChain(compute_start_slot_at_epoch(nextEpoch));
-    chainUpdater.addNewBestBlock();
-
-    final Checkpoint checkpoint = new Checkpoint(epoch, checkpointBlockAndState.getRoot());
-    final CheckpointState expected =
-        CheckpointStateGenerator.generate(checkpoint, checkpointBlockAndState);
-
-    final SafeFuture<Optional<CheckpointState>> actual = client.getCheckpointStateAtEpoch(epoch);
-    assertThat(actual).isCompletedWithValue(Optional.of(expected));
-  }
-
-  @Test
-  public void getCheckpointStateAtEpoch_recentEpoch() {
-    final UnsignedLong epoch = UnsignedLong.valueOf(3);
-    final UnsignedLong epochSlot = compute_start_slot_at_epoch(epoch);
-    final UnsignedLong nextEpoch = epoch.plus(UnsignedLong.ONE);
-
-    chainUpdater.initializeGenesis();
-    // Setup chain at epoch to be queried
-    final SignedBlockAndState checkpointBlockAndState = chainUpdater.advanceChain(epochSlot);
-    // Bury queried epoch behind additional blocks
-    chainUpdater.advanceChain(compute_start_slot_at_epoch(nextEpoch));
-    chainUpdater.addNewBestBlock();
-
-    final Checkpoint checkpoint = new Checkpoint(epoch, checkpointBlockAndState.getRoot());
-    final CheckpointState expected =
-        CheckpointStateGenerator.generate(checkpoint, checkpointBlockAndState);
-
-    final SafeFuture<Optional<CheckpointState>> actual = client.getCheckpointStateAtEpoch(epoch);
-    assertThat(actual).isCompletedWithValue(Optional.of(expected));
   }
 
   public static Stream<Arguments> getQueryBySlotParameters() {
@@ -332,8 +284,8 @@ public abstract class AbstractCombinedChainDataClientTest {
   }
 
   protected SignedBlockAndState advanceChainAndGetBestBlockAndState(final long epoch) {
-    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(epoch);
-    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+    final UInt64 finalizedEpoch = UInt64.valueOf(epoch);
+    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
     chainUpdater.initializeGenesis();
     chainUpdater.advanceChain(finalizedSlot);
@@ -343,23 +295,23 @@ public abstract class AbstractCombinedChainDataClientTest {
 
   protected interface QueryBySlotTestCase<TResult> {
     SafeFuture<Optional<TResult>> executeQueryBySlot(
-        final CombinedChainDataClient client, final UnsignedLong slot);
+        final CombinedChainDataClient client, final UInt64 slot);
 
     Optional<TResult> mapEffectiveBlockAtSlotToExpectedResult(
-        final UnsignedLong slot, Optional<SignedBlockAndState> effectiveBlockAtSlot);
+        final UInt64 slot, Optional<SignedBlockAndState> effectiveBlockAtSlot);
   }
 
   private static class GetLatestStateAtSlotTestCase implements QueryBySlotTestCase<BeaconState> {
 
     @Override
     public SafeFuture<Optional<BeaconState>> executeQueryBySlot(
-        final CombinedChainDataClient client, final UnsignedLong slot) {
+        final CombinedChainDataClient client, final UInt64 slot) {
       return client.getLatestStateAtSlot(slot);
     }
 
     @Override
     public Optional<BeaconState> mapEffectiveBlockAtSlotToExpectedResult(
-        final UnsignedLong slot, final Optional<SignedBlockAndState> effectiveBlockAtSlot) {
+        final UInt64 slot, final Optional<SignedBlockAndState> effectiveBlockAtSlot) {
       return effectiveBlockAtSlot.map(SignedBlockAndState::getState);
     }
   }
@@ -368,13 +320,13 @@ public abstract class AbstractCombinedChainDataClientTest {
       implements QueryBySlotTestCase<SignedBeaconBlock> {
     @Override
     public SafeFuture<Optional<SignedBeaconBlock>> executeQueryBySlot(
-        final CombinedChainDataClient client, final UnsignedLong slot) {
+        final CombinedChainDataClient client, final UInt64 slot) {
       return client.getBlockAtSlotExact(slot);
     }
 
     @Override
     public Optional<SignedBeaconBlock> mapEffectiveBlockAtSlotToExpectedResult(
-        final UnsignedLong slot, final Optional<SignedBlockAndState> effectiveBlockAtSlot) {
+        final UInt64 slot, final Optional<SignedBlockAndState> effectiveBlockAtSlot) {
       return effectiveBlockAtSlot
           .filter(b -> b.getSlot().equals(slot))
           .map(SignedBlockAndState::getBlock);
@@ -385,13 +337,13 @@ public abstract class AbstractCombinedChainDataClientTest {
       implements QueryBySlotTestCase<SignedBeaconBlock> {
     @Override
     public SafeFuture<Optional<SignedBeaconBlock>> executeQueryBySlot(
-        final CombinedChainDataClient client, final UnsignedLong slot) {
+        final CombinedChainDataClient client, final UInt64 slot) {
       return client.getBlockInEffectAtSlot(slot);
     }
 
     @Override
     public Optional<SignedBeaconBlock> mapEffectiveBlockAtSlotToExpectedResult(
-        final UnsignedLong slot, final Optional<SignedBlockAndState> effectiveBlockAtSlot) {
+        final UInt64 slot, final Optional<SignedBlockAndState> effectiveBlockAtSlot) {
       return effectiveBlockAtSlot.map(SignedBlockAndState::getBlock);
     }
   }
@@ -400,13 +352,13 @@ public abstract class AbstractCombinedChainDataClientTest {
       implements QueryBySlotTestCase<BeaconBlockAndState> {
     @Override
     public SafeFuture<Optional<BeaconBlockAndState>> executeQueryBySlot(
-        final CombinedChainDataClient client, final UnsignedLong slot) {
+        final CombinedChainDataClient client, final UInt64 slot) {
       return client.getBlockAndStateInEffectAtSlot(slot);
     }
 
     @Override
     public Optional<BeaconBlockAndState> mapEffectiveBlockAtSlotToExpectedResult(
-        final UnsignedLong slot, final Optional<SignedBlockAndState> effectiveBlockAtSlot) {
+        final UInt64 slot, final Optional<SignedBlockAndState> effectiveBlockAtSlot) {
       return effectiveBlockAtSlot.map(SignedBlockAndState::toUnsigned);
     }
   }

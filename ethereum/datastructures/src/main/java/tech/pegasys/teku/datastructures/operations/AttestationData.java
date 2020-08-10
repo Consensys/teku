@@ -13,16 +13,14 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.max;
-
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
@@ -50,10 +48,10 @@ public class AttestationData extends AbstractImmutableContainer
           AttestationData::new);
 
   @SuppressWarnings("unused")
-  private final UnsignedLong slot = null;
+  private final UInt64 slot = null;
 
   @SuppressWarnings("unused")
-  private final UnsignedLong index = null;
+  private final UInt64 index = null;
 
   // LMD GHOST vote
   @SuppressWarnings("unused")
@@ -71,11 +69,7 @@ public class AttestationData extends AbstractImmutableContainer
   }
 
   public AttestationData(
-      UnsignedLong slot,
-      UnsignedLong index,
-      Bytes32 beacon_block_root,
-      Checkpoint source,
-      Checkpoint target) {
+      UInt64 slot, UInt64 index, Bytes32 beacon_block_root, Checkpoint source, Checkpoint target) {
     super(
         TYPE,
         new UInt64View(slot),
@@ -85,7 +79,7 @@ public class AttestationData extends AbstractImmutableContainer
         target);
   }
 
-  public AttestationData(UnsignedLong slot, AttestationData data) {
+  public AttestationData(UInt64 slot, AttestationData data) {
     this(slot, data.getIndex(), data.getBeacon_block_root(), data.getSource(), data.getTarget());
   }
 
@@ -118,18 +112,18 @@ public class AttestationData extends AbstractImmutableContainer
         .toString();
   }
 
-  public UnsignedLong getEarliestSlotForForkChoice() {
+  public UInt64 getEarliestSlotForForkChoice() {
     // Attestations can't be processed by fork choice until their slot is in the past and until we
     // are in the same epoch as their target.
-    return max(getSlot().plus(UnsignedLong.ONE), getTarget().getEpochStartSlot());
+    return getSlot().plus(UInt64.ONE).max(getTarget().getEpochStartSlot());
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getSlot() {
+  public UInt64 getSlot() {
     return ((UInt64View) get(0)).get();
   }
 
-  public UnsignedLong getIndex() {
+  public UInt64 getIndex() {
     return ((UInt64View) get(1)).get();
   }
 

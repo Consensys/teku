@@ -16,11 +16,11 @@ package tech.pegasys.teku.datastructures.state;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
@@ -42,7 +42,7 @@ public class Checkpoint extends AbstractImmutableContainer
           List.of(BasicViewTypes.UINT64_TYPE, BasicViewTypes.BYTES32_TYPE), Checkpoint::new);
 
   @SuppressWarnings("unused")
-  private final UnsignedLong epoch = null;
+  private final UInt64 epoch = null;
 
   @SuppressWarnings("unused")
   private final Bytes32 root = null;
@@ -51,7 +51,7 @@ public class Checkpoint extends AbstractImmutableContainer
     super(type, backingNode);
   }
 
-  public Checkpoint(UnsignedLong epoch, Bytes32 root) {
+  public Checkpoint(UInt64 epoch, Bytes32 root) {
     super(TYPE, new UInt64View(epoch), new Bytes32View(root));
   }
 
@@ -88,7 +88,7 @@ public class Checkpoint extends AbstractImmutableContainer
   }
 
   /** ****************** * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getEpoch() {
+  public UInt64 getEpoch() {
     return ((UInt64View) get(0)).get();
   }
 
@@ -96,7 +96,7 @@ public class Checkpoint extends AbstractImmutableContainer
     return ((Bytes32View) get(1)).get();
   }
 
-  public UnsignedLong getEpochStartSlot() {
+  public UInt64 getEpochStartSlot() {
     return compute_start_slot_at_epoch(getEpoch());
   }
 

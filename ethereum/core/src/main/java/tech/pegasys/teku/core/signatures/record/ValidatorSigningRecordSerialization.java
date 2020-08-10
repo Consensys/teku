@@ -27,11 +27,11 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.NumericNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.primitives.UnsignedLong;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ValidatorSigningRecordSerialization {
 
@@ -77,16 +77,15 @@ class ValidatorSigningRecordSerialization {
         final SerializerProvider serializers)
         throws IOException {
       gen.writeStartObject();
-      writeUnsignedLong(gen, BLOCK_SLOT_FIELD_NAME, value.getBlockSlot());
-      writeUnsignedLong(gen, SOURCE_EPOCH_FIELD_NAME, value.getAttestationSourceEpoch());
-      writeUnsignedLong(gen, TARGET_EPOCH_FIELD_NAME, value.getAttestationTargetEpoch());
+      writeUInt64(gen, BLOCK_SLOT_FIELD_NAME, value.getBlockSlot());
+      writeUInt64(gen, SOURCE_EPOCH_FIELD_NAME, value.getAttestationSourceEpoch());
+      writeUInt64(gen, TARGET_EPOCH_FIELD_NAME, value.getAttestationTargetEpoch());
       gen.writeEndObject();
     }
 
-    private void writeUnsignedLong(
-        final JsonGenerator gen, final String fieldName, final UnsignedLong value)
+    private void writeUInt64(final JsonGenerator gen, final String fieldName, final UInt64 value)
         throws IOException {
-      if (value.equals(UnsignedLong.MAX_VALUE)) {
+      if (value.equals(UInt64.MAX_VALUE)) {
         gen.writeNullField(fieldName);
       } else {
         gen.writeNumberField(fieldName, value.bigIntegerValue());
@@ -100,18 +99,18 @@ class ValidatorSigningRecordSerialization {
     public ValidatorSigningRecord deserialize(final JsonParser p, final DeserializationContext ctxt)
         throws IOException {
       final TreeNode node = p.getCodec().readTree(p);
-      final UnsignedLong blockSlot = getUnsignedLong(node, BLOCK_SLOT_FIELD_NAME);
-      final UnsignedLong attestationSourceEpoch = getUnsignedLong(node, SOURCE_EPOCH_FIELD_NAME);
-      final UnsignedLong attestationTargetEpoch = getUnsignedLong(node, TARGET_EPOCH_FIELD_NAME);
+      final UInt64 blockSlot = getUInt64(node, BLOCK_SLOT_FIELD_NAME);
+      final UInt64 attestationSourceEpoch = getUInt64(node, SOURCE_EPOCH_FIELD_NAME);
+      final UInt64 attestationTargetEpoch = getUInt64(node, TARGET_EPOCH_FIELD_NAME);
       return new ValidatorSigningRecord(blockSlot, attestationSourceEpoch, attestationTargetEpoch);
     }
 
-    private UnsignedLong getUnsignedLong(final TreeNode node, final String fieldName) {
+    private UInt64 getUInt64(final TreeNode node, final String fieldName) {
       final TreeNode valueNode = node.get(fieldName);
       if (valueNode instanceof NullNode) {
-        return UnsignedLong.MAX_VALUE;
+        return UInt64.MAX_VALUE;
       }
-      return UnsignedLong.valueOf(((NumericNode) valueNode).bigIntegerValue());
+      return UInt64.valueOf(((NumericNode) valueNode).bigIntegerValue());
     }
   }
 }

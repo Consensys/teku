@@ -16,12 +16,12 @@ package tech.pegasys.teku.datastructures.util;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.util.config.Constants.MIN_DEPOSIT_AMOUNT;
 
-import com.google.common.primitives.UnsignedLong;
 import com.google.gson.JsonElement;
 import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.contract.DepositContract;
 
 public class DepositUtil {
@@ -29,7 +29,7 @@ public class DepositUtil {
   public static DepositWithIndex convertDepositEventToOperationDeposit(
       tech.pegasys.teku.pow.event.Deposit event) {
     checkArgument(
-        event.getAmount().compareTo(UnsignedLong.valueOf(MIN_DEPOSIT_AMOUNT)) >= 0,
+        event.getAmount().compareTo(UInt64.valueOf(MIN_DEPOSIT_AMOUNT)) >= 0,
         "Deposit amount too low");
     DepositData data =
         new DepositData(

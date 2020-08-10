@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.bytes_to_int64;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_seed;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.uint_to_bytes;
@@ -30,7 +29,6 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.TARGET_AGGREGATORS_PER_COMMITTEE;
 
 import com.google.common.primitives.UnsignedBytes;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,6 +40,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateCache;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class CommitteeUtil {
 
@@ -182,7 +181,7 @@ public class CommitteeUtil {
    */
   public static int compute_proposer_index(BeaconState state, List<Integer> indices, Bytes32 seed) {
     checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
-    UnsignedLong MAX_RANDOM_BYTE = UnsignedLong.valueOf(255); // Math.pow(2, 8) - 1;
+    UInt64 MAX_RANDOM_BYTE = UInt64.valueOf(255); // Math.pow(2, 8) - 1;
     int i = 0;
     final int total = indices.size();
     Bytes32 hash = null;
@@ -192,13 +191,10 @@ public class CommitteeUtil {
         hash = Hash.sha2_256(Bytes.concatenate(seed, uint_to_bytes(Math.floorDiv(i, 32), 8)));
       }
       int random_byte = UnsignedBytes.toInt(hash.get(i % 32));
-      UnsignedLong effective_balance =
-          state.getValidators().get(candidate_index).getEffective_balance();
+      UInt64 effective_balance = state.getValidators().get(candidate_index).getEffective_balance();
       if (effective_balance
               .times(MAX_RANDOM_BYTE)
-              .compareTo(
-                  UnsignedLong.valueOf(MAX_EFFECTIVE_BALANCE)
-                      .times(UnsignedLong.valueOf(random_byte)))
+              .compareTo(UInt64.valueOf(MAX_EFFECTIVE_BALANCE).times(UInt64.valueOf(random_byte)))
           >= 0) {
         return candidate_index;
       }
@@ -245,27 +241,23 @@ public class CommitteeUtil {
    * @param index
    * @return
    */
-  public static List<Integer> get_beacon_committee(
-      BeaconState state, UnsignedLong slot, UnsignedLong index) {
-    // Make sure state is within range of the slot being queried
-    validateStateForCommitteeQuery(state, slot);
-
+  public static List<Integer> get_beacon_committee(BeaconState state, UInt64 slot, UInt64 index) {
     return BeaconStateCache.getTransitionCaches(state)
         .getBeaconCommittee()
         .get(
             Pair.of(slot, index),
             p -> {
-              UnsignedLong epoch = compute_epoch_at_slot(slot);
-              UnsignedLong committees_per_slot = get_committee_count_per_slot(state, epoch);
+              UInt64 epoch = compute_epoch_at_slot(slot);
+              UInt64 committees_per_slot = get_committee_count_per_slot(state, epoch);
               int committeeIndex =
                   toIntExact(
-                      slot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH))
+                      slot.mod(UInt64.valueOf(SLOTS_PER_EPOCH))
                           .times(committees_per_slot)
                           .plus(index)
                           .longValue());
               int count =
                   toIntExact(
-                      committees_per_slot.times(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).longValue());
+                      committees_per_slot.times(UInt64.valueOf(SLOTS_PER_EPOCH)).longValue());
               return compute_committee(
                   state,
                   get_active_validator_indices(state, epoch),
@@ -273,38 +265,6 @@ public class CommitteeUtil {
                   committeeIndex,
                   count);
             });
-  }
-
-  private static void validateStateForCommitteeQuery(BeaconState state, UnsignedLong slot) {
-    final UnsignedLong oldestQueryableSlot = getEarliestQueryableSlotForTargetSlot(slot);
-    checkArgument(
-        state.getSlot().compareTo(oldestQueryableSlot) >= 0,
-        "Committee information must be derived from a state no older than the previous epoch. State at slot %s is older than cutoff slot %s",
-        state.getSlot(),
-        oldestQueryableSlot);
-  }
-
-  /**
-   * Calculates the earliest slot queryable for assignments at the given slot
-   *
-   * @param slot The slot for which we want to retrieve committee information
-   * @return The earliest slot from which we can query committee assignments
-   */
-  public static UnsignedLong getEarliestQueryableSlotForTargetSlot(final UnsignedLong slot) {
-    final UnsignedLong epoch = compute_epoch_at_slot(slot);
-    return getEarliestQueryableSlotForTargetEpoch(epoch);
-  }
-
-  /**
-   * Calculates the earliest slot queryable for assignments at the given epoch
-   *
-   * @param epoch The epoch for which we want to retrieve committee information
-   * @return The earliest slot from which we can query committee assignments
-   */
-  public static UnsignedLong getEarliestQueryableSlotForTargetEpoch(final UnsignedLong epoch) {
-    final UnsignedLong previousEpoch =
-        epoch.compareTo(UnsignedLong.ZERO) > 0 ? epoch.minus(UnsignedLong.ONE) : epoch;
-    return compute_start_slot_at_epoch(previousEpoch);
   }
 
   public static int getAggregatorModulo(final int committeeSize) {
@@ -329,24 +289,21 @@ public class CommitteeUtil {
    */
   public static int computeSubnetForAttestation(
       final BeaconState state, final Attestation attestation) {
-    final UnsignedLong attestationSlot = attestation.getData().getSlot();
-    final UnsignedLong committeeIndex = attestation.getData().getIndex();
+    final UInt64 attestationSlot = attestation.getData().getSlot();
+    final UInt64 committeeIndex = attestation.getData().getIndex();
     return computeSubnetForCommittee(state, attestationSlot, committeeIndex);
   }
 
   public static int computeSubnetForCommittee(
-      final BeaconState state,
-      final UnsignedLong attestationSlot,
-      final UnsignedLong committeeIndex) {
-    final UnsignedLong slotsSinceEpochStart =
-        attestationSlot.mod(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
-    final UnsignedLong committeesSinceEpochStart =
+      final BeaconState state, final UInt64 attestationSlot, final UInt64 committeeIndex) {
+    final UInt64 slotsSinceEpochStart = attestationSlot.mod(UInt64.valueOf(SLOTS_PER_EPOCH));
+    final UInt64 committeesSinceEpochStart =
         get_committee_count_per_slot(state, compute_epoch_at_slot(attestationSlot))
             .times(slotsSinceEpochStart);
     return toIntExact(
         committeesSinceEpochStart
             .plus(committeeIndex)
-            .mod(UnsignedLong.valueOf(ATTESTATION_SUBNET_COUNT))
+            .mod(UInt64.valueOf(ATTESTATION_SUBNET_COUNT))
             .longValue());
   }
 }

@@ -15,42 +15,42 @@ package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class UnsignedLongSerializerTest {
+public class UInt64SerializerTest {
 
-  private final UnsignedLongSerializer serializer = new UnsignedLongSerializer();
+  private final UInt64Serializer serializer = new UInt64Serializer();
 
   @Test
   public void roundTrip_maxValue() {
-    final UnsignedLong value = UnsignedLong.MAX_VALUE;
+    final UInt64 value = UInt64.MAX_VALUE;
     final byte[] bytes = serializer.serialize(value);
-    final UnsignedLong deserialized = serializer.deserialize(bytes);
+    final UInt64 deserialized = serializer.deserialize(bytes);
     assertThat(deserialized).isEqualTo(value);
   }
 
   @Test
   public void roundTrip_zero() {
-    final UnsignedLong value = UnsignedLong.ZERO;
+    final UInt64 value = UInt64.ZERO;
     final byte[] bytes = serializer.serialize(value);
-    final UnsignedLong deserialized = serializer.deserialize(bytes);
+    final UInt64 deserialized = serializer.deserialize(bytes);
     assertThat(deserialized).isEqualTo(value);
   }
 
   @Test
   public void roundTrip_one() {
-    final UnsignedLong value = UnsignedLong.ONE;
+    final UInt64 value = UInt64.ONE;
     final byte[] bytes = serializer.serialize(value);
-    final UnsignedLong deserialized = serializer.deserialize(bytes);
+    final UInt64 deserialized = serializer.deserialize(bytes);
     assertThat(deserialized).isEqualTo(value);
   }
 
   @Test
   public void roundTrip_other() {
-    final UnsignedLong value = UnsignedLong.valueOf(12500L);
+    final UInt64 value = UInt64.valueOf(12500L);
     final byte[] bytes = serializer.serialize(value);
-    final UnsignedLong deserialized = serializer.deserialize(bytes);
+    final UInt64 deserialized = serializer.deserialize(bytes);
     assertThat(deserialized).isEqualTo(value);
   }
 }

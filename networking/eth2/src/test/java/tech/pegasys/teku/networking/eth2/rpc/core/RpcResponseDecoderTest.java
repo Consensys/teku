@@ -87,4 +87,22 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
           .isEqualTo(new RpcException(ERROR_CODE.get(0), ERROR_MESSAGE));
     }
   }
+
+  @Test
+  public void decodeNextResponse_shouldThrowErrorIfStatusCodeIsNotSuccess_largeErrorCode()
+      throws Exception {
+    final Bytes errorCode = Bytes.of(255);
+    for (Iterable<ByteBuf> testByteBufSlice :
+        testByteBufSlices(errorCode, ERROR_MESSAGE_LENGTH_PREFIX, ERROR_MESSAGE_DATA)) {
+
+      assertThatThrownBy(
+              () -> {
+                for (ByteBuf byteBuf : testByteBufSlice) {
+                  decoder.decodeNextResponses(byteBuf);
+                }
+                decoder.complete();
+              })
+          .isEqualTo(new RpcException(errorCode.get(0), ERROR_MESSAGE));
+    }
+  }
 }

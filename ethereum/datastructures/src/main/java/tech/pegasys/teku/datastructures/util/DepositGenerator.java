@@ -18,7 +18,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_sign
 import static tech.pegasys.teku.util.config.Constants.BLS_WITHDRAWAL_PREFIX;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_DEPOSIT;
 
-import com.google.common.primitives.UnsignedLong;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import org.apache.tuweni.bytes.Bytes;
@@ -29,6 +28,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositMessage;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.message.BouncyCastleMessageDigestFactory;
 
 public class DepositGenerator {
@@ -45,7 +45,7 @@ public class DepositGenerator {
 
   public DepositData createDepositData(
       final BLSKeyPair validatorKeyPair,
-      final UnsignedLong amountInGwei,
+      final UInt64 amountInGwei,
       final BLSPublicKey withdrawalPublicKey) {
     final Bytes32 withdrawalCredentials = createWithdrawalCredentials(withdrawalPublicKey);
     final DepositMessage depositMessage =

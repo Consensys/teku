@@ -15,7 +15,6 @@ package tech.pegasys.teku.datastructures.operations;
 
 import com.google.common.base.Suppliers;
 import com.google.common.collect.Sets;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +26,7 @@ import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.util.hashtree.HashTreeUtil;
@@ -41,7 +41,7 @@ public class AttesterSlashing implements Merkleizable, SimpleOffsetSerializable,
   private final IndexedAttestation attestation_2;
 
   @Label("sos-ignore")
-  private final Supplier<Set<UnsignedLong>> intersectingIndices;
+  private final Supplier<Set<UInt64>> intersectingIndices;
 
   public AttesterSlashing(IndexedAttestation attestation_1, IndexedAttestation attestation_2) {
     this.attestation_1 = attestation_1;
@@ -72,7 +72,7 @@ public class AttesterSlashing implements Merkleizable, SimpleOffsetSerializable,
     return Objects.hash(attestation_1, attestation_2);
   }
 
-  public Set<UnsignedLong> getIntersectingValidatorIndices() {
+  public Set<UInt64> getIntersectingValidatorIndices() {
     return intersectingIndices.get();
   }
 

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.core;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -27,6 +26,7 @@ import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public class BlockProposalUtil {
@@ -38,7 +38,7 @@ public class BlockProposalUtil {
   }
 
   public BeaconBlockAndState createNewUnsignedBlock(
-      final UnsignedLong newSlot,
+      final UInt64 newSlot,
       final int proposerIndex,
       final BLSSignature randaoReveal,
       final BeaconState preState,
@@ -68,7 +68,7 @@ public class BlockProposalUtil {
     BeaconBlock newBlock =
         new BeaconBlock(
             newSlot,
-            UnsignedLong.valueOf(proposerIndex),
+            UInt64.valueOf(proposerIndex),
             parentBlockSigningRoot,
             tmpStateRoot,
             beaconBlockBody);

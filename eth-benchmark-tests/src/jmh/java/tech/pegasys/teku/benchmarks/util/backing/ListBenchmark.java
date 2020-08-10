@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.benchmarks.util.backing;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Level;
@@ -24,6 +23,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ListViewWrite;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
@@ -49,7 +49,7 @@ public class ListBenchmark {
 
     ListViewWrite<UInt64View> l2w = l1.createWritableCopy();
     for (int i = 0; i < 1000000; i++) {
-      l2w.append(new UInt64View(UnsignedLong.valueOf(1121212)));
+      l2w.append(new UInt64View(UInt64.valueOf(1121212)));
     }
     l2r = l2w.commitChanges();
 
@@ -80,7 +80,7 @@ public class ListBenchmark {
   @Warmup(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void append(Blackhole bh) {
-    l1w.append(new UInt64View(UnsignedLong.valueOf(1121212)));
+    l1w.append(new UInt64View(UInt64.valueOf(1121212)));
   }
 
   @Benchmark
@@ -88,7 +88,7 @@ public class ListBenchmark {
   @Measurement(iterations = 5, time = 100, timeUnit = TimeUnit.MILLISECONDS)
   public void incrementalHash(Blackhole bh) {
     ListViewWrite<UInt64View> l2w = l2r.createWritableCopy();
-    l2w.set(12345, new UInt64View(UnsignedLong.valueOf(77777)));
+    l2w.set(12345, new UInt64View(UInt64.valueOf(77777)));
     ListViewRead<UInt64View> l2r_ = l2w.commitChanges();
     l2r_.hashTreeRoot();
   }

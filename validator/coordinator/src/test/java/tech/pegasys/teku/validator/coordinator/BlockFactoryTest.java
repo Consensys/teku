@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -23,9 +22,9 @@ import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.creat
 import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createDeposits;
 import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createProposerSlashings;
 import static tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists.createVoluntaryExits;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +45,7 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
@@ -100,23 +100,23 @@ class BlockFactoryTest {
 
   @Test
   public void shouldCreateBlockAfterNormalSlot() throws Exception {
-    final UnsignedLong newSlot = recentChainData.getBestSlot().plus(ONE);
+    final UInt64 newSlot = recentChainData.getBestSlot().plus(ONE);
     assertBlockCreated(newSlot);
   }
 
   @Test
   public void shouldCreateBlockAfterSkippedSlot() throws Exception {
-    final UnsignedLong newSlot = recentChainData.getBestSlot().plus(UnsignedLong.valueOf(2));
+    final UInt64 newSlot = recentChainData.getBestSlot().plus(UInt64.valueOf(2));
     assertBlockCreated(newSlot);
   }
 
   @Test
   public void shouldCreateBlockAfterMultipleSkippedSlot() throws Exception {
-    final UnsignedLong newSlot = recentChainData.getBestSlot().plus(UnsignedLong.valueOf(5));
+    final UInt64 newSlot = recentChainData.getBestSlot().plus(UInt64.valueOf(5));
     assertBlockCreated(newSlot);
   }
 
-  private void assertBlockCreated(final UnsignedLong newSlot)
+  private void assertBlockCreated(final UInt64 newSlot)
       throws EpochProcessingException, SlotProcessingException, StateTransitionException {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BeaconBlockAndState bestBlockAndState =

@@ -13,17 +13,16 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class CommitteeAssignment {
 
   private List<Integer> committee;
-  private UnsignedLong committeeIndex;
-  private UnsignedLong slot;
+  private UInt64 committeeIndex;
+  private UInt64 slot;
 
-  public CommitteeAssignment(
-      List<Integer> committee, UnsignedLong committeeIndex, UnsignedLong slot) {
+  public CommitteeAssignment(List<Integer> committee, UInt64 committeeIndex, UInt64 slot) {
     this.committee = committee;
     this.committeeIndex = committeeIndex;
     this.slot = slot;
@@ -33,11 +32,11 @@ public class CommitteeAssignment {
     return committee;
   }
 
-  public UnsignedLong getCommitteeIndex() {
+  public UInt64 getCommitteeIndex() {
     return committeeIndex;
   }
 
-  public UnsignedLong getSlot() {
+  public UInt64 getSlot() {
     return slot;
   }
 

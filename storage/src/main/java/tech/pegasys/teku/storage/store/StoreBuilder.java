@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
@@ -26,6 +25,8 @@ import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 
 public class StoreBuilder {
@@ -33,13 +34,13 @@ public class StoreBuilder {
   BlockProvider blockProvider;
 
   final Map<Bytes32, Bytes32> childToParentRoot = new HashMap<>();
-  UnsignedLong time;
-  UnsignedLong genesisTime;
+  UInt64 time;
+  UInt64 genesisTime;
   Checkpoint justifiedCheckpoint;
   Checkpoint finalizedCheckpoint;
   Checkpoint bestJustifiedCheckpoint;
   SignedBlockAndState latestFinalized;
-  Map<UnsignedLong, VoteTracker> votes;
+  Map<UInt64, VoteTracker> votes;
 
   private StoreBuilder() {}
 
@@ -47,7 +48,7 @@ public class StoreBuilder {
     return new StoreBuilder();
   }
 
-  public static UpdatableStore buildForkChoiceStore(
+  public static SafeFuture<UpdatableStore> buildForkChoiceStore(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
       final AnchorPoint anchor) {
@@ -58,9 +59,9 @@ public class StoreBuilder {
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
       final AnchorPoint anchor) {
-    final UnsignedLong genesisTime = anchor.getState().getGenesis_time();
-    final UnsignedLong slot = anchor.getState().getSlot();
-    final UnsignedLong time = genesisTime.plus(UnsignedLong.valueOf(SECONDS_PER_SLOT).times(slot));
+    final UInt64 genesisTime = anchor.getState().getGenesis_time();
+    final UInt64 slot = anchor.getState().getSlot();
+    final UInt64 time = genesisTime.plus(UInt64.valueOf(SECONDS_PER_SLOT).times(slot));
 
     Map<Bytes32, Bytes32> childToParentMap = new HashMap<>();
     childToParentMap.put(anchor.getRoot(), anchor.getParentRoot());
@@ -78,9 +79,9 @@ public class StoreBuilder {
         .votes(new HashMap<>());
   }
 
-  public UpdatableStore build() {
+  public SafeFuture<UpdatableStore> build() {
     assertValid();
-    return new Store(
+    return Store.create(
         metricsSystem,
         blockProvider,
         time,
@@ -119,13 +120,13 @@ public class StoreBuilder {
     return this;
   }
 
-  public StoreBuilder time(final UnsignedLong time) {
+  public StoreBuilder time(final UInt64 time) {
     checkNotNull(time);
     this.time = time;
     return this;
   }
 
-  public StoreBuilder genesisTime(final UnsignedLong genesisTime) {
+  public StoreBuilder genesisTime(final UInt64 genesisTime) {
     checkNotNull(genesisTime);
     this.genesisTime = genesisTime;
     return this;
@@ -161,7 +162,7 @@ public class StoreBuilder {
     return this;
   }
 
-  public StoreBuilder votes(final Map<UnsignedLong, VoteTracker> votes) {
+  public StoreBuilder votes(final Map<UInt64, VoteTracker> votes) {
     checkNotNull(votes);
     this.votes = votes;
     return this;

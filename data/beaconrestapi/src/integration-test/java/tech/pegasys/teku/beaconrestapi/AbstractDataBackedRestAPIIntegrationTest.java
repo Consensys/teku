@@ -22,7 +22,6 @@ import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,6 +42,7 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -71,11 +71,11 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
           .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"))
           .build();
 
-  protected static final UnsignedLong SIX = UnsignedLong.valueOf(6);
-  protected static final UnsignedLong SEVEN = UnsignedLong.valueOf(7);
-  protected static final UnsignedLong EIGHT = UnsignedLong.valueOf(8);
-  protected static final UnsignedLong NINE = UnsignedLong.valueOf(9);
-  protected static final UnsignedLong TEN = UnsignedLong.valueOf(10);
+  protected static final UInt64 SIX = UInt64.valueOf(6);
+  protected static final UInt64 SEVEN = UInt64.valueOf(7);
+  protected static final UInt64 EIGHT = UInt64.valueOf(8);
+  protected static final UInt64 NINE = UInt64.valueOf(9);
+  protected static final UInt64 TEN = UInt64.valueOf(10);
 
   // Mocks
   protected final Eth2Network eth2Network = mock(Eth2Network.class);
@@ -180,14 +180,14 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   }
 
   public List<SignedBlockAndState> createBlocksAtSlots(long... slots) {
-    final UnsignedLong[] unsignedSlots =
-        Arrays.stream(slots).mapToObj(UnsignedLong::valueOf).toArray(UnsignedLong[]::new);
+    final UInt64[] unsignedSlots =
+        Arrays.stream(slots).mapToObj(UInt64::valueOf).toArray(UInt64[]::new);
     return createBlocksAtSlots(unsignedSlots);
   }
 
-  public ArrayList<SignedBlockAndState> createBlocksAtSlots(UnsignedLong... slots) {
+  public ArrayList<SignedBlockAndState> createBlocksAtSlots(UInt64... slots) {
     final ArrayList<SignedBlockAndState> results = new ArrayList<>();
-    for (UnsignedLong slot : slots) {
+    for (UInt64 slot : slots) {
       final SignedBlockAndState block = chainUpdater.advanceChain(slot);
       chainUpdater.updateBestBlock(block);
       results.add(block);
@@ -198,11 +198,10 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   // by using importBlocksAtSlots instead of createBlocksAtSlots, blocks are created
   // via the blockImporter, and this will mean forkChoice has been processed.
   // this is particularly useful if testing for missing state roots (states without blocks)
-  public ArrayList<BeaconBlockAndState> importBlocksAtSlots(UnsignedLong... slots)
-      throws Exception {
+  public ArrayList<BeaconBlockAndState> importBlocksAtSlots(UInt64... slots) throws Exception {
     assertThat(beaconChainUtil).isNotNull();
     final ArrayList<BeaconBlockAndState> results = new ArrayList<>();
-    for (UnsignedLong slot : slots) {
+    for (UInt64 slot : slots) {
       final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock signedBeaconBlock =
           beaconChainUtil.createAndImportBlockAtSlot(slot.longValue());
       results.add(
@@ -213,19 +212,19 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   }
 
   public List<SignedBeaconBlock> createBlocksAtSlotsAndMapToApiResult(long... slots) {
-    final UnsignedLong[] unsignedSlots =
-        Arrays.stream(slots).mapToObj(UnsignedLong::valueOf).toArray(UnsignedLong[]::new);
+    final UInt64[] unsignedSlots =
+        Arrays.stream(slots).mapToObj(UInt64::valueOf).toArray(UInt64[]::new);
     return createBlocksAtSlotsAndMapToApiResult(unsignedSlots);
   }
 
-  public List<SignedBeaconBlock> createBlocksAtSlotsAndMapToApiResult(UnsignedLong... slots) {
+  public List<SignedBeaconBlock> createBlocksAtSlotsAndMapToApiResult(UInt64... slots) {
     return createBlocksAtSlots(slots).stream()
         .map(SignedBlockAndState::getBlock)
         .map(SignedBeaconBlock::new)
         .collect(Collectors.toList());
   }
 
-  public SignedBlockAndState finalizeChainAtEpoch(UnsignedLong epoch) {
+  public SignedBlockAndState finalizeChainAtEpoch(UInt64 epoch) {
     return chainUpdater.finalizeEpoch(epoch);
   }
 

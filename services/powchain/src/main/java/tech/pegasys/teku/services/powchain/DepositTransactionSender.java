@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.services.powchain;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
@@ -29,6 +28,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.contract.DepositContract;
 import tech.pegasys.teku.util.config.Eth1Address;
 
@@ -58,7 +58,7 @@ public class DepositTransactionSender {
   public SafeFuture<TransactionReceipt> sendDepositTransaction(
       BLSKeyPair validatorKeyPair,
       final BLSPublicKey withdrawalPublicKey,
-      final UnsignedLong amountInGwei,
+      final UInt64 amountInGwei,
       final Consumer<String> commandStdOutput,
       final Consumer<String> commandErrorOutput) {
     commandStdOutput.accept(

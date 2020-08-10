@@ -15,10 +15,10 @@ package tech.pegasys.teku.api.schema;
 
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES48;
 
-import com.google.common.primitives.UnsignedLong;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidatorDuties {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES48)
@@ -30,10 +30,10 @@ public class ValidatorDuties {
   public final Integer attestation_committee_position;
 
   @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
-  public final List<UnsignedLong> block_proposal_slots;
+  public final List<UInt64> block_proposal_slots;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong attestation_slot;
+  public final UInt64 attestation_slot;
 
   public ValidatorDuties(
       BLSPubKey validator_pubkey,
@@ -41,8 +41,8 @@ public class ValidatorDuties {
       Integer attestation_committee_index,
       Integer attestation_committee_position,
       Integer aggregator_modulo,
-      List<UnsignedLong> block_proposal_slots,
-      UnsignedLong attestation_slot) {
+      List<UInt64> block_proposal_slots,
+      UInt64 attestation_slot) {
     this.validator_pubkey = validator_pubkey;
     this.validator_index = validator_index;
     this.attestation_committee_index = attestation_committee_index;

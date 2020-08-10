@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.client.duties;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +29,7 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
@@ -38,12 +38,12 @@ import tech.pegasys.teku.validator.client.Validator;
 public class AttestationProductionDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
   private final Map<Integer, Committee> validatorsByCommitteeIndex = new HashMap<>();
-  private final UnsignedLong slot;
+  private final UInt64 slot;
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
 
   public AttestationProductionDuty(
-      final UnsignedLong slot,
+      final UInt64 slot,
       final ForkProvider forkProvider,
       final ValidatorApiChannel validatorApiChannel) {
     this.slot = slot;

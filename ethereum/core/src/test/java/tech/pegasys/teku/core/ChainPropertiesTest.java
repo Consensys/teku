@@ -16,35 +16,35 @@ package tech.pegasys.teku.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
-import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ChainPropertiesTest {
 
   @Test
   public void computeBestEpochFinalizableAtSlot_atEpochBoundary() {
-    final UnsignedLong epoch = UnsignedLong.valueOf(2);
-    final UnsignedLong startSlot = compute_start_slot_at_epoch(epoch);
+    final UInt64 epoch = UInt64.valueOf(2);
+    final UInt64 startSlot = compute_start_slot_at_epoch(epoch);
 
-    final UnsignedLong result = ChainProperties.computeBestEpochFinalizableAtSlot(startSlot);
+    final UInt64 result = ChainProperties.computeBestEpochFinalizableAtSlot(startSlot);
     assertThat(result).isEqualTo(epoch);
   }
 
   @Test
   public void computeBestEpochFinalizableAtSlot_priorToEpochBoundary() {
-    final UnsignedLong epoch = UnsignedLong.valueOf(2);
-    final UnsignedLong slot = compute_start_slot_at_epoch(epoch).minus(UnsignedLong.ONE);
+    final UInt64 epoch = UInt64.valueOf(2);
+    final UInt64 slot = compute_start_slot_at_epoch(epoch).minus(UInt64.ONE);
 
-    final UnsignedLong result = ChainProperties.computeBestEpochFinalizableAtSlot(slot);
+    final UInt64 result = ChainProperties.computeBestEpochFinalizableAtSlot(slot);
     assertThat(result).isEqualTo(epoch);
   }
 
   @Test
   public void computeBestEpochFinalizableAtSlot_afterEpochBoundary() {
-    final UnsignedLong epoch = UnsignedLong.valueOf(2);
-    final UnsignedLong slot = compute_start_slot_at_epoch(epoch).plus(UnsignedLong.ONE);
+    final UInt64 epoch = UInt64.valueOf(2);
+    final UInt64 slot = compute_start_slot_at_epoch(epoch).plus(UInt64.ONE);
 
-    final UnsignedLong result = ChainProperties.computeBestEpochFinalizableAtSlot(slot);
-    assertThat(result).isEqualTo(epoch.plus(UnsignedLong.ONE));
+    final UInt64 result = ChainProperties.computeBestEpochFinalizableAtSlot(slot);
+    assertThat(result).isEqualTo(epoch.plus(UInt64.ONE));
   }
 }

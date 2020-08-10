@@ -21,12 +21,12 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
-import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.Eth1HeadTracker.HeadUpdatedSubscriber;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -40,7 +40,7 @@ class Eth1HeadTrackerTest {
 
   @BeforeAll
   static void setConstants() {
-    Constants.ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(FOLLOW_DISTANCE);
+    Constants.ETH1_FOLLOW_DISTANCE = UInt64.valueOf(FOLLOW_DISTANCE);
   }
 
   @AfterAll
@@ -56,7 +56,7 @@ class Eth1HeadTrackerTest {
     tracker.subscribe(subscriber);
     tracker.start();
 
-    verify(subscriber).onHeadUpdated(UnsignedLong.valueOf(followHeadNumber));
+    verify(subscriber).onHeadUpdated(UInt64.valueOf(followHeadNumber));
   }
 
   @Test
@@ -76,12 +76,12 @@ class Eth1HeadTrackerTest {
     tracker.subscribe(subscriber);
     tracker.start();
 
-    verify(subscriber).onHeadUpdated(UnsignedLong.valueOf(1200 - FOLLOW_DISTANCE));
+    verify(subscriber).onHeadUpdated(UInt64.valueOf(1200 - FOLLOW_DISTANCE));
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
 
-    verify(subscriber).onHeadUpdated(UnsignedLong.valueOf(1201 - FOLLOW_DISTANCE));
+    verify(subscriber).onHeadUpdated(UInt64.valueOf(1201 - FOLLOW_DISTANCE));
   }
 
   @Test
@@ -92,12 +92,12 @@ class Eth1HeadTrackerTest {
     tracker.subscribe(subscriber);
     tracker.start();
 
-    verify(subscriber).onHeadUpdated(UnsignedLong.valueOf(1200 - FOLLOW_DISTANCE));
+    verify(subscriber).onHeadUpdated(UInt64.valueOf(1200 - FOLLOW_DISTANCE));
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
 
-    verify(subscriber).onHeadUpdated(UnsignedLong.valueOf(1501 - FOLLOW_DISTANCE));
+    verify(subscriber).onHeadUpdated(UInt64.valueOf(1501 - FOLLOW_DISTANCE));
   }
 
   @Test
@@ -106,7 +106,7 @@ class Eth1HeadTrackerTest {
     tracker.subscribe(subscriber);
     tracker.start();
 
-    verify(subscriber).onHeadUpdated(UnsignedLong.valueOf(1200 - FOLLOW_DISTANCE));
+    verify(subscriber).onHeadUpdated(UInt64.valueOf(1200 - FOLLOW_DISTANCE));
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
@@ -124,7 +124,7 @@ class Eth1HeadTrackerTest {
     tracker.subscribe(subscriber);
     tracker.start();
 
-    verify(subscriber).onHeadUpdated(UnsignedLong.valueOf(1200 - FOLLOW_DISTANCE));
+    verify(subscriber).onHeadUpdated(UInt64.valueOf(1200 - FOLLOW_DISTANCE));
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();

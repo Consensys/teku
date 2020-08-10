@@ -322,7 +322,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setInitialState(networkOptions.getInitialState())
         .setInteropNumberOfValidators(interopOptions.getInteropNumberOfValidators())
         .setInteropEnabled(interopOptions.isInteropEnabled())
-        .setValidatorKeyFile(validatorOptions.getValidatorKeyFile())
         .setValidatorKeystoreFiles(validatorOptions.getValidatorKeystoreFiles())
         .setValidatorKeystorePasswordFiles(validatorOptions.getValidatorKeystorePasswordFiles())
         .setValidatorExternalSignerPublicKeys(

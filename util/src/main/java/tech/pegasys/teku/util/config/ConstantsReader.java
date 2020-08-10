@@ -16,7 +16,6 @@ package tech.pegasys.teku.util.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
@@ -25,6 +24,7 @@ import java.nio.ByteOrder;
 import java.util.Map;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 class ConstantsReader {
@@ -33,7 +33,7 @@ class ConstantsReader {
       ImmutableMap.<Class<?>, Function<Object, ?>>builder()
           .put(Integer.TYPE, ConstantsReader::parseInt)
           .put(Long.TYPE, toString(Long::valueOf))
-          .put(UnsignedLong.class, toString(UnsignedLong::valueOf))
+          .put(UInt64.class, toString(UInt64::valueOf))
           .put(String.class, Function.identity())
           .put(Bytes.class, toString(Bytes::fromHexString))
           .put(Bytes4.class, toString(Bytes4::fromHexString))

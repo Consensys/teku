@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.server.rocksdb;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -25,6 +24,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.server.AbstractStorageBackedDatabaseTest;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
@@ -89,7 +89,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     database.storeGenesis(genesisAnchor);
     database.close();
 
-    assertThatThrownBy(() -> database.streamFinalizedBlocks(UnsignedLong.ZERO, UnsignedLong.ONE))
+    assertThatThrownBy(() -> database.streamFinalizedBlocks(UInt64.ZERO, UInt64.ONE))
         .isInstanceOf(ShuttingDownException.class);
   }
 
@@ -98,7 +98,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
       throws Exception {
     database.storeGenesis(genesisAnchor);
     try (final Stream<SignedBeaconBlock> stream =
-        database.streamFinalizedBlocks(UnsignedLong.ZERO, UnsignedLong.valueOf(1000L))) {
+        database.streamFinalizedBlocks(UInt64.ZERO, UInt64.valueOf(1000L))) {
       database.close();
       assertThatThrownBy(stream::findAny).isInstanceOf(ShuttingDownException.class);
     }

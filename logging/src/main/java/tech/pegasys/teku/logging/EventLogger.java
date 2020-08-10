@@ -17,13 +17,13 @@ import static tech.pegasys.teku.logging.ColorConsolePrinter.print;
 import static tech.pegasys.teku.logging.LogFormatter.formatHashRoot;
 import static tech.pegasys.teku.logging.LoggingConfigurator.EVENT_LOGGER_NAME;
 
-import com.google.common.primitives.UnsignedLong;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.logging.ColorConsolePrinter.Color;
 
 public class EventLogger {
@@ -37,7 +37,7 @@ public class EventLogger {
   }
 
   public void genesisEvent(
-      final Bytes32 hashTreeRoot, final Bytes32 genesisBlockRoot, final UnsignedLong genesisTime) {
+      final Bytes32 hashTreeRoot, final Bytes32 genesisBlockRoot, final UInt64 genesisTime) {
     final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     final String formattedGenesisTime =
@@ -54,9 +54,9 @@ public class EventLogger {
   }
 
   public void epochEvent(
-      final UnsignedLong currentEpoch,
-      final UnsignedLong justifiedCheckpoint,
-      final UnsignedLong finalizedCheckpoint,
+      final UInt64 currentEpoch,
+      final UInt64 justifiedCheckpoint,
+      final UInt64 finalizedCheckpoint,
       final Bytes32 finalizedRoot) {
     final String epochEventLog =
         String.format(
@@ -68,7 +68,7 @@ public class EventLogger {
     info(epochEventLog, Color.GREEN);
   }
 
-  public void nodeSlotsMissed(final UnsignedLong oldSlot, final UnsignedLong newSlot) {
+  public void nodeSlotsMissed(final UInt64 oldSlot, final UInt64 newSlot) {
     final String driftEventLog =
         String.format(
             "Miss slots  *** Current slot: %s, previous slot: %s",
@@ -76,8 +76,7 @@ public class EventLogger {
     info(driftEventLog, Color.WHITE);
   }
 
-  public void syncEvent(
-      final UnsignedLong nodeSlot, final UnsignedLong headSlot, final int numPeers) {
+  public void syncEvent(final UInt64 nodeSlot, final UInt64 headSlot, final int numPeers) {
     final String syncEventLog =
         String.format(
             "Sync Event  *** Current slot: %s, Head slot: %s, Connected peers: %d",
@@ -86,11 +85,11 @@ public class EventLogger {
   }
 
   public void slotEvent(
-      final UnsignedLong nodeSlot,
-      final UnsignedLong headSlot,
+      final UInt64 nodeSlot,
+      final UInt64 headSlot,
       final Bytes32 bestBlockRoot,
-      final UnsignedLong nodeEpoch,
-      final UnsignedLong finalizedCheckpoint,
+      final UInt64 nodeEpoch,
+      final UInt64 finalizedCheckpoint,
       final Bytes32 finalizedRoot,
       final int numPeers) {
     String blockRoot = "   ... empty";

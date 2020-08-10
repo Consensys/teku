@@ -16,16 +16,16 @@ package tech.pegasys.teku.datastructures.operations;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class VoluntaryExitTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private UnsignedLong epoch = dataStructureUtil.randomUnsignedLong();
-  private UnsignedLong validatorIndex = dataStructureUtil.randomUnsignedLong();
+  private UInt64 epoch = dataStructureUtil.randomUInt64();
+  private UInt64 validatorIndex = dataStructureUtil.randomUInt64();
 
   private VoluntaryExit voluntaryExit = new VoluntaryExit(epoch, validatorIndex);
 
@@ -46,7 +46,7 @@ class VoluntaryExitTest {
   @Test
   void equalsReturnsFalseWhenEpochsAreDifferent() {
     VoluntaryExit testVoluntaryExit =
-        new VoluntaryExit(epoch.plus(dataStructureUtil.randomUnsignedLong()), validatorIndex);
+        new VoluntaryExit(epoch.plus(dataStructureUtil.randomUInt64()), validatorIndex);
 
     assertNotEquals(voluntaryExit, testVoluntaryExit);
   }
@@ -54,7 +54,7 @@ class VoluntaryExitTest {
   @Test
   void equalsReturnsFalseWhenValidatorIndicesAreDifferent() {
     VoluntaryExit testVoluntaryExit =
-        new VoluntaryExit(epoch, validatorIndex.plus(dataStructureUtil.randomUnsignedLong()));
+        new VoluntaryExit(epoch, validatorIndex.plus(dataStructureUtil.randomUInt64()));
 
     assertNotEquals(voluntaryExit, testVoluntaryExit);
   }

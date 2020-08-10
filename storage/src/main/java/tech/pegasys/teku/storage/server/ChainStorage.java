@@ -14,7 +14,6 @@
 package tech.pegasys.teku.storage.server;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -23,6 +22,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.events.AnchorPoint;
@@ -100,13 +100,12 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(final UnsignedLong slot) {
+  public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(final UInt64 slot) {
     return SafeFuture.of(() -> database.getFinalizedBlockAtSlot(slot));
   }
 
   @Override
-  public SafeFuture<Optional<SignedBeaconBlock>> getLatestFinalizedBlockAtSlot(
-      final UnsignedLong slot) {
+  public SafeFuture<Optional<SignedBeaconBlock>> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     return SafeFuture.of(() -> database.getLatestFinalizedBlockAtSlot(slot));
   }
 
@@ -128,7 +127,7 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(final UnsignedLong slot) {
+  public SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(final UInt64 slot) {
     return SafeFuture.of(() -> getLatestFinalizedStateAtSlotSync(slot));
   }
 
@@ -142,11 +141,11 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<UnsignedLong>> getFinalizedSlotByStateRoot(final Bytes32 stateRoot) {
+  public SafeFuture<Optional<UInt64>> getFinalizedSlotByStateRoot(final Bytes32 stateRoot) {
     return SafeFuture.of(() -> database.getSlotForFinalizedStateRoot(stateRoot));
   }
 
-  private Optional<BeaconState> getLatestFinalizedStateAtSlotSync(final UnsignedLong slot) {
+  private Optional<BeaconState> getLatestFinalizedStateAtSlotSync(final UInt64 slot) {
     return finalizedStateCache.getFinalizedState(slot);
   }
 }

@@ -27,7 +27,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +39,7 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.logging.ValidatorLogger;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
@@ -47,7 +47,7 @@ import tech.pegasys.teku.validator.client.Validator;
 
 class AggregationDutyTest {
 
-  public static final UnsignedLong SLOT = UnsignedLong.valueOf(2832);
+  public static final UInt64 SLOT = UInt64.valueOf(2832);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
@@ -117,7 +117,7 @@ class AggregationDutyTest {
         .thenReturn(completedFuture(Optional.of(aggregate)));
 
     final AggregateAndProof expectedAggregateAndProof =
-        new AggregateAndProof(UnsignedLong.valueOf(validatorIndex), aggregate, proof);
+        new AggregateAndProof(UInt64.valueOf(validatorIndex), aggregate, proof);
     final BLSSignature aggregateSignature = dataStructureUtil.randomSignature();
     when(signer1.signAggregateAndProof(expectedAggregateAndProof, forkInfo))
         .thenReturn(SafeFuture.completedFuture(aggregateSignature));
@@ -165,10 +165,10 @@ class AggregationDutyTest {
 
     final AggregateAndProof aggregateAndProof1 =
         new AggregateAndProof(
-            UnsignedLong.valueOf(validator1Index), committee1Aggregate, validator1Proof);
+            UInt64.valueOf(validator1Index), committee1Aggregate, validator1Proof);
     final AggregateAndProof aggregateAndProof2 =
         new AggregateAndProof(
-            UnsignedLong.valueOf(validator2Index), committee2Aggregate, validator2Proof);
+            UInt64.valueOf(validator2Index), committee2Aggregate, validator2Proof);
     final BLSSignature aggregateSignature1 = dataStructureUtil.randomSignature();
     final BLSSignature aggregateSignature2 = dataStructureUtil.randomSignature();
     when(signer1.signAggregateAndProof(aggregateAndProof1, forkInfo))
@@ -216,7 +216,7 @@ class AggregationDutyTest {
         .thenReturn(completedFuture(Optional.of(aggregate)));
 
     final AggregateAndProof aggregateAndProof =
-        new AggregateAndProof(UnsignedLong.valueOf(validator1Index), aggregate, validator1Proof);
+        new AggregateAndProof(UInt64.valueOf(validator1Index), aggregate, validator1Proof);
     final BLSSignature aggregateSignature1 = dataStructureUtil.randomSignature();
     when(signer1.signAggregateAndProof(aggregateAndProof, forkInfo))
         .thenReturn(SafeFuture.completedFuture(aggregateSignature1));

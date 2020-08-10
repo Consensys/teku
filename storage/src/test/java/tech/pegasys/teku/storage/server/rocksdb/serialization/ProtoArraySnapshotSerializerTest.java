@@ -15,12 +15,12 @@ package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.BlockInformation;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 
@@ -41,8 +41,7 @@ public class ProtoArraySnapshotSerializerTest {
     addBlockToBlockInformationList(blockInformationList, block3);
 
     ProtoArraySnapshot protoArraySnapshot =
-        new ProtoArraySnapshot(
-            UnsignedLong.valueOf(100), UnsignedLong.valueOf(99), blockInformationList);
+        new ProtoArraySnapshot(UInt64.valueOf(100), UInt64.valueOf(99), blockInformationList);
 
     final byte[] bytes = serializer.serialize(protoArraySnapshot);
     final ProtoArraySnapshot result = serializer.deserialize(bytes);
@@ -56,7 +55,7 @@ public class ProtoArraySnapshotSerializerTest {
             block.hash_tree_root(),
             block.getParent_root(),
             block.getState_root(),
-            UnsignedLong.valueOf(101),
-            UnsignedLong.valueOf(100)));
+            UInt64.valueOf(101),
+            UInt64.valueOf(100)));
   }
 }
