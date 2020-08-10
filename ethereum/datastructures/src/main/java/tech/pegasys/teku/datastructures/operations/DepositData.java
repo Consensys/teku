@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -23,6 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.util.hashtree.HashTreeUtil;
@@ -36,14 +36,11 @@ public class DepositData implements Merkleizable, SimpleOffsetSerializable, SSZC
 
   private final BLSPublicKey pubkey;
   private final Bytes32 withdrawal_credentials;
-  private final UnsignedLong amount;
+  private final UInt64 amount;
   private BLSSignature signature; // Signing over DepositMessage
 
   public DepositData(
-      BLSPublicKey pubkey,
-      Bytes32 withdrawal_credentials,
-      UnsignedLong amount,
-      BLSSignature signature) {
+      BLSPublicKey pubkey, Bytes32 withdrawal_credentials, UInt64 amount, BLSSignature signature) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.amount = amount;
@@ -61,7 +58,7 @@ public class DepositData implements Merkleizable, SimpleOffsetSerializable, SSZC
   public DepositData() {
     this.pubkey = BLSPublicKey.empty();
     this.withdrawal_credentials = Bytes32.ZERO;
-    this.amount = UnsignedLong.ZERO;
+    this.amount = UInt64.ZERO;
     this.signature = BLSSignature.empty();
   }
 
@@ -117,7 +114,7 @@ public class DepositData implements Merkleizable, SimpleOffsetSerializable, SSZC
     return withdrawal_credentials;
   }
 
-  public UnsignedLong getAmount() {
+  public UInt64 getAmount() {
     return amount;
   }
 
@@ -133,9 +130,9 @@ public class DepositData implements Merkleizable, SimpleOffsetSerializable, SSZC
   public Bytes32 hash_tree_root() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, pubkey.toBytes()),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, pubkey.toSSZBytes()),
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, withdrawal_credentials),
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(amount.longValue())),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toSSZBytes())));
   }
 }

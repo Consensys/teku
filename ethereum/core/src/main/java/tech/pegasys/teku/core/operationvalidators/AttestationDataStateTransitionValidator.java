@@ -16,15 +16,15 @@ package tech.pegasys.teku.core.operationvalidators;
 import static tech.pegasys.teku.core.operationvalidators.OperationInvalidReason.check;
 import static tech.pegasys.teku.core.operationvalidators.OperationInvalidReason.firstOf;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 public class AttestationDataStateTransitionValidator
@@ -36,7 +36,9 @@ public class AttestationDataStateTransitionValidator
     return firstOf(
         () ->
             check(
-                data.getIndex().compareTo(get_committee_count_at_slot(state, data.getSlot())) < 0,
+                data.getIndex()
+                        .compareTo(get_committee_count_per_slot(state, data.getTarget().getEpoch()))
+                    < 0,
                 AttestationInvalidReason.COMMITTEE_INDEX_TOO_HIGH),
         () ->
             check(
@@ -50,15 +52,13 @@ public class AttestationDataStateTransitionValidator
         () ->
             check(
                 data.getSlot()
-                        .plus(UnsignedLong.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))
+                        .plus(UInt64.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))
                         .compareTo(state.getSlot())
                     <= 0,
                 AttestationInvalidReason.SUBMITTED_TOO_QUICKLY),
         () ->
             check(
-                state
-                        .getSlot()
-                        .compareTo(data.getSlot().plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH)))
+                state.getSlot().compareTo(data.getSlot().plus(UInt64.valueOf(SLOTS_PER_EPOCH)))
                     <= 0,
                 AttestationInvalidReason.SUBMITTED_TOO_LATE),
         () -> {

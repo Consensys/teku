@@ -19,7 +19,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSSignature;
 
 public abstract class SignatureTest {
 
@@ -45,14 +44,6 @@ public abstract class SignatureTest {
     Signature signature1 = getBls().randomSignature(1);
     Signature signature2 = getBls().randomSignature(2);
     assertNotEquals(signature1, signature2);
-  }
-
-  @Test
-  void succeedsWhenEqualsReturnsTrueForEmptySignatures() {
-    assertEquals(BLSSignature.empty().getSignature(), BLSSignature.empty().getSignature());
-    assertEquals(
-        BLSSignature.empty().getSignature().hashCode(),
-        BLSSignature.empty().getSignature().hashCode());
   }
 
   @Test

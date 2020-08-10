@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.util;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -32,6 +31,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.events.Subscribers;
@@ -41,10 +41,10 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final UnsignedLong DEFAULT_FUTURE_SLOT_TOLERANCE = UnsignedLong.valueOf(2);
-  private static final UnsignedLong DEFAULT_HISTORICAL_SLOT_TOLERANCE =
-      UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH * 10);
-  private static final UnsignedLong GENESIS_SLOT = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
+  private static final UInt64 DEFAULT_FUTURE_SLOT_TOLERANCE = UInt64.valueOf(2);
+  private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE =
+      UInt64.valueOf(Constants.SLOTS_PER_EPOCH * 10);
+  private static final UInt64 GENESIS_SLOT = UInt64.valueOf(Constants.GENESIS_SLOT);
 
   private final Subscribers<RequiredBlockRootSubscriber> requiredBlockRootSubscribers =
       Subscribers.create(true);
@@ -55,22 +55,22 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   private final Map<Bytes32, Set<Bytes32>> pendingItemsByRequiredBlockRoot =
       new ConcurrentHashMap<>();
   // Define the range of slots we care about
-  private final UnsignedLong futureSlotTolerance;
-  private final UnsignedLong historicalSlotTolerance;
+  private final UInt64 futureSlotTolerance;
+  private final UInt64 historicalSlotTolerance;
 
   private final Function<T, Bytes32> hashTreeRootFunction;
   private final Function<T, Collection<Bytes32>> requiredBlockRootsFunction;
-  private final Function<T, UnsignedLong> targetSlotFunction;
+  private final Function<T, UInt64> targetSlotFunction;
 
-  private volatile UnsignedLong currentSlot = UnsignedLong.ZERO;
-  private volatile UnsignedLong latestFinalizedSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
+  private volatile UInt64 currentSlot = UInt64.ZERO;
+  private volatile UInt64 latestFinalizedSlot = UInt64.valueOf(Constants.GENESIS_SLOT);
 
   PendingPool(
-      final UnsignedLong historicalSlotTolerance,
-      final UnsignedLong futureSlotTolerance,
+      final UInt64 historicalSlotTolerance,
+      final UInt64 futureSlotTolerance,
       final Function<T, Bytes32> hashTreeRootFunction,
       final Function<T, Collection<Bytes32>> requiredBlockRootsFunction,
-      final Function<T, UnsignedLong> targetSlotFunction) {
+      final Function<T, UInt64> targetSlotFunction) {
     this.historicalSlotTolerance = historicalSlotTolerance;
     this.futureSlotTolerance = futureSlotTolerance;
     this.hashTreeRootFunction = hashTreeRootFunction;
@@ -83,7 +83,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   }
 
   public static PendingPool<SignedBeaconBlock> createForBlocks(
-      final UnsignedLong historicalBlockTolerance, final UnsignedLong futureBlockTolerance) {
+      final UInt64 historicalBlockTolerance, final UInt64 futureBlockTolerance) {
     return new PendingPool<>(
         historicalBlockTolerance,
         futureBlockTolerance,
@@ -252,9 +252,9 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   }
 
   @Override
-  public void onSlot(final UnsignedLong slot) {
+  public void onSlot(final UInt64 slot) {
     currentSlot = slot;
-    if (currentSlot.mod(historicalSlotTolerance).equals(UnsignedLong.ZERO)) {
+    if (currentSlot.mod(historicalSlotTolerance).equals(UInt64.ZERO)) {
       // Purge old items
       prune();
     }
@@ -279,12 +279,12 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   }
 
   private boolean isFromFarFuture(final T item) {
-    final UnsignedLong slot = calculateFutureItemLimit();
+    final UInt64 slot = calculateFutureItemLimit();
     return targetSlotFunction.apply(item).compareTo(slot) > 0;
   }
 
   private boolean isOutsideOfHistoricalLimit(final T item) {
-    final UnsignedLong slot = calculateItemAgeLimit();
+    final UInt64 slot = calculateItemAgeLimit();
     return targetSlotFunction.apply(item).compareTo(slot) <= 0;
   }
 
@@ -292,17 +292,13 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     return targetSlotFunction.apply(item).compareTo(latestFinalizedSlot) <= 0;
   }
 
-  private UnsignedLong calculateItemAgeLimit() {
-    final UnsignedLong ageLimit =
-        currentSlot.minus(UnsignedLong.ONE).minus(historicalSlotTolerance);
-    if (ageLimit.compareTo(currentSlot) > 0) {
-      // If subtraction caused overflow, return genesis slot
-      return GENESIS_SLOT;
-    }
-    return ageLimit;
+  private UInt64 calculateItemAgeLimit() {
+    return currentSlot.compareTo(historicalSlotTolerance.plus(UInt64.ONE)) > 0
+        ? currentSlot.minus(UInt64.ONE).minus(historicalSlotTolerance)
+        : GENESIS_SLOT;
   }
 
-  private UnsignedLong calculateFutureItemLimit() {
+  private UInt64 calculateFutureItemLimit() {
     return currentSlot.plus(futureSlotTolerance);
   }
 

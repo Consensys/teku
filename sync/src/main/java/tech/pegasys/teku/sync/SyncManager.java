@@ -18,7 +18,6 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
-import com.google.common.primitives.UnsignedLong;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -30,6 +29,7 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -52,6 +52,14 @@ public class SyncManager extends Service {
 
   private boolean syncActive = false;
   private boolean syncQueued = false;
+  /**
+   * Tracks the last state we notified subscribers of. It differs from syncActive at the start of a
+   * sync because we set syncActive as soon as we begin, but only notify subscribers once we've
+   * actually found a valid peer to sync off to avoid briefly toggling to syncing and back off each
+   * time we look for sync targets.
+   */
+  private boolean subscribersSyncActive = false;
+
   private volatile long peerConnectSubscriptionId;
 
   private final AsyncRunner asyncRunner;
@@ -110,7 +118,6 @@ public class SyncManager extends Service {
         return;
       }
       syncActive = true;
-      syncSubscribers.deliver(SyncSubscriber::onSyncingChange, syncActive);
     }
 
     startSync();
@@ -126,7 +133,10 @@ public class SyncManager extends Service {
                   startSync();
                 } else {
                   syncActive = false;
-                  syncSubscribers.deliver(SyncSubscriber::onSyncingChange, syncActive);
+                  if (subscribersSyncActive) {
+                    subscribersSyncActive = false;
+                    syncSubscribers.deliver(SyncSubscriber::onSyncingChange, false);
+                  }
                 }
               }
             },
@@ -156,7 +166,7 @@ public class SyncManager extends Service {
     if (isSyncActive) {
       Optional<Eth2Peer> bestPeer = findBestSyncPeer();
       if (bestPeer.isPresent()) {
-        UnsignedLong highestSlot = bestPeer.get().getStatus().getHeadSlot();
+        UInt64 highestSlot = bestPeer.get().getStatus().getHeadSlot();
         final SyncStatus syncStatus =
             new SyncStatus(peerSync.getStartingSlot(), storageClient.getBestSlot(), highestSlot);
         return new SyncingStatus(true, syncStatus);
@@ -181,6 +191,12 @@ public class SyncManager extends Service {
 
   private SafeFuture<Void> syncToPeer(final Eth2Peer syncPeer) {
     LOG.trace("Sync to peer {}", syncPeer.getId());
+    synchronized (this) {
+      if (!subscribersSyncActive) {
+        subscribersSyncActive = true;
+        syncSubscribers.deliver(SyncSubscriber::onSyncingChange, true);
+      }
+    }
     return peerSync
         .sync(syncPeer)
         .thenCompose(
@@ -234,19 +250,19 @@ public class SyncManager extends Service {
   }
 
   private boolean isPeerSyncSuitable(Eth2Peer peer) {
-    UnsignedLong ourFinalizedEpoch = storageClient.getFinalizedEpoch();
+    UInt64 ourFinalizedEpoch = storageClient.getFinalizedEpoch();
     LOG.trace(
         "Looking for suitable peer (out of {}) with finalized epoch > {}.",
         network.getPeerCount(),
-        ourFinalizedEpoch.toString(10));
+        ourFinalizedEpoch);
     return !peersWithSyncErrors.contains(peer.getId())
         && (peer.getStatus().getFinalizedEpoch().compareTo(ourFinalizedEpoch) > 0
             || isHeadMoreThanAnEpochAhead(peer));
   }
 
   private boolean isHeadMoreThanAnEpochAhead(final Eth2Peer peer) {
-    final UnsignedLong ourHeadSlot = storageClient.getBestSlot();
-    final UnsignedLong theirHeadSlot = peer.getStatus().getHeadSlot();
-    return theirHeadSlot.compareTo(ourHeadSlot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH))) > 0;
+    final UInt64 ourHeadSlot = storageClient.getBestSlot();
+    final UInt64 theirHeadSlot = peer.getStatus().getHeadSlot();
+    return theirHeadSlot.compareTo(ourHeadSlot.plus(UInt64.valueOf(SLOTS_PER_EPOCH))) > 0;
   }
 }

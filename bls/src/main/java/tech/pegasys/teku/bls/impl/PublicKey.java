@@ -14,6 +14,7 @@
 package tech.pegasys.teku.bls.impl;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 
 /** This class represents a BLS12-381 public key. */
 public interface PublicKey {
@@ -23,7 +24,7 @@ public interface PublicKey {
    *
    * @return byte array of length 48 representation of the public key
    */
-  Bytes toBytesCompressed();
+  Bytes48 toBytesCompressed();
 
   /**
    * Verifies the given BLS signature against the message bytes using this public key.

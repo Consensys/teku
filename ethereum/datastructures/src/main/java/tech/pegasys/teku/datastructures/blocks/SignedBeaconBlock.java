@@ -14,7 +14,6 @@
 package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -22,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.util.hashtree.HashTreeUtil;
@@ -64,7 +64,7 @@ public class SignedBeaconBlock implements SimpleOffsetSerializable, SSZContainer
     return List.of(SimpleOffsetSerializer.serialize(message), Bytes.EMPTY);
   }
 
-  public UnsignedLong getSlot() {
+  public UInt64 getSlot() {
     return message.getSlot();
   }
 
@@ -120,6 +120,6 @@ public class SignedBeaconBlock implements SimpleOffsetSerializable, SSZContainer
     return HashTreeUtil.merkleize(
         List.of(
             message.hash_tree_root(),
-            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toBytes())));
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, signature.toSSZBytes())));
   }
 }

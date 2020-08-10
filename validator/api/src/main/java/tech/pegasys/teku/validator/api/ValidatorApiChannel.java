@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.api;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -24,28 +23,27 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.channels.ChannelInterface;
 
 public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<Optional<ForkInfo>> getForkInfo();
 
   SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
-      UnsignedLong epoch, Collection<BLSPublicKey> publicKeys);
+      UInt64 epoch, Collection<BLSPublicKey> publicKeys);
 
   SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
-      UnsignedLong slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);
+      UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);
 
-  SafeFuture<Optional<Attestation>> createUnsignedAttestation(
-      UnsignedLong slot, int committeeIndex);
+  SafeFuture<Optional<Attestation>> createUnsignedAttestation(UInt64 slot, int committeeIndex);
 
-  SafeFuture<Optional<Attestation>> createAggregate(AttestationData attestationData);
+  SafeFuture<Optional<Attestation>> createAggregate(Bytes32 attestationHashTreeRoot);
 
-  void subscribeToBeaconCommitteeForAggregation(int committeeIndex, UnsignedLong aggregationSlot);
+  void subscribeToBeaconCommitteeForAggregation(int committeeIndex, UInt64 aggregationSlot);
 
   void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 

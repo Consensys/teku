@@ -18,7 +18,6 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +27,7 @@ import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
+import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.ValidatorDuties;
@@ -35,6 +35,7 @@ import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties.Duties;
 
 public class ValidatorDataProvider {
+
   public static final String CANNOT_PRODUCE_FAR_FUTURE_BLOCK =
       "Cannot produce a block more than " + SLOTS_PER_EPOCH + " slots in the future.";
   public static final String CANNOT_PRODUCE_HISTORIC_BLOCK =
@@ -65,20 +67,20 @@ public class ValidatorDataProvider {
     return combinedChainDataClient.isStoreAvailable();
   }
 
-  public boolean isEpochFinalized(final UnsignedLong epoch) {
+  public boolean isEpochFinalized(final UInt64 epoch) {
     return combinedChainDataClient.isFinalizedEpoch(epoch);
   }
 
   public SafeFuture<Optional<BeaconBlock>> getUnsignedBeaconBlockAtSlot(
-      UnsignedLong slot, BLSSignature randao, Optional<Bytes32> graffiti) {
+      UInt64 slot, BLSSignature randao, Optional<Bytes32> graffiti) {
     if (slot == null) {
       throw new IllegalArgumentException(NO_SLOT_PROVIDED);
     }
     if (randao == null) {
       throw new IllegalArgumentException(NO_RANDAO_PROVIDED);
     }
-    UnsignedLong bestSlot = combinedChainDataClient.getBestSlot();
-    if (bestSlot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH)).compareTo(slot) < 0) {
+    UInt64 bestSlot = combinedChainDataClient.getBestSlot();
+    if (bestSlot.plus(UInt64.valueOf(SLOTS_PER_EPOCH)).compareTo(slot) < 0) {
       throw new IllegalArgumentException(CANNOT_PRODUCE_FAR_FUTURE_BLOCK);
     }
     if (bestSlot.compareTo(slot) > 0) {
@@ -87,12 +89,14 @@ public class ValidatorDataProvider {
 
     return validatorApiChannel
         .createUnsignedBlock(
-            slot, tech.pegasys.teku.bls.BLSSignature.fromBytes(randao.getBytes()), graffiti)
+            slot,
+            tech.pegasys.teku.bls.BLSSignature.fromBytesCompressed(randao.getBytes()),
+            graffiti)
         .thenApply(maybeBlock -> maybeBlock.map(BeaconBlock::new));
   }
 
   public SafeFuture<Optional<Attestation>> createUnsignedAttestationAtSlot(
-      UnsignedLong slot, int committeeIndex) {
+      UInt64 slot, int committeeIndex) {
     if (!isStoreAvailable()) {
       return SafeFuture.failedFuture(new ChainDataUnavailableException());
     }
@@ -123,7 +127,7 @@ public class ValidatorDataProvider {
             () -> {
               final List<BLSPublicKey> publicKeys =
                   validatorDutiesRequest.pubkeys.stream()
-                      .map(key -> BLSPublicKey.fromBytes(key.toBytes()))
+                      .map(key -> BLSPublicKey.fromSSZBytes(key.toBytes()))
                       .collect(toList());
               return validatorApiChannel.getDuties(validatorDutiesRequest.epoch, publicKeys);
             })
@@ -151,7 +155,7 @@ public class ValidatorDataProvider {
 
   public void submitAttestation(Attestation attestation) {
     // TODO (#2410): extra validation for the attestation we're posting?
-    if (attestation.signature.asInternalBLSSignature().toBytes().isZero()) {
+    if (attestation.signature.asInternalBLSSignature().toSSZBytes().isZero()) {
       throw new IllegalArgumentException("Signed attestations must have a non zero signature");
     }
     validatorApiChannel.sendSignedAttestation(attestation.asInternalAttestation());
@@ -181,5 +185,16 @@ public class ValidatorDataProvider {
               return new ValidatorBlockResult(
                   responseCode, blockImportResult.getFailureCause(), Optional.ofNullable(hashRoot));
             });
+  }
+
+  public SafeFuture<Optional<Attestation>> createAggregate(final Bytes32 attestationHashTreeRoot) {
+    return validatorApiChannel
+        .createAggregate(attestationHashTreeRoot)
+        .thenApply(maybeAttestation -> maybeAttestation.map(Attestation::new));
+  }
+
+  public void sendAggregateAndProof(SignedAggregateAndProof aggregateAndProof) {
+    validatorApiChannel.sendAggregateAndProof(
+        aggregateAndProof.asInternalSignedAggregateAndProof());
   }
 }

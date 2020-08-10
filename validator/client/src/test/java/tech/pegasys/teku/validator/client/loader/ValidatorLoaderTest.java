@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.loader;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,10 +26,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.signatures.LocalMessageSignerService;
+import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.validator.client.Validator;
-import tech.pegasys.teku.validator.client.signer.ExternalMessageSignerService;
 
 class ValidatorLoaderTest {
 
@@ -40,6 +40,10 @@ class ValidatorLoaderTest {
       "- {privkey: '0x25295f0d1d592a90b333e26e85149708208e9f8e8bc18f6c77bd62f8ad7a6866',\n"
           + "  pubkey: '0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44c'}";
 
+  private final SlashingProtector slashingProtector = mock(SlashingProtector.class);
+
+  private final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector);
+
   @Test
   void initializeValidatorsWithExternalMessageSignerWhenConfigHasExternalSigningPublicKeys() {
     final TekuConfiguration tekuConfiguration =
@@ -50,15 +54,14 @@ class ValidatorLoaderTest {
             .setValidatorKeystorePasswordFiles(emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        ValidatorLoader.initializeValidators(tekuConfiguration);
+        validatorLoader.initializeValidators(tekuConfiguration);
 
     assertThat(validators).hasSize(1);
-    final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
+    final BLSPublicKey key = BLSPublicKey.fromSSZBytes(Bytes.fromHexString(PUBLIC_KEY1));
     final Validator validator = validators.get(key);
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(key);
-    assertThat(validator.getSigner().getMessageSignerService())
-        .isInstanceOf(ExternalMessageSignerService.class);
+    assertThat(validator.getSigner().isLocal()).isFalse();
   }
 
   @Test
@@ -74,15 +77,14 @@ class ValidatorLoaderTest {
             .setValidatorKeystorePasswordFiles(emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        ValidatorLoader.initializeValidators(tekuConfiguration);
+        validatorLoader.initializeValidators(tekuConfiguration);
 
     assertThat(validators).hasSize(1);
-    final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
+    final BLSPublicKey key = BLSPublicKey.fromSSZBytes(Bytes.fromHexString(PUBLIC_KEY1));
     final Validator validator = validators.get(key);
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(key);
-    assertThat(validator.getSigner().getMessageSignerService())
-        .isInstanceOf(LocalMessageSignerService.class);
+    assertThat(validator.getSigner().isLocal()).isTrue();
   }
 
   @Test
@@ -100,23 +102,21 @@ class ValidatorLoaderTest {
             .setValidatorKeystorePasswordFiles(emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        ValidatorLoader.initializeValidators(tekuConfiguration);
+        validatorLoader.initializeValidators(tekuConfiguration);
 
     assertThat(validators).hasSize(2);
 
-    final BLSPublicKey key1 = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
+    final BLSPublicKey key1 = BLSPublicKey.fromSSZBytes(Bytes.fromHexString(PUBLIC_KEY1));
     final Validator validator1 = validators.get(key1);
     assertThat(validator1).isNotNull();
     assertThat(validator1.getPublicKey()).isEqualTo(key1);
-    assertThat(validator1.getSigner().getMessageSignerService())
-        .isInstanceOf(LocalMessageSignerService.class);
+    assertThat(validator1.getSigner().isLocal()).isTrue();
 
-    final BLSPublicKey key2 = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY2));
+    final BLSPublicKey key2 = BLSPublicKey.fromSSZBytes(Bytes.fromHexString(PUBLIC_KEY2));
     final Validator validator2 = validators.get(key2);
     assertThat(validator2).isNotNull();
     assertThat(validator2.getPublicKey()).isEqualTo(key2);
-    assertThat(validator2.getSigner().getMessageSignerService())
-        .isInstanceOf(ExternalMessageSignerService.class);
+    assertThat(validator2.getSigner().isLocal()).isFalse();
   }
 
   @Test
@@ -134,18 +134,17 @@ class ValidatorLoaderTest {
             .setValidatorKeystorePasswordFiles(emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        ValidatorLoader.initializeValidators(tekuConfiguration);
+        validatorLoader.initializeValidators(tekuConfiguration);
 
     // Both local and external validators get loaded.
     assertThat(validators).hasSize(1);
 
     // Local validators are listed first
-    final BLSPublicKey key = BLSPublicKey.fromBytes(Bytes.fromHexString(PUBLIC_KEY1));
+    final BLSPublicKey key = BLSPublicKey.fromSSZBytes(Bytes.fromHexString(PUBLIC_KEY1));
     final Validator validator = validators.get(key);
     assertThat(validator).isNotNull();
     assertThat(validator.getPublicKey()).isEqualTo(key);
-    assertThat(validator.getSigner().getMessageSignerService())
-        .isInstanceOf(ExternalMessageSignerService.class);
+    assertThat(validator.getSigner().isLocal()).isFalse();
   }
 
   @Test
@@ -159,7 +158,7 @@ class ValidatorLoaderTest {
             .setValidatorKeystorePasswordFiles(emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        ValidatorLoader.initializeValidators(tekuConfiguration);
+        validatorLoader.initializeValidators(tekuConfiguration);
 
     assertThat(validators).hasSize(ownedValidatorCount);
   }
@@ -175,7 +174,7 @@ class ValidatorLoaderTest {
             .setValidatorKeystorePasswordFiles(emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        ValidatorLoader.initializeValidators(tekuConfiguration);
+        validatorLoader.initializeValidators(tekuConfiguration);
 
     assertThat(validators).isEmpty();
   }

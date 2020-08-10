@@ -28,8 +28,8 @@ public class MinGenesisTimeBlockEventSerializerTest {
   void shouldSurviveSerialization() {
     final MinGenesisTimeBlockEvent original =
         new MinGenesisTimeBlockEvent(
-            dataStructureUtil.randomUnsignedLong(),
-            dataStructureUtil.randomUnsignedLong(),
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomBytes32());
     final byte[] serialized = serializer.serialize(original);
     final MinGenesisTimeBlockEvent deserialized = serializer.deserialize(serialized);

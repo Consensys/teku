@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.pow;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ThrottlingEth1Provider implements Eth1Provider {
   private final Eth1Provider delegate;
@@ -33,7 +33,7 @@ public class ThrottlingEth1Provider implements Eth1Provider {
   }
 
   @Override
-  public SafeFuture<Block> getEth1Block(final UnsignedLong blockNumber) {
+  public SafeFuture<Block> getEth1Block(final UInt64 blockNumber) {
     return queueRequest(() -> delegate.getEth1Block(blockNumber));
   }
 
@@ -43,7 +43,7 @@ public class ThrottlingEth1Provider implements Eth1Provider {
   }
 
   @Override
-  public SafeFuture<Block> getGuaranteedEth1Block(final UnsignedLong blockNumber) {
+  public SafeFuture<Block> getGuaranteedEth1Block(final UInt64 blockNumber) {
     return queueRequest(() -> delegate.getGuaranteedEth1Block(blockNumber));
   }
 
@@ -59,7 +59,7 @@ public class ThrottlingEth1Provider implements Eth1Provider {
 
   @Override
   public SafeFuture<EthCall> ethCall(
-      final String from, final String to, final String data, final UnsignedLong blockNumber) {
+      final String from, final String to, final String data, final UInt64 blockNumber) {
     return queueRequest(() -> delegate.ethCall(from, to, data, blockNumber));
   }
 

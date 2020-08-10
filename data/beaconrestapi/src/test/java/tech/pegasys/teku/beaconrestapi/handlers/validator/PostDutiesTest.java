@@ -23,7 +23,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
 
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import java.util.Collections;
@@ -38,6 +37,7 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class PostDutiesTest {
@@ -45,7 +45,7 @@ public class PostDutiesTest {
   private static final List<String> pubKeys =
       keyPairs.stream()
           .map(BLSKeyPair::getPublicKey)
-          .map(BLSPublicKey::toBytes)
+          .map(BLSPublicKey::toSSZBytes)
           .map(Bytes::toHexString)
           .collect(Collectors.toList());
   private Context context = mock(Context.class);
@@ -75,7 +75,7 @@ public class PostDutiesTest {
 
   @Test
   public void shouldHandleMissingResultForFinalizedEpoch() throws Exception {
-    final UnsignedLong epoch = UnsignedLong.ZERO;
+    final UInt64 epoch = UInt64.ZERO;
     final String body =
         String.format("{\"epoch\":%s, \"pubkeys\":[\"%s\"]}", epoch, pubKeys.get(0));
 
@@ -96,7 +96,7 @@ public class PostDutiesTest {
 
   @Test
   public void shouldHandleMissingResultForNonFinalizedEpoch() throws Exception {
-    final UnsignedLong epoch = UnsignedLong.ZERO;
+    final UInt64 epoch = UInt64.ZERO;
     final String body =
         String.format("{\"epoch\":%s, \"pubkeys\":[\"%s\"]}", epoch, pubKeys.get(0));
 

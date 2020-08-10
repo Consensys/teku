@@ -13,13 +13,12 @@
 
 package tech.pegasys.teku.beaconrestapi.beacon;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +29,7 @@ import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetBlock;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetBlockWithDataIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
@@ -83,11 +83,11 @@ public class GetBlockWithDataIntegrationTest extends AbstractDataBackedRestAPIIn
     assertThat(result.signedBeaconBlock).usingRecursiveComparison().isEqualTo(blocks.get(1));
   }
 
-  private Response getByEpoch(final UnsignedLong epoch) throws IOException {
+  private Response getByEpoch(final UInt64 epoch) throws IOException {
     return getResponse(GetBlock.ROUTE, Map.of(EPOCH, epoch.toString()));
   }
 
-  private Response getBySlot(final UnsignedLong slot) throws IOException {
+  private Response getBySlot(final UInt64 slot) throws IOException {
     return getResponse(GetBlock.ROUTE, Map.of(SLOT, slot.toString()));
   }
 }

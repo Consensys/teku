@@ -61,7 +61,7 @@ public class BlsVerifyTestExecutor implements TestExecutor {
     private String signature;
 
     public BLSPublicKey getPublicKey() {
-      return BLSPublicKey.fromBytes(Bytes.fromHexString(publicKey));
+      return BLSPublicKey.fromSSZBytes(Bytes.fromHexString(publicKey));
     }
 
     public Bytes getMessage() {

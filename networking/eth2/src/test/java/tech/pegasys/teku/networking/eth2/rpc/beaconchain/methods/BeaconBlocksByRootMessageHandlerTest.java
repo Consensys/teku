@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -50,6 +51,8 @@ public class BeaconBlocksByRootMessageHandlerTest {
 
   @BeforeEach
   public void setup() {
+    when(peer.wantToMakeRequest()).thenReturn(true);
+    when(peer.wantToReceiveObjects(any(), anyLong())).thenReturn(true);
     when(recentChainData.getStore()).thenReturn(store);
   }
 

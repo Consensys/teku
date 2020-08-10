@@ -13,16 +13,15 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggregateAttestations;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_RETENTION_EPOCHS;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
@@ -34,12 +33,13 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.util.config.Constants;
 
 class AggregatingAttestationPoolTest {
 
-  public static final UnsignedLong SLOT = UnsignedLong.valueOf(1234);
+  public static final UInt64 SLOT = UInt64.valueOf(1234);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final AttestationDataStateTransitionValidator attestationDataValidator =
       mock(AttestationDataStateTransitionValidator.class);
@@ -55,7 +55,8 @@ class AggregatingAttestationPoolTest {
   @Test
   public void createAggregateFor_shouldReturnEmptyWhenNoAttestationsMatchGivenData() {
     final Optional<ValidateableAttestation> result =
-        aggregatingPool.createAggregateFor(dataStructureUtil.randomAttestationData());
+        aggregatingPool.createAggregateFor(
+            dataStructureUtil.randomAttestationData().hashTreeRoot());
     assertThat(result).isEmpty();
   }
 
@@ -66,7 +67,7 @@ class AggregatingAttestationPoolTest {
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 4, 6);
 
     final Optional<ValidateableAttestation> result =
-        aggregatingPool.createAggregateFor(attestationData);
+        aggregatingPool.createAggregateFor(attestationData.hashTreeRoot());
     assertThat(result.map(ValidateableAttestation::getAttestation))
         .contains(aggregateAttestations(attestation1, attestation2));
   }
@@ -79,7 +80,7 @@ class AggregatingAttestationPoolTest {
     addAttestationFromValidators(attestationData, 2, 3, 9);
 
     final Optional<ValidateableAttestation> result =
-        aggregatingPool.createAggregateFor(attestationData);
+        aggregatingPool.createAggregateFor(attestationData.hashTreeRoot());
     assertThat(result.map(ValidateableAttestation::getAttestation))
         .contains(aggregateAttestations(attestation1, attestation2));
   }
@@ -148,6 +149,24 @@ class AggregatingAttestationPoolTest {
   }
 
   @Test
+  void getAttestationsForBlock_shouldIncludeMoreRecentAttestationsFirst() {
+    final AttestationData attestationData1 =
+        dataStructureUtil.randomAttestationData(UInt64.valueOf(5));
+    final AttestationData attestationData2 =
+        dataStructureUtil.randomAttestationData(UInt64.valueOf(6));
+    final AttestationData attestationData3 =
+        dataStructureUtil.randomAttestationData(UInt64.valueOf(7));
+    final Attestation attestation1 = addAttestationFromValidators(attestationData1, 1, 2);
+    final Attestation attestation2 = addAttestationFromValidators(attestationData2, 3, 4);
+    final Attestation attestation3 = addAttestationFromValidators(attestationData3, 5, 6);
+
+    final BeaconState stateAtBlockSlot = dataStructureUtil.randomBeaconState(UInt64.valueOf(10));
+
+    assertThat(aggregatingPool.getAttestationsForBlock(stateAtBlockSlot))
+        .containsExactly(attestation3, attestation2, attestation1);
+  }
+
+  @Test
   public void getAttestationsForBlock_shouldNotAddMoreAttestationsThanAllowedInBlock() {
     final BeaconState state = dataStructureUtil.randomBeaconState();
     Constants.MAX_ATTESTATIONS = 2;
@@ -173,7 +192,7 @@ class AggregatingAttestationPoolTest {
     aggregatingPool.onSlot(
         pruneAttestationData
             .getSlot()
-            .plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH * ATTESTATION_RETENTION_EPOCHS))
+            .plus(UInt64.valueOf(SLOTS_PER_EPOCH * ATTESTATION_RETENTION_EPOCHS))
             .plus(ONE));
 
     assertThat(aggregatingPool.getAttestationsForBlock(dataStructureUtil.randomBeaconState()))

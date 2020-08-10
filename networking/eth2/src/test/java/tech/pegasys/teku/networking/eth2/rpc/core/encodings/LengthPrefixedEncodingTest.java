@@ -18,8 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.util.config.Constants.MAX_CHUNK_SIZE;
 
-import com.google.common.primitives.UnsignedLong;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -27,7 +27,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.Utils;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ChunkTooLongException;
@@ -249,6 +251,20 @@ class LengthPrefixedEncodingTest {
   }
 
   @Test
+  void encodePayload_shouldReturnZeroBytesForEmptyMessages() {
+    final Bytes result = encoding.encodePayload(new EmptyMessage());
+    assertThat(result).isEqualTo(Bytes.EMPTY);
+  }
+
+  @Test
+  void shouldDecodeEmptyMessage() throws Exception {
+    final RpcByteBufDecoder<EmptyMessage> decoder = encoding.createDecoder(EmptyMessage.class);
+    final Optional<EmptyMessage> message =
+        decoder.decodeOneMessage(Unpooled.wrappedBuffer(new byte[0]));
+    assertThat(message).contains(EmptyMessage.EMPTY_MESSAGE);
+  }
+
+  @Test
   public void roundtrip_blocksByRootRequest() throws Exception {
     final BeaconBlocksByRootRequestMessage request =
         new BeaconBlocksByRootRequestMessage(
@@ -283,9 +299,9 @@ class LengthPrefixedEncodingTest {
         new StatusMessage(
             new Bytes4(Bytes.of(0, 0, 0, 0)),
             Bytes32.ZERO,
-            UnsignedLong.ZERO,
+            UInt64.ZERO,
             Bytes32.ZERO,
-            UnsignedLong.ZERO));
+            UInt64.ZERO));
   }
 
   private ByteBuf inputByteBuffer(final Bytes... data) {

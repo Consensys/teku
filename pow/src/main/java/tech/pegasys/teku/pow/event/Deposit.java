@@ -14,12 +14,13 @@
 package tech.pegasys.teku.pow.event;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.contract.DepositContract;
 
 public class Deposit {
@@ -27,23 +28,23 @@ public class Deposit {
   private final BLSPublicKey pubkey;
   private final Bytes32 withdrawal_credentials;
   private final BLSSignature signature;
-  private final UnsignedLong amount;
-  private final UnsignedLong merkle_tree_index;
+  private final UInt64 amount;
+  private final UInt64 merkle_tree_index;
 
   public Deposit(DepositContract.DepositEventEventResponse response) {
-    this.merkle_tree_index = UnsignedLong.valueOf(Bytes.wrap(response.index).reverse().toLong());
-    this.pubkey = BLSPublicKey.fromBytesCompressed(Bytes.wrap(response.pubkey));
+    this.merkle_tree_index = UInt64.valueOf(Bytes.wrap(response.index).reverse().toLong());
+    this.pubkey = BLSPublicKey.fromBytesCompressed(Bytes48.wrap(response.pubkey));
     this.withdrawal_credentials = Bytes32.wrap(response.withdrawal_credentials);
-    this.signature = BLSSignature.fromBytes(Bytes.wrap(response.signature));
-    this.amount = UnsignedLong.valueOf(Bytes.wrap(response.amount).reverse().toLong());
+    this.signature = BLSSignature.fromBytesCompressed(Bytes.wrap(response.signature));
+    this.amount = UInt64.valueOf(Bytes.wrap(response.amount).reverse().toLong());
   }
 
   public Deposit(
       BLSPublicKey pubkey,
       Bytes32 withdrawal_credentials,
       BLSSignature signature,
-      UnsignedLong amount,
-      UnsignedLong merkle_tree_index) {
+      UInt64 amount,
+      UInt64 merkle_tree_index) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.signature = signature;
@@ -51,7 +52,7 @@ public class Deposit {
     this.merkle_tree_index = merkle_tree_index;
   }
 
-  public UnsignedLong getMerkle_tree_index() {
+  public UInt64 getMerkle_tree_index() {
     return merkle_tree_index;
   }
 
@@ -63,7 +64,7 @@ public class Deposit {
     return withdrawal_credentials;
   }
 
-  public UnsignedLong getAmount() {
+  public UInt64 getAmount() {
     return amount;
   }
 

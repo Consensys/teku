@@ -15,13 +15,13 @@ package tech.pegasys.teku.pow;
 
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.time.TimeProvider;
 
 public class Eth1StatusLogger {
@@ -48,7 +48,7 @@ public class Eth1StatusLogger {
 
   synchronized void fail() {
     if (activeReporter.isEmpty()) {
-      final UnsignedLong outageStartInSeconds = timeProvider.getTimeInSeconds();
+      final UInt64 outageStartInSeconds = timeProvider.getTimeInSeconds();
       final Cancellable reporter =
           asyncRunner.runWithFixedDelay(
               () -> reportOutage(outageStartInSeconds),
@@ -59,7 +59,7 @@ public class Eth1StatusLogger {
     }
   }
 
-  private void reportOutage(final UnsignedLong outageStartInSeconds) {
+  private void reportOutage(final UInt64 outageStartInSeconds) {
     STATUS_LOG.eth1ServiceDown(
         timeProvider.getTimeInSeconds().minus(outageStartInSeconds).longValue());
   }

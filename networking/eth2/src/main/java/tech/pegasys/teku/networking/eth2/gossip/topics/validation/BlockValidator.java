@@ -22,11 +22,11 @@ import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPA
 import static tech.pegasys.teku.util.config.Constants.VALID_BLOCK_SET_SIZE;
 
 import com.google.common.base.Objects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.StateTransition;
@@ -37,6 +37,7 @@ import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
 import tech.pegasys.teku.util.collections.LimitStrategy;
@@ -95,15 +96,14 @@ public class BlockValidator {
   private boolean blockIsFromFutureSlot(SignedBeaconBlock block) {
     ReadOnlyStore store = recentChainData.getStore();
     final long disparityInSeconds = Math.round((float) MAXIMUM_GOSSIP_CLOCK_DISPARITY / 1000.0);
-    final UnsignedLong maxOffset = UnsignedLong.valueOf(disparityInSeconds);
-    final UnsignedLong maxTime = store.getTime().plus(maxOffset);
-    UnsignedLong maxCurrSlot = getCurrentSlot(maxTime, store.getGenesisTime());
+    final UInt64 maxOffset = UInt64.valueOf(disparityInSeconds);
+    final UInt64 maxTime = store.getTime().plus(maxOffset);
+    UInt64 maxCurrSlot = getCurrentSlot(maxTime, store.getGenesisTime());
     return block.getSlot().compareTo(maxCurrSlot) > 0;
   }
 
   private boolean blockSlotIsGreaterThanLatestFinalizedSlot(SignedBeaconBlock block) {
-    UnsignedLong finalizedSlot =
-        recentChainData.getStore().getFinalizedCheckpoint().getEpochStartSlot();
+    UInt64 finalizedSlot = recentChainData.getStore().getFinalizedCheckpoint().getEpochStartSlot();
     return block.getSlot().compareTo(finalizedSlot) > 0;
   }
 
@@ -113,7 +113,7 @@ public class BlockValidator {
 
   private boolean blockSignatureIsValidWithRespectToProposerIndex(
       SignedBeaconBlock block, BeaconState preState, BeaconState postState) {
-    final Bytes domain = get_domain(preState, DOMAIN_BEACON_PROPOSER);
+    final Bytes32 domain = get_domain(preState, DOMAIN_BEACON_PROPOSER);
     final Bytes signing_root = compute_signing_root(block.getMessage(), domain);
     final BLSSignature signature = block.getSignature();
 
@@ -132,8 +132,8 @@ public class BlockValidator {
   }
 
   private static class SlotAndProposer {
-    private final UnsignedLong slot;
-    private final UnsignedLong proposer_index;
+    private final UInt64 slot;
+    private final UInt64 proposer_index;
 
     public SlotAndProposer(SignedBeaconBlock block) {
       this.slot = block.getSlot();

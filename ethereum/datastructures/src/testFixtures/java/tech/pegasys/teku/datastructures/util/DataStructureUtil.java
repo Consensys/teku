@@ -20,7 +20,6 @@ import static tech.pegasys.teku.util.config.Constants.DOMAIN_DEPOSIT;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
@@ -62,6 +61,7 @@ import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
@@ -72,6 +72,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.Eth1Address;
 
 public final class DataStructureUtil {
 
@@ -99,8 +100,12 @@ public final class DataStructureUtil {
     return new Random(nextSeed()).nextLong();
   }
 
-  public UnsignedLong randomUnsignedLong() {
-    return UnsignedLong.fromLongBits(randomLong());
+  public UInt64 randomUInt64() {
+    return UInt64.fromLongBits(randomLong());
+  }
+
+  public Eth1Address randomEth1Address() {
+    return new Eth1Address(randomBytes32().slice(0, 20));
   }
 
   private Bytes4 randomBytes4() {
@@ -175,20 +180,28 @@ public final class DataStructureUtil {
   }
 
   public Eth1Data randomEth1Data() {
-    return new Eth1Data(randomBytes32(), randomUnsignedLong(), randomBytes32());
+    return new Eth1Data(randomBytes32(), randomUInt64(), randomBytes32());
+  }
+
+  /**
+   * A random UInt64 that is within a reasonable bound for an epoch number. The maximum value
+   * returned won't be reached for another 12,000 years or so.
+   */
+  public UInt64 randomEpoch() {
+    return UInt64.valueOf(new Random(nextSeed()).nextInt(1_000_000_000));
   }
 
   public Checkpoint randomCheckpoint() {
-    return new Checkpoint(randomUnsignedLong(), randomBytes32());
+    return new Checkpoint(randomEpoch(), randomBytes32());
   }
 
   public AttestationData randomAttestationData() {
-    return randomAttestationData(randomUnsignedLong());
+    return randomAttestationData(randomUInt64());
   }
 
-  public AttestationData randomAttestationData(final UnsignedLong slot) {
+  public AttestationData randomAttestationData(final UInt64 slot) {
     return new AttestationData(
-        slot, randomUnsignedLong(), randomBytes32(), randomCheckpoint(), randomCheckpoint());
+        slot, randomUInt64(), randomBytes32(), randomCheckpoint(), randomCheckpoint());
   }
 
   public Attestation randomAttestation() {
@@ -196,7 +209,7 @@ public final class DataStructureUtil {
   }
 
   public AggregateAndProof randomAggregateAndProof() {
-    return new AggregateAndProof(randomUnsignedLong(), randomAttestation(), randomSignature());
+    return new AggregateAndProof(randomUInt64(), randomAttestation(), randomSignature());
   }
 
   public SignedAggregateAndProof randomSignedAggregateAndProof() {
@@ -204,12 +217,12 @@ public final class DataStructureUtil {
   }
 
   public VoteTracker randomVoteTracker() {
-    return new VoteTracker(randomBytes32(), randomBytes32(), randomUnsignedLong());
+    return new VoteTracker(randomBytes32(), randomBytes32(), randomUInt64());
   }
 
   public PendingAttestation randomPendingAttestation() {
     return new PendingAttestation(
-        randomBitlist(), randomAttestationData(), randomUnsignedLong(), randomUnsignedLong());
+        randomBitlist(), randomAttestationData(), randomUInt64(), randomUInt64());
   }
 
   public AttesterSlashing randomAttesterSlashing() {
@@ -230,7 +243,7 @@ public final class DataStructureUtil {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     SignedBeaconBlock parentBlock = parent;
     for (int i = 0; i < count; i++) {
-      final long nextSlot = parentBlock.getSlot().plus(UnsignedLong.ONE).longValue();
+      final long nextSlot = parentBlock.getSlot().plus(UInt64.ONE).longValue();
       final Bytes32 parentRoot = parentBlock.getRoot();
       final SignedBeaconBlock block = randomSignedBeaconBlock(nextSlot, parentRoot, full);
       blocks.add(block);
@@ -244,9 +257,9 @@ public final class DataStructureUtil {
     final List<SignedBlockAndState> blocks = new ArrayList<>();
     SignedBeaconBlock parentBlock = parent;
     for (int i = 0; i < count; i++) {
-      final long nextSlot = parentBlock.getSlot().plus(UnsignedLong.ONE).longValue();
+      final long nextSlot = parentBlock.getSlot().plus(UInt64.ONE).longValue();
       final Bytes32 parentRoot = parentBlock.getRoot();
-      final BeaconState state = randomBeaconState(UnsignedLong.valueOf(nextSlot));
+      final BeaconState state = randomBeaconState(UInt64.valueOf(nextSlot));
       final Bytes32 stateRoot = state.hash_tree_root();
       final SignedBeaconBlock block =
           signedBlock(randomBeaconBlock(nextSlot, parentRoot, stateRoot, full));
@@ -257,10 +270,10 @@ public final class DataStructureUtil {
   }
 
   public SignedBeaconBlock randomSignedBeaconBlock(long slotNum) {
-    return randomSignedBeaconBlock(UnsignedLong.valueOf(slotNum));
+    return randomSignedBeaconBlock(UInt64.valueOf(slotNum));
   }
 
-  public SignedBeaconBlock randomSignedBeaconBlock(UnsignedLong slotNum) {
+  public SignedBeaconBlock randomSignedBeaconBlock(UInt64 slotNum) {
     final BeaconBlock beaconBlock = randomBeaconBlock(slotNum);
     return new SignedBeaconBlock(beaconBlock, randomSignature());
   }
@@ -279,24 +292,24 @@ public final class DataStructureUtil {
   }
 
   public SignedBeaconBlock randomSignedBeaconBlock(long slotNum, BeaconState state) {
-    return randomSignedBeaconBlock(UnsignedLong.valueOf(slotNum), state);
+    return randomSignedBeaconBlock(UInt64.valueOf(slotNum), state);
   }
 
-  public SignedBeaconBlock randomSignedBeaconBlock(UnsignedLong slotNum, BeaconState state) {
+  public SignedBeaconBlock randomSignedBeaconBlock(UInt64 slotNum, BeaconState state) {
     final BeaconBlockBody body = randomBeaconBlockBody();
     final Bytes32 stateRoot = state.hash_tree_root();
 
     final BeaconBlock block =
-        new BeaconBlock(slotNum, randomUnsignedLong(), randomBytes32(), stateRoot, body);
+        new BeaconBlock(slotNum, randomUInt64(), randomBytes32(), stateRoot, body);
     return new SignedBeaconBlock(block, randomSignature());
   }
 
   public BeaconBlock randomBeaconBlock(long slotNum) {
-    return randomBeaconBlock(UnsignedLong.valueOf(slotNum));
+    return randomBeaconBlock(UInt64.valueOf(slotNum));
   }
 
-  public BeaconBlock randomBeaconBlock(UnsignedLong slotNum) {
-    final UnsignedLong proposer_index = randomUnsignedLong();
+  public BeaconBlock randomBeaconBlock(UInt64 slotNum) {
+    final UInt64 proposer_index = randomUInt64();
     Bytes32 previous_root = randomBytes32();
     Bytes32 state_root = randomBytes32();
     BeaconBlockBody body = randomBeaconBlockBody();
@@ -304,7 +317,7 @@ public final class DataStructureUtil {
     return new BeaconBlock(slotNum, proposer_index, previous_root, state_root, body);
   }
 
-  public SignedBlockAndState randomSignedBlockAndState(final UnsignedLong slot) {
+  public SignedBlockAndState randomSignedBlockAndState(final UInt64 slot) {
     final BeaconBlockAndState blockAndState = randomBlockAndState(slot);
 
     final SignedBeaconBlock signedBlock =
@@ -313,21 +326,21 @@ public final class DataStructureUtil {
   }
 
   public BeaconBlockAndState randomBlockAndState(final long slot, final BeaconState beaconState) {
-    final UnsignedLong unsignedSlot = UnsignedLong.valueOf(slot);
+    final UInt64 unsignedSlot = UInt64.valueOf(slot);
     final BeaconState state = beaconState.updated(b -> b.setSlot(unsignedSlot));
     return randomBlockAndState(unsignedSlot, state);
   }
 
-  public BeaconBlockAndState randomBlockAndState(final UnsignedLong slot) {
+  public BeaconBlockAndState randomBlockAndState(final UInt64 slot) {
     final BeaconState state = randomBeaconState(slot);
     return randomBlockAndState(slot, state);
   }
 
-  public BeaconBlockAndState randomBlockAndState(final UnsignedLong slot, final BeaconState state) {
+  public BeaconBlockAndState randomBlockAndState(final UInt64 slot, final BeaconState state) {
     final Bytes32 parentRoot = randomBytes32();
     final Bytes32 state_root = state.hash_tree_root();
     final BeaconBlockBody body = randomBeaconBlockBody();
-    final UnsignedLong proposer_index = randomUnsignedLong();
+    final UInt64 proposer_index = randomUInt64();
     final BeaconBlock block = new BeaconBlock(slot, proposer_index, parentRoot, state_root, body);
 
     return new BeaconBlockAndState(block, state);
@@ -339,9 +352,9 @@ public final class DataStructureUtil {
 
   public BeaconBlock randomBeaconBlock(
       long slotNum, Bytes32 parentRoot, final Bytes32 stateRoot, boolean isFull) {
-    UnsignedLong slot = UnsignedLong.valueOf(slotNum);
+    UInt64 slot = UInt64.valueOf(slotNum);
 
-    final UnsignedLong proposer_index = randomUnsignedLong();
+    final UInt64 proposer_index = randomUInt64();
     BeaconBlockBody body = !isFull ? randomBeaconBlockBody() : randomFullBeaconBlockBody();
 
     return new BeaconBlock(slot, proposer_index, parentRoot, stateRoot, body);
@@ -357,11 +370,7 @@ public final class DataStructureUtil {
 
   public BeaconBlockHeader randomBeaconBlockHeader() {
     return new BeaconBlockHeader(
-        randomUnsignedLong(),
-        randomUnsignedLong(),
-        randomBytes32(),
-        randomBytes32(),
-        randomBytes32());
+        randomUInt64(), randomUInt64(), randomBytes32(), randomBytes32(), randomBytes32());
   }
 
   public BeaconBlockBody randomBeaconBlockBody() {
@@ -403,11 +412,11 @@ public final class DataStructureUtil {
   }
 
   public IndexedAttestation randomIndexedAttestation() {
-    SSZMutableList<UnsignedLong> attesting_indices =
-        SSZList.createMutable(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
-    attesting_indices.add(randomUnsignedLong());
-    attesting_indices.add(randomUnsignedLong());
-    attesting_indices.add(randomUnsignedLong());
+    SSZMutableList<UInt64> attesting_indices =
+        SSZList.createMutable(UInt64.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+    attesting_indices.add(randomUInt64());
+    attesting_indices.add(randomUInt64());
+    attesting_indices.add(randomUInt64());
     return new IndexedAttestation(attesting_indices, randomAttestationData(), randomSignature());
   }
 
@@ -418,9 +427,9 @@ public final class DataStructureUtil {
 
     DepositMessage proof_of_possession_data =
         new DepositMessage(
-            pubkey, withdrawal_credentials, UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
+            pubkey, withdrawal_credentials, UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
 
-    final Bytes domain = compute_domain(DOMAIN_DEPOSIT);
+    final Bytes32 domain = compute_domain(DOMAIN_DEPOSIT);
     final Bytes signing_root = compute_signing_root(proof_of_possession_data, domain);
 
     BLSSignature proof_of_possession = BLS.sign(keyPair.getSecretKey(), signing_root);
@@ -436,26 +445,25 @@ public final class DataStructureUtil {
     return new DepositWithIndex(
         SSZVector.createMutable(32, randomBytes32()),
         randomDepositData(),
-        UnsignedLong.valueOf(depositIndex));
+        UInt64.valueOf(depositIndex));
   }
 
   public DepositsFromBlockEvent randomDepositsFromBlockEvent(
       final long blockIndex, long depositCount) {
-    return randomDepositsFromBlockEvent(UnsignedLong.valueOf(blockIndex), depositCount);
+    return randomDepositsFromBlockEvent(UInt64.valueOf(blockIndex), depositCount);
   }
 
-  public DepositsFromBlockEvent randomDepositsFromBlockEvent(
-      UnsignedLong blockIndex, long depositCount) {
+  public DepositsFromBlockEvent randomDepositsFromBlockEvent(UInt64 blockIndex, long depositCount) {
     List<tech.pegasys.teku.pow.event.Deposit> deposits = new ArrayList<>();
     for (long i = 0; i < depositCount; i++) {
-      deposits.add(randomDepositEvent(UnsignedLong.valueOf(i)));
+      deposits.add(randomDepositEvent(UInt64.valueOf(i)));
     }
-    return new DepositsFromBlockEvent(blockIndex, randomBytes32(), randomUnsignedLong(), deposits);
+    return new DepositsFromBlockEvent(blockIndex, randomBytes32(), randomUInt64(), deposits);
   }
 
   public MinGenesisTimeBlockEvent randomMinGenesisTimeBlockEvent(final long blockIndex) {
     return new MinGenesisTimeBlockEvent(
-        randomUnsignedLong(), UnsignedLong.valueOf(blockIndex), randomBytes32());
+        randomUInt64(), UInt64.valueOf(blockIndex), randomBytes32());
   }
 
   public Deposit randomDepositWithoutIndex() {
@@ -470,17 +478,13 @@ public final class DataStructureUtil {
         randomDepositData());
   }
 
-  public tech.pegasys.teku.pow.event.Deposit randomDepositEvent(UnsignedLong index) {
+  public tech.pegasys.teku.pow.event.Deposit randomDepositEvent(UInt64 index) {
     return new tech.pegasys.teku.pow.event.Deposit(
-        BLSPublicKey.random(nextSeed()),
-        randomBytes32(),
-        randomSignature(),
-        randomUnsignedLong(),
-        index);
+        BLSPublicKey.random(nextSeed()), randomBytes32(), randomSignature(), randomUInt64(), index);
   }
 
   public tech.pegasys.teku.pow.event.Deposit randomDepositEvent() {
-    return randomDepositEvent(randomUnsignedLong());
+    return randomDepositEvent(randomUInt64());
   }
 
   public ArrayList<DepositWithIndex> randomDeposits(int num) {
@@ -498,7 +502,7 @@ public final class DataStructureUtil {
   }
 
   public VoluntaryExit randomVoluntaryExit() {
-    return new VoluntaryExit(randomUnsignedLong(), randomUnsignedLong());
+    return new VoluntaryExit(randomUInt64(), randomUInt64());
   }
 
   public SSZList<DepositWithIndex> newDeposits(int numDeposits) {
@@ -510,13 +514,11 @@ public final class DataStructureUtil {
       BLSKeyPair keypair = BLSKeyPair.random(i);
       DepositData depositData =
           depositGenerator.createDepositData(
-              keypair,
-              UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
-              keypair.getPublicKey());
+              keypair, UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE), keypair.getPublicKey());
 
       SSZVector<Bytes32> proof =
           SSZVector.createMutable(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, Bytes32.ZERO);
-      DepositWithIndex deposit = new DepositWithIndex(proof, depositData, UnsignedLong.valueOf(i));
+      DepositWithIndex deposit = new DepositWithIndex(proof, depositData, UInt64.valueOf(i));
       deposits.add(deposit);
     }
     return deposits;
@@ -526,7 +528,7 @@ public final class DataStructureUtil {
     return Validator.create(
         randomPublicKey(),
         randomBytes32(),
-        UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
+        UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
         false,
         Constants.FAR_FUTURE_EPOCH,
         Constants.FAR_FUTURE_EPOCH,
@@ -535,7 +537,7 @@ public final class DataStructureUtil {
   }
 
   public Fork randomFork() {
-    return new Fork(randomBytes4(), randomBytes4(), randomUnsignedLong());
+    return new Fork(randomBytes4(), randomBytes4(), randomUInt64());
   }
 
   public ForkInfo randomForkInfo() {
@@ -543,7 +545,7 @@ public final class DataStructureUtil {
   }
 
   public EnrForkId randomEnrForkId() {
-    return new EnrForkId(randomBytes4(), randomBytes4(), randomUnsignedLong());
+    return new EnrForkId(randomBytes4(), randomBytes4(), randomUInt64());
   }
 
   public BeaconState randomBeaconState() {
@@ -552,9 +554,9 @@ public final class DataStructureUtil {
 
   public BeaconState randomBeaconState(final int validatorCount) {
     return BeaconState.create(
-        randomUnsignedLong(),
+        randomUInt64(),
         randomBytes32(),
-        randomUnsignedLong(),
+        randomUInt64(),
         randomFork(),
         randomBeaconBlockHeader(),
         randomSSZVector(Bytes32.ZERO, Constants.SLOTS_PER_HISTORICAL_ROOT, this::randomBytes32),
@@ -563,20 +565,16 @@ public final class DataStructureUtil {
         randomEth1Data(),
         randomSSZList(
             Eth1Data.class, EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH, this::randomEth1Data),
-        randomUnsignedLong(),
+        randomUInt64(),
         randomSSZList(
             Validator.class,
             validatorCount,
             Constants.VALIDATOR_REGISTRY_LIMIT,
             this::randomValidator),
         randomSSZList(
-            UnsignedLong.class,
-            validatorCount,
-            Constants.VALIDATOR_REGISTRY_LIMIT,
-            this::randomUnsignedLong),
+            UInt64.class, validatorCount, Constants.VALIDATOR_REGISTRY_LIMIT, this::randomUInt64),
         randomSSZVector(Bytes32.ZERO, Constants.EPOCHS_PER_HISTORICAL_VECTOR, this::randomBytes32),
-        randomSSZVector(
-            UnsignedLong.ZERO, Constants.EPOCHS_PER_SLASHINGS_VECTOR, this::randomUnsignedLong),
+        randomSSZVector(UInt64.ZERO, Constants.EPOCHS_PER_SLASHINGS_VECTOR, this::randomUInt64),
         randomSSZList(
             PendingAttestation.class,
             100,
@@ -593,7 +591,7 @@ public final class DataStructureUtil {
         randomCheckpoint());
   }
 
-  public BeaconState randomBeaconState(UnsignedLong slot) {
+  public BeaconState randomBeaconState(UInt64 slot) {
     return randomBeaconState().updated(state -> state.setSlot(slot));
   }
 }

@@ -17,13 +17,13 @@ import static tech.pegasys.teku.logging.ColorConsolePrinter.print;
 import static tech.pegasys.teku.logging.LoggingConfigurator.VALIDATOR_LOGGER_NAME;
 
 import com.google.common.base.Strings;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.logging.ColorConsolePrinter.Color;
 
 public class ValidatorLogger {
@@ -39,7 +39,7 @@ public class ValidatorLogger {
 
   public void dutyCompleted(
       final String producedType,
-      final UnsignedLong slot,
+      final UInt64 slot,
       final int successCount,
       final Set<Bytes32> blockRoots) {
     final String paddedType = Strings.padEnd(producedType, LONGEST_TYPE_LENGTH, ' ');
@@ -47,7 +47,7 @@ public class ValidatorLogger {
   }
 
   public void dutySkippedWhileSyncing(
-      final String producedType, final UnsignedLong slot, final int skippedCount) {
+      final String producedType, final UInt64 slot, final int skippedCount) {
     log.warn(
         print(
             String.format(
@@ -56,8 +56,7 @@ public class ValidatorLogger {
             Color.YELLOW));
   }
 
-  public void dutyFailed(
-      final String producedType, final UnsignedLong slot, final Throwable error) {
+  public void dutyFailed(final String producedType, final UInt64 slot, final Throwable error) {
     log.error(
         print(
             String.format("%sFailed to produce %s  Slot: %s", PREFIX, producedType, slot),
@@ -66,7 +65,7 @@ public class ValidatorLogger {
   }
 
   private void logDuty(
-      final String type, final UnsignedLong slot, final int count, final Set<Bytes32> roots) {
+      final String type, final UInt64 slot, final int count, final Set<Bytes32> roots) {
     log.info(
         print(
             String.format(
@@ -79,7 +78,7 @@ public class ValidatorLogger {
     return blockRoots.stream().map(LogFormatter::formatHashRoot).collect(Collectors.joining(", "));
   }
 
-  public void aggregationSkipped(final UnsignedLong slot) {
+  public void aggregationSkipped(final UInt64 slot) {
     log.warn(
         print(
             PREFIX
@@ -90,7 +89,7 @@ public class ValidatorLogger {
   }
 
   public void producedInvalidAttestation(
-      final UnsignedLong slot,
+      final UInt64 slot,
       final int expectedValidatorIndex,
       final Optional<Integer> actualValidatorIndex,
       final String reason) {
@@ -109,7 +108,7 @@ public class ValidatorLogger {
             Color.RED));
   }
 
-  public void producedInvalidAggregate(final UnsignedLong slot, final String reason) {
+  public void producedInvalidAggregate(final UInt64 slot, final String reason) {
     log.error(
         print(PREFIX + "Produced invalid aggregate for slot " + slot + ": " + reason, Color.RED));
   }

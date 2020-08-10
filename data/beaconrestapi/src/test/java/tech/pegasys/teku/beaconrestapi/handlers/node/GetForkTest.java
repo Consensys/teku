@@ -22,23 +22,24 @@ import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ChainDataProvider;
-import tech.pegasys.teku.api.schema.Fork;
+import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetForkTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private Context context = mock(Context.class);
-  private final Fork fork = new Fork(dataStructureUtil.randomFork());
+  private final GetForkResponse getForkResponse =
+      new GetForkResponse(dataStructureUtil.randomForkInfo());
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ChainDataProvider provider = mock(ChainDataProvider.class);
 
   @Test
-  public void shouldReturnForkWhenSet() throws Exception {
+  public void shouldReturnForkInfoWhenSet() throws Exception {
     GetFork handler = new GetFork(provider, jsonProvider);
-    when(provider.getFork()).thenReturn(fork);
+    when(provider.getForkInfo()).thenReturn(getForkResponse);
     handler.handle(context);
-    verify(context).result(jsonProvider.objectToJSON(fork));
+    verify(context).result(jsonProvider.objectToJSON(getForkResponse));
     verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
   }
 }

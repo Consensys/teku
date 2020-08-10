@@ -43,13 +43,15 @@ public class StatusMessageHandler
       final StatusMessage message,
       final ResponseCallback<StatusMessage> callback) {
     LOG.trace("Peer {} sent status {}", peer.getId(), message);
+    if (!peer.wantToMakeRequest()) {
+      return;
+    }
     final PeerStatus status = PeerStatus.fromStatusMessage(message);
     peer.updateStatus(status);
 
     final Optional<StatusMessage> localStatus = statusMessageFactory.createStatusMessage();
     if (localStatus.isPresent()) {
-      callback.respond(localStatus.get());
-      callback.completeSuccessfully();
+      callback.respondAndCompleteSuccessfully(localStatus.get());
     } else {
       LOG.warn(
           "Node is not ready to receive p2p traffic. Responding to incoming status message with an error.");

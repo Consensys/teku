@@ -18,11 +18,10 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.initialize_b
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadBytes32FromSsz;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadSsz;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
-import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadUnsignedLongFromYaml;
+import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadUInt64FromYaml;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -30,6 +29,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 
 public class GenesisInitializationTestExecutor implements TestExecutor {
@@ -37,8 +37,7 @@ public class GenesisInitializationTestExecutor implements TestExecutor {
   @Override
   public void runTest(final TestDefinition testDefinition) throws Exception {
     final BeaconState expectedGenesisState = loadStateFromSsz(testDefinition, "state.ssz");
-    final UnsignedLong eth1Timestamp =
-        loadUnsignedLongFromYaml(testDefinition, "eth1_timestamp.yaml");
+    final UInt64 eth1Timestamp = loadUInt64FromYaml(testDefinition, "eth1_timestamp.yaml");
     final Bytes32 eth1BlockHash = loadBytes32FromSsz(testDefinition, "eth1_block_hash.ssz");
     final GenesisMetaData metaData = loadYaml(testDefinition, "meta.yaml", GenesisMetaData.class);
     final List<Deposit> deposits =

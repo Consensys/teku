@@ -17,7 +17,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import static tech.pegasys.teku.util.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 
 import com.google.common.base.Throwables;
-import com.google.common.primitives.UnsignedLong;
 import java.time.Duration;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +30,7 @@ import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
@@ -49,10 +49,10 @@ public class PeerSync {
    * may be empty we check that we're progressing through slots, even if not many blocks are being
    * returned.
    */
-  private static final UnsignedLong MIN_SLOTS_TO_PROGRESS_PER_REQUEST = UnsignedLong.valueOf(50);
+  private static final UInt64 MIN_SLOTS_TO_PROGRESS_PER_REQUEST = UInt64.valueOf(50);
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final UnsignedLong STEP = UnsignedLong.ONE;
+  private static final UInt64 STEP = UInt64.ONE;
 
   private final AtomicBoolean stopped = new AtomicBoolean(false);
   private final RecentChainData storageClient;
@@ -62,7 +62,7 @@ public class PeerSync {
   private final Counter blockImportSuccessResult;
   private final Counter blockImportFailureResult;
 
-  private volatile UnsignedLong startingSlot = UnsignedLong.valueOf(0);
+  private volatile UInt64 startingSlot = UInt64.valueOf(0);
 
   public PeerSync(
       final AsyncRunner asyncRunner,
@@ -85,9 +85,9 @@ public class PeerSync {
   public SafeFuture<PeerSyncResult> sync(final Eth2Peer peer) {
     LOG.debug("Start syncing to peer {}", peer);
     // Begin requesting blocks at our first non-finalized slot
-    final UnsignedLong finalizedEpoch = storageClient.getFinalizedEpoch();
-    final UnsignedLong latestFinalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
-    final UnsignedLong firstNonFinalSlot = latestFinalizedSlot.plus(UnsignedLong.ONE);
+    final UInt64 finalizedEpoch = storageClient.getFinalizedEpoch();
+    final UInt64 latestFinalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+    final UInt64 firstNonFinalSlot = latestFinalizedSlot.plus(UInt64.ONE);
 
     this.startingSlot = firstNonFinalSlot;
 
@@ -110,13 +110,13 @@ public class PeerSync {
   private SafeFuture<PeerSyncResult> executeSync(
       final Eth2Peer peer,
       final PeerStatus status,
-      final UnsignedLong startSlot,
+      final UInt64 startSlot,
       final SafeFuture<Void> readyForRequest) {
     if (stopped.get()) {
       return SafeFuture.completedFuture(PeerSyncResult.CANCELLED);
     }
 
-    final UnsignedLong count = calculateNumberOfBlocksToRequest(startSlot, status);
+    final UInt64 count = calculateNumberOfBlocksToRequest(startSlot, status);
     if (count.longValue() == 0) {
       return completeSyncWithPeer(peer, status);
     }
@@ -137,7 +137,7 @@ public class PeerSync {
             })
         .thenCompose(
             (blockRequest) -> {
-              final UnsignedLong nextSlot = blockRequest.getActualEndSlot().plus(UnsignedLong.ONE);
+              final UInt64 nextSlot = blockRequest.getActualEndSlot().plus(UInt64.ONE);
               LOG.trace(
                   "Completed request starting at {} for {} slots from peer {}. Next request starts from {}",
                   startSlot,
@@ -203,14 +203,13 @@ public class PeerSync {
     }
   }
 
-  private UnsignedLong calculateNumberOfBlocksToRequest(
-      final UnsignedLong nextSlot, final PeerStatus status) {
+  private UInt64 calculateNumberOfBlocksToRequest(final UInt64 nextSlot, final PeerStatus status) {
     if (nextSlot.compareTo(status.getHeadSlot()) > 0) {
       // We've synced the advertised head, nothing left to request
-      return UnsignedLong.ZERO;
+      return UInt64.ZERO;
     }
 
-    final UnsignedLong diff = status.getHeadSlot().minus(nextSlot).plus(UnsignedLong.ONE);
+    final UInt64 diff = status.getHeadSlot().minus(nextSlot).plus(UInt64.ONE);
     return diff.compareTo(MAX_BLOCK_BY_RANGE_REQUEST_SIZE) > 0
         ? MAX_BLOCK_BY_RANGE_REQUEST_SIZE
         : diff;
@@ -239,7 +238,7 @@ public class PeerSync {
     peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT);
   }
 
-  public UnsignedLong getStartingSlot() {
+  public UInt64 getStartingSlot() {
     return startingSlot;
   }
 }

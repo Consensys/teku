@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.dataaccess;
 
-import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +25,7 @@ import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
@@ -44,7 +44,7 @@ public class V3RocksDbDao
   }
 
   @Override
-  public Optional<UnsignedLong> getGenesisTime() {
+  public Optional<UInt64> getGenesisTime() {
     return db.get(V3Schema.GENESIS_TIME);
   }
 
@@ -64,19 +64,19 @@ public class V3RocksDbDao
   }
 
   @Override
-  public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UnsignedLong slot) {
+  public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
     return db.get(V3Schema.FINALIZED_ROOTS_BY_SLOT, slot).flatMap(this::getFinalizedBlock);
   }
 
   @Override
-  public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UnsignedLong slot) {
+  public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     return db.getFloorEntry(V3Schema.FINALIZED_ROOTS_BY_SLOT, slot)
         .map(ColumnEntry::getValue)
         .flatMap(this::getFinalizedBlock);
   }
 
   @Override
-  public Optional<BeaconState> getLatestAvailableFinalizedState(final UnsignedLong maxSlot) {
+  public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     return db.getFloorEntry(V3Schema.FINALIZED_ROOTS_BY_SLOT, maxSlot)
         .map(ColumnEntry::getValue)
         .flatMap(root -> db.get(V3Schema.FINALIZED_STATES_BY_ROOT, root));
@@ -85,26 +85,26 @@ public class V3RocksDbDao
   @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
-      final UnsignedLong startSlot, final UnsignedLong endSlot) {
+      final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(V3Schema.FINALIZED_ROOTS_BY_SLOT, startSlot, endSlot)
         .map(ColumnEntry::getValue)
         .flatMap(root -> getFinalizedBlock(root).stream());
   }
 
   @Override
-  public Optional<UnsignedLong> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
+  public Optional<UInt64> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
     return getFinalizedBlock(blockRoot).map(SignedBeaconBlock::getSlot);
   }
 
   @Override
-  public Optional<UnsignedLong> getSlotForFinalizedStateRoot(final Bytes32 stateRoot) {
+  public Optional<UInt64> getSlotForFinalizedStateRoot(final Bytes32 stateRoot) {
     return db.get(V3Schema.SLOTS_BY_FINALIZED_STATE_ROOT, stateRoot);
   }
 
   @Override
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(
       final Bytes32 stateRoot) {
-    Optional<UnsignedLong> maybeSlot = db.get(V3Schema.SLOTS_BY_FINALIZED_STATE_ROOT, stateRoot);
+    Optional<UInt64> maybeSlot = db.get(V3Schema.SLOTS_BY_FINALIZED_STATE_ROOT, stateRoot);
     return maybeSlot.flatMap(
         slot ->
             getFinalizedBlockAtSlot(slot)
@@ -132,7 +132,7 @@ public class V3RocksDbDao
   }
 
   @Override
-  public List<Bytes32> getStateRootsBeforeSlot(final UnsignedLong slot) {
+  public List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot) {
     try (Stream<ColumnEntry<Bytes32, SlotAndBlockRoot>> stream =
         db.stream(V3Schema.STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT)) {
       return stream
@@ -154,7 +154,7 @@ public class V3RocksDbDao
   }
 
   @Override
-  public Map<UnsignedLong, VoteTracker> getVotes() {
+  public Map<UInt64, VoteTracker> getVotes() {
     return db.getAll(V3Schema.VOTES);
   }
 
@@ -213,7 +213,7 @@ public class V3RocksDbDao
     }
 
     @Override
-    public void setGenesisTime(final UnsignedLong genesisTime) {
+    public void setGenesisTime(final UInt64 genesisTime) {
       transaction.put(V3Schema.GENESIS_TIME, genesisTime);
     }
 
@@ -256,7 +256,7 @@ public class V3RocksDbDao
     }
 
     @Override
-    public void addFinalizedStateRoot(final Bytes32 stateRoot, final UnsignedLong slot) {
+    public void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot) {
       transaction.put(V3Schema.SLOTS_BY_FINALIZED_STATE_ROOT, stateRoot, slot);
     }
 
@@ -281,7 +281,7 @@ public class V3RocksDbDao
     }
 
     @Override
-    public void addVotes(final Map<UnsignedLong, VoteTracker> votes) {
+    public void addVotes(final Map<UInt64, VoteTracker> votes) {
       votes.forEach(
           (validatorIndex, vote) -> transaction.put(V3Schema.VOTES, validatorIndex, vote));
     }

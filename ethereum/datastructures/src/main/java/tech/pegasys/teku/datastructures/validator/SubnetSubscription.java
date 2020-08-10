@@ -13,14 +13,14 @@
 
 package tech.pegasys.teku.datastructures.validator;
 
-import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SubnetSubscription {
 
   private final int subnetId;
-  private final UnsignedLong unsubscriptionSlot;
+  private final UInt64 unsubscriptionSlot;
 
-  public SubnetSubscription(int subnetId, UnsignedLong unsubscriptionSlot) {
+  public SubnetSubscription(int subnetId, UInt64 unsubscriptionSlot) {
     this.subnetId = subnetId;
     this.unsubscriptionSlot = unsubscriptionSlot;
   }
@@ -29,7 +29,7 @@ public class SubnetSubscription {
     return subnetId;
   }
 
-  public UnsignedLong getUnsubscriptionSlot() {
+  public UInt64 getUnsubscriptionSlot() {
     return unsubscriptionSlot;
   }
 }

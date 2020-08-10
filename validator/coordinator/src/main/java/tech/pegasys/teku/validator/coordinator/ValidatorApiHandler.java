@@ -16,17 +16,16 @@ package tech.pegasys.teku.validator.coordinator;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.max;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
 import static tech.pegasys.teku.logging.ValidatorLogger.VALIDATOR_LOGGER;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -58,6 +57,7 @@ import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFunction;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -108,16 +108,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
-      final UnsignedLong epoch, final Collection<BLSPublicKey> publicKeys) {
+      final UInt64 epoch, final Collection<BLSPublicKey> publicKeys) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
     if (publicKeys.isEmpty()) {
       return SafeFuture.completedFuture(Optional.of(emptyList()));
     }
-    final UnsignedLong slot =
+    final UInt64 slot =
         compute_start_slot_at_epoch(
-            epoch.compareTo(UnsignedLong.ZERO) > 0 ? epoch.minus(UnsignedLong.ONE) : epoch);
+            epoch.compareTo(UInt64.ZERO) > 0 ? epoch.minus(UInt64.ONE) : epoch);
     LOG.trace("Retrieving duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient
         .getLatestStateAtSlot(slot)
@@ -128,7 +128,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     .map(state -> getValidatorDutiesFromState(state, epoch, publicKeys)));
   }
 
-  private BeaconState processSlots(final BeaconState startingState, final UnsignedLong targetSlot) {
+  private BeaconState processSlots(final BeaconState startingState, final UInt64 targetSlot) {
     if (startingState.getSlot().equals(targetSlot)) {
       return startingState;
     }
@@ -141,20 +141,19 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
-      final UnsignedLong slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
     return createFromBlockAndState(
-        slot.minus(UnsignedLong.ONE),
+        slot.minus(UInt64.ONE),
         blockAndState ->
             blockFactory.createUnsignedBlock(
                 blockAndState.getState(), blockAndState.getBlock(), slot, randaoReveal, graffiti));
   }
 
   private <T> SafeFuture<Optional<T>> createFromBlockAndState(
-      final UnsignedLong maximumSlot,
-      final ExceptionThrowingFunction<BeaconBlockAndState, T> creator) {
+      final UInt64 maximumSlot, final ExceptionThrowingFunction<BeaconBlockAndState, T> creator) {
 
     return combinedChainDataClient
         .getBlockAndStateInEffectAtSlot(maximumSlot)
@@ -169,7 +168,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<Attestation>> createUnsignedAttestation(
-      final UnsignedLong slot, final int committeeIndex) {
+      final UInt64 slot, final int committeeIndex) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -178,7 +177,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         blockAndState -> {
           final BeaconState state = blockAndState.getState();
           final BeaconBlock block = blockAndState.getBlock();
-          final int committeeCount = get_committee_count_at_slot(state, slot).intValue();
+          final int committeeCount =
+              get_committee_count_per_slot(state, compute_epoch_at_slot(slot)).intValue();
 
           if (committeeIndex < 0 || committeeIndex >= committeeCount) {
             throw new IllegalArgumentException(
@@ -187,7 +187,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     + " - expected between 0 and "
                     + (committeeCount - 1));
           }
-          final UnsignedLong committeeIndexUnsigned = UnsignedLong.valueOf(committeeIndex);
+          final UInt64 committeeIndexUnsigned = UInt64.valueOf(committeeIndex);
           final AttestationData attestationData =
               AttestationUtil.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
           final List<Integer> committee =
@@ -200,19 +200,19 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<Attestation>> createAggregate(final AttestationData attestationData) {
+  public SafeFuture<Optional<Attestation>> createAggregate(final Bytes32 attestationHashTreeRoot) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
     return SafeFuture.completedFuture(
         attestationPool
-            .createAggregateFor(attestationData)
+            .createAggregateFor(attestationHashTreeRoot)
             .map(ValidateableAttestation::getAttestation));
   }
 
   @Override
   public void subscribeToBeaconCommitteeForAggregation(
-      final int committeeIndex, final UnsignedLong aggregationSlot) {
+      final int committeeIndex, final UInt64 aggregationSlot) {
     attestationTopicSubscriber.subscribeToCommitteeForAggregation(committeeIndex, aggregationSlot);
   }
 
@@ -226,20 +226,30 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final Attestation attestation, final Optional<Integer> expectedValidatorIndex) {
     attestationManager
         .onAttestation(ValidateableAttestation.fromAttestation(attestation))
-        .ifInvalid(
-            reason -> {
-              int actualValidatorIndex =
-                  get_attesting_indices(
-                          combinedChainDataClient.getHeadStateFromStore().orElseThrow(),
-                          attestation.getData(),
-                          attestation.getAggregation_bits())
-                      .get(0);
-              VALIDATOR_LOGGER.producedInvalidAttestation(
-                  attestation.getData().getSlot(),
-                  actualValidatorIndex,
-                  expectedValidatorIndex,
-                  reason);
-            });
+        .finish(
+            result ->
+                result.ifInvalid(
+                    reason -> {
+                      VALIDATOR_LOGGER.producedInvalidAttestation(
+                          attestation.getData().getSlot(),
+                          getValidatorIndex(attestation),
+                          expectedValidatorIndex,
+                          reason);
+                    }),
+            err ->
+                LOG.error(
+                    "Failed to send signed attestation for validator {}, slot {}, block {}",
+                    getValidatorIndex(attestation),
+                    attestation.getData().getSlot(),
+                    attestation.getData().getBeacon_block_root()));
+  }
+
+  private int getValidatorIndex(final Attestation attestation) {
+    return get_attesting_indices(
+            combinedChainDataClient.getHeadStateFromStore().orElseThrow(),
+            attestation.getData(),
+            attestation.getAggregation_bits())
+        .get(0);
   }
 
   @Override
@@ -251,10 +261,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
     attestationManager
         .onAttestation(ValidateableAttestation.fromSignedAggregate(aggregateAndProof))
-        .ifInvalid(
-            reason ->
-                VALIDATOR_LOGGER.producedInvalidAggregate(
-                    aggregateAndProof.getMessage().getAggregate().getData().getSlot(), reason));
+        .finish(
+            result ->
+                result.ifInvalid(
+                    reason ->
+                        VALIDATOR_LOGGER.producedInvalidAggregate(
+                            aggregateAndProof.getMessage().getAggregate().getData().getSlot(),
+                            reason)),
+            err ->
+                LOG.error(
+                    "Failed to send aggregate for slot {}",
+                    aggregateAndProof.getMessage().getAggregate().getData().getSlot()));
   }
 
   @Override
@@ -267,10 +284,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private List<ValidatorDuties> getValidatorDutiesFromState(
-      final BeaconState state,
-      final UnsignedLong epoch,
-      final Collection<BLSPublicKey> publicKeys) {
-    final Map<Integer, List<UnsignedLong>> proposalSlotsByValidatorIndex =
+      final BeaconState state, final UInt64 epoch, final Collection<BLSPublicKey> publicKeys) {
+    final Map<Integer, List<UInt64>> proposalSlotsByValidatorIndex =
         getBeaconProposalSlotsByValidatorIndex(state, epoch);
     return publicKeys.stream()
         .map(key -> getDutiesForValidator(key, state, epoch, proposalSlotsByValidatorIndex))
@@ -280,8 +295,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private ValidatorDuties getDutiesForValidator(
       final BLSPublicKey key,
       final BeaconState state,
-      final UnsignedLong epoch,
-      final Map<Integer, List<UnsignedLong>> proposalSlotsByValidatorIndex) {
+      final UInt64 epoch,
+      final Map<Integer, List<UInt64>> proposalSlotsByValidatorIndex) {
     return ValidatorsUtil.getValidatorIndex(state, key)
         .map(
             index -> createValidatorDuties(proposalSlotsByValidatorIndex, key, state, epoch, index))
@@ -289,12 +304,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private ValidatorDuties createValidatorDuties(
-      final Map<Integer, List<UnsignedLong>> proposalSlotsByValidatorIndex,
+      final Map<Integer, List<UInt64>> proposalSlotsByValidatorIndex,
       final BLSPublicKey key,
       final BeaconState state,
-      final UnsignedLong epoch,
+      final UInt64 epoch,
       final Integer validatorIndex) {
-    final List<UnsignedLong> proposerSlots =
+    final List<UInt64> proposerSlots =
         proposalSlotsByValidatorIndex.getOrDefault(validatorIndex, emptyList());
     return CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex)
         .map(
@@ -310,17 +325,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .orElseGet(() -> ValidatorDuties.noDuties(key));
   }
 
-  private Map<Integer, List<UnsignedLong>> getBeaconProposalSlotsByValidatorIndex(
-      final BeaconState state, final UnsignedLong epoch) {
-    final UnsignedLong epochStartSlot = compute_start_slot_at_epoch(epoch);
+  private Map<Integer, List<UInt64>> getBeaconProposalSlotsByValidatorIndex(
+      final BeaconState state, final UInt64 epoch) {
+    final UInt64 epochStartSlot = compute_start_slot_at_epoch(epoch);
     // Don't calculate a proposer for the genesis slot
-    final UnsignedLong startSlot = max(epochStartSlot, UnsignedLong.valueOf(GENESIS_SLOT + 1));
-    final UnsignedLong endSlot =
-        epochStartSlot.plus(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH));
-    final Map<Integer, List<UnsignedLong>> proposalSlotsByValidatorIndex = new HashMap<>();
-    for (UnsignedLong slot = startSlot;
-        slot.compareTo(endSlot) < 0;
-        slot = slot.plus(UnsignedLong.ONE)) {
+    final UInt64 startSlot = epochStartSlot.max(UInt64.valueOf(GENESIS_SLOT + 1));
+    final UInt64 endSlot = epochStartSlot.plus(UInt64.valueOf(Constants.SLOTS_PER_EPOCH));
+    final Map<Integer, List<UInt64>> proposalSlotsByValidatorIndex = new HashMap<>();
+    for (UInt64 slot = startSlot; slot.compareTo(endSlot) < 0; slot = slot.plus(UInt64.ONE)) {
       final Integer proposer = get_beacon_proposer_index(state, slot);
       proposalSlotsByValidatorIndex.computeIfAbsent(proposer, key -> new ArrayList<>()).add(slot);
     }

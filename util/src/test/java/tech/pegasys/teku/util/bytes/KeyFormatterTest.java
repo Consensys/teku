@@ -26,7 +26,7 @@ public class KeyFormatterTest {
     Bytes keyBytes =
         Bytes.fromHexString(
             "0xab10fc693d038b73d67279127501a05f0072cbb7147c68650ef6ac4e0a413e5cabd1f35c8711e1f7d9d885bbc3b8eddc");
-    BLSPublicKey blsPublicKey = BLSPublicKey.fromBytes(keyBytes);
+    BLSPublicKey blsPublicKey = BLSPublicKey.fromSSZBytes(keyBytes);
     assertThat(KeyFormatter.shortPublicKey(blsPublicKey)).isEqualTo("ab10fc6");
   }
 

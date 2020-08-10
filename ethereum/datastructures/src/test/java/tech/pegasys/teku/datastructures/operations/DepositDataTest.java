@@ -16,19 +16,19 @@ package tech.pegasys.teku.datastructures.operations;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class DepositDataTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private BLSPublicKey pubkey = dataStructureUtil.randomPublicKey();
   private Bytes32 withdrawalCredentials = dataStructureUtil.randomBytes32();
-  private UnsignedLong amount = dataStructureUtil.randomUnsignedLong();
+  private UInt64 amount = dataStructureUtil.randomUInt64();
   private BLSSignature signature = dataStructureUtil.randomSignature();
 
   private DepositData depositData =

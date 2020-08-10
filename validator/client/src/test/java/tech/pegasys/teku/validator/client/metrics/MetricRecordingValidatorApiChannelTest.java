@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -32,6 +31,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -114,7 +114,7 @@ class MetricRecordingValidatorApiChannelTest {
     return Stream.of(
         noResponseTest(
             "subscribeToBeaconCommitteeForAggregation",
-            channel -> channel.subscribeToBeaconCommitteeForAggregation(1, UnsignedLong.ZERO),
+            channel -> channel.subscribeToBeaconCommitteeForAggregation(1, UInt64.ZERO),
             MetricRecordingValidatorApiChannel.AGGREGATION_SUBSCRIPTION_COUNTER_NAME),
         noResponseTest(
             "subscribeToPersistentSubnets",
@@ -142,7 +142,7 @@ class MetricRecordingValidatorApiChannelTest {
 
   public static Stream<Arguments> getDataRequestArguments() {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-    final UnsignedLong slot = dataStructureUtil.randomUnsignedLong();
+    final UInt64 slot = dataStructureUtil.randomUInt64();
     final BLSSignature signature = dataStructureUtil.randomSignature();
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     return Stream.of(
@@ -168,7 +168,7 @@ class MetricRecordingValidatorApiChannelTest {
             dataStructureUtil.randomAttestation()),
         requestDataTest(
             "createAggregate",
-            channel -> channel.createAggregate(attestationData),
+            channel -> channel.createAggregate(attestationData.hashTreeRoot()),
             MetricRecordingValidatorApiChannel.AGGREGATE_REQUESTS_COUNTER_NAME,
             dataStructureUtil.randomAttestation()));
   }

@@ -74,6 +74,8 @@ public class Eth2NetworkBuilder {
   private Duration eth2RpcPingInterval = DEFAULT_ETH2_RPC_PING_INTERVAL;
   private int eth2RpcOutstandingPingThreshold = DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
   private Duration eth2StatusUpdateInterval = DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
+  private int peerRateLimit = 500;
+  private int peerRequestLimit = 50;
 
   private Eth2NetworkBuilder() {}
 
@@ -98,7 +100,10 @@ public class Eth2NetworkBuilder {
             rpcEncoding,
             eth2RpcPingInterval,
             eth2RpcOutstandingPingThreshold,
-            eth2StatusUpdateInterval);
+            eth2StatusUpdateInterval,
+            timeProvider,
+            peerRateLimit,
+            peerRequestLimit);
     final Collection<RpcMethod> eth2RpcMethods = eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);
@@ -164,6 +169,16 @@ public class Eth2NetworkBuilder {
   public Eth2NetworkBuilder config(final NetworkConfig config) {
     checkNotNull(config);
     this.config = config;
+    return this;
+  }
+
+  public Eth2NetworkBuilder peerRateLimit(final int peerRateLimit) {
+    this.peerRateLimit = peerRateLimit;
+    return this;
+  }
+
+  public Eth2NetworkBuilder peerRequestLimit(final int peerRequestLimit) {
+    this.peerRequestLimit = peerRequestLimit;
     return this;
   }
 

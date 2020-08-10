@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel.ReorgEvent;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
@@ -42,7 +43,8 @@ class ForkChoiceTest {
 
   @BeforeEach
   public void setup() {
-    recentChainData.initializeFromGenesis(genesis.getState());
+    final SafeFuture<Void> initialized = recentChainData.initializeFromGenesis(genesis.getState());
+    assertThat(initialized).isCompleted();
   }
 
   @Test

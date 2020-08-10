@@ -13,16 +13,16 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
@@ -30,7 +30,8 @@ public class DutyScheduler implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final DutyLoader epochDutiesScheduler;
   private final StableSubnetSubscriber stableSubnetSubscriber;
-  private final NavigableMap<UnsignedLong, DutyQueue> dutiesByEpoch = new TreeMap<>();
+  private final NavigableMap<UInt64, DutyQueue> dutiesByEpoch = new TreeMap<>();
+  private UInt64 lastAttestationCreationSlot;
 
   public DutyScheduler(
       final MetricsSystem metricsSystem,
@@ -47,8 +48,8 @@ public class DutyScheduler implements ValidatorTimingChannel {
   }
 
   @Override
-  public void onSlot(final UnsignedLong slot) {
-    final UnsignedLong epochNumber = compute_epoch_at_slot(slot);
+  public void onSlot(final UInt64 slot) {
+    final UInt64 epochNumber = compute_epoch_at_slot(slot);
     removePriorEpochs(epochNumber);
     dutiesByEpoch.computeIfAbsent(epochNumber, this::requestDutiesForEpoch);
     dutiesByEpoch.computeIfAbsent(epochNumber.plus(ONE), this::requestDutiesForEpoch);
@@ -56,32 +57,41 @@ public class DutyScheduler implements ValidatorTimingChannel {
   }
 
   @Override
-  public void onChainReorg(final UnsignedLong newSlot) {
+  public void onChainReorg(final UInt64 newSlot) {
     LOG.debug("Chain reorganisation detected. Recalculating validator duties");
     dutiesByEpoch.clear();
-    final UnsignedLong epochNumber = compute_epoch_at_slot(newSlot);
-    final UnsignedLong nextEpochNumber = epochNumber.plus(ONE);
+    final UInt64 epochNumber = compute_epoch_at_slot(newSlot);
+    final UInt64 nextEpochNumber = epochNumber.plus(ONE);
     dutiesByEpoch.put(epochNumber, requestDutiesForEpoch(epochNumber));
     dutiesByEpoch.put(nextEpochNumber, requestDutiesForEpoch(nextEpochNumber));
   }
 
   @Override
-  public void onBlockProductionDue(final UnsignedLong slot) {
+  public void onBlockProductionDue(final UInt64 slot) {
     notifyDutyQueue(DutyQueue::onBlockProductionDue, slot);
   }
 
   @Override
-  public void onAttestationCreationDue(final UnsignedLong slot) {
+  public void onAttestationCreationDue(final UInt64 slot) {
+    // Check slot being null for the edge case of genesis slot (i.e. slot 0)
+    if (lastAttestationCreationSlot != null && slot.compareTo(lastAttestationCreationSlot) <= 0) {
+      return;
+    }
+
+    lastAttestationCreationSlot = slot;
     notifyDutyQueue(DutyQueue::onAttestationCreationDue, slot);
   }
 
   @Override
-  public void onAttestationAggregationDue(final UnsignedLong slot) {
+  public void onAttestationAggregationDue(final UInt64 slot) {
     notifyDutyQueue(DutyQueue::onAttestationAggregationDue, slot);
   }
 
   @Override
-  public void onBlockImportedForSlot(final UnsignedLong slot) {
+  public void onBlockImportedForSlot(final UInt64 slot) {
+    // Create attestations for the current slot as soon as the block is imported.
+    onAttestationCreationDue(slot);
+
     // From an epoch x we can calculate duties for epoch's x and x+1 and importing more blocks from
     // epoch x won't change those duties.
     // However, importing a block from epoch x-1 will change the duties for x+1 (2 epochs after the
@@ -89,30 +99,27 @@ public class DutyScheduler implements ValidatorTimingChannel {
     // So invalidate any duties for slot.
     // They will be recalculated on the next slot event if required which avoids requesting duties
     // too often if we're syncing a batch of blocks
-    final UnsignedLong firstInvalidatedEpoch =
-        compute_epoch_at_slot(slot).plus(UnsignedLong.valueOf(2));
+    final UInt64 firstInvalidatedEpoch = compute_epoch_at_slot(slot).plus(UInt64.valueOf(2));
     removeEpochs(dutiesByEpoch.tailMap(firstInvalidatedEpoch, true));
   }
 
-  private DutyQueue requestDutiesForEpoch(final UnsignedLong epochNumber) {
+  private DutyQueue requestDutiesForEpoch(final UInt64 epochNumber) {
     return new DutyQueue(epochDutiesScheduler.loadDutiesForEpoch(epochNumber));
   }
 
-  private void notifyDutyQueue(
-      final BiConsumer<DutyQueue, UnsignedLong> action, final UnsignedLong slot) {
+  private void notifyDutyQueue(final BiConsumer<DutyQueue, UInt64> action, final UInt64 slot) {
     final DutyQueue dutyQueue = dutiesByEpoch.get(compute_epoch_at_slot(slot));
     if (dutyQueue != null) {
       action.accept(dutyQueue, slot);
     }
   }
 
-  private void removePriorEpochs(final UnsignedLong epochNumber) {
-    final NavigableMap<UnsignedLong, DutyQueue> toRemove =
-        dutiesByEpoch.headMap(epochNumber, false);
+  private void removePriorEpochs(final UInt64 epochNumber) {
+    final NavigableMap<UInt64, DutyQueue> toRemove = dutiesByEpoch.headMap(epochNumber, false);
     removeEpochs(toRemove);
   }
 
-  private void removeEpochs(final NavigableMap<UnsignedLong, DutyQueue> toRemove) {
+  private void removeEpochs(final NavigableMap<UInt64, DutyQueue> toRemove) {
     toRemove.values().forEach(DutyQueue::cancel);
     toRemove.clear();
   }

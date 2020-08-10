@@ -15,16 +15,16 @@ package tech.pegasys.teku.core;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class CommitteeAssignmentUtil {
 
@@ -40,21 +40,20 @@ public class CommitteeAssignmentUtil {
    * @return Optional.of(CommitteeAssignment).
    */
   public static Optional<CommitteeAssignment> get_committee_assignment(
-      BeaconState state, UnsignedLong epoch, int validator_index) {
-    UnsignedLong next_epoch = get_current_epoch(state).plus(UnsignedLong.ONE);
+      BeaconState state, UInt64 epoch, int validator_index) {
+    UInt64 next_epoch = get_current_epoch(state).plus(UInt64.ONE);
     checkArgument(
         epoch.compareTo(next_epoch) <= 0, "get_committee_assignment: Epoch number too high");
 
-    UnsignedLong start_slot = compute_start_slot_at_epoch(epoch);
+    UInt64 start_slot = compute_start_slot_at_epoch(epoch);
+    final UInt64 committeeCountPerSlot = get_committee_count_per_slot(state, epoch);
+    for (UInt64 slot = start_slot;
+        slot.compareTo(start_slot.plus(UInt64.valueOf(SLOTS_PER_EPOCH))) < 0;
+        slot = slot.plus(UInt64.ONE)) {
 
-    for (UnsignedLong slot = start_slot;
-        slot.compareTo(start_slot.plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH))) < 0;
-        slot = slot.plus(UnsignedLong.ONE)) {
-
-      final UnsignedLong committeeCountAtSlot = get_committee_count_at_slot(state, slot);
-      for (UnsignedLong index = UnsignedLong.ZERO;
-          index.compareTo(committeeCountAtSlot) < 0;
-          index = index.plus(UnsignedLong.ONE)) {
+      for (UInt64 index = UInt64.ZERO;
+          index.compareTo(committeeCountPerSlot) < 0;
+          index = index.plus(UInt64.ONE)) {
         final List<Integer> committee = get_beacon_committee(state, slot, index);
         if (committee.contains(validator_index)) {
           return Optional.of(new CommitteeAssignment(committee, index, slot));

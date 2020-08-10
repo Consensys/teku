@@ -13,12 +13,17 @@
 
 package tech.pegasys.teku.storage.client;
 
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Throwables;
 import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -32,6 +37,7 @@ import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.util.config.Constants;
 
 public class StorageBackedRecentChainData extends RecentChainData {
+  private static final Logger LOG = LogManager.getLogger();
   private final BlockProvider blockProvider;
   private final StorageQueryChannel storageQueryChannel;
 
@@ -113,13 +119,22 @@ public class StorageBackedRecentChainData extends RecentChainData {
 
   private SafeFuture<RecentChainData> processStoreFuture(
       SafeFuture<Optional<StoreBuilder>> storeFuture) {
-    return storeFuture.thenApply(
-        maybeStore -> {
-          maybeStore
-              .map(builder -> builder.blockProvider(blockProvider).build())
-              .ifPresent(this::setStore);
-          STATUS_LOG.finishInitializingChainData();
-          return this;
+    return storeFuture.thenCompose(
+        maybeStoreBuilder -> {
+          if (maybeStoreBuilder.isEmpty()) {
+            STATUS_LOG.finishInitializingChainData();
+            return completedFuture(this);
+          }
+          return maybeStoreBuilder
+              .get()
+              .blockProvider(blockProvider)
+              .build()
+              .thenApply(
+                  store -> {
+                    setStore(store);
+                    STATUS_LOG.finishInitializingChainData();
+                    return this;
+                  });
         });
   }
 
@@ -133,10 +148,17 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final AsyncRunner asyncRunner) {
     return requestInitialStore()
         .exceptionallyCompose(
-            (err) ->
-                asyncRunner.runAfterDelay(
+            (err) -> {
+              if (Throwables.getRootCause(err) instanceof TimeoutException) {
+                LOG.trace("Storage initialization timed out, will retry.");
+                return asyncRunner.runAfterDelay(
                     () -> requestInitialStoreWithRetry(asyncRunner),
                     Constants.STORAGE_REQUEST_TIMEOUT,
-                    TimeUnit.SECONDS));
+                    TimeUnit.SECONDS);
+              } else {
+                STATUS_LOG.fatalErrorInitialisingStorage(err);
+                return SafeFuture.failedFuture(err);
+              }
+            });
   }
 }

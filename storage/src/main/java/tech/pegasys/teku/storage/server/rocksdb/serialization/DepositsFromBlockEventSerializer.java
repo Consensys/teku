@@ -15,13 +15,13 @@ package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
 import static java.util.stream.Collectors.toList;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.Deposit;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 
@@ -32,9 +32,9 @@ public class DepositsFromBlockEventSerializer implements RocksDbSerializer<Depos
     return SSZ.decode(
         Bytes.of(data),
         reader -> {
-          final UnsignedLong blockNumber = UnsignedLong.fromLongBits(reader.readUInt64());
+          final UInt64 blockNumber = UInt64.fromLongBits(reader.readUInt64());
           final Bytes32 blockHash = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
-          final UnsignedLong blockTimestamp = UnsignedLong.fromLongBits(reader.readUInt64());
+          final UInt64 blockTimestamp = UInt64.fromLongBits(reader.readUInt64());
           final List<Deposit> deposits =
               reader.readBytesList().stream().map(this::decodeDeposit).collect(toList());
           return new DepositsFromBlockEvent(blockNumber, blockHash, blockTimestamp, deposits);
@@ -60,7 +60,7 @@ public class DepositsFromBlockEventSerializer implements RocksDbSerializer<Depos
         depositWriter -> {
           depositWriter.writeFixedBytes(deposit.getPubkey().toBytesCompressed());
           depositWriter.writeFixedBytes(deposit.getWithdrawal_credentials());
-          depositWriter.writeFixedBytes(deposit.getSignature().toBytes());
+          depositWriter.writeFixedBytes(deposit.getSignature().toSSZBytes());
           depositWriter.writeUInt64(deposit.getAmount().longValue());
           depositWriter.writeUInt64(deposit.getMerkle_tree_index().longValue());
         });
@@ -71,12 +71,13 @@ public class DepositsFromBlockEventSerializer implements RocksDbSerializer<Depos
         data,
         reader -> {
           final BLSPublicKey publicKey =
-              BLSPublicKey.fromBytesCompressed(reader.readFixedBytes(BLSPublicKey.BLS_PUBKEY_SIZE));
+              BLSPublicKey.fromSSZBytes(
+                  Bytes.wrap(reader.readFixedBytes(BLSPublicKey.SSZ_BLS_PUBKEY_SIZE)));
           final Bytes32 withdrawalCredentials = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final BLSSignature signature =
-              BLSSignature.fromBytes(reader.readFixedBytes(BLSSignature.BLS_SIGNATURE_SIZE));
-          final UnsignedLong amount = UnsignedLong.fromLongBits(reader.readUInt64());
-          final UnsignedLong merkleTreeIndex = UnsignedLong.fromLongBits(reader.readUInt64());
+              BLSSignature.fromSSZBytes(reader.readFixedBytes(BLSSignature.SSZ_BLS_SIGNATURE_SIZE));
+          final UInt64 amount = UInt64.fromLongBits(reader.readUInt64());
+          final UInt64 merkleTreeIndex = UInt64.fromLongBits(reader.readUInt64());
           return new Deposit(publicKey, withdrawalCredentials, signature, amount, merkleTreeIndex);
         });
   }

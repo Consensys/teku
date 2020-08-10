@@ -40,13 +40,14 @@ import tech.pegasys.teku.cli.options.MetricsOptions;
 import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.cli.options.OutputOptions;
 import tech.pegasys.teku.cli.options.P2POptions;
+import tech.pegasys.teku.cli.options.RemoteValidatorApiOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.cli.subcommand.DepositCommand;
 import tech.pegasys.teku.cli.subcommand.GenesisCommand;
 import tech.pegasys.teku.cli.subcommand.PeerCommand;
 import tech.pegasys.teku.cli.subcommand.TransitionCommand;
 import tech.pegasys.teku.cli.subcommand.UnstableOptionsCommand;
-import tech.pegasys.teku.cli.subcommand.debug.DebugCommand;
+import tech.pegasys.teku.cli.subcommand.debug.DebugToolsCommand;
 import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
 import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
@@ -69,7 +70,7 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
       PeerCommand.class,
       DepositCommand.class,
       GenesisCommand.class,
-      DebugCommand.class,
+      DebugToolsCommand.class,
       UnstableOptionsCommand.class
     },
     showDefaultValues = true,
@@ -109,7 +110,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       converter = LogTypeConverter.class,
       paramLabel = "<LOG VERBOSITY LEVEL>",
       description =
-          "Logging verbosity levels: OFF, FATAL, WARN, INFO, DEBUG, TRACE, ALL (default: INFO).",
+          "Logging verbosity levels: OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL (default: INFO).",
       arity = "1")
   private Level logLevel;
 
@@ -149,6 +150,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   @Mixin(name = "REST API")
   private BeaconRestApiOptions beaconRestApiOptions;
+
+  @Mixin(name = "REMOTE VALIDATOR API")
+  private RemoteValidatorApiOptions remoteValidatorApiOptions;
 
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
@@ -255,7 +259,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
     } catch (InvalidConfigurationException | DatabaseStorageException ex) {
       reportUserError(ex);
     } catch (CompletionException e) {
-      if (Throwables.getRootCause(e) instanceof InvalidConfigurationException) {
+      if (Throwables.getRootCause(e) instanceof InvalidConfigurationException
+          || Throwables.getRootCause(e) instanceof DatabaseStorageException) {
         reportUserError(Throwables.getRootCause(e));
       } else {
         reportUnexpectedError(e);
@@ -297,6 +302,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
         .setStartupTargetPeerCount(networkOptions.getStartupTargetPeerCount())
         .setStartupTimeoutSeconds(networkOptions.getStartupTimeoutSeconds())
+        .setPeerRateLimit(networkOptions.getPeerRateLimit())
+        .setPeerRequestLimit(networkOptions.getPeerRequestLimit())
         .setP2pEnabled(p2POptions.isP2pEnabled())
         .setP2pInterface(p2POptions.getP2pInterface())
         .setP2pPort(p2POptions.getP2pPort())
@@ -315,7 +322,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setInitialState(networkOptions.getInitialState())
         .setInteropNumberOfValidators(interopOptions.getInteropNumberOfValidators())
         .setInteropEnabled(interopOptions.isInteropEnabled())
-        .setValidatorKeyFile(validatorOptions.getValidatorKeyFile())
         .setValidatorKeystoreFiles(validatorOptions.getValidatorKeystoreFiles())
         .setValidatorKeystorePasswordFiles(validatorOptions.getValidatorKeystorePasswordFiles())
         .setValidatorExternalSignerPublicKeys(
@@ -351,6 +357,10 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setRestApiEnabled(beaconRestApiOptions.isRestApiEnabled())
         .setRestApiInterface(beaconRestApiOptions.getRestApiInterface())
         .setRestApiHostAllowlist(beaconRestApiOptions.getRestApiHostAllowlist())
+        .setRemoteValidatorApiInterface(remoteValidatorApiOptions.getApiInterface())
+        .setRemoteValidatorApiPort(remoteValidatorApiOptions.getApiPort())
+        .setRemoteValidatorApiMaxSubscribers(remoteValidatorApiOptions.getMaxSubscribers())
+        .setRemoteValidatorApiEnabled(remoteValidatorApiOptions.isApiEnabled())
         .build();
   }
 }

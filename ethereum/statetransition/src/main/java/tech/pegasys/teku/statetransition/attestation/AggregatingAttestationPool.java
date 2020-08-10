@@ -16,12 +16,12 @@ package tech.pegasys.teku.statetransition.attestation;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_RETENTION_EPOCHS;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -33,6 +33,7 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
@@ -47,7 +48,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
 
   private final Map<Bytes, MatchingDataAttestationGroup> attestationGroupByDataHash =
       new HashMap<>();
-  private final NavigableMap<UnsignedLong, Set<Bytes>> dataHashBySlot = new TreeMap<>();
+  private final NavigableMap<UInt64, Set<Bytes>> dataHashBySlot = new TreeMap<>();
   private final AttestationDataStateTransitionValidator attestationDataValidator;
 
   public AggregatingAttestationPool(
@@ -68,13 +69,13 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   @Override
-  public synchronized void onSlot(final UnsignedLong slot) {
-    final UnsignedLong attestationRetentionSlots =
-        UnsignedLong.valueOf(SLOTS_PER_EPOCH * ATTESTATION_RETENTION_EPOCHS);
+  public synchronized void onSlot(final UInt64 slot) {
+    final UInt64 attestationRetentionSlots =
+        UInt64.valueOf(SLOTS_PER_EPOCH * ATTESTATION_RETENTION_EPOCHS);
     if (slot.compareTo(attestationRetentionSlots) <= 0) {
       return;
     }
-    final UnsignedLong firstValidAttestationSlot = slot.minus(attestationRetentionSlots);
+    final UInt64 firstValidAttestationSlot = slot.minus(attestationRetentionSlots);
     final Collection<Set<Bytes>> dataHashesToRemove =
         dataHashBySlot.headMap(firstValidAttestationSlot, false).values();
     dataHashesToRemove.stream().flatMap(Set::stream).forEach(attestationGroupByDataHash::remove);
@@ -95,7 +96,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     }
   }
 
-  private void removeFromSlotMappings(final UnsignedLong slot, final Bytes32 dataRoot) {
+  private void removeFromSlotMappings(final UInt64 slot, final Bytes32 dataRoot) {
     final Set<Bytes> dataHashesForSlot = dataHashBySlot.get(slot);
     if (dataHashesForSlot != null) {
       dataHashesForSlot.remove(dataRoot);
@@ -108,7 +109,10 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   public synchronized SSZList<Attestation> getAttestationsForBlock(
       final BeaconState stateAtBlockSlot) {
     final SSZMutableList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
-    attestationGroupByDataHash.values().stream()
+    dataHashBySlot.descendingMap().values().stream()
+        .flatMap(Collection::stream)
+        .map(attestationGroupByDataHash::get)
+        .filter(Objects::nonNull)
         .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
         .flatMap(MatchingDataAttestationGroup::stream)
         .limit(attestations.getMaxSize())
@@ -123,8 +127,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   public synchronized Optional<ValidateableAttestation> createAggregateFor(
-      final AttestationData attestationData) {
-    return Optional.ofNullable(attestationGroupByDataHash.get(attestationData.hash_tree_root()))
+      final Bytes32 attestationHashTreeRoot) {
+    return Optional.ofNullable(attestationGroupByDataHash.get(attestationHashTreeRoot))
         .flatMap(attestations -> attestations.stream().findFirst());
   }
 }

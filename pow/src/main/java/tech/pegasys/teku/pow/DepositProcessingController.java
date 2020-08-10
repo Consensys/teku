@@ -16,13 +16,13 @@ package tech.pegasys.teku.pow;
 import static tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder.calculateCandidateGenesisTimestamp;
 import static tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder.notifyMinGenesisTimeBlockReached;
 
-import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -84,7 +84,7 @@ public class DepositProcessingController {
     return depositFetcher.fetchDepositsInRange(fromBlockNumber, toBlockNumber);
   }
 
-  private synchronized void onNewCanonicalBlockNumber(UnsignedLong newCanonicalBlockNumber) {
+  private synchronized void onNewCanonicalBlockNumber(UInt64 newCanonicalBlockNumber) {
     this.latestCanonicalBlockNumber = newCanonicalBlockNumber.bigIntegerValue();
     fetchLatestSubscriptionDeposits();
   }
@@ -107,7 +107,7 @@ public class DepositProcessingController {
     active = true;
 
     fromBlock = latestSuccessfullyQueriedBlock.add(BigInteger.ONE);
-    toBlock = latestCanonicalBlockNumber;
+    toBlock = latestCanonicalBlockNumber.min(fromBlock.add(BigInteger.valueOf(500_000)));
 
     depositFetcher
         .fetchDepositsInRange(fromBlock, toBlock)
@@ -130,8 +130,7 @@ public class DepositProcessingController {
 
     depositFetcher
         .fetchDepositsInRange(nextBlockNumber, nextBlockNumber)
-        .thenCompose(
-            __ -> eth1Provider.getGuaranteedEth1Block(UnsignedLong.valueOf(nextBlockNumber)))
+        .thenCompose(__ -> eth1Provider.getGuaranteedEth1Block(UInt64.valueOf(nextBlockNumber)))
         .thenAccept(
             block -> {
               final BigInteger blockNumber = block.getNumber();
@@ -160,7 +159,7 @@ public class DepositProcessingController {
       fetchLatestSubscriptionDeposits();
     } else {
       // We've caught up with deposits all the way up to the follow distance
-      eth1BlockFetcher.onInSync(UnsignedLong.valueOf(latestCanonicalBlockNumber));
+      eth1BlockFetcher.onInSync(UInt64.valueOf(latestCanonicalBlockNumber));
     }
   }
 

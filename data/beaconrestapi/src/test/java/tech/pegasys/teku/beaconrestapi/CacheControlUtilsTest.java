@@ -13,12 +13,12 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_FINALIZED;
 import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ChainDataProvider;

@@ -16,19 +16,19 @@ package tech.pegasys.teku.datastructures.state;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 
 class PendingAttestationTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private Bitlist participationBitfield = dataStructureUtil.randomBitlist();
   private AttestationData data = dataStructureUtil.randomAttestationData();
-  private UnsignedLong inclusionDelay = dataStructureUtil.randomUnsignedLong();
-  private UnsignedLong proposerIndex = dataStructureUtil.randomUnsignedLong();
+  private UInt64 inclusionDelay = dataStructureUtil.randomUInt64();
+  private UInt64 proposerIndex = dataStructureUtil.randomUInt64();
 
   private PendingAttestation pendingAttestation =
       new PendingAttestation(participationBitfield, data, inclusionDelay, proposerIndex);
@@ -78,7 +78,7 @@ class PendingAttestationTest {
         new PendingAttestation(
             participationBitfield,
             data,
-            inclusionDelay.plus(dataStructureUtil.randomUnsignedLong()),
+            inclusionDelay.plus(dataStructureUtil.randomUInt64()),
             proposerIndex);
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
@@ -91,7 +91,7 @@ class PendingAttestationTest {
             participationBitfield,
             data,
             inclusionDelay,
-            proposerIndex.plus(dataStructureUtil.randomUnsignedLong()));
+            proposerIndex.plus(dataStructureUtil.randomUInt64()));
 
     assertNotEquals(pendingAttestation, testPendingAttestation);
   }

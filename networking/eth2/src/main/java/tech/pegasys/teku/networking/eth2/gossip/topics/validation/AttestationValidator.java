@@ -13,12 +13,12 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
@@ -27,7 +27,6 @@ import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SL
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.VALID_ATTESTATION_SET_SIZE;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import java.util.OptionalInt;
@@ -37,6 +36,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
 import tech.pegasys.teku.util.collections.LimitStrategy;
@@ -44,10 +44,10 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class AttestationValidator {
 
-  private static final UnsignedLong MAX_FUTURE_SLOT_ALLOWANCE = UnsignedLong.valueOf(3);
-  private static final UnsignedLong MILLIS_PER_SECOND = UnsignedLong.valueOf(1000);
-  private static final UnsignedLong MAXIMUM_GOSSIP_CLOCK_DISPARITY =
-      UnsignedLong.valueOf(Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY);
+  private static final UInt64 MAX_FUTURE_SLOT_ALLOWANCE = UInt64.valueOf(3);
+  private static final UInt64 MILLIS_PER_SECOND = UInt64.valueOf(1000);
+  private static final UInt64 MAXIMUM_GOSSIP_CLOCK_DISPARITY =
+      UInt64.valueOf(Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY);
 
   private final Set<ValidatorAndTargetEpoch> receivedValidAttestations =
       ConcurrentLimitedSet.create(
@@ -108,7 +108,7 @@ public class AttestationValidator {
     // ATTESTATION_PROPAGATION_SLOT_RANGE >= current_slot >= attestation.data.slot (a client MAY
     // queue
     // future attestations for processing at the appropriate slot).
-    final UnsignedLong currentTimeMillis = secondsToMillis(recentChainData.getStore().getTime());
+    final UInt64 currentTimeMillis = secondsToMillis(recentChainData.getStore().getTime());
     if (isCurrentTimeAfterAttestationPropagationSlotRange(currentTimeMillis, attestation)
         || isFromFarFuture(attestation, currentTimeMillis)) {
       return SafeFuture.completedFuture(IGNORE);
@@ -163,73 +163,69 @@ public class AttestationValidator {
   }
 
   private boolean isCurrentTimeBeforeMinimumAttestationBroadcastTime(
-      final Attestation attestation, final UnsignedLong currentTimeMillis) {
-    final UnsignedLong minimumBroadcastTimeMillis =
+      final Attestation attestation, final UInt64 currentTimeMillis) {
+    final UInt64 minimumBroadcastTimeMillis =
         minimumBroadcastTimeMillis(attestation.getData().getSlot());
     return currentTimeMillis.compareTo(minimumBroadcastTimeMillis) < 0;
   }
 
-  private boolean isFromFarFuture(
-      final Attestation attestation, final UnsignedLong currentTimeMillis) {
-    final UnsignedLong attestationSlotTimeMillis =
+  private boolean isFromFarFuture(final Attestation attestation, final UInt64 currentTimeMillis) {
+    final UInt64 attestationSlotTimeMillis =
         secondsToMillis(
             recentChainData
                 .getGenesisTime()
                 .plus(
                     attestation
                         .getEarliestSlotForForkChoiceProcessing()
-                        .times(UnsignedLong.valueOf(SECONDS_PER_SLOT))));
-    final UnsignedLong discardAttestationsAfterMillis =
+                        .times(UInt64.valueOf(SECONDS_PER_SLOT))));
+    final UInt64 discardAttestationsAfterMillis =
         currentTimeMillis.plus(
-            secondsToMillis(
-                MAX_FUTURE_SLOT_ALLOWANCE.times(UnsignedLong.valueOf(SECONDS_PER_SLOT))));
+            secondsToMillis(MAX_FUTURE_SLOT_ALLOWANCE.times(UInt64.valueOf(SECONDS_PER_SLOT))));
     return attestationSlotTimeMillis.compareTo(discardAttestationsAfterMillis) > 0;
   }
 
   private boolean isCurrentTimeAfterAttestationPropagationSlotRange(
-      final UnsignedLong currentTimeMillis, final Attestation attestation) {
-    final UnsignedLong attestationSlot = attestation.getData().getSlot();
+      final UInt64 currentTimeMillis, final Attestation attestation) {
+    final UInt64 attestationSlot = attestation.getData().getSlot();
     return maximumBroadcastTimeMillis(attestationSlot).compareTo(currentTimeMillis) < 0;
   }
 
-  private UnsignedLong secondsToMillis(final UnsignedLong seconds) {
+  private UInt64 secondsToMillis(final UInt64 seconds) {
     return seconds.times(MILLIS_PER_SECOND);
   }
 
-  private UnsignedLong minimumBroadcastTimeMillis(final UnsignedLong attestationSlot) {
-    final UnsignedLong lastAllowedTime =
+  private UInt64 minimumBroadcastTimeMillis(final UInt64 attestationSlot) {
+    final UInt64 lastAllowedTime =
         recentChainData
             .getGenesisTime()
-            .plus(attestationSlot.times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
-    final UnsignedLong lastAllowedTimeMillis = secondsToMillis(lastAllowedTime);
+            .plus(attestationSlot.times(UInt64.valueOf(SECONDS_PER_SLOT)));
+    final UInt64 lastAllowedTimeMillis = secondsToMillis(lastAllowedTime);
     return lastAllowedTimeMillis.compareTo(MAXIMUM_GOSSIP_CLOCK_DISPARITY) >= 0
         ? lastAllowedTimeMillis.minus(MAXIMUM_GOSSIP_CLOCK_DISPARITY)
         : ZERO;
   }
 
-  private UnsignedLong maximumBroadcastTimeMillis(final UnsignedLong attestationSlot) {
-    final UnsignedLong lastAllowedSlot = attestationSlot.plus(ATTESTATION_PROPAGATION_SLOT_RANGE);
+  private UInt64 maximumBroadcastTimeMillis(final UInt64 attestationSlot) {
+    final UInt64 lastAllowedSlot = attestationSlot.plus(ATTESTATION_PROPAGATION_SLOT_RANGE);
     // The last allowed time is the end of the lastAllowedSlot (hence the plus 1).
-    final UnsignedLong lastAllowedTime =
+    final UInt64 lastAllowedTime =
         recentChainData
             .getGenesisTime()
-            .plus(lastAllowedSlot.plus(ONE).times(UnsignedLong.valueOf(SECONDS_PER_SLOT)));
+            .plus(lastAllowedSlot.plus(ONE).times(UInt64.valueOf(SECONDS_PER_SLOT)));
 
     // Add allowed clock disparity
     return secondsToMillis(lastAllowedTime).plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY);
   }
 
   private static class ValidatorAndTargetEpoch {
-    private final UnsignedLong targetEpoch;
+    private final UInt64 targetEpoch;
     // Validator is identified via committee index and position to avoid resolving the actual
     // validator ID before checking for duplicates
-    private final UnsignedLong committeeIndex;
+    private final UInt64 committeeIndex;
     private final int committeePosition;
 
     private ValidatorAndTargetEpoch(
-        final UnsignedLong targetEpoch,
-        final UnsignedLong committeeIndex,
-        final int committeePosition) {
+        final UInt64 targetEpoch, final UInt64 committeeIndex, final int committeePosition) {
       this.targetEpoch = targetEpoch;
       this.committeeIndex = committeeIndex;
       this.committeePosition = committeePosition;

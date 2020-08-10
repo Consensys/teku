@@ -21,7 +21,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +29,7 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
@@ -42,9 +42,8 @@ public class SyncManagerTest {
 
   private static final long SUBSCRIPTION_ID = 3423;
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");
-  private static final UnsignedLong PEER_FINALIZED_EPOCH = UnsignedLong.valueOf(3);
-  private static final UnsignedLong PEER_HEAD_SLOT =
-      UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH * 5);
+  private static final UInt64 PEER_FINALIZED_EPOCH = UInt64.valueOf(3);
+  private static final UInt64 PEER_HEAD_SLOT = UInt64.valueOf(Constants.SLOTS_PER_EPOCH * 5);
   private static final PeerStatus PEER_STATUS =
       PeerStatus.fromStatusMessage(
           new StatusMessage(
@@ -69,7 +68,7 @@ public class SyncManagerTest {
   @BeforeEach
   public void setUp() {
     when(network.subscribeConnect(any())).thenReturn(SUBSCRIPTION_ID);
-    when(storageClient.getFinalizedEpoch()).thenReturn(UnsignedLong.ZERO);
+    when(storageClient.getFinalizedEpoch()).thenReturn(UInt64.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
   }
 
@@ -122,8 +121,7 @@ public class SyncManagerTest {
     when(network.streamPeers()).thenReturn(Stream.of(peer));
     when(storageClient.getFinalizedEpoch()).thenReturn(PEER_STATUS.getFinalizedEpoch());
     when(storageClient.getBestSlot())
-        .thenReturn(
-            PEER_STATUS.getHeadSlot().minus(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH + 1)));
+        .thenReturn(PEER_STATUS.getHeadSlot().minus(UInt64.valueOf(Constants.SLOTS_PER_EPOCH + 1)));
 
     final SafeFuture<PeerSyncResult> syncFuture = new SafeFuture<>();
     when(peerSync.sync(peer)).thenReturn(syncFuture);
@@ -230,13 +228,13 @@ public class SyncManagerTest {
 
     final SafeFuture<PeerSyncResult> syncFuture = new SafeFuture<>();
     when(peerSync.sync(peer)).thenReturn(syncFuture);
-    UnsignedLong startingSlot = UnsignedLong.valueOf(11);
+    UInt64 startingSlot = UInt64.valueOf(11);
     when(peerSync.getStartingSlot()).thenReturn(startingSlot);
 
     assertThat(syncManager.start()).isCompleted();
     assertThat(syncManager.isSyncActive()).isTrue();
 
-    UnsignedLong currentSlot = UnsignedLong.valueOf(17);
+    UInt64 currentSlot = UInt64.valueOf(17);
     when(storageClient.getBestSlot()).thenReturn(currentSlot);
 
     SyncStatus syncStatus = syncManager.getSyncStatus().getSyncStatus();
@@ -317,5 +315,17 @@ public class SyncManagerTest {
     sync1Future.complete(PeerSyncResult.SUCCESSFUL_SYNC);
     assertThat(syncManager.isSyncActive()).isTrue();
     verifyNoMoreInteractions(syncSubscriber);
+  }
+
+  @Test
+  void subscribeToSyncChanges_notNotifiedWhenSyncFailsToFindPeersToSyncTo() {
+    syncManager.subscribeToSyncChanges(syncSubscriber);
+
+    when(network.streamPeers()).thenReturn(Stream.empty());
+
+    final SafeFuture<PeerSyncResult> sync1Future = new SafeFuture<>();
+    when(peerSync.sync(peer)).thenReturn(sync1Future);
+    assertThat(syncManager.start()).isCompleted();
+    verifyNoInteractions(syncSubscriber);
   }
 }

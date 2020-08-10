@@ -14,13 +14,13 @@
 package tech.pegasys.teku.datastructures.state;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -64,7 +64,7 @@ public class Validator extends AbstractImmutableContainer
 
   // Effective balance
   @SuppressWarnings("unused")
-  private final UnsignedLong effective_balance = null;
+  private final UInt64 effective_balance = null;
 
   // Was the validator slashed
   @SuppressWarnings("unused")
@@ -72,19 +72,19 @@ public class Validator extends AbstractImmutableContainer
 
   // Epoch when became eligible for activation
   @SuppressWarnings("unused")
-  private final UnsignedLong activation_eligibility_epoch = null;
+  private final UInt64 activation_eligibility_epoch = null;
 
   // Epoch when validator activated
   @SuppressWarnings("unused")
-  private final UnsignedLong activation_epoch = null;
+  private final UInt64 activation_epoch = null;
 
   // Epoch when validator exited
   @SuppressWarnings("unused")
-  private final UnsignedLong exit_epoch = null;
+  private final UInt64 exit_epoch = null;
 
   // Epoch when validator withdrew
   @SuppressWarnings("unused")
-  private final UnsignedLong withdrawable_epoch = null;
+  private final UInt64 withdrawable_epoch = null;
 
   private Validator(ContainerViewType<Validator> type, TreeNode backingNode) {
     super(type, backingNode);
@@ -93,15 +93,15 @@ public class Validator extends AbstractImmutableContainer
   public Validator(
       BLSPublicKey pubkey,
       Bytes32 withdrawal_credentials,
-      UnsignedLong effective_balance,
+      UInt64 effective_balance,
       boolean slashed,
-      UnsignedLong activation_eligibility_epoch,
-      UnsignedLong activation_epoch,
-      UnsignedLong exit_epoch,
-      UnsignedLong withdrawable_epoch) {
+      UInt64 activation_eligibility_epoch,
+      UInt64 activation_epoch,
+      UInt64 exit_epoch,
+      UInt64 withdrawable_epoch) {
     super(
         TYPE,
-        ViewUtils.createVectorFromBytes(pubkey.toBytes()),
+        ViewUtils.createVectorFromBytes(pubkey.toSSZBytes()),
         new Bytes32View(withdrawal_credentials),
         new UInt64View(effective_balance),
         new BitView(slashed),
@@ -157,12 +157,12 @@ public class Validator extends AbstractImmutableContainer
   public static Validator create(
       BLSPublicKey pubkey,
       Bytes32 withdrawal_credentials,
-      UnsignedLong effective_balance,
+      UInt64 effective_balance,
       boolean slashed,
-      UnsignedLong activation_eligibility_epoch,
-      UnsignedLong activation_epoch,
-      UnsignedLong exit_epoch,
-      UnsignedLong withdrawable_epoch) {
+      UInt64 activation_eligibility_epoch,
+      UInt64 activation_epoch,
+      UInt64 exit_epoch,
+      UInt64 withdrawable_epoch) {
     return new Validator(
         pubkey,
         withdrawal_credentials,
@@ -175,14 +175,14 @@ public class Validator extends AbstractImmutableContainer
   }
 
   public BLSPublicKey getPubkey() {
-    return BLSPublicKey.fromBytes(ViewUtils.getAllBytes(getAny(0)));
+    return BLSPublicKey.fromSSZBytes(ViewUtils.getAllBytes(getAny(0)));
   }
 
   public Bytes32 getWithdrawal_credentials() {
     return ((Bytes32View) get(1)).get();
   }
 
-  public UnsignedLong getEffective_balance() {
+  public UInt64 getEffective_balance() {
     return ((UInt64View) get(2)).get();
   }
 
@@ -190,23 +190,23 @@ public class Validator extends AbstractImmutableContainer
     return ((BitView) get(3)).get();
   }
 
-  public UnsignedLong getActivation_eligibility_epoch() {
+  public UInt64 getActivation_eligibility_epoch() {
     return ((UInt64View) get(4)).get();
   }
 
-  public UnsignedLong getActivation_epoch() {
+  public UInt64 getActivation_epoch() {
     return ((UInt64View) get(5)).get();
   }
 
-  public UnsignedLong getExit_epoch() {
+  public UInt64 getExit_epoch() {
     return ((UInt64View) get(6)).get();
   }
 
-  public UnsignedLong getWithdrawable_epoch() {
+  public UInt64 getWithdrawable_epoch() {
     return ((UInt64View) get(7)).get();
   }
 
-  public Validator withEffective_balance(UnsignedLong effective_balance) {
+  public Validator withEffective_balance(UInt64 effective_balance) {
     return create(
         getPubkey(),
         getWithdrawal_credentials(),
@@ -230,7 +230,7 @@ public class Validator extends AbstractImmutableContainer
         getWithdrawable_epoch());
   }
 
-  public Validator withActivation_eligibility_epoch(UnsignedLong activation_eligibility_epoch) {
+  public Validator withActivation_eligibility_epoch(UInt64 activation_eligibility_epoch) {
     return create(
         getPubkey(),
         getWithdrawal_credentials(),
@@ -242,7 +242,7 @@ public class Validator extends AbstractImmutableContainer
         getWithdrawable_epoch());
   }
 
-  public Validator withActivation_epoch(UnsignedLong activation_epoch) {
+  public Validator withActivation_epoch(UInt64 activation_epoch) {
     return create(
         getPubkey(),
         getWithdrawal_credentials(),
@@ -254,7 +254,7 @@ public class Validator extends AbstractImmutableContainer
         getWithdrawable_epoch());
   }
 
-  public Validator withExit_epoch(UnsignedLong exit_epoch) {
+  public Validator withExit_epoch(UInt64 exit_epoch) {
     return create(
         getPubkey(),
         getWithdrawal_credentials(),
@@ -266,7 +266,7 @@ public class Validator extends AbstractImmutableContainer
         getWithdrawable_epoch());
   }
 
-  public Validator withWithdrawable_epoch(UnsignedLong withdrawable_epoch) {
+  public Validator withWithdrawable_epoch(UInt64 withdrawable_epoch) {
     return create(
         getPubkey(),
         getWithdrawal_credentials(),

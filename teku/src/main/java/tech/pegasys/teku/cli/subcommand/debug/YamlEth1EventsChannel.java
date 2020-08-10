@@ -18,7 +18,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SequenceWriter;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
@@ -28,6 +27,7 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.Deposit;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
@@ -35,9 +35,9 @@ import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 
 class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
 
-  private UnsignedLong nextExpectedDeposit = UnsignedLong.ZERO;
-  private UnsignedLong lastBlockNumber;
-  private UnsignedLong lastBlockTimestamp;
+  private UInt64 nextExpectedDeposit = UInt64.ZERO;
+  private UInt64 lastBlockNumber;
+  private UInt64 lastBlockTimestamp;
   private final SequenceWriter writer;
 
   public YamlEth1EventsChannel(final PrintStream out) throws IOException {
@@ -90,7 +90,7 @@ class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
               + " but got "
               + deposit.getMerkle_tree_index());
     }
-    nextExpectedDeposit = deposit.getMerkle_tree_index().plus(UnsignedLong.ONE);
+    nextExpectedDeposit = deposit.getMerkle_tree_index().plus(UInt64.ONE);
     return new DepositInfo(
         deposit.getMerkle_tree_index(),
         deposit.getPubkey(),
@@ -115,8 +115,8 @@ class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
   }
 
   private static class BlockInfo {
-    public final UnsignedLong block;
-    public final UnsignedLong timestamp;
+    public final UInt64 block;
+    public final UInt64 timestamp;
     public final String hash;
     public final List<DepositInfo> deposits;
 
@@ -124,8 +124,8 @@ class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
     public final List<String> errors;
 
     public BlockInfo(
-        final UnsignedLong blockNumber,
-        final UnsignedLong blockTimestamp,
+        final UInt64 blockNumber,
+        final UInt64 blockTimestamp,
         final Bytes32 blockHash,
         final List<DepositInfo> deposits,
         final List<String> errors) {
@@ -138,8 +138,8 @@ class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
   }
 
   private static class MinGenesisTimeInfo {
-    public final UnsignedLong number;
-    public final UnsignedLong timestamp;
+    public final UInt64 number;
+    public final UInt64 timestamp;
     public final String hash;
     public final boolean minGenesisBlock = true;
 
@@ -151,9 +151,9 @@ class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
   }
 
   private static class DepositInfo {
-    public final UnsignedLong index;
+    public final UInt64 index;
     public final String publicKey;
-    public final UnsignedLong amount;
+    public final UInt64 amount;
     public final String withdrawalCredentials;
     public final String signature;
 
@@ -161,9 +161,9 @@ class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
     public final List<String> errors;
 
     private DepositInfo(
-        final UnsignedLong index,
+        final UInt64 index,
         final BLSPublicKey publicKey,
-        final UnsignedLong amount,
+        final UInt64 amount,
         final Bytes32 withdrawalCredentials,
         final BLSSignature signature,
         final List<String> errors) {
@@ -171,7 +171,7 @@ class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
       this.publicKey = publicKey.toBytesCompressed().toHexString();
       this.amount = amount;
       this.withdrawalCredentials = withdrawalCredentials.toHexString();
-      this.signature = signature.toBytes().toHexString();
+      this.signature = signature.toSSZBytes().toHexString();
       this.errors = errors;
     }
   }

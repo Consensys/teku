@@ -13,12 +13,11 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
@@ -27,16 +26,17 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 class AttestationDataTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private UnsignedLong slot = dataStructureUtil.randomUnsignedLong();
-  private UnsignedLong index = dataStructureUtil.randomUnsignedLong();
+  private UInt64 slot = dataStructureUtil.randomUInt64();
+  private UInt64 index = dataStructureUtil.randomUInt64();
   private Bytes32 beaconBlockRoot = dataStructureUtil.randomBytes32();
-  private UnsignedLong source_epoch = dataStructureUtil.randomUnsignedLong();
+  private UInt64 source_epoch = dataStructureUtil.randomUInt64();
   private Bytes32 source_root = dataStructureUtil.randomBytes32();
-  private UnsignedLong target_epoch = dataStructureUtil.randomUnsignedLong();
+  private UInt64 target_epoch = dataStructureUtil.randomUInt64();
   private Bytes32 target_root = dataStructureUtil.randomBytes32();
   private Checkpoint source = new Checkpoint(source_epoch, source_root);
   private Checkpoint target = new Checkpoint(target_epoch, target_root);
@@ -58,22 +58,22 @@ class AttestationDataTest {
   void shouldNotBeProcessableBeforeSlotAfterCreationSlot() {
     final AttestationData data =
         new AttestationData(
-            UnsignedLong.valueOf(60),
-            UnsignedLong.ZERO,
+            UInt64.valueOf(60),
+            UInt64.ZERO,
             Bytes32.ZERO,
             new Checkpoint(ONE, Bytes32.ZERO),
             new Checkpoint(ONE, Bytes32.ZERO));
 
-    assertThat(data.getEarliestSlotForForkChoice()).isEqualTo(UnsignedLong.valueOf(61));
+    assertThat(data.getEarliestSlotForForkChoice()).isEqualTo(UInt64.valueOf(61));
   }
 
   @Test
   void shouldNotBeProcessableBeforeFirstSlotOfTargetEpoch() {
-    final Checkpoint target = new Checkpoint(UnsignedLong.valueOf(10), Bytes32.ZERO);
+    final Checkpoint target = new Checkpoint(UInt64.valueOf(10), Bytes32.ZERO);
     final AttestationData data =
         new AttestationData(
-            UnsignedLong.valueOf(1),
-            UnsignedLong.ZERO,
+            UInt64.valueOf(1),
+            UInt64.ZERO,
             Bytes32.ZERO,
             new Checkpoint(ONE, Bytes32.ZERO),
             target);
@@ -106,7 +106,7 @@ class AttestationDataTest {
 
   @Test
   void equalsReturnsFalseWhenSourceEpochsAreDifferent() {
-    Checkpoint newSource = new Checkpoint(dataStructureUtil.randomUnsignedLong(), source.getRoot());
+    Checkpoint newSource = new Checkpoint(dataStructureUtil.randomUInt64(), source.getRoot());
     AttestationData testAttestationData =
         new AttestationData(slot, index, beaconBlockRoot, newSource, target);
 
@@ -124,7 +124,7 @@ class AttestationDataTest {
 
   @Test
   void equalsReturnsFalseWhenTargetEpochsAreDifferent() {
-    Checkpoint newTarget = new Checkpoint(dataStructureUtil.randomUnsignedLong(), target.getRoot());
+    Checkpoint newTarget = new Checkpoint(dataStructureUtil.randomUInt64(), target.getRoot());
     AttestationData testAttestationData =
         new AttestationData(slot, index, beaconBlockRoot, source, newTarget);
 
@@ -143,7 +143,7 @@ class AttestationDataTest {
   @Test
   void equalsReturnsFalseWhenSlotIsDifferent() {
     AttestationData testAttestationData =
-        new AttestationData(UnsignedLong.valueOf(1234), index, beaconBlockRoot, source, target);
+        new AttestationData(UInt64.valueOf(1234), index, beaconBlockRoot, source, target);
 
     assertNotEquals(attestationData, testAttestationData);
   }
@@ -151,7 +151,7 @@ class AttestationDataTest {
   @Test
   void equalsReturnsFalseWhenIndexIsDifferent() {
     AttestationData testAttestationData =
-        new AttestationData(slot, UnsignedLong.valueOf(1234), beaconBlockRoot, source, target);
+        new AttestationData(slot, UInt64.valueOf(1234), beaconBlockRoot, source, target);
 
     assertNotEquals(attestationData, testAttestationData);
   }

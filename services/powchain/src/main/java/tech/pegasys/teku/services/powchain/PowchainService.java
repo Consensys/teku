@@ -16,6 +16,11 @@ package tech.pegasys.teku.services.powchain;
 import static tech.pegasys.teku.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
 import static tech.pegasys.teku.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 
+import java.util.concurrent.TimeUnit;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -40,6 +45,8 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class PowchainService extends Service {
 
+  private static final Logger LOG = LogManager.getLogger();
+
   private final Eth1DepositManager eth1DepositManager;
   private final Eth1HeadTracker headTracker;
 
@@ -48,9 +55,7 @@ public class PowchainService extends Service {
 
     AsyncRunner asyncRunner = config.createAsyncRunner("powchain");
 
-    final HttpService web3jService = new HttpService(tekuConfig.getEth1Endpoint());
-    web3jService.addHeader("User-Agent", VersionProvider.VERSION);
-    Web3j web3j = Web3j.build(web3jService);
+    Web3j web3j = createWeb3j(tekuConfig);
 
     final Eth1Provider eth1Provider =
         new ThrottlingEth1Provider(
@@ -99,6 +104,26 @@ public class PowchainService extends Service {
             eth1DepositStorageChannel,
             depositProcessingController,
             new MinimumGenesisTimeBlockFinder(eth1Provider));
+  }
+
+  private Web3j createWeb3j(final TekuConfiguration tekuConfig) {
+    final HttpService web3jService =
+        new HttpService(tekuConfig.getEth1Endpoint(), createOkHttpClient());
+    web3jService.addHeader("User-Agent", VersionProvider.VERSION);
+    return Web3j.build(web3jService);
+  }
+
+  private static OkHttpClient createOkHttpClient() {
+    final OkHttpClient.Builder builder =
+        new OkHttpClient.Builder()
+            // Increased read timeout allows ETH1 nodes time to process large log requests
+            .readTimeout(1, TimeUnit.MINUTES);
+    if (LOG.isTraceEnabled()) {
+      HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
+      logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+      builder.addInterceptor(logging);
+    }
+    return builder.build();
   }
 
   @Override

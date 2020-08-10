@@ -15,16 +15,16 @@ package tech.pegasys.teku.core;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.LocalMessageSignerService;
-import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.core.signatures.UnprotectedSigner;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 public class VoluntaryExitGenerator {
@@ -35,11 +35,11 @@ public class VoluntaryExitGenerator {
   }
 
   private SignedVoluntaryExit create(
-      ForkInfo forkInfo, UnsignedLong epoch, int validatorIndex, boolean valid) {
-    VoluntaryExit exit = new VoluntaryExit(epoch, UnsignedLong.valueOf(validatorIndex));
+      ForkInfo forkInfo, UInt64 epoch, int validatorIndex, boolean valid) {
+    VoluntaryExit exit = new VoluntaryExit(epoch, UInt64.valueOf(validatorIndex));
 
     BLSSignature exitSignature =
-        new Signer(new LocalMessageSignerService(getKeypair(validatorIndex, valid)))
+        new UnprotectedSigner(new LocalMessageSignerService(getKeypair(validatorIndex, valid)))
             .signVoluntaryExit(exit, forkInfo)
             .join();
 
@@ -65,7 +65,7 @@ public class VoluntaryExitGenerator {
   }
 
   public SignedVoluntaryExit withEpoch(BeaconState state, int epoch, int validatorIndex) {
-    return create(state.getForkInfo(), UnsignedLong.valueOf(epoch), validatorIndex, true);
+    return create(state.getForkInfo(), UInt64.valueOf(epoch), validatorIndex, true);
   }
 
   private BLSKeyPair getKeypair(int validatorIndex, boolean valid) {

@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.util.time;
 
-import com.google.common.primitives.UnsignedLong;
 import java.time.Clock;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SystemTimeProvider implements TimeProvider {
 
@@ -25,7 +25,7 @@ public class SystemTimeProvider implements TimeProvider {
   }
 
   @Override
-  public UnsignedLong getTimeInMillis() {
-    return UnsignedLong.valueOf(clock.millis());
+  public UInt64 getTimeInMillis() {
+    return UInt64.valueOf(clock.millis());
   }
 }
