@@ -295,6 +295,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setP2pPrivateKeyFile("path/to/file")
         .setP2pPeerLowerBound(64)
         .setP2pPeerUpperBound(74)
+        .setTargetSubnetSubscriberCount(2)
         .setP2pStaticPeers(Collections.emptyList())
         .setInteropGenesisTime(1)
         .setInteropOwnedValidatorStartIndex(0)
