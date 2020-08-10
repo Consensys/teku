@@ -48,6 +48,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAggregate;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAggregateAndProof;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToBeaconCommittee;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -193,6 +194,12 @@ class BeaconRestApiTest {
   @Test
   public void shouldHaveValidatorPostAggregateAndProofEndpoint() {
     verify(app).post(eq(PostAggregateAndProof.ROUTE), any(PostAggregateAndProof.class));
+  }
+
+  @Test
+  public void shouldHaveSubscribeToBeaconCommitteeEndpoint() {
+    verify(app)
+        .post(eq(PostSubscribeToBeaconCommittee.ROUTE), any(PostSubscribeToBeaconCommittee.class));
   }
 
   @Test
