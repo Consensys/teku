@@ -20,7 +20,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,6 +64,10 @@ public class SyncManagerTest {
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final SyncSubscriber syncSubscriber = mock(SyncSubscriber.class);
 
+  private final AtomicReference<UInt64> localSlot = new AtomicReference<>(PEER_HEAD_SLOT);
+  private final AtomicReference<UInt64> localHeadSlot = new AtomicReference<>(UInt64.ZERO);
+  private final AtomicReference<UInt64> localFinalizedEpoch = new AtomicReference<>(UInt64.ZERO);
+
   @SuppressWarnings("unchecked")
   private final ArgumentCaptor<PeerConnectedSubscriber<Eth2Peer>> onConnectionListener =
       ArgumentCaptor.forClass(PeerConnectedSubscriber.class);
@@ -68,7 +75,9 @@ public class SyncManagerTest {
   @BeforeEach
   public void setUp() {
     when(network.subscribeConnect(any())).thenReturn(SUBSCRIPTION_ID);
-    when(storageClient.getFinalizedEpoch()).thenReturn(UInt64.ZERO);
+    when(storageClient.getFinalizedEpoch()).thenAnswer((__) -> localFinalizedEpoch.get());
+    when(storageClient.getCurrentSlot()).thenAnswer((__) -> Optional.ofNullable(localSlot.get()));
+    when(storageClient.getBestSlot()).thenAnswer((__) -> localHeadSlot.get());
     when(peer.getStatus()).thenReturn(PEER_STATUS);
   }
 
@@ -85,8 +94,51 @@ public class SyncManagerTest {
   @Test
   void sync_noSuitablePeers() {
     // We're already in sync with the peer
-    when(storageClient.getFinalizedEpoch()).thenReturn(PEER_STATUS.getFinalizedEpoch());
-    when(storageClient.getBestSlot()).thenReturn(PEER_STATUS.getHeadSlot());
+    setLocalChainState(PEER_STATUS.getHeadSlot(), PEER_STATUS.getFinalizedEpoch());
+
+    when(network.streamPeers()).thenReturn(Stream.of(peer));
+    // Should be immediately completed as there is nothing to do.
+    assertThat(syncManager.start()).isCompleted();
+    assertThat(syncManager.isSyncActive()).isFalse();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+    verifyNoInteractions(peerSync);
+  }
+
+  @Test
+  void sync_noSuitablePeers_almostInSync() {
+    // We're almost in sync with the peer
+    final UInt64 oldHeadSlot =
+        PEER_STATUS.getHeadSlot().minus(UInt64.valueOf(Constants.SLOTS_PER_EPOCH));
+    setLocalChainState(oldHeadSlot, PEER_STATUS.getFinalizedEpoch().minus(UInt64.ONE));
+
+    when(network.streamPeers()).thenReturn(Stream.of(peer));
+    // Should be immediately completed as there is nothing to do.
+    assertThat(syncManager.start()).isCompleted();
+    assertThat(syncManager.isSyncActive()).isFalse();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+    verifyNoInteractions(peerSync);
+  }
+
+  @Test
+  void sync_noSuitablePeers_remoteEpochInTheFuture() {
+    // Remote peer finalized epoch is too far ahead
+    final UInt64 headSlot = compute_start_slot_at_epoch(PEER_FINALIZED_EPOCH).minus(UInt64.ONE);
+    localSlot.set(headSlot);
+
+    when(network.streamPeers()).thenReturn(Stream.of(peer));
+    // Should be immediately completed as there is nothing to do.
+    assertThat(syncManager.start()).isCompleted();
+    assertThat(syncManager.isSyncActive()).isFalse();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+    verifyNoInteractions(peerSync);
+  }
+
+  @Test
+  void sync_noSuitablePeers_remoteHeadSlotInTheFuture() {
+    // Remote peer head slot is too far ahead
+    final UInt64 headSlot = PEER_HEAD_SLOT.minus(UInt64.valueOf(2));
+    localSlot.set(headSlot);
+
     when(network.streamPeers()).thenReturn(Stream.of(peer));
     // Should be immediately completed as there is nothing to do.
     assertThat(syncManager.start()).isCompleted();
@@ -117,11 +169,58 @@ public class SyncManagerTest {
   }
 
   @Test
+  void sync_existingPeers_remoteHeadSlotIsAheadButWithinErrorThreshold() {
+    final UInt64 headSlot = PEER_HEAD_SLOT.minus(UInt64.ONE);
+    localSlot.set(headSlot);
+
+    when(network.streamPeers()).thenReturn(Stream.of(peer));
+
+    final SafeFuture<PeerSyncResult> syncFuture = new SafeFuture<>();
+    when(peerSync.sync(peer)).thenReturn(syncFuture);
+
+    assertThat(syncManager.start()).isCompleted();
+    assertThat(syncManager.isSyncActive()).isTrue();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+
+    verify(peerSync).sync(peer);
+
+    // Signal the peer sync is complete
+    syncFuture.complete(PeerSyncResult.SUCCESSFUL_SYNC);
+
+    // Check that the sync is done and the peer was not disconnected.
+    assertThat(syncManager.isSyncActive()).isFalse();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+  }
+
+  @Test
+  void sync_existingPeers_peerFinalizedEpochMoreThan1EpochAhead() {
+    setLocalChainState(
+        PEER_STATUS.getHeadSlot(), PEER_STATUS.getFinalizedEpoch().minus(UInt64.valueOf(2)));
+    when(network.streamPeers()).thenReturn(Stream.of(peer));
+
+    final SafeFuture<PeerSyncResult> syncFuture = new SafeFuture<>();
+    when(peerSync.sync(peer)).thenReturn(syncFuture);
+
+    assertThat(syncManager.start()).isCompleted();
+    assertThat(syncManager.isSyncActive()).isTrue();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+
+    verify(peerSync).sync(peer);
+
+    // Signal the peer sync is complete
+    syncFuture.complete(PeerSyncResult.SUCCESSFUL_SYNC);
+
+    // Check that the sync is done and the peer was not disconnected.
+    assertThat(syncManager.isSyncActive()).isFalse();
+    assertThat(syncManager.isSyncQueued()).isFalse();
+  }
+
+  @Test
   void sync_existingPeerWithSameFinalizedEpochButMuchBetterHeadSlot() {
     when(network.streamPeers()).thenReturn(Stream.of(peer));
-    when(storageClient.getFinalizedEpoch()).thenReturn(PEER_STATUS.getFinalizedEpoch());
-    when(storageClient.getBestSlot())
-        .thenReturn(PEER_STATUS.getHeadSlot().minus(UInt64.valueOf(Constants.SLOTS_PER_EPOCH + 1)));
+    final UInt64 oldHeadSlot =
+        PEER_STATUS.getHeadSlot().minus(UInt64.valueOf(Constants.SLOTS_PER_EPOCH + 1));
+    setLocalChainState(oldHeadSlot, PEER_STATUS.getFinalizedEpoch());
 
     final SafeFuture<PeerSyncResult> syncFuture = new SafeFuture<>();
     when(peerSync.sync(peer)).thenReturn(syncFuture);
@@ -234,11 +333,11 @@ public class SyncManagerTest {
     assertThat(syncManager.start()).isCompleted();
     assertThat(syncManager.isSyncActive()).isTrue();
 
-    UInt64 currentSlot = UInt64.valueOf(17);
-    when(storageClient.getBestSlot()).thenReturn(currentSlot);
+    UInt64 headSlot = UInt64.valueOf(17);
+    localHeadSlot.set(headSlot);
 
     SyncStatus syncStatus = syncManager.getSyncStatus().getSyncStatus();
-    assertThat(syncStatus.getCurrentSlot()).isEqualTo(currentSlot);
+    assertThat(syncStatus.getCurrentSlot()).isEqualTo(headSlot);
     assertThat(syncStatus.getStartingSlot()).isEqualTo(startingSlot);
     assertThat(syncStatus.getHighestSlot()).isEqualTo(PEER_HEAD_SLOT);
 
@@ -327,5 +426,10 @@ public class SyncManagerTest {
     when(peerSync.sync(peer)).thenReturn(sync1Future);
     assertThat(syncManager.start()).isCompleted();
     verifyNoInteractions(syncSubscriber);
+  }
+
+  private void setLocalChainState(final UInt64 headSlot, final UInt64 finalizedEpoch) {
+    localHeadSlot.set(headSlot);
+    localFinalizedEpoch.set(finalizedEpoch);
   }
 }

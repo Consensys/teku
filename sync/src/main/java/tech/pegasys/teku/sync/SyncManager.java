@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.sync;
 
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
@@ -31,6 +32,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
@@ -43,6 +45,7 @@ import tech.pegasys.teku.util.events.Subscribers;
 public class SyncManager extends Service {
   private static final Duration SHORT_DELAY = Duration.ofSeconds(5);
   private static final Duration LONG_DELAY = Duration.ofSeconds(20);
+  private static final UInt64 SYNC_THRESHOLD_IN_EPOCHS = UInt64.ONE;
 
   private static final Logger LOG = LogManager.getLogger();
   private final P2PNetwork<Eth2Peer> network;
@@ -255,14 +258,36 @@ public class SyncManager extends Service {
         "Looking for suitable peer (out of {}) with finalized epoch > {}.",
         network.getPeerCount(),
         ourFinalizedEpoch);
+
+    final PeerStatus peerStatus = peer.getStatus();
     return !peersWithSyncErrors.contains(peer.getId())
-        && (peer.getStatus().getFinalizedEpoch().compareTo(ourFinalizedEpoch) > 0
-            || isHeadMoreThanAnEpochAhead(peer));
+        && peerStatusIsConsistentWithOurNode(peerStatus)
+        && peerIsAheadOfOurNode(peerStatus, ourFinalizedEpoch);
   }
 
-  private boolean isHeadMoreThanAnEpochAhead(final Eth2Peer peer) {
+  /** Make sure remote peer is not broadcasting a chain state from the future. */
+  private boolean peerStatusIsConsistentWithOurNode(final PeerStatus peerStatus) {
+    final UInt64 currentSlot = storageClient.getCurrentSlot().orElse(UInt64.ZERO);
+    final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
+    final UInt64 slotErrorThreshold = UInt64.ONE;
+
+    return peerStatus.getFinalizedEpoch().compareTo(currentEpoch) <= 0
+        && peerStatus.getHeadSlot().compareTo(currentSlot.plus(slotErrorThreshold)) <= 0;
+  }
+
+  private boolean peerIsAheadOfOurNode(
+      final PeerStatus peerStatus, final UInt64 ourFinalizedEpoch) {
+    final UInt64 finalizedEpochThreshold = ourFinalizedEpoch.plus(SYNC_THRESHOLD_IN_EPOCHS);
+
+    return peerStatus.getFinalizedEpoch().compareTo(finalizedEpochThreshold) > 0
+        || isPeerHeadSlotAhead(peerStatus);
+  }
+
+  private boolean isPeerHeadSlotAhead(final PeerStatus peerStatus) {
     final UInt64 ourHeadSlot = storageClient.getBestSlot();
-    final UInt64 theirHeadSlot = peer.getStatus().getHeadSlot();
-    return theirHeadSlot.compareTo(ourHeadSlot.plus(UInt64.valueOf(SLOTS_PER_EPOCH))) > 0;
+    final UInt64 headSlotThreshold =
+        ourHeadSlot.plus(SYNC_THRESHOLD_IN_EPOCHS.times(SLOTS_PER_EPOCH));
+
+    return peerStatus.getHeadSlot().compareTo(headSlotThreshold) > 0;
   }
 }
