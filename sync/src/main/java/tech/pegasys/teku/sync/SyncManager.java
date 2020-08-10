@@ -273,15 +273,15 @@ public class SyncManager extends Service {
     final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
     final UInt64 slotErrorThreshold = UInt64.ONE;
 
-    return peerStatus.getFinalizedEpoch().compareTo(currentEpoch) <= 0
-        && peerStatus.getHeadSlot().compareTo(currentSlot.plus(slotErrorThreshold)) <= 0;
+    return peerStatus.getFinalizedEpoch().isLessThanOrEqualTo(currentEpoch)
+        && peerStatus.getHeadSlot().isLessThanOrEqualTo(currentSlot.plus(slotErrorThreshold));
   }
 
   private boolean peerIsAheadOfOurNode(
       final PeerStatus peerStatus, final UInt64 ourFinalizedEpoch) {
     final UInt64 finalizedEpochThreshold = ourFinalizedEpoch.plus(SYNC_THRESHOLD_IN_EPOCHS);
 
-    return peerStatus.getFinalizedEpoch().compareTo(finalizedEpochThreshold) > 0
+    return peerStatus.getFinalizedEpoch().isGreaterThan(finalizedEpochThreshold)
         || isPeerHeadSlotAhead(peerStatus);
   }
 
@@ -289,6 +289,6 @@ public class SyncManager extends Service {
     final UInt64 ourHeadSlot = storageClient.getBestSlot();
     final UInt64 headSlotThreshold = ourHeadSlot.plus(SYNC_THRESHOLD_IN_SLOTS);
 
-    return peerStatus.getHeadSlot().compareTo(headSlotThreshold) > 0;
+    return peerStatus.getHeadSlot().isGreaterThan(headSlotThreshold);
   }
 }

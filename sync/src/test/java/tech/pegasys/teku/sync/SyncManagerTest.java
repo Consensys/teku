@@ -109,7 +109,7 @@ public class SyncManagerTest {
     // We're almost in sync with the peer
     final UInt64 oldHeadSlot =
         PEER_STATUS.getHeadSlot().minus(UInt64.valueOf(Constants.SLOTS_PER_EPOCH));
-    setLocalChainState(oldHeadSlot, PEER_STATUS.getFinalizedEpoch().minus(UInt64.ONE));
+    setLocalChainState(oldHeadSlot, PEER_STATUS.getFinalizedEpoch().minus(1));
 
     when(network.streamPeers()).thenReturn(Stream.of(peer));
     // Should be immediately completed as there is nothing to do.
@@ -122,7 +122,7 @@ public class SyncManagerTest {
   @Test
   void sync_noSuitablePeers_remoteEpochInTheFuture() {
     // Remote peer finalized epoch is too far ahead
-    final UInt64 headSlot = compute_start_slot_at_epoch(PEER_FINALIZED_EPOCH).minus(UInt64.ONE);
+    final UInt64 headSlot = compute_start_slot_at_epoch(PEER_FINALIZED_EPOCH).minus(1);
     localSlot.set(headSlot);
 
     when(network.streamPeers()).thenReturn(Stream.of(peer));
@@ -136,7 +136,7 @@ public class SyncManagerTest {
   @Test
   void sync_noSuitablePeers_remoteHeadSlotInTheFuture() {
     // Remote peer head slot is too far ahead
-    final UInt64 headSlot = PEER_HEAD_SLOT.minus(UInt64.valueOf(2));
+    final UInt64 headSlot = PEER_HEAD_SLOT.minus(2);
     localSlot.set(headSlot);
 
     when(network.streamPeers()).thenReturn(Stream.of(peer));
@@ -170,7 +170,7 @@ public class SyncManagerTest {
 
   @Test
   void sync_existingPeers_remoteHeadSlotIsAheadButWithinErrorThreshold() {
-    final UInt64 headSlot = PEER_HEAD_SLOT.minus(UInt64.ONE);
+    final UInt64 headSlot = PEER_HEAD_SLOT.minus(1);
     localSlot.set(headSlot);
 
     when(network.streamPeers()).thenReturn(Stream.of(peer));
@@ -194,8 +194,7 @@ public class SyncManagerTest {
 
   @Test
   void sync_existingPeers_peerFinalizedEpochMoreThan1EpochAhead() {
-    setLocalChainState(
-        PEER_STATUS.getHeadSlot(), PEER_STATUS.getFinalizedEpoch().minus(UInt64.valueOf(2)));
+    setLocalChainState(PEER_STATUS.getHeadSlot(), PEER_STATUS.getFinalizedEpoch().minus(2));
     when(network.streamPeers()).thenReturn(Stream.of(peer));
 
     final SafeFuture<PeerSyncResult> syncFuture = new SafeFuture<>();
@@ -218,8 +217,7 @@ public class SyncManagerTest {
   @Test
   void sync_existingPeerWithSameFinalizedEpochButMuchBetterHeadSlot() {
     when(network.streamPeers()).thenReturn(Stream.of(peer));
-    final UInt64 oldHeadSlot =
-        PEER_STATUS.getHeadSlot().minus(UInt64.valueOf(Constants.SLOTS_PER_EPOCH + 1));
+    final UInt64 oldHeadSlot = PEER_STATUS.getHeadSlot().minus(Constants.SLOTS_PER_EPOCH + 1);
     setLocalChainState(oldHeadSlot, PEER_STATUS.getFinalizedEpoch());
 
     final SafeFuture<PeerSyncResult> syncFuture = new SafeFuture<>();
