@@ -192,7 +192,7 @@ class AggregatingAttestationPoolTest {
     aggregatingPool.onSlot(
         pruneAttestationData
             .getSlot()
-            .plus(UInt64.valueOf(SLOTS_PER_EPOCH * ATTESTATION_RETENTION_EPOCHS))
+            .plus(SLOTS_PER_EPOCH * ATTESTATION_RETENTION_EPOCHS)
             .plus(ONE));
 
     assertThat(aggregatingPool.getAttestationsForBlock(dataStructureUtil.randomBeaconState()))

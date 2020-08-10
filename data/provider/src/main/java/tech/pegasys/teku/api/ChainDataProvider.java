@@ -84,7 +84,7 @@ public class ChainDataProvider {
 
     final UInt64 earliestQueryableSlot =
         CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
-    if (recentChainData.getBestSlot().compareTo(earliestQueryableSlot) < 0) {
+    if (recentChainData.getBestSlot().isLessThan(earliestQueryableSlot)) {
       return SafeFuture.completedFuture(Optional.empty());
     }
 

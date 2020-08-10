@@ -177,9 +177,8 @@ public class CommitteeUtil {
       int random_byte = UnsignedBytes.toInt(hash.get(i % 32));
       UInt64 effective_balance = state.getValidators().get(candidate_index).getEffective_balance();
       if (effective_balance
-              .times(MAX_RANDOM_BYTE)
-              .compareTo(UInt64.valueOf(MAX_EFFECTIVE_BALANCE).times(UInt64.valueOf(random_byte)))
-          >= 0) {
+          .times(MAX_RANDOM_BYTE)
+          .isGreaterThanOrEqualTo(UInt64.valueOf(MAX_EFFECTIVE_BALANCE).times(random_byte))) {
         return candidate_index;
       }
       i++;
@@ -238,13 +237,8 @@ public class CommitteeUtil {
               UInt64 committees_per_slot = get_committee_count_per_slot(state, epoch);
               int committeeIndex =
                   toIntExact(
-                      slot.mod(UInt64.valueOf(SLOTS_PER_EPOCH))
-                          .times(committees_per_slot)
-                          .plus(index)
-                          .longValue());
-              int count =
-                  toIntExact(
-                      committees_per_slot.times(UInt64.valueOf(SLOTS_PER_EPOCH)).longValue());
+                      slot.mod(SLOTS_PER_EPOCH).times(committees_per_slot).plus(index).longValue());
+              int count = committees_per_slot.times(SLOTS_PER_EPOCH).intValue();
               return compute_committee(
                   state,
                   get_active_validator_indices(state, epoch),
@@ -314,14 +308,10 @@ public class CommitteeUtil {
 
   public static int computeSubnetForCommittee(
       final BeaconState state, final UInt64 attestationSlot, final UInt64 committeeIndex) {
-    final UInt64 slotsSinceEpochStart = attestationSlot.mod(UInt64.valueOf(SLOTS_PER_EPOCH));
+    final UInt64 slotsSinceEpochStart = attestationSlot.mod(SLOTS_PER_EPOCH);
     final UInt64 committeesSinceEpochStart =
         get_committee_count_per_slot(state, compute_epoch_at_slot(attestationSlot))
             .times(slotsSinceEpochStart);
-    return toIntExact(
-        committeesSinceEpochStart
-            .plus(committeeIndex)
-            .mod(UInt64.valueOf(ATTESTATION_SUBNET_COUNT))
-            .longValue());
+    return committeesSinceEpochStart.plus(committeeIndex).mod(ATTESTATION_SUBNET_COUNT).intValue();
   }
 }

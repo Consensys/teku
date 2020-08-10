@@ -180,8 +180,7 @@ public class SlotProcessorTest {
     when(syncService.isSyncActive()).thenReturn(false);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
-    UInt64 slotProcessingTime =
-        beaconState.getGenesis_time().plus(slot.times(UInt64.valueOf(SECONDS_PER_SLOT)));
+    UInt64 slotProcessingTime = beaconState.getGenesis_time().plus(slot.times(SECONDS_PER_SLOT));
     // slot processor starts at slot 0, but fast forwards to slot 100
     slotProcessor.onTick(slotProcessingTime);
     assertThat(slotProcessor.getNodeSlot().getValue()).isEqualTo(slot);
@@ -212,7 +211,7 @@ public class SlotProcessorTest {
 
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
-    slotProcessor.onTick(beaconState.getGenesis_time().plus(UInt64.valueOf(SECONDS_PER_SLOT / 3)));
+    slotProcessor.onTick(beaconState.getGenesis_time().plus(SECONDS_PER_SLOT / 3));
     verify(eventLogger)
         .slotEvent(
             ZERO,
@@ -240,8 +239,7 @@ public class SlotProcessorTest {
 
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
-    slotProcessor.onTick(
-        beaconState.getGenesis_time().plus(UInt64.valueOf(SECONDS_PER_SLOT).minus(ONE)));
+    slotProcessor.onTick(beaconState.getGenesis_time().plus(SECONDS_PER_SLOT - 1));
     assertThat(slotProcessor.getNodeSlot().getValue()).isEqualTo(ONE);
     assertThat(events).containsExactly(new BroadcastAggregatesEvent(slot));
   }

@@ -102,9 +102,7 @@ class BlockProcessorUtilTest {
         originalValidatorBalancesSize,
         "A new balance was added to the validator balances, but should not have been.");
     assertEquals(knownValidator, postState.getValidators().get(originalValidatorRegistrySize - 1));
-    assertEquals(
-        amount.times(UInt64.valueOf(2L)),
-        postState.getBalances().get(originalValidatorBalancesSize - 1));
+    assertEquals(amount.times(2L), postState.getBalances().get(originalValidatorBalancesSize - 1));
   }
 
   @Test

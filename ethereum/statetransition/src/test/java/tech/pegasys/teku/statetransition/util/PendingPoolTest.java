@@ -32,7 +32,7 @@ public class PendingPoolTest {
   private final UInt64 futureTolerance = UInt64.valueOf(2);
   private final PendingPool<SignedBeaconBlock> pendingPool =
       PendingPool.createForBlocks(historicalTolerance, futureTolerance);
-  private UInt64 currentSlot = historicalTolerance.times(UInt64.valueOf(2));
+  private UInt64 currentSlot = historicalTolerance.times(2);
   private List<Bytes32> requiredRootEvents = new ArrayList<>();
   private List<Bytes32> requiredRootDroppedEvents = new ArrayList<>();
 

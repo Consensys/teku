@@ -259,8 +259,7 @@ public class BeaconChainUtil {
     }
 
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    createAndImportBlockAtSlot(
-        recentChainData.getBestSlot().plus(UInt64.valueOf(MIN_ATTESTATION_INCLUSION_DELAY)));
+    createAndImportBlockAtSlot(recentChainData.getBestSlot().plus(MIN_ATTESTATION_INCLUSION_DELAY));
 
     while (recentChainData.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) < 0) {
 

@@ -36,8 +36,7 @@ import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 class ForkChoiceUtilTest {
 
   private static final UInt64 GENESIS_TIME = UInt64.valueOf("1591924193");
-  static final UInt64 SLOT_50 =
-      GENESIS_TIME.plus(UInt64.valueOf(SECONDS_PER_SLOT).times(UInt64.valueOf(50L)));
+  static final UInt64 SLOT_50 = GENESIS_TIME.plus(SECONDS_PER_SLOT * 50L);
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
   private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();

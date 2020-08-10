@@ -420,7 +420,7 @@ class ValidatorApiHandlerTest {
   }
 
   private BeaconState createStateWithMixOfActiveAndInactiveValidators(final UInt64 slot) {
-    final UInt64 futureEpoch = compute_epoch_at_slot(slot).plus(UInt64.valueOf(10));
+    final UInt64 futureEpoch = compute_epoch_at_slot(slot).plus(10);
     return dataStructureUtil
         .randomBeaconState(32)
         .updated(

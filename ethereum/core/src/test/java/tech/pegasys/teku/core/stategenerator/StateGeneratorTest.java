@@ -232,8 +232,7 @@ public class StateGeneratorTest {
     final HashTree tree =
         HashTree.builder().rootHash(genesis.getRoot()).blocks(blockMap.values()).build();
     // Create block provider that is missing some blocks
-    final SignedBeaconBlock missingBlock =
-        chainBuilder.getBlockAtSlot(genesis.getSlot().plus(UInt64.valueOf(2)));
+    final SignedBeaconBlock missingBlock = chainBuilder.getBlockAtSlot(genesis.getSlot().plus(2));
     blockMap.remove(missingBlock.getRoot());
     final BlockProvider blockProvider = BlockProvider.fromMap(blockMap);
 

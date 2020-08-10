@@ -166,7 +166,7 @@ public class AttestationValidator {
       final Attestation attestation, final UInt64 currentTimeMillis) {
     final UInt64 minimumBroadcastTimeMillis =
         minimumBroadcastTimeMillis(attestation.getData().getSlot());
-    return currentTimeMillis.compareTo(minimumBroadcastTimeMillis) < 0;
+    return currentTimeMillis.isLessThan(minimumBroadcastTimeMillis);
   }
 
   private boolean isFromFarFuture(final Attestation attestation, final UInt64 currentTimeMillis) {
@@ -175,19 +175,16 @@ public class AttestationValidator {
             recentChainData
                 .getGenesisTime()
                 .plus(
-                    attestation
-                        .getEarliestSlotForForkChoiceProcessing()
-                        .times(UInt64.valueOf(SECONDS_PER_SLOT))));
+                    attestation.getEarliestSlotForForkChoiceProcessing().times(SECONDS_PER_SLOT)));
     final UInt64 discardAttestationsAfterMillis =
-        currentTimeMillis.plus(
-            secondsToMillis(MAX_FUTURE_SLOT_ALLOWANCE.times(UInt64.valueOf(SECONDS_PER_SLOT))));
-    return attestationSlotTimeMillis.compareTo(discardAttestationsAfterMillis) > 0;
+        currentTimeMillis.plus(secondsToMillis(MAX_FUTURE_SLOT_ALLOWANCE.times(SECONDS_PER_SLOT)));
+    return attestationSlotTimeMillis.isGreaterThan(discardAttestationsAfterMillis);
   }
 
   private boolean isCurrentTimeAfterAttestationPropagationSlotRange(
       final UInt64 currentTimeMillis, final Attestation attestation) {
     final UInt64 attestationSlot = attestation.getData().getSlot();
-    return maximumBroadcastTimeMillis(attestationSlot).compareTo(currentTimeMillis) < 0;
+    return maximumBroadcastTimeMillis(attestationSlot).isLessThan(currentTimeMillis);
   }
 
   private UInt64 secondsToMillis(final UInt64 seconds) {
@@ -196,11 +193,9 @@ public class AttestationValidator {
 
   private UInt64 minimumBroadcastTimeMillis(final UInt64 attestationSlot) {
     final UInt64 lastAllowedTime =
-        recentChainData
-            .getGenesisTime()
-            .plus(attestationSlot.times(UInt64.valueOf(SECONDS_PER_SLOT)));
+        recentChainData.getGenesisTime().plus(attestationSlot.times(SECONDS_PER_SLOT));
     final UInt64 lastAllowedTimeMillis = secondsToMillis(lastAllowedTime);
-    return lastAllowedTimeMillis.compareTo(MAXIMUM_GOSSIP_CLOCK_DISPARITY) >= 0
+    return lastAllowedTimeMillis.isGreaterThanOrEqualTo(MAXIMUM_GOSSIP_CLOCK_DISPARITY)
         ? lastAllowedTimeMillis.minus(MAXIMUM_GOSSIP_CLOCK_DISPARITY)
         : ZERO;
   }
@@ -209,9 +204,7 @@ public class AttestationValidator {
     final UInt64 lastAllowedSlot = attestationSlot.plus(ATTESTATION_PROPAGATION_SLOT_RANGE);
     // The last allowed time is the end of the lastAllowedSlot (hence the plus 1).
     final UInt64 lastAllowedTime =
-        recentChainData
-            .getGenesisTime()
-            .plus(lastAllowedSlot.plus(ONE).times(UInt64.valueOf(SECONDS_PER_SLOT)));
+        recentChainData.getGenesisTime().plus(lastAllowedSlot.plus(ONE).times(SECONDS_PER_SLOT));
 
     // Add allowed clock disparity
     return secondsToMillis(lastAllowedTime).plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY);
