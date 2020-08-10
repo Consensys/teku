@@ -79,7 +79,10 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
     variablePartsList.add(
-        SSZ.encodeUInt64List(attesting_indices.stream().mapToLong(UInt64::longValue).toArray()));
+        SSZ.encode(
+            writer ->
+                attesting_indices.stream()
+                    .forEach(value -> writer.writeUInt64(value.longValue()))));
     variablePartsList.addAll(Collections.nCopies(data.getSSZFieldCount(), Bytes.EMPTY));
     variablePartsList.addAll(Collections.nCopies(signature.getSSZFieldCount(), Bytes.EMPTY));
     return variablePartsList;
