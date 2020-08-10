@@ -41,11 +41,11 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
@@ -278,22 +278,17 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void createUnsignedAttestation_shouldCreateAttestation() {
-    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
-
     final UInt64 slot = compute_start_slot_at_epoch(EPOCH).plus(UInt64.ONE);
 
     final BeaconState state = createStateWithActiveValidators(PREVIOUS_EPOCH_START_SLOT);
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(state.getSlot(), state);
+    final SignedBlockAndState blockAndState = new SignedBlockAndState(block, state);
 
-    final CheckpointState checkpointState = mock(CheckpointState.class);
-    when(checkpointState.getState()).thenReturn(state);
-    when(checkpointState.getBlock()).thenReturn(block);
-
-    when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
-    when(chainDataClient.getBestSlot()).thenReturn(slot);
-    when(chainDataClient.getCheckpointStateAtEpoch(PREVIOUS_EPOCH))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(checkpointState)));
+    final SafeFuture<Optional<SignedBlockAndState>> blockAndStateResult =
+        completedFuture(Optional.of(blockAndState));
+    when(chainDataClient.getSignedBlockAndStateInEffectAtSlot(slot))
+        .thenReturn(blockAndStateResult);
 
     final int committeeIndex = 0;
     final SafeFuture<Optional<Attestation>> result =
