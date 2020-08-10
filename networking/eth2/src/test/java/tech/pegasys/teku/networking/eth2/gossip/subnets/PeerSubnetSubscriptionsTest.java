@@ -38,6 +38,7 @@ class PeerSubnetSubscriptionsTest {
   private static final NodeId PEER1 = new MockNodeId(1);
   private static final NodeId PEER2 = new MockNodeId(2);
   private static final NodeId PEER3 = new MockNodeId(3);
+  private static final int TARGET_SUBSCRIBER_COUNT = 2;
 
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final AttestationSubnetTopicProvider topicProvider =
@@ -60,7 +61,7 @@ class PeerSubnetSubscriptionsTest {
             .build();
     when(gossipNetwork.getSubscribersByTopic()).thenReturn(subscribersByTopic);
     final PeerSubnetSubscriptions subscriptions =
-        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider);
+        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider, TARGET_SUBSCRIBER_COUNT);
     assertThat(subscriptions.getSubscriberCountForSubnet(0)).isEqualTo(3);
     assertThat(subscriptions.getSubscriberCountForSubnet(1)).isEqualTo(1);
     assertThat(subscriptions.getSubscriberCountForSubnet(2)).isEqualTo(2);
@@ -73,37 +74,42 @@ class PeerSubnetSubscriptionsTest {
   @Test
   void shouldReturnEmptyBitvectorWhenPeerHasNoSubscriptions() {
     final Bitvector subscriptions =
-        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider).getSubscriptionsForPeer(PEER1);
+        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider, TARGET_SUBSCRIBER_COUNT)
+            .getSubscriptionsForPeer(PEER1);
     assertThat(subscriptions).isEqualTo(createBitvector());
   }
 
   @Test
   void shouldReturnZeroWhenSubnetHasNoSubscribers() {
     final int subscriberCount =
-        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider).getSubscriberCountForSubnet(1);
+        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider, TARGET_SUBSCRIBER_COUNT)
+            .getSubscriberCountForSubnet(1);
     assertThat(subscriberCount).isEqualTo(0);
   }
 
   @Test
   void shouldRequireAdditionalPeersWhenNotAllSubnetsHaveEnoughSubscribers() {
     final int requiredPeers =
-        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider).getSubscribersRequired();
-    assertThat(requiredPeers).isEqualTo(PeerSubnetSubscriptions.TARGET_SUBSCRIBER_COUNT);
+        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider, TARGET_SUBSCRIBER_COUNT)
+            .getSubscribersRequired();
+    assertThat(requiredPeers).isEqualTo(TARGET_SUBSCRIBER_COUNT);
   }
 
   @Test
   void shouldRequireAdditionalPeersWhenAllSubnetsHaveSomeButNotEnoughSubscribers() {
     withSubscriberCountForAllSubnets(1);
     final int requiredPeers =
-        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider).getSubscribersRequired();
-    assertThat(requiredPeers).isEqualTo(PeerSubnetSubscriptions.TARGET_SUBSCRIBER_COUNT - 1);
+        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider, TARGET_SUBSCRIBER_COUNT)
+            .getSubscribersRequired();
+    assertThat(requiredPeers).isEqualTo(TARGET_SUBSCRIBER_COUNT - 1);
   }
 
   @Test
   void shouldRequireAdditionalPeersWhenAllSubnetsHaveEnoughSubscribers() {
-    withSubscriberCountForAllSubnets(PeerSubnetSubscriptions.TARGET_SUBSCRIBER_COUNT);
+    withSubscriberCountForAllSubnets(TARGET_SUBSCRIBER_COUNT);
     final int requiredPeers =
-        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider).getSubscribersRequired();
+        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider, TARGET_SUBSCRIBER_COUNT)
+            .getSubscribersRequired();
     assertThat(requiredPeers).isZero();
   }
 
