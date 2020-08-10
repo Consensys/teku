@@ -64,12 +64,15 @@ import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAggregateAndProof;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToBeaconCommittee;
+import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToPersistentSubnets;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class BeaconRestApi {
+
   private final Javalin app;
   private final JsonProvider jsonProvider = new JsonProvider();
   private static final Logger LOG = LogManager.getLogger();
@@ -234,6 +237,12 @@ public class BeaconRestApi {
     app.post(
         PostAggregateAndProof.ROUTE,
         new PostAggregateAndProof(validatorDataProvider, jsonProvider));
+    app.post(
+        PostSubscribeToBeaconCommittee.ROUTE,
+        new PostSubscribeToBeaconCommittee(validatorDataProvider, jsonProvider));
+    app.post(
+        PostSubscribeToPersistentSubnets.ROUTE,
+        new PostSubscribeToPersistentSubnets(validatorDataProvider, jsonProvider));
   }
 
   private void addNetworkHandlers(NetworkDataProvider networkDataProvider) {

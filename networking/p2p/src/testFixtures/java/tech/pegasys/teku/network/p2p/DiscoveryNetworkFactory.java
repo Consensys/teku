@@ -87,7 +87,8 @@ public class DiscoveryNetworkFactory {
                 staticPeers,
                 true,
                 bootnodes,
-                new TargetPeerRange(20, 30, 0));
+                new TargetPeerRange(20, 30, 0),
+                2);
         final NoOpMetricsSystem metricsSystem = new NoOpMetricsSystem();
         final ReputationManager reputationManager =
             new ReputationManager(
