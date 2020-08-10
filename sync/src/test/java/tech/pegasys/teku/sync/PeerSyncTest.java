@@ -393,8 +393,8 @@ public class PeerSyncTest {
 
   @Test
   void sync_stopSyncIfPeerSendsBlocksInWrongOrder() {
-    final UnsignedLong startSlot = UnsignedLong.ONE;
-    UnsignedLong peerHeadSlot = UnsignedLong.valueOf(1000000);
+    final UInt64 startSlot = UInt64.ONE;
+    UInt64 peerHeadSlot = UInt64.valueOf(1000000);
 
     withPeerHeadSlot(peerHeadSlot);
 
@@ -408,12 +408,12 @@ public class PeerSyncTest {
         .requestBlocksByRange(
             eq(startSlot),
             eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
-            eq(UnsignedLong.ONE),
+            eq(UInt64.ONE),
             responseListenerArgumentCaptor.capture());
 
     requestFuture.completeExceptionally(
         new BlocksByRangeResponseOutOfOrderException(
-            peer, startSlot, startSlot.plus(UnsignedLong.valueOf(100))));
+            peer, startSlot, startSlot.plus(UInt64.valueOf(100))));
 
     // Peer returns some blocks but they are not ordered
     assertThat(syncFuture).isCompletedWithValue(PeerSyncResult.INVALID_RESPONSE);

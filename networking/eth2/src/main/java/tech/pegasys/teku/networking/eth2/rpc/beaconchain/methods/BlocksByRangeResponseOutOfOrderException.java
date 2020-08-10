@@ -13,14 +13,13 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 
 public class BlocksByRangeResponseOutOfOrderException extends InvalidResponseException {
 
-  public BlocksByRangeResponseOutOfOrderException(
-      Peer peer, UnsignedLong startSlot, UnsignedLong endSlot) {
+  public BlocksByRangeResponseOutOfOrderException(Peer peer, UInt64 startSlot, UInt64 endSlot) {
     super(
         String.format(
             "Received invalid response from peer %s.  Peer returned blocks at slots %s, %s out of order. ",

@@ -19,12 +19,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 
@@ -43,9 +43,9 @@ public class BlocksByRangeListenerWrapperTest {
 
   @Test
   void blockSlotSmallerThanFromSlot() {
-    UnsignedLong START_SLOT = UnsignedLong.valueOf(1);
-    UnsignedLong COUNT = UnsignedLong.valueOf(4);
-    UnsignedLong STEP = UnsignedLong.valueOf(2);
+    UInt64 START_SLOT = UInt64.valueOf(1);
+    UInt64 COUNT = UInt64.valueOf(4);
+    UInt64 STEP = UInt64.valueOf(2);
     listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, START_SLOT, COUNT, STEP);
 
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(0);
@@ -59,9 +59,9 @@ public class BlocksByRangeListenerWrapperTest {
 
   @Test
   void blockSlotIsCorrect() {
-    UnsignedLong START_SLOT = UnsignedLong.valueOf(1);
-    UnsignedLong COUNT = UnsignedLong.valueOf(4);
-    UnsignedLong STEP = UnsignedLong.valueOf(2);
+    UInt64 START_SLOT = UInt64.valueOf(1);
+    UInt64 COUNT = UInt64.valueOf(4);
+    UInt64 STEP = UInt64.valueOf(2);
     listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, START_SLOT, COUNT, STEP);
 
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
@@ -77,9 +77,9 @@ public class BlocksByRangeListenerWrapperTest {
 
   @Test
   void blockSlotDoesNotMatchStep() {
-    UnsignedLong START_SLOT = UnsignedLong.valueOf(1);
-    UnsignedLong COUNT = UnsignedLong.valueOf(4);
-    UnsignedLong STEP = UnsignedLong.valueOf(2);
+    UInt64 START_SLOT = UInt64.valueOf(1);
+    UInt64 COUNT = UInt64.valueOf(4);
+    UInt64 STEP = UInt64.valueOf(2);
     listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, START_SLOT, COUNT, STEP);
 
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
@@ -95,9 +95,9 @@ public class BlocksByRangeListenerWrapperTest {
 
   @Test
   void blockSlotGreaterThanToSlot() {
-    UnsignedLong START_SLOT = UnsignedLong.valueOf(1);
-    UnsignedLong COUNT = UnsignedLong.valueOf(4);
-    UnsignedLong STEP = UnsignedLong.valueOf(2);
+    UInt64 START_SLOT = UInt64.valueOf(1);
+    UInt64 COUNT = UInt64.valueOf(4);
+    UInt64 STEP = UInt64.valueOf(2);
     // end slot is 9
     listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, START_SLOT, COUNT, STEP);
 

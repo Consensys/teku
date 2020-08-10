@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 
@@ -24,18 +24,18 @@ public class BlocksByRangeListenerWrapper implements ResponseStreamListener<Sign
 
   private final Peer peer;
   private final ResponseStreamListener<SignedBeaconBlock> blockResponseListener;
-  private final UnsignedLong startSlot;
-  private final UnsignedLong endSlot;
-  private final UnsignedLong step;
+  private final UInt64 startSlot;
+  private final UInt64 endSlot;
+  private final UInt64 step;
 
-  private Optional<UnsignedLong> maybeSlotOfLastBlock = Optional.empty();
+  private Optional<UInt64> maybeSlotOfLastBlock = Optional.empty();
 
   public BlocksByRangeListenerWrapper(
       Peer peer,
       ResponseStreamListener<SignedBeaconBlock> blockResponseListener,
-      UnsignedLong startSlot,
-      UnsignedLong count,
-      UnsignedLong step) {
+      UInt64 startSlot,
+      UInt64 count,
+      UInt64 step) {
     this.peer = peer;
     this.blockResponseListener = blockResponseListener;
     this.startSlot = startSlot;
@@ -45,7 +45,7 @@ public class BlocksByRangeListenerWrapper implements ResponseStreamListener<Sign
 
   @Override
   public SafeFuture<?> onResponse(SignedBeaconBlock response) {
-    UnsignedLong blockSlot = response.getSlot();
+    UInt64 blockSlot = response.getSlot();
 
     if (!blockSlotIsInRange(blockSlot)
         || !blockSlotMatchesTheStep(blockSlot)
@@ -57,20 +57,20 @@ public class BlocksByRangeListenerWrapper implements ResponseStreamListener<Sign
     return blockResponseListener.onResponse(response);
   }
 
-  private boolean blockSlotIsInRange(UnsignedLong blockSlot) {
+  private boolean blockSlotIsInRange(UInt64 blockSlot) {
     return blockSlot.compareTo(startSlot) >= 0 && blockSlot.compareTo(endSlot) <= 0;
   }
 
-  private boolean blockSlotMatchesTheStep(UnsignedLong blockSlot) {
-    return blockSlot.minus(startSlot).mod(step).equals(UnsignedLong.ZERO);
+  private boolean blockSlotMatchesTheStep(UInt64 blockSlot) {
+    return blockSlot.minus(startSlot).mod(step).equals(UInt64.ZERO);
   }
 
-  private boolean blockSlotGreaterThanPreviousBlockSlot(UnsignedLong blockSlot) {
+  private boolean blockSlotGreaterThanPreviousBlockSlot(UInt64 blockSlot) {
     if (maybeSlotOfLastBlock.isEmpty()) {
       return true;
     }
 
-    UnsignedLong lastBlockSlot = maybeSlotOfLastBlock.get();
+    UInt64 lastBlockSlot = maybeSlotOfLastBlock.get();
     return blockSlot.compareTo(lastBlockSlot) > 0;
   }
 }
