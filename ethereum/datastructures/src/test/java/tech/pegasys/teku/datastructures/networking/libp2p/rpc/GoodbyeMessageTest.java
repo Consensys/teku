@@ -16,15 +16,15 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class GoodbyeMessageTest {
 
   private static final Bytes EXPECTED_SSZ = Bytes.fromHexString("0x0100000000000000");
-  private static final GoodbyeMessage MESSAGE = new GoodbyeMessage(UnsignedLong.ONE);
+  private static final GoodbyeMessage MESSAGE = new GoodbyeMessage(UInt64.ONE);
 
   @Test
   public void shouldSerializeToSsz() {
@@ -41,14 +41,14 @@ class GoodbyeMessageTest {
 
   @Test
   public void shouldRejectInvalidReasonCode() {
-    assertThatThrownBy(() -> new GoodbyeMessage(UnsignedLong.valueOf(15)))
+    assertThatThrownBy(() -> new GoodbyeMessage(UInt64.valueOf(15)))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
   public void shouldAllowCustomReasonCodes() {
     new GoodbyeMessage(GoodbyeMessage.MIN_CUSTOM_REASON_CODE);
-    new GoodbyeMessage(GoodbyeMessage.MIN_CUSTOM_REASON_CODE.plus(UnsignedLong.ONE));
-    new GoodbyeMessage(UnsignedLong.MAX_VALUE);
+    new GoodbyeMessage(GoodbyeMessage.MIN_CUSTOM_REASON_CODE.plus(UInt64.ONE));
+    new GoodbyeMessage(UInt64.MAX_VALUE);
   }
 }

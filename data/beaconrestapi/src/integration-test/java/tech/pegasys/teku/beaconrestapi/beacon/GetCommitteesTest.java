@@ -18,7 +18,6 @@ import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +30,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetCommittees;
 import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -39,7 +39,7 @@ public class GetCommitteesTest extends AbstractDataBackedRestAPIIntegrationTest 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
     startPreGenesisRestAPI();
-    final UnsignedLong epoch = UnsignedLong.ONE;
+    final UInt64 epoch = UInt64.ONE;
 
     final Response response = getByEpoch(epoch.intValue());
     assertNoContent(response);
@@ -48,7 +48,7 @@ public class GetCommitteesTest extends AbstractDataBackedRestAPIIntegrationTest 
   @Test
   public void shouldReturnNoContentIfHeadRootUnavailable() throws Exception {
     startPreForkChoiceRestAPI();
-    final UnsignedLong epoch = UnsignedLong.ONE;
+    final UInt64 epoch = UInt64.ONE;
 
     final Response response = getByEpoch(epoch.intValue());
     assertNoContent(response);
@@ -111,12 +111,11 @@ public class GetCommitteesTest extends AbstractDataBackedRestAPIIntegrationTest 
     final int targetSlot = 20;
     final int finalizedSlot = 20 + Constants.SLOTS_PER_HISTORICAL_ROOT;
     createBlocksAtSlots(targetSlot, finalizedSlot);
-    final UnsignedLong finalizedEpoch =
-        ChainProperties.computeBestEpochFinalizableAtSlot(finalizedSlot);
+    final UInt64 finalizedEpoch = ChainProperties.computeBestEpochFinalizableAtSlot(finalizedSlot);
     final SignedBlockAndState finalizedBlock = finalizeChainAtEpoch(finalizedEpoch);
-    assertThat(finalizedBlock.getSlot()).isEqualTo(UnsignedLong.valueOf(finalizedSlot));
+    assertThat(finalizedBlock.getSlot()).isEqualTo(UInt64.valueOf(finalizedSlot));
 
-    final int targetEpoch = finalizedEpoch.minus(UnsignedLong.ONE).intValue();
+    final int targetEpoch = finalizedEpoch.minus(UInt64.ONE).intValue();
     final Response response = getByEpoch(targetEpoch);
     assertThat(response.code()).isEqualTo(SC_GONE);
   }
@@ -129,8 +128,8 @@ public class GetCommitteesTest extends AbstractDataBackedRestAPIIntegrationTest 
     return List.of(result);
   }
 
-  private UnsignedLong firstSlotInEpoch(final int epoch) {
-    return BeaconStateUtil.compute_start_slot_at_epoch(UnsignedLong.valueOf(epoch));
+  private UInt64 firstSlotInEpoch(final int epoch) {
+    return BeaconStateUtil.compute_start_slot_at_epoch(UInt64.valueOf(epoch));
   }
 
   private Response getByEpoch(final int epoch) throws IOException {

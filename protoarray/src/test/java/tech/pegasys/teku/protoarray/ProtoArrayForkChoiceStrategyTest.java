@@ -13,12 +13,11 @@
 
 package tech.pegasys.teku.protoarray;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
@@ -30,6 +29,7 @@ import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ProtoArrayForkChoiceStrategyTest {
   private final MutableStore store = new TestStoreFactory().createGenesisStore();
@@ -61,7 +61,7 @@ public class ProtoArrayForkChoiceStrategyTest {
     final Checkpoint checkpoint = store.getFinalizedCheckpoint();
     SignedBlockAndState parent = genesis;
     for (int i = 0; i < count; i++) {
-      final UnsignedLong slot = parent.getSlot().plus(ONE);
+      final UInt64 slot = parent.getSlot().plus(ONE);
       final Bytes32 blockHash = Bytes32.fromHexStringLenient("0x" + i);
       final Bytes32 parentRoot = parent.getRoot();
 

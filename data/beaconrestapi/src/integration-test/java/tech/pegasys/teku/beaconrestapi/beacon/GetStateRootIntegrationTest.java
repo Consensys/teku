@@ -17,7 +17,6 @@ import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.Map;
 import okhttp3.Response;
@@ -26,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.RestApiConstants;
 import tech.pegasys.teku.beaconrestapi.handlers.beacon.GetStateRoot;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetStateRootIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
@@ -78,7 +78,7 @@ public class GetStateRootIntegrationTest extends AbstractDataBackedRestAPIIntegr
     return Bytes32.fromHexString(bytes32String);
   }
 
-  private Bytes32 getStateRootAtSlot(final UnsignedLong slot) {
+  private Bytes32 getStateRootAtSlot(final UInt64 slot) {
     try {
       return combinedChainDataClient
           .getStateAtSlotExact(slot)

@@ -15,9 +15,9 @@ package tech.pegasys.teku.statetransition.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class FutureItemsTest {
 
@@ -38,7 +38,7 @@ public class FutureItemsTest {
 
     futureItems.add(item);
 
-    final UnsignedLong priorSlot = item.getSlot().minus(UnsignedLong.ONE);
+    final UInt64 priorSlot = item.getSlot().minus(UInt64.ONE);
     final List<Item> pruned = futureItems.prune(priorSlot);
     assertThat(pruned).isEmpty();
 
@@ -63,19 +63,19 @@ public class FutureItemsTest {
 
     futureItems.add(item);
 
-    final List<Item> pruned = futureItems.prune(item.getSlot().plus(UnsignedLong.ONE));
+    final List<Item> pruned = futureItems.prune(item.getSlot().plus(UInt64.ONE));
     assertThat(pruned).containsExactly(item);
     assertThat(futureItems.size()).isEqualTo(0);
   }
 
   private static class Item {
-    private final UnsignedLong slot;
+    private final UInt64 slot;
 
     private Item(final long slot) {
-      this.slot = UnsignedLong.valueOf(slot);
+      this.slot = UInt64.valueOf(slot);
     }
 
-    public UnsignedLong getSlot() {
+    public UInt64 getSlot() {
       return slot;
     }
   }

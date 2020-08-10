@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.store;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -28,6 +27,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -47,7 +47,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final UpdatableStore store = createGenesisStore();
 
     // Create some blocks that we can finalize
-    final UnsignedLong epoch = UnsignedLong.ONE;
+    final UInt64 epoch = UInt64.ONE;
     final SignedBlockAndState finalizedBlock =
         chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(epoch));
     final Checkpoint finalizedCheckpoint = new Checkpoint(epoch, finalizedBlock.getRoot());
@@ -65,7 +65,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final UpdatableStore store = createGenesisStore();
 
     // Create some blocks that we can finalize
-    final UnsignedLong epoch = UnsignedLong.ONE;
+    final UInt64 epoch = UInt64.ONE;
     final SignedBlockAndState finalizedBlock =
         chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(epoch));
     final Checkpoint finalizedCheckpoint = new Checkpoint(epoch, finalizedBlock.getRoot());
@@ -198,8 +198,8 @@ public class StoreTransactionTest extends AbstractStoreTest {
   @Test
   public void getCheckpointState_fromBlockInTx() throws Exception {
     final UpdatableStore store = createGenesisStore();
-    final UnsignedLong epoch = UnsignedLong.ONE;
-    final UnsignedLong epochStartSlot = compute_start_slot_at_epoch(epoch);
+    final UInt64 epoch = UInt64.ONE;
+    final UInt64 epochStartSlot = compute_start_slot_at_epoch(epoch);
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(epochStartSlot);
     final Checkpoint checkpoint = new Checkpoint(epoch, blockAndState.getRoot());
 

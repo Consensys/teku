@@ -17,16 +17,16 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.primitives.UnsignedLong;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Eth1Data {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 deposit_root;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong deposit_count;
+  public final UInt64 deposit_count;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public final Bytes32 block_hash;
@@ -40,7 +40,7 @@ public class Eth1Data {
   @JsonCreator
   public Eth1Data(
       @JsonProperty("deposit_root") final Bytes32 deposit_root,
-      @JsonProperty("deposit_count") final UnsignedLong deposit_count,
+      @JsonProperty("deposit_count") final UInt64 deposit_count,
       @JsonProperty("block_hash") final Bytes32 block_hash) {
     this.deposit_root = deposit_root;
     this.deposit_count = deposit_count;

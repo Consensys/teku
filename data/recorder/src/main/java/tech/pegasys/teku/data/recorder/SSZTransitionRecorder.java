@@ -16,7 +16,6 @@ package tech.pegasys.teku.data.recorder;
 import static tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer.serialize;
 
 import com.google.common.eventbus.Subscribe;
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 
@@ -69,7 +69,7 @@ public class SSZTransitionRecorder {
     return dir;
   }
 
-  private Path slotDirectory(final UnsignedLong slot) {
+  private Path slotDirectory(final UInt64 slot) {
     return mkdirs(outputDirectory.resolve(slot.toString()));
   }
 }

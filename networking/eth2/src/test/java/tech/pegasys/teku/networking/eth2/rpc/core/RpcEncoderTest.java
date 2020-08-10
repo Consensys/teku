@@ -15,11 +15,11 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
@@ -35,10 +35,10 @@ final class RpcEncoderTest {
       new StatusMessage(
           new Bytes4(Bytes.of(0, 0, 0, 0)),
           Bytes32.ZERO,
-          UnsignedLong.ZERO,
+          UInt64.ZERO,
           Bytes32.fromHexString(
               "0x30A903798306695D21D1FAA76363A0070677130835E503760B0E84479B7819E6"),
-          UnsignedLong.ZERO);
+          UInt64.ZERO);
 
   private final RpcEncoder encoder = new RpcEncoder(RpcEncoding.SSZ);
 

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.datastructures.util;
 
 import static tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer.BOOLEAN_SIZE;
-import static tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer.UNSIGNED_LONG_SIZE;
 import static tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer.getOptionalReflectionInfo;
 import static tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer.getRequiredReflectionInfo;
 import static tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer.isBitvector;
@@ -27,6 +26,7 @@ import java.lang.reflect.Field;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -138,8 +138,8 @@ public class LengthBoundCalculator {
 
   private static int getPrimitiveLength(final Class<?> classInfo) {
     switch (classInfo.getSimpleName()) {
-      case "UnsignedLong":
-        return UNSIGNED_LONG_SIZE;
+      case "UInt64":
+        return UInt64.BYTES;
       case "ArrayWrappingBytes32":
       case "Bytes32":
         return Bytes32.SIZE;

@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -25,6 +24,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 
 class AttestationTest {
@@ -44,11 +44,11 @@ class AttestationTest {
         new Attestation(
             aggregationBitfield,
             new AttestationData(
-                UnsignedLong.valueOf(1),
-                UnsignedLong.ZERO,
+                UInt64.valueOf(1),
+                UInt64.ZERO,
                 beaconBlockRoot,
-                new Checkpoint(UnsignedLong.ONE, Bytes32.ZERO),
-                new Checkpoint(UnsignedLong.valueOf(10), targetRoot)),
+                new Checkpoint(UInt64.ONE, Bytes32.ZERO),
+                new Checkpoint(UInt64.valueOf(10), targetRoot)),
             BLSSignature.empty());
 
     assertThat(attestation.getDependentBlockRoots())
@@ -63,11 +63,11 @@ class AttestationTest {
         new Attestation(
             aggregationBitfield,
             new AttestationData(
-                UnsignedLong.valueOf(1),
-                UnsignedLong.ZERO,
+                UInt64.valueOf(1),
+                UInt64.ZERO,
                 root,
-                new Checkpoint(UnsignedLong.ONE, Bytes32.ZERO),
-                new Checkpoint(UnsignedLong.valueOf(10), root)),
+                new Checkpoint(UInt64.ONE, Bytes32.ZERO),
+                new Checkpoint(UInt64.valueOf(10), root)),
             BLSSignature.empty());
 
     assertThat(attestation.getDependentBlockRoots()).containsExactlyInAnyOrder(root);

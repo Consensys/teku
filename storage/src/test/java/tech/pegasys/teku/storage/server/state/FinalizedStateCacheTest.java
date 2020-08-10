@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.server.state;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -21,8 +20,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +31,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.Database;
 
 class FinalizedStateCacheTest {
@@ -63,9 +63,9 @@ class FinalizedStateCacheTest {
 
   @Test
   void shouldRegenerateFromMoreRecentCachedState() throws Exception {
-    final UnsignedLong databaseSlot = UnsignedLong.valueOf(1);
-    final UnsignedLong cachedSlot = UnsignedLong.valueOf(2);
-    final UnsignedLong requestedSlot = UnsignedLong.valueOf(3);
+    final UInt64 databaseSlot = UInt64.valueOf(1);
+    final UInt64 cachedSlot = UInt64.valueOf(2);
+    final UInt64 requestedSlot = UInt64.valueOf(3);
     chainBuilder.generateBlocksUpToSlot(requestedSlot);
 
     // Latest state available from the database is at databaseSlot (1)
@@ -93,10 +93,10 @@ class FinalizedStateCacheTest {
 
     // Fill up the cache
     for (int i = 1; i <= MAXIMUM_CACHE_SIZE; i++) {
-      cache.getFinalizedState(UnsignedLong.valueOf(i));
+      cache.getFinalizedState(UInt64.valueOf(i));
     }
     // Evict the least recently used item (should be genesis state)
-    cache.getFinalizedState(UnsignedLong.valueOf(MAXIMUM_CACHE_SIZE + 1));
+    cache.getFinalizedState(UInt64.valueOf(MAXIMUM_CACHE_SIZE + 1));
 
     cache.getFinalizedState(ONE);
     verify(database, times(2)).streamFinalizedBlocks(ONE, ONE);

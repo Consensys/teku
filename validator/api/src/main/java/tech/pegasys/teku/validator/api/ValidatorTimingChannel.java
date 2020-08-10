@@ -13,19 +13,19 @@
 
 package tech.pegasys.teku.validator.api;
 
-import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
 
 public interface ValidatorTimingChannel extends VoidReturningChannelInterface {
-  void onSlot(UnsignedLong slot);
+  void onSlot(UInt64 slot);
 
-  void onChainReorg(final UnsignedLong newSlot);
+  void onChainReorg(final UInt64 newSlot);
 
-  void onBlockProductionDue(UnsignedLong slot);
+  void onBlockProductionDue(UInt64 slot);
 
-  void onAttestationCreationDue(UnsignedLong slot);
+  void onAttestationCreationDue(UInt64 slot);
 
-  void onAttestationAggregationDue(UnsignedLong slot);
+  void onAttestationAggregationDue(UInt64 slot);
 
-  void onBlockImportedForSlot(UnsignedLong slot);
+  void onBlockImportedForSlot(UInt64 slot);
 }

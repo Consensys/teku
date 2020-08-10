@@ -18,7 +18,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 
-import com.google.common.primitives.UnsignedLong;
 import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,6 +28,7 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.metrics.SettableGauge;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
@@ -141,7 +141,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   }
 
   @Override
-  public void onSlot(final UnsignedLong slot) {
+  public void onSlot(final UInt64 slot) {
     recentChainData.getBestState().ifPresent(this::updateMetrics);
   }
 
@@ -155,8 +155,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   }
 
   private int getLiveValidators(final SSZList<PendingAttestation> attestations) {
-    final Map<UnsignedLong, Map<UnsignedLong, Bitlist>> aggregationBitsBySlotAndCommittee =
-        new HashMap<>();
+    final Map<UInt64, Map<UInt64, Bitlist>> aggregationBitsBySlotAndCommittee = new HashMap<>();
     attestations.forEach(
         attestation ->
             aggregationBitsBySlotAndCommittee

@@ -13,22 +13,22 @@
 
 package tech.pegasys.teku.sync;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 
 public class PeerSyncBlockRequest implements ResponseStreamListener<SignedBeaconBlock> {
 
   private final SafeFuture<Void> readyForNextRequest;
-  private final UnsignedLong lastRequestedSlot;
+  private final UInt64 lastRequestedSlot;
   private final ResponseStreamListener<SignedBeaconBlock> blockResponseListener;
-  private Optional<UnsignedLong> slotOfLastBlock = Optional.empty();
+  private Optional<UInt64> slotOfLastBlock = Optional.empty();
 
   public PeerSyncBlockRequest(
       final SafeFuture<Void> readyForNextRequest,
-      final UnsignedLong lastRequestedSlot,
+      final UInt64 lastRequestedSlot,
       final ResponseStreamListener<SignedBeaconBlock> blockResponseListener) {
     this.readyForNextRequest = readyForNextRequest;
     this.lastRequestedSlot = lastRequestedSlot;
@@ -45,9 +45,9 @@ public class PeerSyncBlockRequest implements ResponseStreamListener<SignedBeacon
     return readyForNextRequest;
   }
 
-  public UnsignedLong getActualEndSlot() {
+  public UInt64 getActualEndSlot() {
     // The peer must return at least one block if it has it, so if no blocks were returned they
     // must all of have been empty.
-    return slotOfLastBlock.orElse(lastRequestedSlot.minus(UnsignedLong.ONE));
+    return slotOfLastBlock.orElse(lastRequestedSlot.minus(UInt64.ONE));
   }
 }

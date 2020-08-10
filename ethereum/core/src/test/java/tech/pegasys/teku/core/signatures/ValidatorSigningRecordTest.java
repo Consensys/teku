@@ -13,10 +13,9 @@
 
 package tech.pegasys.teku.core.signatures;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -25,6 +24,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.core.signatures.record.ValidatorSigningRecord;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ValidatorSigningRecordTest {
 
@@ -39,8 +39,7 @@ class ValidatorSigningRecordTest {
   @Test
   void shouldRoundTripToBytes() {
     final ValidatorSigningRecord record =
-        new ValidatorSigningRecord(
-            UnsignedLong.valueOf(10), UnsignedLong.valueOf(20), UnsignedLong.valueOf(30));
+        new ValidatorSigningRecord(UInt64.valueOf(10), UInt64.valueOf(20), UInt64.valueOf(30));
     final Bytes bytes = record.toBytes();
     final ValidatorSigningRecord result = ValidatorSigningRecord.fromBytes(bytes);
     assertThat(result).isEqualToComparingFieldByField(record);
@@ -51,15 +50,14 @@ class ValidatorSigningRecordTest {
   void signBlock(
       @SuppressWarnings("unused") final String name,
       final ValidatorSigningRecord input,
-      final UnsignedLong slot,
+      final UInt64 slot,
       final Optional<ValidatorSigningRecord> expectedResult) {
     assertThat(input.maySignBlock(slot)).isEqualTo(expectedResult);
   }
 
   static List<Arguments> blockCases() {
     final ValidatorSigningRecord startingRecord =
-        new ValidatorSigningRecord(
-            UnsignedLong.valueOf(3), UnsignedLong.valueOf(6), UnsignedLong.valueOf(7));
+        new ValidatorSigningRecord(UInt64.valueOf(3), UInt64.valueOf(6), UInt64.valueOf(7));
     return List.of(
         Arguments.of(
             "noExistingRecord",
@@ -70,9 +68,9 @@ class ValidatorSigningRecordTest {
                     ONE,
                     ValidatorSigningRecord.NEVER_SIGNED,
                     ValidatorSigningRecord.NEVER_SIGNED))),
-        Arguments.of("=", startingRecord, UnsignedLong.valueOf(3), Optional.empty()),
-        Arguments.of("<", startingRecord, UnsignedLong.valueOf(2), Optional.empty()),
-        Arguments.of(">", startingRecord, UnsignedLong.valueOf(4), allowed(4, 6, 7)));
+        Arguments.of("=", startingRecord, UInt64.valueOf(3), Optional.empty()),
+        Arguments.of("<", startingRecord, UInt64.valueOf(2), Optional.empty()),
+        Arguments.of(">", startingRecord, UInt64.valueOf(4), allowed(4, 6, 7)));
   }
 
   @ParameterizedTest(name = "maySignAttestation({0})")
@@ -80,15 +78,15 @@ class ValidatorSigningRecordTest {
   void maySignAttestation(
       @SuppressWarnings("unused") final String name,
       final ValidatorSigningRecord input,
-      final UnsignedLong sourceEpoch,
-      final UnsignedLong targetEpoch,
+      final UInt64 sourceEpoch,
+      final UInt64 targetEpoch,
       final Optional<ValidatorSigningRecord> expectedResult) {
     assertThat(input.maySignAttestation(sourceEpoch, targetEpoch)).isEqualTo(expectedResult);
   }
 
   static List<Arguments> attestationCases() {
     final ValidatorSigningRecord startingRecord =
-        new ValidatorSigningRecord(ONE, UnsignedLong.valueOf(4), UnsignedLong.valueOf(6));
+        new ValidatorSigningRecord(ONE, UInt64.valueOf(4), UInt64.valueOf(6));
     return List.of(
         // No record
         attestationArguments(
@@ -112,9 +110,7 @@ class ValidatorSigningRecordTest {
       final int blockSlot, final int sourceEpoch, final int targetEpoch) {
     return Optional.of(
         new ValidatorSigningRecord(
-            UnsignedLong.valueOf(blockSlot),
-            UnsignedLong.valueOf(sourceEpoch),
-            UnsignedLong.valueOf(targetEpoch)));
+            UInt64.valueOf(blockSlot), UInt64.valueOf(sourceEpoch), UInt64.valueOf(targetEpoch)));
   }
 
   private static Arguments attestationArguments(
@@ -127,8 +123,8 @@ class ValidatorSigningRecordTest {
     return Arguments.of(
         "source " + sourceEpochDescription + ", target " + targetEpochDescription,
         lastSignedRecord,
-        UnsignedLong.valueOf(sourceEpoch),
-        UnsignedLong.valueOf(targetEpoch),
+        UInt64.valueOf(sourceEpoch),
+        UInt64.valueOf(targetEpoch),
         expectedResult);
   }
 }

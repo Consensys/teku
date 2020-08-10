@@ -17,7 +17,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import static tech.pegasys.teku.storage.store.StoreAssertions.assertStoresMatch;
 
 import com.google.common.io.Files;
-import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -28,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -109,19 +109,17 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     initGenesis();
 
     // Create finalized block at slot prior to epoch boundary
-    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
-    final UnsignedLong finalizedSlot =
-        compute_start_slot_at_epoch(finalizedEpoch).minus(UnsignedLong.ONE);
+    final UInt64 finalizedEpoch = UInt64.valueOf(2);
+    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch).minus(UInt64.ONE);
     chainBuilder.generateBlocksUpToSlot(finalizedSlot);
     final SignedBlockAndState finalizedBlock = chainBuilder.getBlockAndStateAtSlot(finalizedSlot);
     final Checkpoint finalizedCheckpoint =
         chainBuilder.getCurrentCheckpointForEpoch(finalizedEpoch);
 
     // Add some more blocks
-    final UnsignedLong firstHotBlockSlot =
-        finalizedCheckpoint.getEpochStartSlot().plus(UnsignedLong.ONE);
+    final UInt64 firstHotBlockSlot = finalizedCheckpoint.getEpochStartSlot().plus(UInt64.ONE);
     chainBuilder.generateBlockAtSlot(firstHotBlockSlot);
-    chainBuilder.generateBlocksUpToSlot(firstHotBlockSlot.plus(UnsignedLong.valueOf(10)));
+    chainBuilder.generateBlocksUpToSlot(firstHotBlockSlot.plus(UInt64.valueOf(10)));
 
     // Save new blocks and finalized checkpoint
     final StoreTransaction tx = recentChainData.startStoreTransaction();

@@ -20,7 +20,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
@@ -32,12 +31,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.record.ValidatorSigningRecord;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class SlashingProtectorTest {
 
-  private static final UnsignedLong ATTESTATION_TEST_BLOCK_SLOT = UnsignedLong.valueOf(3);
-  private static final UnsignedLong BLOCK_TEST_SOURCE_EPOCH = UnsignedLong.valueOf(12);
-  private static final UnsignedLong BLOCK_TEST_TARGET_EPOCH = UnsignedLong.valueOf(15);
+  private static final UInt64 ATTESTATION_TEST_BLOCK_SLOT = UInt64.valueOf(3);
+  private static final UInt64 BLOCK_TEST_SOURCE_EPOCH = UInt64.valueOf(12);
+  private static final UInt64 BLOCK_TEST_TARGET_EPOCH = UInt64.valueOf(15);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   private final BLSPublicKey validator = dataStructureUtil.randomPublicKey();
@@ -54,8 +54,8 @@ class SlashingProtectorTest {
   @MethodSource("blockCases")
   void maySignBlock(
       @SuppressWarnings("unused") final String name,
-      final Optional<UnsignedLong> lastSignedRecord,
-      final UnsignedLong slot,
+      final Optional<UInt64> lastSignedRecord,
+      final UInt64 slot,
       final boolean allowed)
       throws Exception {
     if (allowed) {
@@ -67,10 +67,10 @@ class SlashingProtectorTest {
 
   static List<Arguments> blockCases() {
     return List.of(
-        Arguments.of("noExistingRecord", Optional.empty(), UnsignedLong.valueOf(1), true),
-        Arguments.of("=", Optional.of(UnsignedLong.valueOf(3)), UnsignedLong.valueOf(3), false),
-        Arguments.of("<", Optional.of(UnsignedLong.valueOf(3)), UnsignedLong.valueOf(2), false),
-        Arguments.of(">", Optional.of(UnsignedLong.valueOf(3)), UnsignedLong.valueOf(4), true));
+        Arguments.of("noExistingRecord", Optional.empty(), UInt64.valueOf(1), true),
+        Arguments.of("=", Optional.of(UInt64.valueOf(3)), UInt64.valueOf(3), false),
+        Arguments.of("<", Optional.of(UInt64.valueOf(3)), UInt64.valueOf(2), false),
+        Arguments.of(">", Optional.of(UInt64.valueOf(3)), UInt64.valueOf(4), true));
   }
 
   @ParameterizedTest(name = "maySignAttestation({0})")
@@ -78,8 +78,8 @@ class SlashingProtectorTest {
   void maySignAttestation(
       @SuppressWarnings("unused") final String name,
       final Optional<ValidatorSigningRecord> lastSignedRecord,
-      final UnsignedLong sourceEpoch,
-      final UnsignedLong targetEpoch,
+      final UInt64 sourceEpoch,
+      final UInt64 targetEpoch,
       final boolean allowed)
       throws Exception {
     if (allowed) {
@@ -93,15 +93,11 @@ class SlashingProtectorTest {
     final Optional<ValidatorSigningRecord> existingRecord =
         Optional.of(
             new ValidatorSigningRecord(
-                ATTESTATION_TEST_BLOCK_SLOT, UnsignedLong.valueOf(4), UnsignedLong.valueOf(6)));
+                ATTESTATION_TEST_BLOCK_SLOT, UInt64.valueOf(4), UInt64.valueOf(6)));
     return List.of(
         // No record
         Arguments.of(
-            "noExistingRecord",
-            Optional.empty(),
-            UnsignedLong.valueOf(1),
-            UnsignedLong.valueOf(2),
-            true),
+            "noExistingRecord", Optional.empty(), UInt64.valueOf(1), UInt64.valueOf(2), true),
         attestationArguments("=", "=", existingRecord, 4, 6, false),
         attestationArguments("=", "<", existingRecord, 4, 5, false),
         attestationArguments("=", ">", existingRecord, 4, 7, true),
@@ -123,15 +119,15 @@ class SlashingProtectorTest {
     return Arguments.of(
         "source " + sourceEpochDescription + ", target " + targetEpochDescription,
         lastSignedRecord,
-        UnsignedLong.valueOf(sourceEpoch),
-        UnsignedLong.valueOf(targetEpoch),
+        UInt64.valueOf(sourceEpoch),
+        UInt64.valueOf(targetEpoch),
         allowed);
   }
 
   private void assertAttestationSigningAllowed(
       final Optional<ValidatorSigningRecord> lastSignedAttestation,
-      final UnsignedLong sourceEpoch,
-      final UnsignedLong targetEpoch)
+      final UInt64 sourceEpoch,
+      final UInt64 targetEpoch)
       throws Exception {
     when(dataWriter.read(signingRecordPath))
         .thenReturn(lastSignedAttestation.map(ValidatorSigningRecord::toBytes));
@@ -141,7 +137,7 @@ class SlashingProtectorTest {
 
     final ValidatorSigningRecord updatedRecord =
         new ValidatorSigningRecord(
-            lastSignedAttestation.isPresent() ? ATTESTATION_TEST_BLOCK_SLOT : UnsignedLong.ZERO,
+            lastSignedAttestation.isPresent() ? ATTESTATION_TEST_BLOCK_SLOT : UInt64.ZERO,
             sourceEpoch,
             targetEpoch);
     verify(dataWriter).syncedWrite(signingRecordPath, updatedRecord.toBytes());
@@ -149,8 +145,8 @@ class SlashingProtectorTest {
 
   private void assertAttestationSigningDisallowed(
       final Optional<ValidatorSigningRecord> lastSignedAttestation,
-      final UnsignedLong sourceEpoch,
-      final UnsignedLong targetEpoch)
+      final UInt64 sourceEpoch,
+      final UInt64 targetEpoch)
       throws IOException {
     when(dataWriter.read(signingRecordPath))
         .thenReturn(lastSignedAttestation.map(ValidatorSigningRecord::toBytes));
@@ -161,8 +157,7 @@ class SlashingProtectorTest {
   }
 
   private void assertBlockSigningAllowed(
-      final Optional<UnsignedLong> lastSignedBlockSlot, final UnsignedLong newBlockSlot)
-      throws Exception {
+      final Optional<UInt64> lastSignedBlockSlot, final UInt64 newBlockSlot) throws Exception {
     when(dataWriter.read(signingRecordPath))
         .thenReturn(lastSignedBlockSlot.map(this::blockTestSigningRecord));
 
@@ -180,14 +175,13 @@ class SlashingProtectorTest {
     verify(dataWriter).syncedWrite(signingRecordPath, updatedRecord);
   }
 
-  private Bytes blockTestSigningRecord(final UnsignedLong blockSlot) {
+  private Bytes blockTestSigningRecord(final UInt64 blockSlot) {
     return new ValidatorSigningRecord(blockSlot, BLOCK_TEST_SOURCE_EPOCH, BLOCK_TEST_TARGET_EPOCH)
         .toBytes();
   }
 
   private void assertBlockSigningDisallowed(
-      final Optional<UnsignedLong> lastSignedBlockSlot, final UnsignedLong newBlockSlot)
-      throws Exception {
+      final Optional<UInt64> lastSignedBlockSlot, final UInt64 newBlockSlot) throws Exception {
     when(dataWriter.read(signingRecordPath))
         .thenReturn(lastSignedBlockSlot.map(this::blockTestSigningRecord));
 

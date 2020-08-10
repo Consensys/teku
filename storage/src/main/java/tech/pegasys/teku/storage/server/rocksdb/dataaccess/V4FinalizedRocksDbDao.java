@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.dataaccess;
 
-import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -21,17 +20,18 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
 
 public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
   private final RocksDbAccessor db;
-  private final UnsignedLong stateStorageFrequency;
+  private final UInt64 stateStorageFrequency;
 
   public V4FinalizedRocksDbDao(final RocksDbAccessor db, final long stateStorageFrequency) {
     this.db = db;
-    this.stateStorageFrequency = UnsignedLong.valueOf(stateStorageFrequency);
+    this.stateStorageFrequency = UInt64.valueOf(stateStorageFrequency);
   }
 
   @Override
@@ -40,18 +40,18 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
   }
 
   @Override
-  public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UnsignedLong slot) {
+  public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
     return db.get(V4SchemaFinalized.FINALIZED_BLOCKS_BY_SLOT, slot);
   }
 
   @Override
-  public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UnsignedLong slot) {
+  public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     return db.getFloorEntry(V4SchemaFinalized.FINALIZED_BLOCKS_BY_SLOT, slot)
         .map(ColumnEntry::getValue);
   }
 
   @Override
-  public Optional<BeaconState> getLatestAvailableFinalizedState(final UnsignedLong maxSlot) {
+  public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     return db.getFloorEntry(V4SchemaFinalized.FINALIZED_STATES_BY_SLOT, maxSlot)
         .map(ColumnEntry::getValue);
   }
@@ -59,26 +59,25 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
   @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
-      final UnsignedLong startSlot, final UnsignedLong endSlot) {
+      final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(V4SchemaFinalized.FINALIZED_BLOCKS_BY_SLOT, startSlot, endSlot)
         .map(ColumnEntry::getValue);
   }
 
   @Override
-  public Optional<UnsignedLong> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
+  public Optional<UInt64> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
     return db.get(V4SchemaFinalized.SLOTS_BY_FINALIZED_ROOT, blockRoot);
   }
 
   @Override
-  public Optional<UnsignedLong> getSlotForFinalizedStateRoot(final Bytes32 stateRoot) {
+  public Optional<UInt64> getSlotForFinalizedStateRoot(final Bytes32 stateRoot) {
     return db.get(V4SchemaFinalized.SLOTS_BY_FINALIZED_STATE_ROOT, stateRoot);
   }
 
   @Override
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootForFinalizedStateRoot(
       final Bytes32 stateRoot) {
-    Optional<UnsignedLong> maybeSlot =
-        db.get(V4SchemaFinalized.SLOTS_BY_FINALIZED_STATE_ROOT, stateRoot);
+    Optional<UInt64> maybeSlot = db.get(V4SchemaFinalized.SLOTS_BY_FINALIZED_STATE_ROOT, stateRoot);
     return maybeSlot.flatMap(
         slot ->
             getFinalizedBlockAtSlot(slot)
@@ -99,10 +98,10 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
 
   private static class V4FinalizedUpdater implements FinalizedUpdater {
     private final RocksDbAccessor.RocksDbTransaction transaction;
-    private final UnsignedLong stateStorageFrequency;
-    private Optional<UnsignedLong> lastStateStoredSlot;
+    private final UInt64 stateStorageFrequency;
+    private Optional<UInt64> lastStateStoredSlot;
 
-    V4FinalizedUpdater(final RocksDbAccessor db, final UnsignedLong stateStorageFrequency) {
+    V4FinalizedUpdater(final RocksDbAccessor db, final UInt64 stateStorageFrequency) {
       this.transaction = db.startTransaction();
       this.stateStorageFrequency = stateStorageFrequency;
       lastStateStoredSlot =
@@ -118,7 +117,7 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
     @Override
     public void addFinalizedState(final Bytes32 blockRoot, final BeaconState state) {
       if (lastStateStoredSlot.isPresent()) {
-        UnsignedLong nextStorageSlot = lastStateStoredSlot.get().plus(stateStorageFrequency);
+        UInt64 nextStorageSlot = lastStateStoredSlot.get().plus(stateStorageFrequency);
         if (state.getSlot().compareTo(nextStorageSlot) >= 0) {
           addFinalizedState(state);
         }
@@ -128,7 +127,7 @@ public class V4FinalizedRocksDbDao implements RocksDbFinalizedDao {
     }
 
     @Override
-    public void addFinalizedStateRoot(final Bytes32 stateRoot, final UnsignedLong slot) {
+    public void addFinalizedStateRoot(final Bytes32 stateRoot, final UInt64 slot) {
       transaction.put(V4SchemaFinalized.SLOTS_BY_FINALIZED_STATE_ROOT, stateRoot, slot);
     }
 

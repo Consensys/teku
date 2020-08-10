@@ -15,10 +15,10 @@ package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
 import static java.util.stream.Collectors.toList;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.BlockInformation;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 
@@ -28,8 +28,8 @@ public class ProtoArraySnapshotSerializer implements RocksDbSerializer<ProtoArra
     return SSZ.decode(
         Bytes.of(data),
         reader -> {
-          final UnsignedLong justifiedEpoch = UnsignedLong.fromLongBits(reader.readUInt64());
-          final UnsignedLong finalizedEpoch = UnsignedLong.fromLongBits(reader.readUInt64());
+          final UInt64 justifiedEpoch = UInt64.fromLongBits(reader.readUInt64());
+          final UInt64 finalizedEpoch = UInt64.fromLongBits(reader.readUInt64());
           final List<BlockInformation> blockInformationList =
               reader.readBytesList().stream().map(BlockInformation::fromBytes).collect(toList());
 

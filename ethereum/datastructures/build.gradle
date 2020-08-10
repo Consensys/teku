@@ -25,6 +25,7 @@ dependencies {
 
   testFixturesApi 'org.apache.tuweni:tuweni-bytes'
   testFixturesApi 'com.google.guava:guava'
+  testFixturesApi project(':infrastructure:unsigned')
 
   testFixturesImplementation project(':bls')
   testFixturesImplementation project(':util')

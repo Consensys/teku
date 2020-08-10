@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.beacon;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,8 +27,8 @@ import static tech.pegasys.teku.beaconrestapi.handlers.beacon.GetBlock.NO_PARAME
 import static tech.pegasys.teku.beaconrestapi.handlers.beacon.GetBlock.NO_VALID_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.handlers.beacon.GetBlock.TOO_MANY_PARAMETERS;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import java.util.List;
@@ -45,6 +44,7 @@ import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetBlockTest {
@@ -158,7 +158,7 @@ public class GetBlockTest {
     SafeFuture<Optional<GetBlockResponse>> providerData =
         completedFuture(Optional.of(new GetBlockResponse(signedBeaconBlock)));
     when(context.queryParamMap()).thenReturn(params);
-    when(provider.getBlockBySlot(UnsignedLong.valueOf(8))).thenReturn(providerData);
+    when(provider.getBlockBySlot(UInt64.valueOf(8))).thenReturn(providerData);
 
     handler.handle(context);
     verify(context).result(args.capture());
@@ -173,7 +173,7 @@ public class GetBlockTest {
     final Map<String, List<String>> params = Map.of(EPOCH, List.of(ONE.toString()));
     SafeFuture<Optional<GetBlockResponse>> providerData = completedFuture(Optional.empty());
     when(context.queryParamMap()).thenReturn(params);
-    when(provider.getBlockBySlot(UnsignedLong.valueOf(8))).thenReturn(providerData);
+    when(provider.getBlockBySlot(UInt64.valueOf(8))).thenReturn(providerData);
 
     handler.handle(context);
     verify(context).status(SC_NOT_FOUND);

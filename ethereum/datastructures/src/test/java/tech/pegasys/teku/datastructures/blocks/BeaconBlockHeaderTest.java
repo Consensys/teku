@@ -16,17 +16,17 @@ package tech.pegasys.teku.datastructures.blocks;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class BeaconBlockHeaderTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private UnsignedLong slot = dataStructureUtil.randomUnsignedLong();
-  private UnsignedLong proposer_index = dataStructureUtil.randomUnsignedLong();
+  private UInt64 slot = dataStructureUtil.randomUInt64();
+  private UInt64 proposer_index = dataStructureUtil.randomUInt64();
   private Bytes32 previous_block_root = dataStructureUtil.randomBytes32();
   private Bytes32 state_root = dataStructureUtil.randomBytes32();
   private Bytes32 block_body_root = dataStructureUtil.randomBytes32();
@@ -54,7 +54,7 @@ class BeaconBlockHeaderTest {
   void equalsReturnsFalseWhenSlotsAreDifferent() {
     BeaconBlockHeader testBeaconBlockHeader =
         new BeaconBlockHeader(
-            slot.plus(dataStructureUtil.randomUnsignedLong()),
+            slot.plus(dataStructureUtil.randomUInt64()),
             proposer_index,
             previous_block_root,
             state_root,
@@ -68,7 +68,7 @@ class BeaconBlockHeaderTest {
     BeaconBlockHeader testBeaconBlockHeader =
         new BeaconBlockHeader(
             slot,
-            proposer_index.plus(dataStructureUtil.randomUnsignedLong()),
+            proposer_index.plus(dataStructureUtil.randomUInt64()),
             previous_block_root,
             state_root,
             block_body_root);

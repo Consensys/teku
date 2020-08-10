@@ -17,10 +17,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 
-import com.google.common.primitives.UnsignedLong;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 
 public class SanitySlotsTestExecutor implements TestExecutor {
@@ -31,7 +31,7 @@ public class SanitySlotsTestExecutor implements TestExecutor {
     final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
     final BeaconState expectedState = loadStateFromSsz(testDefinition, "post.ssz");
     final StateTransition stateTransition = new StateTransition();
-    final UnsignedLong endSlot = preState.getSlot().plus(UnsignedLong.valueOf(numberOfSlots));
+    final UInt64 endSlot = preState.getSlot().plus(UInt64.valueOf(numberOfSlots));
 
     final BeaconState result = stateTransition.process_slots(preState, endSlot);
     assertThat(result).isEqualTo(expectedState);
