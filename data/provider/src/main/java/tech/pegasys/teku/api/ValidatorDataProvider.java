@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -196,5 +197,11 @@ public class ValidatorDataProvider {
   public void sendAggregateAndProof(SignedAggregateAndProof aggregateAndProof) {
     validatorApiChannel.sendAggregateAndProof(
         aggregateAndProof.asInternalSignedAggregateAndProof());
+  }
+
+  public void subscribeToBeaconCommitteeForAggregation(
+      final SubscribeToBeaconCommitteeRequest request) {
+    validatorApiChannel.subscribeToBeaconCommitteeForAggregation(
+        request.committee_index, request.aggregation_slot);
   }
 }
