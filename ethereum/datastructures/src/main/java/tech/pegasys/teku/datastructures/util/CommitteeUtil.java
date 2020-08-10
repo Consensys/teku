@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.bytes_to_int64;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_seed;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.uint_to_bytes;
@@ -225,6 +226,9 @@ public class CommitteeUtil {
    * @return
    */
   public static List<Integer> get_beacon_committee(BeaconState state, UInt64 slot, UInt64 index) {
+    // Make sure state is within range of the slot being queried
+    validateStateForCommitteeQuery(state, slot);
+
     return BeaconStateCache.getTransitionCaches(state)
         .getBeaconCommittee()
         .get(
@@ -248,6 +252,37 @@ public class CommitteeUtil {
                   committeeIndex,
                   count);
             });
+  }
+
+  private static void validateStateForCommitteeQuery(BeaconState state, UInt64 slot) {
+    final UInt64 oldestQueryableSlot = getEarliestQueryableSlotForTargetSlot(slot);
+    checkArgument(
+        state.getSlot().compareTo(oldestQueryableSlot) >= 0,
+        "Committee information must be derived from a state no older than the previous epoch. State at slot %s is older than cutoff slot %s",
+        state.getSlot(),
+        oldestQueryableSlot);
+  }
+
+  /**
+   * Calculates the earliest slot queryable for assignments at the given slot
+   *
+   * @param slot The slot for which we want to retrieve committee information
+   * @return The earliest slot from which we can query committee assignments
+   */
+  public static UInt64 getEarliestQueryableSlotForTargetSlot(final UInt64 slot) {
+    final UInt64 epoch = compute_epoch_at_slot(slot);
+    return getEarliestQueryableSlotForTargetEpoch(epoch);
+  }
+
+  /**
+   * Calculates the earliest slot queryable for assignments at the given epoch
+   *
+   * @param epoch The epoch for which we want to retrieve committee information
+   * @return The earliest slot from which we can query committee assignments
+   */
+  public static UInt64 getEarliestQueryableSlotForTargetEpoch(final UInt64 epoch) {
+    final UInt64 previousEpoch = epoch.compareTo(UInt64.ZERO) > 0 ? epoch.minus(UInt64.ONE) : epoch;
+    return compute_start_slot_at_epoch(previousEpoch);
   }
 
   public static int getAggregatorModulo(final int committeeSize) {
