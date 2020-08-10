@@ -48,7 +48,7 @@ import tech.pegasys.teku.util.config.Constants;
 public class GetValidatorsTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private Context context = mock(Context.class);
-  private final UInt64 epoch = dataStructureUtil.randomUInt64();
+  private final UInt64 epoch = dataStructureUtil.randomEpoch();
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
   private final tech.pegasys.teku.datastructures.state.BeaconState beaconStateInternal =
