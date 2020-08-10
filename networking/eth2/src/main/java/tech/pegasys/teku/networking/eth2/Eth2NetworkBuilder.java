@@ -143,7 +143,9 @@ public class Eth2NetworkBuilder {
         p2pNetwork,
         new Eth2PeerSelectionStrategy(
             config.getTargetPeerRange(),
-            network -> PeerSubnetSubscriptions.create(network, subnetTopicProvider),
+            network ->
+                PeerSubnetSubscriptions.create(
+                    network, subnetTopicProvider, config.getTargetSubnetSubscriberCount()),
             reputationManager,
             Collections::shuffle),
         config);

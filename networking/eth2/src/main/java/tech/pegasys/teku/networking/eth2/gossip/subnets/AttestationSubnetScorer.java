@@ -32,9 +32,11 @@ public class AttestationSubnetScorer implements PeerScorer {
   }
 
   public static AttestationSubnetScorer create(
-      final GossipNetwork gossipNetwork, final AttestationSubnetTopicProvider topicProvider) {
+      final GossipNetwork gossipNetwork,
+      final AttestationSubnetTopicProvider topicProvider,
+      final int targetSubnetSubscriberCount) {
     return new AttestationSubnetScorer(
-        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider));
+        PeerSubnetSubscriptions.create(gossipNetwork, topicProvider, targetSubnetSubscriberCount));
   }
 
   @Override
