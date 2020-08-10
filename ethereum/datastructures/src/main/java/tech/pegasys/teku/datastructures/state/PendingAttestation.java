@@ -106,27 +106,20 @@ public class PendingAttestation extends AbstractImmutableContainer
   @Override
   public List<Bytes> get_fixed_parts() {
     List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(List.of(Bytes.EMPTY));
+    fixedPartsList.add(Bytes.EMPTY);
     fixedPartsList.addAll(getData().get_fixed_parts());
-    fixedPartsList.addAll(
-        List.of(
-            SSZ.encodeUInt64(getInclusion_delay().longValue()),
-            SSZ.encodeUInt64(getProposer_index().longValue())));
+    fixedPartsList.add(SSZ.encodeUInt64(getInclusion_delay().longValue()));
+    fixedPartsList.add(SSZ.encodeUInt64(getProposer_index().longValue()));
     return fixedPartsList;
   }
 
   @Override
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
-    // TODO (#2396): The below lines are a hack while Tuweni SSZ/SOS is being upgraded. To be
-    // uncommented
-    // once we shift from Bytes to a real bitlist type.
-    // Bytes serialized_aggregation_bits =
-    // Bytes.fromHexString("0x01").shiftLeft(aggregation_bits.bitLength()).or(aggregation_bits);
-    // variablePartsList.addAll(List.of(serialized_aggregation_bits));
-    variablePartsList.addAll(List.of(getAggregation_bits().serialize()));
+    variablePartsList.add(getAggregation_bits().serialize());
     variablePartsList.addAll(Collections.nCopies(getData().getSSZFieldCount(), Bytes.EMPTY));
-    variablePartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY));
+    variablePartsList.add(Bytes.EMPTY);
+    variablePartsList.add(Bytes.EMPTY);
     return variablePartsList;
   }
 
