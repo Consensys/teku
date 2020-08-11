@@ -39,6 +39,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.util.config.Constants;
 
 public class PostDutiesTest {
   private static final List<BLSKeyPair> keyPairs = BLSKeyGenerator.generateKeyPairs(1);
@@ -69,6 +70,15 @@ public class PostDutiesTest {
     PostDuties handler = new PostDuties(provider, jsonProvider);
     when(provider.isStoreAvailable()).thenReturn(true);
     when(context.body()).thenReturn("{\"epoch\":\"-1\"}");
+    handler.handle(context);
+    verify(context).status(SC_BAD_REQUEST);
+  }
+
+  @Test
+  public void shouldReturnBadRequestWhenEpochNumberTooLargeInBody() throws Exception {
+    PostDuties handler = new PostDuties(provider, jsonProvider);
+    when(provider.isStoreAvailable()).thenReturn(true);
+    when(context.body()).thenReturn("{\"epoch\":\"" + Constants.FAR_FUTURE_EPOCH + "\"}");
     handler.handle(context);
     verify(context).status(SC_BAD_REQUEST);
   }

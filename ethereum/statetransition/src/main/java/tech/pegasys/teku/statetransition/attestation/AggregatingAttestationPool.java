@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
@@ -50,6 +51,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
       new HashMap<>();
   private final NavigableMap<UInt64, Set<Bytes>> dataHashBySlot = new TreeMap<>();
   private final AttestationDataStateTransitionValidator attestationDataValidator;
+  private final AtomicInteger size = new AtomicInteger(0);
 
   public AggregatingAttestationPool(
       final AttestationDataStateTransitionValidator attestationDataValidator) {
@@ -59,10 +61,13 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   public synchronized void add(final ValidateableAttestation attestation) {
     final AttestationData attestationData = attestation.getAttestation().getData();
     final Bytes32 dataRoot = attestationData.hash_tree_root();
-    attestationGroupByDataHash
-        .computeIfAbsent(dataRoot, key -> new MatchingDataAttestationGroup(attestationData))
-        .add(attestation);
-
+    final boolean add =
+        attestationGroupByDataHash
+            .computeIfAbsent(dataRoot, key -> new MatchingDataAttestationGroup(attestationData))
+            .add(attestation);
+    if (add) {
+      size.incrementAndGet();
+    }
     dataHashBySlot
         .computeIfAbsent(attestationData.getSlot(), slot -> new HashSet<>())
         .add(dataRoot);
@@ -89,7 +94,8 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     if (attestations == null) {
       return;
     }
-    attestations.remove(attestation);
+    final int numRemoved = attestations.remove(attestation);
+    size.addAndGet(-numRemoved);
     if (attestations.isEmpty()) {
       attestationGroupByDataHash.remove(dataRoot);
       removeFromSlotMappings(attestationData.getSlot(), dataRoot);
@@ -104,6 +110,10 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         dataHashBySlot.remove(slot);
       }
     }
+  }
+
+  public int getSize() {
+    return size.get();
   }
 
   public synchronized SSZList<Attestation> getAttestationsForBlock(

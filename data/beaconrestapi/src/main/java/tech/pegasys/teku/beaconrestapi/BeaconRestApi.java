@@ -52,6 +52,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.network.GetListenPort;
 import tech.pegasys.teku.beaconrestapi.handlers.network.GetPeerCount;
 import tech.pegasys.teku.beaconrestapi.handlers.network.GetPeerId;
 import tech.pegasys.teku.beaconrestapi.handlers.network.GetPeers;
+import tech.pegasys.teku.beaconrestapi.handlers.node.GetAttestationsInPoolCount;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetFork;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetSyncing;
@@ -207,6 +208,9 @@ public class BeaconRestApi {
         GetGenesisTime.ROUTE, new GetGenesisTime(provider.getChainDataProvider(), jsonProvider));
     app.get(GetSyncing.ROUTE, new GetSyncing(provider.getSyncDataProvider(), jsonProvider));
     app.get(GetVersion.ROUTE, new GetVersion(jsonProvider));
+    app.get(
+        GetAttestationsInPoolCount.ROUTE,
+        new GetAttestationsInPoolCount(provider.getNodeDataProvider(), jsonProvider));
   }
 
   private void addBeaconHandlers(final DataProvider dataProvider) {
