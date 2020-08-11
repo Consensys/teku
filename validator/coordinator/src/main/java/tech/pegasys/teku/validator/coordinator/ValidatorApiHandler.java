@@ -25,6 +25,7 @@ import static tech.pegasys.teku.logging.ValidatorLogger.VALIDATOR_LOGGER;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -307,8 +308,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     eventBus.post(new ProposedBlockEvent(block));
   }
 
-  private boolean isSyncActive() {
-    return !syncStateTracker.getCurrentSyncState().isInSync();
+  @VisibleForTesting
+  boolean isSyncActive() {
+    return syncStateTracker.getCurrentSyncState().isStartingUp()
+        || (syncStateTracker.getCurrentSyncState().isSyncing() && headBlockIsTooFarBehind());
+  }
+
+  private boolean headBlockIsTooFarBehind() {
+    final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
+    final UInt64 headEpoch = combinedChainDataClient.getHeadEpoch();
+    return headEpoch.plus(1).isLessThan(currentEpoch);
   }
 
   private List<ValidatorDuties> getValidatorDutiesFromState(

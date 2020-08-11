@@ -83,7 +83,7 @@ public class ValidatorDataProvider {
     if (randao == null) {
       throw new IllegalArgumentException(NO_RANDAO_PROVIDED);
     }
-    UInt64 bestSlot = combinedChainDataClient.getBestSlot();
+    UInt64 bestSlot = combinedChainDataClient.getHeadSlot();
     if (bestSlot.plus(UInt64.valueOf(SLOTS_PER_EPOCH)).compareTo(slot) < 0) {
       throw new IllegalArgumentException(CANNOT_PRODUCE_FAR_FUTURE_BLOCK);
     }

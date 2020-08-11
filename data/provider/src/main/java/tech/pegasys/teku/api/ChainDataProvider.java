@@ -184,7 +184,7 @@ public class ChainDataProvider {
         () -> {
           UInt64 slot =
               request.epoch == null
-                  ? combinedChainDataClient.getBestSlot()
+                  ? combinedChainDataClient.getHeadSlot()
                   : BeaconStateUtil.compute_start_slot_at_epoch(request.epoch);
 
           return combinedChainDataClient
