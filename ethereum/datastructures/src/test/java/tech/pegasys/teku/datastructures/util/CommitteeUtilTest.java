@@ -48,7 +48,7 @@ public class CommitteeUtilTest {
     final UInt64 epochSlot = compute_start_slot_at_epoch(epoch);
     final BeaconState state = dataStructureUtil.randomBeaconState(epochSlot);
 
-    final UInt64 outOfRangeSlot = compute_start_slot_at_epoch(epoch.plus(UInt64.valueOf(2)));
+    final UInt64 outOfRangeSlot = compute_start_slot_at_epoch(epoch.plus(2));
     assertThatThrownBy(() -> CommitteeUtil.get_beacon_committee(state, outOfRangeSlot, ONE))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(
@@ -61,7 +61,7 @@ public class CommitteeUtilTest {
     final UInt64 epochSlot = compute_start_slot_at_epoch(epoch.plus(ONE)).minus(ONE);
     final BeaconState state = dataStructureUtil.randomBeaconState(epochSlot);
 
-    final UInt64 outOfRangeSlot = compute_start_slot_at_epoch(epoch.plus(UInt64.valueOf(2)));
+    final UInt64 outOfRangeSlot = compute_start_slot_at_epoch(epoch.plus(2));
     assertThatThrownBy(() -> CommitteeUtil.get_beacon_committee(state, outOfRangeSlot, ONE))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(
@@ -74,7 +74,7 @@ public class CommitteeUtilTest {
     final UInt64 epochSlot = compute_start_slot_at_epoch(epoch);
     final BeaconState state = dataStructureUtil.randomBeaconState(epochSlot);
 
-    final UInt64 outOfRangeSlot = compute_start_slot_at_epoch(epoch.plus(UInt64.valueOf(2)));
+    final UInt64 outOfRangeSlot = compute_start_slot_at_epoch(epoch.plus(2));
     final UInt64 inRangeSlot = outOfRangeSlot.minus(ONE);
     assertDoesNotThrow(() -> CommitteeUtil.get_beacon_committee(state, inRangeSlot, ONE));
   }

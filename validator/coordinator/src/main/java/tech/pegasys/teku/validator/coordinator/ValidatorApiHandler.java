@@ -25,6 +25,7 @@ import static tech.pegasys.teku.logging.ValidatorLogger.VALIDATOR_LOGGER;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -65,6 +66,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.sync.SyncState;
 import tech.pegasys.teku.sync.SyncStateTracker;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
@@ -307,8 +309,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     eventBus.post(new ProposedBlockEvent(block));
   }
 
-  private boolean isSyncActive() {
-    return !syncStateTracker.getCurrentSyncState().isInSync();
+  @VisibleForTesting
+  boolean isSyncActive() {
+    final SyncState syncState = syncStateTracker.getCurrentSyncState();
+    return syncState.isStartingUp() || (syncState.isSyncing() && headBlockIsTooFarBehind());
+  }
+
+  private boolean headBlockIsTooFarBehind() {
+    final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
+    final UInt64 headEpoch = combinedChainDataClient.getHeadEpoch();
+    return headEpoch.plus(1).isLessThan(currentEpoch);
   }
 
   private List<ValidatorDuties> getValidatorDutiesFromState(
@@ -358,7 +368,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     final UInt64 epochStartSlot = compute_start_slot_at_epoch(epoch);
     // Don't calculate a proposer for the genesis slot
     final UInt64 startSlot = epochStartSlot.max(UInt64.valueOf(GENESIS_SLOT + 1));
-    final UInt64 endSlot = epochStartSlot.plus(UInt64.valueOf(Constants.SLOTS_PER_EPOCH));
+    final UInt64 endSlot = epochStartSlot.plus(Constants.SLOTS_PER_EPOCH);
     final Map<Integer, List<UInt64>> proposalSlotsByValidatorIndex = new HashMap<>();
     for (UInt64 slot = startSlot; slot.compareTo(endSlot) < 0; slot = slot.plus(UInt64.ONE)) {
       final Integer proposer = get_beacon_proposer_index(state, slot);

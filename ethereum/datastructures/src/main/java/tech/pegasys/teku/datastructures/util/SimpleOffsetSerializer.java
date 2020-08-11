@@ -195,7 +195,7 @@ public class SimpleOffsetSerializer {
     for (Bytes part : parts) {
       fixed_parts.add(SSZ.encodeUInt32(offset.longValue()));
       variable_parts.add(part);
-      offset = offset.plus(UInt64.valueOf(part.size()));
+      offset = offset.plus(part.size());
     }
     return Bytes.wrap(
         Bytes.concatenate(fixed_parts.toArray(new Bytes[0])),

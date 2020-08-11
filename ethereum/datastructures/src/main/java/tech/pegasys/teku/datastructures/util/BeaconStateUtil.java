@@ -254,8 +254,7 @@ public class BeaconStateUtil {
    */
   public static Bytes32 get_seed(BeaconState state, UInt64 epoch, Bytes4 domain_type)
       throws IllegalArgumentException {
-    UInt64 randaoIndex =
-        epoch.plus(UInt64.valueOf(EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD - 1));
+    UInt64 randaoIndex = epoch.plus(EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD - 1);
     Bytes32 mix = get_randao_mix(state, randaoIndex);
     Bytes epochBytes = uint_to_bytes(epoch.longValue(), 8);
     return Hash.sha2_256(Bytes.concatenate(domain_type.getWrappedBytes(), epochBytes, mix));
@@ -411,7 +410,7 @@ public class BeaconStateUtil {
    *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_epoch_of_slot</a>
    */
   public static UInt64 compute_epoch_at_slot(UInt64 slot) {
-    return slot.dividedBy(UInt64.valueOf(Constants.SLOTS_PER_EPOCH));
+    return slot.dividedBy(Constants.SLOTS_PER_EPOCH);
   }
 
   /**
@@ -464,7 +463,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_epoch_of_slot</a>
    */
   public static UInt64 compute_start_slot_at_epoch(UInt64 epoch) {
-    return epoch.times(UInt64.valueOf(SLOTS_PER_EPOCH));
+    return epoch.times(SLOTS_PER_EPOCH);
   }
 
   /**
@@ -495,8 +494,7 @@ public class BeaconStateUtil {
         UInt64.valueOf(
             state.getValidators().stream()
                 .filter(v -> v.getExit_epoch().equals(final_exit_queue_epoch))
-                .collect(Collectors.toList())
-                .size());
+                .count());
 
     if (exit_queue_churn.compareTo(get_validator_churn_limit(state)) >= 0) {
       exit_queue_epoch = exit_queue_epoch.plus(UInt64.ONE);
@@ -510,7 +508,7 @@ public class BeaconStateUtil {
             validator
                 .withExit_epoch(exit_queue_epoch)
                 .withWithdrawable_epoch(
-                    exit_queue_epoch.plus(UInt64.valueOf(MIN_VALIDATOR_WITHDRAWABILITY_DELAY))));
+                    exit_queue_epoch.plus(MIN_VALIDATOR_WITHDRAWABILITY_DELAY)));
   }
 
   /**
@@ -538,16 +536,16 @@ public class BeaconStateUtil {
                 .withWithdrawable_epoch(
                     validator
                         .getWithdrawable_epoch()
-                        .max(epoch.plus(UInt64.valueOf(EPOCHS_PER_SLASHINGS_VECTOR)))));
+                        .max(epoch.plus(EPOCHS_PER_SLASHINGS_VECTOR))));
 
-    int index = epoch.mod(UInt64.valueOf(EPOCHS_PER_SLASHINGS_VECTOR)).intValue();
+    int index = epoch.mod(EPOCHS_PER_SLASHINGS_VECTOR).intValue();
     state
         .getSlashings()
         .set(index, state.getSlashings().get(index).plus(validator.getEffective_balance()));
     decrease_balance(
         state,
         slashed_index,
-        validator.getEffective_balance().dividedBy(UInt64.valueOf(MIN_SLASHING_PENALTY_QUOTIENT)));
+        validator.getEffective_balance().dividedBy(MIN_SLASHING_PENALTY_QUOTIENT));
 
     // Apply proposer and whistleblower rewards
     int proposer_index = get_beacon_proposer_index(state);
@@ -556,7 +554,7 @@ public class BeaconStateUtil {
     }
 
     UInt64 whistleblower_reward =
-        validator.getEffective_balance().dividedBy(UInt64.valueOf(WHISTLEBLOWER_REWARD_QUOTIENT));
+        validator.getEffective_balance().dividedBy(WHISTLEBLOWER_REWARD_QUOTIENT);
     UInt64 proposer_reward = whistleblower_reward.dividedBy(PROPOSER_REWARD_QUOTIENT);
     increase_balance(state, proposer_index, proposer_reward);
     increase_balance(state, whistleblower_index, whistleblower_reward.minus(proposer_reward));
@@ -609,7 +607,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_randao_mix</a>
    */
   public static Bytes32 get_randao_mix(BeaconState state, UInt64 epoch) {
-    int index = epoch.mod(UInt64.valueOf(EPOCHS_PER_HISTORICAL_VECTOR)).intValue();
+    int index = epoch.mod(EPOCHS_PER_HISTORICAL_VECTOR).intValue();
     return state.getRandao_mixes().get(index);
   }
 
@@ -719,7 +717,7 @@ public class BeaconStateUtil {
    *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_activation_exit_epoch</a>
    */
   public static UInt64 compute_activation_exit_epoch(UInt64 epoch) {
-    return epoch.plus(UInt64.ONE).plus(UInt64.valueOf(MAX_SEED_LOOKAHEAD));
+    return epoch.plus(UInt64.ONE).plus(MAX_SEED_LOOKAHEAD);
   }
 
   public static boolean all(Bitvector bitvector, int start, int end) {
@@ -742,12 +740,11 @@ public class BeaconStateUtil {
   public static UInt64 integer_squareroot(UInt64 n) {
     checkArgument(
         n.compareTo(UInt64.ZERO) >= 0, "checkArgument threw an exception in integer_squareroot()");
-    UInt64 TWO = UInt64.valueOf(2L);
     UInt64 x = n;
-    UInt64 y = x.plus(UInt64.ONE).dividedBy(TWO);
+    UInt64 y = x.plus(UInt64.ONE).dividedBy(2);
     while (y.compareTo(x) < 0) {
       x = y;
-      y = x.plus(n.dividedBy(x)).dividedBy(TWO);
+      y = x.plus(n.dividedBy(x)).dividedBy(2);
     }
     return x;
   }
@@ -803,12 +800,12 @@ public class BeaconStateUtil {
       throws IllegalArgumentException {
     checkArgument(
         isBlockRootAvailableFromState(state, slot), "BeaconStateUtil.get_block_root_at_slot");
-    int latestBlockRootIndex = slot.mod(UInt64.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue();
+    int latestBlockRootIndex = slot.mod(SLOTS_PER_HISTORICAL_ROOT).intValue();
     return state.getBlock_roots().get(latestBlockRootIndex);
   }
 
   public static boolean isBlockRootAvailableFromState(BeaconState state, UInt64 slot) {
-    UInt64 slotPlusHistoricalRoot = slot.plus(UInt64.valueOf(SLOTS_PER_HISTORICAL_ROOT));
+    UInt64 slotPlusHistoricalRoot = slot.plus(SLOTS_PER_HISTORICAL_ROOT);
     return slot.compareTo(state.getSlot()) < 0
         && state.getSlot().compareTo(slotPlusHistoricalRoot) <= 0;
   }

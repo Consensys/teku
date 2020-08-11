@@ -81,7 +81,7 @@ public class ValidatorApiHandlerIntegrationTest {
   public void createUnsignedAttestation_withRecentBlockAvailable() {
     final UInt64 targetEpoch = UInt64.valueOf(3);
     final UInt64 targetEpochStartSlot = compute_start_slot_at_epoch(targetEpoch);
-    final UInt64 targetSlot = targetEpochStartSlot.plus(UInt64.valueOf(2));
+    final UInt64 targetSlot = targetEpochStartSlot.plus(2);
 
     final SignedBlockAndState genesis = chainUpdater.initializeGenesis();
     final Checkpoint genesisCheckpoint = genesis.getState().getFinalized_checkpoint();
@@ -115,7 +115,7 @@ public class ValidatorApiHandlerIntegrationTest {
     final UInt64 latestSlot = compute_start_slot_at_epoch(latestEpoch).plus(ONE);
     final UInt64 targetEpoch = UInt64.valueOf(latestEpoch.longValue() + 3);
     final UInt64 targetEpochStartSlot = compute_start_slot_at_epoch(targetEpoch);
-    final UInt64 targetSlot = targetEpochStartSlot.plus(UInt64.valueOf(2));
+    final UInt64 targetSlot = targetEpochStartSlot.plus(2);
 
     final SignedBlockAndState genesis = chainUpdater.initializeGenesis();
     final Checkpoint genesisCheckpoint = genesis.getState().getFinalized_checkpoint();

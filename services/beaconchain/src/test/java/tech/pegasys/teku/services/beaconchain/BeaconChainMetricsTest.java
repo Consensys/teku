@@ -94,7 +94,7 @@ class BeaconChainMetricsTest {
   @Test
   void getHeadSlotValue_shouldSupplyValueWhenStoreIsPresent() {
     when(recentChainData.isPreGenesis()).thenReturn(false);
-    when(recentChainData.getBestSlot()).thenReturn(ONE);
+    when(recentChainData.getHeadSlot()).thenReturn(ONE);
 
     assertThat(metricsSystem.getGauge(BEACON, "head_slot").getValue()).isEqualTo(1L);
   }
@@ -151,7 +151,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getFinalizedRootValue_shouldReturnValueWhenStoreIsPresent() {
-    when(recentChainData.getBestBlockAndState()).thenReturn(Optional.of(blockAndState));
+    when(recentChainData.getHeadBlockAndState()).thenReturn(Optional.of(blockAndState));
     when(blockAndState.getState()).thenReturn(state);
     when(state.getFinalized_checkpoint()).thenReturn(checkpoint);
 
@@ -168,7 +168,7 @@ class BeaconChainMetricsTest {
   @Test
   void getPreviousJustifiedEpochValue_shouldSupplyValueWhenStoreIsPresent() {
     when(recentChainData.isPreGenesis()).thenReturn(false);
-    when(recentChainData.getBestBlockAndState()).thenReturn(Optional.of(blockAndState));
+    when(recentChainData.getHeadBlockAndState()).thenReturn(Optional.of(blockAndState));
     when(blockAndState.getState()).thenReturn(state);
     when(state.getPrevious_justified_checkpoint()).thenReturn(checkpoint);
 
@@ -185,7 +185,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getPreviousJustifiedRootValue_shouldReturnValueWhenStoreIsPresent() {
-    when(recentChainData.getBestBlockAndState()).thenReturn(Optional.of(blockAndState));
+    when(recentChainData.getHeadBlockAndState()).thenReturn(Optional.of(blockAndState));
     when(blockAndState.getState()).thenReturn(state);
     when(state.getPrevious_justified_checkpoint()).thenReturn(checkpoint);
 
@@ -201,7 +201,7 @@ class BeaconChainMetricsTest {
 
   @Test
   void getJustifiedRootValue_shouldReturnValueWhenStoreIsPresent() {
-    when(recentChainData.getBestBlockAndState()).thenReturn(Optional.of(blockAndState));
+    when(recentChainData.getHeadBlockAndState()).thenReturn(Optional.of(blockAndState));
     when(blockAndState.getState()).thenReturn(state);
     when(state.getCurrent_justified_checkpoint()).thenReturn(new Checkpoint(NODE_SLOT_VALUE, root));
 

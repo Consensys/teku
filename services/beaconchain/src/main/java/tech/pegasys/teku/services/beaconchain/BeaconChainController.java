@@ -523,7 +523,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     UInt64 currentSlot = ZERO;
     if (currentTime.compareTo(genesisTime) >= 0) {
       UInt64 deltaTime = currentTime.minus(genesisTime);
-      currentSlot = deltaTime.dividedBy(UInt64.valueOf(SECONDS_PER_SLOT));
+      currentSlot = deltaTime.dividedBy(SECONDS_PER_SLOT);
     } else {
       UInt64 timeUntilGenesis = genesisTime.minus(currentTime);
       genesisTimeTracker = currentTime;
@@ -543,9 +543,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     transaction.commit().join();
 
     final UInt64 genesisTime = recentChainData.getGenesisTime();
-    if (genesisTime.compareTo(currentTime) > 0) {
+    if (genesisTime.isGreaterThan(currentTime)) {
       // notify every 10 minutes
-      if (genesisTimeTracker.plus(UInt64.valueOf(600L)).compareTo(currentTime) <= 0) {
+      if (genesisTimeTracker.plus(600L).isLessThanOrEqualTo(currentTime)) {
         genesisTimeTracker = currentTime;
         STATUS_LOG.timeUntilGenesis(
             genesisTime.minus(currentTime).longValue(), p2pNetwork.getPeerCount());

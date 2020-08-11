@@ -119,7 +119,7 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     // Add some more blocks
     final UInt64 firstHotBlockSlot = finalizedCheckpoint.getEpochStartSlot().plus(UInt64.ONE);
     chainBuilder.generateBlockAtSlot(firstHotBlockSlot);
-    chainBuilder.generateBlocksUpToSlot(firstHotBlockSlot.plus(UInt64.valueOf(10)));
+    chainBuilder.generateBlocksUpToSlot(firstHotBlockSlot.plus(10));
 
     // Save new blocks and finalized checkpoint
     final StoreTransaction tx = recentChainData.startStoreTransaction();

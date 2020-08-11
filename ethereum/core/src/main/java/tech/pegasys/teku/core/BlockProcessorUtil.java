@@ -125,7 +125,7 @@ public final class BlockProcessorUtil {
 
       Bytes32 mix =
           get_randao_mix(state, epoch).xor(Hash.sha2_256(body.getRandao_reveal().toSSZBytes()));
-      int index = epoch.mod(UInt64.valueOf(EPOCHS_PER_HISTORICAL_VECTOR)).intValue();
+      int index = epoch.mod(EPOCHS_PER_HISTORICAL_VECTOR).intValue();
       state.getRandao_mixes().set(index, mix);
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());

@@ -68,7 +68,7 @@ public class ProtoNode {
       }
       weight = weight.minus(deltaAbsoluteValue);
     } else {
-      weight = weight.plus(UInt64.valueOf(delta));
+      weight = weight.plus(delta);
     }
   }
 

@@ -63,6 +63,16 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void snappyCompressionDefaultsToTrueForCustomNetwork() {
+    final String[] args = {"--network=/tmp/foo.yaml"};
+
+    beaconNodeCommand.parse(args);
+
+    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
+    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isTrue();
+  }
+
+  @Test
   public void mainnetNetworkDefaultsSnappyCompressionOn() {
     final String[] args = {"--network", "mainnet"};
 

@@ -77,7 +77,7 @@ public class SyncManagerTest {
     when(network.subscribeConnect(any())).thenReturn(SUBSCRIPTION_ID);
     when(storageClient.getFinalizedEpoch()).thenAnswer((__) -> localFinalizedEpoch.get());
     when(storageClient.getCurrentSlot()).thenAnswer((__) -> Optional.ofNullable(localSlot.get()));
-    when(storageClient.getBestSlot()).thenAnswer((__) -> localHeadSlot.get());
+    when(storageClient.getHeadSlot()).thenAnswer((__) -> localHeadSlot.get());
     when(peer.getStatus()).thenReturn(PEER_STATUS);
   }
 
@@ -107,8 +107,7 @@ public class SyncManagerTest {
   @Test
   void sync_noSuitablePeers_almostInSync() {
     // We're almost in sync with the peer
-    final UInt64 oldHeadSlot =
-        PEER_STATUS.getHeadSlot().minus(UInt64.valueOf(Constants.SLOTS_PER_EPOCH));
+    final UInt64 oldHeadSlot = PEER_STATUS.getHeadSlot().minus(Constants.SLOTS_PER_EPOCH);
     setLocalChainState(oldHeadSlot, PEER_STATUS.getFinalizedEpoch().minus(1));
 
     when(network.streamPeers()).thenReturn(Stream.of(peer));

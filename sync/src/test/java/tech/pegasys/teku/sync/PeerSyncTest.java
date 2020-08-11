@@ -335,7 +335,7 @@ public class PeerSyncTest {
 
     // first non-finalized slot after syncing with peer
     final UInt64 secondSyncStartingSlot =
-        PEER_FINALIZED_EPOCH.times(UInt64.valueOf(Constants.SLOTS_PER_EPOCH)).plus(UInt64.ONE);
+        PEER_FINALIZED_EPOCH.times(Constants.SLOTS_PER_EPOCH).plus(UInt64.ONE);
 
     verify(peer)
         .requestBlocksByRange(

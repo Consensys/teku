@@ -189,7 +189,7 @@ public abstract class AbstractCombinedChainDataClientTest {
       final String caseName, final QueryBySlotTestCase<T> testCase) {
     final SignedBlockAndState bestBlock = advanceChainAndGetBestBlockAndState(2);
 
-    final UInt64 querySlot = bestBlock.getSlot().plus(UInt64.valueOf(2));
+    final UInt64 querySlot = bestBlock.getSlot().plus(2);
     final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(bestBlock);
     final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
     final Optional<T> expected =
@@ -279,7 +279,7 @@ public abstract class AbstractCombinedChainDataClientTest {
     chainUpdater.initializeGenesis();
     // Setup chain at epoch to be queried
     final SignedBlockAndState checkpointBlockAndState =
-        chainUpdater.advanceChain(epochSlot.minus(UInt64.valueOf(2)));
+        chainUpdater.advanceChain(epochSlot.minus(2));
     // Bury queried epoch behind additional blocks
     chainUpdater.advanceChain(compute_start_slot_at_epoch(nextEpoch));
     chainUpdater.addNewBestBlock();
