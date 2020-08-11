@@ -236,8 +236,7 @@ public class CommitteeUtil {
               UInt64 epoch = compute_epoch_at_slot(slot);
               UInt64 committees_per_slot = get_committee_count_per_slot(state, epoch);
               int committeeIndex =
-                  toIntExact(
-                      slot.mod(SLOTS_PER_EPOCH).times(committees_per_slot).plus(index).longValue());
+                  slot.mod(SLOTS_PER_EPOCH).times(committees_per_slot).plus(index).intValue();
               int count = committees_per_slot.times(SLOTS_PER_EPOCH).intValue();
               return compute_committee(
                   state,
