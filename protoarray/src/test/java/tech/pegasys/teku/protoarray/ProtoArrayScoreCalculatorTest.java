@@ -184,7 +184,7 @@ public class ProtoArrayScoreCalculatorTest {
   void computeDeltas_changingBalances() {
 
     final UInt64 OLD_BALANCE = UInt64.valueOf(42);
-    final UInt64 NEW_BALANCE = OLD_BALANCE.times(UInt64.valueOf(2));
+    final UInt64 NEW_BALANCE = OLD_BALANCE.times(2);
 
     int validatorCount = 16;
 

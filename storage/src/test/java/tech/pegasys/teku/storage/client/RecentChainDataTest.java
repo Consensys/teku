@@ -462,8 +462,7 @@ class RecentChainDataTest {
     final UInt64 finalizedEpoch =
         ChainProperties.computeBestEpochFinalizableAtSlot(finalizedBlockSlot);
     final UInt64 recentSlot = compute_start_slot_at_epoch(finalizedEpoch).plus(ONE);
-    final UInt64 chainHeight =
-        historicalRoots.times(UInt64.valueOf(2)).plus(recentSlot).plus(UInt64.valueOf(5));
+    final UInt64 chainHeight = historicalRoots.times(2).plus(recentSlot).plus(5);
     // Build historical blocks
     final SignedBlockAndState finalizedBlock;
     while (true) {
@@ -482,7 +481,7 @@ class RecentChainDataTest {
     while (chainBuilder.getLatestSlot().compareTo(chainHeight) < 0) {
       bestBlock = chainBuilder.generateBlockAtSlot(nextSlot);
       saveBlock(storageClient, bestBlock);
-      nextSlot = nextSlot.plus(UInt64.valueOf(skipBlocks));
+      nextSlot = nextSlot.plus(skipBlocks);
     }
     // Update best block and finalized state
     updateBestBlock(storageClient, bestBlock);
@@ -536,8 +535,8 @@ class RecentChainDataTest {
     final ChainBuilder fork = chainBuilder.fork();
     final UInt64 chainSplitSlot = chainBuilder.getLatestSlot();
     for (int i = 0; i < 5; i++) {
-      final UInt64 canonicalBlockSlot = chainSplitSlot.plus(UInt64.valueOf(i * 2 + 2));
-      final UInt64 forkSlot = chainSplitSlot.plus(UInt64.valueOf(i * 2 + 1));
+      final UInt64 canonicalBlockSlot = chainSplitSlot.plus(i * 2 + 2);
+      final UInt64 forkSlot = chainSplitSlot.plus(i * 2 + 1);
       updateBestBlock(storageClient, chainBuilder.generateBlockAtSlot(canonicalBlockSlot));
       saveBlock(storageClient, fork.generateBlockAtSlot(forkSlot));
     }

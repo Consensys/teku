@@ -106,13 +106,13 @@ class BlockFactoryTest {
 
   @Test
   public void shouldCreateBlockAfterSkippedSlot() throws Exception {
-    final UInt64 newSlot = recentChainData.getBestSlot().plus(UInt64.valueOf(2));
+    final UInt64 newSlot = recentChainData.getBestSlot().plus(2);
     assertBlockCreated(newSlot);
   }
 
   @Test
   public void shouldCreateBlockAfterMultipleSkippedSlot() throws Exception {
-    final UInt64 newSlot = recentChainData.getBestSlot().plus(UInt64.valueOf(5));
+    final UInt64 newSlot = recentChainData.getBestSlot().plus(5);
     assertBlockCreated(newSlot);
   }
 

@@ -110,7 +110,7 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
-    final UInt64 futureEpoch = slot.plus(UInt64.valueOf(SLOTS_PER_EPOCH));
+    final UInt64 futureEpoch = slot.plus(SLOTS_PER_EPOCH);
 
     final SafeFuture<Optional<List<Committee>>> future = provider.getCommitteesAtEpoch(futureEpoch);
     assertThat(future.get()).isEmpty();
