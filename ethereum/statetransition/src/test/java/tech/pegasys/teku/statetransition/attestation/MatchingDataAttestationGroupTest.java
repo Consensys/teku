@@ -79,7 +79,7 @@ class MatchingDataAttestationGroupTest {
             aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation()));
 
     assertThat(group.stream()).containsExactly(attestation3);
-    assertThat(numRemoved).isEqualTo(0); // the one attestation is still there.
+    assertThat(numRemoved).isEqualTo(2); // the one attestation is still there, and we've removed 2.
   }
 
   @Test
