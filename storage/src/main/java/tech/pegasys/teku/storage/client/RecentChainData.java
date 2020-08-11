@@ -73,7 +73,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   private volatile UpdatableStore store;
   private volatile Optional<ProtoArrayForkChoiceStrategy> forkChoiceStrategy;
-  private volatile Optional<SignedBlockAndStateAndSlot> chainHead = Optional.empty();
+  private volatile Optional<ChainHead> chainHead = Optional.empty();
   private volatile UInt64 genesisTime;
 
   RecentChainData(
@@ -122,7 +122,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
               // The genesis state is by definition finalized so just get the root from there.
               final SignedBlockAndState headBlock = store.getLatestFinalizedBlockAndState();
-              updateBestBlock(headBlock.getRoot(), headBlock.getSlot());
+              updateHead(headBlock.getRoot(), headBlock.getSlot());
             });
   }
 
@@ -134,11 +134,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return this.store == null;
   }
 
-  /**
-   * Returns true if the best block / chainhead has not yet been set.
-   *
-   * @return true if the best block is unknown, false otherwise.
-   */
+  /** @return true if the chain head has been set, false otherwise. */
   public boolean isPreForkChoice() {
     return chainHead.isEmpty();
   }
@@ -185,46 +181,45 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   // NETWORKING RELATED INFORMATION METHODS:
 
   /**
-   * Update Best Block
+   * Set the block that is the current chain head according to fork-choice processing.
    *
-   * @param root the new best block root
-   * @param slot the new best slot
+   * @param root The new head block root
+   * @param currentSlot The current slot - the slot at which the new head was selected
    */
-  public void updateBestBlock(Bytes32 root, UInt64 slot) {
-    final Optional<SignedBlockAndStateAndSlot> originalChainHead = chainHead;
+  public void updateHead(Bytes32 root, UInt64 currentSlot) {
+    final Optional<ChainHead> originalChainHead = chainHead;
     store
         .retrieveBlockAndState(root)
         .thenApply(
             headBlockAndState ->
                 headBlockAndState
-                    .map(head -> SignedBlockAndStateAndSlot.create(head, slot))
+                    .map(head -> ChainHead.create(head, currentSlot))
                     .orElseThrow(
                         () ->
                             new IllegalStateException(
                                 String.format(
-                                    "Unable to update best block as of slot %s.  Block is unavailable: %s.",
-                                    slot, root))))
+                                    "Unable to update head block as of slot %s.  Block is unavailable: %s.",
+                                    currentSlot, root))))
         .thenAccept(headBlock -> updateChainHead(originalChainHead, headBlock))
         .reportExceptions();
   }
 
   private void updateChainHead(
-      final Optional<SignedBlockAndStateAndSlot> originalHead,
-      final SignedBlockAndStateAndSlot newChainHead) {
+      final Optional<ChainHead> originalHead, final ChainHead newChainHead) {
     synchronized (this) {
       if (!chainHead.equals(originalHead)) {
         // The chain head has been updated while we were waiting for the newChainHead
         // Skip this update to avoid accidentally regressing the chain head
-        LOG.info("Skipping best block update to avoid potential rollback of the best block.");
+        LOG.info("Skipping head block update to avoid potential rollback of the chain head.");
         return;
       }
       final Optional<Bytes32> originalBestRoot = originalHead.map(SignedBlockAndState::getRoot);
-      final UInt64 originalBestSlot =
-          originalHead.map(SignedBlockAndStateAndSlot::getHeadSlot).orElse(UInt64.ZERO);
+      final UInt64 originalForkChoiceSlot =
+          originalHead.map(ChainHead::getForkChoiceSlot).orElse(UInt64.ZERO);
 
       this.chainHead = Optional.of(newChainHead);
       if (originalBestRoot
-          .map(original -> hasReorgedFrom(original, originalBestSlot))
+          .map(originalRoot -> hasReorgedFrom(originalRoot, originalForkChoiceSlot))
           .orElse(false)) {
         reorgCounter.inc();
         reorgEventChannel.reorgOccurred(newChainHead.getRoot(), newChainHead.getSlot());
@@ -234,12 +229,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     bestBlockInitialized.complete(null);
   }
 
-  private boolean hasReorgedFrom(final Bytes32 originalBestRoot, final UInt64 originalBestSlot) {
-    // Get the block root in effect at the old best slot on the current best chain. If this is a
-    // different fork to the previous chain the root at originalBestSlot will be different from
-    // originalBestRoot. If it's an extension of the same chain it will match.
-    return getBlockRootBySlot(originalBestSlot)
-        .map(rootAtOldBestSlot -> !rootAtOldBestSlot.equals(originalBestRoot))
+  private boolean hasReorgedFrom(
+      final Bytes32 originalHeadRoot, final UInt64 originalForkChoiceSlot) {
+    // Get the block root in effect at the old fork choice slot on the current chain. If this is a
+    // different fork to the previous chain the root at originalForkChoiceSlot will be different
+    // from originalHeadRoot. If it's an extension of the same chain it will match.
+    return getBlockRootBySlot(originalForkChoiceSlot)
+        .map(rootAtOldBestSlot -> !rootAtOldBestSlot.equals(originalHeadRoot))
         .orElse(true);
   }
 
@@ -299,21 +295,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return chainHead.map(SignedBlockAndState::getRoot);
   }
 
-  /**
-   * If available, return the best block and state.
-   *
-   * @return The best block along with its corresponding state.
-   */
-  public Optional<BeaconBlockAndState> getBestBlockAndState() {
+  /** @return The block and state at the head of the chain. */
+  public Optional<BeaconBlockAndState> getHeadBlockAndState() {
     return chainHead.map(SignedBlockAndState::toUnsigned);
   }
 
-  /**
-   * If available, return the best block.
-   *
-   * @return The best block.
-   */
-  public Optional<SignedBeaconBlock> getBestBlock() {
+  /** @return The block at the head of the chain. */
+  public Optional<SignedBeaconBlock> getHeadBlock() {
     return chainHead.map(SignedBlockAndState::getBlock);
   }
 
@@ -331,7 +319,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    *
    * @return
    */
-  public UInt64 getBestSlot() {
+  public UInt64 getHeadSlot() {
     return chainHead.map(SignedBlockAndState::getSlot).orElse(UInt64.ZERO);
   }
 
@@ -403,22 +391,21 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store.retrieveCheckpointState(checkpoint);
   }
 
-  private static class SignedBlockAndStateAndSlot extends SignedBlockAndState {
-    private final UInt64 headSlot;
+  private static class ChainHead extends SignedBlockAndState {
+    private final UInt64 forkChoiceSlot;
 
-    public SignedBlockAndStateAndSlot(SignedBeaconBlock block, BeaconState state, UInt64 headSlot) {
+    public ChainHead(SignedBeaconBlock block, BeaconState state, UInt64 forkChoiceSlot) {
       super(block, state);
-      this.headSlot = headSlot;
+      this.forkChoiceSlot = forkChoiceSlot;
     }
 
-    public static SignedBlockAndStateAndSlot create(
-        SignedBlockAndState blockAndState, UInt64 slot) {
-      return new SignedBlockAndStateAndSlot(
-          blockAndState.getBlock(), blockAndState.getState(), slot);
+    public static ChainHead create(SignedBlockAndState blockAndState, UInt64 forkChoiceSlot) {
+      return new ChainHead(blockAndState.getBlock(), blockAndState.getState(), forkChoiceSlot);
     }
 
-    public UInt64 getHeadSlot() {
-      return headSlot;
+    /** @return The slot at which the chain head was calculated */
+    public UInt64 getForkChoiceSlot() {
+      return forkChoiceSlot;
     }
   }
 }

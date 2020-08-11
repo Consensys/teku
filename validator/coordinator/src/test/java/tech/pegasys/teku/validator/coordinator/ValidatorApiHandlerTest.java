@@ -99,8 +99,67 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
+  public void isSyncActive_syncIsActiveAndHeadIsBehind() {
+    setupSyncingState(SyncState.SYNCING, EPOCH, EPOCH.minus(2));
+    assertThat(validatorApiHandler.isSyncActive()).isTrue();
+  }
+
+  @Test
+  public void isSyncActive_syncIsActiveAndHeadALittleBehind() {
+    setupSyncingState(SyncState.SYNCING, EPOCH, EPOCH.minus(1));
+    assertThat(validatorApiHandler.isSyncActive()).isFalse();
+  }
+
+  @Test
+  public void isSyncActive_syncIsActiveAndHeadIsCaughtUp() {
+    setupSyncingState(SyncState.SYNCING, EPOCH, EPOCH);
+    assertThat(validatorApiHandler.isSyncActive()).isFalse();
+  }
+
+  @Test
+  public void isSyncActive_inSyncAndHeadIsRecent() {
+    setupSyncingState(SyncState.IN_SYNC, EPOCH, EPOCH);
+    assertThat(validatorApiHandler.isSyncActive()).isFalse();
+  }
+
+  @Test
+  public void isSyncActive_inSyncAndHeadIsOld() {
+    setupSyncingState(SyncState.IN_SYNC, EPOCH, EPOCH.minus(5));
+    assertThat(validatorApiHandler.isSyncActive()).isFalse();
+  }
+
+  @Test
+  public void isSyncActive_startingUpAndHeadIsBehind() {
+    setupSyncingState(SyncState.START_UP, EPOCH, EPOCH.minus(2));
+    assertThat(validatorApiHandler.isSyncActive()).isTrue();
+  }
+
+  @Test
+  public void isSyncActive_startingUpAndHeadALittleBehind() {
+    setupSyncingState(SyncState.START_UP, EPOCH, EPOCH.minus(1));
+    assertThat(validatorApiHandler.isSyncActive()).isTrue();
+  }
+
+  @Test
+  public void isSyncActive_startingUpAndHeadIsCaughtUp() {
+    setupSyncingState(SyncState.START_UP, EPOCH, EPOCH);
+    assertThat(validatorApiHandler.isSyncActive()).isTrue();
+  }
+
+  private void nodeIsSyncing() {
+    setupSyncingState(SyncState.SYNCING, EPOCH, EPOCH.minus(2));
+  }
+
+  private void setupSyncingState(
+      final SyncState syncState, final UInt64 currentEpoch, final UInt64 headEpoch) {
+    when(syncStateTracker.getCurrentSyncState()).thenReturn(syncState);
+    when(chainDataClient.getCurrentEpoch()).thenReturn(currentEpoch);
+    when(chainDataClient.getHeadEpoch()).thenReturn(headEpoch);
+  }
+
+  @Test
   public void getDuties_shouldFailWhenNodeIsSyncing() {
-    when(syncStateTracker.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
+    nodeIsSyncing();
     final SafeFuture<Optional<List<ValidatorDuties>>> duties =
         validatorApiHandler.getDuties(EPOCH, List.of(dataStructureUtil.randomPublicKey()));
     assertThat(duties).isCompletedExceptionally();
@@ -229,7 +288,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void createUnsignedBlock_shouldFailWhenNodeIsSyncing() {
-    when(syncStateTracker.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
+    nodeIsSyncing();
     final SafeFuture<Optional<BeaconBlock>> result =
         validatorApiHandler.createUnsignedBlock(
             UInt64.ONE, dataStructureUtil.randomSignature(), Optional.empty());
@@ -249,7 +308,7 @@ class ValidatorApiHandlerTest {
     final BeaconBlock createdBlock = dataStructureUtil.randomBeaconBlock(newSlot.longValue());
 
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
-    when(chainDataClient.getBestSlot()).thenReturn(UInt64.valueOf(24));
+    when(chainDataClient.getHeadSlot()).thenReturn(UInt64.valueOf(24));
     when(chainDataClient.getBlockAndStateInEffectAtSlot(newSlot.minus(UInt64.ONE)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(previousBlockAndState)));
     when(blockFactory.createUnsignedBlock(
@@ -268,7 +327,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void createUnsignedAttestation_shouldFailWhenNodeIsSyncing() {
-    when(syncStateTracker.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
+    nodeIsSyncing();
     final SafeFuture<Optional<Attestation>> result =
         validatorApiHandler.createUnsignedAttestation(UInt64.ONE, 1);
 
@@ -311,7 +370,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void createAggregate_shouldFailWhenNodeIsSyncing() {
-    when(syncStateTracker.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
+    nodeIsSyncing();
     final SafeFuture<Optional<Attestation>> result =
         validatorApiHandler.createAggregate(
             dataStructureUtil.randomAttestationData().hashTreeRoot());

@@ -94,7 +94,7 @@ public class ValidatorDataProviderTest {
 
   @Test
   void getUnsignedBeaconBlockAtSlot_shouldThrowIfHistoricSlotRequested() {
-    when(combinedChainDataClient.getBestSlot()).thenReturn(ONE);
+    when(combinedChainDataClient.getHeadSlot()).thenReturn(ONE);
 
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(ZERO, signature, Optional.empty()));
@@ -102,7 +102,7 @@ public class ValidatorDataProviderTest {
 
   @Test
   void getUnsignedBeaconBlockAtSlot_shouldThrowIfFarFutureSlotRequested() {
-    when(combinedChainDataClient.getBestSlot()).thenReturn(ONE);
+    when(combinedChainDataClient.getHeadSlot()).thenReturn(ONE);
 
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(
@@ -113,7 +113,7 @@ public class ValidatorDataProviderTest {
 
   @Test
   void getUnsignedBeaconBlockAtSlot_shouldCreateAnUnsignedBlock() {
-    when(combinedChainDataClient.getBestSlot()).thenReturn(ZERO);
+    when(combinedChainDataClient.getHeadSlot()).thenReturn(ZERO);
     when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockInternal)));
 
