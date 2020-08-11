@@ -46,6 +46,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.util.config.Constants;
 
 public class GetBlockTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -177,5 +178,15 @@ public class GetBlockTest {
 
     handler.handle(context);
     verify(context).status(SC_NOT_FOUND);
+  }
+
+  @Test
+  void shouldReturnBadRequestWhenEpochTooLarge() throws Exception {
+    final Map<String, List<String>> params =
+        Map.of(EPOCH, List.of(Constants.FAR_FUTURE_EPOCH.toString()));
+    when(context.queryParamMap()).thenReturn(params);
+
+    handler.handle(context);
+    verify(context).status(SC_BAD_REQUEST);
   }
 }

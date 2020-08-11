@@ -199,6 +199,71 @@ class AggregatingAttestationPoolTest {
         .containsOnly(preserveAttestation);
   }
 
+  @Test
+  public void getSize_shouldIncludeAttestationsAdded() {
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+
+    addAttestationFromValidators(attestationData, 1, 2, 3, 4);
+    addAttestationFromValidators(attestationData, 2, 5);
+    assertThat(aggregatingPool.getSize()).isEqualTo(2);
+  }
+
+  @Test
+  public void getSize_shouldDecreaseWhenAttestationsRemoved() {
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    addAttestationFromValidators(attestationData, 1, 2, 3, 4);
+    final Attestation attestationToRemove = addAttestationFromValidators(attestationData, 2, 5);
+    aggregatingPool.remove(attestationToRemove);
+    assertThat(aggregatingPool.getSize()).isEqualTo(1);
+  }
+
+  @Test
+  public void getSize_shouldNotIncrementWhenAttestationAlreadyExists() {
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+
+    final Attestation attestation = addAttestationFromValidators(attestationData, 1, 2, 3, 4);
+    aggregatingPool.add(ValidateableAttestation.fromAttestation(attestation));
+    assertThat(aggregatingPool.getSize()).isEqualTo(1);
+  }
+
+  @Test
+  public void getSize_shouldDecrementForAllRemovedAttestations() {
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    addAttestationFromValidators(attestationData, 1, 2, 3);
+    addAttestationFromValidators(attestationData, 4, 5);
+    assertThat(aggregatingPool.getSize()).isEqualTo(2);
+    final Attestation attestationToRemove =
+        addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5);
+    aggregatingPool.remove(attestationToRemove);
+    assertThat(aggregatingPool.getSize()).isEqualTo(0);
+  }
+
+  @Test
+  public void getSize_shouldAddTheRightData() {
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5);
+    addAttestationFromValidators(attestationData, 1, 2, 3);
+    addAttestationFromValidators(attestationData, 4, 5);
+    addAttestationFromValidators(attestationData, 6);
+    addAttestationFromValidators(attestationData, 7, 8);
+    assertThat(aggregatingPool.getSize()).isEqualTo(5);
+  }
+
+  @Test
+  public void getSize_shouldDecrementForAllRemovedAttestationsWhileKeepingOthers() {
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+    addAttestationFromValidators(attestationData, 1, 2, 3);
+    addAttestationFromValidators(attestationData, 4, 5);
+    addAttestationFromValidators(attestationData, 6);
+    addAttestationFromValidators(attestationData, 7, 8);
+    final Attestation attestationToRemove =
+        addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5);
+    assertThat(aggregatingPool.getSize()).isEqualTo(5);
+
+    aggregatingPool.remove(attestationToRemove);
+    assertThat(aggregatingPool.getSize()).isEqualTo(2);
+  }
+
   private Attestation addAttestationFromValidators(
       final AttestationData data, final int... validators) {
     final Bitlist bitlist = new Bitlist(20, Constants.MAX_VALIDATORS_PER_COMMITTEE);
