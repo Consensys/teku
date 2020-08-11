@@ -21,6 +21,7 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.util.config.Constants;
 
 public class ValidatorsRequest {
   @Schema(type = "string", format = "uint64")
@@ -36,5 +37,10 @@ public class ValidatorsRequest {
       @JsonProperty(value = "pubkeys", required = true) final List<BLSPubKey> pubkeys) {
     this.epoch = epoch;
     this.pubkeys = pubkeys;
+    // Restrict valid epoch values to ones that can be converted to slot without overflowing
+    if (epoch != null
+        && epoch.isGreaterThan(UInt64.MAX_VALUE.dividedBy(Constants.SLOTS_PER_EPOCH))) {
+      throw new IllegalArgumentException("Epoch is too large.");
+    }
   }
 }
