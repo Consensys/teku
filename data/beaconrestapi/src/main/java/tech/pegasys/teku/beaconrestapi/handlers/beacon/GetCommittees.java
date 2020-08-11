@@ -23,7 +23,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERRO
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64;
+import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsEpoch;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -75,7 +75,7 @@ public class GetCommittees extends AbstractHandler implements Handler {
   @Override
   public void handle(Context ctx) throws Exception {
     try {
-      UInt64 epoch = getParameterValueAsUInt64(ctx.queryParamMap(), EPOCH);
+      UInt64 epoch = getParameterValueAsEpoch(ctx.queryParamMap(), EPOCH);
       final SafeFuture<Optional<List<Committee>>> future = provider.getCommitteesAtEpoch(epoch);
       UInt64 slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
       ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(provider, slot));

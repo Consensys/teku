@@ -46,6 +46,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -80,6 +81,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final Eth2Network eth2Network = mock(Eth2Network.class);
   protected final SyncService syncService = mock(SyncService.class);
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
+  protected final AggregatingAttestationPool attestationPool =
+      mock(AggregatingAttestationPool.class);
 
   private StorageSystem storageSystem;
 
@@ -130,7 +133,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             eth2Network,
             syncService,
             validatorApiChannel,
-            blockImporter);
+            blockImporter,
+            attestationPool);
     beaconRestApi = new BeaconRestApi(dataProvider, config);
     beaconRestApi.start();
     client = new OkHttpClient.Builder().readTimeout(0, TimeUnit.SECONDS).build();
