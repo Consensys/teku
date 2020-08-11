@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.client.duties;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.validator.client.duties.DutyResult.combine;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,6 +28,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.logging.ValidatorLogger;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
@@ -38,13 +38,13 @@ public class AggregationDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
   private final ConcurrentMap<Integer, CommitteeAggregator> aggregatorsByCommitteeIndex =
       new ConcurrentHashMap<>();
-  private final UnsignedLong slot;
+  private final UInt64 slot;
   private final ValidatorApiChannel validatorApiChannel;
   private final ForkProvider forkProvider;
   private final ValidatorLogger validatorLogger;
 
   public AggregationDuty(
-      final UnsignedLong slot,
+      final UInt64 slot,
       final ValidatorApiChannel validatorApiChannel,
       final ForkProvider forkProvider,
       final ValidatorLogger validatorLogger) {
@@ -77,7 +77,7 @@ public class AggregationDuty implements Duty {
         committeeIndex -> {
           validatorApiChannel.subscribeToBeaconCommitteeForAggregation(committeeIndex, slot);
           return new CommitteeAggregator(
-              validator, UnsignedLong.valueOf(validatorIndex), proof, unsignedAttestationFuture);
+              validator, UInt64.valueOf(validatorIndex), proof, unsignedAttestationFuture);
         });
   }
 
@@ -140,13 +140,13 @@ public class AggregationDuty implements Duty {
   private static class CommitteeAggregator {
 
     private final Validator validator;
-    private final UnsignedLong validatorIndex;
+    private final UInt64 validatorIndex;
     private final BLSSignature proof;
     private final SafeFuture<Optional<Attestation>> unsignedAttestationFuture;
 
     private CommitteeAggregator(
         final Validator validator,
-        final UnsignedLong validatorIndex,
+        final UInt64 validatorIndex,
         final BLSSignature proof,
         final SafeFuture<Optional<Attestation>> unsignedAttestationFuture) {
       this.validator = validator;

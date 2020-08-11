@@ -26,8 +26,7 @@ public class SlotAndBlockRootSerializerTest {
   @Test
   public void roundTrip() {
     final SlotAndBlockRoot original =
-        new SlotAndBlockRoot(
-            dataStructureUtil.randomUnsignedLong(), dataStructureUtil.randomBytes32());
+        new SlotAndBlockRoot(dataStructureUtil.randomUInt64(), dataStructureUtil.randomBytes32());
     final byte[] bytes = serializer.serialize(original);
     final SlotAndBlockRoot restored = serializer.deserialize(bytes);
 

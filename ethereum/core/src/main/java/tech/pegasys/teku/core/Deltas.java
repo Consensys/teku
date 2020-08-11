@@ -13,23 +13,23 @@
 
 package tech.pegasys.teku.core;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Deltas {
-  private final List<UnsignedLong> rewards;
-  private final List<UnsignedLong> penalties;
+  private final List<UInt64> rewards;
+  private final List<UInt64> penalties;
 
-  public Deltas(final List<UnsignedLong> rewards, final List<UnsignedLong> penalties) {
+  public Deltas(final List<UInt64> rewards, final List<UInt64> penalties) {
     this.rewards = rewards;
     this.penalties = penalties;
   }
 
-  public UnsignedLong getReward(final int validatorIndex) {
+  public UInt64 getReward(final int validatorIndex) {
     return rewards.get(validatorIndex);
   }
 
-  public UnsignedLong getPenalty(final int validatorIndex) {
+  public UInt64 getPenalty(final int validatorIndex) {
     return penalties.get(validatorIndex);
   }
 }

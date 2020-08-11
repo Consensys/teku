@@ -13,27 +13,27 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 
 public class DepositWithIndex extends Deposit implements Comparable<DepositWithIndex> {
 
-  private final UnsignedLong index;
+  private final UInt64 index;
 
-  public DepositWithIndex(SSZVector<Bytes32> proof, DepositData data, UnsignedLong index) {
+  public DepositWithIndex(SSZVector<Bytes32> proof, DepositData data, UInt64 index) {
     super(proof, data);
     this.index = index;
   }
 
-  public DepositWithIndex(DepositData data, UnsignedLong index) {
+  public DepositWithIndex(DepositData data, UInt64 index) {
     super(data);
     this.index = index;
   }
 
-  public UnsignedLong getIndex() {
+  public UInt64 getIndex() {
     return index;
   }
 

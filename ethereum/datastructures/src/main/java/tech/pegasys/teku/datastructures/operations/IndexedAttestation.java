@@ -13,17 +13,16 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
@@ -37,13 +36,12 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
   public static final int SSZ_FIELD_COUNT = 2;
 
-  private final SSZList<UnsignedLong>
-      attesting_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
+  private final SSZList<UInt64> attesting_indices; // List bounded by MAX_VALIDATORS_PER_COMMITTEE
   private final AttestationData data;
   private final BLSSignature signature;
 
   public IndexedAttestation(
-      SSZList<UnsignedLong> attesting_indices, AttestationData data, BLSSignature signature) {
+      SSZList<UInt64> attesting_indices, AttestationData data, BLSSignature signature) {
     this.attesting_indices = attesting_indices;
     this.data = data;
     this.signature = signature;
@@ -52,7 +50,7 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
   // Required by SSZ reflection
   public IndexedAttestation() {
     this.attesting_indices =
-        SSZList.createMutable(UnsignedLong.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
+        SSZList.createMutable(UInt64.class, Constants.MAX_VALIDATORS_PER_COMMITTEE);
     data = null;
     signature = null;
   }
@@ -80,13 +78,11 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
   @Override
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
-    variablePartsList.addAll(
-        List.of(
-            // TODO (#2396): The below lines are a hack while Tuweni SSZ/SOS is being upgraded.
-            Bytes.fromHexString(
+    variablePartsList.add(
+        SSZ.encode(
+            writer ->
                 attesting_indices.stream()
-                    .map(value -> SSZ.encodeUInt64(value.longValue()).toHexString().substring(2))
-                    .collect(Collectors.joining()))));
+                    .forEach(value -> writer.writeUInt64(value.longValue()))));
     variablePartsList.addAll(Collections.nCopies(data.getSSZFieldCount(), Bytes.EMPTY));
     variablePartsList.addAll(Collections.nCopies(signature.getSSZFieldCount(), Bytes.EMPTY));
     return variablePartsList;
@@ -118,7 +114,7 @@ public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializabl
   }
 
   /** ******************* * GETTERS & SETTERS * * ******************* */
-  public SSZList<UnsignedLong> getAttesting_indices() {
+  public SSZList<UInt64> getAttesting_indices() {
     return attesting_indices;
   }
 

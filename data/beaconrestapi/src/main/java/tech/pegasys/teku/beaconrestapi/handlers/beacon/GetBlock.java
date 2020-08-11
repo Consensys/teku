@@ -27,11 +27,11 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
+import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsEpoch;
+import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -47,6 +47,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetBlock implements Handler {
@@ -103,12 +104,12 @@ public class GetBlock implements Handler {
         return;
       }
 
-      final UnsignedLong slot;
+      final UInt64 slot;
       if (queryParamMap.containsKey(EPOCH)) {
-        UnsignedLong epoch = getParameterValueAsUnsignedLong(queryParamMap, EPOCH);
+        UInt64 epoch = getParameterValueAsEpoch(queryParamMap, EPOCH);
         slot = compute_start_slot_at_epoch(epoch);
       } else if (queryParamMap.containsKey(SLOT)) {
-        slot = getParameterValueAsUnsignedLong(queryParamMap, SLOT);
+        slot = getParameterValueAsUInt64(queryParamMap, SLOT);
       } else {
         throw new IllegalArgumentException(NO_VALID_PARAMETER);
       }

@@ -24,7 +24,6 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
@@ -39,10 +38,11 @@ import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetNewBlockDataBackedIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
-  private final UnsignedLong SIX_HUNDRED = UnsignedLong.valueOf(600L);
+  private final UInt64 SIX_HUNDRED = UInt64.valueOf(600L);
   private final tech.pegasys.teku.bls.BLSSignature signatureInternal =
       tech.pegasys.teku.bls.BLSSignature.random(1234);
   private BLSSignature signature = new BLSSignature(signatureInternal);
@@ -85,7 +85,7 @@ public class GetNewBlockDataBackedIntegrationTest extends AbstractDataBackedRest
         .isEqualTo(ValidatorDataProvider.CANNOT_PRODUCE_HISTORIC_BLOCK);
   }
 
-  private Response getUnsignedBlock(final UnsignedLong slot) throws IOException {
+  private Response getUnsignedBlock(final UInt64 slot) throws IOException {
     return getResponse(
         GetNewBlock.ROUTE, Map.of(SLOT, slot.toString(), RANDAO_REVEAL, signature.toHexString()));
   }

@@ -21,7 +21,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -33,6 +32,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -49,27 +49,25 @@ public class PeerChainValidatorTest {
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
 
-  private final UnsignedLong genesisTime = UnsignedLong.valueOf(0);
+  private final UInt64 genesisTime = UInt64.valueOf(0);
   private final ForkInfo remoteForkInfo = dataStructureUtil.randomForkInfo();
   private final Bytes4 remoteFork = remoteForkInfo.getForkDigest();
   private final ForkInfo otherForkInfo = dataStructureUtil.randomForkInfo();
 
-  private final UnsignedLong genesisEpoch = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
-  private final UnsignedLong remoteFinalizedEpoch = UnsignedLong.valueOf(10L);
-  private final UnsignedLong earlierEpoch = UnsignedLong.valueOf(8L);
-  private final UnsignedLong laterEpoch = UnsignedLong.valueOf(12L);
+  private final UInt64 genesisEpoch = UInt64.valueOf(Constants.GENESIS_EPOCH);
+  private final UInt64 remoteFinalizedEpoch = UInt64.valueOf(10L);
+  private final UInt64 earlierEpoch = UInt64.valueOf(8L);
+  private final UInt64 laterEpoch = UInt64.valueOf(12L);
 
-  private final UnsignedLong genesisSlot = compute_start_slot_at_epoch(genesisEpoch);
-  private final UnsignedLong remoteFinalizedEpochSlot =
-      compute_start_slot_at_epoch(remoteFinalizedEpoch);
-  private final UnsignedLong earlierEpochSlot = compute_start_slot_at_epoch(earlierEpoch);
-  private final UnsignedLong laterEpochSlot = compute_start_slot_at_epoch(laterEpoch);
+  private final UInt64 genesisSlot = compute_start_slot_at_epoch(genesisEpoch);
+  private final UInt64 remoteFinalizedEpochSlot = compute_start_slot_at_epoch(remoteFinalizedEpoch);
+  private final UInt64 earlierEpochSlot = compute_start_slot_at_epoch(earlierEpoch);
+  private final UInt64 laterEpochSlot = compute_start_slot_at_epoch(laterEpoch);
 
   // Offset slots from epoch to simulate skipped blocks
-  private final UnsignedLong remoteFinalizedBlockSlot =
-      remoteFinalizedEpochSlot.minus(UnsignedLong.ONE);
-  private final UnsignedLong earlierBlockSlot = earlierEpochSlot.minus(UnsignedLong.ONE);
-  private final UnsignedLong laterBlockSlot = laterEpochSlot.minus(UnsignedLong.ONE);
+  private final UInt64 remoteFinalizedBlockSlot = remoteFinalizedEpochSlot.minus(UInt64.ONE);
+  private final UInt64 earlierBlockSlot = earlierEpochSlot.minus(UInt64.ONE);
+  private final UInt64 laterBlockSlot = laterEpochSlot.minus(UInt64.ONE);
 
   private final SignedBeaconBlock genesisBlock =
       dataStructureUtil.randomSignedBeaconBlock(genesisSlot.longValue());
@@ -101,8 +99,7 @@ public class PeerChainValidatorTest {
     when(store.getGenesisTime()).thenReturn(genesisTime);
     when(store.getTime())
         .thenReturn(
-            genesisTime.plus(
-                laterBlockSlot.times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT))));
+            genesisTime.plus(laterBlockSlot.times(UInt64.valueOf(Constants.SECONDS_PER_SLOT))));
 
     when(recentChainData.getStore()).thenReturn(store);
   }
@@ -288,11 +285,11 @@ public class PeerChainValidatorTest {
     final Checkpoint remoteFinalizedCheckpoint = getFinalizedCheckpoint(remoteStatus);
     withLocalFinalizedCheckpoint(genesisCheckpoint);
 
-    final UnsignedLong currentTime =
+    final UInt64 currentTime =
         genesisTime.plus(
             remoteFinalizedCheckpoint
                 .getEpochStartSlot()
-                .times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
+                .times(UInt64.valueOf(Constants.SECONDS_PER_SLOT)));
     when(store.getTime()).thenReturn(currentTime);
   }
 
@@ -300,12 +297,12 @@ public class PeerChainValidatorTest {
     final Checkpoint remoteFinalizedCheckpoint = getFinalizedCheckpoint(remoteStatus);
     withLocalFinalizedCheckpoint(genesisCheckpoint);
 
-    final UnsignedLong currentTime =
+    final UInt64 currentTime =
         genesisTime.plus(
             remoteFinalizedCheckpoint
                 .getEpochStartSlot()
-                .minus(UnsignedLong.ONE)
-                .times(UnsignedLong.valueOf(Constants.SECONDS_PER_SLOT)));
+                .minus(UInt64.ONE)
+                .times(UInt64.valueOf(Constants.SECONDS_PER_SLOT)));
     when(store.getTime()).thenReturn(currentTime);
   }
 
@@ -376,7 +373,7 @@ public class PeerChainValidatorTest {
         .thenReturn(blockResult);
   }
 
-  private SignedBeaconBlock randomBlock(UnsignedLong slot) {
+  private SignedBeaconBlock randomBlock(UInt64 slot) {
     return dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
   }
 
@@ -394,11 +391,11 @@ public class PeerChainValidatorTest {
 
     final Bytes32 headRoot = Bytes32.fromHexString("0xeeee");
     // Set a head slot some distance beyond the finalized epoch
-    final UnsignedLong headSlot =
+    final UInt64 headSlot =
         remoteFinalizedCheckpoint
             .getEpoch()
-            .times(UnsignedLong.valueOf(Constants.SLOTS_PER_EPOCH))
-            .plus(UnsignedLong.valueOf(10L));
+            .times(UInt64.valueOf(Constants.SLOTS_PER_EPOCH))
+            .plus(UInt64.valueOf(10L));
 
     final PeerStatus status =
         new PeerStatus(

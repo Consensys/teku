@@ -14,8 +14,8 @@
 package tech.pegasys.teku.validator.anticorruption;
 
 import com.google.common.eventbus.Subscribe;
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
@@ -51,13 +51,13 @@ class BeaconChainEventAdapter implements SlotEventsChannel, ReorgEventChannel {
   }
 
   @Override
-  public void onSlot(final UnsignedLong slot) {
+  public void onSlot(final UInt64 slot) {
     validatorTimingChannel.onSlot(slot);
     validatorTimingChannel.onBlockProductionDue(slot);
   }
 
   @Override
-  public void reorgOccurred(final Bytes32 bestBlockRoot, final UnsignedLong bestSlot) {
+  public void reorgOccurred(final Bytes32 bestBlockRoot, final UInt64 bestSlot) {
     validatorTimingChannel.onChainReorg(bestSlot);
   }
 }

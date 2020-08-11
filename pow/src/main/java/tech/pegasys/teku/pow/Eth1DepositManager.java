@@ -16,7 +16,6 @@ package tech.pegasys.teku.pow;
 import static tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder.isBlockAfterMinGenesis;
 import static tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder.notifyMinGenesisTimeBlockReached;
 
-import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -24,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
@@ -147,7 +147,7 @@ public class Eth1DepositManager {
         .getLatestEth1Block()
         .thenApply(EthBlock.Block::getNumber)
         .thenApply(number -> number.subtract(Constants.ETH1_FOLLOW_DISTANCE.bigIntegerValue()))
-        .thenApply(UnsignedLong::valueOf)
+        .thenApply(UInt64::valueOf)
         .thenCompose(eth1Provider::getGuaranteedEth1Block)
         .exceptionallyCompose(
             (err) -> {

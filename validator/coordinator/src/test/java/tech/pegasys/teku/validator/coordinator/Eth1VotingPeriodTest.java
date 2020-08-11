@@ -13,21 +13,21 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 class Eth1VotingPeriodTest {
 
-  private static final UnsignedLong GENESIS_TIME = UnsignedLong.valueOf(1000);
-  private static final UnsignedLong START_SLOT = UnsignedLong.valueOf(100);
-  private static final UnsignedLong NEXT_VOTING_PERIOD_SLOT = UnsignedLong.valueOf(102);
+  private static final UInt64 GENESIS_TIME = UInt64.valueOf(1000);
+  private static final UInt64 START_SLOT = UInt64.valueOf(100);
+  private static final UInt64 NEXT_VOTING_PERIOD_SLOT = UInt64.valueOf(102);
 
   private final Eth1VotingPeriod votingPeriod = new Eth1VotingPeriod();
 
@@ -46,8 +46,8 @@ class Eth1VotingPeriodTest {
 
   @BeforeAll
   static void setConstants() {
-    Constants.SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(3);
-    Constants.ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(5);
+    Constants.SECONDS_PER_ETH1_BLOCK = UInt64.valueOf(3);
+    Constants.ETH1_FOLLOW_DISTANCE = UInt64.valueOf(5);
     Constants.EPOCHS_PER_ETH1_VOTING_PERIOD = 1;
     Constants.SLOTS_PER_EPOCH = 6;
     Constants.SECONDS_PER_SLOT = 4;
@@ -61,19 +61,17 @@ class Eth1VotingPeriodTest {
   @Test
   void checkTimeValues() {
     assertThat(votingPeriod.getSpecRangeLowerBound(START_SLOT, GENESIS_TIME))
-        .isEqualByComparingTo(UnsignedLong.valueOf(1354));
+        .isEqualByComparingTo(UInt64.valueOf(1354));
     assertThat(votingPeriod.getSpecRangeUpperBound(START_SLOT, GENESIS_TIME))
-        .isEqualByComparingTo(UnsignedLong.valueOf(1369));
+        .isEqualByComparingTo(UInt64.valueOf(1369));
     assertThat(votingPeriod.getSpecRangeLowerBound(NEXT_VOTING_PERIOD_SLOT, GENESIS_TIME))
-        .isEqualByComparingTo(UnsignedLong.valueOf(1378));
+        .isEqualByComparingTo(UInt64.valueOf(1378));
   }
 
   @Test
   void checkTimeValuesStayAboveZero() {
-    assertThat(votingPeriod.getSpecRangeLowerBound(ONE, ZERO))
-        .isEqualByComparingTo(UnsignedLong.ZERO);
-    assertThat(votingPeriod.getSpecRangeUpperBound(ONE, ZERO))
-        .isEqualByComparingTo(UnsignedLong.ZERO);
+    assertThat(votingPeriod.getSpecRangeLowerBound(ONE, ZERO)).isEqualByComparingTo(UInt64.ZERO);
+    assertThat(votingPeriod.getSpecRangeUpperBound(ONE, ZERO)).isEqualByComparingTo(UInt64.ZERO);
   }
 
   @Test
@@ -82,6 +80,6 @@ class Eth1VotingPeriodTest {
     // (SECONDS_PER_ETH1_BLOCK * ETH1_FOLLOW_DISTANCE) +
     // (SLOTS_PER_EPOCH * SECONDS_PER_SLOT)
     // So 4 + (1 * 6 * 4) + (3 * 5) + (6 * 4) = 67
-    assertThat(votingPeriod.getCacheDurationInSeconds()).isEqualTo(UnsignedLong.valueOf(67));
+    assertThat(votingPeriod.getCacheDurationInSeconds()).isEqualTo(UInt64.valueOf(67));
   }
 }

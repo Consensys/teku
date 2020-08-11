@@ -18,11 +18,11 @@ import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -47,8 +47,8 @@ public class JsonProvider {
     module.addDeserializer(Bytes.class, new BytesDeserializer());
     module.addSerializer(Bytes.class, new BytesSerializer());
 
-    module.addDeserializer(UnsignedLong.class, new UnsignedLongDeserializer());
-    module.addSerializer(UnsignedLong.class, new UnsignedLongSerializer());
+    module.addDeserializer(UInt64.class, new UInt64Deserializer());
+    module.addSerializer(UInt64.class, new UInt64Serializer());
 
     objectMapper.registerModule(module).writer(new DefaultPrettyPrinter());
   }

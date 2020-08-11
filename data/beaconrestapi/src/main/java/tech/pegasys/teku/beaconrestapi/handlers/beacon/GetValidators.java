@@ -27,10 +27,9 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERRO
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsEpoch;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
 
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -50,6 +49,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
@@ -116,8 +116,8 @@ public class GetValidators extends AbstractHandler implements Handler {
       boolean isFinalized = false;
       final SafeFuture<Optional<BeaconState>> future;
       if (parameters.containsKey(EPOCH)) {
-        UnsignedLong epoch = getParameterValueAsUnsignedLong(parameters, EPOCH);
-        UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+        UInt64 epoch = getParameterValueAsEpoch(parameters, EPOCH);
+        UInt64 slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
         isFinalized = chainDataProvider.isFinalized(slot);
         future = chainDataProvider.getStateAtSlot(slot);
       } else {
@@ -133,7 +133,7 @@ public class GetValidators extends AbstractHandler implements Handler {
         this.handlePossiblyMissingResult(
             ctx, future, getResultProcessor(activeOnly, pageSize, pageToken));
       }
-    } catch (final IllegalArgumentException | ArithmeticException e) {
+    } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }

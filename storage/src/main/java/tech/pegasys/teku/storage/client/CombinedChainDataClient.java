@@ -20,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
@@ -31,14 +30,18 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
@@ -76,7 +79,7 @@ public class CombinedChainDataClient {
    * @param slot the slot to get the block for
    * @return the block at the requested slot or empty if the slot was empty
    */
-  public SafeFuture<Optional<SignedBeaconBlock>> getBlockAtSlotExact(final UnsignedLong slot) {
+  public SafeFuture<Optional<SignedBeaconBlock>> getBlockAtSlotExact(final UInt64 slot) {
     return getBlockInEffectAtSlot(slot)
         .thenApply(maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot)));
   }
@@ -90,7 +93,7 @@ public class CombinedChainDataClient {
    * @return the block at the requested slot or empty if the slot was empty
    */
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockAtSlotExact(
-      final UnsignedLong slot, final Bytes32 headBlockRoot) {
+      final UInt64 slot, final Bytes32 headBlockRoot) {
     return getBlockInEffectAtSlot(slot, headBlockRoot)
         .thenApply(maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot)));
   }
@@ -104,7 +107,7 @@ public class CombinedChainDataClient {
    * @return the block at slot or the closest previous slot if empty
    */
   private SafeFuture<Optional<SignedBeaconBlock>> getBlockInEffectAtSlot(
-      final UnsignedLong slot, Bytes32 headBlockRoot) {
+      final UInt64 slot, Bytes32 headBlockRoot) {
     if (!isStoreAvailable()) {
       return BLOCK_NOT_AVAILABLE;
     }
@@ -118,7 +121,7 @@ public class CombinedChainDataClient {
     return historicalChainData.getLatestFinalizedBlockAtSlot(slot);
   }
 
-  public SafeFuture<Optional<SignedBeaconBlock>> getBlockInEffectAtSlot(final UnsignedLong slot) {
+  public SafeFuture<Optional<SignedBeaconBlock>> getBlockInEffectAtSlot(final UInt64 slot) {
     if (!isChainDataFullyAvailable()) {
       return BLOCK_NOT_AVAILABLE;
     }
@@ -133,17 +136,22 @@ public class CombinedChainDataClient {
   }
 
   public SafeFuture<Optional<BeaconBlockAndState>> getBlockAndStateInEffectAtSlot(
-      final UnsignedLong slot) {
+      final UInt64 slot) {
+    return getSignedBlockAndStateInEffectAtSlot(slot)
+        .thenApply(result -> result.map(SignedBlockAndState::toUnsigned));
+  }
+
+  public SafeFuture<Optional<SignedBlockAndState>> getSignedBlockAndStateInEffectAtSlot(
+      final UInt64 slot) {
     return getBlockInEffectAtSlot(slot)
         .thenCompose(
             maybeBlock ->
                 maybeBlock
-                    .map(SignedBeaconBlock::getMessage)
                     .map(this::getStateForBlock)
                     .orElseGet(() -> SafeFuture.completedFuture(Optional.empty())));
   }
 
-  public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(final UnsignedLong slot) {
+  public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(final UInt64 slot) {
     return getBlockAndStateInEffectAtSlot(slot)
         .thenApplyChecked(
             maybeBlockAndState ->
@@ -151,19 +159,48 @@ public class CombinedChainDataClient {
                     blockAndState -> regenerateBeaconState(blockAndState.getState(), slot)));
   }
 
-  private SafeFuture<Optional<BeaconBlockAndState>> getStateForBlock(final BeaconBlock block) {
-    return getStateByBlockRoot(block.hash_tree_root())
-        .thenApply(maybeState -> maybeState.map(state -> new BeaconBlockAndState(block, state)));
+  public SafeFuture<Optional<CheckpointState>> getCheckpointStateAtEpoch(final UInt64 epoch) {
+    final UInt64 epochSlot = compute_start_slot_at_epoch(epoch);
+    return getSignedBlockAndStateInEffectAtSlot(epochSlot)
+        .thenCompose(
+            maybeBlockAndState ->
+                maybeBlockAndState
+                    .map(
+                        blockAndState ->
+                            getCheckpointState(epoch, blockAndState).thenApply(Optional::of))
+                    .orElse(SafeFuture.completedFuture(Optional.empty())));
   }
 
-  public boolean isFinalized(final UnsignedLong slot) {
-    final UnsignedLong finalizedEpoch = recentChainData.getFinalizedEpoch();
-    final UnsignedLong finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+  public SafeFuture<CheckpointState> getCheckpointState(
+      final UInt64 epoch, final SignedBlockAndState latestBlockAndState) {
+    final Checkpoint checkpoint = new Checkpoint(epoch, latestBlockAndState.getRoot());
+    return recentChainData
+        .getStore()
+        .retrieveCheckpointState(checkpoint)
+        .thenApply(
+            checkpointState -> {
+              if (checkpointState.isEmpty()) {
+                return CheckpointStateGenerator.generate(checkpoint, latestBlockAndState);
+              }
+              final SignedBeaconBlock block = latestBlockAndState.getBlock();
+              return new CheckpointState(checkpoint, block, checkpointState.get());
+            });
+  }
+
+  private SafeFuture<Optional<SignedBlockAndState>> getStateForBlock(
+      final SignedBeaconBlock block) {
+    return getStateByBlockRoot(block.getRoot())
+        .thenApply(maybeState -> maybeState.map(state -> new SignedBlockAndState(block, state)));
+  }
+
+  public boolean isFinalized(final UInt64 slot) {
+    final UInt64 finalizedEpoch = recentChainData.getFinalizedEpoch();
+    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
     return finalizedSlot.compareTo(slot) >= 0;
   }
 
-  public boolean isFinalizedEpoch(final UnsignedLong epoch) {
-    final UnsignedLong finalizedEpoch = recentChainData.getFinalizedEpoch();
+  public boolean isFinalizedEpoch(final UInt64 epoch) {
+    final UInt64 finalizedEpoch = recentChainData.getFinalizedEpoch();
     return finalizedEpoch.compareTo(epoch) >= 0;
   }
 
@@ -173,7 +210,7 @@ public class CombinedChainDataClient {
    * @param slot the slot to get the state for
    * @return the State at slot
    */
-  public SafeFuture<Optional<BeaconState>> getLatestStateAtSlot(final UnsignedLong slot) {
+  public SafeFuture<Optional<BeaconState>> getLatestStateAtSlot(final UInt64 slot) {
     if (!isChainDataFullyAvailable()) {
       return STATE_NOT_AVAILABLE;
     }
@@ -246,7 +283,7 @@ public class CombinedChainDataClient {
   }
 
   private Optional<BeaconState> regenerateBeaconState(
-      final BeaconState preState, final UnsignedLong slot) {
+      final BeaconState preState, final UInt64 slot) {
     if (preState.getSlot().equals(slot)) {
       return Optional.of(preState);
     } else if (slot.compareTo(getBestSlot()) > 0) {
@@ -281,14 +318,14 @@ public class CombinedChainDataClient {
     return !recentChainData.isPreGenesis() && !recentChainData.isPreForkChoice();
   }
 
-  public List<CommitteeAssignment> getCommitteesFromState(BeaconState state, UnsignedLong epoch) {
+  public List<CommitteeAssignment> getCommitteesFromState(BeaconState state, UInt64 epoch) {
     List<CommitteeAssignment> result = new ArrayList<>();
-    final UnsignedLong startingSlot = compute_start_slot_at_epoch(epoch);
+    final UInt64 startingSlot = compute_start_slot_at_epoch(epoch);
     int committeeCount = get_committee_count_per_slot(state, epoch).intValue();
     for (int i = 0; i < SLOTS_PER_EPOCH; i++) {
-      UnsignedLong slot = startingSlot.plus(UnsignedLong.valueOf(i));
+      UInt64 slot = startingSlot.plus(UInt64.valueOf(i));
       for (int j = 0; j < committeeCount; j++) {
-        UnsignedLong idx = UnsignedLong.valueOf(j);
+        UInt64 idx = UInt64.valueOf(j);
         List<Integer> committee = CommitteeUtil.get_beacon_committee(state, slot, idx);
         result.add(new CommitteeAssignment(committee, idx, slot));
       }
@@ -296,7 +333,7 @@ public class CombinedChainDataClient {
     return result;
   }
 
-  public UnsignedLong getBestSlot() {
+  public UInt64 getBestSlot() {
     return this.recentChainData.getBestSlot();
   }
 
@@ -305,8 +342,8 @@ public class CombinedChainDataClient {
     return recentChainData.getStore();
   }
 
-  public NavigableMap<UnsignedLong, Bytes32> getAncestorRoots(
-      final UnsignedLong startSlot, final UnsignedLong step, final UnsignedLong count) {
+  public NavigableMap<UInt64, Bytes32> getAncestorRoots(
+      final UInt64 startSlot, final UInt64 step, final UInt64 count) {
     return recentChainData.getAncestorRoots(startSlot, step, count);
   }
 
@@ -322,12 +359,12 @@ public class CombinedChainDataClient {
             });
   }
 
-  private boolean isRecentData(final UnsignedLong slot) {
+  private boolean isRecentData(final UInt64 slot) {
     checkNotNull(slot);
     if (recentChainData.isPreGenesis()) {
       return false;
     }
-    final UnsignedLong finalizedSlot = recentChainData.getStore().getLatestFinalizedBlockSlot();
+    final UInt64 finalizedSlot = recentChainData.getStore().getLatestFinalizedBlockSlot();
     return slot.compareTo(finalizedSlot) >= 0;
   }
 }

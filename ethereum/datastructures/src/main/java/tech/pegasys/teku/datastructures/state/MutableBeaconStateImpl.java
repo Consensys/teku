@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import com.google.common.primitives.UnsignedLong;
 import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.backing.ViewRead;
@@ -38,7 +38,7 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
   private final boolean builder;
 
   private SSZMutableList<Validator> validators;
-  private SSZMutableList<UnsignedLong> balances;
+  private SSZMutableList<UInt64> balances;
   private SSZMutableVector<Bytes32> blockRoots;
   private SSZMutableVector<Bytes32> stateRoots;
   private SSZMutableList<Bytes32> historicalRoots;
@@ -105,7 +105,7 @@ class MutableBeaconStateImpl extends ContainerViewWriteImpl
   }
 
   @Override
-  public SSZMutableList<UnsignedLong> getBalances() {
+  public SSZMutableList<UInt64> getBalances() {
     return balances != null ? balances : (balances = MutableBeaconState.super.getBalances());
   }
 

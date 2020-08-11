@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.benchmarks.util.backing;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
@@ -25,6 +24,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 @State(Scope.Thread)
@@ -66,7 +66,7 @@ public class BeaconStateBenchmark {
   @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   @Measurement(iterations = 10, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
   public void iterateBalances(Blackhole bh) {
-    for (UnsignedLong balance : beaconState.getBalances()) {
+    for (UInt64 balance : beaconState.getBalances()) {
       bh.consume(balance);
     }
   }
@@ -79,7 +79,7 @@ public class BeaconStateBenchmark {
         beaconState.updated(
             state -> {
               int size = state.getBalances().size();
-              UnsignedLong balance = UnsignedLong.valueOf(777);
+              UInt64 balance = UInt64.valueOf(777);
               for (int i = 0; i < size; i++) {
                 state.getBalances().set(i, balance);
               }

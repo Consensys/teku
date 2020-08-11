@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.pow;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -23,6 +22,7 @@ import org.web3j.protocol.Web3j;
 import org.web3j.tx.ClientTransactionManager;
 import org.web3j.tx.gas.DefaultGasProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.contract.DepositContract;
 import tech.pegasys.teku.pow.exception.Eth1RequestException;
 
@@ -46,7 +46,7 @@ public class DepositContractAccessor {
   }
 
   @SuppressWarnings("rawtypes")
-  public SafeFuture<Optional<Bytes32>> getDepositRoot(UnsignedLong blockHeight) {
+  public SafeFuture<Optional<Bytes32>> getDepositRoot(UInt64 blockHeight) {
     String encodedFunction = contract.get_deposit_root().encodeFunctionCall();
     return callFunctionAtBlockNumber(encodedFunction, blockHeight)
         .thenApply(
@@ -60,7 +60,7 @@ public class DepositContractAccessor {
   }
 
   @SuppressWarnings("rawtypes")
-  public SafeFuture<Optional<UnsignedLong>> getDepositCount(UnsignedLong blockHeight) {
+  public SafeFuture<Optional<UInt64>> getDepositCount(UInt64 blockHeight) {
     String encodedFunction = contract.get_deposit_count().encodeFunctionCall();
     return callFunctionAtBlockNumber(encodedFunction, blockHeight)
         .thenApply(
@@ -71,7 +71,7 @@ public class DepositContractAccessor {
               }
               byte[] bytes = (byte[]) list.get(0).getValue();
               long deposit_count = Bytes.wrap(bytes).reverse().toLong();
-              return Optional.of(UnsignedLong.valueOf(deposit_count));
+              return Optional.of(UInt64.valueOf(deposit_count));
             });
   }
 
@@ -79,8 +79,7 @@ public class DepositContractAccessor {
     return contract;
   }
 
-  private SafeFuture<String> callFunctionAtBlockNumber(
-      String encodedFunction, UnsignedLong blockHeight) {
+  private SafeFuture<String> callFunctionAtBlockNumber(String encodedFunction, UInt64 blockHeight) {
     return eth1Provider
         .ethCall(null, contract.getContractAddress(), encodedFunction, blockHeight)
         .thenApply(

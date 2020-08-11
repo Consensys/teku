@@ -29,9 +29,9 @@ public class DepositsFromBlockSerializerTest {
   public void shouldEncodeAndDecodeWithMultipleDeposits() {
     final DepositsFromBlockEvent event =
         new DepositsFromBlockEvent(
-            dataStructureUtil.randomUnsignedLong(),
+            dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomUnsignedLong(),
+            dataStructureUtil.randomUInt64(),
             List.of(
                 dataStructureUtil.randomDepositEvent(),
                 dataStructureUtil.randomDepositEvent(),
@@ -45,9 +45,9 @@ public class DepositsFromBlockSerializerTest {
   public void shouldEncodeAndDecodeWithSingleDeposit() {
     final DepositsFromBlockEvent event =
         new DepositsFromBlockEvent(
-            dataStructureUtil.randomUnsignedLong(),
+            dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomUnsignedLong(),
+            dataStructureUtil.randomUInt64(),
             List.of(dataStructureUtil.randomDepositEvent()));
     final byte[] bytes = serializer.serialize(event);
     final DepositsFromBlockEvent result = serializer.deserialize(bytes);

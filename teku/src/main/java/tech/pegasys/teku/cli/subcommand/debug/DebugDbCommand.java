@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.cli.subcommand.debug;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,6 +27,7 @@ import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
@@ -105,7 +105,7 @@ public class DebugDbCommand implements Runnable {
     setConstants(networkOptions);
     try (final Database database = createDatabase(dataOptions)) {
       return writeState(
-          outputFile, database.getLatestAvailableFinalizedState(UnsignedLong.valueOf(slot)));
+          outputFile, database.getLatestAvailableFinalizedState(UInt64.valueOf(slot)));
     }
   }
 

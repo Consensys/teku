@@ -11,18 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.provider;
+package tech.pegasys.teku.api;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.google.common.primitives.UnsignedLong;
-import java.io.IOException;
+import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 
-public class UnsignedLongSerializer extends JsonSerializer<UnsignedLong> {
-  @Override
-  public void serialize(UnsignedLong value, JsonGenerator gen, SerializerProvider serializers)
-      throws IOException {
-    gen.writeString(value.toString(10));
+public class NodeDataProvider {
+
+  private final AggregatingAttestationPool attestationPool;
+
+  public NodeDataProvider(final AggregatingAttestationPool attestationPool) {
+    this.attestationPool = attestationPool;
+  }
+
+  public int getAttestationPoolSize() {
+    return attestationPool.getSize();
   }
 }

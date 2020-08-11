@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggregateAttestations;
 import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
@@ -25,10 +24,11 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 
 class MatchingDataAttestationGroupTest {
-  private static final UnsignedLong SLOT = UnsignedLong.valueOf(1234);
+  private static final UInt64 SLOT = UInt64.valueOf(1234);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final AttestationData attestationData = dataStructureUtil.randomAttestationData(SLOT);
 
@@ -49,9 +49,10 @@ class MatchingDataAttestationGroupTest {
   @Test
   public void isEmpty_shouldBeEmptyAfterAttestationRemoved() {
     final Attestation attestation = addAttestation(1).getAttestation();
-    group.remove(attestation);
+    int numRemoved = group.remove(attestation);
 
     assertThat(group.isEmpty()).isTrue();
+    assertThat(numRemoved).isEqualTo(1);
   }
 
   @Test
@@ -60,10 +61,11 @@ class MatchingDataAttestationGroupTest {
     final Attestation copy =
         SimpleOffsetSerializer.deserialize(
             SimpleOffsetSerializer.serialize(attestation), Attestation.class);
-    group.remove(copy);
+    int numRemoved = group.remove(copy);
 
     assertThat(group.stream()).isEmpty();
     assertThat(group.isEmpty()).isTrue();
+    assertThat(numRemoved).isEqualTo(1);
   }
 
   @Test
@@ -72,10 +74,12 @@ class MatchingDataAttestationGroupTest {
     final ValidateableAttestation attestation2 = addAttestation(2);
     final ValidateableAttestation attestation3 = addAttestation(3);
 
-    group.remove(
-        aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation()));
+    int numRemoved =
+        group.remove(
+            aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation()));
 
     assertThat(group.stream()).containsExactly(attestation3);
+    assertThat(numRemoved).isEqualTo(2); // the one attestation is still there, and we've removed 2.
   }
 
   @Test
@@ -120,7 +124,8 @@ class MatchingDataAttestationGroupTest {
 
   private ValidateableAttestation addAttestation(final int... validators) {
     final ValidateableAttestation attestation = createAttestation(validators);
-    group.add(attestation);
+    final boolean added = group.add(attestation);
+    assertThat(added).isTrue();
     return attestation;
   }
 

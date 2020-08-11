@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.util;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -23,6 +22,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateCache;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -37,7 +37,7 @@ public class ValidatorsUtil {
    *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_active_validator
    *     </a>
    */
-  public static boolean is_active_validator(Validator validator, UnsignedLong epoch) {
+  public static boolean is_active_validator(Validator validator, UInt64 epoch) {
     return validator.getActivation_epoch().compareTo(epoch) <= 0
         && epoch.compareTo(validator.getExit_epoch()) < 0;
   }
@@ -50,9 +50,7 @@ public class ValidatorsUtil {
    */
   public static boolean is_eligible_for_activation_queue(Validator validator) {
     return validator.getActivation_eligibility_epoch().equals(Constants.FAR_FUTURE_EPOCH)
-        && validator
-            .getEffective_balance()
-            .equals(UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
+        && validator.getEffective_balance().equals(UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
   }
 
   /**
@@ -71,7 +69,7 @@ public class ValidatorsUtil {
   }
 
   public static Optional<BLSPublicKey> getValidatorPubKey(
-      BeaconState state, UnsignedLong validatorIndex) {
+      BeaconState state, UInt64 validatorIndex) {
     if (state.getValidators().size() <= validatorIndex.longValue()
         || validatorIndex.longValue() < 0) {
       return Optional.empty();
@@ -91,7 +89,7 @@ public class ValidatorsUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_active_validator_indices</a>
    */
-  public static List<Integer> get_active_validator_indices(BeaconState state, UnsignedLong epoch) {
+  public static List<Integer> get_active_validator_indices(BeaconState state, UInt64 epoch) {
     return BeaconStateCache.getTransitionCaches(state)
         .getActiveValidators()
         .get(
@@ -137,10 +135,10 @@ public class ValidatorsUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#decrease_balance</a>
    */
-  public static void decrease_balance(MutableBeaconState state, int index, UnsignedLong delta) {
-    UnsignedLong newBalance =
+  public static void decrease_balance(MutableBeaconState state, int index, UInt64 delta) {
+    UInt64 newBalance =
         delta.compareTo(state.getBalances().get(index)) > 0
-            ? UnsignedLong.ZERO
+            ? UInt64.ZERO
             : state.getBalances().get(index).minus(delta);
     state.getBalances().set(index, newBalance);
   }
@@ -154,7 +152,7 @@ public class ValidatorsUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#increase_balance</a>
    */
-  public static void increase_balance(MutableBeaconState state, int index, UnsignedLong delta) {
+  public static void increase_balance(MutableBeaconState state, int index, UInt64 delta) {
     state.getBalances().set(index, state.getBalances().get(index).plus(delta));
   }
 
@@ -167,7 +165,7 @@ public class ValidatorsUtil {
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_slashable_validator<a/>
    */
-  public static boolean is_slashable_validator(Validator validator, UnsignedLong epoch) {
+  public static boolean is_slashable_validator(Validator validator, UInt64 epoch) {
     return !validator.isSlashed()
         && (validator.getActivation_epoch().compareTo(epoch) <= 0
             && epoch.compareTo(validator.getWithdrawable_epoch()) < 0);

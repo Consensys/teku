@@ -18,10 +18,10 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES48;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.primitives.UnsignedLong;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class DepositData {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES48)
@@ -31,7 +31,7 @@ public class DepositData {
   public final Bytes32 withdrawal_credentials;
 
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong amount;
+  public final UInt64 amount;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public final BLSSignature signature;
@@ -46,7 +46,7 @@ public class DepositData {
   public DepositData(
       @JsonProperty("pubkey") final BLSPubKey pubkey,
       @JsonProperty("withdrawal_credentials") final Bytes32 withdrawal_credentials,
-      @JsonProperty("amount") final UnsignedLong amount,
+      @JsonProperty("amount") final UInt64 amount,
       @JsonProperty("signature") final BLSSignature signature) {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;

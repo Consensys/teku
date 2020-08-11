@@ -26,7 +26,6 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PAGE_SIZE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PAGE_TOKEN;
 
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import java.util.List;
 import java.util.Map;
@@ -42,13 +41,14 @@ import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.util.config.Constants;
 
 public class GetValidatorsTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private Context context = mock(Context.class);
-  private final UnsignedLong epoch = dataStructureUtil.randomEpoch();
+  private final UInt64 epoch = dataStructureUtil.randomEpoch();
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
   private final tech.pegasys.teku.datastructures.state.BeaconState beaconStateInternal =
@@ -107,7 +107,7 @@ public class GetValidatorsTest {
   public void shouldReturnValidatorsWhenQueryByEpoch() throws Exception {
     GetValidators handler = new GetValidators(provider, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of(epoch.toString())));
-    final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+    final UInt64 slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
 
     BeaconValidators beaconValidators = new BeaconValidators(beaconStateInternal);
 
@@ -132,7 +132,7 @@ public class GetValidatorsTest {
     when(context.queryParamMap())
         .thenReturn(Map.of(ACTIVE, List.of("true"), EPOCH, List.of(epoch.toString())));
     when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
-    final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+    final UInt64 slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
 
     final tech.pegasys.teku.datastructures.state.BeaconState beaconStateWithAddedActiveValidator =
         addActiveValidator(beaconStateInternal);
@@ -165,7 +165,7 @@ public class GetValidatorsTest {
     GetValidators handler = new GetValidators(provider, jsonProvider);
     when(context.queryParamMap()).thenReturn(Map.of(ACTIVE, List.of("true")));
     when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
-    final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+    final UInt64 slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
 
     final tech.pegasys.teku.datastructures.state.BeaconState beaconStateWithAddedValidator =
         addActiveValidator(beaconStateInternal);
@@ -204,7 +204,7 @@ public class GetValidatorsTest {
                 List.of(epoch.toString()),
                 PAGE_SIZE,
                 List.of(String.valueOf(suppliedPageSizeParam))));
-    final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+    final UInt64 slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
 
     when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
 
@@ -240,7 +240,7 @@ public class GetValidatorsTest {
                 List.of(String.valueOf(suppliedPageSizeParam)),
                 PAGE_TOKEN,
                 List.of(String.valueOf(suppliedPageTokenParam))));
-    final UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+    final UInt64 slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
 
     when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
 
@@ -275,10 +275,25 @@ public class GetValidatorsTest {
   }
 
   @Test
+  public void shouldReturnBadRequestWhenTooBigEpochParameterSpecified() throws Exception {
+    final GetValidators handler = new GetValidators(provider, jsonProvider);
+    // It's a valid uint64 but is too big to be converted to a slot
+    final String tooBigEpoch = Constants.FAR_FUTURE_EPOCH.toString();
+    when(context.queryParamMap())
+        .thenReturn(Map.of(ACTIVE, List.of("true"), EPOCH, List.of(tooBigEpoch)));
+    when(provider.isStoreAvailable()).thenReturn(true);
+    when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
+
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
+  }
+
+  @Test
   public void shouldReturnEmptyListWhenQueryByActiveAndFarFutureEpoch() throws Exception {
     final GetValidators handler = new GetValidators(provider, jsonProvider);
-    final UnsignedLong futureEpoch = UnsignedLong.valueOf(294829482492L);
-    final UnsignedLong farFutureSlot = BeaconStateUtil.compute_start_slot_at_epoch(futureEpoch);
+    final UInt64 futureEpoch = UInt64.valueOf(294829482492L);
+    final UInt64 farFutureSlot = BeaconStateUtil.compute_start_slot_at_epoch(futureEpoch);
     when(context.queryParamMap())
         .thenReturn(Map.of(ACTIVE, List.of("true"), EPOCH, List.of(futureEpoch.toString())));
     when(provider.isStoreAvailable()).thenReturn(true);
@@ -300,8 +315,8 @@ public class GetValidatorsTest {
     Validator v =
         dataStructureUtil
             .randomValidator()
-            .withActivation_eligibility_epoch(UnsignedLong.ZERO)
-            .withActivation_epoch(UnsignedLong.valueOf(Constants.GENESIS_EPOCH));
+            .withActivation_eligibility_epoch(UInt64.ZERO)
+            .withActivation_epoch(UInt64.valueOf(Constants.GENESIS_EPOCH));
     assertThat(
             ValidatorsUtil.is_active_validator(v, BeaconStateUtil.get_current_epoch(beaconState)))
         .isTrue();
@@ -310,7 +325,7 @@ public class GetValidatorsTest {
         state -> {
           state.getValidators().add(v);
           // also add balance
-          state.getBalances().add(UnsignedLong.ZERO);
+          state.getBalances().add(UInt64.ZERO);
         });
   }
 }

@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_active_validator;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +32,7 @@ import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 // Note that genesis generation is also covered by the initialization acceptance test
@@ -46,10 +46,10 @@ class GenesisGeneratorTest {
           .mapToObj(
               index -> {
                 final DepositData data = INITIAL_DEPOSIT_DATA.get(index);
-                return new DepositWithIndex(data, UnsignedLong.valueOf(index));
+                return new DepositWithIndex(data, UInt64.valueOf(index));
               })
           .collect(toList());
-  public static final UnsignedLong GENESIS_EPOCH = UnsignedLong.valueOf(Constants.GENESIS_EPOCH);
+  public static final UInt64 GENESIS_EPOCH = UInt64.valueOf(Constants.GENESIS_EPOCH);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final GenesisGenerator genesisGenerator = new GenesisGenerator();
@@ -59,14 +59,14 @@ class GenesisGeneratorTest {
     final Bytes32 eth1BlockHash1 = dataStructureUtil.randomBytes32();
     final Bytes32 eth1BlockHash2 = dataStructureUtil.randomBytes32();
 
-    final UnsignedLong genesisTime = UnsignedLong.valueOf(982928293223232L);
+    final UInt64 genesisTime = UInt64.valueOf(982928293223232L);
 
     final BeaconState expectedState =
         BeaconStateUtil.initialize_beacon_state_from_eth1(
             eth1BlockHash2, genesisTime, INITIAL_DEPOSITS);
 
     genesisGenerator.updateCandidateState(
-        eth1BlockHash1, genesisTime.minus(UnsignedLong.ONE), INITIAL_DEPOSITS.subList(0, 8));
+        eth1BlockHash1, genesisTime.minus(UInt64.ONE), INITIAL_DEPOSITS.subList(0, 8));
 
     genesisGenerator.updateCandidateState(
         eth1BlockHash2, genesisTime, INITIAL_DEPOSITS.subList(8, INITIAL_DEPOSITS.size()));
@@ -82,7 +82,7 @@ class GenesisGeneratorTest {
   public void shouldIncrementallyAddValidators() {
     for (int i = 0; i < INITIAL_DEPOSITS.size(); i++) {
       genesisGenerator.updateCandidateState(
-          Bytes32.ZERO, UnsignedLong.ZERO, Collections.singletonList(INITIAL_DEPOSITS.get(i)));
+          Bytes32.ZERO, UInt64.ZERO, Collections.singletonList(INITIAL_DEPOSITS.get(i)));
 
       final BeaconState state = genesisGenerator.getGenesisState();
       assertThat(get_active_validator_indices(state, GENESIS_EPOCH)).hasSize(i + 1);
@@ -104,10 +104,10 @@ class GenesisGeneratorTest {
             BLSSignature.empty());
     deposits.add(0, new Deposit(invalidData));
 
-    genesisGenerator.updateCandidateState(Bytes32.ZERO, UnsignedLong.ZERO, deposits);
+    genesisGenerator.updateCandidateState(Bytes32.ZERO, UInt64.ZERO, deposits);
     final BeaconState state = genesisGenerator.getGenesisState();
     // All deposits were processed
-    assertThat(state.getEth1_deposit_index()).isEqualTo(UnsignedLong.valueOf(deposits.size()));
+    assertThat(state.getEth1_deposit_index()).isEqualTo(UInt64.valueOf(deposits.size()));
     // But one didn't result in a new validator
     assertThat(state.getValidators()).hasSize(deposits.size() - 1);
     assertThat(genesisGenerator.getActiveValidatorCount()).isEqualTo(deposits.size() - 1);

@@ -14,11 +14,11 @@
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
@@ -29,10 +29,10 @@ public class EnrForkId implements SimpleOffsetSerializable, SSZContainer {
 
   private final Bytes4 forkDigest;
   private final Bytes4 nextForkVersion;
-  private final UnsignedLong nextForkEpoch;
+  private final UInt64 nextForkEpoch;
 
   public EnrForkId(
-      final Bytes4 forkDigest, final Bytes4 nextForkVersion, final UnsignedLong nextForkEpoch) {
+      final Bytes4 forkDigest, final Bytes4 nextForkVersion, final UInt64 nextForkEpoch) {
     this.forkDigest = forkDigest;
     this.nextForkVersion = nextForkVersion;
     this.nextForkEpoch = nextForkEpoch;
@@ -46,7 +46,7 @@ public class EnrForkId implements SimpleOffsetSerializable, SSZContainer {
     return nextForkVersion;
   }
 
-  public UnsignedLong getNextForkEpoch() {
+  public UInt64 getNextForkEpoch() {
     return nextForkEpoch;
   }
 

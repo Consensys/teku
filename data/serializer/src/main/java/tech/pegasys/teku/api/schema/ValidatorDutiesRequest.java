@@ -17,14 +17,14 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES48;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.primitives.UnsignedLong;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidatorDutiesRequest {
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong epoch;
+  public final UInt64 epoch;
 
   @ArraySchema(
       schema = @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES48))
@@ -32,7 +32,7 @@ public class ValidatorDutiesRequest {
 
   @JsonCreator
   public ValidatorDutiesRequest(
-      @JsonProperty(value = "epoch", required = true) UnsignedLong epoch,
+      @JsonProperty(value = "epoch", required = true) UInt64 epoch,
       @JsonProperty(value = "pubkeys", required = true) final List<BLSPubKey> pubkeys) {
     this.epoch = epoch;
     this.pubkeys = pubkeys;

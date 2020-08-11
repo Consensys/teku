@@ -18,7 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -26,6 +25,7 @@ import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 
@@ -45,15 +45,15 @@ class JsonProviderTest {
   }
 
   @Test
-  public void unsignedLongShouldSerializeToJson() throws JsonProcessingException {
-    UnsignedLong data = dataStructureUtil.randomUnsignedLong();
+  public void UInt64ShouldSerializeToJson() throws JsonProcessingException {
+    UInt64 data = dataStructureUtil.randomUInt64();
     String serialized = jsonProvider.objectToJSON(data);
     assertEquals(serialized, Q + data.toString() + Q);
   }
 
   @Test
-  public void maxUnsignedLongShouldSerializeToJson() throws JsonProcessingException {
-    UnsignedLong data = UnsignedLong.MAX_VALUE;
+  public void maxUInt64ShouldSerializeToJson() throws JsonProcessingException {
+    UInt64 data = UInt64.MAX_VALUE;
     String serialized = jsonProvider.objectToJSON(data);
     assertEquals(serialized, Q + data.toString() + Q);
   }
@@ -89,7 +89,7 @@ class JsonProviderTest {
   @Test
   void beaconStateJsonTest() throws JsonProcessingException {
     tech.pegasys.teku.datastructures.state.BeaconState stateInternal =
-        dataStructureUtil.randomBeaconState(UnsignedLong.valueOf(16));
+        dataStructureUtil.randomBeaconState(UInt64.valueOf(16));
     BeaconState state = new BeaconState(stateInternal);
     String jsonState = jsonProvider.objectToJSON(state);
     assertTrue(jsonState.length() > 0);
@@ -111,7 +111,7 @@ class JsonProviderTest {
 
     ValidatorsRequest result = jsonProvider.jsonToObject(data, ValidatorsRequest.class);
 
-    assertThat(result.epoch).isEqualTo(UnsignedLong.ZERO);
+    assertThat(result.epoch).isEqualTo(UInt64.ZERO);
     assertThat(result.pubkeys).isEqualTo(List.of(BLSPubKey.fromHexString(PUBKEY)));
   }
 }

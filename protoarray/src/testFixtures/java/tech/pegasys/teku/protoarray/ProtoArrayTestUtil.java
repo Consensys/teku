@@ -15,12 +15,12 @@ package tech.pegasys.teku.protoarray;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ProtoArrayTestUtil {
   private static final TestStoreFactory STORE_FACTORY = new TestStoreFactory();
@@ -32,9 +32,9 @@ public class ProtoArrayTestUtil {
 
   public static ProtoArrayForkChoiceStrategy createProtoArrayForkChoiceStrategy(
       Bytes32 finalizedBlockRoot,
-      UnsignedLong finalizedBlockSlot,
-      UnsignedLong finalizedCheckpointEpoch,
-      UnsignedLong justifiedCheckpointEpoch) {
+      UInt64 finalizedBlockSlot,
+      UInt64 finalizedCheckpointEpoch,
+      UInt64 justifiedCheckpointEpoch) {
     MutableStore store = STORE_FACTORY.createEmptyStore();
     store.setJustifiedCheckpoint(new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO));
     store.setFinalizedCheckpoint(new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO));

@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
-import static com.google.common.primitives.UnsignedLong.ZERO;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.max;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -25,12 +23,13 @@ import java.util.Set;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class AttestationTopicSubscriber implements SlotEventsChannel {
-  private final Map<Integer, UnsignedLong> subnetIdToUnsubscribeSlot = new HashMap<>();
+  private final Map<Integer, UInt64> subnetIdToUnsubscribeSlot = new HashMap<>();
   private final Set<Integer> persistentSubnetIdSet = new HashSet<>();
   private final Eth2Network eth2Network;
   private final RecentChainData recentChainData;
@@ -42,7 +41,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
   }
 
   public synchronized void subscribeToCommitteeForAggregation(
-      final int committeeIndex, final UnsignedLong aggregationSlot) {
+      final int committeeIndex, final UInt64 aggregationSlot) {
     recentChainData
         .getBestState()
         // No point aggregating for historic slots and we can't calculate the subnet ID
@@ -52,16 +51,15 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
   }
 
   private void subscribeToCommitteeForAggregation(
-      final BeaconState state, final int committeeIndex, final UnsignedLong aggregationSlot) {
+      final BeaconState state, final int committeeIndex, final UInt64 aggregationSlot) {
     final int subnetId =
         CommitteeUtil.computeSubnetForCommittee(
-            state, aggregationSlot, UnsignedLong.valueOf(committeeIndex));
-    final UnsignedLong currentUnsubscriptionSlot =
-        subnetIdToUnsubscribeSlot.getOrDefault(subnetId, ZERO);
+            state, aggregationSlot, UInt64.valueOf(committeeIndex));
+    final UInt64 currentUnsubscriptionSlot = subnetIdToUnsubscribeSlot.getOrDefault(subnetId, ZERO);
     if (currentUnsubscriptionSlot.equals(ZERO)) {
       eth2Network.subscribeToAttestationSubnetId(subnetId);
     }
-    subnetIdToUnsubscribeSlot.put(subnetId, max(currentUnsubscriptionSlot, aggregationSlot));
+    subnetIdToUnsubscribeSlot.put(subnetId, currentUnsubscriptionSlot.max(aggregationSlot));
   }
 
   public synchronized void subscribeToPersistentSubnets(
@@ -72,7 +70,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
       int subnetId = subnetSubscription.getSubnetId();
       shouldUpdateENR = persistentSubnetIdSet.add(subnetId) || shouldUpdateENR;
 
-      UnsignedLong existingUnsubscriptionSlot =
+      UInt64 existingUnsubscriptionSlot =
           subnetIdToUnsubscribeSlot.computeIfAbsent(
               subnetId,
               (key) -> {
@@ -81,7 +79,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
               });
 
       subnetIdToUnsubscribeSlot.put(
-          subnetId, max(existingUnsubscriptionSlot, subnetSubscription.getUnsubscriptionSlot()));
+          subnetId, existingUnsubscriptionSlot.max(subnetSubscription.getUnsubscriptionSlot()));
     }
 
     if (shouldUpdateENR) {
@@ -90,13 +88,13 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
   }
 
   @Override
-  public synchronized void onSlot(final UnsignedLong slot) {
+  public synchronized void onSlot(final UInt64 slot) {
     boolean shouldUpdateENR = false;
 
-    final Iterator<Map.Entry<Integer, UnsignedLong>> iterator =
+    final Iterator<Map.Entry<Integer, UInt64>> iterator =
         subnetIdToUnsubscribeSlot.entrySet().iterator();
     while (iterator.hasNext()) {
-      final Map.Entry<Integer, UnsignedLong> entry = iterator.next();
+      final Map.Entry<Integer, UInt64> entry = iterator.next();
       if (entry.getValue().compareTo(slot) < 0) {
         iterator.remove();
         int subnetId = entry.getKey();

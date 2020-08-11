@@ -14,11 +14,11 @@
 package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
@@ -46,10 +46,10 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
           BeaconBlockHeader::new);
 
   @SuppressWarnings("unused")
-  private final UnsignedLong slot = null;
+  private final UInt64 slot = null;
 
   @SuppressWarnings("unused")
-  private final UnsignedLong proposer_index = null;
+  private final UInt64 proposer_index = null;
 
   @SuppressWarnings("unused")
   private final Bytes32 parent_root = null;
@@ -65,8 +65,8 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
   }
 
   public BeaconBlockHeader(
-      UnsignedLong slot,
-      UnsignedLong proposer_index,
+      UInt64 slot,
+      UInt64 proposer_index,
       Bytes32 parent_root,
       Bytes32 state_root,
       Bytes32 body_root) {
@@ -103,11 +103,11 @@ public class BeaconBlockHeader extends AbstractImmutableContainer
   }
 
   /** *************** * GETTERS & SETTERS * * ******************* */
-  public UnsignedLong getSlot() {
+  public UInt64 getSlot() {
     return ((UInt64View) get(0)).get();
   }
 
-  public UnsignedLong getProposer_index() {
+  public UInt64 getProposer_index() {
     return ((UInt64View) get(1)).get();
   }
 

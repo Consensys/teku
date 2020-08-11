@@ -17,26 +17,26 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ProtoArray {
 
   private int pruneThreshold;
 
-  private UnsignedLong justifiedEpoch;
-  private UnsignedLong finalizedEpoch;
+  private UInt64 justifiedEpoch;
+  private UInt64 finalizedEpoch;
 
   private final List<ProtoNode> nodes;
   private final Map<Bytes32, Integer> indices;
 
   public ProtoArray(
       int pruneThreshold,
-      UnsignedLong justifiedEpoch,
-      UnsignedLong finalizedEpoch,
+      UInt64 justifiedEpoch,
+      UInt64 finalizedEpoch,
       List<ProtoNode> nodes,
       Map<Bytes32, Integer> indices) {
     this.pruneThreshold = pruneThreshold;
@@ -69,12 +69,12 @@ public class ProtoArray {
    * @param finalizedEpoch
    */
   public void onBlock(
-      UnsignedLong blockSlot,
+      UInt64 blockSlot,
       Bytes32 blockRoot,
       Bytes32 parentRoot,
       Bytes32 stateRoot,
-      UnsignedLong justifiedEpoch,
-      UnsignedLong finalizedEpoch) {
+      UInt64 justifiedEpoch,
+      UInt64 finalizedEpoch) {
     if (indices.containsKey(blockRoot)) {
       return;
     }
@@ -90,7 +90,7 @@ public class ProtoArray {
             Optional.ofNullable(indices.get(parentRoot)),
             justifiedEpoch,
             finalizedEpoch,
-            UnsignedLong.ZERO,
+            UInt64.ZERO,
             Optional.empty(),
             Optional.empty());
 
@@ -151,8 +151,7 @@ public class ProtoArray {
    * @param justifiedEpoch
    * @param finalizedEpoch
    */
-  public void applyScoreChanges(
-      List<Long> deltas, UnsignedLong justifiedEpoch, UnsignedLong finalizedEpoch) {
+  public void applyScoreChanges(List<Long> deltas, UInt64 justifiedEpoch, UInt64 finalizedEpoch) {
     checkArgument(deltas.size() == indices.size(), "ProtoArray: Invalid delta length");
 
     if (!justifiedEpoch.equals(this.justifiedEpoch)
@@ -386,17 +385,15 @@ public class ProtoArray {
    * @return
    */
   private boolean nodeIsViableForHead(ProtoNode node) {
-    return (node.getJustifiedEpoch().equals(justifiedEpoch)
-            || justifiedEpoch.equals(UnsignedLong.ZERO))
-        && (node.getFinalizedEpoch().equals(finalizedEpoch)
-            || finalizedEpoch.equals(UnsignedLong.ZERO));
+    return (node.getJustifiedEpoch().equals(justifiedEpoch) || justifiedEpoch.equals(UInt64.ZERO))
+        && (node.getFinalizedEpoch().equals(finalizedEpoch) || finalizedEpoch.equals(UInt64.ZERO));
   }
 
-  public UnsignedLong getJustifiedEpoch() {
+  public UInt64 getJustifiedEpoch() {
     return justifiedEpoch;
   }
 
-  public UnsignedLong getFinalizedEpoch() {
+  public UInt64 getFinalizedEpoch() {
     return finalizedEpoch;
   }
 }

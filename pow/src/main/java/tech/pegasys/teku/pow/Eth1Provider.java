@@ -13,22 +13,22 @@
 
 package tech.pegasys.teku.pow;
 
-import com.google.common.primitives.UnsignedLong;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import org.web3j.protocol.core.methods.response.EthCall;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface Eth1Provider {
 
-  SafeFuture<Block> getEth1Block(UnsignedLong blockNumber);
+  SafeFuture<Block> getEth1Block(UInt64 blockNumber);
 
   SafeFuture<Block> getEth1Block(String blockHash);
 
   SafeFuture<Block> getGuaranteedEth1Block(String blockHash);
 
-  SafeFuture<Block> getGuaranteedEth1Block(UnsignedLong blockNumber);
+  SafeFuture<Block> getGuaranteedEth1Block(UInt64 blockNumber);
 
   SafeFuture<Block> getLatestEth1Block();
 
-  SafeFuture<EthCall> ethCall(String from, String to, String data, UnsignedLong blockNumber);
+  SafeFuture<EthCall> ethCall(String from, String to, String data, UInt64 blockNumber);
 }

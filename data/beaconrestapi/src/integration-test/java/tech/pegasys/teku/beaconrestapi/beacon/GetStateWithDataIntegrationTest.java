@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.teku.beaconrestapi.handlers.beacon.GetState.ROUTE;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +31,7 @@ import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetStateWithDataIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
@@ -70,8 +70,7 @@ public class GetStateWithDataIntegrationTest extends AbstractDataBackedRestAPIIn
     return jsonProvider.jsonToObject(responseBody, BeaconState.class);
   }
 
-  private tech.pegasys.teku.datastructures.state.BeaconState getInternalState(
-      final UnsignedLong slot) {
+  private tech.pegasys.teku.datastructures.state.BeaconState getInternalState(final UInt64 slot) {
     return combinedChainDataClient.getStateAtSlotExact(slot).join().orElseThrow();
   }
 
@@ -103,14 +102,14 @@ public class GetStateWithDataIntegrationTest extends AbstractDataBackedRestAPIIn
   }
 
   private tech.pegasys.teku.datastructures.state.BeaconState getStateFromSlot(
-      final UnsignedLong populatedSlot, final UnsignedLong desiredSlot)
+      final UInt64 populatedSlot, final UInt64 desiredSlot)
       throws EpochProcessingException, SlotProcessingException {
     return stateTransition.process_slots(
         combinedChainDataClient.getLatestStateAtSlot(populatedSlot).join().orElseThrow(),
         desiredSlot);
   }
 
-  private Response getBySlot(final UnsignedLong slot) throws IOException {
+  private Response getBySlot(final UInt64 slot) throws IOException {
     return getResponse(ROUTE, Map.of(SLOT, slot.toString()));
   }
 

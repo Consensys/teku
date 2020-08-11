@@ -15,11 +15,11 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
@@ -32,14 +32,14 @@ public class MetadataMessage implements RpcRequest, SimpleOffsetSerializable, SS
     return new MetadataMessage();
   }
 
-  private final UnsignedLong seqNumber;
+  private final UInt64 seqNumber;
   private final Bitvector attnets; // vector of size Constants.ATTESTATION_SUBNET_COUNT
 
   public MetadataMessage() {
-    this(UnsignedLong.ZERO, new Bitvector(Constants.ATTESTATION_SUBNET_COUNT));
+    this(UInt64.ZERO, new Bitvector(Constants.ATTESTATION_SUBNET_COUNT));
   }
 
-  public MetadataMessage(UnsignedLong seqNumber, Bitvector attnets) {
+  public MetadataMessage(UInt64 seqNumber, Bitvector attnets) {
     checkArgument(attnets.getSize() == Constants.ATTESTATION_SUBNET_COUNT, "Invalid vector size");
     this.seqNumber = seqNumber;
     this.attnets = attnets;
@@ -55,7 +55,7 @@ public class MetadataMessage implements RpcRequest, SimpleOffsetSerializable, SS
     return List.of(SSZ.encodeUInt64(seqNumber.longValue()), attnets.serialize());
   }
 
-  public UnsignedLong getSeqNumber() {
+  public UInt64 getSeqNumber() {
     return seqNumber;
   }
 

@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.eq;
@@ -24,12 +22,13 @@ import static tech.pegasys.teku.core.CommitteeAssignmentUtil.get_committee_assig
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.OptionalInt;
 import org.junit.jupiter.api.AfterAll;
@@ -53,6 +52,7 @@ import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
@@ -240,7 +240,7 @@ class SignedAggregateAndProofValidatorTest {
     final Attestation attestation = aggregateAndProof1.getMessage().getAggregate();
     final SignedAggregateAndProof aggregateAndProof2 =
         new SignedAggregateAndProof(
-            new AggregateAndProof(UnsignedLong.valueOf(2), attestation, BLSSignature.empty()),
+            new AggregateAndProof(UInt64.valueOf(2), attestation, BLSSignature.empty()),
             BLSSignature.empty());
 
     whenAttestationIsValid(aggregateAndProof1);
@@ -269,7 +269,7 @@ class SignedAggregateAndProofValidatorTest {
     final Attestation attestation = aggregateAndProof1.getMessage().getAggregate();
     final SignedAggregateAndProof aggregateAndProof2 =
         new SignedAggregateAndProof(
-            new AggregateAndProof(UnsignedLong.valueOf(2), attestation, BLSSignature.empty()),
+            new AggregateAndProof(UInt64.valueOf(2), attestation, BLSSignature.empty()),
             BLSSignature.empty());
 
     whenAttestationIsValid(aggregateAndProof1);
@@ -324,7 +324,7 @@ class SignedAggregateAndProofValidatorTest {
     final BeaconBlockAndState chainHead = bestBlock.toUnsigned();
 
     // We need a validator that is an aggregator for both epoch 0 and 1. 238 happens to be one.
-    final UnsignedLong aggregatorIndex = UnsignedLong.valueOf(238);
+    final UInt64 aggregatorIndex = UInt64.valueOf(238);
     final SignedAggregateAndProof aggregateAndProof1 =
         generator
             .generator()
@@ -368,7 +368,7 @@ class SignedAggregateAndProofValidatorTest {
         generator
             .generator()
             .blockAndState(chainHead)
-            .aggregatorIndex(UnsignedLong.valueOf(aggregatorIndex))
+            .aggregatorIndex(UInt64.valueOf(aggregatorIndex))
             .committeeIndex(committeeAssignment.getCommitteeIndex())
             .slot(committeeAssignment.getSlot())
             .generate();
@@ -391,7 +391,7 @@ class SignedAggregateAndProofValidatorTest {
         generator
             .generator()
             .blockAndState(chainHead)
-            .aggregatorIndex(UnsignedLong.valueOf(aggregatorIndex))
+            .aggregatorIndex(UInt64.valueOf(aggregatorIndex))
             .generate();
     whenAttestationIsValid(aggregate);
     // Sanity check aggregator is not in the committee
@@ -454,7 +454,7 @@ class SignedAggregateAndProofValidatorTest {
   }
 
   private CommitteeAssignment getCommitteeAssignment(
-      final BeaconBlockAndState chainHead, final int aggregatorIndex, final UnsignedLong epoch) {
+      final BeaconBlockAndState chainHead, final int aggregatorIndex, final UInt64 epoch) {
     return get_committee_assignment(chainHead.getState(), epoch, aggregatorIndex).orElseThrow();
   }
 }
