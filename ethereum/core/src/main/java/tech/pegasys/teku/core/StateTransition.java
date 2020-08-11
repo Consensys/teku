@@ -147,7 +147,7 @@ public class StateTransition {
         state -> {
           // Cache state root
           Bytes32 previous_state_root = state.hash_tree_root();
-          int index = state.getSlot().mod(UInt64.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue();
+          int index = state.getSlot().mod(SLOTS_PER_HISTORICAL_ROOT).intValue();
           state.getState_roots().set(index, previous_state_root);
 
           // Cache latest block header state root
@@ -195,11 +195,7 @@ public class StateTransition {
       while (state.getSlot().compareTo(slot) < 0) {
         state = process_slot(state);
         // Process epoch on the start slot of the next epoch
-        if (state
-            .getSlot()
-            .plus(UInt64.ONE)
-            .mod(UInt64.valueOf(SLOTS_PER_EPOCH))
-            .equals(UInt64.ZERO)) {
+        if (state.getSlot().plus(UInt64.ONE).mod(SLOTS_PER_EPOCH).equals(UInt64.ZERO)) {
           state = EpochProcessor.processEpoch(state);
         }
         state = state.updated(s -> s.setSlot(s.getSlot().plus(UInt64.ONE)));

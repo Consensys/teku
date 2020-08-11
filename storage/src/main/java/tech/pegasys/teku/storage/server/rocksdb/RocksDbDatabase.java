@@ -355,8 +355,7 @@ public class RocksDbDatabase implements Database {
           .ifPresent(
               checkpoint -> {
                 updater.setFinalizedCheckpoint(checkpoint);
-                UInt64 finalizedSlot =
-                    checkpoint.getEpochStartSlot().plus(UInt64.valueOf(SLOTS_PER_EPOCH));
+                UInt64 finalizedSlot = checkpoint.getEpochStartSlot().plus(SLOTS_PER_EPOCH);
                 updater.pruneHotStateRoots(hotDao.getStateRootsBeforeSlot(finalizedSlot));
               });
 

@@ -61,7 +61,7 @@ public class StoreBuilder {
       final AnchorPoint anchor) {
     final UInt64 genesisTime = anchor.getState().getGenesis_time();
     final UInt64 slot = anchor.getState().getSlot();
-    final UInt64 time = genesisTime.plus(UInt64.valueOf(SECONDS_PER_SLOT).times(slot));
+    final UInt64 time = genesisTime.plus(slot.times(SECONDS_PER_SLOT));
 
     Map<Bytes32, Bytes32> childToParentMap = new HashMap<>();
     childToParentMap.put(anchor.getRoot(), anchor.getParentRoot());

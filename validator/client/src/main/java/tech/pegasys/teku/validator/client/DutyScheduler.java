@@ -99,7 +99,7 @@ public class DutyScheduler implements ValidatorTimingChannel {
     // So invalidate any duties for slot.
     // They will be recalculated on the next slot event if required which avoids requesting duties
     // too often if we're syncing a batch of blocks
-    final UInt64 firstInvalidatedEpoch = compute_epoch_at_slot(slot).plus(UInt64.valueOf(2));
+    final UInt64 firstInvalidatedEpoch = compute_epoch_at_slot(slot).plus(2);
     removeEpochs(dutiesByEpoch.tailMap(firstInvalidatedEpoch, true));
   }
 

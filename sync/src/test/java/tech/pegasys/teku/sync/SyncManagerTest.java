@@ -107,8 +107,7 @@ public class SyncManagerTest {
   @Test
   void sync_noSuitablePeers_almostInSync() {
     // We're almost in sync with the peer
-    final UInt64 oldHeadSlot =
-        PEER_STATUS.getHeadSlot().minus(UInt64.valueOf(Constants.SLOTS_PER_EPOCH));
+    final UInt64 oldHeadSlot = PEER_STATUS.getHeadSlot().minus(Constants.SLOTS_PER_EPOCH);
     setLocalChainState(oldHeadSlot, PEER_STATUS.getFinalizedEpoch().minus(1));
 
     when(network.streamPeers()).thenReturn(Stream.of(peer));

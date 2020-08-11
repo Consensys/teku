@@ -367,7 +367,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     final UInt64 epochStartSlot = compute_start_slot_at_epoch(epoch);
     // Don't calculate a proposer for the genesis slot
     final UInt64 startSlot = epochStartSlot.max(UInt64.valueOf(GENESIS_SLOT + 1));
-    final UInt64 endSlot = epochStartSlot.plus(UInt64.valueOf(Constants.SLOTS_PER_EPOCH));
+    final UInt64 endSlot = epochStartSlot.plus(Constants.SLOTS_PER_EPOCH);
     final Map<Integer, List<UInt64>> proposalSlotsByValidatorIndex = new HashMap<>();
     for (UInt64 slot = startSlot; slot.compareTo(endSlot) < 0; slot = slot.plus(UInt64.ONE)) {
       final Integer proposer = get_beacon_proposer_index(state, slot);

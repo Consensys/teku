@@ -324,7 +324,7 @@ public class CombinedChainDataClient {
     final UInt64 startingSlot = compute_start_slot_at_epoch(epoch);
     int committeeCount = get_committee_count_per_slot(state, epoch).intValue();
     for (int i = 0; i < SLOTS_PER_EPOCH; i++) {
-      UInt64 slot = startingSlot.plus(UInt64.valueOf(i));
+      UInt64 slot = startingSlot.plus(i);
       for (int j = 0; j < committeeCount; j++) {
         UInt64 idx = UInt64.valueOf(j);
         List<Integer> committee = CommitteeUtil.get_beacon_committee(state, slot, idx);
