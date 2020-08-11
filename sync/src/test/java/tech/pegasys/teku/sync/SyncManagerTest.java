@@ -77,7 +77,7 @@ public class SyncManagerTest {
     when(network.subscribeConnect(any())).thenReturn(SUBSCRIPTION_ID);
     when(storageClient.getFinalizedEpoch()).thenAnswer((__) -> localFinalizedEpoch.get());
     when(storageClient.getCurrentSlot()).thenAnswer((__) -> Optional.ofNullable(localSlot.get()));
-    when(storageClient.getBestSlot()).thenAnswer((__) -> localHeadSlot.get());
+    when(storageClient.getHeadSlot()).thenAnswer((__) -> localHeadSlot.get());
     when(peer.getStatus()).thenReturn(PEER_STATUS);
   }
 

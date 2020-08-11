@@ -173,7 +173,7 @@ public class SyncManager extends Service {
       if (bestPeer.isPresent()) {
         UInt64 highestSlot = bestPeer.get().getStatus().getHeadSlot();
         final SyncStatus syncStatus =
-            new SyncStatus(peerSync.getStartingSlot(), storageClient.getBestSlot(), highestSlot);
+            new SyncStatus(peerSync.getStartingSlot(), storageClient.getHeadSlot(), highestSlot);
         return new SyncingStatus(true, syncStatus);
       }
     }
@@ -286,7 +286,7 @@ public class SyncManager extends Service {
   }
 
   private boolean isPeerHeadSlotAhead(final PeerStatus peerStatus) {
-    final UInt64 ourHeadSlot = storageClient.getBestSlot();
+    final UInt64 ourHeadSlot = storageClient.getHeadSlot();
     final UInt64 headSlotThreshold = ourHeadSlot.plus(SYNC_THRESHOLD_IN_SLOTS);
 
     return peerStatus.getHeadSlot().isGreaterThan(headSlotThreshold);

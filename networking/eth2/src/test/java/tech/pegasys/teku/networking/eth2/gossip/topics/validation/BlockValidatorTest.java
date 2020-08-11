@@ -47,7 +47,7 @@ public class BlockValidatorTest {
 
   @Test
   void shouldReturnValidForValidBlock() throws Exception {
-    final UInt64 nextSlot = recentChainData.getBestSlot().plus(ONE);
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     beaconChainUtil.setSlot(nextSlot);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
 
@@ -57,7 +57,7 @@ public class BlockValidatorTest {
 
   @Test
   void shouldReturnInvalidForSecondValidBlockForSlotAndProposer() throws Exception {
-    final UInt64 nextSlot = recentChainData.getBestSlot().plus(ONE);
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     beaconChainUtil.setSlot(nextSlot);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
 
@@ -70,7 +70,7 @@ public class BlockValidatorTest {
 
   @Test
   void shouldReturnSavedForFutureForBlockFromFuture() throws Exception {
-    final UInt64 nextSlot = recentChainData.getBestSlot().plus(ONE);
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
 
     InternalValidationResult result = blockValidator.validate(block).join();
@@ -79,7 +79,7 @@ public class BlockValidatorTest {
 
   @Test
   void shouldReturnSavedForFutureForBlockWithParentUnavailable() throws Exception {
-    final UInt64 nextSlot = recentChainData.getBestSlot().plus(ONE);
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     beaconChainUtil.setSlot(nextSlot);
 
     final SignedBeaconBlock signedBlock = beaconChainUtil.createBlockAtSlot(nextSlot);
@@ -108,7 +108,7 @@ public class BlockValidatorTest {
     UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(finalizedSlot.minus(ONE));
     beaconChainUtil.finalizeChainAtEpoch(finalizedEpoch);
-    beaconChainUtil.setSlot(recentChainData.getBestSlot());
+    beaconChainUtil.setSlot(recentChainData.getHeadSlot());
 
     InternalValidationResult result = blockValidator.validate(block).join();
     assertThat(result).isEqualTo(InternalValidationResult.IGNORE);
@@ -116,7 +116,7 @@ public class BlockValidatorTest {
 
   @Test
   void shouldReturnInvalidForBlockWithWrongProposerIndex() throws Exception {
-    final UInt64 nextSlot = recentChainData.getBestSlot().plus(ONE);
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     beaconChainUtil.setSlot(nextSlot);
 
     final SignedBeaconBlock signedBlock = beaconChainUtil.createBlockAtSlot(nextSlot);
@@ -144,7 +144,7 @@ public class BlockValidatorTest {
 
   @Test
   void shouldReturnInvalidForBlockWithWrongSignature() throws Exception {
-    final UInt64 nextSlot = recentChainData.getBestSlot().plus(ONE);
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     beaconChainUtil.setSlot(nextSlot);
 
     final SignedBeaconBlock block =

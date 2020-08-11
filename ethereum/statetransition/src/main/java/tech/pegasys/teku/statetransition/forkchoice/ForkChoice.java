@@ -73,7 +73,7 @@ public class ForkChoice {
                       justifiedCheckpointState.orElseThrow());
               transaction.commit(() -> {}, "Failed to persist validator vote changes.");
 
-              recentChainData.updateBestBlock(
+              recentChainData.updateHead(
                   headBlockRoot,
                   nodeSlot.orElse(
                       forkChoiceStrategy

@@ -99,14 +99,14 @@ class AttestationValidatorTest {
   @Test
   public void shouldReturnValidForValidAttestation() {
     final Attestation attestation =
-        attestationGenerator.validAttestation(recentChainData.getBestBlockAndState().orElseThrow());
+        attestationGenerator.validAttestation(recentChainData.getHeadBlockAndState().orElseThrow());
     assertThat(validate(attestation)).isEqualTo(ACCEPT);
   }
 
   @Test
   public void shouldRejectAttestationWithIncorrectAggregateBitsSize() {
     final Attestation attestation =
-        attestationGenerator.validAttestation(recentChainData.getBestBlockAndState().orElseThrow());
+        attestationGenerator.validAttestation(recentChainData.getHeadBlockAndState().orElseThrow());
     final Bitlist validAggregationBits = attestation.getAggregation_bits();
     final Bitlist invalidAggregationBits =
         new Bitlist(validAggregationBits.getCurrentSize() + 1, validAggregationBits.getMaxSize());
@@ -120,7 +120,7 @@ class AttestationValidatorTest {
   @Test
   public void shouldRejectAttestationFromBeforeAttestationPropagationSlotRange() {
     final Attestation attestation =
-        attestationGenerator.validAttestation(recentChainData.getBestBlockAndState().orElseThrow());
+        attestationGenerator.validAttestation(recentChainData.getHeadBlockAndState().orElseThrow());
 
     // In the first slot after
     final UInt64 slot = ATTESTATION_PROPAGATION_SLOT_RANGE.plus(ONE);
@@ -134,7 +134,7 @@ class AttestationValidatorTest {
   @Test
   public void shouldAcceptAttestationWithinClockDisparityOfEarliestPropagationSlot() {
     final Attestation attestation =
-        attestationGenerator.validAttestation(recentChainData.getBestBlockAndState().orElseThrow());
+        attestationGenerator.validAttestation(recentChainData.getHeadBlockAndState().orElseThrow());
 
     // At the very start of the first slot the attestation isn't allowed, but still within
     // the MAXIMUM_GOSSIP_CLOCK_DISPARITY so should be allowed.
@@ -148,7 +148,7 @@ class AttestationValidatorTest {
   public void shouldDeferAttestationFromAfterThePropagationSlotRange() {
     final Attestation attestation =
         attestationGenerator.validAttestation(
-            recentChainData.getBestBlockAndState().orElseThrow(), ONE);
+            recentChainData.getHeadBlockAndState().orElseThrow(), ONE);
     assertThat(attestation.getData().getSlot()).isEqualTo(ONE);
 
     chainUpdater.setCurrentSlot(ZERO);
@@ -160,7 +160,7 @@ class AttestationValidatorTest {
   public void shouldAcceptAttestationWithinClockDisparityOfLatestPropagationSlot() {
     final Attestation attestation =
         attestationGenerator.validAttestation(
-            recentChainData.getBestBlockAndState().orElseThrow(), ONE);
+            recentChainData.getHeadBlockAndState().orElseThrow(), ONE);
     assertThat(attestation.getData().getSlot()).isEqualTo(ONE);
 
     // Ideally we'd rewind the time by a few milliseconds but our Store only keeps time to second
@@ -175,7 +175,7 @@ class AttestationValidatorTest {
     final Attestation attestation =
         AttestationGenerator.groupAndAggregateAttestations(
                 attestationGenerator.getAttestationsForSlot(
-                    recentChainData.getBestBlockAndState().orElseThrow()))
+                    recentChainData.getHeadBlockAndState().orElseThrow()))
             .get(0);
 
     assertThat(validate(attestation)).isEqualTo(REJECT);
@@ -183,12 +183,12 @@ class AttestationValidatorTest {
 
   @Test
   public void shouldRejectAttestationForSameValidatorAndTargetEpoch() throws Exception {
-    final BeaconBlockAndState genesis = recentChainData.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState genesis = recentChainData.getHeadBlockAndState().orElseThrow();
     chainUpdater.advanceChain(ONE);
 
     // Slot 1 attestation for the block at slot 1
     final Attestation attestation1 =
-        attestationGenerator.validAttestation(recentChainData.getBestBlockAndState().orElseThrow());
+        attestationGenerator.validAttestation(recentChainData.getHeadBlockAndState().orElseThrow());
     // Slot 1 attestation from the same validator claiming no block at slot 1
     final Attestation attestation2 =
         attestationGenerator
@@ -208,7 +208,7 @@ class AttestationValidatorTest {
 
   @Test
   public void shouldAcceptAttestationForSameValidatorButDifferentTargetEpoch() throws Exception {
-    final BeaconBlockAndState genesis = recentChainData.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState genesis = recentChainData.getHeadBlockAndState().orElseThrow();
     final SignedBeaconBlock nextEpochBlock =
         chainUpdater.advanceChain(UInt64.valueOf(SLOTS_PER_EPOCH + 1)).getBlock();
 
@@ -219,7 +219,7 @@ class AttestationValidatorTest {
     final Attestation attestation2 =
         attestationGenerator
             .streamAttestations(
-                recentChainData.getBestBlockAndState().orElseThrow(), nextEpochBlock.getSlot())
+                recentChainData.getHeadBlockAndState().orElseThrow(), nextEpochBlock.getSlot())
             .filter(attestation -> hasSameValidators(attestation1, attestation))
             .findFirst()
             .orElseThrow();
@@ -235,7 +235,7 @@ class AttestationValidatorTest {
 
   @Test
   public void shouldAcceptAttestationForSameSlotButDifferentValidator() {
-    final BeaconBlockAndState genesis = recentChainData.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState genesis = recentChainData.getHeadBlockAndState().orElseThrow();
 
     // Slot 0 attestation from one validator
     final Attestation attestation1 = attestationGenerator.validAttestation(genesis, ZERO);
@@ -260,7 +260,7 @@ class AttestationValidatorTest {
   public void shouldRejectAttestationWithInvalidSignature() {
     final Attestation attestation =
         attestationGenerator.attestationWithInvalidSignature(
-            recentChainData.getBestBlockAndState().orElseThrow());
+            recentChainData.getHeadBlockAndState().orElseThrow());
 
     assertThat(validate(attestation)).isEqualTo(REJECT);
   }
@@ -277,7 +277,7 @@ class AttestationValidatorTest {
 
   @Test
   public void shouldRejectAttestationsSentOnTheWrongSubnet() {
-    final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
