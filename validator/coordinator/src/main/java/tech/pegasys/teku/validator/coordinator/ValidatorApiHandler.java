@@ -66,6 +66,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.sync.SyncState;
 import tech.pegasys.teku.sync.SyncStateTracker;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
@@ -310,8 +311,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @VisibleForTesting
   boolean isSyncActive() {
-    return syncStateTracker.getCurrentSyncState().isStartingUp()
-        || (syncStateTracker.getCurrentSyncState().isSyncing() && headBlockIsTooFarBehind());
+    final SyncState syncState = syncStateTracker.getCurrentSyncState();
+    return syncState.isStartingUp() || (syncState.isSyncing() && headBlockIsTooFarBehind());
   }
 
   private boolean headBlockIsTooFarBehind() {
