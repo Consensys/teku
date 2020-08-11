@@ -27,8 +27,8 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERRO
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsEpoch;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -116,7 +116,7 @@ public class GetValidators extends AbstractHandler implements Handler {
       boolean isFinalized = false;
       final SafeFuture<Optional<BeaconState>> future;
       if (parameters.containsKey(EPOCH)) {
-        UInt64 epoch = getParameterValueAsUInt64(parameters, EPOCH);
+        UInt64 epoch = getParameterValueAsEpoch(parameters, EPOCH);
         UInt64 slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
         isFinalized = chainDataProvider.isFinalized(slot);
         future = chainDataProvider.getStateAtSlot(slot);
@@ -133,7 +133,7 @@ public class GetValidators extends AbstractHandler implements Handler {
         this.handlePossiblyMissingResult(
             ctx, future, getResultProcessor(activeOnly, pageSize, pageToken));
       }
-    } catch (final IllegalArgumentException | ArithmeticException e) {
+    } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
