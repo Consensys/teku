@@ -21,8 +21,11 @@ import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -130,5 +133,50 @@ public class CombinedChainDataClientTest_archiveMode extends AbstractCombinedCha
         client.getStateByStateRoot(skippedSlotState.hash_tree_root()).get();
     assertThat(result.isPresent()).isTrue();
     assertThat(result.get()).isEqualTo(skippedSlotState);
+  }
+
+  @Test
+  public void getCheckpointStateAtEpoch_historicalCheckpoint() {
+    final UInt64 finalizedEpoch = UInt64.valueOf(3);
+    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+
+    chainUpdater.initializeGenesis();
+    // Setup chain at epoch to be queried
+    final SignedBlockAndState checkpointBlockAndState = chainUpdater.advanceChain(finalizedSlot);
+    chainUpdater.finalizeEpoch(finalizedEpoch);
+    chainUpdater.addNewBestBlock();
+
+    final Checkpoint checkpoint = new Checkpoint(finalizedEpoch, checkpointBlockAndState.getRoot());
+    final CheckpointState expected =
+        CheckpointStateGenerator.generate(checkpoint, checkpointBlockAndState);
+
+    final SafeFuture<Optional<CheckpointState>> actual =
+        client.getCheckpointStateAtEpoch(finalizedEpoch);
+    assertThat(actual).isCompletedWithValue(Optional.of(expected));
+  }
+
+  @Test
+  public void getCheckpointStateAtEpoch_historicalCheckpointWithSkippedBoundarySlot() {
+    final UInt64 finalizedEpoch = UInt64.valueOf(3);
+    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
+    final UInt64 nextEpoch = finalizedEpoch.plus(UInt64.ONE);
+
+    chainUpdater.initializeGenesis();
+    // Setup chain at epoch to be queried
+    final SignedBlockAndState checkpointBlockAndState =
+        chainUpdater.advanceChain(finalizedSlot.minus(UInt64.ONE));
+    chainUpdater.finalizeEpoch(finalizedEpoch);
+    // Bury queried epoch behind another finalized epoch
+    chainUpdater.advanceChain(compute_start_slot_at_epoch(nextEpoch));
+    chainUpdater.finalizeEpoch(nextEpoch);
+    chainUpdater.addNewBestBlock();
+
+    final Checkpoint checkpoint = new Checkpoint(finalizedEpoch, checkpointBlockAndState.getRoot());
+    final CheckpointState expected =
+        CheckpointStateGenerator.generate(checkpoint, checkpointBlockAndState);
+
+    final SafeFuture<Optional<CheckpointState>> actual =
+        client.getCheckpointStateAtEpoch(finalizedEpoch);
+    assertThat(actual).isCompletedWithValue(Optional.of(expected));
   }
 }

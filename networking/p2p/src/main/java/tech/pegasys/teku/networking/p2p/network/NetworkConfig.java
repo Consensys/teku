@@ -39,6 +39,7 @@ public class NetworkConfig {
   private final TargetPeerRange targetPeerRange;
   private final GossipConfig gossipConfig;
   private final WireLogsConfig wireLogsConfig;
+  private final int targetSubnetSubscriberCount;
 
   public NetworkConfig(
       final PrivKey privateKey,
@@ -49,7 +50,8 @@ public class NetworkConfig {
       final List<String> staticPeers,
       final boolean isDiscoveryEnabled,
       final List<String> bootnodes,
-      final TargetPeerRange targetPeerRange) {
+      final TargetPeerRange targetPeerRange,
+      final int targetSubnetSubscriberCount) {
     this(
         privateKey,
         networkInterface,
@@ -60,6 +62,7 @@ public class NetworkConfig {
         isDiscoveryEnabled,
         bootnodes,
         targetPeerRange,
+        targetSubnetSubscriberCount,
         GossipConfig.DEFAULT_CONFIG,
         WireLogsConfig.DEFAULT_CONFIG);
   }
@@ -74,6 +77,7 @@ public class NetworkConfig {
       final boolean isDiscoveryEnabled,
       final List<String> bootnodes,
       final TargetPeerRange targetPeerRange,
+      final int targetSubnetSubscriberCount,
       final GossipConfig gossipConfig,
       final WireLogsConfig wireLogsConfig) {
 
@@ -81,6 +85,7 @@ public class NetworkConfig {
     this.networkInterface = networkInterface;
 
     this.advertisedIp = advertisedIp.filter(ip -> !ip.isBlank());
+    this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     if (this.advertisedIp.map(ip -> !isInetAddress(ip)).orElse(false)) {
       throw new IllegalArgumentException("Advertised ip is set incorrectly.");
     }
@@ -129,6 +134,10 @@ public class NetworkConfig {
 
   public TargetPeerRange getTargetPeerRange() {
     return targetPeerRange;
+  }
+
+  public int getTargetSubnetSubscriberCount() {
+    return targetSubnetSubscriberCount;
   }
 
   public GossipConfig getGossipConfig() {

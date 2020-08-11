@@ -36,6 +36,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.getP2pStaticPeers()).isEqualTo(List.of("127.1.0.1", "127.1.1.1"));
     assertThat(config.getP2pPeerLowerBound()).isEqualTo(70);
     assertThat(config.getP2pPeerUpperBound()).isEqualTo(85);
+    assertThat(config.getTargetSubnetSubscriberCount()).isEqualTo(5);
   }
 
   @Test

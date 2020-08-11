@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.bytes_to_int64;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_seed;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.uint_to_bytes;
@@ -58,7 +59,6 @@ public class CommitteeUtil {
     checkArgument(index < index_count, "CommitteeUtil.get_shuffled_index1");
 
     int indexRet = index;
-    byte[] powerOfTwoNumbers = {1, 2, 4, 8, 16, 32, 64, (byte) 128};
 
     for (int round = 0; round < SHUFFLE_ROUND_COUNT; round++) {
 
@@ -70,22 +70,16 @@ public class CommitteeUtil {
               Long.remainderUnsigned(
                   bytes_to_int64(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
                   index_count));
-      int flip = Math.floorMod(pivot - indexRet, index_count);
-      if (flip < 0) {
-        // Account for flip being negative
-        flip += index_count;
-      }
-
+      int flip = Math.floorMod(pivot + index_count - indexRet, index_count);
       int position = Math.max(indexRet, flip);
 
       Bytes positionDiv256 = uint_to_bytes(Math.floorDiv(position, 256), 4);
-      Bytes source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, positionDiv256));
+      Bytes hashBytes = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, positionDiv256));
 
-      // The byte type is signed in Java, but the right shift should be fine as we just use bit 0.
-      // But we can't use % in the normal way because of signedness, so we `& 1` instead.
-      byte theByte = source.get(Math.floorDiv(Math.floorMod(position, 256), 8));
-      byte theMask = powerOfTwoNumbers[Math.floorMod(position, 8)];
-      if ((theByte & theMask) != 0) {
+      int bitIndex = position & 0xff;
+      int theByte = hashBytes.get(bitIndex / 8);
+      int theBit = (theByte >> (bitIndex & 0x07)) & 1;
+      if (theBit != 0) {
         indexRet = flip;
       }
     }
@@ -100,72 +94,62 @@ public class CommitteeUtil {
   }
 
   /**
-   * Ported from Lighthouse client:
-   * https://github.com/sigp/lighthouse/blob/master/eth2/utils/swap_or_not_shuffle/src/shuffle_list.rs
-   * NOTE: shuffling the whole list with this method 200x-300x faster than shuffling it by
-   * individual indexes
+   * Shuffles a list of integers in-place with ``seed`` as entropy.
+   *
+   * <p>Utilizes 'swap or not' shuffling found in
+   * https://link.springer.com/content/pdf/10.1007%2F978-3-642-32009-5_1.pdf See the 'generalized
+   * domain' algorithm on page 3.
+   *
+   * <p>The result of this should be the same using compute_shuffled_index() on each index in the
+   * list, but is vastly more efficient due to reuse of the hashed pseudorandom data.
+   *
+   * @param input The list to be shuffled.
+   * @param seed Initial seed value used for randomization.
    */
   public static void shuffle_list(int[] input, Bytes32 seed) {
-    if (input.length == 0) {
+
+    int listSize = input.length;
+    if (listSize == 0) {
       return;
     }
-    int rounds = SHUFFLE_ROUND_COUNT;
-    int list_size = input.length;
 
-    for (int r = rounds - 1; r >= 0; r--) {
-      Bytes roundAsByte = Bytes.of((byte) r);
+    for (int round = SHUFFLE_ROUND_COUNT - 1; round >= 0; round--) {
 
+      Bytes roundAsByte = Bytes.of((byte) round);
+
+      // This needs to be unsigned modulo.
       int pivot =
           toIntExact(
               Long.remainderUnsigned(
                   bytes_to_int64(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
-                  list_size));
+                  listSize));
 
-      int mirror = (pivot + 1) >> 1;
-      Bytes source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, uint_to_bytes(pivot >> 8, 4)));
-      byte byte_v = source.get((pivot & 0xFF) >> 3);
+      Bytes hashBytes = Bytes.EMPTY;
+      int mirror1 = (pivot + 2) / 2;
+      int mirror2 = (pivot + listSize) / 2;
+      for (int i = mirror1; i <= mirror2; i++) {
 
-      for (int i = 0; i < mirror; i++) {
-        int j = pivot - i;
-
-        if ((j & 0xff) == 0xff) {
-          source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, uint_to_bytes(j >> 8, 4)));
+        int flip, bitIndex;
+        if (i <= pivot) {
+          flip = pivot - i;
+          bitIndex = i & 0xff;
+          if (bitIndex == 0 || i == mirror1) {
+            hashBytes = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, uint_to_bytes(i / 256, 4)));
+          }
+        } else {
+          flip = pivot + listSize - i;
+          bitIndex = flip & 0xff;
+          if (bitIndex == 0xff || i == pivot + 1) {
+            hashBytes = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, uint_to_bytes(flip / 256, 4)));
+          }
         }
 
-        if ((j & 0x07) == 0x07) {
-          byte_v = source.get((j & 0xff) >> 3);
-        }
-        int bit_v = (byte_v >> (j & 0x07)) & 0x01;
-
-        if (bit_v == 1) {
+        int theByte = hashBytes.get(bitIndex / 8);
+        int theBit = (theByte >> (bitIndex & 0x07)) & 1;
+        if (theBit != 0) {
           int tmp = input[i];
-          input[i] = input[j];
-          input[j] = tmp;
-        }
-      }
-      mirror = (pivot + list_size + 1) >> 1;
-      int end = list_size - 1;
-
-      source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, uint_to_bytes(end >> 8, 4)));
-      byte_v = source.get((end & 0xff) >> 3);
-
-      for (int i = pivot + 1, loop_iter = 0; i < mirror; i++, loop_iter++) {
-
-        int j = end - loop_iter;
-
-        if ((j & 0xff) == 0xff) {
-          source = Hash.sha2_256(Bytes.wrap(seed, roundAsByte, uint_to_bytes(j >> 8, 4)));
-        }
-
-        if ((j & 0x07) == 0x07) {
-          byte_v = source.get((j & 0xff) >> 3);
-        }
-        int bit_v = (byte_v >> (j & 0x07)) & 0x01;
-
-        if (bit_v == 1) {
-          int tmp = input[i];
-          input[i] = input[j];
-          input[j] = tmp;
+          input[i] = input[flip];
+          input[flip] = tmp;
         }
       }
     }
@@ -242,6 +226,9 @@ public class CommitteeUtil {
    * @return
    */
   public static List<Integer> get_beacon_committee(BeaconState state, UInt64 slot, UInt64 index) {
+    // Make sure state is within range of the slot being queried
+    validateStateForCommitteeQuery(state, slot);
+
     return BeaconStateCache.getTransitionCaches(state)
         .getBeaconCommittee()
         .get(
@@ -265,6 +252,37 @@ public class CommitteeUtil {
                   committeeIndex,
                   count);
             });
+  }
+
+  private static void validateStateForCommitteeQuery(BeaconState state, UInt64 slot) {
+    final UInt64 oldestQueryableSlot = getEarliestQueryableSlotForTargetSlot(slot);
+    checkArgument(
+        state.getSlot().compareTo(oldestQueryableSlot) >= 0,
+        "Committee information must be derived from a state no older than the previous epoch. State at slot %s is older than cutoff slot %s",
+        state.getSlot(),
+        oldestQueryableSlot);
+  }
+
+  /**
+   * Calculates the earliest slot queryable for assignments at the given slot
+   *
+   * @param slot The slot for which we want to retrieve committee information
+   * @return The earliest slot from which we can query committee assignments
+   */
+  public static UInt64 getEarliestQueryableSlotForTargetSlot(final UInt64 slot) {
+    final UInt64 epoch = compute_epoch_at_slot(slot);
+    return getEarliestQueryableSlotForTargetEpoch(epoch);
+  }
+
+  /**
+   * Calculates the earliest slot queryable for assignments at the given epoch
+   *
+   * @param epoch The epoch for which we want to retrieve committee information
+   * @return The earliest slot from which we can query committee assignments
+   */
+  public static UInt64 getEarliestQueryableSlotForTargetEpoch(final UInt64 epoch) {
+    final UInt64 previousEpoch = epoch.compareTo(UInt64.ZERO) > 0 ? epoch.minus(UInt64.ONE) : epoch;
+    return compute_start_slot_at_epoch(previousEpoch);
   }
 
   public static int getAggregatorModulo(final int committeeSize) {
