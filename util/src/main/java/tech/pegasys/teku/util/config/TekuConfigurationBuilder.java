@@ -21,7 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 
 public class TekuConfigurationBuilder {
 
-  private static final boolean DEFAULT_P2P_SNAPPY_ENABLED = false;
+  private static final boolean DEFAULT_P2P_SNAPPY_ENABLED = true;
   private String constants;
   private Integer startupTargetPeerCount;
   private Integer startupTimeoutSeconds;
