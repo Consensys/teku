@@ -62,7 +62,7 @@ public class ChainDataProvider {
       throw new ChainDataUnavailableException();
     }
 
-    return recentChainData.getBestBlockAndState().map(BeaconHead::new);
+    return recentChainData.getHeadBlockAndState().map(BeaconHead::new);
   }
 
   public GetForkResponse getForkInfo() {
@@ -84,7 +84,7 @@ public class ChainDataProvider {
 
     final UInt64 earliestQueryableSlot =
         CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
-    if (recentChainData.getBestSlot().isLessThan(earliestQueryableSlot)) {
+    if (recentChainData.getHeadSlot().isLessThan(earliestQueryableSlot)) {
       return SafeFuture.completedFuture(Optional.empty());
     }
 
@@ -212,6 +212,6 @@ public class ChainDataProvider {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
     }
-    return recentChainData.getBestBlockAndState().map(BeaconChainHead::new);
+    return recentChainData.getHeadBlockAndState().map(BeaconChainHead::new);
   }
 }

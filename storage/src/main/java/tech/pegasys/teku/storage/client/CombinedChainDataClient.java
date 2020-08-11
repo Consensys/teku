@@ -308,7 +308,7 @@ public class CombinedChainDataClient {
   }
 
   public Optional<SignedBeaconBlock> getBestBlock() {
-    return recentChainData.getBestBlock();
+    return recentChainData.getHeadBlock();
   }
 
   public boolean isStoreAvailable() {
@@ -334,18 +334,22 @@ public class CombinedChainDataClient {
     return result;
   }
 
+  /** @return The slot at which the chain head block was proposed */
   public UInt64 getHeadSlot() {
-    return this.recentChainData.getBestSlot();
+    return this.recentChainData.getHeadSlot();
   }
 
+  /** @return The epoch in which the chain head block was proposed */
   public UInt64 getHeadEpoch() {
     return compute_epoch_at_slot(getHeadSlot());
   }
 
+  /** @return The current slot according to clock time */
   public UInt64 getCurrentSlot() {
     return this.recentChainData.getCurrentSlot().orElseGet(this::getHeadSlot);
   }
 
+  /** @return The current epoch according to clock time */
   public UInt64 getCurrentEpoch() {
     return compute_epoch_at_slot(getCurrentSlot());
   }

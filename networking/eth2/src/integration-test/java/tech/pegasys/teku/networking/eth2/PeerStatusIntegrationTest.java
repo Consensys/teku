@@ -181,7 +181,7 @@ public class PeerStatusIntegrationTest {
         state.getFinalized_checkpoint().getRoot(),
         state.getFinalized_checkpoint().getEpoch(),
         storageClient.getBestBlockRoot().orElseThrow(),
-        storageClient.getBestSlot());
+        storageClient.getHeadSlot());
   }
 
   private void assertStatus(
