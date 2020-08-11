@@ -5,12 +5,60 @@ we recommend most users use the latest `master` branch of Teku.
 
 ## Upcoming Breaking Changes
 
-- Anyone using `/node/version` should switch to use
-   the new `/v1/node/version` endpoint, as `/node/version` will be removed in a future release.
+- REST API endpoints will be updated to match emerging standards in a future release.
+
+## 0.12.3
+
+### Breaking Changes
+
+- Removed `--validators-unencrypted-key-files` option. This was only intended for early interop testing. Keys should be loaded from encrypted keystores.
+
+### Additions and Improvements
+
+- Add basic built-in slashing protection. Note that this only a last line of defence against bugs in the beacon node and will not prevent slashing if validator keys are run in multiple processes simultaneously.
+- Validator duty logging is now enabled by default. It can be disabled with `--log-include-validator-duties-enabled=false`
+- Add updated Medalla bootnodes
+- Updated to be compliant with beacon chain spec 0.12.2
+- Prioritise more recent attestations when creating blocks as they pay higher rewards
+- Refuse to start if the existing database is from a different network to the current configuration
+- Added rate limiting for remote peers based on both number of blocks requested and total number of requests made
+- Discovery now requires confirmation from multiple peers before updating the external IP reported by the node
+- Improved interoperability with other clients: seqno field is now optional for libp2p messages
+- REST API updates:
+    - Added genesis validator root to the `/node/fork` REST API
+    - Added `/validator/aggregate_attestation`
+    - Added `/validator/persistent_subnets_subscription`
+    - Added `/validator/beacon_committee_subscription`
+    - Added `/validator/aggregate_and_proofs`
+    - Added `/node/pending_attestation_count`
+- Report the current peer count in "time to genesis" 
+- Added UInt64 overflow and underflow detection
+- Improved performance of list shuffling operations
+- Snappy compression is now enabled by default for custom networks. It can be disabled with `--p2p-snappy-enabled=false`
+
+
+### Bug Fixes
+
+- Fixed vector for DOS attack caused by not throttling libp2p response rate. (See https://github.com/libp2p/jvm-libp2p/pull/127 and https://github.com/ethereum/public-attacknets/issues/7 for futher details)
+- Fixed issue that delayed publication of created attestations by a slot
+- Fixed "Invalid attestation: Signature is invalid" errors caused by incorrect caching of committee selections (see https://github.com/PegaSysEng/teku/pull/2501 for further details)
+- Fixed issues where validators failed to perform duties because the node incorrectly returned to syncing state
+- Fixed `--logging` option to accept lowercase `debug` option. Renamed the `debug` subcommand to avoid the naming conflict
+- Avoid lock contention when reading in-memory storage metrics
+- Reduced memory usage when loading large numbers of scrypt encoded keystores
+- Increased read timeout for ETH1 requests to avoid repeatedly timing out when the ETH1 node is slow
+- Reduced noise in logs from `ClosedChannelException` when a peer unexpected disconnects 
+- Fixed `IllegalArgumentException` when RPC response code was greater than 127
+- Fixed `IllegalArgumentException` when unexpectedly short discovery messages were received
+- Fixed very frequenet `InternalErrorException` when a peer disconnected during initial libp2p handshake
+- Fixed crash during shutdown caused by metrics accessing RocksDB after it was closed
+- Restricted the maximum epoch value accepted by REST API to ensure it can be converted to a slot without overflowing uint64
+- Fixed help text for `--p2p-discovery-bootnodes`
 
 ## 0.12.2
 
 ### Additions and Improvements
+
 - Added `medalla` network definition. As the genesis state is not yet known, an ETH1 endpoint must be specified when connecting to the `medalla` testnet
 - Attestations are now created and published immediately after the block for the slot is imported, instead of waiting until 1/3rd of the way through the slot
 - The Teku docker image has been upgraded to run Java 14
@@ -26,6 +74,7 @@ we recommend most users use the latest `master` branch of Teku.
 - Stricter req/resp message lengths are now enforced based on message content type
 
 ### Bug Fixes
+
 - Significant reductions in process resident memory. As this involved a configuration change for RocksDB the most significant reduction is achieved with a new database
 - Fixed issue where Teku did not reconnect to peers after a network interruption
 - Fixed issue where Teku may stop attempting to create new outbound peer connections
