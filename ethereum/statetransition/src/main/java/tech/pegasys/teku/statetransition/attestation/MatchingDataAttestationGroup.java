@@ -109,14 +109,18 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
     int numRemoved = 0;
     for (Iterator<Set<ValidateableAttestation>> i = attestationSets.iterator(); i.hasNext(); ) {
       final Set<ValidateableAttestation> candidates = i.next();
-      candidates.removeIf(
-          candidate ->
-              attestation
-                  .getAggregation_bits()
-                  .isSuperSetOf(candidate.getAttestation().getAggregation_bits()));
+      for (Iterator<ValidateableAttestation> iterator = candidates.iterator();
+          iterator.hasNext(); ) {
+        ValidateableAttestation candidate = iterator.next();
+        if (attestation
+            .getAggregation_bits()
+            .isSuperSetOf(candidate.getAttestation().getAggregation_bits())) {
+          iterator.remove();
+          numRemoved++;
+        }
+      }
       if (candidates.isEmpty()) {
         i.remove();
-        numRemoved++;
       }
     }
     return numRemoved;
