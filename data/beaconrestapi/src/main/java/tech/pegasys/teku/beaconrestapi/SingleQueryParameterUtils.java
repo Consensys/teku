@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.util.config.Constants;
 
 public class SingleQueryParameterUtils {
 
@@ -57,7 +58,7 @@ public class SingleQueryParameterUtils {
       throws IllegalArgumentException {
     String stringValue = validateQueryParameter(parameterMap, key);
     try {
-      return Integer.valueOf(stringValue);
+      return Integer.parseInt(stringValue);
     } catch (IllegalArgumentException ex) {
       throw new IllegalArgumentException(INVALID_NUMERIC_VALUE);
     }
@@ -74,12 +75,23 @@ public class SingleQueryParameterUtils {
     }
   }
 
+  public static UInt64 getParameterValueAsEpoch(
+      final Map<String, List<String>> parameterMap, final String key)
+      throws IllegalArgumentException {
+    final UInt64 value = getParameterValueAsUInt64(parameterMap, key);
+    // Restrict valid epoch values to ones that can be converted to slot without overflowing
+    if (value.isGreaterThan(UInt64.MAX_VALUE.dividedBy(Constants.SLOTS_PER_EPOCH))) {
+      throw new IllegalArgumentException(INVALID_NUMERIC_VALUE);
+    }
+    return value;
+  }
+
   public static long getParameterValueAsLong(
       final Map<String, List<String>> parameterMap, final String key)
       throws IllegalArgumentException {
     String stringValue = validateQueryParameter(parameterMap, key);
     try {
-      return Long.valueOf(stringValue);
+      return Long.parseLong(stringValue);
     } catch (IllegalArgumentException ex) {
       throw new IllegalArgumentException(INVALID_NUMERIC_VALUE);
     }
