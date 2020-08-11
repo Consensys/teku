@@ -139,7 +139,7 @@ public class ChainDataProviderTest {
         .thenReturn(Optional.of(bestBlock.getRoot()));
     when(mockCombinedChainDataClient.getCommitteesFromState(any(), any()))
         .thenReturn(committeeAssignments);
-    when(mockRecentChainData.getBestSlot()).thenReturn(bestBlock.getSlot());
+    when(mockRecentChainData.getHeadSlot()).thenReturn(bestBlock.getSlot());
     when(mockCombinedChainDataClient.getCheckpointStateAtEpoch(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(checkpointState)));
     final SafeFuture<Optional<List<Committee>>> future =
@@ -177,7 +177,7 @@ public class ChainDataProviderTest {
     final BeaconHead head = optionalBeaconHead.get();
     assertEquals(blockRoot, head.block_root);
     assertEquals(beaconStateInternal.hash_tree_root(), head.state_root);
-    assertEquals(recentChainData.getBestSlot(), head.slot);
+    assertEquals(recentChainData.getHeadSlot(), head.slot);
   }
 
   @Test

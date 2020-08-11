@@ -188,7 +188,7 @@ public class GossipMessageHandlerIntegrationTest {
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState bestBlockAndState =
-        node1.storageClient().getBestBlockAndState().orElseThrow();
+        node1.storageClient().getHeadBlockAndState().orElseThrow();
     Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
     processedAttestationSubscribers.forEach(
         s -> s.accept(ValidateableAttestation.fromAttestation(validAttestation)));
@@ -236,7 +236,7 @@ public class GossipMessageHandlerIntegrationTest {
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState bestBlockAndState =
-        node1.storageClient().getBestBlockAndState().orElseThrow();
+        node1.storageClient().getHeadBlockAndState().orElseThrow();
     ValidateableAttestation validAttestation =
         ValidateableAttestation.fromAttestation(
             attestationGenerator.validAttestation(bestBlockAndState));
@@ -298,7 +298,7 @@ public class GossipMessageHandlerIntegrationTest {
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState bestBlockAndState =
-        node1.storageClient().getBestBlockAndState().orElseThrow();
+        node1.storageClient().getHeadBlockAndState().orElseThrow();
     ValidateableAttestation validAttestation =
         ValidateableAttestation.fromAttestation(
             attestationGenerator.validAttestation(bestBlockAndState));

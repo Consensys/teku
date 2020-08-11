@@ -57,7 +57,7 @@ public class BlockTopicHandlerTest {
 
   @Test
   public void handleMessage_validBlock() throws Exception {
-    final UInt64 nextSlot = recentChainData.getBestSlot().plus(UInt64.ONE);
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(UInt64.ONE);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
     Bytes serialized = gossipEncoding.encode(block);
     beaconChainUtil.setSlot(nextSlot);
@@ -69,10 +69,10 @@ public class BlockTopicHandlerTest {
 
   @Test
   public void handleMessage_validFutureBlock() throws Exception {
-    final UInt64 nextSlot = recentChainData.getBestSlot().plus(UInt64.ONE);
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(UInt64.ONE);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlot(nextSlot);
     Bytes serialized = gossipEncoding.encode(block);
-    beaconChainUtil.setSlot(recentChainData.getBestSlot());
+    beaconChainUtil.setSlot(recentChainData.getHeadSlot());
 
     final ValidationResult result = topicHandler.handleMessage(serialized).join();
     assertThat(result).isEqualTo(ValidationResult.Ignore);
@@ -99,7 +99,7 @@ public class BlockTopicHandlerTest {
 
   @Test
   public void handleMessage_invalidBlock_wrongProposer() throws Exception {
-    final UInt64 nextSlot = recentChainData.getBestSlot().plus(UInt64.ONE);
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(UInt64.ONE);
     final SignedBeaconBlock block = beaconChainUtil.createBlockAtSlotFromInvalidProposer(nextSlot);
     Bytes serialized = gossipEncoding.encode(block);
     beaconChainUtil.setSlot(nextSlot);

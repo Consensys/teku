@@ -215,7 +215,7 @@ public class SlotProcessorTest {
     verify(eventLogger)
         .slotEvent(
             ZERO,
-            recentChainData.getBestSlot(),
+            recentChainData.getHeadSlot(),
             recentChainData.getBestBlockRoot().get(),
             ZERO,
             recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),

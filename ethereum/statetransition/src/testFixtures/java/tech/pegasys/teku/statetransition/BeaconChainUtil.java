@@ -238,7 +238,7 @@ public class BeaconChainUtil {
         withValidProposer || validatorKeys.size() > 1,
         "Must have >1 validator in order to create a block from an invalid proposer.");
     final BeaconBlockAndState bestBlockAndState =
-        recentChainData.getBestBlockAndState().orElseThrow();
+        recentChainData.getHeadBlockAndState().orElseThrow();
     final Bytes32 bestBlockRoot = bestBlockAndState.getRoot();
     final BeaconBlock bestBlock = bestBlockAndState.getBlock();
     final BeaconState preState = bestBlockAndState.getState();
@@ -259,22 +259,22 @@ public class BeaconChainUtil {
     }
 
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    createAndImportBlockAtSlot(recentChainData.getBestSlot().plus(MIN_ATTESTATION_INCLUSION_DELAY));
+    createAndImportBlockAtSlot(recentChainData.getHeadSlot().plus(MIN_ATTESTATION_INCLUSION_DELAY));
 
     while (recentChainData.getStore().getFinalizedCheckpoint().getEpoch().compareTo(epoch) < 0) {
 
       BeaconState headState =
-          recentChainData.getBestBlockAndState().map(BeaconBlockAndState::getState).orElseThrow();
+          recentChainData.getHeadBlockAndState().map(BeaconBlockAndState::getState).orElseThrow();
       BeaconBlock headBlock =
-          recentChainData.getBestBlock().map(SignedBeaconBlock::getMessage).orElseThrow();
-      UInt64 slot = recentChainData.getBestSlot();
+          recentChainData.getHeadBlock().map(SignedBeaconBlock::getMessage).orElseThrow();
+      UInt64 slot = recentChainData.getHeadSlot();
       SSZList<Attestation> currentSlotAssignments =
           SSZList.createMutable(
               attestationGenerator.getAttestationsForSlot(headState, headBlock, slot),
               Constants.MAX_ATTESTATIONS,
               Attestation.class);
       createAndImportBlockAtSlot(
-          recentChainData.getBestSlot().plus(UInt64.ONE),
+          recentChainData.getHeadSlot().plus(UInt64.ONE),
           Optional.of(currentSlotAssignments),
           Optional.empty(),
           Optional.empty(),

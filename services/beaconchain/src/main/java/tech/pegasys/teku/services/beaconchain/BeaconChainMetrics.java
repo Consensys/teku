@@ -183,11 +183,11 @@ public class BeaconChainMetrics implements SlotEventsChannel {
     if (recentChainData.isPreGenesis()) {
       return NOT_SET;
     }
-    return recentChainData.getBestSlot().longValue();
+    return recentChainData.getHeadSlot().longValue();
   }
 
   private long getFinalizedRootValue() {
-    Optional<BeaconBlockAndState> maybeBlockAndState = recentChainData.getBestBlockAndState();
+    Optional<BeaconBlockAndState> maybeBlockAndState = recentChainData.getHeadBlockAndState();
     if (maybeBlockAndState.isPresent()) {
       Bytes32 root = maybeBlockAndState.get().getState().getFinalized_checkpoint().getRoot();
       return getLongFromRoot(root);
@@ -196,7 +196,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   }
 
   private long getPreviousJustifiedRootValue() {
-    Optional<BeaconBlockAndState> maybeBlockAndState = recentChainData.getBestBlockAndState();
+    Optional<BeaconBlockAndState> maybeBlockAndState = recentChainData.getHeadBlockAndState();
     if (maybeBlockAndState.isPresent()) {
       Bytes32 root =
           maybeBlockAndState.get().getState().getPrevious_justified_checkpoint().getRoot();
@@ -206,7 +206,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   }
 
   private long getJustifiedRootValue() {
-    Optional<BeaconBlockAndState> maybeBlockAndState = recentChainData.getBestBlockAndState();
+    Optional<BeaconBlockAndState> maybeBlockAndState = recentChainData.getHeadBlockAndState();
     if (maybeBlockAndState.isPresent()) {
       Bytes32 root =
           maybeBlockAndState.get().getState().getCurrent_justified_checkpoint().getRoot();
@@ -238,7 +238,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
   }
 
   private long getPreviousJustifiedEpochValue() {
-    Optional<BeaconBlockAndState> maybeBlockAndState = recentChainData.getBestBlockAndState();
+    Optional<BeaconBlockAndState> maybeBlockAndState = recentChainData.getHeadBlockAndState();
     return maybeBlockAndState
         .map(
             beaconBlockAndState ->

@@ -100,19 +100,19 @@ class BlockFactoryTest {
 
   @Test
   public void shouldCreateBlockAfterNormalSlot() throws Exception {
-    final UInt64 newSlot = recentChainData.getBestSlot().plus(ONE);
+    final UInt64 newSlot = recentChainData.getHeadSlot().plus(ONE);
     assertBlockCreated(newSlot);
   }
 
   @Test
   public void shouldCreateBlockAfterSkippedSlot() throws Exception {
-    final UInt64 newSlot = recentChainData.getBestSlot().plus(2);
+    final UInt64 newSlot = recentChainData.getHeadSlot().plus(2);
     assertBlockCreated(newSlot);
   }
 
   @Test
   public void shouldCreateBlockAfterMultipleSkippedSlot() throws Exception {
-    final UInt64 newSlot = recentChainData.getBestSlot().plus(5);
+    final UInt64 newSlot = recentChainData.getHeadSlot().plus(5);
     assertBlockCreated(newSlot);
   }
 
@@ -120,7 +120,7 @@ class BlockFactoryTest {
       throws EpochProcessingException, SlotProcessingException, StateTransitionException {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BeaconBlockAndState bestBlockAndState =
-        recentChainData.getBestBlockAndState().orElseThrow();
+        recentChainData.getHeadBlockAndState().orElseThrow();
     final Bytes32 bestBlockRoot = bestBlockAndState.getRoot();
     final BeaconBlock previousBlock = bestBlockAndState.getBlock();
     final BeaconState previousState =
