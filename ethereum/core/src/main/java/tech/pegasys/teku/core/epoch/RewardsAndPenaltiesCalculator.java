@@ -84,7 +84,7 @@ public class RewardsAndPenaltiesCalculator {
     UInt64 totalBalanceSquareRoot = get_total_active_balance_with_root(state).getRight();
     UInt64 effectiveBalance = state.getValidators().get(index).getEffective_balance();
     return effectiveBalance
-        .times(UInt64.valueOf(BASE_REWARD_FACTOR))
+        .times(BASE_REWARD_FACTOR)
         .dividedBy(totalBalanceSquareRoot)
         .dividedBy(BASE_REWARDS_PER_EPOCH);
   }

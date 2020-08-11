@@ -42,15 +42,14 @@ public class StateRootRecorderTest {
   @Test
   public void shouldHandleMultipleSteps() {
     final StateRootRecorder stateRootRecorder =
-        new StateRootRecorder(
-            slot.minus(UInt64.valueOf(2)), (stateRoot, slot) -> stateRoots.put(slot, stateRoot));
+        new StateRootRecorder(slot.minus(2), (stateRoot, slot) -> stateRoots.put(slot, stateRoot));
     stateRootRecorder.acceptNextState(state);
-    assertThat(stateRoots).containsOnlyKeys(slot.minus(UInt64.valueOf(2)), slot.minus(ONE), slot);
+    assertThat(stateRoots).containsOnlyKeys(slot.minus(2), slot.minus(ONE), slot);
   }
 
   @Test
   public void shouldLimitToSlotsPerHistoricalRoot() {
-    final UInt64 history = UInt64.valueOf(SLOTS_PER_HISTORICAL_ROOT).plus(UInt64.valueOf(10));
+    final UInt64 history = UInt64.valueOf(SLOTS_PER_HISTORICAL_ROOT).plus(10);
     final StateRootRecorder stateRootRecorder =
         new StateRootRecorder(
             slot.minus(history), (stateRoot, slot) -> stateRoots.put(slot, stateRoot));

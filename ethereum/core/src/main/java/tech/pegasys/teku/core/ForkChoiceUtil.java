@@ -58,11 +58,11 @@ public class ForkChoiceUtil {
   }
 
   public static UInt64 getCurrentSlot(UInt64 currentTime, UInt64 genesisTime) {
-    return currentTime.minus(genesisTime).dividedBy(UInt64.valueOf(SECONDS_PER_SLOT));
+    return currentTime.minus(genesisTime).dividedBy(SECONDS_PER_SLOT);
   }
 
   public static UInt64 getSlotStartTime(UInt64 slotNumber, UInt64 genesisTime) {
-    return genesisTime.plus(slotNumber.times(UInt64.valueOf(SECONDS_PER_SLOT)));
+    return genesisTime.plus(slotNumber.times(SECONDS_PER_SLOT));
   }
 
   public static UInt64 get_current_slot(ReadOnlyStore store, boolean useUnixTime) {

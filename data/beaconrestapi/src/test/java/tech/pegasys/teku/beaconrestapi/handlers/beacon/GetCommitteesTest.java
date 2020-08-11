@@ -68,7 +68,7 @@ public class GetCommitteesTest {
     storageSystem.chainUpdater().updateBestBlock(bestBlock);
 
     combinedChainDataClient = storageSystem.combinedChainDataClient();
-    epoch = slot.dividedBy(UInt64.valueOf(SLOTS_PER_EPOCH));
+    epoch = slot.dividedBy(SLOTS_PER_EPOCH);
   }
 
   @Test
