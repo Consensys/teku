@@ -275,6 +275,21 @@ public class GetValidatorsTest {
   }
 
   @Test
+  public void shouldReturnBadRequestWhenTooBigEpochParameterSpecified() throws Exception {
+    final GetValidators handler = new GetValidators(provider, jsonProvider);
+    // It's a valid uint64 but is too big to be converted to a slot
+    final String tooBigEpoch = Constants.FAR_FUTURE_EPOCH.toString();
+    when(context.queryParamMap())
+        .thenReturn(Map.of(ACTIVE, List.of("true"), EPOCH, List.of(tooBigEpoch)));
+    when(provider.isStoreAvailable()).thenReturn(true);
+    when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
+
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
+  }
+
+  @Test
   public void shouldReturnEmptyListWhenQueryByActiveAndFarFutureEpoch() throws Exception {
     final GetValidators handler = new GetValidators(provider, jsonProvider);
     final UInt64 futureEpoch = UInt64.valueOf(294829482492L);
