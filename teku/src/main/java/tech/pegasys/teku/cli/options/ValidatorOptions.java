@@ -22,12 +22,11 @@ import tech.pegasys.teku.util.cli.GraffitiConverter;
 public class ValidatorOptions {
   @Option(
       names = {"--validator-keys"},
-      paramLabel = "<KEY_PATH>:<PASS_PATH>",
+      paramLabel = "<KEY_DIR>:<PASS_DIR> | <KEY_FILE>:<PASS_FILE>",
       description =
-          "Where KEY_PATH is either a directory or file, and PASS_PATH is the associated password path. "
-              + "keysDir:passDir will find keysDir/**.json, and expect to find passDir/**.txt. "
-              + "keyFile:passFile will expect that the file 'keyFile' exists, "
-              + "and the file containing the password for it is 'passFile'. "
+          "<KEY_DIR>:<PASS_DIR> will find <KEY_DIR>/**.json, and expect to find <PASS_DIR>/**.txt.\n"
+              + "<KEY_FILE>:<PASS_FILE> will expect that the file <KEY_FILE> exists, "
+              + "and the file containing the password for it is <PASS_FILE>.\n"
               + "The path separator is operating system dependent, and should be ';' in windows rather than ':'.",
       split = ",",
       arity = "1..*")
