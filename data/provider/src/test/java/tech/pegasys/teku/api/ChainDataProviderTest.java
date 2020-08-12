@@ -44,8 +44,11 @@ import tech.pegasys.teku.api.schema.Committee;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorWithIndex;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
+import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -107,7 +110,7 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
-    final UInt64 futureEpoch = slot.plus(UInt64.valueOf(SLOTS_PER_EPOCH));
+    final UInt64 futureEpoch = slot.plus(SLOTS_PER_EPOCH);
 
     final SafeFuture<Optional<List<Committee>>> future = provider.getCommitteesAtEpoch(futureEpoch);
     assertThat(future.get()).isEmpty();
@@ -118,7 +121,16 @@ public class ChainDataProviderTest {
       throws ExecutionException, InterruptedException {
     final List<CommitteeAssignment> committeeAssignments =
         List.of(new CommitteeAssignment(List.of(1), ZERO, ONE));
-    final UInt64 currentEpoch = bestBlock.getSlot().dividedBy(UInt64.valueOf(SLOTS_PER_EPOCH));
+    final UInt64 currentEpoch = compute_epoch_at_slot(bestBlock.getSlot());
+
+    // Setup data
+    final UInt64 queryEpoch = currentEpoch.equals(ZERO) ? currentEpoch : currentEpoch.minus(ONE);
+    final Checkpoint checkpoint =
+        storageSystem.chainBuilder().getCurrentCheckpointForEpoch(queryEpoch);
+    final SignedBlockAndState checkpointBlockAndState =
+        storageSystem.chainBuilder().getBlockAndState(checkpoint.getRoot()).orElseThrow();
+    final CheckpointState checkpointState =
+        CheckpointStateGenerator.generate(checkpoint, checkpointBlockAndState);
 
     final ChainDataProvider provider =
         new ChainDataProvider(mockRecentChainData, mockCombinedChainDataClient);
@@ -127,9 +139,9 @@ public class ChainDataProviderTest {
         .thenReturn(Optional.of(bestBlock.getRoot()));
     when(mockCombinedChainDataClient.getCommitteesFromState(any(), any()))
         .thenReturn(committeeAssignments);
-    when(mockRecentChainData.getBestSlot()).thenReturn(bestBlock.getSlot());
-    when(mockCombinedChainDataClient.getBlockAndStateInEffectAtSlot(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(bestBlock.toUnsigned())));
+    when(mockRecentChainData.getHeadSlot()).thenReturn(bestBlock.getSlot());
+    when(mockCombinedChainDataClient.getCheckpointStateAtEpoch(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(checkpointState)));
     final SafeFuture<Optional<List<Committee>>> future =
         provider.getCommitteesAtEpoch(currentEpoch);
 
@@ -165,7 +177,7 @@ public class ChainDataProviderTest {
     final BeaconHead head = optionalBeaconHead.get();
     assertEquals(blockRoot, head.block_root);
     assertEquals(beaconStateInternal.hash_tree_root(), head.state_root);
-    assertEquals(recentChainData.getBestSlot(), head.slot);
+    assertEquals(recentChainData.getHeadSlot(), head.slot);
   }
 
   @Test

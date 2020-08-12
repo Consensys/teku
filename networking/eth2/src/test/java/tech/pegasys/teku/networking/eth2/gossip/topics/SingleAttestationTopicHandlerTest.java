@@ -74,7 +74,7 @@ public class SingleAttestationTopicHandlerTest {
   @Test
   public void handleMessage_valid() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromAttestation(
             attestationGenerator.validAttestation(blockAndState));
@@ -90,7 +90,7 @@ public class SingleAttestationTopicHandlerTest {
   @Test
   public void handleMessage_ignored() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromAttestation(
             attestationGenerator.validAttestation(blockAndState));
@@ -106,7 +106,7 @@ public class SingleAttestationTopicHandlerTest {
   @Test
   public void handleMessage_saveForFuture() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromAttestation(
             attestationGenerator.validAttestation(blockAndState));
@@ -122,7 +122,7 @@ public class SingleAttestationTopicHandlerTest {
   @Test
   public void handleMessage_invalid() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
-    final BeaconBlockAndState blockAndState = recentChainData.getBestBlockAndState().orElseThrow();
+    final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromAttestation(
             attestationGenerator.validAttestation(blockAndState));

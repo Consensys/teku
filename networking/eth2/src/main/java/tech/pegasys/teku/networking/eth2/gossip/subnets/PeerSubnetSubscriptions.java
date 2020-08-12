@@ -29,20 +29,23 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class PeerSubnetSubscriptions {
 
-  static final int TARGET_SUBSCRIBER_COUNT = 2;
   private final Map<Integer, Integer> subscriberCountBySubnetId;
   private final Map<NodeId, Bitvector> subscriptionsByPeer;
+  private final int targetSubnetSubscriberCount;
 
   private PeerSubnetSubscriptions(
       final Map<Integer, Integer> subscriberCountBySubnetId,
-      final Map<NodeId, Bitvector> subscriptionsByPeer) {
-
+      final Map<NodeId, Bitvector> subscriptionsByPeer,
+      final int targetSubnetSubscriberCount) {
     this.subscriberCountBySubnetId = subscriberCountBySubnetId;
     this.subscriptionsByPeer = subscriptionsByPeer;
+    this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
   }
 
   public static PeerSubnetSubscriptions create(
-      final GossipNetwork network, final AttestationSubnetTopicProvider topicProvider) {
+      final GossipNetwork network,
+      final AttestationSubnetTopicProvider topicProvider,
+      final int targetSubnetSubscriberCount) {
     final PeerSubnetSubscriptions.Builder builder = new PeerSubnetSubscriptions.Builder();
     final Map<String, Collection<NodeId>> subscribersByTopic = network.getSubscribersByTopic();
     streamSubnetIds()
@@ -51,7 +54,7 @@ public class PeerSubnetSubscriptions {
                 subscribersByTopic
                     .getOrDefault(topicProvider.getTopicForSubnet(subnetId), Collections.emptySet())
                     .forEach(subscriber -> builder.addSubscriber(subnetId, subscriber)));
-    return builder.build();
+    return builder.targetSubnetSubscriberCount(targetSubnetSubscriberCount).build();
   }
 
   public int getSubscriberCountForSubnet(final int subnetId) {
@@ -67,7 +70,7 @@ public class PeerSubnetSubscriptions {
   }
 
   public int getSubscribersRequired() {
-    return TARGET_SUBSCRIBER_COUNT
+    return targetSubnetSubscriberCount
         - streamSubnetIds().map(this::getSubscriberCountForSubnet).min().orElse(0);
   }
 
@@ -80,6 +83,7 @@ public class PeerSubnetSubscriptions {
     private final Map<Integer, Integer> subscriberCountBySubnetId = new HashMap<>();
 
     private final Map<NodeId, Bitvector> subscriptionsByPeer = new HashMap<>();
+    private int targetSubnetSubscriberCount = 2;
 
     public Builder addSubscriber(final int subnetId, final NodeId peer) {
       subscriberCountBySubnetId.put(
@@ -90,8 +94,14 @@ public class PeerSubnetSubscriptions {
       return this;
     }
 
+    public Builder targetSubnetSubscriberCount(final int targetSubnetSubscriberCount) {
+      this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
+      return this;
+    }
+
     public PeerSubnetSubscriptions build() {
-      return new PeerSubnetSubscriptions(subscriberCountBySubnetId, subscriptionsByPeer);
+      return new PeerSubnetSubscriptions(
+          subscriberCountBySubnetId, subscriptionsByPeer, targetSubnetSubscriberCount);
     }
   }
 

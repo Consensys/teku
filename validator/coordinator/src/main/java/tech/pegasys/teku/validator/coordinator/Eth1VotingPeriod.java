@@ -32,9 +32,7 @@ public class Eth1VotingPeriod {
 
   public UInt64 getSpecRangeLowerBound(final UInt64 slot, final UInt64 genesisTime) {
     return secondsBeforeCurrentVotingPeriodStartTime(
-        slot,
-        genesisTime,
-        ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK).times(UInt64.valueOf(2)));
+        slot, genesisTime, ETH1_FOLLOW_DISTANCE.times(SECONDS_PER_ETH1_BLOCK).times(2));
   }
 
   public UInt64 getSpecRangeUpperBound(final UInt64 slot, final UInt64 genesisTime) {
@@ -45,7 +43,7 @@ public class Eth1VotingPeriod {
   private UInt64 secondsBeforeCurrentVotingPeriodStartTime(
       final UInt64 slot, final UInt64 genesisTime, final UInt64 valueToSubtract) {
     final UInt64 currentVotingPeriodStartTime = getVotingPeriodStartTime(slot, genesisTime);
-    if (currentVotingPeriodStartTime.compareTo(valueToSubtract) > 0) {
+    if (currentVotingPeriodStartTime.isGreaterThan(valueToSubtract)) {
       return currentVotingPeriodStartTime.minus(valueToSubtract);
     } else {
       return UInt64.ZERO;
@@ -54,12 +52,12 @@ public class Eth1VotingPeriod {
 
   private UInt64 getVotingPeriodStartTime(final UInt64 slot, final UInt64 genesisTime) {
     final UInt64 eth1VotingPeriodStartSlot =
-        slot.minus(slot.mod(UInt64.valueOf(EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH)));
+        slot.minus(slot.mod(EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH));
     return computeTimeAtSlot(eth1VotingPeriodStartSlot, genesisTime);
   }
 
   private UInt64 computeTimeAtSlot(final UInt64 slot, final UInt64 genesisTime) {
-    return genesisTime.plus(slot.times(UInt64.valueOf(Constants.SECONDS_PER_SLOT)));
+    return genesisTime.plus(slot.times(Constants.SECONDS_PER_SLOT));
   }
 
   public UInt64 getCacheDurationInSeconds() {

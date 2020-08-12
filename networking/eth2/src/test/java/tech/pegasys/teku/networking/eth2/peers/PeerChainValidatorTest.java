@@ -98,8 +98,7 @@ public class PeerChainValidatorTest {
 
     when(store.getGenesisTime()).thenReturn(genesisTime);
     when(store.getTime())
-        .thenReturn(
-            genesisTime.plus(laterBlockSlot.times(UInt64.valueOf(Constants.SECONDS_PER_SLOT))));
+        .thenReturn(genesisTime.plus(laterBlockSlot.times(Constants.SECONDS_PER_SLOT)));
 
     when(recentChainData.getStore()).thenReturn(store);
   }
@@ -287,9 +286,7 @@ public class PeerChainValidatorTest {
 
     final UInt64 currentTime =
         genesisTime.plus(
-            remoteFinalizedCheckpoint
-                .getEpochStartSlot()
-                .times(UInt64.valueOf(Constants.SECONDS_PER_SLOT)));
+            remoteFinalizedCheckpoint.getEpochStartSlot().times(Constants.SECONDS_PER_SLOT));
     when(store.getTime()).thenReturn(currentTime);
   }
 
@@ -302,7 +299,7 @@ public class PeerChainValidatorTest {
             remoteFinalizedCheckpoint
                 .getEpochStartSlot()
                 .minus(UInt64.ONE)
-                .times(UInt64.valueOf(Constants.SECONDS_PER_SLOT)));
+                .times(Constants.SECONDS_PER_SLOT));
     when(store.getTime()).thenReturn(currentTime);
   }
 
@@ -392,10 +389,7 @@ public class PeerChainValidatorTest {
     final Bytes32 headRoot = Bytes32.fromHexString("0xeeee");
     // Set a head slot some distance beyond the finalized epoch
     final UInt64 headSlot =
-        remoteFinalizedCheckpoint
-            .getEpoch()
-            .times(UInt64.valueOf(Constants.SLOTS_PER_EPOCH))
-            .plus(UInt64.valueOf(10L));
+        remoteFinalizedCheckpoint.getEpoch().times(Constants.SLOTS_PER_EPOCH).plus(10L);
 
     final PeerStatus status =
         new PeerStatus(

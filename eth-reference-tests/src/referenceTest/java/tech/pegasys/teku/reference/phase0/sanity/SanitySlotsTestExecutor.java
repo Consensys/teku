@@ -31,7 +31,7 @@ public class SanitySlotsTestExecutor implements TestExecutor {
     final BeaconState preState = loadStateFromSsz(testDefinition, "pre.ssz");
     final BeaconState expectedState = loadStateFromSsz(testDefinition, "post.ssz");
     final StateTransition stateTransition = new StateTransition();
-    final UInt64 endSlot = preState.getSlot().plus(UInt64.valueOf(numberOfSlots));
+    final UInt64 endSlot = preState.getSlot().plus(numberOfSlots);
 
     final BeaconState result = stateTransition.process_slots(preState, endSlot);
     assertThat(result).isEqualTo(expectedState);

@@ -51,6 +51,7 @@ public class TekuConfiguration implements MetricsConfig {
   private final String p2pPrivateKeyFile;
   private final int p2pPeerLowerBound;
   private final int p2pPeerUpperBound;
+  private final int targetSubnetSubscriberCount;
   private final List<String> p2pStaticPeers;
   private final boolean p2pSnappyEnabled;
 
@@ -138,6 +139,7 @@ public class TekuConfiguration implements MetricsConfig {
       final String p2pPrivateKeyFile,
       final int p2pPeerLowerBound,
       final int p2pPeerUpperBound,
+      final int targetSubnetSubscriberCount,
       final List<String> p2pStaticPeers,
       final boolean p2pSnappyEnabled,
       final Integer interopGenesisTime,
@@ -201,6 +203,7 @@ public class TekuConfiguration implements MetricsConfig {
     this.p2pPrivateKeyFile = p2pPrivateKeyFile;
     this.p2pPeerLowerBound = p2pPeerLowerBound;
     this.p2pPeerUpperBound = p2pPeerUpperBound;
+    this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.p2pStaticPeers = p2pStaticPeers;
     this.p2pSnappyEnabled = p2pSnappyEnabled;
     this.interopGenesisTime = interopGenesisTime;
@@ -313,6 +316,10 @@ public class TekuConfiguration implements MetricsConfig {
 
   public int getMinimumRandomlySelectedPeerCount() {
     return Math.min(1, p2pPeerLowerBound * 2 / 10);
+  }
+
+  public int getTargetSubnetSubscriberCount() {
+    return targetSubnetSubscriberCount;
   }
 
   public List<String> getP2pStaticPeers() {

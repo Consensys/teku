@@ -70,7 +70,7 @@ public class Generator {
     localChain.initializeStorage();
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
 
-    UInt64 currentSlot = localStorage.getBestSlot();
+    UInt64 currentSlot = localStorage.getHeadSlot();
     List<Attestation> attestations = Collections.emptyList();
 
     String blocksFile =

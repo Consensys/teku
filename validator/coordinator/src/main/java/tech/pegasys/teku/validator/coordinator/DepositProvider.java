@@ -121,10 +121,10 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
     // the generated proofs are valid
     checkRequiredDepositsAvailable(eth1DepositCount, eth1DepositIndex);
 
-    UInt64 latestDepositIndexWithMaxBlock = eth1DepositIndex.plus(UInt64.valueOf(MAX_DEPOSITS));
+    UInt64 latestDepositIndexWithMaxBlock = eth1DepositIndex.plus(MAX_DEPOSITS);
 
     UInt64 toDepositIndex =
-        latestDepositIndexWithMaxBlock.compareTo(eth1DepositCount) > 0
+        latestDepositIndexWithMaxBlock.isGreaterThan(eth1DepositCount)
             ? eth1DepositCount
             : latestDepositIndexWithMaxBlock;
 

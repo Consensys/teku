@@ -21,7 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 
 public class TekuConfigurationBuilder {
 
-  private static final boolean DEFAULT_P2P_SNAPPY_ENABLED = false;
+  private static final boolean DEFAULT_P2P_SNAPPY_ENABLED = true;
   private String constants;
   private Integer startupTargetPeerCount;
   private Integer startupTimeoutSeconds;
@@ -37,6 +37,7 @@ public class TekuConfigurationBuilder {
   private String p2pPrivateKeyFile;
   private int p2pPeerLowerBound;
   private int p2pPeerUpperBound;
+  private int targetSubnetSubscriberCount;
   private List<String> p2pStaticPeers;
   private Boolean p2pSnappyEnabled;
   private Integer interopGenesisTime;
@@ -160,6 +161,12 @@ public class TekuConfigurationBuilder {
 
   public TekuConfigurationBuilder setP2pPeerUpperBound(final int p2pPeerUpperBound) {
     this.p2pPeerUpperBound = p2pPeerUpperBound;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setTargetSubnetSubscriberCount(
+      final int targetSubnetSubscriberCount) {
+    this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     return this;
   }
 
@@ -460,6 +467,7 @@ public class TekuConfigurationBuilder {
         p2pPrivateKeyFile,
         p2pPeerLowerBound,
         p2pPeerUpperBound,
+        targetSubnetSubscriberCount,
         p2pStaticPeers,
         p2pSnappyEnabled,
         interopGenesisTime,

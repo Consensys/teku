@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.core.epoch;
 
-import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.all;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_activation_exit_epoch;
@@ -124,7 +123,8 @@ public final class EpochProcessorUtil {
       MutableBeaconState state, MatchingAttestations matchingAttestations)
       throws EpochProcessingException {
     try {
-      if (get_current_epoch(state).compareTo(UInt64.valueOf(GENESIS_EPOCH).plus(UInt64.ONE)) <= 0) {
+      if (get_current_epoch(state)
+          .isLessThanOrEqualTo(UInt64.valueOf(GENESIS_EPOCH).plus(UInt64.ONE))) {
         return;
       }
 
@@ -140,9 +140,8 @@ public final class EpochProcessorUtil {
       SSZList<PendingAttestation> matching_target_attestations =
           matchingAttestations.getMatchingTargetAttestations(previous_epoch);
       if (get_attesting_balance(state, matching_target_attestations)
-              .times(UInt64.valueOf(3))
-              .compareTo(get_total_active_balance(state).times(UInt64.valueOf(2)))
-          >= 0) {
+          .times(3)
+          .isGreaterThanOrEqualTo(get_total_active_balance(state).times(2))) {
         Checkpoint newCheckpoint =
             new Checkpoint(previous_epoch, get_block_root(state, previous_epoch));
         state.setCurrent_justified_checkpoint(newCheckpoint);
@@ -151,9 +150,8 @@ public final class EpochProcessorUtil {
       matching_target_attestations =
           matchingAttestations.getMatchingTargetAttestations(current_epoch);
       if (get_attesting_balance(state, matching_target_attestations)
-              .times(UInt64.valueOf(3))
-              .compareTo(get_total_active_balance(state).times(UInt64.valueOf(2)))
-          >= 0) {
+          .times(3)
+          .isGreaterThanOrEqualTo(get_total_active_balance(state).times(2))) {
         Checkpoint newCheckpoint =
             new Checkpoint(current_epoch, get_block_root(state, current_epoch));
         state.setCurrent_justified_checkpoint(newCheckpoint);
@@ -166,34 +164,22 @@ public final class EpochProcessorUtil {
 
       // The 2nd/3rd/4th most recent epochs are justified, the 2nd using the 4th as source
       if (all(justificationBits, 1, 4)
-          && old_previous_justified_checkpoint
-              .getEpoch()
-              .plus(UInt64.valueOf(3))
-              .equals(current_epoch)) {
+          && old_previous_justified_checkpoint.getEpoch().plus(3).equals(current_epoch)) {
         state.setFinalized_checkpoint(old_previous_justified_checkpoint);
       }
       // The 2nd/3rd most recent epochs are justified, the 2nd using the 3rd as source
       if (all(justificationBits, 1, 3)
-          && old_previous_justified_checkpoint
-              .getEpoch()
-              .plus(UInt64.valueOf(2))
-              .equals(current_epoch)) {
+          && old_previous_justified_checkpoint.getEpoch().plus(2).equals(current_epoch)) {
         state.setFinalized_checkpoint(old_previous_justified_checkpoint);
       }
       // The 1st/2nd/3rd most recent epochs are justified, the 1st using the 3rd as source
       if (all(justificationBits, 0, 3)
-          && old_current_justified_checkpoint
-              .getEpoch()
-              .plus(UInt64.valueOf(2))
-              .equals(current_epoch)) {
+          && old_current_justified_checkpoint.getEpoch().plus(2).equals(current_epoch)) {
         state.setFinalized_checkpoint(old_current_justified_checkpoint);
       }
       // The 1st/2nd most recent epochs are justified, the 1st using the 2nd as source
       if (all(justificationBits, 0, 2)
-          && old_current_justified_checkpoint
-              .getEpoch()
-              .plus(UInt64.valueOf(1))
-              .equals(current_epoch)) {
+          && old_current_justified_checkpoint.getEpoch().plus(1).equals(current_epoch)) {
         state.setFinalized_checkpoint(old_current_justified_checkpoint);
       }
 
@@ -254,7 +240,9 @@ public final class EpochProcessorUtil {
         }
 
         if (is_active_validator(validator, get_current_epoch(state))
-            && validator.getEffective_balance().compareTo(UInt64.valueOf(EJECTION_BALANCE)) <= 0) {
+            && validator
+                .getEffective_balance()
+                .isLessThanOrEqualTo(UInt64.valueOf(EJECTION_BALANCE))) {
           initiate_validator_exit(state, index);
         }
       }
@@ -322,7 +310,7 @@ public final class EpochProcessorUtil {
       Validator validator = validators.get(index);
       if (validator.isSlashed()
           && epoch
-              .plus(UInt64.valueOf(EPOCHS_PER_SLASHINGS_VECTOR / 2))
+              .plus(EPOCHS_PER_SLASHINGS_VECTOR / 2)
               .equals(validator.getWithdrawable_epoch())) {
         UInt64 increment = EFFECTIVE_BALANCE_INCREMENT;
         UInt64 penalty_numerator =
@@ -351,7 +339,7 @@ public final class EpochProcessorUtil {
     UInt64 next_epoch = current_epoch.plus(UInt64.ONE);
 
     // Reset eth1 data votes
-    if (next_epoch.mod(UInt64.valueOf(EPOCHS_PER_ETH1_VOTING_PERIOD)).equals(UInt64.ZERO)) {
+    if (next_epoch.mod(EPOCHS_PER_ETH1_VOTING_PERIOD).equals(UInt64.ZERO)) {
       state.getEth1_data_votes().clear();
     }
 
@@ -366,8 +354,8 @@ public final class EpochProcessorUtil {
           EFFECTIVE_BALANCE_INCREMENT.dividedBy(HYSTERESIS_QUOTIENT);
       final UInt64 downward_threshold = hysteresis_increment.times(HYSTERESIS_DOWNWARD_MULTIPLIER);
       final UInt64 upward_threshold = hysteresis_increment.times(HYSTERESIS_UPWARD_MULTIPLIER);
-      if (balance.plus(downward_threshold).compareTo(validator.getEffective_balance()) < 0
-          || validator.getEffective_balance().plus(upward_threshold).compareTo(balance) < 0) {
+      if (balance.plus(downward_threshold).isLessThan(validator.getEffective_balance())
+          || validator.getEffective_balance().plus(upward_threshold).isLessThan(balance)) {
         state
             .getValidators()
             .set(
@@ -380,18 +368,15 @@ public final class EpochProcessorUtil {
     }
 
     // Reset slashings
-    int index = next_epoch.mod(UInt64.valueOf(EPOCHS_PER_SLASHINGS_VECTOR)).intValue();
+    int index = next_epoch.mod(EPOCHS_PER_SLASHINGS_VECTOR).intValue();
     state.getSlashings().set(index, UInt64.ZERO);
 
     // Set randao mix
-    final int randaoIndex =
-        toIntExact(next_epoch.mod(UInt64.valueOf(EPOCHS_PER_HISTORICAL_VECTOR)).longValue());
+    final int randaoIndex = next_epoch.mod(EPOCHS_PER_HISTORICAL_VECTOR).intValue();
     state.getRandao_mixes().set(randaoIndex, get_randao_mix(state, current_epoch));
 
     // Set historical root accumulator
-    if (next_epoch
-        .mod(UInt64.valueOf(SLOTS_PER_HISTORICAL_ROOT / SLOTS_PER_EPOCH))
-        .equals(UInt64.ZERO)) {
+    if (next_epoch.mod(SLOTS_PER_HISTORICAL_ROOT / SLOTS_PER_EPOCH).equals(UInt64.ZERO)) {
       HistoricalBatch historical_batch =
           new HistoricalBatch(state.getBlock_roots(), state.getState_roots());
       state.getHistorical_roots().add(historical_batch.hash_tree_root());

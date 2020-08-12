@@ -30,10 +30,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
@@ -186,7 +189,7 @@ public abstract class AbstractCombinedChainDataClientTest {
       final String caseName, final QueryBySlotTestCase<T> testCase) {
     final SignedBlockAndState bestBlock = advanceChainAndGetBestBlockAndState(2);
 
-    final UInt64 querySlot = bestBlock.getSlot().plus(UInt64.valueOf(2));
+    final UInt64 querySlot = bestBlock.getSlot().plus(2);
     final Optional<SignedBlockAndState> effectiveBlockAtSlot = Optional.of(bestBlock);
     final SafeFuture<Optional<T>> result = testCase.executeQueryBySlot(client, querySlot);
     final Optional<T> expected =
@@ -265,6 +268,49 @@ public abstract class AbstractCombinedChainDataClientTest {
         client.getStateByStateRoot(bestBlockAndState.getState().hash_tree_root()).get();
     assertThat(result.isPresent()).isTrue();
     assertThat(result.get()).isEqualTo(bestBlockAndState.getState());
+  }
+
+  @Test
+  public void getCheckpointStateAtEpoch_recentEpochWithSkippedBoundarySlot() {
+    final UInt64 epoch = UInt64.valueOf(3);
+    final UInt64 epochSlot = compute_start_slot_at_epoch(epoch);
+    final UInt64 nextEpoch = epoch.plus(UInt64.ONE);
+
+    chainUpdater.initializeGenesis();
+    // Setup chain at epoch to be queried
+    final SignedBlockAndState checkpointBlockAndState =
+        chainUpdater.advanceChain(epochSlot.minus(2));
+    // Bury queried epoch behind additional blocks
+    chainUpdater.advanceChain(compute_start_slot_at_epoch(nextEpoch));
+    chainUpdater.addNewBestBlock();
+
+    final Checkpoint checkpoint = new Checkpoint(epoch, checkpointBlockAndState.getRoot());
+    final CheckpointState expected =
+        CheckpointStateGenerator.generate(checkpoint, checkpointBlockAndState);
+
+    final SafeFuture<Optional<CheckpointState>> actual = client.getCheckpointStateAtEpoch(epoch);
+    assertThat(actual).isCompletedWithValue(Optional.of(expected));
+  }
+
+  @Test
+  public void getCheckpointStateAtEpoch_recentEpoch() {
+    final UInt64 epoch = UInt64.valueOf(3);
+    final UInt64 epochSlot = compute_start_slot_at_epoch(epoch);
+    final UInt64 nextEpoch = epoch.plus(UInt64.ONE);
+
+    chainUpdater.initializeGenesis();
+    // Setup chain at epoch to be queried
+    final SignedBlockAndState checkpointBlockAndState = chainUpdater.advanceChain(epochSlot);
+    // Bury queried epoch behind additional blocks
+    chainUpdater.advanceChain(compute_start_slot_at_epoch(nextEpoch));
+    chainUpdater.addNewBestBlock();
+
+    final Checkpoint checkpoint = new Checkpoint(epoch, checkpointBlockAndState.getRoot());
+    final CheckpointState expected =
+        CheckpointStateGenerator.generate(checkpoint, checkpointBlockAndState);
+
+    final SafeFuture<Optional<CheckpointState>> actual = client.getCheckpointStateAtEpoch(epoch);
+    assertThat(actual).isCompletedWithValue(Optional.of(expected));
   }
 
   public static Stream<Arguments> getQueryBySlotParameters() {

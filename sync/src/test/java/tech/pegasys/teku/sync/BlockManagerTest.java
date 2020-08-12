@@ -255,7 +255,7 @@ public class BlockManagerTest {
     // Update local slot to match the first new block
     incrementSlot();
     for (int i = 0; i < blockCount; i++) {
-      final UInt64 nextSlot = genesisSlot.plus(UInt64.valueOf(i + 1));
+      final UInt64 nextSlot = genesisSlot.plus(i + 1);
       blocks.add(remoteChain.createAndImportBlockAtSlot(nextSlot));
     }
 

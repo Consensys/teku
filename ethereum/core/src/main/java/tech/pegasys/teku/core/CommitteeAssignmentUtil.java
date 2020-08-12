@@ -48,7 +48,7 @@ public class CommitteeAssignmentUtil {
     UInt64 start_slot = compute_start_slot_at_epoch(epoch);
     final UInt64 committeeCountPerSlot = get_committee_count_per_slot(state, epoch);
     for (UInt64 slot = start_slot;
-        slot.compareTo(start_slot.plus(UInt64.valueOf(SLOTS_PER_EPOCH))) < 0;
+        slot.isLessThan(start_slot.plus(SLOTS_PER_EPOCH));
         slot = slot.plus(UInt64.ONE)) {
 
       for (UInt64 index = UInt64.ZERO;
