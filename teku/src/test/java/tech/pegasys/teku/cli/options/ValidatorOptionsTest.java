@@ -17,6 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
+
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
@@ -40,6 +42,7 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.getValidatorKeystoreFiles()).containsExactly("a.key", "b.key");
     assertThat(config.getValidatorKeystorePasswordFiles())
         .containsExactly("a.password", "b.password");
+    assertThat(config.getValidatorKeys()).containsExactlyInAnyOrder("a.key:a.password","b.json:b.txt");
     assertThat(config.getValidatorExternalSignerPublicKeys()).containsExactly(publicKey);
     assertThat(config.getValidatorExternalSignerUrl()).isEqualTo(new URL("https://signer.url/"));
     assertThat(config.getValidatorExternalSignerTimeout()).isEqualTo(1234);

@@ -20,12 +20,23 @@ import picocli.CommandLine.Option;
 import tech.pegasys.teku.util.cli.GraffitiConverter;
 
 public class ValidatorOptions {
+  @Option(
+      names = {"--validator-keys"},
+      paramLabel = "<KEY_PATH>:<PASS_PATH>",
+      description =
+          "Where key is either a folder or file, and the password associated. "
+              + "If a folder is passed, the password file should be named the same as the key file, "
+              + "with a '.txt' extension for password text file (password will be first line of file).",
+      split = ",",
+      arity = "1..*")
+  private List<String> validatorKeys;
 
   @Option(
       names = {"--validators-key-files"},
       paramLabel = "<FILENAMES>",
       description = "The list of encrypted keystore files to load the validator keys from",
       split = ",",
+      hidden = true,
       arity = "0..*")
   private List<String> validatorKeystoreFiles = new ArrayList<>();
 
@@ -34,6 +45,7 @@ public class ValidatorOptions {
       paramLabel = "<FILENAMES>",
       description = "The list of password files to decrypt the validator keystore files",
       split = ",",
+      hidden = true,
       arity = "0..*")
   private List<String> validatorKeystorePasswordFiles = new ArrayList<>();
 
@@ -90,5 +102,9 @@ public class ValidatorOptions {
 
   public Bytes32 getGraffiti() {
     return graffiti;
+  }
+
+  public List<String> getValidatorKeys() {
+    return validatorKeys;
   }
 }

@@ -48,6 +48,7 @@ public class TekuConfigurationBuilder {
   private String validatorsKeyFile;
   private List<String> validatorKeystoreFiles;
   private List<String> validatorKeystorePasswordFiles;
+  private List<String> validatorKeys;
   private List<String> validatorExternalSignerPublicKeys;
   private String validatorExternalSignerUrl;
   private int validatorExternalSignerTimeout;
@@ -219,6 +220,11 @@ public class TekuConfigurationBuilder {
   public TekuConfigurationBuilder setValidatorKeystorePasswordFiles(
       final List<String> validatorKeystorePasswordFiles) {
     this.validatorKeystorePasswordFiles = validatorKeystorePasswordFiles;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setValidatorKeys(final List<String> validatorKeys) {
+    this.validatorKeys = validatorKeys;
     return this;
   }
 
@@ -465,6 +471,7 @@ public class TekuConfigurationBuilder {
         validatorsKeyFile,
         validatorKeystoreFiles,
         validatorKeystorePasswordFiles,
+        validatorKeys,
         validatorExternalSignerPublicKeys,
         validatorExternalSignerUrl,
         validatorExternalSignerTimeout,

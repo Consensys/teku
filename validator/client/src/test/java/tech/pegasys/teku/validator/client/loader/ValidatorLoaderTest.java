@@ -52,6 +52,7 @@ class ValidatorLoaderTest {
             .setValidatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
             .setValidatorKeystoreFiles(emptyList())
             .setValidatorKeystorePasswordFiles(emptyList())
+            .setValidatorKeys(emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(tekuConfiguration);
@@ -75,6 +76,7 @@ class ValidatorLoaderTest {
             .setValidatorKeyFile(validatorKeyFile.toAbsolutePath().toString())
             .setValidatorKeystoreFiles(emptyList())
             .setValidatorKeystorePasswordFiles(emptyList())
+            .setValidatorKeys(emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(tekuConfiguration);
@@ -132,6 +134,7 @@ class ValidatorLoaderTest {
             .setValidatorKeyFile(validatorKeyFile.toAbsolutePath().toString())
             .setValidatorKeystoreFiles(emptyList())
             .setValidatorKeystorePasswordFiles(emptyList())
+            .setValidatorKeys(emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(tekuConfiguration);
@@ -156,6 +159,7 @@ class ValidatorLoaderTest {
             .setInteropOwnedValidatorCount(ownedValidatorCount)
             .setValidatorKeystoreFiles(emptyList())
             .setValidatorKeystorePasswordFiles(emptyList())
+            .setValidatorKeys(emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(tekuConfiguration);
@@ -172,6 +176,7 @@ class ValidatorLoaderTest {
             .setInteropOwnedValidatorCount(ownedValidatorCount)
             .setValidatorKeystoreFiles(emptyList())
             .setValidatorKeystorePasswordFiles(emptyList())
+            .setValidatorKeys(emptyList())
             .build();
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(tekuConfiguration);
