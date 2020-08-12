@@ -70,7 +70,8 @@ public class ValidatorApiHandlerIntegrationTest {
           attestationPool,
           attestationManager,
           attestationTopicSubscriber,
-          eventBus);
+          eventBus,
+          mock(DutyMetrics.class));
 
   @BeforeEach
   public void setup() {
