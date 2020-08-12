@@ -218,6 +218,11 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
+  public Map<UInt64, VoteTracker> getVotes() {
+    return hotDao.getVotes();
+  }
+
+  @Override
   public Optional<UInt64> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
     return finalizedDao.getSlotForFinalizedBlockRoot(blockRoot);
   }
