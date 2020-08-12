@@ -66,8 +66,4 @@ class DutyMetricsTest {
   private UInt64 expectedAttestationTime(final UInt64 slot) {
     return slot.times(SECONDS_PER_SLOT).plus(SECONDS_PER_SLOT / 3).times(1000);
   }
-
-  private UInt64 expectedBlockTime(final UInt64 slot) {
-    return slot.times(SECONDS_PER_SLOT).times(1000);
-  }
 }
