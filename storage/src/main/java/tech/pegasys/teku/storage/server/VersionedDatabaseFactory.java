@@ -54,14 +54,15 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
       final String dataPath,
-      final StateStorageMode dataStorageMode) {
+      final StateStorageMode dataStorageMode,
+      final Eth1Address depositContractAddress) {
     this(
         metricsSystem,
         dataPath,
         dataStorageMode,
         DatabaseVersion.DEFAULT_VERSION.getValue(),
         DEFAULT_STORAGE_FREQUENCY,
-        Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC"));
+        depositContractAddress);
   }
 
   public VersionedDatabaseFactory(
