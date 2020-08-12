@@ -24,9 +24,11 @@ public class ValidatorOptions {
       names = {"--validator-keys"},
       paramLabel = "<KEY_PATH>:<PASS_PATH>",
       description =
-          "Where key is either a folder or file, and the password associated. "
-              + "If a folder is passed, the password file should be named the same as the key file, "
-              + "with a '.txt' extension for password text file (password will be first line of file).",
+          "Where KEY_PATH is either a directory or file, and PASS_PATH is the associated password path. "
+              + "keysDir:passDir will find keysDir/**.json, and expect to find passDir/**.txt. "
+              + "keyFile:passFile will expect that the file 'keyFile' exists, "
+              + "and the file containing the password for it is 'passFile'. "
+              + "The path separator is operating system dependent, and should be ';' in windows rather than ':'.",
       split = ",",
       arity = "1..*")
   private List<String> validatorKeys;

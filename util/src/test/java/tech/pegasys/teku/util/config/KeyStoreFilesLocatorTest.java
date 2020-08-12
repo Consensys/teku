@@ -29,7 +29,7 @@ public class KeyStoreFilesLocatorTest {
   @Test
   public void shouldFindPairsAtDepth(@TempDir final Path tempDir) throws IOException {
     createFolders(tempDir, "key/1/2/3", "pass/1/2/3");
-    createFiles(tempDir, "key/a.json", "pass/a.txt", "key/1/2/3/b.json", "pass/1/2/3/b.bin");
+    createFiles(tempDir, "key/a.json", "pass/a.txt", "key/1/2/3/b.json", "pass/1/2/3/b.txt");
     final String tempStr = tempDir.toString();
     KeyStoreFilesLocator locator =
         new KeyStoreFilesLocator(
@@ -38,7 +38,7 @@ public class KeyStoreFilesLocatorTest {
     assertThat(locator.getFilePairs())
         .containsExactlyInAnyOrder(
             tuple(tempStr, "key/a.json", "pass/a.txt"),
-            tuple(tempStr, "key/1/2/3/b.json", "pass/1/2/3/b.bin"));
+            tuple(tempStr, "key/1/2/3/b.json", "pass/1/2/3/b.txt"));
   }
 
   @Test
