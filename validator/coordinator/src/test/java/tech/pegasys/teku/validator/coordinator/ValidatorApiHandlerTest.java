@@ -91,7 +91,8 @@ class ValidatorApiHandlerTest {
           attestationPool,
           attestationManager,
           attestationTopicSubscriptions,
-          eventBus);
+          eventBus,
+          mock(DutyMetrics.class));
 
   @BeforeEach
   public void setUp() {

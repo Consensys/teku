@@ -95,6 +95,7 @@ import tech.pegasys.teku.util.time.channels.TimeTickChannel;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DepositProvider;
+import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
@@ -325,7 +326,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationPool,
             attestationManager,
             attestationTopicSubscriber,
-            eventBus);
+            eventBus,
+            DutyMetrics.create(metricsSystem, timeProvider, recentChainData));
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationTopicSubscriber)
         .subscribe(ValidatorApiChannel.class, validatorApiHandler);

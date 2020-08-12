@@ -83,6 +83,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final AttestationManager attestationManager;
   private final AttestationTopicSubscriber attestationTopicSubscriber;
   private final EventBus eventBus;
+  private final DutyMetrics dutyMetrics;
 
   public ValidatorApiHandler(
       final CombinedChainDataClient combinedChainDataClient,
@@ -92,7 +93,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
       final AttestationTopicSubscriber attestationTopicSubscriber,
-      final EventBus eventBus) {
+      final EventBus eventBus,
+      final DutyMetrics dutyMetrics) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateTracker = syncStateTracker;
     this.stateTransition = stateTransition;
@@ -101,6 +103,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.attestationManager = attestationManager;
     this.attestationTopicSubscriber = attestationTopicSubscriber;
     this.eventBus = eventBus;
+    this.dutyMetrics = dutyMetrics;
   }
 
   @Override
@@ -257,15 +260,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     attestationManager
         .onAttestation(ValidateableAttestation.fromAttestation(attestation))
         .finish(
-            result ->
-                result.ifInvalid(
-                    reason -> {
+            result -> {
+              result.ifInvalid(
+                  reason ->
                       VALIDATOR_LOGGER.producedInvalidAttestation(
                           attestation.getData().getSlot(),
                           getValidatorIndex(attestation),
                           expectedValidatorIndex,
-                          reason);
-                    }),
+                          reason));
+              dutyMetrics.onAttestationPublished(attestation.getData().getSlot());
+            },
             err ->
                 LOG.error(
                     "Failed to send signed attestation for validator {}, slot {}, block {}",
