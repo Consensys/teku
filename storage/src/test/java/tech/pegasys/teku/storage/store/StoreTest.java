@@ -137,6 +137,56 @@ class StoreTest extends AbstractStoreTest {
   }
 
   @Test
+  public void getCheckpointState_forGenesis() {
+    final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
+    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
+    final BlockProvider blockProvider = blockProviderFromChainBuilder();
+
+    final UpdatableStore store =
+        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis).join();
+    final Checkpoint checkpoint = new Checkpoint(UInt64.ZERO, genesisBlockAndState.getRoot());
+
+    final BeaconState baseState = genesisBlockAndState.getState();
+    final BeaconState result = store.getCheckpointState(checkpoint, baseState);
+    assertThat(result).isEqualTo(baseState);
+  }
+
+  @Test
+  public void getCheckpointState_forEpochPastGenesis() {
+    final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
+    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
+    final BlockProvider blockProvider = blockProviderFromChainBuilder();
+
+    final UpdatableStore store =
+        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis).join();
+    final Checkpoint checkpoint = new Checkpoint(UInt64.ONE, genesisBlockAndState.getRoot());
+
+    final BeaconState baseState = genesisBlockAndState.getState();
+    final BeaconState result = store.getCheckpointState(checkpoint, baseState);
+    assertThat(result.getSlot()).isGreaterThan(baseState.getSlot());
+    assertThat(result.getSlot()).isEqualTo(checkpoint.getEpochStartSlot());
+    assertThat(result.getLatest_block_header().hash_tree_root()).isEqualTo(checkpoint.getRoot());
+  }
+
+  @Test
+  public void getCheckpointState_invalidState() {
+    final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
+    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
+    final BlockProvider blockProvider = blockProviderFromChainBuilder();
+
+    final UpdatableStore store =
+        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis).join();
+    final SignedBlockAndState futureBlockAndState =
+        chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(UInt64.valueOf(2)));
+
+    final Checkpoint checkpoint = new Checkpoint(UInt64.ONE, futureBlockAndState.getRoot());
+
+    assertThatThrownBy(() -> store.getCheckpointState(checkpoint, futureBlockAndState.getState()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Latest state must be at or prior to checkpoint slot");
+  }
+
+  @Test
   public void
       retrieveCheckpointState_shouldThrowInvalidCheckpointExceptionWhenEpochBeforeBlockRoot()
           throws Exception {

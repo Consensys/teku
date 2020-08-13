@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -126,6 +127,13 @@ class SignedAggregateAndProofValidatorTest {
   public void setUp() {
     chainUpdater.initializeGenesis(false);
     bestBlock = chainUpdater.addNewBestBlock();
+
+    final AttestationValidator realAttestationValidator = new AttestationValidator(recentChainData);
+    when(attestationValidator.resolveStateForAttestation(any(), any()))
+        .thenAnswer(
+            i ->
+                realAttestationValidator.resolveStateForAttestation(
+                    i.getArgument(0), i.getArgument(1)));
   }
 
   @Test
