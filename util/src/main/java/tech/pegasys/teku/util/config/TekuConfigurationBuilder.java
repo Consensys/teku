@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.util.config;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -47,8 +48,9 @@ public class TekuConfigurationBuilder {
   private int interopNumberOfValidators;
   private boolean interopEnabled;
   private String validatorsKeyFile;
-  private List<String> validatorKeystoreFiles;
-  private List<String> validatorKeystorePasswordFiles;
+  private List<String> validatorKeystoreFiles = new ArrayList<>();
+  private List<String> validatorKeystorePasswordFiles = new ArrayList<>();
+  private List<String> validatorKeys = new ArrayList<>();
   private List<String> validatorExternalSignerPublicKeys;
   private String validatorExternalSignerUrl;
   private int validatorExternalSignerTimeout;
@@ -226,6 +228,11 @@ public class TekuConfigurationBuilder {
   public TekuConfigurationBuilder setValidatorKeystorePasswordFiles(
       final List<String> validatorKeystorePasswordFiles) {
     this.validatorKeystorePasswordFiles = validatorKeystorePasswordFiles;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setValidatorKeys(final List<String> validatorKeys) {
+    this.validatorKeys = validatorKeys;
     return this;
   }
 
@@ -473,6 +480,7 @@ public class TekuConfigurationBuilder {
         validatorsKeyFile,
         validatorKeystoreFiles,
         validatorKeystorePasswordFiles,
+        validatorKeys,
         validatorExternalSignerPublicKeys,
         validatorExternalSignerUrl,
         validatorExternalSignerTimeout,
