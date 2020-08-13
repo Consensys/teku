@@ -36,7 +36,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import tech.pegasys.teku.events.AsyncEventDeliverer.QueueReader;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.ScheduledExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 
 class EventChannelTest {
@@ -44,11 +47,15 @@ class EventChannelTest {
   private final ChannelExceptionHandler exceptionHandler = mock(ChannelExceptionHandler.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private ExecutorService executor;
+  private AsyncRunner realAsyncRunner;
 
   @AfterEach
   public void tearDown() {
     if (executor != null) {
       executor.shutdownNow();
+    }
+    if (realAsyncRunner != null) {
+      realAsyncRunner.shutdown();
     }
   }
 
@@ -223,7 +230,12 @@ class EventChannelTest {
             throw new RuntimeException(e);
           }
         };
-    channel.subscribeMultithreaded(subscriber, 2); // Two subscribing threads
+
+    // Two subscribing threads
+    realAsyncRunner =
+        ScheduledExecutorAsyncRunner.create(
+            EventChannelTest.class.getName(), 2, new MetricTrackingExecutorFactory(metricsSystem));
+    channel.subscribeMultithreaded(subscriber, realAsyncRunner);
 
     final CountDownLatch started1 = new CountDownLatch(1);
     final CountDownLatch await1 = new CountDownLatch(1);

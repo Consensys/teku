@@ -15,6 +15,7 @@ package tech.pegasys.teku.services.chainstorage;
 
 import static tech.pegasys.teku.util.config.Constants.STORAGE_QUERY_CHANNEL_PARALLELISM;
 
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
@@ -61,6 +62,8 @@ public class StorageService extends Service {
                   serviceConfig.getConfig().isEth1DepositsFromStorageEnabled());
           protoArrayStorage = new ProtoArrayStorage(database);
 
+          final AsyncRunner storageQueryAsyncRunner =
+              serviceConfig.createAsyncRunner("storageQuery", STORAGE_QUERY_CHANNEL_PARALLELISM);
           serviceConfig
               .getEventChannels()
               .subscribe(Eth1DepositStorageChannel.class, depositStorage)
@@ -68,7 +71,7 @@ public class StorageService extends Service {
               .subscribe(StorageUpdateChannel.class, chainStorage)
               .subscribe(ProtoArrayStorageChannel.class, protoArrayStorage)
               .subscribeMultithreaded(
-                  StorageQueryChannel.class, chainStorage, STORAGE_QUERY_CHANNEL_PARALLELISM);
+                  StorageQueryChannel.class, chainStorage, storageQueryAsyncRunner);
 
           chainStorage.start();
         });
