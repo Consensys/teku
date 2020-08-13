@@ -33,6 +33,7 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.core.signatures.SlashingProtectedSigner;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.core.signatures.UnprotectedSigner;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.util.bytes.KeyFormatter;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.validator.client.Validator;
@@ -41,9 +42,11 @@ import tech.pegasys.teku.validator.client.signer.ExternalMessageSignerService;
 public class ValidatorLoader {
 
   private final SlashingProtector slashingProtector;
+  private final AsyncRunner asyncRunner;
 
-  public ValidatorLoader(final SlashingProtector slashingProtector) {
+  public ValidatorLoader(final SlashingProtector slashingProtector, final AsyncRunner asyncRunner) {
     this.slashingProtector = slashingProtector;
+    this.asyncRunner = asyncRunner;
   }
 
   public Map<BLSPublicKey, Validator> initializeValidators(TekuConfiguration config) {
@@ -69,7 +72,8 @@ public class ValidatorLoader {
                 new Validator(
                     blsKeyPair.getPublicKey(),
                     createSigner(
-                        blsKeyPair.getPublicKey(), new LocalMessageSignerService(blsKeyPair)),
+                        blsKeyPair.getPublicKey(),
+                        new LocalMessageSignerService(blsKeyPair, asyncRunner)),
                     Optional.ofNullable(config.getGraffiti())))
         .collect(toMap(Validator::getPublicKey, Function.identity()));
   }

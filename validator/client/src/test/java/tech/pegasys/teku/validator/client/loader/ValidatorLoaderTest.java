@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.validator.client.Validator;
 
@@ -40,8 +41,10 @@ class ValidatorLoaderTest {
           + "  pubkey: '0xa99a76ed7796f7be22d5b7e85deeb7c5677e88e511e0b337618f8c4eb61349b4bf2d153f649f7b53359fe8b94a38e44c'}";
 
   private final SlashingProtector slashingProtector = mock(SlashingProtector.class);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
-  private final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector);
+  private final ValidatorLoader validatorLoader =
+      new ValidatorLoader(slashingProtector, asyncRunner);
 
   @Test
   void initializeValidatorsWithExternalMessageSignerWhenConfigHasExternalSigningPublicKeys() {
