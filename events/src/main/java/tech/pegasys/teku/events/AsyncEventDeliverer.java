@@ -23,7 +23,10 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.LockSupport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -128,7 +131,15 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
 
     void deliverNextEvent() throws InterruptedException {
       final Runnable task = queue.take();
-      eventExecutor.execute(task);
+      while (!stopped.get()) {
+        try {
+          eventExecutor.execute(task);
+          return;
+        } catch (final RejectedExecutionException e) {
+          LOG.warn("Rejected execution while trying to deliver event. Retrying delivery.", e);
+          LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(500));
+        }
+      }
     }
   }
 }
