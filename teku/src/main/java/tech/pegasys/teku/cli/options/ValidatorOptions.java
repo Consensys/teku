@@ -30,7 +30,7 @@ public class ValidatorOptions {
               + "The path separator is operating system dependent, and should be ';' in windows rather than ':'.",
       split = ",",
       arity = "1..*")
-  private List<String> validatorKeys;
+  private List<String> validatorKeys = new ArrayList<>();
 
   @Option(
       names = {"--validators-key-files"},

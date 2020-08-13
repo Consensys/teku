@@ -64,7 +64,6 @@ public class TekuConfiguration implements MetricsConfig {
 
   // Validator
   private final String validatorsKeyFile;
-  // TODO (#1918): The following two options will eventually be moved to the validator subcommand
   private final List<String> validatorKeystoreFiles;
   private final List<String> validatorKeystorePasswordFiles;
   private final List<String> validatorKeys;
@@ -542,7 +541,7 @@ public class TekuConfiguration implements MetricsConfig {
 
   public List<Pair<Path, Path>> getValidatorKeystorePasswordFilePairs() {
     final KeyStoreFilesLocator processor =
-        new KeyStoreFilesLocator(Optional.ofNullable(validatorKeys), File.pathSeparator);
+        new KeyStoreFilesLocator(validatorKeys, File.pathSeparator);
     processor.parse();
     if (validatorKeystoreFiles != null) {
       validateKeyStoreFilesAndPasswordFilesConfig();

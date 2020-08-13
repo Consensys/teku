@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.util.config;
 
+import static java.util.stream.Collectors.toList;
+
 import com.google.common.base.Splitter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,16 +31,12 @@ import org.apache.logging.log4j.Logger;
 
 public class KeyStoreFilesLocator {
   private static final Logger LOG = LogManager.getLogger();
-  private final List<Pair<Path, Path>> filePairs;
-  private final Map<Path, Path> pathMap;
+  private final Map<Path, Path> pathMap = new HashMap<>();
   private final List<String> colonSeparatedPairs;
   private final String pathSeparator;
 
-  public KeyStoreFilesLocator(
-      Optional<List<String>> maybeColonSeparatedPairs, final String pathSeparator) {
-    this.filePairs = new ArrayList<>();
-    this.colonSeparatedPairs = maybeColonSeparatedPairs.orElse(List.of());
-    this.pathMap = new HashMap<>();
+  public KeyStoreFilesLocator(final List<String> colonSeparatedPairs, final String pathSeparator) {
+    this.colonSeparatedPairs = colonSeparatedPairs;
     this.pathSeparator = pathSeparator;
   }
 
@@ -53,17 +50,8 @@ public class KeyStoreFilesLocator {
                 + pathSeparator
                 + "' as expected.");
       }
-      if (currentEntry.matches(".*:.*:.*")) {
-        throw new InvalidConfigurationException(
-            "validatorKeys entry ("
-                + currentEntry
-                + ") contained more than one '"
-                + pathSeparator
-                + "', not keyFile'"
-                + pathSeparator
-                + "'passFile as expected.");
-      }
-      final List<String> entry = Splitter.on(pathSeparator).splitToList(currentEntry);
+
+      final List<String> entry = Splitter.on(pathSeparator).limit(2).splitToList(currentEntry);
       parseEntry(entry.get(0), entry.get(1));
     }
   }
@@ -81,17 +69,17 @@ public class KeyStoreFilesLocator {
 
     if (!keyFile.exists()) {
       throw new InvalidConfigurationException(
-          String.format("Invalid configuration. could not find the key file (%s).", keyFileName));
+          String.format("Invalid configuration. Could not find the key file (%s).", keyFileName));
     }
     if (!passwordFile.exists()) {
       throw new InvalidConfigurationException(
           String.format(
-              "Invalid configuration. could not find the password file (%s).", passwordFileName));
+              "Invalid configuration. Could not find the password file (%s).", passwordFileName));
     }
     if (keyFile.isDirectory() != passwordFile.isDirectory()) {
       throw new InvalidConfigurationException(
           String.format(
-              "Invalid configuration. validatorKeys entry (%s"
+              "Invalid configuration. --validator-keys entry (%s"
                   + pathSeparator
                   + "%s) must be both directories or both files",
               keyFileName,
@@ -99,34 +87,35 @@ public class KeyStoreFilesLocator {
     }
     if (keyFile.isFile()) {
       pathMap.putIfAbsent(keyFile.toPath(), passwordFile.toPath());
-      filePairs.add(Pair.of(keyFile.toPath(), passwordFile.toPath()));
     } else {
       parseDirectory(keyFile, passwordFile);
     }
   }
 
   void parseDirectory(final File keyDirectory, final File passwordDirectory) {
-    final String keyBasePath = keyDirectory.getAbsolutePath();
-    final String passwordBasePath = passwordDirectory.getAbsolutePath();
     try (Stream<Path> walk = Files.walk(keyDirectory.toPath())) {
       walk.filter(Files::isRegularFile)
           .filter(
               (path) ->
                   !path.getFileName().toString().startsWith(".")
-                      && path.toString().endsWith(".json"))
+                      && path.getFileName().toString().endsWith(".json"))
           .forEach(
               path -> {
-                final String keyFilename = path.toAbsolutePath().toString();
-                final String passwordFileExpectedLocation =
-                    keyFilename
-                        .substring(0, keyFilename.length() - 5)
-                        .replace(keyBasePath, passwordBasePath);
-                final Optional<File> maybePassFile = findPassFile(passwordFileExpectedLocation);
+                final Path relativeDirectoryPath =
+                    keyDirectory.toPath().relativize(path.getParent());
+                final String keystoreName = path.getFileName().toString();
+                final Path passwordPath =
+                    passwordDirectory
+                        .toPath()
+                        .resolve(relativeDirectoryPath)
+                        .resolve(
+                            keystoreName.substring(0, keystoreName.length() - ".json".length()));
+                final Optional<File> maybePassFile =
+                    findPassFile(passwordPath.toAbsolutePath().toString());
                 if (maybePassFile.isEmpty()) {
                   throw new InvalidConfigurationException(
                       String.format(
-                          "Invalid configuration. No matching password file for (%s) in the key path. "
-                              + "For key file 'f.json', expect to see password 'f.txt'.",
+                          "Invalid configuration. No matching password file for (%s) in the key path.",
                           path.toAbsolutePath().toString()));
                 }
                 pathMap.putIfAbsent(path, maybePassFile.get().toPath());
@@ -149,8 +138,8 @@ public class KeyStoreFilesLocator {
   }
 
   public List<Pair<Path, Path>> getFilePairs() {
-    final List<Pair<Path, Path>> pairs = new ArrayList<>();
-    pathMap.forEach((k, v) -> pairs.add(Pair.of(k, v)));
-    return pairs;
+    return pathMap.entrySet().stream()
+        .map(entry -> Pair.of(entry.getKey(), entry.getValue()))
+        .collect(toList());
   }
 }
