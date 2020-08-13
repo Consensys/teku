@@ -29,6 +29,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
+import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class AggregateGenerator {
@@ -58,7 +59,9 @@ public class AggregateGenerator {
   }
 
   private Signer getSignerForValidatorIndex(final int validatorIndex) {
-    return new UnprotectedSigner(new LocalMessageSignerService(validatorKeys.get(validatorIndex)));
+    return new UnprotectedSigner(
+        new LocalMessageSignerService(
+            validatorKeys.get(validatorIndex), DelayedExecutorAsyncRunner.create()));
   }
 
   public class Generator {

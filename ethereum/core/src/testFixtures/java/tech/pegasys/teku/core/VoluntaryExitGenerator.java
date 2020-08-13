@@ -24,6 +24,7 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -39,7 +40,9 @@ public class VoluntaryExitGenerator {
     VoluntaryExit exit = new VoluntaryExit(epoch, UInt64.valueOf(validatorIndex));
 
     BLSSignature exitSignature =
-        new UnprotectedSigner(new LocalMessageSignerService(getKeypair(validatorIndex, valid)))
+        new UnprotectedSigner(
+                new LocalMessageSignerService(
+                    getKeypair(validatorIndex, valid), DelayedExecutorAsyncRunner.create()))
             .signVoluntaryExit(exit, forkInfo)
             .join();
 
