@@ -97,8 +97,7 @@ public class KeyStoreFilesLocator {
       walk.filter(Files::isRegularFile)
           .filter(
               (path) ->
-                  !path.toFile().isHidden()
-                      && path.getFileName().toString().endsWith(".json"))
+                  !path.toFile().isHidden() && path.getFileName().toString().endsWith(".json"))
           .forEach(
               path -> {
                 final Path relativeDirectoryPath =
