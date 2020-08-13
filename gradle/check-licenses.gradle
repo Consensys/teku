@@ -31,6 +31,7 @@ ext.acceptedLicenses = [
     'Apache License, Version 2.0',
     'Bouncy Castle Licence',
     'Public Domain',
+    'Public Domain, per Creative Commons CC0',
     'Mozilla Public License 1.0',
     'Mozilla Public License Version 1.1',
     'Mozilla Public License Version 2.0',
@@ -94,6 +95,7 @@ downloadLicenses {
       ],
       (bsd2Clause): [
               'BSD 2-Clause',
+              'BSD-2-Clause',
               'BSD 2-Clause "New" or "Revised" License (BSD-2-Clause)',
               license('BSD 2-clause', 'http://opensource.org/licenses/BSD-2-Clause'),
               license('BSD 2-Clause', 'http://www.scala-lang.org/license.html'),
