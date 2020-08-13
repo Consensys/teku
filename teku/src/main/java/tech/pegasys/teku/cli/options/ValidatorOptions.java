@@ -20,12 +20,24 @@ import picocli.CommandLine.Option;
 import tech.pegasys.teku.util.cli.GraffitiConverter;
 
 public class ValidatorOptions {
+  @Option(
+      names = {"--validator-keys"},
+      paramLabel = "<KEY_DIR>:<PASS_DIR> | <KEY_FILE>:<PASS_FILE>",
+      description =
+          "<KEY_DIR>:<PASS_DIR> will find <KEY_DIR>/**.json, and expect to find <PASS_DIR>/**.txt.\n"
+              + "<KEY_FILE>:<PASS_FILE> will expect that the file <KEY_FILE> exists, "
+              + "and the file containing the password for it is <PASS_FILE>.\n"
+              + "The path separator is operating system dependent, and should be ';' in windows rather than ':'.",
+      split = ",",
+      arity = "1..*")
+  private List<String> validatorKeys = new ArrayList<>();
 
   @Option(
       names = {"--validators-key-files"},
       paramLabel = "<FILENAMES>",
       description = "The list of encrypted keystore files to load the validator keys from",
       split = ",",
+      hidden = true,
       arity = "0..*")
   private List<String> validatorKeystoreFiles = new ArrayList<>();
 
@@ -34,6 +46,7 @@ public class ValidatorOptions {
       paramLabel = "<FILENAMES>",
       description = "The list of password files to decrypt the validator keystore files",
       split = ",",
+      hidden = true,
       arity = "0..*")
   private List<String> validatorKeystorePasswordFiles = new ArrayList<>();
 
@@ -90,5 +103,9 @@ public class ValidatorOptions {
 
   public Bytes32 getGraffiti() {
     return graffiti;
+  }
+
+  public List<String> getValidatorKeys() {
+    return validatorKeys;
   }
 }
