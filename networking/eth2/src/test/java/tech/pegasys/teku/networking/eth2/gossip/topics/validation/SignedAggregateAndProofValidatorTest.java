@@ -29,6 +29,7 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.Interna
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.List;
 import java.util.OptionalInt;
@@ -112,6 +113,7 @@ class SignedAggregateAndProofValidatorTest {
   private final SignedAggregateAndProofValidator validator =
       new SignedAggregateAndProofValidator(recentChainData, attestationValidator);
   private SignedBlockAndState bestBlock;
+  private SignedBlockAndState genesis;
 
   @BeforeAll
   public static void init() {
@@ -125,7 +127,7 @@ class SignedAggregateAndProofValidatorTest {
 
   @BeforeEach
   public void setUp() {
-    chainUpdater.initializeGenesis(false);
+    genesis = chainUpdater.initializeGenesis(false);
     bestBlock = chainUpdater.addNewBestBlock();
 
     final AttestationValidator realAttestationValidator = new AttestationValidator(recentChainData);
@@ -140,6 +142,19 @@ class SignedAggregateAndProofValidatorTest {
   public void shouldReturnValidForValidAggregate() {
     final BeaconBlockAndState chainHead = recentChainData.getHeadBlockAndState().orElseThrow();
     final SignedAggregateAndProof aggregate = generator.validAggregateAndProof(chainHead);
+    whenAttestationIsValid(aggregate);
+    assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregate)))
+        .isCompletedWithValue(ACCEPT);
+  }
+
+  @Test
+  public void shouldReturnValidForValidAggregate_whenManyBlocksHaveBeenSkipped() {
+    final BeaconBlockAndState chainHead = recentChainData.getHeadBlockAndState().orElseThrow();
+    final UInt64 currentSlot = chainHead.getSlot().plus(SLOTS_PER_EPOCH * 3);
+    storageSystem.chainUpdater().setCurrentSlot(currentSlot);
+
+    final SignedAggregateAndProof aggregate =
+        generator.validAggregateAndProof(chainHead, currentSlot);
     whenAttestationIsValid(aggregate);
     assertThat(validator.validate(ValidateableAttestation.fromSignedAggregate(aggregate)))
         .isCompletedWithValue(ACCEPT);
@@ -336,8 +351,7 @@ class SignedAggregateAndProofValidatorTest {
     final SignedAggregateAndProof aggregateAndProof1 =
         generator
             .generator()
-            .blockAndState(chainHead)
-            .slot(ZERO)
+            .blockAndState(genesis.toUnsigned())
             .aggregatorIndex(aggregatorIndex)
             .generate();
 
@@ -346,9 +360,8 @@ class SignedAggregateAndProofValidatorTest {
     final SignedAggregateAndProof aggregateAndProof2 =
         generator
             .generator()
-            .blockAndState(chainHead)
+            .blockAndState(chainHead, epochOneCommitteeAssignment.getSlot())
             .committeeIndex(epochOneCommitteeAssignment.getCommitteeIndex())
-            .slot(epochOneCommitteeAssignment.getSlot())
             .aggregatorIndex(aggregatorIndex)
             .generate();
     whenAttestationIsValid(aggregateAndProof1);
@@ -375,10 +388,9 @@ class SignedAggregateAndProofValidatorTest {
     final SignedAggregateAndProof aggregate =
         generator
             .generator()
-            .blockAndState(chainHead)
+            .blockAndState(chainHead, committeeAssignment.getSlot())
             .aggregatorIndex(UInt64.valueOf(aggregatorIndex))
             .committeeIndex(committeeAssignment.getCommitteeIndex())
-            .slot(committeeAssignment.getSlot())
             .generate();
     whenAttestationIsValid(aggregate);
     // Sanity check

@@ -32,6 +32,8 @@ import java.util.stream.StreamSupport;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.core.exceptions.EpochProcessingException;
+import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.signatures.LocalMessageSignerService;
 import tech.pegasys.teku.core.signatures.UnprotectedSigner;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -200,8 +202,10 @@ public class AttestationGenerator {
    * assigned slot.
    */
   private static class AttestationIterator implements Iterator<Attestation> {
-    // The head block to attest to with its corresponding state
-    private final BeaconBlockAndState headBlockAndState;
+    // The latest block being attested to
+    private final BeaconBlock headBlock;
+    // The latest state processed through to the current slot
+    private final BeaconState headState;
     // The assigned slot to generate attestations for
     private final UInt64 assignedSlot;
     // The epoch containing the assigned slot
@@ -218,12 +222,26 @@ public class AttestationGenerator {
         final UInt64 assignedSlot,
         final List<BLSKeyPair> validatorKeys,
         final Function<Integer, BLSKeyPair> validatorKeySupplier) {
-      this.headBlockAndState = headBlockAndState;
+      this.headBlock = headBlockAndState.getBlock();
+      this.headState = generateHeadState(headBlockAndState.getState(), assignedSlot);
       this.validatorKeys = validatorKeys;
       this.assignedSlot = assignedSlot;
       this.assignedSlotEpoch = compute_epoch_at_slot(assignedSlot);
       this.validatorKeySupplier = validatorKeySupplier;
       generateNextAttestation();
+    }
+
+    private BeaconState generateHeadState(final BeaconState state, final UInt64 slot) {
+      if (state.getSlot().equals(slot)) {
+        return state;
+      }
+
+      StateTransition stateTransition = new StateTransition();
+      try {
+        return stateTransition.process_slots(state, slot);
+      } catch (EpochProcessingException | SlotProcessingException e) {
+        throw new IllegalStateException(e);
+      }
     }
 
     public static AttestationIterator create(
@@ -269,8 +287,6 @@ public class AttestationGenerator {
     private void generateNextAttestation() {
       nextAttestation = Optional.empty();
 
-      final BeaconState headState = headBlockAndState.getState();
-      final BeaconBlock headBlock = headBlockAndState.getBlock();
       int lastProcessedValidatorIndex = currentValidatorIndex;
       for (int validatorIndex = currentValidatorIndex;
           validatorIndex < validatorKeys.size();
