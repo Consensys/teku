@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -31,10 +32,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Set;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -128,7 +132,7 @@ public class AttestationValidator {
                 return SAVE_FOR_FUTURE;
               }
 
-              final BeaconState state = maybeState.get();
+              final BeaconState state = resolveStateForAttestation(attestation, maybeState.get());
 
               // The attestation's committee index (attestation.data.index) is for the correct
               // subnet.
@@ -153,6 +157,33 @@ public class AttestationValidator {
               }
               return ACCEPT;
             });
+  }
+
+  /**
+   * Committee information is only guaranteed to be stable up to 1 epoch ahead, if block attested to
+   * is too old, we need to roll the corresponding state forward to process the attestation
+   *
+   * @param attestation The attestation to be processed
+   * @param blockState The state corresponding to the block being attested to
+   * @return The state to use for validation of this attestation
+   */
+  public BeaconState resolveStateForAttestation(
+      final Attestation attestation, final BeaconState blockState) {
+    final Bytes32 blockRoot = attestation.getData().getBeacon_block_root();
+    final Checkpoint targetEpoch = attestation.getData().getTarget();
+    final UInt64 earliestSlot =
+        CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(targetEpoch.getEpoch());
+    final UInt64 earliestEpoch = compute_epoch_at_slot(earliestSlot);
+
+    final BeaconState state;
+    if (blockState.getSlot().isLessThan(earliestSlot)) {
+      final Checkpoint checkpoint = new Checkpoint(earliestEpoch, blockRoot);
+      state = recentChainData.getStore().getCheckpointState(checkpoint, blockState);
+    } else {
+      state = blockState;
+    }
+
+    return state;
   }
 
   private ValidatorAndTargetEpoch getValidatorAndTargetEpoch(final Attestation attestation) {
