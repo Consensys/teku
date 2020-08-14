@@ -451,6 +451,17 @@ class Store implements UpdatableStore {
                     }));
   }
 
+  @Override
+  public BeaconState getCheckpointState(
+      final Checkpoint checkpoint, final BeaconState latestStateAtEpoch) {
+    if (latestStateAtEpoch.getSlot().isGreaterThan(checkpoint.getEpochStartSlot())) {
+      throw new IllegalArgumentException("Latest state must be at or prior to checkpoint slot");
+    }
+    final BeaconState checkpointState = regenerateCheckpointState(checkpoint, latestStateAtEpoch);
+    putCheckpointState(checkpoint, checkpointState);
+    return checkpointState;
+  }
+
   private Optional<BeaconState> getCheckpointStateIfAvailable(final Checkpoint checkpoint) {
     readLock.lock();
     try {
@@ -837,6 +848,12 @@ class Store implements UpdatableStore {
             Optional.of(regenerateCheckpointState(checkpoint, inMemoryCheckpointBlockState)));
       }
       return Store.this.retrieveCheckpointState(checkpoint);
+    }
+
+    @Override
+    public BeaconState getCheckpointState(
+        final Checkpoint checkpoint, final BeaconState latestStateAtEpoch) {
+      return Store.this.getCheckpointState(checkpoint, latestStateAtEpoch);
     }
 
     @Override

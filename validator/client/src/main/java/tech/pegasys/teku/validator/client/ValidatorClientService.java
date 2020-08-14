@@ -51,7 +51,7 @@ public class ValidatorClientService extends Service {
         new SlashingProtector(
             new SyncDataAccessor(),
             Path.of(config.getConfig().getDataPath(), "validators", "slashprotection"));
-    final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector);
+    final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector, asyncRunner);
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(config.getConfig());
     final ValidatorApiChannel validatorApiChannel =

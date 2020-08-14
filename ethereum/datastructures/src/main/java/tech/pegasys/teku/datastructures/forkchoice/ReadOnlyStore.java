@@ -86,4 +86,6 @@ public interface ReadOnlyStore {
   SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot);
 
   SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint);
+
+  BeaconState getCheckpointState(final Checkpoint checkpoint, final BeaconState latestStateAtEpoch);
 }
