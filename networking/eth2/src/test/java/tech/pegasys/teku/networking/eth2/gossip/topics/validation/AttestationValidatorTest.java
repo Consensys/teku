@@ -104,6 +104,17 @@ class AttestationValidatorTest {
   }
 
   @Test
+  public void shouldReturnValidForValidAttestation_whenManyBlocksHaveBeenSkipped() {
+    final BeaconBlockAndState head = recentChainData.getHeadBlockAndState().orElseThrow();
+    final UInt64 currentSlot = head.getSlot().plus(SLOTS_PER_EPOCH * 3);
+    storageSystem.chainUpdater().setCurrentSlot(currentSlot);
+
+    final Attestation attestation =
+        attestationGenerator.validAttestation(head, head.getSlot().plus(SLOTS_PER_EPOCH * 3));
+    assertThat(validate(attestation)).isEqualTo(ACCEPT);
+  }
+
+  @Test
   public void shouldRejectAttestationWithIncorrectAggregateBitsSize() {
     final Attestation attestation =
         attestationGenerator.validAttestation(recentChainData.getHeadBlockAndState().orElseThrow());

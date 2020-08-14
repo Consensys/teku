@@ -173,6 +173,15 @@ class TestStoreImpl implements MutableStore {
     return SafeFuture.completedFuture(getCheckpointState(checkpoint));
   }
 
+  @Override
+  public BeaconState getCheckpointState(
+      final Checkpoint checkpoint, final BeaconState latestStateAtEpoch) {
+    if (!latestStateAtEpoch.getSlot().equals(checkpoint.getEpochStartSlot())) {
+      throw new UnsupportedOperationException("Checkpoint state calculation not supported");
+    }
+    return latestStateAtEpoch;
+  }
+
   // Mutable methods
   @Override
   public void putBlockAndState(final SignedBeaconBlock block, final BeaconState state) {
