@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
@@ -57,6 +58,7 @@ class BeaconChainMetricsTest {
   private final Checkpoint checkpoint = new Checkpoint(NODE_SLOT_VALUE, root);
 
   private static final BeaconBlockAndState blockAndState = mock(BeaconBlockAndState.class);
+  private final BeaconState randomState = dataStructureUtil.randomBeaconState();
   private final BeaconState state = mock(BeaconState.class);
 
   private final NodeSlot nodeSlot = new NodeSlot(NODE_SLOT_VALUE);
@@ -65,10 +67,26 @@ class BeaconChainMetricsTest {
   private final RecentChainData preGenesisChainData =
       MemoryOnlyRecentChainData.create(mock(EventBus.class));
   private final Eth2Network eth2Network = mock(Eth2Network.class);
+  private final Checkpoint finalizedCheckpoint = dataStructureUtil.randomCheckpoint();
+  private final Checkpoint currentJustifiedCheckpoint = dataStructureUtil.randomCheckpoint();
+  private final Checkpoint previousJustifiedCheckpoint = dataStructureUtil.randomCheckpoint();
 
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final BeaconChainMetrics beaconChainMetrics =
       new BeaconChainMetrics(recentChainData, nodeSlot, metricsSystem, eth2Network);
+
+  @BeforeEach
+  void setUp() {
+    when(recentChainData.getBestState()).thenReturn(Optional.of(randomState));
+    when(state.getFinalized_checkpoint()).thenReturn(finalizedCheckpoint);
+    when(state.getCurrent_justified_checkpoint()).thenReturn(currentJustifiedCheckpoint);
+    when(state.getPrevious_justified_checkpoint()).thenReturn(previousJustifiedCheckpoint);
+    //
+    // when(state.getCurrent_epoch_attestations()).thenReturn(SSZList.empty(PendingAttestation.class));
+    //    when(state.getPrevious_epoch_attestations())
+    //        .thenReturn(SSZList.empty(PendingAttestation.class));
+    //    when(state.getSlot()).thenReturn(NODE_SLOT_VALUE);
+  }
 
   @Test
   void getLongFromRoot_shouldParseNegativeOne() {
@@ -116,9 +134,9 @@ class BeaconChainMetricsTest {
   @Test
   void getFinalizedEpochValue_shouldSupplyValueWhenStoreIsPresent() {
     when(recentChainData.isPreGenesis()).thenReturn(false);
-    when(recentChainData.getFinalizedEpoch()).thenReturn(ONE);
-
-    assertThat(metricsSystem.getGauge(BEACON, "finalized_epoch").getValue()).isEqualTo(1);
+    beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
+    assertThat(metricsSystem.getGauge(BEACON, "finalized_epoch").getValue())
+        .isEqualTo(randomState.getFinalized_checkpoint().getEpoch().longValue());
   }
 
   @Test
@@ -151,11 +169,11 @@ class BeaconChainMetricsTest {
 
   @Test
   void getFinalizedRootValue_shouldReturnValueWhenStoreIsPresent() {
-    when(recentChainData.getHeadBlockAndState()).thenReturn(Optional.of(blockAndState));
-    when(blockAndState.getState()).thenReturn(state);
-    when(state.getFinalized_checkpoint()).thenReturn(checkpoint);
+    beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
 
-    assertThat(metricsSystem.getGauge(BEACON, "finalized_root").getValue()).isEqualTo(-1);
+    assertThat(metricsSystem.getGauge(BEACON, "finalized_root").getValue())
+        .isEqualTo(
+            BeaconChainMetrics.getLongFromRoot(randomState.getFinalized_checkpoint().getRoot()));
   }
 
   @Test
@@ -167,13 +185,10 @@ class BeaconChainMetricsTest {
 
   @Test
   void getPreviousJustifiedEpochValue_shouldSupplyValueWhenStoreIsPresent() {
-    when(recentChainData.isPreGenesis()).thenReturn(false);
-    when(recentChainData.getHeadBlockAndState()).thenReturn(Optional.of(blockAndState));
-    when(blockAndState.getState()).thenReturn(state);
-    when(state.getPrevious_justified_checkpoint()).thenReturn(checkpoint);
+    beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
 
     assertThat(metricsSystem.getGauge(BEACON, "previous_justified_epoch").getValue())
-        .isEqualTo(NODE_SLOT_VALUE.longValue());
+        .isEqualTo(randomState.getPrevious_justified_checkpoint().getEpoch().longValue());
   }
 
   @Test
@@ -185,11 +200,12 @@ class BeaconChainMetricsTest {
 
   @Test
   void getPreviousJustifiedRootValue_shouldReturnValueWhenStoreIsPresent() {
-    when(recentChainData.getHeadBlockAndState()).thenReturn(Optional.of(blockAndState));
-    when(blockAndState.getState()).thenReturn(state);
-    when(state.getPrevious_justified_checkpoint()).thenReturn(checkpoint);
+    beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
 
-    assertThat(metricsSystem.getGauge(BEACON, "previous_justified_root").getValue()).isEqualTo(-1);
+    assertThat(metricsSystem.getGauge(BEACON, "previous_justified_root").getValue())
+        .isEqualTo(
+            BeaconChainMetrics.getLongFromRoot(
+                randomState.getPrevious_justified_checkpoint().getRoot()));
   }
 
   @Test
@@ -201,11 +217,11 @@ class BeaconChainMetricsTest {
 
   @Test
   void getJustifiedRootValue_shouldReturnValueWhenStoreIsPresent() {
-    when(recentChainData.getHeadBlockAndState()).thenReturn(Optional.of(blockAndState));
-    when(blockAndState.getState()).thenReturn(state);
-    when(state.getCurrent_justified_checkpoint()).thenReturn(new Checkpoint(NODE_SLOT_VALUE, root));
-
-    assertThat(metricsSystem.getGauge(BEACON, "current_justified_root").getValue()).isEqualTo(-1);
+    beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
+    assertThat(metricsSystem.getGauge(BEACON, "current_justified_root").getValue())
+        .isEqualTo(
+            BeaconChainMetrics.getLongFromRoot(
+                randomState.getCurrent_justified_checkpoint().getRoot()));
   }
 
   @Test
@@ -217,10 +233,9 @@ class BeaconChainMetricsTest {
 
   @Test
   void getJustifiedEpochValue_shouldReturnValueWhenStoreIsPresent() {
-    when(recentChainData.isPreGenesis()).thenReturn(false);
-    when(recentChainData.getBestJustifiedEpoch()).thenReturn(ONE);
-
-    assertThat(metricsSystem.getGauge(BEACON, "current_justified_epoch").getValue()).isEqualTo(1);
+    beaconChainMetrics.onSlot(NODE_SLOT_VALUE);
+    assertThat(metricsSystem.getGauge(BEACON, "current_justified_epoch").getValue())
+        .isEqualTo(randomState.getCurrent_justified_checkpoint().getEpoch().longValue());
   }
 
   @Test
