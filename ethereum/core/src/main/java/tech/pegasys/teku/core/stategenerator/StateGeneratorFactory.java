@@ -14,8 +14,12 @@
 package tech.pegasys.teku.core.stategenerator;
 
 import java.util.Optional;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
@@ -25,16 +29,29 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 
 public class StateGeneratorFactory {
-
+  private static final int MAX_ACTIVE_REGENERATIONS = 5;
   private final ConcurrentHashMap<Bytes32, SafeFuture<SignedBlockAndState>> inProgressGeneration =
       new ConcurrentHashMap<>();
+  private final AtomicInteger activeRegenerations = new AtomicInteger(0);
+  private final Queue<Supplier<SafeFuture<SignedBlockAndState>>> queuedRegenerations =
+      new ConcurrentLinkedQueue<>();
 
   public StateGeneratorFactory(final MetricsSystem metricsSystem) {
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.BEACON,
-        "inprogress_regenerations",
-        "Number of state regeneration tasks currently in progress",
+        "regenerations_requested",
+        "Number of state regeneration tasks requested but not yet completed",
         inProgressGeneration::size);
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.BEACON,
+        "regenerations_active",
+        "Number of state regeneration tasks actively being processed",
+        activeRegenerations::get);
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.BEACON,
+        "regenerations_queued",
+        "Number of state regeneration tasks queued for later processing",
+        queuedRegenerations::size);
   }
 
   public SafeFuture<SignedBlockAndState> regenerateStateForBlock(
@@ -77,17 +94,48 @@ public class StateGeneratorFactory {
       final BlockProvider blockProvider,
       final Consumer<SignedBlockAndState> cacheHandler,
       final SafeFuture<SignedBlockAndState> future) {
-    final StateGenerator stateGenerator =
-        StateGenerator.create(tree, baseBlockAndState, blockProvider);
-    stateGenerator
-        .regenerateStateForBlock(blockRoot)
-        .thenPeek(
-            result -> {
-              cacheHandler.accept(result);
-              inProgressGeneration.remove(blockRoot);
-            })
-        .catchAndRethrow(error -> inProgressGeneration.remove(blockRoot))
-        .propagateTo(future);
+
+    queuedRegenerations.add(
+        () -> {
+          final StateGenerator stateGenerator =
+              StateGenerator.create(tree, baseBlockAndState, blockProvider);
+          stateGenerator
+              .regenerateStateForBlock(blockRoot)
+              .thenPeek(
+                  result -> {
+                    cacheHandler.accept(result);
+                    inProgressGeneration.remove(blockRoot);
+                  })
+              .catchAndRethrow(error -> inProgressGeneration.remove(blockRoot))
+              .propagateTo(future);
+          return future;
+        });
+    tryProcessNext();
     return future;
+  }
+
+  private void tryProcessNext() {
+    final int currentActiveCount = activeRegenerations.get();
+    while (currentActiveCount < MAX_ACTIVE_REGENERATIONS && !queuedRegenerations.isEmpty()) {
+      if (activeRegenerations.compareAndSet(currentActiveCount, currentActiveCount + 1)) {
+        processNext();
+        return;
+      }
+    }
+  }
+
+  private void processNext() {
+    final Supplier<SafeFuture<SignedBlockAndState>> nextRegeneration = queuedRegenerations.poll();
+    if (nextRegeneration == null) {
+      activeRegenerations.decrementAndGet();
+      return;
+    }
+    nextRegeneration
+        .get()
+        .always(
+            () -> {
+              activeRegenerations.decrementAndGet();
+              tryProcessNext();
+            });
   }
 }
