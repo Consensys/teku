@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.core.stategenerator;
 
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
@@ -48,6 +49,34 @@ public class StateGeneratorFactory {
     if (inProgress != null) {
       return inProgress;
     }
+    Optional<Bytes32> maybeAncestorRoot = tree.getParent(blockRoot);
+    while (maybeAncestorRoot.isPresent()) {
+      final Bytes32 ancestorRoot = maybeAncestorRoot.get();
+      final SafeFuture<SignedBlockAndState> parentFuture = inProgressGeneration.get(ancestorRoot);
+      if (parentFuture != null) {
+        final HashTree treeFromAncestor = tree.withRoot(ancestorRoot).build();
+        return parentFuture.thenCompose(
+            ancestorState ->
+                regenerate(
+                    blockRoot,
+                    treeFromAncestor,
+                    ancestorState,
+                    blockProvider,
+                    cacheHandler,
+                    future));
+      }
+      maybeAncestorRoot = maybeAncestorRoot.flatMap(tree::getParent);
+    }
+    return regenerate(blockRoot, tree, baseBlockAndState, blockProvider, cacheHandler, future);
+  }
+
+  private SafeFuture<SignedBlockAndState> regenerate(
+      final Bytes32 blockRoot,
+      final HashTree tree,
+      final SignedBlockAndState baseBlockAndState,
+      final BlockProvider blockProvider,
+      final Consumer<SignedBlockAndState> cacheHandler,
+      final SafeFuture<SignedBlockAndState> future) {
     final StateGenerator stateGenerator =
         StateGenerator.create(tree, baseBlockAndState, blockProvider);
     stateGenerator
