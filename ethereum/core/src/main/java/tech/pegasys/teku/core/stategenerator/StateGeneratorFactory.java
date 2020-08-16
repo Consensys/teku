@@ -29,7 +29,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 
 public class StateGeneratorFactory {
-  private static final int MAX_ACTIVE_REGENERATIONS = 5;
   private final ConcurrentHashMap<Bytes32, SafeFuture<SignedBlockAndState>> inProgressGeneration =
       new ConcurrentHashMap<>();
   private final AtomicInteger activeRegenerations = new AtomicInteger(0);
@@ -115,12 +114,13 @@ public class StateGeneratorFactory {
   }
 
   private void tryProcessNext() {
-    final int currentActiveCount = activeRegenerations.get();
-    while (currentActiveCount < MAX_ACTIVE_REGENERATIONS && !queuedRegenerations.isEmpty()) {
+    int currentActiveCount = activeRegenerations.get();
+    while (currentActiveCount < getActiveRegenerationLimit() && !queuedRegenerations.isEmpty()) {
       if (activeRegenerations.compareAndSet(currentActiveCount, currentActiveCount + 1)) {
         processNext();
         return;
       }
+      currentActiveCount = activeRegenerations.get();
     }
   }
 
@@ -137,5 +137,9 @@ public class StateGeneratorFactory {
               activeRegenerations.decrementAndGet();
               tryProcessNext();
             });
+  }
+
+  private int getActiveRegenerationLimit() {
+    return Math.max(2, Runtime.getRuntime().availableProcessors());
   }
 }
