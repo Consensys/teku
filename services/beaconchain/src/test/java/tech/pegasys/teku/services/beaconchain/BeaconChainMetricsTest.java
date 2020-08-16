@@ -81,11 +81,6 @@ class BeaconChainMetricsTest {
     when(state.getFinalized_checkpoint()).thenReturn(finalizedCheckpoint);
     when(state.getCurrent_justified_checkpoint()).thenReturn(currentJustifiedCheckpoint);
     when(state.getPrevious_justified_checkpoint()).thenReturn(previousJustifiedCheckpoint);
-    //
-    // when(state.getCurrent_epoch_attestations()).thenReturn(SSZList.empty(PendingAttestation.class));
-    //    when(state.getPrevious_epoch_attestations())
-    //        .thenReturn(SSZList.empty(PendingAttestation.class));
-    //    when(state.getSlot()).thenReturn(NODE_SLOT_VALUE);
   }
 
   @Test
