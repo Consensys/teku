@@ -33,10 +33,10 @@ import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
  */
 public class MetricsHistogram {
   static final List<String> LABELS = Collections.singletonList("quantile");
-  static final List<String> LABEL_50 = Collections.singletonList("50%");
-  static final List<String> LABEL_95 = Collections.singletonList("95%");
-  static final List<String> LABEL_99 = Collections.singletonList("99%");
-  static final List<String> LABEL_1 = Collections.singletonList("100%");
+  static final List<String> LABEL_50 = Collections.singletonList("0.5");
+  static final List<String> LABEL_95 = Collections.singletonList("0.95");
+  static final List<String> LABEL_99 = Collections.singletonList("0.99");
+  static final List<String> LABEL_1 = Collections.singletonList("1");
 
   private final Histogram histogram;
 
