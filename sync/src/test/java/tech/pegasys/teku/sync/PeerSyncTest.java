@@ -275,6 +275,53 @@ public class PeerSyncTest {
   }
 
   @Test
+  void sync_withPeerStatusUpdatedWhileSyncing() {
+    final UInt64 initialPeerHeadSlot = PEER_HEAD_SLOT;
+
+    final SafeFuture<Void> requestFuture1 = new SafeFuture<>();
+    final SafeFuture<Void> requestFuture2 = new SafeFuture<>();
+    when(peer.requestBlocksByRange(any(), any(), any(), any()))
+        .thenReturn(requestFuture1)
+        .thenReturn(requestFuture2);
+
+    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
+    assertThat(syncFuture).isNotDone();
+
+    final UInt64 startSlot = UInt64.ONE;
+    verify(peer)
+        .requestBlocksByRange(
+            eq(startSlot),
+            eq(initialPeerHeadSlot),
+            eq(UInt64.ONE),
+            responseListenerArgumentCaptor.capture());
+
+    // Update peer's status before completing first request, which should prompt a second request
+    final UInt64 secondRequestSize = UInt64.valueOf(5);
+    UInt64 updatedPeerHeadSlot = initialPeerHeadSlot.plus(secondRequestSize);
+    withPeerHeadSlot(updatedPeerHeadSlot);
+
+    final int lastReceivedBlockSlot = initialPeerHeadSlot.intValue();
+    completeRequestWithBlockAtSlot(requestFuture1, lastReceivedBlockSlot);
+
+    final UInt64 nextSlotStart = UInt64.valueOf(lastReceivedBlockSlot + 1);
+    verify(peer)
+        .requestBlocksByRange(
+            eq(nextSlotStart),
+            eq(secondRequestSize),
+            eq(UInt64.ONE),
+            responseListenerArgumentCaptor.capture());
+
+    when(storageClient.getFinalizedEpoch()).thenReturn(PEER_FINALIZED_EPOCH);
+
+    // Respond with blocks and check they're passed to the block importer.
+    completeRequestWithBlockAtSlot(requestFuture2, updatedPeerHeadSlot.intValue());
+
+    // Check that the sync is done and the peer was not disconnected.
+    assertThat(syncFuture).isCompleted();
+    verify(peer, never()).disconnectCleanly(any());
+  }
+
+  @Test
   void sync_handleEmptyResponse() {
     final UInt64 secondRequestSize = UInt64.valueOf(5);
     UInt64 peerHeadSlot = Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(secondRequestSize);
