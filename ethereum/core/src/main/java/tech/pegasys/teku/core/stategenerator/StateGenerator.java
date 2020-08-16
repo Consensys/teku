@@ -107,17 +107,20 @@ public class StateGenerator {
   }
 
   public SafeFuture<SignedBlockAndState> regenerateStateForBlock(final Bytes32 blockRoot) {
-    LOG.info("Regenerate state for block {} by replaying {} blocks", blockRoot, blockTree.size());
+    final int blockCount = blockTree.size();
+    LOG.info("Regenerate state for block {} by replaying {} blocks", blockRoot, blockCount);
+    final long startTime = System.currentTimeMillis();
 
     return chainStateGenerator
         .generateTargetState(blockRoot)
         .thenPeek(
             result ->
                 LOG.info(
-                    "Completed regeneration of block {} at slot {} by replaying {} blocks",
+                    "Completed regeneration of block {} at slot {} by replaying {} blocks. Took {}ms",
                     blockRoot,
                     result.getSlot(),
-                    blockTree.size()));
+                    blockCount,
+                    System.currentTimeMillis() - startTime));
   }
 
   public SafeFuture<Void> regenerateAllStates(final StateHandler stateHandler) {
