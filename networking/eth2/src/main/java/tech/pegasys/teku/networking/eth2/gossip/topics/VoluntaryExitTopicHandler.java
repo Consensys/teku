@@ -17,6 +17,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
@@ -34,10 +35,12 @@ public class VoluntaryExitTopicHandler
   private final GossipedOperationConsumer<SignedVoluntaryExit> consumer;
 
   public VoluntaryExitTopicHandler(
+      final AsyncRunner asyncRunner,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final VoluntaryExitValidator validator,
       final GossipedOperationConsumer<SignedVoluntaryExit> consumer) {
+    super(asyncRunner);
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();
     this.validator = validator;
