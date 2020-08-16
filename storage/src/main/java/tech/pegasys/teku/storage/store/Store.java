@@ -73,7 +73,8 @@ class Store implements UpdatableStore {
   private final Counter checkpointStateRequestRegenerateCounter;
   private final Counter checkpointStateRequestMissCounter;
   private final MetricsSystem metricsSystem;
-  private final StateGeneratorFactory stateGeneratorFactory = new StateGeneratorFactory();
+  private final StateGeneratorFactory stateGeneratorFactory;
+
   private Optional<SettableGauge> stateCountGauge = Optional.empty();
   private Optional<SettableGauge> blockCountGauge = Optional.empty();
   private Optional<SettableGauge> checkpointCountGauge = Optional.empty();
@@ -109,6 +110,7 @@ class Store implements UpdatableStore {
 
     // Set up metrics
     this.metricsSystem = metricsSystem;
+    this.stateGeneratorFactory = new StateGeneratorFactory(metricsSystem);
     final LabelledMetric<Counter> stateRequestCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.STORAGE,

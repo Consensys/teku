@@ -16,15 +16,25 @@ package tech.pegasys.teku.core.stategenerator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.metrics.TekuMetricCategory;
 
 public class StateGeneratorFactory {
 
   private final ConcurrentHashMap<Bytes32, SafeFuture<SignedBlockAndState>> inProgressGeneration =
       new ConcurrentHashMap<>();
+
+  public StateGeneratorFactory(final MetricsSystem metricsSystem) {
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.BEACON,
+        "inprogress_regenerations",
+        "Number of state regeneration tasks currently in progress",
+        inProgressGeneration::size);
+  }
 
   public SafeFuture<SignedBlockAndState> regenerateStateForBlock(
       final Bytes32 blockRoot,
