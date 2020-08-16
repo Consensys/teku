@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.AggregateAttestationTopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
@@ -37,6 +38,7 @@ public class AggregateGossipManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final SignedAggregateAndProofValidator validator =
       mock(SignedAggregateAndProofValidator.class);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final TopicChannel topicChannel = mock(TopicChannel.class);
@@ -54,6 +56,7 @@ public class AggregateGossipManagerTest {
         .subscribe(contains(AggregateAttestationTopicHandler.TOPIC_NAME), any());
     gossipManager =
         new AggregateGossipManager(
+            asyncRunner,
             gossipNetwork,
             gossipEncoding,
             dataStructureUtil.randomForkInfo(),

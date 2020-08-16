@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.BlockTopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
@@ -39,6 +40,7 @@ public class BlockGossipManagerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = new EventBus();
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final BlockValidator blockValidator =
       new BlockValidator(recentChainData, new StateTransition());
@@ -52,6 +54,7 @@ public class BlockGossipManagerTest {
         .when(gossipNetwork)
         .subscribe(contains(BlockTopicHandler.TOPIC_NAME), any());
     new BlockGossipManager(
+        asyncRunner,
         gossipNetwork,
         gossipEncoding,
         dataStructureUtil.randomForkInfo(),
