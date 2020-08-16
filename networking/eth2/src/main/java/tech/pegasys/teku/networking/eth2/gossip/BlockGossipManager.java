@@ -18,6 +18,7 @@ import com.google.common.eventbus.Subscribe;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.BlockTopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.BlockValidator;
@@ -33,6 +34,7 @@ public class BlockGossipManager {
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public BlockGossipManager(
+      final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
@@ -41,7 +43,7 @@ public class BlockGossipManager {
     this.gossipEncoding = gossipEncoding;
 
     final BlockTopicHandler topicHandler =
-        new BlockTopicHandler(gossipEncoding, forkInfo, blockValidator, eventBus);
+        new BlockTopicHandler(asyncRunner, gossipEncoding, forkInfo, blockValidator, eventBus);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
 
     this.eventBus = eventBus;

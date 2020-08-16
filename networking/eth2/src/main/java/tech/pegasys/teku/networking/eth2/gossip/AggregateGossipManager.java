@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.AggregateAttestationTopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
@@ -32,6 +33,7 @@ public class AggregateGossipManager {
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public AggregateGossipManager(
+      final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
@@ -41,7 +43,7 @@ public class AggregateGossipManager {
     this.gossipEncoding = gossipEncoding;
     final AggregateAttestationTopicHandler aggregateAttestationTopicHandler =
         new AggregateAttestationTopicHandler(
-            gossipEncoding, forkInfo, validator, gossipedAttestationConsumer);
+            asyncRunner, gossipEncoding, forkInfo, validator, gossipedAttestationConsumer);
     this.channel =
         gossipNetwork.subscribe(
             aggregateAttestationTopicHandler.getTopic(), aggregateAttestationTopicHandler);

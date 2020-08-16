@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
@@ -35,11 +36,13 @@ public class SingleAttestationTopicHandler
   private final Bytes4 forkDigest;
 
   public SingleAttestationTopicHandler(
+      final AsyncRunner asyncRunner,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final int subnetId,
       final AttestationValidator validator,
       final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
+    super(asyncRunner);
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();
     this.validator = validator;
