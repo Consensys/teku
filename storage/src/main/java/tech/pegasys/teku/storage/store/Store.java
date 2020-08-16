@@ -43,6 +43,7 @@ import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.stategenerator.StateGenerator;
+import tech.pegasys.teku.core.stategenerator.StateGeneratorFactory;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -72,6 +73,7 @@ class Store implements UpdatableStore {
   private final Counter checkpointStateRequestRegenerateCounter;
   private final Counter checkpointStateRequestMissCounter;
   private final MetricsSystem metricsSystem;
+  private final StateGeneratorFactory stateGeneratorFactory = new StateGeneratorFactory();
   private Optional<SettableGauge> stateCountGauge = Optional.empty();
   private Optional<SettableGauge> blockCountGauge = Optional.empty();
   private Optional<SettableGauge> checkpointCountGauge = Optional.empty();
@@ -573,14 +575,12 @@ class Store implements UpdatableStore {
                       final SignedBlockAndState baseBlockAndState =
                           new SignedBlockAndState(block, baseState.get());
                       final HashTree tree = treeBuilder.build();
-                      final StateGenerator stateGenerator =
-                          StateGenerator.create(tree, baseBlockAndState, blockProvider);
-                      return stateGenerator
-                          .regenerateStateForBlock(blockRoot)
+                      return stateGeneratorFactory
+                          .regenerateStateForBlock(
+                              blockRoot, tree, baseBlockAndState, blockProvider, cacheHandler)
                           .thenApply(
                               result -> {
                                 stateRequestRegenerateCounter.inc();
-                                cacheHandler.accept(result);
                                 return Optional.of(result);
                               });
                     })
