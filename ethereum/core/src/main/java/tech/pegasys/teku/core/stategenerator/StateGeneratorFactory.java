@@ -34,8 +34,13 @@ public class StateGeneratorFactory {
   private final AtomicInteger activeRegenerations = new AtomicInteger(0);
   private final Queue<Supplier<SafeFuture<SignedBlockAndState>>> queuedRegenerations =
       new ConcurrentLinkedQueue<>();
+  private final MetricsSystem metricsSystem;
 
   public StateGeneratorFactory(final MetricsSystem metricsSystem) {
+    this.metricsSystem = metricsSystem;
+  }
+
+  public void startMetrics() {
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.BEACON,
         "regenerations_requested",
@@ -118,7 +123,6 @@ public class StateGeneratorFactory {
     while (currentActiveCount < getActiveRegenerationLimit() && !queuedRegenerations.isEmpty()) {
       if (activeRegenerations.compareAndSet(currentActiveCount, currentActiveCount + 1)) {
         processNext();
-        return;
       }
       currentActiveCount = activeRegenerations.get();
     }

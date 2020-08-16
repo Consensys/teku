@@ -96,6 +96,7 @@ class Store implements UpdatableStore {
   private Store(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
+      final StateGeneratorFactory stateGeneratorFactory,
       final UInt64 time,
       final UInt64 genesis_time,
       final Checkpoint justified_checkpoint,
@@ -110,7 +111,7 @@ class Store implements UpdatableStore {
 
     // Set up metrics
     this.metricsSystem = metricsSystem;
-    this.stateGeneratorFactory = new StateGeneratorFactory(metricsSystem);
+    this.stateGeneratorFactory = stateGeneratorFactory;
     final LabelledMetric<Counter> stateRequestCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.STORAGE,
@@ -161,6 +162,7 @@ class Store implements UpdatableStore {
   public static SafeFuture<UpdatableStore> create(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
+      final StateGeneratorFactory stateGeneratorFactory,
       final UInt64 time,
       final UInt64 genesisTime,
       final Checkpoint justifiedCheckpoint,
@@ -224,6 +226,7 @@ class Store implements UpdatableStore {
               return new Store(
                   metricsSystem,
                   blockProvider,
+                  stateGeneratorFactory,
                   time,
                   genesisTime,
                   justifiedCheckpoint,
@@ -269,6 +272,7 @@ class Store implements UpdatableStore {
                   TekuMetricCategory.STORAGE,
                   "memory_checkpoint_state_count",
                   "Number of checkpoint states held in the in-memory store"));
+      stateGeneratorFactory.startMetrics();
     } finally {
       lock.writeLock().unlock();
     }
