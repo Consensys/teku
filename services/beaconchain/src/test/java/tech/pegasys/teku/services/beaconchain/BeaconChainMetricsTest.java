@@ -29,7 +29,6 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -55,9 +54,6 @@ class BeaconChainMetricsTest {
       Bytes32.fromHexString("0x760aa80a2c5cc1452a5301ecb176b366372d5f2218e0c24eFFFFFFFFFFFFFF7F");
   private final Bytes32 root3 =
       Bytes32.fromHexString("0x760aa80a2c5cc1452a5301ecb176b366372d5f2218e0c24e0000000000000080");
-  private final Checkpoint checkpoint = new Checkpoint(NODE_SLOT_VALUE, root);
-
-  private static final BeaconBlockAndState blockAndState = mock(BeaconBlockAndState.class);
   private final BeaconState randomState = dataStructureUtil.randomBeaconState();
   private final BeaconState state = mock(BeaconState.class);
 
