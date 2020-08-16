@@ -205,6 +205,7 @@ public class Eth2NetworkFactory {
                 config);
 
         return new ActiveEth2Network(
+            asyncRunner,
             metricsSystem,
             network,
             eth2PeerManager,

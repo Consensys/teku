@@ -114,6 +114,7 @@ public class Eth2NetworkBuilder {
     final DiscoveryNetwork<?> network = buildNetwork(gossipEncoding);
 
     return new ActiveEth2Network(
+        asyncRunner,
         metricsSystem,
         network,
         eth2PeerManager,
