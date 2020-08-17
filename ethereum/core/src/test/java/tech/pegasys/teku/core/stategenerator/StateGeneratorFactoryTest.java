@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.stategenerator.StateGeneratorFactory.RegenerationTask;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
-import tech.pegasys.teku.datastructures.hashtree.HashTree.Builder;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -142,7 +141,7 @@ class StateGeneratorFactoryTest {
   }
 
   private HashTree createHashTreeForChain(final List<SignedBlockAndState> blocks) {
-    final Builder builder = HashTree.builder();
+    final HashTree.Builder builder = HashTree.builder();
     blocks.forEach(block -> builder.childAndParentRoots(block.getRoot(), block.getParentRoot()));
     builder.rootHash(blocks.get(0).getRoot());
     return builder.build();
@@ -213,7 +212,8 @@ class StateGeneratorFactoryTest {
       assertThat(rebasedTo).contains(newBaseState);
       assertThat(regenerated).isTrue();
       // Assert that rebase is valid
-      getTree().withRoot(rebasedTo.orElseThrow().getRoot()).build();
+      final HashTree newTree = getTree().withRoot(rebasedTo.orElseThrow().getRoot()).build();
+      assertThat(newTree.getRootHash()).isEqualTo(newBaseState.getRoot());
     }
   }
 }
