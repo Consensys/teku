@@ -91,7 +91,8 @@ public class ForkChoice {
                                   () ->
                                       new IllegalStateException(
                                           "Unable to retrieve the slot of fork choice head"))))
-                  .alwaysRun(() -> headUpdateInProgress.set(false));
+                  .alwaysRun(() -> headUpdateInProgress.set(false))
+                  .reportExceptions();
             })
         .catchAndRethrow(error -> headUpdateInProgress.set(false))
         .join();
