@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+
+import java.util.Optional;
 
 public class BlocksByRangeListenerWrapper implements ResponseStreamListener<SignedBeaconBlock> {
 
@@ -28,6 +30,7 @@ public class BlocksByRangeListenerWrapper implements ResponseStreamListener<Sign
   private final UInt64 endSlot;
   private final UInt64 step;
 
+  private Optional<Bytes32> maybeRootOfLastBlock = Optional.empty();
   private Optional<UInt64> maybeSlotOfLastBlock = Optional.empty();
 
   public BlocksByRangeListenerWrapper(
@@ -45,16 +48,18 @@ public class BlocksByRangeListenerWrapper implements ResponseStreamListener<Sign
 
   @Override
   public SafeFuture<?> onResponse(SignedBeaconBlock response) {
-    UInt64 blockSlot = response.getSlot();
-
-    if (!blockSlotIsInRange(blockSlot)
-        || !blockSlotMatchesTheStep(blockSlot)
-        || !blockSlotGreaterThanPreviousBlockSlot(blockSlot)) {
-      throw new BlocksByRangeResponseOutOfOrderException(peer, startSlot, endSlot);
-    }
-
-    maybeSlotOfLastBlock = Optional.of(blockSlot);
-    return blockResponseListener.onResponse(response);
+    return SafeFuture.of(() -> {
+      UInt64 blockSlot = response.getSlot();
+      if (!blockSlotIsInRange(blockSlot)
+              || !blockSlotMatchesTheStep(blockSlot)
+              || !blockSlotGreaterThanPreviousBlockSlot(blockSlot)
+              || !blockParentRootMatches(response.getParent_root())) {
+        throw new BlocksByRangeResponseOutOfOrderException(peer, startSlot, endSlot);
+      }
+      maybeSlotOfLastBlock = Optional.of(blockSlot);
+      maybeRootOfLastBlock = Optional.of(response.getRoot());
+      return blockResponseListener.onResponse(response);
+    });
   }
 
   private boolean blockSlotIsInRange(UInt64 blockSlot) {
@@ -72,5 +77,17 @@ public class BlocksByRangeListenerWrapper implements ResponseStreamListener<Sign
 
     UInt64 lastBlockSlot = maybeSlotOfLastBlock.get();
     return blockSlot.compareTo(lastBlockSlot) > 0;
+  }
+
+  private boolean blockParentRootMatches(Bytes32 blockParentRoot) {
+    if (maybeRootOfLastBlock.isEmpty()) {
+      return true;
+    }
+
+    if (!step.equals(UInt64.ONE)) {
+      return true;
+    }
+
+    return maybeRootOfLastBlock.get().equals(blockParentRoot);
   }
 }
