@@ -26,6 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.stategenerator.StateGenerationQueue;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
@@ -128,6 +129,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
           return maybeStoreBuilder
               .get()
               .blockProvider(blockProvider)
+              .stateGenerationQueue(StateGenerationQueue.create(metricsSystem))
               .build()
               .thenApply(
                   store -> {
