@@ -63,7 +63,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
   protected final ProtoArrayStorageChannel protoArrayStorageChannel;
-  private final MetricsSystem metricsSystem;
+  protected final MetricsSystem metricsSystem;
   private final ReorgEventChannel reorgEventChannel;
 
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
