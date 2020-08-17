@@ -94,4 +94,21 @@ public class BlockTree {
             })
         .orElse(false);
   }
+  @Override
+  public boolean equals(final Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (!(o instanceof BlockTree)) {
+      return false;
+    }
+    final BlockTree blockTree = (BlockTree) o;
+    return Objects.equals(getHashTree(), blockTree.getHashTree())
+        && Objects.equals(blockRootToSlot, blockTree.blockRootToSlot);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getHashTree(), blockRootToSlot);
+  }
 }
