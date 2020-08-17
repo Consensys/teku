@@ -22,7 +22,7 @@ import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.stategenerator.StateGeneratorFactory;
+import tech.pegasys.teku.core.stategenerator.StateGenerationQueue;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -33,7 +33,7 @@ import tech.pegasys.teku.storage.events.AnchorPoint;
 public class StoreBuilder {
   MetricsSystem metricsSystem;
   BlockProvider blockProvider;
-  StateGeneratorFactory stateGeneratorFactory;
+  StateGenerationQueue stateGenerationQueue;
 
   final Map<Bytes32, Bytes32> childToParentRoot = new HashMap<>();
   UInt64 time;
@@ -71,7 +71,7 @@ public class StoreBuilder {
     return create()
         .metricsSystem(metricsSystem)
         .blockProvider(blockProvider)
-        .stateGeneratorFactory(StateGeneratorFactory.create(metricsSystem))
+        .stateGenerationQueue(StateGenerationQueue.create(metricsSystem))
         .time(time)
         .genesisTime(genesisTime)
         .finalizedCheckpoint(anchor.getCheckpoint())
@@ -87,7 +87,7 @@ public class StoreBuilder {
     return Store.create(
         metricsSystem,
         blockProvider,
-        stateGeneratorFactory,
+        stateGenerationQueue,
         time,
         genesisTime,
         justifiedCheckpoint,
@@ -102,7 +102,7 @@ public class StoreBuilder {
   private void assertValid() {
     checkState(metricsSystem != null, "Metrics system must be defined");
     checkState(blockProvider != null, "Block provider must be defined");
-    checkState(stateGeneratorFactory != null, "State generator factory must be defined");
+    checkState(stateGenerationQueue != null, "State generation queue must be defined");
     checkState(time != null, "Time must be defined");
     checkState(genesisTime != null, "Genesis time must be defined");
     checkState(justifiedCheckpoint != null, "Justified checkpoint must be defined");
@@ -125,9 +125,9 @@ public class StoreBuilder {
     return this;
   }
 
-  public StoreBuilder stateGeneratorFactory(final StateGeneratorFactory stateGeneratorFactory) {
-    checkNotNull(stateGeneratorFactory);
-    this.stateGeneratorFactory = stateGeneratorFactory;
+  public StoreBuilder stateGenerationQueue(final StateGenerationQueue stateGenerationQueue) {
+    checkNotNull(stateGenerationQueue);
+    this.stateGenerationQueue = stateGenerationQueue;
     return this;
   }
 

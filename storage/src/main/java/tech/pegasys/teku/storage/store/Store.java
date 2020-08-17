@@ -43,7 +43,7 @@ import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.stategenerator.StateGenerator;
-import tech.pegasys.teku.core.stategenerator.StateGeneratorFactory;
+import tech.pegasys.teku.core.stategenerator.StateGenerationQueue;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -73,7 +73,7 @@ class Store implements UpdatableStore {
   private final Counter checkpointStateRequestRegenerateCounter;
   private final Counter checkpointStateRequestMissCounter;
   private final MetricsSystem metricsSystem;
-  private final StateGeneratorFactory stateGeneratorFactory;
+  private final StateGenerationQueue stateGenerationQueue;
 
   private Optional<SettableGauge> stateCountGauge = Optional.empty();
   private Optional<SettableGauge> blockCountGauge = Optional.empty();
@@ -96,7 +96,7 @@ class Store implements UpdatableStore {
   private Store(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
-      final StateGeneratorFactory stateGeneratorFactory,
+      final StateGenerationQueue stateGenerationQueue,
       final UInt64 time,
       final UInt64 genesis_time,
       final Checkpoint justified_checkpoint,
@@ -111,7 +111,7 @@ class Store implements UpdatableStore {
 
     // Set up metrics
     this.metricsSystem = metricsSystem;
-    this.stateGeneratorFactory = stateGeneratorFactory;
+    this.stateGenerationQueue = stateGenerationQueue;
     final LabelledMetric<Counter> stateRequestCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.STORAGE,
@@ -162,7 +162,7 @@ class Store implements UpdatableStore {
   public static SafeFuture<UpdatableStore> create(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
-      final StateGeneratorFactory stateGeneratorFactory,
+      final StateGenerationQueue stateGenerationQueue,
       final UInt64 time,
       final UInt64 genesisTime,
       final Checkpoint justifiedCheckpoint,
@@ -226,7 +226,7 @@ class Store implements UpdatableStore {
               return new Store(
                   metricsSystem,
                   blockProvider,
-                  stateGeneratorFactory,
+                  stateGenerationQueue,
                   time,
                   genesisTime,
                   justifiedCheckpoint,
@@ -272,7 +272,7 @@ class Store implements UpdatableStore {
                   TekuMetricCategory.STORAGE,
                   "memory_checkpoint_state_count",
                   "Number of checkpoint states held in the in-memory store"));
-      stateGeneratorFactory.startMetrics();
+      stateGenerationQueue.startMetrics();
     } finally {
       lock.writeLock().unlock();
     }
@@ -581,7 +581,7 @@ class Store implements UpdatableStore {
                       final SignedBlockAndState baseBlockAndState =
                           new SignedBlockAndState(block, baseState.get());
                       final HashTree tree = treeBuilder.build();
-                      return stateGeneratorFactory
+                      return stateGenerationQueue
                           .regenerateStateForBlock(
                               blockRoot, tree, baseBlockAndState, blockProvider, cacheHandler)
                           .thenApply(

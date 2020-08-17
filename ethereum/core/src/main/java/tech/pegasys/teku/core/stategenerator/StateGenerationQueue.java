@@ -30,7 +30,7 @@ import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 
-public class StateGeneratorFactory {
+public class StateGenerationQueue {
   private final ConcurrentHashMap<Bytes32, SafeFuture<SignedBlockAndState>> inProgressGeneration =
       new ConcurrentHashMap<>();
   private final AtomicInteger activeRegenerations = new AtomicInteger(0);
@@ -38,14 +38,14 @@ public class StateGeneratorFactory {
   private final MetricsSystem metricsSystem;
   private final IntSupplier activeRegenerationLimit;
 
-  StateGeneratorFactory(
+  StateGenerationQueue(
       final MetricsSystem metricsSystem, final IntSupplier activeRegenerationLimit) {
     this.metricsSystem = metricsSystem;
     this.activeRegenerationLimit = activeRegenerationLimit;
   }
 
-  public static StateGeneratorFactory create(final MetricsSystem metricsSystem) {
-    return new StateGeneratorFactory(
+  public static StateGenerationQueue create(final MetricsSystem metricsSystem) {
+    return new StateGenerationQueue(
         metricsSystem, () -> Math.max(2, Runtime.getRuntime().availableProcessors()));
   }
 

@@ -39,6 +39,6 @@ public class StoreAssertions {
             "checkpointStateRequestRegenerateCounter",
             "checkpointStateRequestMissCounter",
             "metricsSystem",
-            "stateGeneratorFactory");
+            "stateGenerationQueue");
   }
 }
