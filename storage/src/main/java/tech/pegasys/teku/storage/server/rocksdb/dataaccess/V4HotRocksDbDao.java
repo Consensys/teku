@@ -193,11 +193,6 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     }
 
     @Override
-    public void addHotBlocks(final Map<Bytes32, SignedBeaconBlock> blocks) {
-      blocks.values().forEach(this::addHotBlock);
-    }
-
-    @Override
     public void addHotStateRoots(
         final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap) {
       stateRootToSlotAndBlockRootMap.forEach(

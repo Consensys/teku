@@ -33,6 +33,7 @@ public class StorageUpdate {
   private final Optional<Checkpoint> bestJustifiedCheckpoint;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final Map<Bytes32, SignedBeaconBlock> hotBlocks;
+  private final Map<Bytes32, BeaconState> hotStates;
   private final Map<UInt64, VoteTracker> votes;
   private final Set<Bytes32> deletedHotBlocks;
 
@@ -42,6 +43,7 @@ public class StorageUpdate {
       final Optional<Checkpoint> justifiedCheckpoint,
       final Optional<Checkpoint> bestJustifiedCheckpoint,
       final Map<Bytes32, SignedBeaconBlock> hotBlocks,
+      final Map<Bytes32, BeaconState> hotStates,
       final Set<Bytes32> deletedHotBlocks,
       final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots) {
@@ -50,6 +52,7 @@ public class StorageUpdate {
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.hotBlocks = hotBlocks;
+    this.hotStates = hotStates;
     this.deletedHotBlocks = deletedHotBlocks;
     this.votes = votes;
     this.stateRoots = stateRoots;
@@ -84,6 +87,10 @@ public class StorageUpdate {
 
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks() {
     return hotBlocks;
+  }
+
+  public Map<Bytes32, BeaconState> getHotStates() {
+    return hotStates;
   }
 
   public Set<Bytes32> getDeletedHotBlocks() {

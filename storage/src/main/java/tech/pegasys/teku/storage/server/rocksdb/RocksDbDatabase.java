@@ -369,6 +369,7 @@ public class RocksDbDatabase implements Database {
       update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
 
       updater.addHotBlocks(update.getHotBlocks());
+      updater.addHotStates(update.getHotStates());
 
       if (update.getStateRoots().size() > 0) {
         updater.addHotStateRoots(update.getStateRoots());

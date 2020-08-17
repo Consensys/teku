@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -69,6 +70,8 @@ class StoreTransactionUpdates {
         tx.justified_checkpoint,
         tx.best_justified_checkpoint,
         hotBlocks,
+        // TODO - persist hot states
+        Collections.emptyMap(),
         prunedHotBlockRoots,
         tx.votes,
         stateRoots);
