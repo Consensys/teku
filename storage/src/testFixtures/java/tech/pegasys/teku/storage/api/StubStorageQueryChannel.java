@@ -48,6 +48,11 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
+  public SafeFuture<Optional<BeaconState>> getHotStateByBlockRoot(final Bytes32 blockRoot) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
   public SafeFuture<Map<Bytes32, SignedBeaconBlock>> getHotBlocksByRoot(
       final Set<Bytes32> blockRoots) {
     return SafeFuture.completedFuture(Collections.emptyMap());

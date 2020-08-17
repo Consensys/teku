@@ -77,6 +77,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Optional<BeaconState> getHotState(final Bytes32 root) {
+    return Optional.empty();
+  }
+
+  @Override
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots) {
     return Collections.emptyMap();
   }

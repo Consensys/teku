@@ -253,6 +253,11 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
+  public Optional<BeaconState> getHotState(final Bytes32 root) {
+    return hotDao.getHotState(root);
+  }
+
+  @Override
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots) {
     return blockRoots.stream()
         .flatMap(root -> hotDao.getHotBlock(root).stream())

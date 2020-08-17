@@ -115,6 +115,11 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   }
 
   @Override
+  public SafeFuture<Optional<BeaconState>> getHotStateByBlockRoot(final Bytes32 blockRoot) {
+    return SafeFuture.of(() -> database.getHotState(blockRoot));
+  }
+
+  @Override
   public SafeFuture<Map<Bytes32, SignedBeaconBlock>> getHotBlocksByRoot(
       final Set<Bytes32> blockRoots) {
     return SafeFuture.of(() -> database.getHotBlocks(blockRoots));

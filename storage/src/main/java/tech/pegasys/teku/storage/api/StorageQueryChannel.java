@@ -35,6 +35,8 @@ public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot);
 
+  SafeFuture<Optional<BeaconState>> getHotStateByBlockRoot(final Bytes32 blockRoot);
+
   /**
    * Returns "hot" blocks - the latest finalized block or blocks that descend from the latest
    * finalized block

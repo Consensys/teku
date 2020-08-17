@@ -64,6 +64,8 @@ public interface Database extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getSignedBlock(Bytes32 root);
 
+  Optional<BeaconState> getHotState(Bytes32 root);
+
   /**
    * Returns latest finalized block or any known blocks that descend from the latest finalized block
    *
