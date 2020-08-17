@@ -64,6 +64,7 @@ import tech.pegasys.teku.util.collections.LimitedMap;
 
 class Store implements UpdatableStore {
   private static final Logger LOG = LogManager.getLogger();
+  static final int HOT_STATE_CHECKPOINT_FREQUENCY_IN_EPOCHS = 1;
 
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock readLock = lock.readLock();
@@ -82,7 +83,7 @@ class Store implements UpdatableStore {
 
   private final BlockProvider blockProvider;
 
-  HashTree blockTree;
+  BlockTree blockTree;
   UInt64 time;
   UInt64 genesis_time;
   Checkpoint justified_checkpoint;
@@ -103,7 +104,7 @@ class Store implements UpdatableStore {
       final Checkpoint justified_checkpoint,
       final Checkpoint finalized_checkpoint,
       final Checkpoint best_justified_checkpoint,
-      final HashTree blockTree,
+      final BlockTree blockTree,
       final SignedBlockAndState finalizedBlockAndState,
       final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SignedBeaconBlock> blocks,
@@ -189,13 +190,13 @@ class Store implements UpdatableStore {
     // Build block tree structure
     HashTree.Builder treeBuilder = HashTree.builder().rootHash(finalizedBlockAndState.getRoot());
     childToParentRoot.forEach(treeBuilder::childAndParentRoots);
-    final HashTree blockTree = treeBuilder.build();
-    if (blockTree.size() < childToParentRoot.size()) {
+    final HashTree hashTree = treeBuilder.build();
+    if (hashTree.size() < childToParentRoot.size()) {
       // This should be an error, but keeping this as a warning now for backwards-compatibility
       // reasons.  Some existing databases may have unpruned fork blocks, and could become
       // unusable
       // if we throw here.  In the future, we should convert this to an error.
-      LOG.warn("Ignoring {} non-canonical blocks", childToParentRoot.size() - blockTree.size());
+      LOG.warn("Ignoring {} non-canonical blocks", childToParentRoot.size() - hashTree.size());
     }
 
     // Create state generator
@@ -205,10 +206,11 @@ class Store implements UpdatableStore {
             fromMap(blocks),
             blockProvider);
     final StateGenerator stateGenerator =
-        StateGenerator.create(blockTree, finalizedBlockAndState, blockProviderWithBlocks);
+        StateGenerator.create(hashTree, finalizedBlockAndState, blockProviderWithBlocks);
 
     // Process blocks
-    LOG.info("Process {} block(s) to regenerate state", blockTree.size());
+    LOG.info("Process {} block(s) to regenerate state", hashTree.size());
+    final Map<Bytes32, UInt64> blockRootToSlot = new HashMap<>();
     final AtomicInteger processedBlocks = new AtomicInteger(0);
     return stateGenerator
         .regenerateAllStates(
@@ -219,10 +221,11 @@ class Store implements UpdatableStore {
               }
               blocks.put(block.getRoot(), block);
               blockStates.put(block.getRoot(), state);
+              blockRootToSlot.put(block.getRoot(), block.getSlot());
             })
         .thenApply(
             __ -> {
-              LOG.info("Finished processing {} block(s)", blockTree.size());
+              LOG.info("Finished processing {} block(s)", hashTree.size());
 
               return new Store(
                   metricsSystem,
@@ -233,7 +236,7 @@ class Store implements UpdatableStore {
                   justifiedCheckpoint,
                   finalizedCheckpoint,
                   bestJustifiedCheckpoint,
-                  blockTree,
+                  new BlockTree(hashTree, blockRootToSlot),
                   finalizedBlockAndState,
                   votes,
                   blocks,
@@ -384,7 +387,7 @@ class Store implements UpdatableStore {
   public List<Bytes32> getOrderedBlockRoots() {
     readLock.lock();
     try {
-      return blockTree.breadthFirstStream().collect(Collectors.toList());
+      return blockTree.getOrderedBlockRoots();
     } finally {
       readLock.unlock();
     }
@@ -552,20 +555,22 @@ class Store implements UpdatableStore {
     final AtomicReference<BeaconState> baseState = new AtomicReference<>();
     readLock.lock();
     try {
-      this.blockTree.processHashesInChainWhile(
-          blockRoot,
-          (root, parent) -> {
-            treeBuilder.childAndParentRoots(root, parent);
-            final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
-            blockState.ifPresent(
-                (state) -> {
-                  // We found a base state
-                  treeBuilder.rootHash(root);
-                  baseBlockRoot.set(root);
-                  baseState.set(state);
-                });
-            return blockState.isEmpty();
-          });
+      this.blockTree
+          .getHashTree()
+          .processHashesInChainWhile(
+              blockRoot,
+              (root, parent) -> {
+                treeBuilder.childAndParentRoots(root, parent);
+                final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
+                blockState.ifPresent(
+                    (state) -> {
+                      // We found a base state
+                      treeBuilder.rootHash(root);
+                      baseBlockRoot.set(root);
+                      baseState.set(state);
+                    });
+                return blockState.isEmpty();
+              });
     } finally {
       readLock.unlock();
     }
@@ -821,7 +826,7 @@ class Store implements UpdatableStore {
 
       Store.this.lock.readLock().lock();
       try {
-        final HashTree.Builder treeBuilder = Store.this.blockTree.updater();
+        final HashTree.Builder treeBuilder = Store.this.blockTree.getHashTree().updater();
         this.blocks.values().forEach(treeBuilder::block);
         return treeBuilder.build().breadthFirstStream().collect(Collectors.toList());
       } finally {
