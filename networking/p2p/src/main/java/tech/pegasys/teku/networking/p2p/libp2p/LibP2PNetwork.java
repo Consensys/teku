@@ -36,7 +36,6 @@ import io.libp2p.pubsub.gossip.Gossip;
 import io.libp2p.pubsub.gossip.GossipParams;
 import io.libp2p.pubsub.gossip.GossipRouter;
 import io.libp2p.security.noise.NoiseXXSecureChannel;
-import io.libp2p.security.secio.SecIoSecureChannel;
 import io.libp2p.transport.tcp.TcpTransport;
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.logging.LogLevel;
@@ -132,7 +131,6 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
               b.getIdentity().setFactory(() -> privKey);
               b.getTransports().add(TcpTransport::new);
               b.getSecureChannels().add(NoiseXXSecureChannel::new);
-              b.getSecureChannels().add(SecIoSecureChannel::new); // to be removed later
               b.getMuxers().add(MplexStreamMuxer::new);
 
               b.getNetwork().listen(listenAddr.toString());
