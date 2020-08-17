@@ -39,7 +39,7 @@ public class VersionedDatabaseFactoryTest {
   public void createDatabase_fromEmptyDataDir() throws Exception {
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE);
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, eth1Address);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
 
@@ -52,14 +52,13 @@ public class VersionedDatabaseFactoryTest {
     createDbDirectory(dataDir);
     createVersionFile(dataDir, DatabaseVersion.V3);
 
-    final DatabaseFactory dbFactory =
+    final VersionedDatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE);
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, eth1Address);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
     }
-    assertThat(((VersionedDatabaseFactory) dbFactory).getDatabaseVersion())
-        .isEqualTo(DatabaseVersion.V3);
+    assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V3);
   }
 
   @Test
@@ -102,7 +101,7 @@ public class VersionedDatabaseFactoryTest {
 
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE);
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, eth1Address);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("Unrecognized database version: bla");
@@ -114,7 +113,7 @@ public class VersionedDatabaseFactoryTest {
 
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE);
+            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, eth1Address);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("No database version file was found");

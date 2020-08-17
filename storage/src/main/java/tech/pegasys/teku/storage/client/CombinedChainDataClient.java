@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
@@ -30,11 +31,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -134,11 +138,16 @@ public class CombinedChainDataClient {
 
   public SafeFuture<Optional<BeaconBlockAndState>> getBlockAndStateInEffectAtSlot(
       final UInt64 slot) {
+    return getSignedBlockAndStateInEffectAtSlot(slot)
+        .thenApply(result -> result.map(SignedBlockAndState::toUnsigned));
+  }
+
+  public SafeFuture<Optional<SignedBlockAndState>> getSignedBlockAndStateInEffectAtSlot(
+      final UInt64 slot) {
     return getBlockInEffectAtSlot(slot)
         .thenCompose(
             maybeBlock ->
                 maybeBlock
-                    .map(SignedBeaconBlock::getMessage)
                     .map(this::getStateForBlock)
                     .orElseGet(() -> SafeFuture.completedFuture(Optional.empty())));
   }
@@ -151,9 +160,38 @@ public class CombinedChainDataClient {
                     blockAndState -> regenerateBeaconState(blockAndState.getState(), slot)));
   }
 
-  private SafeFuture<Optional<BeaconBlockAndState>> getStateForBlock(final BeaconBlock block) {
-    return getStateByBlockRoot(block.hash_tree_root())
-        .thenApply(maybeState -> maybeState.map(state -> new BeaconBlockAndState(block, state)));
+  public SafeFuture<Optional<CheckpointState>> getCheckpointStateAtEpoch(final UInt64 epoch) {
+    final UInt64 epochSlot = compute_start_slot_at_epoch(epoch);
+    return getSignedBlockAndStateInEffectAtSlot(epochSlot)
+        .thenCompose(
+            maybeBlockAndState ->
+                maybeBlockAndState
+                    .map(
+                        blockAndState ->
+                            getCheckpointState(epoch, blockAndState).thenApply(Optional::of))
+                    .orElse(SafeFuture.completedFuture(Optional.empty())));
+  }
+
+  public SafeFuture<CheckpointState> getCheckpointState(
+      final UInt64 epoch, final SignedBlockAndState latestBlockAndState) {
+    final Checkpoint checkpoint = new Checkpoint(epoch, latestBlockAndState.getRoot());
+    return recentChainData
+        .getStore()
+        .retrieveCheckpointState(checkpoint)
+        .thenApply(
+            checkpointState -> {
+              if (checkpointState.isEmpty()) {
+                return CheckpointStateGenerator.generate(checkpoint, latestBlockAndState);
+              }
+              final SignedBeaconBlock block = latestBlockAndState.getBlock();
+              return new CheckpointState(checkpoint, block, checkpointState.get());
+            });
+  }
+
+  private SafeFuture<Optional<SignedBlockAndState>> getStateForBlock(
+      final SignedBeaconBlock block) {
+    return getStateByBlockRoot(block.getRoot())
+        .thenApply(maybeState -> maybeState.map(state -> new SignedBlockAndState(block, state)));
   }
 
   public boolean isFinalized(final UInt64 slot) {
@@ -249,7 +287,7 @@ public class CombinedChainDataClient {
       final BeaconState preState, final UInt64 slot) {
     if (preState.getSlot().equals(slot)) {
       return Optional.of(preState);
-    } else if (slot.compareTo(getBestSlot()) > 0) {
+    } else if (slot.compareTo(getHeadSlot()) > 0) {
       LOG.debug("Attempted to wind forward to a future state: {}", slot.toString());
       return Optional.empty();
     }
@@ -270,7 +308,7 @@ public class CombinedChainDataClient {
   }
 
   public Optional<SignedBeaconBlock> getBestBlock() {
-    return recentChainData.getBestBlock();
+    return recentChainData.getHeadBlock();
   }
 
   public boolean isStoreAvailable() {
@@ -286,7 +324,7 @@ public class CombinedChainDataClient {
     final UInt64 startingSlot = compute_start_slot_at_epoch(epoch);
     int committeeCount = get_committee_count_per_slot(state, epoch).intValue();
     for (int i = 0; i < SLOTS_PER_EPOCH; i++) {
-      UInt64 slot = startingSlot.plus(UInt64.valueOf(i));
+      UInt64 slot = startingSlot.plus(i);
       for (int j = 0; j < committeeCount; j++) {
         UInt64 idx = UInt64.valueOf(j);
         List<Integer> committee = CommitteeUtil.get_beacon_committee(state, slot, idx);
@@ -296,8 +334,24 @@ public class CombinedChainDataClient {
     return result;
   }
 
-  public UInt64 getBestSlot() {
-    return this.recentChainData.getBestSlot();
+  /** @return The slot at which the chain head block was proposed */
+  public UInt64 getHeadSlot() {
+    return this.recentChainData.getHeadSlot();
+  }
+
+  /** @return The epoch in which the chain head block was proposed */
+  public UInt64 getHeadEpoch() {
+    return compute_epoch_at_slot(getHeadSlot());
+  }
+
+  /** @return The current slot according to clock time */
+  public UInt64 getCurrentSlot() {
+    return this.recentChainData.getCurrentSlot().orElseGet(this::getHeadSlot);
+  }
+
+  /** @return The current epoch according to clock time */
+  public UInt64 getCurrentEpoch() {
+    return compute_epoch_at_slot(getCurrentSlot());
   }
 
   @VisibleForTesting

@@ -218,6 +218,11 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
+  public Map<UInt64, VoteTracker> getVotes() {
+    return hotDao.getVotes();
+  }
+
+  @Override
   public Optional<UInt64> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
     return finalizedDao.getSlotForFinalizedBlockRoot(blockRoot);
   }
@@ -355,8 +360,7 @@ public class RocksDbDatabase implements Database {
           .ifPresent(
               checkpoint -> {
                 updater.setFinalizedCheckpoint(checkpoint);
-                UInt64 finalizedSlot =
-                    checkpoint.getEpochStartSlot().plus(UInt64.valueOf(SLOTS_PER_EPOCH));
+                UInt64 finalizedSlot = checkpoint.getEpochStartSlot().plus(SLOTS_PER_EPOCH);
                 updater.pruneHotStateRoots(hotDao.getStateRootsBeforeSlot(finalizedSlot));
               });
 

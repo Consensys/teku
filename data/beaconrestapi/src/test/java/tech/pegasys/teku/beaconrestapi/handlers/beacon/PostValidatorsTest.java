@@ -40,6 +40,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.util.config.Constants;
 
 public class PostValidatorsTest {
   private static final String EMPTY_LIST = "[]";
@@ -86,6 +87,17 @@ public class PostValidatorsTest {
   @Test
   void shouldReturnBadRequestIfBadObject() throws Exception {
     when(context.body()).thenReturn("{}");
+    handler.handle(context);
+
+    verify(context).status(SC_BAD_REQUEST);
+    verify(context).body();
+    verifyNoMoreInteractions(context);
+  }
+
+  @Test
+  void shouldReturnBadRequestWhenEpochTooHigh() throws Exception {
+    final String body = "{\"epoch\":" + Constants.FAR_FUTURE_EPOCH + ",\"pubkeys\":[]}";
+    when(context.body()).thenReturn(body);
     handler.handle(context);
 
     verify(context).status(SC_BAD_REQUEST);

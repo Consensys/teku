@@ -21,4 +21,12 @@ public enum SyncState {
   public boolean isInSync() {
     return this == IN_SYNC;
   }
+
+  public boolean isStartingUp() {
+    return this == START_UP;
+  }
+
+  public boolean isSyncing() {
+    return this == SYNCING;
+  }
 }

@@ -114,6 +114,7 @@ public class Eth2NetworkBuilder {
     final DiscoveryNetwork<?> network = buildNetwork(gossipEncoding);
 
     return new ActiveEth2Network(
+        asyncRunner,
         metricsSystem,
         network,
         eth2PeerManager,
@@ -143,7 +144,9 @@ public class Eth2NetworkBuilder {
         p2pNetwork,
         new Eth2PeerSelectionStrategy(
             config.getTargetPeerRange(),
-            network -> PeerSubnetSubscriptions.create(network, subnetTopicProvider),
+            network ->
+                PeerSubnetSubscriptions.create(
+                    network, subnetTopicProvider, config.getTargetSubnetSubscriberCount()),
             reputationManager,
             Collections::shuffle),
         config);

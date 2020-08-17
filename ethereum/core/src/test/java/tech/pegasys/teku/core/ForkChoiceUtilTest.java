@@ -14,6 +14,11 @@
 package tech.pegasys.teku.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import java.util.List;
@@ -27,6 +32,7 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -36,8 +42,7 @@ import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 class ForkChoiceUtilTest {
 
   private static final UInt64 GENESIS_TIME = UInt64.valueOf("1591924193");
-  static final UInt64 SLOT_50 =
-      GENESIS_TIME.plus(UInt64.valueOf(SECONDS_PER_SLOT).times(UInt64.valueOf(50L)));
+  static final UInt64 SLOT_50 = GENESIS_TIME.plus(SECONDS_PER_SLOT * 50L);
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
   private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
@@ -46,7 +51,7 @@ class ForkChoiceUtilTest {
       ProtoArrayForkChoiceStrategy.initialize(store, new StubProtoArrayStorageChannel()).join();
 
   @Test
-  void getAncestors_shouldGetSimpleSequenceOfAncestors() throws Exception {
+  void getAncestors_shouldGetSimpleSequenceOfAncestors() {
     chainBuilder.generateBlocksUpToSlot(10).forEach(this::addBlock);
 
     final NavigableMap<UInt64, Bytes32> rootsBySlot =
@@ -61,7 +66,7 @@ class ForkChoiceUtilTest {
   }
 
   @Test
-  void getAncestors_shouldGetSequenceOfRootsWhenSkipping() throws Exception {
+  void getAncestors_shouldGetSequenceOfRootsWhenSkipping() {
     chainBuilder.generateBlocksUpToSlot(10).forEach(this::addBlock);
 
     final NavigableMap<UInt64, Bytes32> rootsBySlot =
@@ -76,8 +81,7 @@ class ForkChoiceUtilTest {
   }
 
   @Test
-  void getAncestors_shouldGetSequenceOfRootsWhenStartIsPriorToFinalizedCheckpoint()
-      throws Exception {
+  void getAncestors_shouldGetSequenceOfRootsWhenStartIsPriorToFinalizedCheckpoint() {
     chainBuilder.generateBlocksUpToSlot(10).forEach(this::addBlock);
     forkChoiceStrategy.setPruneThreshold(0);
     forkChoiceStrategy.maybePrune(chainBuilder.getBlockAtSlot(4).getRoot());
@@ -94,7 +98,7 @@ class ForkChoiceUtilTest {
   }
 
   @Test
-  void getAncestors_shouldGetSequenceOfRootsWhenEndIsAfterChainHead() throws Exception {
+  void getAncestors_shouldGetSequenceOfRootsWhenEndIsAfterChainHead() {
     chainBuilder.generateBlocksUpToSlot(10).forEach(this::addBlock);
 
     final NavigableMap<UInt64, Bytes32> rootsBySlot =
@@ -109,7 +113,7 @@ class ForkChoiceUtilTest {
   }
 
   @Test
-  void getAncestors_shouldNotIncludeEntryForEmptySlots() throws Exception {
+  void getAncestors_shouldNotIncludeEntryForEmptySlots() {
     addBlock(chainBuilder.generateBlockAtSlot(3));
     addBlock(chainBuilder.generateBlockAtSlot(5));
 
@@ -143,6 +147,16 @@ class ForkChoiceUtilTest {
   public void getSlotStartTime_shouldGetCorrectTimePastGenesis() {
     assertThat(ForkChoiceUtil.getSlotStartTime(UInt64.valueOf(50L), GENESIS_TIME))
         .isEqualTo(SLOT_50);
+  }
+
+  @Test
+  void on_tick_shouldExitImmediatelyWhenCurrentTimeIsBeforeGenesisTime() {
+    final MutableStore store = mock(MutableStore.class);
+    when(store.getGenesisTime()).thenReturn(UInt64.valueOf(3000));
+    when(store.getTime()).thenReturn(UInt64.ZERO);
+    ForkChoiceUtil.on_tick(store, UInt64.valueOf(2000));
+
+    verify(store, never()).setTime(any());
   }
 
   private Map<UInt64, Bytes32> getRootsForBlocks(final int... blockNumbers) {

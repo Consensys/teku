@@ -27,4 +27,7 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:statetransition'))
   testImplementation testFixtures(project(':util'))
   testImplementation testFixtures(project(':storage'))
+
+  integrationTestImplementation testFixtures(project(':ethereum:core'))
+  integrationTestImplementation testFixtures(project(':infrastructure:async'))
 }

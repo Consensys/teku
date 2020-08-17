@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -31,10 +32,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Set;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -128,7 +132,7 @@ public class AttestationValidator {
                 return SAVE_FOR_FUTURE;
               }
 
-              final BeaconState state = maybeState.get();
+              final BeaconState state = resolveStateForAttestation(attestation, maybeState.get());
 
               // The attestation's committee index (attestation.data.index) is for the correct
               // subnet.
@@ -155,6 +159,33 @@ public class AttestationValidator {
             });
   }
 
+  /**
+   * Committee information is only guaranteed to be stable up to 1 epoch ahead, if block attested to
+   * is too old, we need to roll the corresponding state forward to process the attestation
+   *
+   * @param attestation The attestation to be processed
+   * @param blockState The state corresponding to the block being attested to
+   * @return The state to use for validation of this attestation
+   */
+  public BeaconState resolveStateForAttestation(
+      final Attestation attestation, final BeaconState blockState) {
+    final Bytes32 blockRoot = attestation.getData().getBeacon_block_root();
+    final Checkpoint targetEpoch = attestation.getData().getTarget();
+    final UInt64 earliestSlot =
+        CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(targetEpoch.getEpoch());
+    final UInt64 earliestEpoch = compute_epoch_at_slot(earliestSlot);
+
+    final BeaconState state;
+    if (blockState.getSlot().isLessThan(earliestSlot)) {
+      final Checkpoint checkpoint = new Checkpoint(earliestEpoch, blockRoot);
+      state = recentChainData.getStore().getCheckpointState(checkpoint, blockState);
+    } else {
+      state = blockState;
+    }
+
+    return state;
+  }
+
   private ValidatorAndTargetEpoch getValidatorAndTargetEpoch(final Attestation attestation) {
     return new ValidatorAndTargetEpoch(
         attestation.getData().getTarget().getEpoch(),
@@ -166,7 +197,7 @@ public class AttestationValidator {
       final Attestation attestation, final UInt64 currentTimeMillis) {
     final UInt64 minimumBroadcastTimeMillis =
         minimumBroadcastTimeMillis(attestation.getData().getSlot());
-    return currentTimeMillis.compareTo(minimumBroadcastTimeMillis) < 0;
+    return currentTimeMillis.isLessThan(minimumBroadcastTimeMillis);
   }
 
   private boolean isFromFarFuture(final Attestation attestation, final UInt64 currentTimeMillis) {
@@ -175,19 +206,16 @@ public class AttestationValidator {
             recentChainData
                 .getGenesisTime()
                 .plus(
-                    attestation
-                        .getEarliestSlotForForkChoiceProcessing()
-                        .times(UInt64.valueOf(SECONDS_PER_SLOT))));
+                    attestation.getEarliestSlotForForkChoiceProcessing().times(SECONDS_PER_SLOT)));
     final UInt64 discardAttestationsAfterMillis =
-        currentTimeMillis.plus(
-            secondsToMillis(MAX_FUTURE_SLOT_ALLOWANCE.times(UInt64.valueOf(SECONDS_PER_SLOT))));
-    return attestationSlotTimeMillis.compareTo(discardAttestationsAfterMillis) > 0;
+        currentTimeMillis.plus(secondsToMillis(MAX_FUTURE_SLOT_ALLOWANCE.times(SECONDS_PER_SLOT)));
+    return attestationSlotTimeMillis.isGreaterThan(discardAttestationsAfterMillis);
   }
 
   private boolean isCurrentTimeAfterAttestationPropagationSlotRange(
       final UInt64 currentTimeMillis, final Attestation attestation) {
     final UInt64 attestationSlot = attestation.getData().getSlot();
-    return maximumBroadcastTimeMillis(attestationSlot).compareTo(currentTimeMillis) < 0;
+    return maximumBroadcastTimeMillis(attestationSlot).isLessThan(currentTimeMillis);
   }
 
   private UInt64 secondsToMillis(final UInt64 seconds) {
@@ -196,11 +224,9 @@ public class AttestationValidator {
 
   private UInt64 minimumBroadcastTimeMillis(final UInt64 attestationSlot) {
     final UInt64 lastAllowedTime =
-        recentChainData
-            .getGenesisTime()
-            .plus(attestationSlot.times(UInt64.valueOf(SECONDS_PER_SLOT)));
+        recentChainData.getGenesisTime().plus(attestationSlot.times(SECONDS_PER_SLOT));
     final UInt64 lastAllowedTimeMillis = secondsToMillis(lastAllowedTime);
-    return lastAllowedTimeMillis.compareTo(MAXIMUM_GOSSIP_CLOCK_DISPARITY) >= 0
+    return lastAllowedTimeMillis.isGreaterThanOrEqualTo(MAXIMUM_GOSSIP_CLOCK_DISPARITY)
         ? lastAllowedTimeMillis.minus(MAXIMUM_GOSSIP_CLOCK_DISPARITY)
         : ZERO;
   }
@@ -209,9 +235,7 @@ public class AttestationValidator {
     final UInt64 lastAllowedSlot = attestationSlot.plus(ATTESTATION_PROPAGATION_SLOT_RANGE);
     // The last allowed time is the end of the lastAllowedSlot (hence the plus 1).
     final UInt64 lastAllowedTime =
-        recentChainData
-            .getGenesisTime()
-            .plus(lastAllowedSlot.plus(ONE).times(UInt64.valueOf(SECONDS_PER_SLOT)));
+        recentChainData.getGenesisTime().plus(lastAllowedSlot.plus(ONE).times(SECONDS_PER_SLOT));
 
     // Add allowed clock disparity
     return secondsToMillis(lastAllowedTime).plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY);

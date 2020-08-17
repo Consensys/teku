@@ -147,10 +147,10 @@ class BeaconStateUtilTest {
     // Calculate Expected Results
     UInt64 expectedBalance = UInt64.ZERO;
     for (UInt64 balance : state.getBalances()) {
-      if (balance.compareTo(UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE)) < 0) {
+      if (balance.isLessThan(UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE))) {
         expectedBalance = expectedBalance.plus(balance);
       } else {
-        expectedBalance = expectedBalance.plus(UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
+        expectedBalance = expectedBalance.plus(Constants.MAX_EFFECTIVE_BALANCE);
       }
     }
 
@@ -316,17 +316,6 @@ class BeaconStateUtilTest {
       int idx = CommitteeUtil.compute_shuffled_index(i, listSize, seed);
       assertFalse(done[idx]);
       done[idx] = true;
-    }
-  }
-
-  @Test
-  void succeedsWhenGetPermutedIndexAndShuffleGiveTheSameResults() {
-    Bytes32 seed = Bytes32.leftPad(Bytes.ofUnsignedInt(100));
-    int listSize = 100;
-    int[] shuffling = BeaconStateUtil.shuffle(listSize, seed);
-    for (int i = 0; i < listSize; i++) {
-      int idx = CommitteeUtil.compute_shuffled_index(i, listSize, seed);
-      assertEquals(shuffling[i], idx);
     }
   }
 

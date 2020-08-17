@@ -75,9 +75,7 @@ public class TestStoreFactory {
     checkpoint_states.put(anchorCheckpoint, anchorState);
 
     return new TestStoreImpl(
-        anchorState
-            .getGenesis_time()
-            .plus(UInt64.valueOf(SECONDS_PER_SLOT).times(anchorState.getSlot())),
+        anchorState.getGenesis_time().plus(anchorState.getSlot().times(SECONDS_PER_SLOT)),
         anchorState.getGenesis_time(),
         anchorCheckpoint,
         anchorCheckpoint,

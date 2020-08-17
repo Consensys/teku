@@ -14,8 +14,10 @@
 package tech.pegasys.teku.cli.subcommand.debug;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Optional;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
@@ -25,9 +27,11 @@ import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.options.DataOptions;
 import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
@@ -65,9 +69,11 @@ public class DebugDbCommand implements Runnable {
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
-  public int getDeposits(@Mixin final DataOptions dataOptions) throws Exception {
+  public int getDeposits(
+      @Mixin final DataOptions dataOptions, @Mixin final NetworkOptions networkOptions)
+      throws Exception {
     try (final YamlEth1EventsChannel eth1EventsChannel = new YamlEth1EventsChannel(System.out);
-        final Database database = createDatabase(dataOptions)) {
+        final Database database = createDatabase(dataOptions, networkOptions)) {
       final DepositStorage depositStorage =
           DepositStorage.create(eth1EventsChannel, database, true);
       depositStorage.replayDepositEvents().join();
@@ -103,7 +109,7 @@ public class DebugDbCommand implements Runnable {
           final long slot)
       throws Exception {
     setConstants(networkOptions);
-    try (final Database database = createDatabase(dataOptions)) {
+    try (final Database database = createDatabase(dataOptions, networkOptions)) {
       return writeState(
           outputFile, database.getLatestAvailableFinalizedState(UInt64.valueOf(slot)));
     }
@@ -131,7 +137,7 @@ public class DebugDbCommand implements Runnable {
           final Path outputFile)
       throws Exception {
     setConstants(networkOptions);
-    try (final Database database = createDatabase(dataOptions)) {
+    try (final Database database = createDatabase(dataOptions, networkOptions)) {
       final Optional<BeaconState> state =
           database
               .createMemoryStore()
@@ -141,15 +147,59 @@ public class DebugDbCommand implements Runnable {
     }
   }
 
+  @Command(
+      name = "get-forkchoice-snapshot",
+      description = "Get the stored fork choice data",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int getForkChoiceSnapshot(
+      @Mixin final DataOptions dataOptions,
+      @Mixin final NetworkOptions networkOptions,
+      @Option(
+              names = {"--output", "-o"},
+              description = "File to write output to")
+          final Path outputFile)
+      throws Exception {
+    setConstants(networkOptions);
+    try (final Database database = createDatabase(dataOptions, networkOptions)) {
+      final Optional<ProtoArraySnapshot> snapshot = database.getProtoArraySnapshot();
+      if (snapshot.isEmpty()) {
+        System.err.println("No fork choice snapshot available.");
+        return 2;
+      }
+      final Map<UInt64, VoteTracker> votes = database.getVotes();
+      final String report = ForkChoiceDataWriter.writeForkChoiceData(snapshot.get(), votes);
+      if (outputFile != null) {
+        Files.writeString(outputFile, report, StandardCharsets.UTF_8);
+      } else {
+        System.out.println(report);
+      }
+      return 0;
+    }
+  }
+
   private void setConstants(@Mixin final NetworkOptions networkOptions) {
     Constants.setConstants(
         NetworkDefinition.fromCliArg(networkOptions.getNetwork()).getConstants());
   }
 
-  private Database createDatabase(final DataOptions dataOptions) {
+  private Database createDatabase(
+      final DataOptions dataOptions, final NetworkOptions networkOptions) {
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
-            new NoOpMetricsSystem(), dataOptions.getDataPath(), dataOptions.getDataStorageMode());
+            new NoOpMetricsSystem(),
+            dataOptions.getDataPath(),
+            dataOptions.getDataStorageMode(),
+            NetworkDefinition.fromCliArg(networkOptions.getNetwork())
+                .getEth1DepositContractAddress()
+                .orElse(null));
     return databaseFactory.createDatabase();
   }
 

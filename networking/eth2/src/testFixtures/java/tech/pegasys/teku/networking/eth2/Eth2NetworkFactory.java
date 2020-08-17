@@ -196,12 +196,16 @@ public class Eth2NetworkFactory {
                 new Eth2PeerSelectionStrategy(
                     config.getTargetPeerRange(),
                     gossipNetwork ->
-                        PeerSubnetSubscriptions.create(gossipNetwork, subnetTopicProvider),
+                        PeerSubnetSubscriptions.create(
+                            gossipNetwork,
+                            subnetTopicProvider,
+                            config.getTargetSubnetSubscriberCount()),
                     reputationManager,
                     Collections::shuffle),
                 config);
 
         return new ActiveEth2Network(
+            asyncRunner,
             metricsSystem,
             network,
             eth2PeerManager,
@@ -235,6 +239,7 @@ public class Eth2NetworkFactory {
           false,
           emptyList(),
           new TargetPeerRange(20, 30, 0),
+          2,
           GossipConfig.DEFAULT_CONFIG,
           new WireLogsConfig(false, false, true, false));
     }

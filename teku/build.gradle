@@ -10,6 +10,7 @@ dependencies {
   implementation project(':infrastructure:async')
   implementation project(':logging')
   implementation project(':networking:p2p')
+  implementation project(':protoarray')
   implementation project(':pow')
   implementation project(':services:beaconchain')
   implementation project(':services:chainstorage')

@@ -27,6 +27,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
+import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsEpoch;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
@@ -105,7 +106,7 @@ public class GetBlock implements Handler {
 
       final UInt64 slot;
       if (queryParamMap.containsKey(EPOCH)) {
-        UInt64 epoch = getParameterValueAsUInt64(queryParamMap, EPOCH);
+        UInt64 epoch = getParameterValueAsEpoch(queryParamMap, EPOCH);
         slot = compute_start_slot_at_epoch(epoch);
       } else if (queryParamMap.containsKey(SLOT)) {
         slot = getParameterValueAsUInt64(queryParamMap, SLOT);

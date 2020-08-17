@@ -38,7 +38,6 @@ import static tech.pegasys.teku.util.config.Constants.MIN_SEED_LOOKAHEAD;
 import static tech.pegasys.teku.util.config.Constants.MIN_SLASHING_PENALTY_QUOTIENT;
 import static tech.pegasys.teku.util.config.Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
 import static tech.pegasys.teku.util.config.Constants.PROPOSER_REWARD_QUOTIENT;
-import static tech.pegasys.teku.util.config.Constants.SHUFFLE_ROUND_COUNT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
 import static tech.pegasys.teku.util.config.Constants.TARGET_COMMITTEE_SIZE;
@@ -255,8 +254,7 @@ public class BeaconStateUtil {
    */
   public static Bytes32 get_seed(BeaconState state, UInt64 epoch, Bytes4 domain_type)
       throws IllegalArgumentException {
-    UInt64 randaoIndex =
-        epoch.plus(UInt64.valueOf(EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD - 1));
+    UInt64 randaoIndex = epoch.plus(EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD - 1);
     Bytes32 mix = get_randao_mix(state, randaoIndex);
     Bytes epochBytes = uint_to_bytes(epoch.longValue(), 8);
     return Hash.sha2_256(Bytes.concatenate(domain_type.getWrappedBytes(), epochBytes, mix));
@@ -412,7 +410,7 @@ public class BeaconStateUtil {
    *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_epoch_of_slot</a>
    */
   public static UInt64 compute_epoch_at_slot(UInt64 slot) {
-    return slot.dividedBy(UInt64.valueOf(Constants.SLOTS_PER_EPOCH));
+    return slot.dividedBy(Constants.SLOTS_PER_EPOCH);
   }
 
   /**
@@ -465,7 +463,7 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_epoch_of_slot</a>
    */
   public static UInt64 compute_start_slot_at_epoch(UInt64 epoch) {
-    return epoch.times(UInt64.valueOf(SLOTS_PER_EPOCH));
+    return epoch.times(SLOTS_PER_EPOCH);
   }
 
   /**
@@ -496,8 +494,7 @@ public class BeaconStateUtil {
         UInt64.valueOf(
             state.getValidators().stream()
                 .filter(v -> v.getExit_epoch().equals(final_exit_queue_epoch))
-                .collect(Collectors.toList())
-                .size());
+                .count());
 
     if (exit_queue_churn.compareTo(get_validator_churn_limit(state)) >= 0) {
       exit_queue_epoch = exit_queue_epoch.plus(UInt64.ONE);
@@ -511,7 +508,7 @@ public class BeaconStateUtil {
             validator
                 .withExit_epoch(exit_queue_epoch)
                 .withWithdrawable_epoch(
-                    exit_queue_epoch.plus(UInt64.valueOf(MIN_VALIDATOR_WITHDRAWABILITY_DELAY))));
+                    exit_queue_epoch.plus(MIN_VALIDATOR_WITHDRAWABILITY_DELAY)));
   }
 
   /**
@@ -539,16 +536,16 @@ public class BeaconStateUtil {
                 .withWithdrawable_epoch(
                     validator
                         .getWithdrawable_epoch()
-                        .max(epoch.plus(UInt64.valueOf(EPOCHS_PER_SLASHINGS_VECTOR)))));
+                        .max(epoch.plus(EPOCHS_PER_SLASHINGS_VECTOR))));
 
-    int index = epoch.mod(UInt64.valueOf(EPOCHS_PER_SLASHINGS_VECTOR)).intValue();
+    int index = epoch.mod(EPOCHS_PER_SLASHINGS_VECTOR).intValue();
     state
         .getSlashings()
         .set(index, state.getSlashings().get(index).plus(validator.getEffective_balance()));
     decrease_balance(
         state,
         slashed_index,
-        validator.getEffective_balance().dividedBy(UInt64.valueOf(MIN_SLASHING_PENALTY_QUOTIENT)));
+        validator.getEffective_balance().dividedBy(MIN_SLASHING_PENALTY_QUOTIENT));
 
     // Apply proposer and whistleblower rewards
     int proposer_index = get_beacon_proposer_index(state);
@@ -557,7 +554,7 @@ public class BeaconStateUtil {
     }
 
     UInt64 whistleblower_reward =
-        validator.getEffective_balance().dividedBy(UInt64.valueOf(WHISTLEBLOWER_REWARD_QUOTIENT));
+        validator.getEffective_balance().dividedBy(WHISTLEBLOWER_REWARD_QUOTIENT);
     UInt64 proposer_reward = whistleblower_reward.dividedBy(PROPOSER_REWARD_QUOTIENT);
     increase_balance(state, proposer_index, proposer_reward);
     increase_balance(state, whistleblower_index, whistleblower_reward.minus(proposer_reward));
@@ -610,85 +607,8 @@ public class BeaconStateUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_randao_mix</a>
    */
   public static Bytes32 get_randao_mix(BeaconState state, UInt64 epoch) {
-    int index = epoch.mod(UInt64.valueOf(EPOCHS_PER_HISTORICAL_VECTOR)).intValue();
+    int index = epoch.mod(EPOCHS_PER_HISTORICAL_VECTOR).intValue();
     return state.getRandao_mixes().get(index);
-  }
-
-  /**
-   * Return shuffled indices in a pseudorandom permutation `0...list_size-1` with ``seed`` as
-   * entropy.
-   *
-   * <p>Utilizes 'swap or not' shuffling found in
-   * https://link.springer.com/content/pdf/10.1007%2F978-3-642-32009-5_1.pdf See the 'generalized
-   * domain' algorithm on page 3.
-   *
-   * <p>The result of this should be the same as calling get_permuted_index() for each index in the
-   * list
-   *
-   * @param list_size The size of the list from which the element is taken. Must not exceed 2^31.
-   * @param seed Initial seed value used for randomization.
-   * @return The permuted arrays of indices
-   */
-  public static int[] shuffle(int list_size, Bytes32 seed) {
-
-    if (list_size == 0) {
-      return new int[0];
-    }
-
-    //  In the following, great care is needed around signed and unsigned values.
-    //  Note that the % (modulo) operator in Java behaves differently from the
-    //  modulo operator in python:
-    //    Python -1 % 13 = 12
-    //    Java   -1 % 13 = -1
-
-    //  Using UInt64 doesn't help us as some quantities can legitimately be negative.
-
-    // Note: this should be faster than manually creating the list in a for loop
-    // https://stackoverflow.com/questions/10242380/how-can-i-generate-a-list-or-array-of-sequential-integers-in-java
-    int[] indices = IntStream.rangeClosed(0, list_size - 1).toArray();
-
-    // int[] indices = new int[list_size];
-    // for (int i = 0; i < list_size; i++) {
-    //   indices[i] = i;
-    // }
-
-    byte[] powerOfTwoNumbers = {1, 2, 4, 8, 16, 32, 64, (byte) 128};
-
-    for (int round = 0; round < SHUFFLE_ROUND_COUNT; round++) {
-
-      Bytes roundAsByte = Bytes.of((byte) round);
-
-      Bytes hashBytes = Bytes.EMPTY;
-      for (int i = 0; i < (list_size + 255) / 256; i++) {
-        Bytes iAsBytes4 = uint_to_bytes(i, 4);
-        hashBytes = Bytes.wrap(hashBytes, Hash.sha2_256(Bytes.wrap(seed, roundAsByte, iAsBytes4)));
-      }
-
-      // This needs to be unsigned modulo.
-      int pivot =
-          toIntExact(
-              Long.remainderUnsigned(
-                  bytes_to_int64(Hash.sha2_256(Bytes.wrap(seed, roundAsByte)).slice(0, 8)),
-                  list_size));
-
-      for (int i = 0; i < list_size; i++) {
-
-        int flip = (pivot - indices[i]) % list_size;
-        if (flip < 0) {
-          // Account for flip being negative
-          flip += list_size;
-        }
-
-        int hashPosition = Math.max(indices[i], flip);
-        byte theByte = hashBytes.get(hashPosition / 8);
-        byte theMask = powerOfTwoNumbers[hashPosition % 8];
-        if ((theByte & theMask) != 0) {
-          indices[i] = flip;
-        }
-      }
-    }
-
-    return indices;
   }
 
   /**
@@ -797,7 +717,7 @@ public class BeaconStateUtil {
    *     https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#compute_activation_exit_epoch</a>
    */
   public static UInt64 compute_activation_exit_epoch(UInt64 epoch) {
-    return epoch.plus(UInt64.ONE).plus(UInt64.valueOf(MAX_SEED_LOOKAHEAD));
+    return epoch.plus(UInt64.ONE).plus(MAX_SEED_LOOKAHEAD);
   }
 
   public static boolean all(Bitvector bitvector, int start, int end) {
@@ -820,12 +740,11 @@ public class BeaconStateUtil {
   public static UInt64 integer_squareroot(UInt64 n) {
     checkArgument(
         n.compareTo(UInt64.ZERO) >= 0, "checkArgument threw an exception in integer_squareroot()");
-    UInt64 TWO = UInt64.valueOf(2L);
     UInt64 x = n;
-    UInt64 y = x.plus(UInt64.ONE).dividedBy(TWO);
+    UInt64 y = x.plus(UInt64.ONE).dividedBy(2);
     while (y.compareTo(x) < 0) {
       x = y;
-      y = x.plus(n.dividedBy(x)).dividedBy(TWO);
+      y = x.plus(n.dividedBy(x)).dividedBy(2);
     }
     return x;
   }
@@ -881,12 +800,12 @@ public class BeaconStateUtil {
       throws IllegalArgumentException {
     checkArgument(
         isBlockRootAvailableFromState(state, slot), "BeaconStateUtil.get_block_root_at_slot");
-    int latestBlockRootIndex = slot.mod(UInt64.valueOf(SLOTS_PER_HISTORICAL_ROOT)).intValue();
+    int latestBlockRootIndex = slot.mod(SLOTS_PER_HISTORICAL_ROOT).intValue();
     return state.getBlock_roots().get(latestBlockRootIndex);
   }
 
   public static boolean isBlockRootAvailableFromState(BeaconState state, UInt64 slot) {
-    UInt64 slotPlusHistoricalRoot = slot.plus(UInt64.valueOf(SLOTS_PER_HISTORICAL_ROOT));
+    UInt64 slotPlusHistoricalRoot = slot.plus(SLOTS_PER_HISTORICAL_ROOT);
     return slot.compareTo(state.getSlot()) < 0
         && state.getSlot().compareTo(slotPlusHistoricalRoot) <= 0;
   }

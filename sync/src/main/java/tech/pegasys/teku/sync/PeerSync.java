@@ -91,7 +91,7 @@ public class PeerSync {
 
     this.startingSlot = firstNonFinalSlot;
 
-    return executeSync(peer, peer.getStatus(), firstNonFinalSlot, SafeFuture.COMPLETE)
+    return executeSync(peer, firstNonFinalSlot, SafeFuture.COMPLETE)
         .whenComplete(
             (res, err) -> {
               if (err != null) {
@@ -108,14 +108,12 @@ public class PeerSync {
 
   @SuppressWarnings("FutureReturnValueIgnored")
   private SafeFuture<PeerSyncResult> executeSync(
-      final Eth2Peer peer,
-      final PeerStatus status,
-      final UInt64 startSlot,
-      final SafeFuture<Void> readyForRequest) {
+      final Eth2Peer peer, final UInt64 startSlot, final SafeFuture<Void> readyForRequest) {
     if (stopped.get()) {
       return SafeFuture.completedFuture(PeerSyncResult.CANCELLED);
     }
 
+    final PeerStatus status = peer.getStatus();
     final UInt64 count = calculateNumberOfBlocksToRequest(startSlot, status);
     if (count.longValue() == 0) {
       return completeSyncWithPeer(peer, status);
@@ -151,7 +149,7 @@ public class PeerSync {
                     peer.getId());
                 return SafeFuture.completedFuture(PeerSyncResult.EXCESSIVE_THROTTLING);
               }
-              return executeSync(peer, status, nextSlot, blockRequest.getReadyForNextRequest());
+              return executeSync(peer, nextSlot, blockRequest.getReadyForNextRequest());
             })
         .exceptionally(err -> handleFailedRequestToPeer(peer, err));
   }

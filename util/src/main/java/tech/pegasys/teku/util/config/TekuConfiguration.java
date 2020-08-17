@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.util.config;
 
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -51,6 +51,7 @@ public class TekuConfiguration implements MetricsConfig {
   private final String p2pPrivateKeyFile;
   private final int p2pPeerLowerBound;
   private final int p2pPeerUpperBound;
+  private final int targetSubnetSubscriberCount;
   private final List<String> p2pStaticPeers;
   private final boolean p2pSnappyEnabled;
 
@@ -63,9 +64,9 @@ public class TekuConfiguration implements MetricsConfig {
 
   // Validator
   private final String validatorsKeyFile;
-  // TODO (#1918): The following two options will eventually be moved to the validator subcommand
   private final List<String> validatorKeystoreFiles;
   private final List<String> validatorKeystorePasswordFiles;
+  private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeys;
   private final String validatorExternalSignerUrl;
   private final int validatorExternalSignerTimeout;
@@ -137,6 +138,7 @@ public class TekuConfiguration implements MetricsConfig {
       final String p2pPrivateKeyFile,
       final int p2pPeerLowerBound,
       final int p2pPeerUpperBound,
+      final int targetSubnetSubscriberCount,
       final List<String> p2pStaticPeers,
       final boolean p2pSnappyEnabled,
       final Integer interopGenesisTime,
@@ -148,6 +150,7 @@ public class TekuConfiguration implements MetricsConfig {
       final String validatorsKeyFile,
       final List<String> validatorKeystoreFiles,
       final List<String> validatorKeystorePasswordFiles,
+      final List<String> validatorKeys,
       final List<String> validatorExternalSignerPublicKeys,
       final String validatorExternalSignerUrl,
       final int validatorExternalSignerTimeout,
@@ -199,6 +202,7 @@ public class TekuConfiguration implements MetricsConfig {
     this.p2pPrivateKeyFile = p2pPrivateKeyFile;
     this.p2pPeerLowerBound = p2pPeerLowerBound;
     this.p2pPeerUpperBound = p2pPeerUpperBound;
+    this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.p2pStaticPeers = p2pStaticPeers;
     this.p2pSnappyEnabled = p2pSnappyEnabled;
     this.interopGenesisTime = interopGenesisTime;
@@ -210,6 +214,7 @@ public class TekuConfiguration implements MetricsConfig {
     this.validatorsKeyFile = validatorsKeyFile;
     this.validatorKeystoreFiles = validatorKeystoreFiles;
     this.validatorKeystorePasswordFiles = validatorKeystorePasswordFiles;
+    this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeys = validatorExternalSignerPublicKeys;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
     this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
@@ -312,6 +317,10 @@ public class TekuConfiguration implements MetricsConfig {
     return Math.min(1, p2pPeerLowerBound * 2 / 10);
   }
 
+  public int getTargetSubnetSubscriberCount() {
+    return targetSubnetSubscriberCount;
+  }
+
   public List<String> getP2pStaticPeers() {
     return p2pStaticPeers;
   }
@@ -358,6 +367,10 @@ public class TekuConfiguration implements MetricsConfig {
 
   public List<String> getValidatorKeystorePasswordFiles() {
     return validatorKeystorePasswordFiles;
+  }
+
+  public List<String> getValidatorKeys() {
+    return validatorKeys;
   }
 
   public List<BLSPublicKey> getValidatorExternalSignerPublicKeys() {
@@ -527,21 +540,16 @@ public class TekuConfiguration implements MetricsConfig {
   }
 
   public List<Pair<Path, Path>> getValidatorKeystorePasswordFilePairs() {
-    final List<String> keystoreFiles = getValidatorKeystoreFiles();
-    final List<String> keystorePasswordFiles = getValidatorKeystorePasswordFiles();
-
-    if (keystoreFiles.isEmpty() || keystorePasswordFiles.isEmpty()) {
-      return null;
+    final KeyStoreFilesLocator processor =
+        new KeyStoreFilesLocator(validatorKeys, File.pathSeparator);
+    processor.parse();
+    if (validatorKeystoreFiles != null) {
+      validateKeyStoreFilesAndPasswordFilesConfig();
+      processor.parseKeyAndPasswordList(
+          getValidatorKeystoreFiles(), getValidatorKeystorePasswordFiles());
     }
 
-    validateKeyStoreFilesAndPasswordFilesConfig();
-
-    final List<Pair<Path, Path>> keystoreFilePasswordFilePairs = new ArrayList<>();
-    for (int i = 0; i < keystoreFiles.size(); i++) {
-      keystoreFilePasswordFilePairs.add(
-          Pair.of(Path.of(keystoreFiles.get(i)), Path.of(keystorePasswordFiles.get(i))));
-    }
-    return keystoreFilePasswordFilePairs;
+    return processor.getFilePairs();
   }
 
   public void validateConfig() throws IllegalArgumentException {

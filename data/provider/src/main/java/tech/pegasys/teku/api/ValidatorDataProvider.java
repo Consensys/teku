@@ -21,7 +21,10 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -29,6 +32,7 @@ import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.ValidatorDuties;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
@@ -79,11 +83,11 @@ public class ValidatorDataProvider {
     if (randao == null) {
       throw new IllegalArgumentException(NO_RANDAO_PROVIDED);
     }
-    UInt64 bestSlot = combinedChainDataClient.getBestSlot();
-    if (bestSlot.plus(UInt64.valueOf(SLOTS_PER_EPOCH)).compareTo(slot) < 0) {
+    UInt64 bestSlot = combinedChainDataClient.getHeadSlot();
+    if (bestSlot.plus(SLOTS_PER_EPOCH).isLessThan(slot)) {
       throw new IllegalArgumentException(CANNOT_PRODUCE_FAR_FUTURE_BLOCK);
     }
-    if (bestSlot.compareTo(slot) > 0) {
+    if (bestSlot.isGreaterThan(slot)) {
       throw new IllegalArgumentException(CANNOT_PRODUCE_HISTORIC_BLOCK);
     }
 
@@ -196,5 +200,20 @@ public class ValidatorDataProvider {
   public void sendAggregateAndProof(SignedAggregateAndProof aggregateAndProof) {
     validatorApiChannel.sendAggregateAndProof(
         aggregateAndProof.asInternalSignedAggregateAndProof());
+  }
+
+  public void subscribeToBeaconCommitteeForAggregation(
+      final SubscribeToBeaconCommitteeRequest request) {
+    validatorApiChannel.subscribeToBeaconCommitteeForAggregation(
+        request.committee_index, request.aggregation_slot);
+  }
+
+  public void subscribeToPersistentSubnets(final List<SubnetSubscription> subnetSubscriptions) {
+    final Set<tech.pegasys.teku.datastructures.validator.SubnetSubscription>
+        internalSubnetSubscriptions =
+            subnetSubscriptions.stream()
+                .map(SubnetSubscription::asInternalSubnetSubscription)
+                .collect(Collectors.toSet());
+    validatorApiChannel.subscribeToPersistentSubnets(internalSubnetSubscriptions);
   }
 }

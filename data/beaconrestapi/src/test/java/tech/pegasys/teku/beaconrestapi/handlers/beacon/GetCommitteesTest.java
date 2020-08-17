@@ -43,6 +43,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class GetCommitteesTest {
@@ -67,11 +68,22 @@ public class GetCommitteesTest {
     storageSystem.chainUpdater().updateBestBlock(bestBlock);
 
     combinedChainDataClient = storageSystem.combinedChainDataClient();
-    epoch = slot.dividedBy(UInt64.valueOf(SLOTS_PER_EPOCH));
+    epoch = slot.dividedBy(SLOTS_PER_EPOCH);
   }
 
   @Test
   public void shouldReturnBadRequestWhenNoEpochIsSupplied() throws Exception {
+    ChainDataProvider provider = new ChainDataProvider(null, combinedChainDataClient);
+    final GetCommittees handler = new GetCommittees(provider, jsonProvider);
+
+    handler.handle(context);
+    verify(context).status(SC_BAD_REQUEST);
+  }
+
+  @Test
+  public void shouldReturnBadRequestWhenEpochIsTooLarge() throws Exception {
+    when(context.queryParamMap())
+        .thenReturn(Map.of(EPOCH, List.of(Constants.FAR_FUTURE_EPOCH.toString())));
     ChainDataProvider provider = new ChainDataProvider(null, combinedChainDataClient);
     final GetCommittees handler = new GetCommittees(provider, jsonProvider);
 

@@ -297,7 +297,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   private TekuConfiguration tekuConfiguration() {
-    // TODO (#2408): validate option dependencies
     return TekuConfiguration.builder()
         .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
         .setStartupTargetPeerCount(networkOptions.getStartupTargetPeerCount())
@@ -314,6 +313,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setP2pPrivateKeyFile(p2POptions.getP2pPrivateKeyFile())
         .setP2pPeerLowerBound(p2POptions.getP2pLowerBound())
         .setP2pPeerUpperBound(p2POptions.getP2pUpperBound())
+        .setTargetSubnetSubscriberCount(p2POptions.getP2pTargetSubnetSubscriberCount())
         .setP2pStaticPeers(p2POptions.getP2pStaticPeers())
         .setP2pSnappyEnabled(p2POptions.isP2pSnappyEnabled())
         .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
@@ -324,6 +324,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setInteropEnabled(interopOptions.isInteropEnabled())
         .setValidatorKeystoreFiles(validatorOptions.getValidatorKeystoreFiles())
         .setValidatorKeystorePasswordFiles(validatorOptions.getValidatorKeystorePasswordFiles())
+        .setValidatorKeys(validatorOptions.getValidatorKeys())
         .setValidatorExternalSignerPublicKeys(
             validatorOptions.getValidatorExternalSignerPublicKeys())
         .setValidatorExternalSignerUrl(validatorOptions.getValidatorExternalSignerUrl())

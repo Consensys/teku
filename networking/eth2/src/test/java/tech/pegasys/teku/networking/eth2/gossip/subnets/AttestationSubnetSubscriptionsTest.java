@@ -31,6 +31,7 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationSubnetSubscriptionsTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData =
       MemoryOnlyRecentChainData.create(mock(EventBus.class));
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
@@ -58,6 +60,7 @@ public class AttestationSubnetSubscriptionsTest {
     BeaconChainUtil.create(0, recentChainData).initializeStorage();
     subnetSubscriptions =
         new AttestationSubnetSubscriptions(
+            asyncRunner,
             gossipNetwork,
             gossipEncoding,
             mock(AttestationValidator.class),

@@ -24,7 +24,6 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 public class AttestationDataStateTransitionValidator
@@ -52,14 +51,13 @@ public class AttestationDataStateTransitionValidator
         () ->
             check(
                 data.getSlot()
-                        .plus(UInt64.valueOf(Constants.MIN_ATTESTATION_INCLUSION_DELAY))
+                        .plus(Constants.MIN_ATTESTATION_INCLUSION_DELAY)
                         .compareTo(state.getSlot())
                     <= 0,
                 AttestationInvalidReason.SUBMITTED_TOO_QUICKLY),
         () ->
             check(
-                state.getSlot().compareTo(data.getSlot().plus(UInt64.valueOf(SLOTS_PER_EPOCH)))
-                    <= 0,
+                state.getSlot().isLessThanOrEqualTo(data.getSlot().plus(SLOTS_PER_EPOCH)),
                 AttestationInvalidReason.SUBMITTED_TOO_LATE),
         () -> {
           if (data.getTarget().getEpoch().equals(get_current_epoch(state))) {

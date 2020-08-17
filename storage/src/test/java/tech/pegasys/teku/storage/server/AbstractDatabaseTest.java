@@ -703,7 +703,7 @@ public abstract class AbstractDatabaseTest {
     // Check that last block
     final SignedBeaconBlock lastFinalizedBlock = finalizedBlocks.get(finalizedBlocks.size() - 1);
     for (int i = 0; i < 10; i++) {
-      final UInt64 slot = lastFinalizedBlock.getSlot().plus(UInt64.valueOf(i));
+      final UInt64 slot = lastFinalizedBlock.getSlot().plus(i);
       assertThat(database.getLatestFinalizedBlockAtSlot(slot))
           .describedAs("Latest finalized block at slot %s", slot)
           .contains(lastFinalizedBlock);

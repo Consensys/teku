@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.util.config;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -21,7 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 
 public class TekuConfigurationBuilder {
 
-  private static final boolean DEFAULT_P2P_SNAPPY_ENABLED = false;
+  private static final boolean DEFAULT_P2P_SNAPPY_ENABLED = true;
   private String constants;
   private Integer startupTargetPeerCount;
   private Integer startupTimeoutSeconds;
@@ -37,6 +38,7 @@ public class TekuConfigurationBuilder {
   private String p2pPrivateKeyFile;
   private int p2pPeerLowerBound;
   private int p2pPeerUpperBound;
+  private int targetSubnetSubscriberCount;
   private List<String> p2pStaticPeers;
   private Boolean p2pSnappyEnabled;
   private Integer interopGenesisTime;
@@ -46,8 +48,9 @@ public class TekuConfigurationBuilder {
   private int interopNumberOfValidators;
   private boolean interopEnabled;
   private String validatorsKeyFile;
-  private List<String> validatorKeystoreFiles;
-  private List<String> validatorKeystorePasswordFiles;
+  private List<String> validatorKeystoreFiles = new ArrayList<>();
+  private List<String> validatorKeystorePasswordFiles = new ArrayList<>();
+  private List<String> validatorKeys = new ArrayList<>();
   private List<String> validatorExternalSignerPublicKeys;
   private String validatorExternalSignerUrl;
   private int validatorExternalSignerTimeout;
@@ -162,6 +165,12 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
+  public TekuConfigurationBuilder setTargetSubnetSubscriberCount(
+      final int targetSubnetSubscriberCount) {
+    this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
+    return this;
+  }
+
   public TekuConfigurationBuilder setP2pStaticPeers(final List<String> p2pStaticPeers) {
     this.p2pStaticPeers = p2pStaticPeers;
     return this;
@@ -219,6 +228,11 @@ public class TekuConfigurationBuilder {
   public TekuConfigurationBuilder setValidatorKeystorePasswordFiles(
       final List<String> validatorKeystorePasswordFiles) {
     this.validatorKeystorePasswordFiles = validatorKeystorePasswordFiles;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setValidatorKeys(final List<String> validatorKeys) {
+    this.validatorKeys = validatorKeys;
     return this;
   }
 
@@ -454,6 +468,7 @@ public class TekuConfigurationBuilder {
         p2pPrivateKeyFile,
         p2pPeerLowerBound,
         p2pPeerUpperBound,
+        targetSubnetSubscriberCount,
         p2pStaticPeers,
         p2pSnappyEnabled,
         interopGenesisTime,
@@ -465,6 +480,7 @@ public class TekuConfigurationBuilder {
         validatorsKeyFile,
         validatorKeystoreFiles,
         validatorKeystorePasswordFiles,
+        validatorKeys,
         validatorExternalSignerPublicKeys,
         validatorExternalSignerUrl,
         validatorExternalSignerTimeout,

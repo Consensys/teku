@@ -74,7 +74,8 @@ public class SignedBlockAndState {
       return false;
     }
     final SignedBlockAndState that = (SignedBlockAndState) o;
-    return Objects.equals(block, that.block) && Objects.equals(state, that.state);
+    return Objects.equals(getBlock(), that.getBlock())
+        && Objects.equals(getState(), that.getState());
   }
 
   @Override

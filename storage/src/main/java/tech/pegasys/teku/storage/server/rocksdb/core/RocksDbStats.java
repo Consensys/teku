@@ -220,12 +220,16 @@ public class RocksDbStats implements AutoCloseable {
   }
 
   private long getLongProperty(final RocksDB database, final String name) {
-    try {
-      return database.getLongProperty(name);
-    } catch (RocksDBException e) {
-      LOG.warn("Failed to load " + name + " property for RocksDB metrics");
-      return 0;
-    }
+    return ifOpen(
+        () -> {
+          try {
+            return database.getLongProperty(name);
+          } catch (RocksDBException e) {
+            LOG.warn("Failed to load " + name + " property for RocksDB metrics");
+            return 0L;
+          }
+        },
+        0L);
   }
 
   private Collector histogramToCollector(

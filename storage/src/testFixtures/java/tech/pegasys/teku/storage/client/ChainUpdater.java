@@ -33,6 +33,10 @@ public class ChainUpdater {
     this.chainBuilder = chainBuilder;
   }
 
+  public UInt64 getHeadSlot() {
+    return recentChainData.getHeadSlot();
+  }
+
   public void setCurrentSlot(final UInt64 currentSlot) {
     checkState(!recentChainData.isPreGenesis(), "Cannot set current slot before genesis");
     setTime(getSlotTime(currentSlot));
@@ -82,7 +86,7 @@ public class ChainUpdater {
   public void updateBestBlock(final SignedBlockAndState bestBlock) {
     saveBlock(bestBlock);
 
-    recentChainData.updateBestBlock(bestBlock.getRoot(), bestBlock.getSlot());
+    recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
   }
 
   public SignedBlockAndState advanceChain() {

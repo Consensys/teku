@@ -17,13 +17,16 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class LocalMessageSignerService implements MessageSignerService {
   private final BLSKeyPair keypair;
+  private final AsyncRunner asyncRunner;
 
-  public LocalMessageSignerService(final BLSKeyPair keypair) {
+  public LocalMessageSignerService(final BLSKeyPair keypair, final AsyncRunner asyncRunner) {
     this.keypair = keypair;
+    this.asyncRunner = asyncRunner;
   }
 
   @Override
@@ -62,6 +65,7 @@ public class LocalMessageSignerService implements MessageSignerService {
   }
 
   private SafeFuture<BLSSignature> sign(final Bytes signing_root) {
-    return SafeFuture.completedFuture(BLS.sign(keypair.getSecretKey(), signing_root));
+    return asyncRunner.runAsync(
+        () -> SafeFuture.completedFuture(BLS.sign(keypair.getSecretKey(), signing_root)));
   }
 }
