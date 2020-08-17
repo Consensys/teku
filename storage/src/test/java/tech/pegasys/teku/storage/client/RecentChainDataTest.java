@@ -94,7 +94,7 @@ class RecentChainDataTest {
     final SignedBlockAndState bestBlock = chainBuilder.generateNextBlock();
     saveBlock(storageClient, bestBlock);
 
-    storageClient.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
+    updateHead(storageClient, bestBlock, bestBlock.getSlot());
     assertThat(storageClient.getHeadBlockAndState()).contains(bestBlock.toUnsigned());
   }
 
@@ -102,7 +102,8 @@ class RecentChainDataTest {
   public void updateBestBlock_blockAndStateAreMissing() throws Exception {
     final SignedBlockAndState bestBlock = chainBuilder.generateNextBlock();
 
-    storageClient.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
+    assertThatSafeFuture(storageClient.updateHead(bestBlock.getRoot(), bestBlock.getSlot()))
+        .isCompletedExceptionallyWith(IllegalStateException.class);
     assertThat(storageClient.getHeadBlockAndState()).contains(genesis.toUnsigned());
   }
 
@@ -197,7 +198,7 @@ class RecentChainDataTest {
     importBlocksAndStates(storageClient, chainBuilder);
 
     final SignedBlockAndState latestBlockAndState = chainBuilder.getLatestBlockAndState();
-    storageClient.updateHead(latestBlockAndState.getRoot(), latestBlockAndState.getSlot());
+    updateHead(storageClient, latestBlockAndState, latestBlockAndState.getSlot());
     assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
   }
 
@@ -205,13 +206,13 @@ class RecentChainDataTest {
   public void updateBestBlock_reorgEventWhenBlockFillsEmptyHeadSlot() throws Exception {
     final SignedBlockAndState slot1Block = chainBuilder.generateBlockAtSlot(1);
     importBlocksAndStates(storageClient, chainBuilder);
-    storageClient.updateHead(slot1Block.getRoot(), UInt64.valueOf(2));
+    updateHead(storageClient, slot1Block, UInt64.valueOf(2));
     assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
     assertThat(getReorgCountMetric(storageSystem)).isZero();
 
     final SignedBlockAndState slot2Block = chainBuilder.generateBlockAtSlot(2);
     importBlocksAndStates(storageClient, chainBuilder);
-    storageClient.updateHead(slot2Block.getRoot(), slot2Block.getSlot());
+    updateHead(storageClient, slot2Block, slot2Block.getSlot());
     final List<ReorgEvent> reorgEvents = storageSystem.reorgEventChannel().getReorgEvents();
     assertThat(reorgEvents).hasSize(1);
     assertThat(reorgEvents.get(0).getBestBlockRoot()).isEqualTo(slot2Block.getRoot());
@@ -246,13 +247,11 @@ class RecentChainDataTest {
     importBlocksAndStates(preGenesisStorageClient, chainBuilder, forkBuilder);
 
     // Update to head block of original chain.
-    preGenesisStorageClient.updateHead(
-        latestBlockAndState.getRoot(), latestBlockAndState.getSlot());
+    updateHead(preGenesisStorageClient, latestBlockAndState, latestBlockAndState.getSlot());
     assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
 
     // Switch to fork.
-    preGenesisStorageClient.updateHead(
-        latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
+    updateHead(preGenesisStorageClient, latestForkBlockAndState, latestForkBlockAndState.getSlot());
     // Check reorg event
     assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents().size()).isEqualTo(1);
     final ReorgEvent reorgEvent =
@@ -291,13 +290,11 @@ class RecentChainDataTest {
     importBlocksAndStates(preGenesisStorageClient, chainBuilder, forkBuilder);
 
     // Update to head block of original chain.
-    preGenesisStorageClient.updateHead(
-        latestBlockAndState.getRoot(), latestBlockAndState.getSlot());
+    updateHead(preGenesisStorageClient, latestBlockAndState, latestBlockAndState.getSlot());
     assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
 
     // Switch to fork.
-    preGenesisStorageClient.updateHead(
-        latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
+    updateHead(preGenesisStorageClient, latestForkBlockAndState, latestForkBlockAndState.getSlot());
     // Check reorg event
     final ReorgEvent reorgEvent =
         preGenesisStorageSystem.reorgEventChannel().getReorgEvents().get(0);
@@ -317,25 +314,28 @@ class RecentChainDataTest {
     // Set store and update best block to genesis
     assertThat(preGenesisStorageClient.getHeadBlockAndState()).isEmpty();
     preGenesisStorageClient.setStore(store);
-    preGenesisStorageClient.updateHead(genesis.getRoot(), genesis.getSlot());
+    updateHead(preGenesisStorageClient, genesis, genesis.getSlot());
     assertThat(preGenesisStorageClient.getHeadBlockAndState()).contains(genesis.toUnsigned());
 
     // Update best block, but delay the resolution of the future
     final SignedBlockAndState chainHeadA = chain.get(0);
     final SafeFuture<Optional<SignedBlockAndState>> chainHeadAFuture = new SafeFuture<>();
     when(store.retrieveBlockAndState(chainHeadA.getRoot())).thenReturn(chainHeadAFuture);
-    preGenesisStorageClient.updateHead(chainHeadA.getRoot(), chainHeadA.getSlot());
+    final SafeFuture<Void> staleUpdate =
+        preGenesisStorageClient.updateHead(chainHeadA.getRoot(), chainHeadA.getSlot());
+    assertThat(staleUpdate).isNotDone();
     // We should still be at genesis while we wait on the future to resolve
     assertThat(preGenesisStorageClient.getHeadBlockAndState()).contains(genesis.toUnsigned());
 
     // Now start another update
     final SignedBlockAndState chainHeadB = chain.get(1);
-    preGenesisStorageClient.updateHead(chainHeadB.getRoot(), chainHeadB.getSlot());
+    updateHead(preGenesisStorageClient, chainHeadB, chainHeadB.getSlot());
     assertThat(preGenesisStorageClient.getHeadBlockAndState()).contains(chainHeadB.toUnsigned());
 
     // Resolve the earlier update - which should be ignored since we've already moved on
     chainHeadAFuture.complete(Optional.of(chainHeadA));
     assertThat(preGenesisStorageClient.getHeadBlockAndState()).contains(chainHeadB.toUnsigned());
+    assertThat(staleUpdate).isCompleted();
   }
 
   @Test
@@ -675,7 +675,7 @@ class RecentChainDataTest {
       RecentChainData recentChainData, final SignedBlockAndState bestBlock) {
     saveBlock(recentChainData, bestBlock);
 
-    storageClient.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
+    updateHead(storageClient, bestBlock, bestBlock.getSlot());
   }
 
   private SignedBlockAndState advanceBestBlock(final RecentChainData recentChainData) {
@@ -721,5 +721,10 @@ class RecentChainDataTest {
         .getMetricsSystem()
         .getCounter(TekuMetricCategory.BEACON, "reorgs_total")
         .getValue();
+  }
+
+  private void updateHead(
+      final RecentChainData storageClient, final SignedBlockAndState bestBlock, final UInt64 slot) {
+    assertThat(storageClient.updateHead(bestBlock.getRoot(), slot)).isCompleted();
   }
 }

@@ -122,7 +122,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
               // The genesis state is by definition finalized so just get the root from there.
               final SignedBlockAndState headBlock = store.getLatestFinalizedBlockAndState();
-              updateHead(headBlock.getRoot(), headBlock.getSlot());
+              updateChainHead(Optional.empty(), ChainHead.create(headBlock, headBlock.getSlot()));
             });
   }
 
@@ -186,9 +186,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * @param root The new head block root
    * @param currentSlot The current slot - the slot at which the new head was selected
    */
-  public void updateHead(Bytes32 root, UInt64 currentSlot) {
+  public SafeFuture<Void> updateHead(Bytes32 root, UInt64 currentSlot) {
     final Optional<ChainHead> originalChainHead = chainHead;
-    store
+    return store
         .retrieveBlockAndState(root)
         .thenApply(
             headBlockAndState ->
@@ -200,8 +200,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
                                 String.format(
                                     "Unable to update head block as of slot %s.  Block is unavailable: %s.",
                                     currentSlot, root))))
-        .thenAccept(headBlock -> updateChainHead(originalChainHead, headBlock))
-        .reportExceptions();
+        .thenAccept(headBlock -> updateChainHead(originalChainHead, headBlock));
   }
 
   private void updateChainHead(
@@ -210,7 +209,14 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       if (!chainHead.equals(originalHead)) {
         // The chain head has been updated while we were waiting for the newChainHead
         // Skip this update to avoid accidentally regressing the chain head
-        LOG.info("Skipping head block update to avoid potential rollback of the chain head.");
+        LOG.info(
+            "Skipping update of chain head to {} ({}) because of interim update from {} ({}) to {} ({}).",
+            newChainHead.getForkChoiceSlot(),
+            newChainHead.getRoot(),
+            originalHead.map(ChainHead::getForkChoiceSlot).orElse(null),
+            originalHead.map(ChainHead::getRoot).orElse(null),
+            chainHead.map(ChainHead::getForkChoiceSlot).orElse(null),
+            chainHead.map(ChainHead::getRoot).orElse(null));
         return;
       }
       final Optional<Bytes32> originalBestRoot = originalHead.map(SignedBlockAndState::getRoot);
