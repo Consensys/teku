@@ -22,6 +22,7 @@ import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.lookup.StateProvider;
 import tech.pegasys.teku.core.stategenerator.StateGenerationQueue;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.storage.events.AnchorPoint;
 public class StoreBuilder {
   MetricsSystem metricsSystem;
   BlockProvider blockProvider;
+  StateProvider stateProvider;
   StateGenerationQueue stateGenerationQueue;
 
   final Map<Bytes32, Bytes32> childToParentRoot = new HashMap<>();
@@ -53,13 +55,15 @@ public class StoreBuilder {
   public static SafeFuture<UpdatableStore> buildForkChoiceStore(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
+      final StateProvider stateProvider,
       final AnchorPoint anchor) {
-    return forkChoiceStoreBuilder(metricsSystem, blockProvider, anchor).build();
+    return forkChoiceStoreBuilder(metricsSystem, blockProvider, stateProvider, anchor).build();
   }
 
   public static StoreBuilder forkChoiceStoreBuilder(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
+      final StateProvider stateProvider,
       final AnchorPoint anchor) {
     final UInt64 genesisTime = anchor.getState().getGenesis_time();
     final UInt64 slot = anchor.getState().getSlot();
@@ -71,7 +75,7 @@ public class StoreBuilder {
     return create()
         .metricsSystem(metricsSystem)
         .blockProvider(blockProvider)
-        .stateGenerationQueue(StateGenerationQueue.create(metricsSystem))
+        .stateProvider(stateProvider)
         .time(time)
         .genesisTime(genesisTime)
         .finalizedCheckpoint(anchor.getCheckpoint())
@@ -83,7 +87,9 @@ public class StoreBuilder {
   }
 
   public SafeFuture<UpdatableStore> build() {
+    createDefaults();
     assertValid();
+
     return Store.create(
         metricsSystem,
         blockProvider,
@@ -97,6 +103,12 @@ public class StoreBuilder {
         latestFinalized,
         votes,
         StorePruningOptions.createDefault());
+  }
+
+  private void createDefaults() {
+    if (stateGenerationQueue == null) {
+      stateGenerationQueue = StateGenerationQueue.create(stateProvider, metricsSystem);
+    }
   }
 
   private void assertValid() {
@@ -122,6 +134,12 @@ public class StoreBuilder {
   public StoreBuilder blockProvider(final BlockProvider blockProvider) {
     checkNotNull(blockProvider);
     this.blockProvider = blockProvider;
+    return this;
+  }
+
+  public StoreBuilder stateProvider(final StateProvider stateProvider) {
+    checkNotNull(stateProvider);
+    this.stateProvider = stateProvider;
     return this;
   }
 

@@ -13,12 +13,16 @@
 
 package tech.pegasys.teku.storage.store;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+
 import com.google.common.collect.Sets;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,8 +36,18 @@ public class BlockTree {
   final Map<Bytes32, UInt64> blockRootToSlot;
 
   public BlockTree(final HashTree hashTree, final Map<Bytes32, UInt64> blockRootToSlot) {
+    validate(hashTree, blockRootToSlot);
     this.hashTree = hashTree;
     this.blockRootToSlot = blockRootToSlot;
+  }
+
+  private void validate(final HashTree hashTree, final Map<Bytes32, UInt64> blockRootToSlot) {
+    checkArgument(
+        hashTree.size() == blockRootToSlot.size(),
+        "Slot lookup and hash tree must contain the same number of elements");
+    checkArgument(
+        Sets.difference(hashTree.getAllRoots(), blockRootToSlot.keySet()).isEmpty(),
+        "Slot lookup and hash tree must contain the same roots");
   }
 
   public BlockTree update(final HashTree updatedHashTree, Map<Bytes32, UInt64> newBlockSlots) {
@@ -83,6 +97,7 @@ public class BlockTree {
   }
 
   public boolean isRootAtEpochBoundary(Bytes32 blockRoot) {
+    assertBlockIsInTree(blockRoot);
     return hashTree
         .getParent(blockRoot)
         .map(
@@ -94,6 +109,20 @@ public class BlockTree {
             })
         .orElse(false);
   }
+
+  public UInt64 getEpoch(Bytes32 blockRoot) {
+    assertBlockIsInTree(blockRoot);
+    final UInt64 slot = blockRootToSlot.get(blockRoot);
+    return compute_epoch_at_slot(slot);
+  }
+
+  private void assertBlockIsInTree(Bytes32 blockRoot) {
+    if (!contains(blockRoot)) {
+      throw new IllegalArgumentException(
+          "Provided block root is not in the current tree: " + blockRoot);
+    }
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (o == this) {

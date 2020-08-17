@@ -36,13 +36,13 @@ class AsyncChainStateGenerator {
 
   private final HashTree blockTree;
   private final BlockProvider blockProvider;
-  private final StateProvider stateProvider;
+  private final SynchronousStateProvider stateProvider;
   private final int blockBatchSize;
 
   private AsyncChainStateGenerator(
       final HashTree blockTree,
       final BlockProvider blockProvider,
-      final StateProvider stateProvider,
+      final SynchronousStateProvider stateProvider,
       final int blockBatchSize) {
     this.blockTree = blockTree;
     this.blockProvider = blockProvider;
@@ -53,7 +53,7 @@ class AsyncChainStateGenerator {
   public static AsyncChainStateGenerator create(
       final HashTree blockTree,
       final BlockProvider blockProvider,
-      final StateProvider stateProvider) {
+      final SynchronousStateProvider stateProvider) {
     return new AsyncChainStateGenerator(
         blockTree, blockProvider, stateProvider, DEFAULT_BLOCK_BATCH_SIZE);
   }

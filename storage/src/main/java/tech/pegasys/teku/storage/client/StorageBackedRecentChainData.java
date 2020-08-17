@@ -26,7 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.stategenerator.StateGenerationQueue;
+import tech.pegasys.teku.core.lookup.StateProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
@@ -40,6 +40,7 @@ import tech.pegasys.teku.util.config.Constants;
 public class StorageBackedRecentChainData extends RecentChainData {
   private static final Logger LOG = LogManager.getLogger();
   private final BlockProvider blockProvider;
+  private final StateProvider stateProvider;
   private final StorageQueryChannel storageQueryChannel;
 
   public StorageBackedRecentChainData(
@@ -53,6 +54,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
     super(
         metricsSystem,
         storageQueryChannel::getHotBlocksByRoot,
+        storageQueryChannel::getHotStateByBlockRoot,
         storageUpdateChannel,
         protoArrayStorageChannel,
         finalizedCheckpointChannel,
@@ -60,6 +62,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
         eventBus);
     this.storageQueryChannel = storageQueryChannel;
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
+    this.stateProvider = storageQueryChannel::getHotStateByBlockRoot;
     eventBus.register(this);
   }
 
@@ -129,7 +132,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
           return maybeStoreBuilder
               .get()
               .blockProvider(blockProvider)
-              .stateGenerationQueue(StateGenerationQueue.create(metricsSystem))
+              .stateProvider(stateProvider)
               .build()
               .thenApply(
                   store -> {

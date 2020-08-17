@@ -14,12 +14,17 @@
 package tech.pegasys.teku.core.stategenerator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.core.lookup.StateProvider;
 import tech.pegasys.teku.core.stategenerator.StateGenerationQueue.RegenerationTask;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
@@ -34,12 +39,15 @@ class StateGenerationQueueTest {
   private static final int ACTIVE_REGENERATION_LIMIT = 2;
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
+  private final StateProvider stateProvider = mock(StateProvider.class);
   private final StateGenerationQueue stateGenerationQueue =
-      new StateGenerationQueue(metricsSystem, () -> ACTIVE_REGENERATION_LIMIT);
+      new StateGenerationQueue(stateProvider, metricsSystem, () -> ACTIVE_REGENERATION_LIMIT);
 
   @BeforeEach
   void setUp() {
     stateGenerationQueue.startMetrics();
+    // Don't find any states by default
+    when(stateProvider.getState(any())).thenReturn(SafeFuture.completedFuture(Optional.empty()));
   }
 
   @Test
@@ -184,7 +192,7 @@ class StateGenerationQueueTest {
     private Optional<SignedBlockAndState> rebasedTo = Optional.empty();
 
     public StubRegenerationTask(final Bytes32 blockRoot, final HashTree tree) {
-      super(blockRoot, tree, null, null, null);
+      super(blockRoot, tree, null, Collections.emptyList(), null, null, null);
     }
 
     @Override

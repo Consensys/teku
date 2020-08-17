@@ -19,6 +19,7 @@ import com.google.common.eventbus.EventBus;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.lookup.StateProvider;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -41,6 +42,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
     super(
         metricsSystem,
         BlockProvider.NOOP,
+        StateProvider.NOOP,
         storageUpdateChannel,
         protoArrayStorageChannel,
         finalizedCheckpointChannel,

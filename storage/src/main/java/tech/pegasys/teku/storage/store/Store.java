@@ -17,6 +17,8 @@ import static tech.pegasys.teku.core.lookup.BlockProvider.fromDynamicMap;
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
 
 import com.google.common.collect.Sets;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -553,6 +555,7 @@ class Store implements UpdatableStore {
     final HashTree.Builder treeBuilder = HashTree.builder();
     final AtomicReference<Bytes32> baseBlockRoot = new AtomicReference<>();
     final AtomicReference<BeaconState> baseState = new AtomicReference<>();
+    final List<Bytes32> epochBoundaryRoots = Collections.synchronizedList(new ArrayList<>());
     readLock.lock();
     try {
       this.blockTree
@@ -562,6 +565,9 @@ class Store implements UpdatableStore {
               (root, parent) -> {
                 treeBuilder.childAndParentRoots(root, parent);
                 final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
+                if (blockState.isEmpty() && blockTree.isRootAtEpochBoundary(root)) {
+                  epochBoundaryRoots.add(root);
+                }
                 blockState.ifPresent(
                     (state) -> {
                       // We found a base state
@@ -603,7 +609,12 @@ class Store implements UpdatableStore {
                       final HashTree tree = treeBuilder.build();
                       return stateGenerationQueue
                           .regenerateStateForBlock(
-                              blockRoot, tree, baseBlockAndState, blockProvider, cacheHandler)
+                              blockRoot,
+                              tree,
+                              baseBlockAndState,
+                              epochBoundaryRoots,
+                              blockProvider,
+                              cacheHandler)
                           .thenApply(
                               result -> {
                                 stateRequestRegenerateCounter.inc();

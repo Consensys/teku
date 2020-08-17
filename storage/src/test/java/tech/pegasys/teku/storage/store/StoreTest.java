@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -32,10 +31,8 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
-import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class StoreTest extends AbstractStoreTest {
@@ -118,12 +115,8 @@ class StoreTest extends AbstractStoreTest {
 
   @Test
   public void retrieveCheckpointState_shouldGenerateCheckpointStates() {
-    final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
-    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
-    final BlockProvider blockProvider = blockProviderFromChainBuilder();
-
-    final UpdatableStore store =
-        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis).join();
+    final UpdatableStore store = createGenesisStore();
+    final SignedBlockAndState genesisBlockAndState = chainBuilder.getLatestBlockAndState();
     final Checkpoint checkpoint = new Checkpoint(UInt64.ONE, genesisBlockAndState.getRoot());
 
     final SafeFuture<Optional<BeaconState>> result = store.retrieveCheckpointState(checkpoint);
@@ -136,12 +129,8 @@ class StoreTest extends AbstractStoreTest {
 
   @Test
   public void getCheckpointState_forGenesis() {
-    final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
-    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
-    final BlockProvider blockProvider = blockProviderFromChainBuilder();
-
-    final UpdatableStore store =
-        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis).join();
+    final UpdatableStore store = createGenesisStore();
+    final SignedBlockAndState genesisBlockAndState = chainBuilder.getLatestBlockAndState();
     final Checkpoint checkpoint = new Checkpoint(UInt64.ZERO, genesisBlockAndState.getRoot());
 
     final BeaconState baseState = genesisBlockAndState.getState();
@@ -151,12 +140,8 @@ class StoreTest extends AbstractStoreTest {
 
   @Test
   public void getCheckpointState_forEpochPastGenesis() {
-    final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
-    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
-    final BlockProvider blockProvider = blockProviderFromChainBuilder();
-
-    final UpdatableStore store =
-        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis).join();
+    final UpdatableStore store = createGenesisStore();
+    final SignedBlockAndState genesisBlockAndState = chainBuilder.getLatestBlockAndState();
     final Checkpoint checkpoint = new Checkpoint(UInt64.ONE, genesisBlockAndState.getRoot());
 
     final BeaconState baseState = genesisBlockAndState.getState();
@@ -168,12 +153,7 @@ class StoreTest extends AbstractStoreTest {
 
   @Test
   public void getCheckpointState_invalidState() {
-    final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
-    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
-    final BlockProvider blockProvider = blockProviderFromChainBuilder();
-
-    final UpdatableStore store =
-        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis).join();
+    final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState futureBlockAndState =
         chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(UInt64.valueOf(2)));
 
@@ -188,14 +168,10 @@ class StoreTest extends AbstractStoreTest {
   public void
       retrieveCheckpointState_shouldThrowInvalidCheckpointExceptionWhenEpochBeforeBlockRoot()
           throws Exception {
-    final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
-    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
-    final BlockProvider blockProvider = blockProviderFromChainBuilder();
+    final UpdatableStore store = createGenesisStore();
     final Bytes32 futureRoot =
         chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(UInt64.valueOf(2))).getRoot();
 
-    final UpdatableStore store =
-        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis).join();
     // Add blocks
     final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
     chainBuilder.streamBlocksAndStates().forEach(tx::putBlockAndState);
@@ -208,14 +184,10 @@ class StoreTest extends AbstractStoreTest {
   }
 
   public void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction) {
-    final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
-    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
+    final UpdatableStore store = createGenesisStore();
     final UInt64 epoch3Slot = compute_start_slot_at_epoch(UInt64.valueOf(4));
     chainBuilder.generateBlocksUpToSlot(epoch3Slot);
-    final BlockProvider blockProvider = blockProviderFromChainBuilder();
 
-    final UpdatableStore store =
-        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis).join();
     final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();
     final UInt64 initialTime = store.getTime();
     final UInt64 genesisTime = store.getGenesisTime();
