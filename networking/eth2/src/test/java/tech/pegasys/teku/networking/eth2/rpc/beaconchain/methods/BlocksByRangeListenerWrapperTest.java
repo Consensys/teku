@@ -13,12 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -27,6 +21,13 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class BlocksByRangeListenerWrapperTest {
   private DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -50,11 +51,9 @@ public class BlocksByRangeListenerWrapperTest {
 
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(0);
 
-    try {
-      listenerWrapper.onResponse(block1).join();
-    } catch (final Exception e) {
-      assertThat(e).isInstanceOf(BlocksByRangeResponseOutOfOrderException.class);
-    }
+    SafeFuture<?> result = listenerWrapper.onResponse(block1);
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get).hasCauseExactlyInstanceOf(BlocksByRangeResponseOutOfOrderException.class);
   }
 
   @Test
@@ -86,11 +85,9 @@ public class BlocksByRangeListenerWrapperTest {
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
     listener.onResponse(block1).join();
 
-    try {
-      listenerWrapper.onResponse(block2).join();
-    } catch (final Exception e) {
-      assertThat(e).isInstanceOf(BlocksByRangeResponseOutOfOrderException.class);
-    }
+    SafeFuture<?> result = listenerWrapper.onResponse(block2);
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get).hasCauseExactlyInstanceOf(BlocksByRangeResponseOutOfOrderException.class);
   }
 
   @Test
@@ -111,10 +108,8 @@ public class BlocksByRangeListenerWrapperTest {
     listenerWrapper.onResponse(block3).join();
     listenerWrapper.onResponse(block4).join();
 
-    try {
-      listenerWrapper.onResponse(block5).join();
-    } catch (final Exception e) {
-      assertThat(e).isInstanceOf(BlocksByRangeResponseOutOfOrderException.class);
-    }
+    SafeFuture<?> result = listenerWrapper.onResponse(block5);
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get).hasCauseExactlyInstanceOf(BlocksByRangeResponseOutOfOrderException.class);
   }
 }
