@@ -118,7 +118,7 @@ public abstract class AbstractStoreTest {
         Store.create(
             new StubMetricsSystem(),
             blockProviderFromChainBuilder(),
-            new StateGeneratorFactory(new StubMetricsSystem()),
+            StateGeneratorFactory.create(new StubMetricsSystem()),
             genesis.getState().getGenesis_time(),
             genesis.getState().getGenesis_time(),
             genesisCheckpoint,

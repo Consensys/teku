@@ -129,7 +129,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
           return maybeStoreBuilder
               .get()
               .blockProvider(blockProvider)
-              .stateGeneratorFactory(new StateGeneratorFactory(metricsSystem))
+              .stateGeneratorFactory(StateGeneratorFactory.create(metricsSystem))
               .build()
               .thenApply(
                   store -> {

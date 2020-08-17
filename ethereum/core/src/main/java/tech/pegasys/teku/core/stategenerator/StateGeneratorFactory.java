@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.function.IntSupplier;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
@@ -32,12 +32,19 @@ public class StateGeneratorFactory {
   private final ConcurrentHashMap<Bytes32, SafeFuture<SignedBlockAndState>> inProgressGeneration =
       new ConcurrentHashMap<>();
   private final AtomicInteger activeRegenerations = new AtomicInteger(0);
-  private final Queue<Supplier<SafeFuture<SignedBlockAndState>>> queuedRegenerations =
-      new ConcurrentLinkedQueue<>();
+  private final Queue<RegenerationTask> queuedRegenerations = new ConcurrentLinkedQueue<>();
   private final MetricsSystem metricsSystem;
+  private final IntSupplier activeRegenerationLimit;
 
-  public StateGeneratorFactory(final MetricsSystem metricsSystem) {
+  StateGeneratorFactory(
+      final MetricsSystem metricsSystem, final IntSupplier activeRegenerationLimit) {
     this.metricsSystem = metricsSystem;
+    this.activeRegenerationLimit = activeRegenerationLimit;
+  }
+
+  public static StateGeneratorFactory create(final MetricsSystem metricsSystem) {
+    return new StateGeneratorFactory(
+        metricsSystem, () -> Math.max(2, Runtime.getRuntime().availableProcessors()));
   }
 
   public void startMetrics() {
@@ -64,63 +71,50 @@ public class StateGeneratorFactory {
       final SignedBlockAndState baseBlockAndState,
       final BlockProvider blockProvider,
       final Consumer<SignedBlockAndState> cacheHandler) {
+    return regenerateStateForBlock(
+        new RegenerationTask(blockRoot, tree, baseBlockAndState, blockProvider, cacheHandler));
+  }
+
+  public SafeFuture<SignedBlockAndState> regenerateStateForBlock(final RegenerationTask task) {
     final SafeFuture<SignedBlockAndState> future = new SafeFuture<>();
     final SafeFuture<SignedBlockAndState> inProgress =
-        inProgressGeneration.putIfAbsent(blockRoot, future);
+        inProgressGeneration.putIfAbsent(task.getBlockRoot(), future);
     if (inProgress != null) {
       return inProgress;
     }
-    Optional<Bytes32> maybeAncestorRoot = tree.getParent(blockRoot);
+    Optional<Bytes32> maybeAncestorRoot = task.getTree().getParent(task.getBlockRoot());
     while (maybeAncestorRoot.isPresent()) {
       final Bytes32 ancestorRoot = maybeAncestorRoot.get();
       final SafeFuture<SignedBlockAndState> parentFuture = inProgressGeneration.get(ancestorRoot);
       if (parentFuture != null) {
-        final HashTree treeFromAncestor = tree.withRoot(ancestorRoot).build();
-        return parentFuture.thenCompose(
-            ancestorState ->
-                regenerate(
-                    blockRoot,
-                    treeFromAncestor,
-                    ancestorState,
-                    blockProvider,
-                    cacheHandler,
-                    future));
+        return parentFuture
+            .thenCompose(
+                ancestorState -> {
+                  queueRegeneration(task.rebase(ancestorState));
+                  return future;
+                })
+            .catchAndRethrow(
+                error -> {
+                  // Remove if regeneration fails.
+                  inProgressGeneration.remove(task.getBlockRoot(), future);
+                  future.completeExceptionally(error);
+                });
       }
-      maybeAncestorRoot = maybeAncestorRoot.flatMap(tree::getParent);
+      maybeAncestorRoot = maybeAncestorRoot.flatMap(task.getTree()::getParent);
     }
-    return regenerate(blockRoot, tree, baseBlockAndState, blockProvider, cacheHandler, future);
+    queueRegeneration(task);
+    return future;
   }
 
-  private SafeFuture<SignedBlockAndState> regenerate(
-      final Bytes32 blockRoot,
-      final HashTree tree,
-      final SignedBlockAndState baseBlockAndState,
-      final BlockProvider blockProvider,
-      final Consumer<SignedBlockAndState> cacheHandler,
-      final SafeFuture<SignedBlockAndState> future) {
-
-    queuedRegenerations.add(
-        () -> {
-          final StateGenerator stateGenerator =
-              StateGenerator.create(tree, baseBlockAndState, blockProvider);
-          stateGenerator
-              .regenerateStateForBlock(blockRoot)
-              .thenPeek(
-                  result -> {
-                    cacheHandler.accept(result);
-                    inProgressGeneration.remove(blockRoot);
-                  })
-              .catchAndRethrow(error -> inProgressGeneration.remove(blockRoot))
-              .propagateTo(future);
-          return future;
-        });
+  private void queueRegeneration(final RegenerationTask task) {
+    queuedRegenerations.add(task);
     tryProcessNext();
-    return future;
   }
 
   private void tryProcessNext() {
     int currentActiveCount = activeRegenerations.get();
-    while (currentActiveCount < getActiveRegenerationLimit() && !queuedRegenerations.isEmpty()) {
+    while (currentActiveCount < activeRegenerationLimit.getAsInt()
+        && !queuedRegenerations.isEmpty()) {
       if (activeRegenerations.compareAndSet(currentActiveCount, currentActiveCount + 1)) {
         processNext();
       }
@@ -129,13 +123,22 @@ public class StateGeneratorFactory {
   }
 
   private void processNext() {
-    final Supplier<SafeFuture<SignedBlockAndState>> nextRegeneration = queuedRegenerations.poll();
-    if (nextRegeneration == null) {
+    final RegenerationTask task = queuedRegenerations.poll();
+    if (task == null) {
       activeRegenerations.decrementAndGet();
       return;
     }
-    nextRegeneration
-        .get()
+    task.regenerate()
+        .whenComplete(
+            (result, error) -> {
+              final SafeFuture<SignedBlockAndState> future =
+                  inProgressGeneration.remove(task.getBlockRoot());
+              if (error != null) {
+                future.completeExceptionally(error);
+              } else {
+                future.complete(result);
+              }
+            })
         .always(
             () -> {
               activeRegenerations.decrementAndGet();
@@ -143,7 +146,44 @@ public class StateGeneratorFactory {
             });
   }
 
-  private int getActiveRegenerationLimit() {
-    return Math.max(2, Runtime.getRuntime().availableProcessors());
+  public static class RegenerationTask {
+    private final HashTree tree;
+    private final SignedBlockAndState baseBlockAndState;
+    private final BlockProvider blockProvider;
+    private final Bytes32 blockRoot;
+    private final Consumer<SignedBlockAndState> cacheHandler;
+
+    public RegenerationTask(
+        final Bytes32 blockRoot,
+        final HashTree tree,
+        final SignedBlockAndState baseBlockAndState,
+        final BlockProvider blockProvider,
+        final Consumer<SignedBlockAndState> cacheHandler) {
+      this.tree = tree;
+      this.baseBlockAndState = baseBlockAndState;
+      this.blockProvider = blockProvider;
+      this.blockRoot = blockRoot;
+      this.cacheHandler = cacheHandler;
+    }
+
+    public Bytes32 getBlockRoot() {
+      return blockRoot;
+    }
+
+    public HashTree getTree() {
+      return tree;
+    }
+
+    public RegenerationTask rebase(final SignedBlockAndState newBaseBlockAndState) {
+      final HashTree treeFromAncestor = tree.withRoot(newBaseBlockAndState.getRoot()).build();
+      return new RegenerationTask(
+          blockRoot, treeFromAncestor, newBaseBlockAndState, blockProvider, cacheHandler);
+    }
+
+    public SafeFuture<SignedBlockAndState> regenerate() {
+      final StateGenerator stateGenerator =
+          StateGenerator.create(tree, baseBlockAndState, blockProvider);
+      return stateGenerator.regenerateStateForBlock(blockRoot).thenPeek(cacheHandler);
+    }
   }
 }

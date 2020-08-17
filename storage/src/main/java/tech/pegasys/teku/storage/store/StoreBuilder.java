@@ -71,7 +71,7 @@ public class StoreBuilder {
     return create()
         .metricsSystem(metricsSystem)
         .blockProvider(blockProvider)
-        .stateGeneratorFactory(new StateGeneratorFactory(metricsSystem))
+        .stateGeneratorFactory(StateGeneratorFactory.create(metricsSystem))
         .time(time)
         .genesisTime(genesisTime)
         .finalizedCheckpoint(anchor.getCheckpoint())
