@@ -143,11 +143,12 @@ public class StateGeneratorFactory {
                 future.complete(result);
               }
             })
-        .always(
+        .alwaysRun(
             () -> {
               activeRegenerations.decrementAndGet();
               tryProcessNext();
-            });
+            })
+        .reportExceptions();
   }
 
   public static class RegenerationTask {
