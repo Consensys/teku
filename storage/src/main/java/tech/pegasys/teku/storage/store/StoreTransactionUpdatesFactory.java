@@ -131,7 +131,7 @@ class StoreTransactionUpdatesFactory {
         .filter(
             e ->
                 compute_epoch_at_slot(e.getValue().getSlot())
-                    .mod(Store.HOT_STATE_CHECKPOINT_FREQUENCY_IN_EPOCHS)
+                    .mod(Store.HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS)
                     .equals(UInt64.ZERO))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }

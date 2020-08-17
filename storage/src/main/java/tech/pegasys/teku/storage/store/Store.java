@@ -17,8 +17,6 @@ import static tech.pegasys.teku.core.lookup.BlockProvider.fromDynamicMap;
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
 
 import com.google.common.collect.Sets;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -66,7 +64,7 @@ import tech.pegasys.teku.util.collections.LimitedMap;
 
 class Store implements UpdatableStore {
   private static final Logger LOG = LogManager.getLogger();
-  static final int HOT_STATE_CHECKPOINT_FREQUENCY_IN_EPOCHS = 1;
+  static final int HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS = 1;
 
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock readLock = lock.readLock();
@@ -555,7 +553,7 @@ class Store implements UpdatableStore {
     final HashTree.Builder treeBuilder = HashTree.builder();
     final AtomicReference<Bytes32> baseBlockRoot = new AtomicReference<>();
     final AtomicReference<BeaconState> baseState = new AtomicReference<>();
-    final List<Bytes32> epochBoundaryRoots = Collections.synchronizedList(new ArrayList<>());
+    final AtomicReference<Bytes32> latestEpochBoundary = new AtomicReference<>();
     readLock.lock();
     try {
       this.blockTree
@@ -565,8 +563,13 @@ class Store implements UpdatableStore {
               (root, parent) -> {
                 treeBuilder.childAndParentRoots(root, parent);
                 final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
-                if (blockState.isEmpty() && blockTree.isRootAtEpochBoundary(root)) {
-                  epochBoundaryRoots.add(root);
+                if (blockState.isEmpty()
+                    && blockTree.isRootAtEpochBoundary(root)
+                    && blockTree
+                        .getEpoch(root)
+                        .mod(HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS)
+                        .equals(UInt64.ZERO)) {
+                  latestEpochBoundary.compareAndExchange(null, root);
                 }
                 blockState.ifPresent(
                     (state) -> {
@@ -612,7 +615,7 @@ class Store implements UpdatableStore {
                               blockRoot,
                               tree,
                               baseBlockAndState,
-                              epochBoundaryRoots,
+                              Optional.ofNullable(latestEpochBoundary.get()),
                               blockProvider,
                               cacheHandler)
                           .thenApply(

@@ -18,7 +18,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -192,7 +191,7 @@ class StateGenerationQueueTest {
     private Optional<SignedBlockAndState> rebasedTo = Optional.empty();
 
     public StubRegenerationTask(final Bytes32 blockRoot, final HashTree tree) {
-      super(blockRoot, tree, null, Collections.emptyList(), null, null, null);
+      super(blockRoot, tree, null, Optional.empty(), null, null, null);
     }
 
     @Override
