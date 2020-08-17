@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -61,6 +62,7 @@ public class PeerSync {
   private final Counter blockImportSuccessResult;
   private final Counter blockImportFailureResult;
 
+  private final AtomicInteger throttledRequestCount = new AtomicInteger(0);
   private volatile UInt64 startingSlot = UInt64.valueOf(0);
 
   public PeerSync(
@@ -143,10 +145,19 @@ public class PeerSync {
                   nextSlot);
               if (count.compareTo(MIN_SLOTS_TO_PROGRESS_PER_REQUEST) > 0
                   && startSlot.plus(MIN_SLOTS_TO_PROGRESS_PER_REQUEST).compareTo(nextSlot) > 0) {
+                final int throttledRequests = throttledRequestCount.incrementAndGet();
                 LOG.debug(
-                    "Rejecting peer {} as sync target because it excessively throttled returned blocks",
+                    "Received {} consecutive excessively throttled response from {}",
+                    throttledRequests,
                     peer.getId());
-                return SafeFuture.completedFuture(PeerSyncResult.EXCESSIVE_THROTTLING);
+                if (throttledRequests > 10) {
+                  LOG.debug(
+                      "Rejecting peer {} as sync target because it excessively throttled returned blocks",
+                      peer.getId());
+                  return SafeFuture.completedFuture(PeerSyncResult.EXCESSIVE_THROTTLING);
+                }
+              } else {
+                throttledRequestCount.set(0);
               }
               return executeSync(peer, nextSlot, blockRequest.getReadyForNextRequest());
             })
