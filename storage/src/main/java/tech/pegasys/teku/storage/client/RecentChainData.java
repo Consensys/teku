@@ -210,7 +210,14 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       if (!chainHead.equals(originalHead)) {
         // The chain head has been updated while we were waiting for the newChainHead
         // Skip this update to avoid accidentally regressing the chain head
-        LOG.info("Skipping head block update to avoid potential rollback of the chain head.");
+        LOG.info(
+            "Skipping update of chain head to {} ({}) because of interim update from {} ({}) to {} ({}).",
+            newChainHead.getForkChoiceSlot(),
+            newChainHead.getRoot(),
+            originalHead.map(ChainHead::getForkChoiceSlot).orElse(null),
+            originalHead.map(ChainHead::getRoot).orElse(null),
+            chainHead.map(ChainHead::getForkChoiceSlot).orElse(null),
+            chainHead.map(ChainHead::getRoot).orElse(null));
         return;
       }
       final Optional<Bytes32> originalBestRoot = originalHead.map(SignedBlockAndState::getRoot);
