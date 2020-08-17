@@ -44,7 +44,6 @@ import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.stategenerator.StateGenerationQueue;
 import tech.pegasys.teku.core.stategenerator.StateGenerator;
-import tech.pegasys.teku.core.stategenerator.StateGenerationQueue;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
