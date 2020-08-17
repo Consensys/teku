@@ -19,7 +19,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import com.google.common.collect.Sets;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -48,17 +47,6 @@ public class BlockTree {
     checkArgument(
         Sets.difference(hashTree.getAllRoots(), blockRootToSlot.keySet()).isEmpty(),
         "Slot lookup and hash tree must contain the same roots");
-  }
-
-  public BlockTree update(final HashTree updatedHashTree, Map<Bytes32, UInt64> newBlockSlots) {
-    final Map<Bytes32, UInt64> updatedBlockRootToSlot = new HashMap<>(blockRootToSlot);
-    updatedBlockRootToSlot.putAll(newBlockSlots);
-    // Prune any slots that aren't currently tracked
-    final Set<Bytes32> prunedSlots =
-        Sets.difference(updatedHashTree.getAllRoots(), updatedBlockRootToSlot.keySet());
-    new HashSet<>(prunedSlots).forEach(updatedBlockRootToSlot::remove);
-
-    return new BlockTree(updatedHashTree, updatedBlockRootToSlot);
   }
 
   public BlockTree updated(final Bytes32 newRoot, Collection<SignedBeaconBlock> newBlocks) {
