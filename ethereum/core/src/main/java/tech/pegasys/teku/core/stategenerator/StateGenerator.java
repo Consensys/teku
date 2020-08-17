@@ -36,7 +36,7 @@ import tech.pegasys.teku.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class StateGenerator {
-  public static final int DEFAULT_STATE_CACHE_SIZE = 50;
+  public static final int DEFAULT_STATE_CACHE_SIZE = 100;
   private static final Logger LOG = LogManager.getLogger();
 
   private final BlockProcessor blockProcessor = new BlockProcessor();
