@@ -68,6 +68,11 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
   }
 
   @Override
+  public Optional<BeaconState> getHotState(final Bytes32 root) {
+    return db.get(V4SchemaHot.HOT_STATES_BY_ROOT, root);
+  }
+
+  @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamHotBlocks() {
     return db.stream(V4SchemaHot.HOT_BLOCKS_BY_ROOT).map(ColumnEntry::getValue);
@@ -183,6 +188,11 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     }
 
     @Override
+    public void addHotState(final Bytes32 blockRoot, final BeaconState state) {
+      transaction.put(V4SchemaHot.HOT_STATES_BY_ROOT, blockRoot, state);
+    }
+
+    @Override
     public void addHotBlocks(final Map<Bytes32, SignedBeaconBlock> blocks) {
       blocks.values().forEach(this::addHotBlock);
     }
@@ -212,6 +222,7 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     @Override
     public void deleteHotBlock(final Bytes32 blockRoot) {
       transaction.delete(V4SchemaHot.HOT_BLOCKS_BY_ROOT, blockRoot);
+      transaction.delete(V4SchemaHot.HOT_STATES_BY_ROOT, blockRoot);
     }
 
     @Override

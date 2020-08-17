@@ -117,6 +117,12 @@ public class V3RocksDbDao
   }
 
   @Override
+  public Optional<BeaconState> getHotState(final Bytes32 root) {
+    // Not supported
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root) {
     return db.get(V3Schema.FINALIZED_BLOCKS_BY_ROOT, root);
   }
@@ -241,6 +247,11 @@ public class V3RocksDbDao
     public void addHotBlock(final SignedBeaconBlock block) {
       final Bytes32 blockRoot = block.getRoot();
       transaction.put(V3Schema.HOT_BLOCKS_BY_ROOT, blockRoot, block);
+    }
+
+    @Override
+    public void addHotState(final Bytes32 blockRoot, final BeaconState state) {
+      // No-op for this version
     }
 
     @Override

@@ -47,6 +47,8 @@ public interface V4SchemaHot extends Schema {
       RocksDbColumn.create(4, UINT64_SERIALIZER, DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER);
   RocksDbColumn<Bytes32, SlotAndBlockRoot> STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT =
       RocksDbColumn.create(5, BYTES32_SERIALIZER, SLOT_AND_BLOCK_ROOT_SERIALIZER);
+  RocksDbColumn<Bytes32, BeaconState> HOT_STATES_BY_ROOT =
+      RocksDbColumn.create(1, BYTES32_SERIALIZER, STATE_SERIALIZER);
 
   // Variables
   RocksDbVariable<UInt64> GENESIS_TIME = RocksDbVariable.create(1, UINT64_SERIALIZER);

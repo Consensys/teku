@@ -45,6 +45,8 @@ public interface RocksDbHotDao extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getHotBlock(final Bytes32 root);
 
+  Optional<BeaconState> getHotState(final Bytes32 root);
+
   Map<Bytes32, SignedBeaconBlock> getHotBlocks();
 
   List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot);
@@ -71,6 +73,8 @@ public interface RocksDbHotDao extends AutoCloseable {
     void setLatestFinalizedState(final BeaconState state);
 
     void addHotBlock(final SignedBeaconBlock block);
+
+    void addHotState(final Bytes32 blockRoot, final BeaconState state);
 
     void addVotes(final Map<UInt64, VoteTracker> states);
 
