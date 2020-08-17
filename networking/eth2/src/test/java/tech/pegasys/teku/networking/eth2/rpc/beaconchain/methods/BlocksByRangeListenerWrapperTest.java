@@ -13,6 +13,13 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -21,13 +28,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class BlocksByRangeListenerWrapperTest {
   private DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -53,8 +53,13 @@ public class BlocksByRangeListenerWrapperTest {
 
     SafeFuture<?> result = listenerWrapper.onResponse(block1);
     assertThat(result).isCompletedExceptionally();
-    assertThatThrownBy(result::get).hasCauseExactlyInstanceOf(BlocksByRangeResponseInvalidResponseException.class);
-    assertThatThrownBy(result::get).hasMessageContaining(BlocksByRangeResponseInvalidResponseException.InvalidResponseType.BLOCK_SLOT_NOT_IN_RANGE.describe());
+    assertThatThrownBy(result::get)
+        .hasCauseExactlyInstanceOf(BlocksByRangeResponseInvalidResponseException.class);
+    assertThatThrownBy(result::get)
+        .hasMessageContaining(
+            BlocksByRangeResponseInvalidResponseException.InvalidResponseType
+                .BLOCK_SLOT_NOT_IN_RANGE
+                .describe());
   }
 
   @Test
@@ -88,9 +93,13 @@ public class BlocksByRangeListenerWrapperTest {
 
     SafeFuture<?> result = listenerWrapper.onResponse(block2);
     assertThat(result).isCompletedExceptionally();
-    assertThatThrownBy(result::get).hasCauseExactlyInstanceOf(BlocksByRangeResponseInvalidResponseException.class);
-    assertThatThrownBy(result::get).hasMessageContaining(BlocksByRangeResponseInvalidResponseException.InvalidResponseType.BLOCK_SLOT_DOES_NOT_MATCH_STEP.describe());
-
+    assertThatThrownBy(result::get)
+        .hasCauseExactlyInstanceOf(BlocksByRangeResponseInvalidResponseException.class);
+    assertThatThrownBy(result::get)
+        .hasMessageContaining(
+            BlocksByRangeResponseInvalidResponseException.InvalidResponseType
+                .BLOCK_SLOT_DOES_NOT_MATCH_STEP
+                .describe());
   }
 
   @Test
@@ -113,8 +122,13 @@ public class BlocksByRangeListenerWrapperTest {
 
     SafeFuture<?> result = listenerWrapper.onResponse(block5);
     assertThat(result).isCompletedExceptionally();
-    assertThatThrownBy(result::get).hasCauseExactlyInstanceOf(BlocksByRangeResponseInvalidResponseException.class);
-    assertThatThrownBy(result::get).hasMessageContaining(BlocksByRangeResponseInvalidResponseException.InvalidResponseType.BLOCK_SLOT_NOT_IN_RANGE.describe());
+    assertThatThrownBy(result::get)
+        .hasCauseExactlyInstanceOf(BlocksByRangeResponseInvalidResponseException.class);
+    assertThatThrownBy(result::get)
+        .hasMessageContaining(
+            BlocksByRangeResponseInvalidResponseException.InvalidResponseType
+                .BLOCK_SLOT_NOT_IN_RANGE
+                .describe());
   }
 
   @Test
@@ -132,8 +146,13 @@ public class BlocksByRangeListenerWrapperTest {
 
     SafeFuture<?> result = listenerWrapper.onResponse(block2);
     assertThat(result).isCompletedExceptionally();
-    assertThatThrownBy(result::get).hasCauseExactlyInstanceOf(BlocksByRangeResponseInvalidResponseException.class);
-    assertThatThrownBy(result::get).hasMessageContaining(BlocksByRangeResponseInvalidResponseException.InvalidResponseType.BLOCK_PARENT_ROOT_DOES_NOT_MATCH.describe());
+    assertThatThrownBy(result::get)
+        .hasCauseExactlyInstanceOf(BlocksByRangeResponseInvalidResponseException.class);
+    assertThatThrownBy(result::get)
+        .hasMessageContaining(
+            BlocksByRangeResponseInvalidResponseException.InvalidResponseType
+                .BLOCK_PARENT_ROOT_DOES_NOT_MATCH
+                .describe());
   }
 
   @Test
@@ -151,7 +170,12 @@ public class BlocksByRangeListenerWrapperTest {
 
     SafeFuture<?> result = listenerWrapper.onResponse(block2);
     assertThat(result).isCompletedExceptionally();
-    assertThatThrownBy(result::get).hasCauseExactlyInstanceOf(BlocksByRangeResponseInvalidResponseException.class);
-    assertThatThrownBy(result::get).hasMessageContaining(BlocksByRangeResponseInvalidResponseException.InvalidResponseType.BLOCK_SLOT_NOT_GREATER_THAN_PREVIOUS_BLOCK_SLOT.describe());
+    assertThatThrownBy(result::get)
+        .hasCauseExactlyInstanceOf(BlocksByRangeResponseInvalidResponseException.class);
+    assertThatThrownBy(result::get)
+        .hasMessageContaining(
+            BlocksByRangeResponseInvalidResponseException.InvalidResponseType
+                .BLOCK_SLOT_NOT_GREATER_THAN_PREVIOUS_BLOCK_SLOT
+                .describe());
   }
 }

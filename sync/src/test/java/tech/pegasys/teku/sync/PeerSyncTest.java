@@ -460,7 +460,9 @@ public class PeerSyncTest {
 
     requestFuture.completeExceptionally(
         new BlocksByRangeResponseInvalidResponseException(
-            peer, startSlot, startSlot.plus(UInt64.valueOf(100))));
+            peer,
+            BlocksByRangeResponseInvalidResponseException.InvalidResponseType
+                .BLOCK_SLOT_NOT_GREATER_THAN_PREVIOUS_BLOCK_SLOT));
 
     // Peer returns some blocks but they are not ordered
     assertThat(syncFuture).isCompletedWithValue(PeerSyncResult.INVALID_RESPONSE);
