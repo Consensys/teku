@@ -321,11 +321,9 @@ class RecentChainDataTest {
     final SignedBlockAndState chainHeadA = chain.get(0);
     final SafeFuture<Optional<SignedBlockAndState>> chainHeadAFuture = new SafeFuture<>();
     when(store.retrieveBlockAndState(chainHeadA.getRoot())).thenReturn(chainHeadAFuture);
-    final SafeFuture<Void> staleUpdate = preGenesisStorageClient.updateHead(
-        chainHeadA.getRoot(),
-        chainHeadA.getSlot());
-    assertThat(staleUpdate)
-        .isNotDone();
+    final SafeFuture<Void> staleUpdate =
+        preGenesisStorageClient.updateHead(chainHeadA.getRoot(), chainHeadA.getSlot());
+    assertThat(staleUpdate).isNotDone();
     // We should still be at genesis while we wait on the future to resolve
     assertThat(preGenesisStorageClient.getHeadBlockAndState()).contains(genesis.toUnsigned());
 
