@@ -20,6 +20,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.IntSupplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
@@ -87,18 +89,15 @@ public class StateGeneratorFactory {
       final Bytes32 ancestorRoot = maybeAncestorRoot.get();
       final SafeFuture<SignedBlockAndState> parentFuture = inProgressGeneration.get(ancestorRoot);
       if (parentFuture != null) {
-        return parentFuture
-            .thenCompose(
-                ancestorState -> {
-                  queueRegeneration(task.rebase(ancestorState));
-                  return future;
-                })
-            .catchAndRethrow(
+        parentFuture
+            .thenAccept(ancestorState -> queueRegeneration(task.rebase(ancestorState)))
+            .finish(
                 error -> {
                   // Remove if regeneration fails.
                   inProgressGeneration.remove(task.getBlockRoot(), future);
                   future.completeExceptionally(error);
                 });
+        return future;
       }
       maybeAncestorRoot =
           maybeAncestorRoot
@@ -152,6 +151,7 @@ public class StateGeneratorFactory {
   }
 
   public static class RegenerationTask {
+    private static final Logger LOG = LogManager.getLogger();
     private final HashTree tree;
     private final SignedBlockAndState baseBlockAndState;
     private final BlockProvider blockProvider;
@@ -180,7 +180,17 @@ public class StateGeneratorFactory {
     }
 
     public RegenerationTask rebase(final SignedBlockAndState newBaseBlockAndState) {
-      final HashTree treeFromAncestor = tree.withRoot(newBaseBlockAndState.getRoot()).build();
+      final Bytes32 newBaseRoot = newBaseBlockAndState.getRoot();
+      if (!tree.contains(newBaseRoot)) {
+        LOG.warn(
+            "Attempting to rebase a task for {} onto a starting state that is not a required ancestor ({} at slot {})",
+            blockRoot,
+            newBaseRoot,
+            newBaseBlockAndState.getSlot());
+        return this;
+      }
+      final HashTree treeFromAncestor =
+          tree.withRoot(newBaseRoot).block(newBaseBlockAndState.getBlock()).build();
       return new RegenerationTask(
           blockRoot, treeFromAncestor, newBaseBlockAndState, blockProvider, cacheHandler);
     }
