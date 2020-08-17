@@ -145,11 +145,15 @@ public class PeerSync {
                   nextSlot);
               if (count.compareTo(MIN_SLOTS_TO_PROGRESS_PER_REQUEST) > 0
                   && startSlot.plus(MIN_SLOTS_TO_PROGRESS_PER_REQUEST).compareTo(nextSlot) > 0) {
-                LOG.debug(
-                    "Rejecting peer {} as sync target because it excessively throttled returned blocks",
-                    peer.getId());
                 final int throttledRequests = throttledRequestCount.incrementAndGet();
+                LOG.debug(
+                    "Received {} consecutive excessively throttled response from {}",
+                    throttledRequests,
+                    peer.getId());
                 if (throttledRequests > 10) {
+                  LOG.debug(
+                      "Rejecting peer {} as sync target because it excessively throttled returned blocks",
+                      peer.getId());
                   return SafeFuture.completedFuture(PeerSyncResult.EXCESSIVE_THROTTLING);
                 }
               } else {
