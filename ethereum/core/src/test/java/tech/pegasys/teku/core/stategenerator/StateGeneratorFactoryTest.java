@@ -15,6 +15,7 @@ package tech.pegasys.teku.core.stategenerator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.stategenerator.StateGeneratorFactory.RegenerationTask;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
+import tech.pegasys.teku.datastructures.hashtree.HashTree.Builder;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -81,22 +83,20 @@ class StateGeneratorFactoryTest {
 
   @Test
   void shouldUseQueuedRegenerationAsStartingPointIfPossible() {
-    final StubRegenerationTask task1 = createRandomTask();
+    final SignedBlockAndState baseState = dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
+    final List<SignedBlockAndState> blocks =
+        dataStructureUtil.randomSignedBlockAndStateSequence(baseState.getBlock(), 10, false);
+    final SignedBlockAndState task1State = blocks.get(6);
+    final List<SignedBlockAndState> task1Blocks = blocks.subList(0, 6);
+    final HashTree task1Tree = createHashTreeForChain(task1Blocks);
+    final StubRegenerationTask task1 = new StubRegenerationTask(task1State.getRoot(), task1Tree);
     final SafeFuture<SignedBlockAndState> result1 =
         stateGeneratorFactory.regenerateStateForBlock(task1);
     assertThat(result1).isNotDone();
     task1.assertRegeneratedWithoutRebase();
 
-    final Bytes32 expectedStartingPoint = task1.getBlockRoot();
-    final Bytes32 task2Target = dataStructureUtil.randomBytes32();
-    final Bytes32 task2InitialRoot = dataStructureUtil.randomBytes32();
-    final HashTree task2Tree =
-        HashTree.builder()
-            .childAndParentRoots(task2Target, expectedStartingPoint)
-            .childAndParentRoots(expectedStartingPoint, task2InitialRoot)
-            .childAndParentRoots(task2InitialRoot, dataStructureUtil.randomBytes32())
-            .rootHash(task2InitialRoot)
-            .build();
+    final Bytes32 task2Target = blocks.get(9).getRoot();
+    final HashTree task2Tree = createHashTreeForChain(blocks);
     final StubRegenerationTask task2 = new StubRegenerationTask(task2Target, task2Tree);
     final SafeFuture<SignedBlockAndState> result2 =
         stateGeneratorFactory.regenerateStateForBlock(task2);
@@ -104,8 +104,8 @@ class StateGeneratorFactoryTest {
     // Shouldn't start task 2 because it can use the result of task 1 as a better starting point
     task2.assertNotRegenerated();
 
-    final SignedBlockAndState task1State = dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
     task1.regenerationResult.complete(task1State);
+    assertThat(result1).isCompletedWithValue(task1State);
 
     task2.assertRegneratedAfterRebase(task1State);
     final SignedBlockAndState task2State =
@@ -114,6 +114,38 @@ class StateGeneratorFactoryTest {
 
     assertThat(result2).isCompletedWithValue(task2State);
     assertAllRegenerationsComplete();
+  }
+
+  @Test
+  void shouldNotUseQueuedStartingPointBeforeTheCurrentRoot() {
+    final SignedBlockAndState baseState = dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
+    final List<SignedBlockAndState> blocks =
+        dataStructureUtil.randomSignedBlockAndStateSequence(baseState.getBlock(), 10, false);
+    final SignedBlockAndState task1State = blocks.get(6);
+    final List<SignedBlockAndState> task1Blocks = blocks.subList(0, 6);
+    final HashTree task1Tree = createHashTreeForChain(task1Blocks);
+    final StubRegenerationTask task1 = new StubRegenerationTask(task1State.getRoot(), task1Tree);
+    final SafeFuture<SignedBlockAndState> result1 =
+        stateGeneratorFactory.regenerateStateForBlock(task1);
+    assertThat(result1).isNotDone();
+    task1.assertRegeneratedWithoutRebase();
+
+    final Bytes32 task2Target = blocks.get(9).getRoot();
+    final HashTree task2Tree = createHashTreeForChain(blocks.subList(7, 10));
+    final StubRegenerationTask task2 = new StubRegenerationTask(task2Target, task2Tree);
+    final SafeFuture<SignedBlockAndState> result2 =
+        stateGeneratorFactory.regenerateStateForBlock(task2);
+    assertThat(result2).isNotDone();
+    // Task 2 starts immediately because its base root is already better than task 1
+    // even though task 1's target root is in the hash tree as the parent of its root
+    task2.assertRegeneratedWithoutRebase();
+  }
+
+  private HashTree createHashTreeForChain(final List<SignedBlockAndState> blocks) {
+    final Builder builder = HashTree.builder();
+    blocks.forEach(block -> builder.childAndParentRoots(block.getRoot(), block.getParentRoot()));
+    builder.rootHash(blocks.get(0).getRoot());
+    return builder.build();
   }
 
   private StubRegenerationTask createRandomTask() {
@@ -180,6 +212,8 @@ class StateGeneratorFactoryTest {
     public void assertRegneratedAfterRebase(final SignedBlockAndState newBaseState) {
       assertThat(rebasedTo).contains(newBaseState);
       assertThat(regenerated).isTrue();
+      // Assert that rebase is valid
+      getTree().withRoot(rebasedTo.orElseThrow().getRoot()).build();
     }
   }
 }

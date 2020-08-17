@@ -100,7 +100,11 @@ public class StateGeneratorFactory {
                   future.completeExceptionally(error);
                 });
       }
-      maybeAncestorRoot = maybeAncestorRoot.flatMap(task.getTree()::getParent);
+      maybeAncestorRoot =
+          maybeAncestorRoot
+              // Don't find ancestor of the root hash
+              .filter(root -> !root.equals(task.getTree().getRootHash()))
+              .flatMap(task.getTree()::getParent);
     }
     queueRegeneration(task);
     return future;
