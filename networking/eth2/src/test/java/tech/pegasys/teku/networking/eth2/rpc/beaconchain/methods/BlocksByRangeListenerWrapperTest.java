@@ -53,7 +53,8 @@ public class BlocksByRangeListenerWrapperTest {
 
     SafeFuture<?> result = listenerWrapper.onResponse(block1);
     assertThat(result).isCompletedExceptionally();
-    assertThatThrownBy(result::get).hasCauseExactlyInstanceOf(BlocksByRangeResponseOutOfOrderException.class);
+    assertThatThrownBy(result::get).hasCauseExactlyInstanceOf(BlocksByRangeResponseInvalidResponseException.class);
+    assertThatThrownBy(result::get).hasMessageContaining(BlocksByRangeResponseInvalidResponseException.InvalidResponseType.BLOCK_SLOT_NOT_IN_RANGE.describe());
   }
 
   @Test
@@ -87,7 +88,9 @@ public class BlocksByRangeListenerWrapperTest {
 
     SafeFuture<?> result = listenerWrapper.onResponse(block2);
     assertThat(result).isCompletedExceptionally();
-    assertThatThrownBy(result::get).hasCauseExactlyInstanceOf(BlocksByRangeResponseOutOfOrderException.class);
+    assertThatThrownBy(result::get).hasCauseExactlyInstanceOf(BlocksByRangeResponseInvalidResponseException.class);
+    assertThatThrownBy(result::get).hasMessageContaining(BlocksByRangeResponseInvalidResponseException.InvalidResponseType.BLOCK_SLOT_DOES_NOT_MATCH_STEP.describe());
+
   }
 
   @Test
@@ -110,6 +113,45 @@ public class BlocksByRangeListenerWrapperTest {
 
     SafeFuture<?> result = listenerWrapper.onResponse(block5);
     assertThat(result).isCompletedExceptionally();
-    assertThatThrownBy(result::get).hasCauseExactlyInstanceOf(BlocksByRangeResponseOutOfOrderException.class);
+    assertThatThrownBy(result::get).hasCauseExactlyInstanceOf(BlocksByRangeResponseInvalidResponseException.class);
+    assertThatThrownBy(result::get).hasMessageContaining(BlocksByRangeResponseInvalidResponseException.InvalidResponseType.BLOCK_SLOT_NOT_IN_RANGE.describe());
+  }
+
+  @Test
+  void blockParentRootDoesNotMatch() {
+    UInt64 START_SLOT = UInt64.valueOf(1);
+    UInt64 COUNT = UInt64.valueOf(4);
+    UInt64 STEP = UInt64.valueOf(1);
+    // end slot is 9
+    listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, START_SLOT, COUNT, STEP);
+
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
+    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
+
+    listenerWrapper.onResponse(block1).join();
+
+    SafeFuture<?> result = listenerWrapper.onResponse(block2);
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get).hasCauseExactlyInstanceOf(BlocksByRangeResponseInvalidResponseException.class);
+    assertThatThrownBy(result::get).hasMessageContaining(BlocksByRangeResponseInvalidResponseException.InvalidResponseType.BLOCK_PARENT_ROOT_DOES_NOT_MATCH.describe());
+  }
+
+  @Test
+  void blockSlotGreaterThanPreviousBlockSlot() {
+    UInt64 START_SLOT = UInt64.valueOf(1);
+    UInt64 COUNT = UInt64.valueOf(4);
+    UInt64 STEP = UInt64.valueOf(1);
+    // end slot is 9
+    listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, START_SLOT, COUNT, STEP);
+
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
+    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(1);
+
+    listenerWrapper.onResponse(block1).join();
+
+    SafeFuture<?> result = listenerWrapper.onResponse(block2);
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get).hasCauseExactlyInstanceOf(BlocksByRangeResponseInvalidResponseException.class);
+    assertThatThrownBy(result::get).hasMessageContaining(BlocksByRangeResponseInvalidResponseException.InvalidResponseType.BLOCK_SLOT_NOT_GREATER_THAN_PREVIOUS_BLOCK_SLOT.describe());
   }
 }

@@ -43,7 +43,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
-import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseOutOfOrderException;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
@@ -412,7 +412,7 @@ public class PeerSyncTest {
             responseListenerArgumentCaptor.capture());
 
     requestFuture.completeExceptionally(
-        new BlocksByRangeResponseOutOfOrderException(
+        new BlocksByRangeResponseInvalidResponseException(
             peer, startSlot, startSlot.plus(UInt64.valueOf(100))));
 
     // Peer returns some blocks but they are not ordered

@@ -22,6 +22,11 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 
 import java.util.Optional;
 
+import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException.InvalidResponseType.BLOCK_PARENT_ROOT_DOES_NOT_MATCH;
+import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException.InvalidResponseType.BLOCK_SLOT_DOES_NOT_MATCH_STEP;
+import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException.InvalidResponseType.BLOCK_SLOT_NOT_GREATER_THAN_PREVIOUS_BLOCK_SLOT;
+import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException.InvalidResponseType.BLOCK_SLOT_NOT_IN_RANGE;
+
 public class BlocksByRangeListenerWrapper implements ResponseStreamListener<SignedBeaconBlock> {
 
   private final Peer peer;
@@ -49,13 +54,24 @@ public class BlocksByRangeListenerWrapper implements ResponseStreamListener<Sign
   @Override
   public SafeFuture<?> onResponse(SignedBeaconBlock response) {
     return SafeFuture.of(() -> {
+
       UInt64 blockSlot = response.getSlot();
-      if (!blockSlotIsInRange(blockSlot)
-              || !blockSlotMatchesTheStep(blockSlot)
-              || !blockSlotGreaterThanPreviousBlockSlot(blockSlot)
-              || !blockParentRootMatches(response.getParent_root())) {
-        throw new BlocksByRangeResponseOutOfOrderException(peer, startSlot, endSlot);
+      if (!blockSlotIsInRange(blockSlot)){
+        throw new BlocksByRangeResponseInvalidResponseException(peer, BLOCK_SLOT_NOT_IN_RANGE);
       }
+
+      if (!blockSlotMatchesTheStep(blockSlot)) {
+        throw new BlocksByRangeResponseInvalidResponseException(peer, BLOCK_SLOT_DOES_NOT_MATCH_STEP);
+      }
+
+      if (!blockSlotGreaterThanPreviousBlockSlot(blockSlot)){
+        throw new BlocksByRangeResponseInvalidResponseException(peer, BLOCK_SLOT_NOT_GREATER_THAN_PREVIOUS_BLOCK_SLOT);
+      }
+
+      if (!blockParentRootMatches(response.getParent_root())) {
+        throw new BlocksByRangeResponseInvalidResponseException(peer, BLOCK_PARENT_ROOT_DOES_NOT_MATCH);
+      }
+
       maybeSlotOfLastBlock = Optional.of(blockSlot);
       maybeRootOfLastBlock = Optional.of(response.getRoot());
       return blockResponseListener.onResponse(response);
