@@ -49,7 +49,7 @@ class StoreTest extends AbstractStoreTest {
           SafeFuture<Optional<SignedBeaconBlock>> result = store.retrieveSignedBlock(root);
           assertThat(result).isCompleted();
           assertThat(result)
-              .withFailMessage("Expected block %s to be available", expectedBlock.getSlot())
+              .describedAs("block %s", expectedBlock.getSlot())
               .isCompletedWithValue(Optional.of(expectedBlock));
         });
   }
@@ -63,7 +63,7 @@ class StoreTest extends AbstractStoreTest {
           SafeFuture<Optional<BeaconBlock>> result = store.retrieveBlock(root);
           assertThat(result).isCompleted();
           assertThat(result)
-              .withFailMessage("Expected block %s to be available", expectedBlock.getSlot())
+              .describedAs("block %s", expectedBlock.getSlot())
               .isCompletedWithValue(Optional.of(expectedBlock));
         });
   }
@@ -76,8 +76,7 @@ class StoreTest extends AbstractStoreTest {
           SafeFuture<Optional<SignedBlockAndState>> result = store.retrieveBlockAndState(root);
           assertThat(result).isCompleted();
           assertThat(result)
-              .withFailMessage(
-                  "Expected block and state at %s to be available", blockAndState.getSlot())
+              .describedAs("block and state at %s", blockAndState.getSlot())
               .isCompletedWithValue(Optional.of(blockAndState));
         });
   }
@@ -90,7 +89,7 @@ class StoreTest extends AbstractStoreTest {
           SafeFuture<Optional<BeaconState>> result = store.retrieveBlockState(root);
           assertThat(result).isCompleted();
           assertThat(result)
-              .withFailMessage("Expected state at %s to be available", blockAndState.getSlot())
+              .describedAs("State at %s", blockAndState.getSlot())
               .isCompletedWithValue(Optional.of(blockAndState.getState()));
         });
   }
@@ -102,8 +101,7 @@ class StoreTest extends AbstractStoreTest {
           SafeFuture<Optional<BeaconState>> result =
               store.retrieveCheckpointState(checkpointState.getCheckpoint());
           assertThat(result)
-              .withFailMessage(
-                  "Expected checkpoint state for checkpoint %s", checkpointState.getCheckpoint())
+              .describedAs("Checkpoint state for checkpoint %s", checkpointState.getCheckpoint())
               .isCompletedWithValue(Optional.of(checkpointState.getState()));
         });
   }

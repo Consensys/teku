@@ -15,6 +15,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-bytes'
 
   testImplementation testFixtures(project(':bls'))
+  testImplementation testFixtures(project(':data:metrics'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':protoarray'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
