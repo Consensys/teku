@@ -19,7 +19,7 @@ public class StorePruningOptions {
   public static final int DEFAULT_STATE_CACHE_SIZE = Constants.SLOTS_PER_EPOCH * 5;
   // Max block size is about 20x smaller than the minimum state size
   public static final int DEFAULT_BLOCK_CACHE_SIZE = DEFAULT_STATE_CACHE_SIZE * 2;
-  public static final int DEFAULT_CHECKPOINT_STATE_CACHE_SIZE = 20;
+  public static final int DEFAULT_CHECKPOINT_STATE_CACHE_SIZE = 100;
 
   private final int stateCacheSize;
   private final int blockCacheSize;

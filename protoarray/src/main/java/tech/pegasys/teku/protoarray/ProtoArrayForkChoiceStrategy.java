@@ -20,6 +20,8 @@ import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -34,6 +36,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final ReadWriteLock protoArrayLock = new ReentrantReadWriteLock();
   private final ReadWriteLock votesLock = new ReentrantReadWriteLock();
   private final ReadWriteLock balancesLock = new ReentrantReadWriteLock();
@@ -207,6 +211,8 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     votesLock.writeLock().lock();
     balancesLock.writeLock().lock();
     try {
+      final long startTime = System.currentTimeMillis();
+
       List<UInt64> oldBalances = balances;
       List<UInt64> newBalances = justifiedStateBalances;
 
@@ -216,6 +222,12 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
 
       protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
       balances = new ArrayList<>(newBalances);
+
+      LOG.info(
+          "Finding the head at justified epoch {} and finalized epoch {}. Took {}ms",
+          justifiedEpoch,
+          finalizedEpoch,
+          System.currentTimeMillis() - startTime);
 
       return protoArray.findHead(justifiedRoot);
     } finally {
