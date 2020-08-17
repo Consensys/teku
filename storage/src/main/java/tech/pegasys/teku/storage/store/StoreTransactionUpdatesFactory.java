@@ -19,7 +19,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -134,7 +133,7 @@ class StoreTransactionUpdatesFactory {
                 compute_epoch_at_slot(e.getValue().getSlot())
                     .mod(Store.HOT_STATE_CHECKPOINT_FREQUENCY_IN_EPOCHS)
                     .equals(UInt64.ZERO))
-        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   private static Map<Bytes32, Bytes32> collectFinalizedRoots(
