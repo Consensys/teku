@@ -86,7 +86,7 @@ public class ChainUpdater {
   public void updateBestBlock(final SignedBlockAndState bestBlock) {
     saveBlock(bestBlock);
 
-    assertThat(recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot())).isCompleted();
+    recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
   }
 
   public SignedBlockAndState advanceChain() {

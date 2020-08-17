@@ -17,9 +17,6 @@ import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
@@ -38,8 +35,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ForkChoice {
-  private static final Logger LOG = LogManager.getLogger();
-  private final AtomicBoolean headUpdateInProgress = new AtomicBoolean(false);
   private final RecentChainData recentChainData;
   private final StateTransition stateTransition;
 
@@ -62,9 +57,6 @@ public class ForkChoice {
   }
 
   private synchronized void processHead(Optional<UInt64> nodeSlot) {
-    if (!headUpdateInProgress.compareAndSet(false, true)) {
-      LOG.info("Skipping fork choice head update because an update is already in progress");
-    }
     final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
     final Checkpoint justifiedCheckpoint = recentChainData.getStore().getJustifiedCheckpoint();
     recentChainData
@@ -81,20 +73,16 @@ public class ForkChoice {
                       justifiedCheckpointState.orElseThrow());
               transaction.commit(() -> {}, "Failed to persist validator vote changes.");
 
-              recentChainData
-                  .updateHead(
-                      headBlockRoot,
-                      nodeSlot.orElse(
-                          forkChoiceStrategy
-                              .blockSlot(headBlockRoot)
-                              .orElseThrow(
-                                  () ->
-                                      new IllegalStateException(
-                                          "Unable to retrieve the slot of fork choice head"))))
-                  .alwaysRun(() -> headUpdateInProgress.set(false))
-                  .reportExceptions();
+              recentChainData.updateHead(
+                  headBlockRoot,
+                  nodeSlot.orElse(
+                      forkChoiceStrategy
+                          .blockSlot(headBlockRoot)
+                          .orElseThrow(
+                              () ->
+                                  new IllegalStateException(
+                                      "Unable to retrieve the slot of fork choice head"))));
             })
-        .catchAndRethrow(error -> headUpdateInProgress.set(false))
         .join();
   }
 

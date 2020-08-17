@@ -95,11 +95,11 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
   public void shouldRespondWithBlocksFromCanonicalChain() throws Exception {
     final SignedBeaconBlock block1 = beaconChainUtil.createAndImportBlockAtSlot(1);
     final Bytes32 block1Root = block1.getMessage().hash_tree_root();
-    updateHead(block1, block1Root);
+    recentChainData1.updateHead(block1Root, block1.getSlot());
 
     final SignedBeaconBlock block2 = beaconChainUtil.createAndImportBlockAtSlot(2);
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
-    updateHead(block2, block2Root);
+    recentChainData1.updateHead(block2Root, block2.getSlot());
 
     final List<SignedBeaconBlock> response = requestBlocks();
     assertThat(response).containsExactly(block1, block2);
@@ -111,7 +111,7 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
     beaconChainUtil.createAndImportBlockAtSlot(1);
     final SignedBeaconBlock block2 = beaconChainUtil.createAndImportBlockAtSlot(2);
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
-    updateHead(block2, block2Root);
+    recentChainData1.updateHead(block2Root, block2.getSlot());
 
     peer1.disconnectImmediately(Optional.empty(), false);
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
@@ -131,7 +131,7 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
     beaconChainUtil.createAndImportBlockAtSlot(1);
     final SignedBeaconBlock block2 = beaconChainUtil.createAndImportBlockAtSlot(2);
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
-    updateHead(block2, block2Root);
+    recentChainData1.updateHead(block2Root, block2.getSlot());
 
     peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS);
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
@@ -151,7 +151,7 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
     beaconChainUtil.createAndImportBlockAtSlot(1);
     final SignedBeaconBlock block2 = beaconChainUtil.createAndImportBlockAtSlot(2);
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
-    updateHead(block2, block2Root);
+    recentChainData1.updateHead(block2Root, block2.getSlot());
 
     peer1.disconnectImmediately(Optional.empty(), false);
     final SafeFuture<SignedBeaconBlock> res = peer1.requestBlockBySlot(UInt64.ONE);
@@ -167,7 +167,7 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
     beaconChainUtil.createAndImportBlockAtSlot(1);
     final SignedBeaconBlock block2 = beaconChainUtil.createAndImportBlockAtSlot(2);
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
-    updateHead(block2, block2Root);
+    recentChainData1.updateHead(block2Root, block2.getSlot());
 
     peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS);
     final SafeFuture<SignedBeaconBlock> res = peer1.requestBlockBySlot(UInt64.ONE);
@@ -185,10 +185,6 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
         peer1.requestBlocksByRange(
             UInt64.ONE, UInt64.valueOf(10), UInt64.ONE, ResponseStreamListener.from(blocks::add)));
     return blocks;
-  }
-
-  private void updateHead(final SignedBeaconBlock block1, final Bytes32 block1Root) {
-    assertThat(recentChainData1.updateHead(block1Root, block1.getSlot())).isCompleted();
   }
 
   public static class BeaconBlocksByRangeIntegrationTest_ssz

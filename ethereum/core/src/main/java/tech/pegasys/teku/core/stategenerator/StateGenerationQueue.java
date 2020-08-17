@@ -142,12 +142,11 @@ public class StateGenerationQueue {
                 future.complete(result);
               }
             })
-        .alwaysRun(
+        .always(
             () -> {
               activeRegenerations.decrementAndGet();
               tryProcessNext();
-            })
-        .reportExceptions();
+            });
   }
 
   public static class RegenerationTask {
