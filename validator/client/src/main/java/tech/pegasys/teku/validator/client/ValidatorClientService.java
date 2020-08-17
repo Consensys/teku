@@ -32,6 +32,7 @@ import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.ValidatorDutyFactory;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.metrics.MetricRecordingValidatorApiChannel;
+import tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler;
 
 public class ValidatorClientService extends Service {
   private final EventChannels eventChannels;
@@ -54,10 +55,18 @@ public class ValidatorClientService extends Service {
     final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector, asyncRunner);
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(config.getConfig());
-    final ValidatorApiChannel validatorApiChannel =
-        new MetricRecordingValidatorApiChannel(
-            metricsSystem,
-            config.getEventChannels().getPublisher(ValidatorApiChannel.class, asyncRunner));
+
+    final ValidatorApiChannel validatorApiChannel;
+    if (config.getConfig().isRemoteValidatorApiEnabled()) {
+      validatorApiChannel =
+          new MetricRecordingValidatorApiChannel(
+              metricsSystem, new RemoteValidatorApiHandler(config));
+    } else {
+      validatorApiChannel =
+          new MetricRecordingValidatorApiChannel(
+              metricsSystem,
+              config.getEventChannels().getPublisher(ValidatorApiChannel.class, asyncRunner));
+    }
     final RetryingDutyLoader dutyLoader =
         createDutyLoader(metricsSystem, validatorApiChannel, asyncRunner, validators);
     final StableSubnetSubscriber stableSubnetSubscriber =
