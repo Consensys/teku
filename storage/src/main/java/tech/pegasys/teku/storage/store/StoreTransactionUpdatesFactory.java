@@ -22,6 +22,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -34,6 +36,8 @@ import tech.pegasys.teku.storage.events.FinalizedChainData;
 import tech.pegasys.teku.storage.store.Store.Transaction;
 
 class StoreTransactionUpdatesFactory {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final Store baseStore;
   private final Store.Transaction tx;
 
@@ -123,10 +127,15 @@ class StoreTransactionUpdatesFactory {
    */
   private Map<Bytes32, BeaconState> getHotStatesToPersist() {
     final BlockTree blockTree = updatedBlockTree.orElse(baseStore.blockTree);
-    return hotStates.entrySet().stream()
-        .filter(e -> blockTree.isRootAtEpochBoundary(e.getKey()))
-        .filter(e -> baseStore.shouldPersistStateAtEpoch(blockTree.getEpoch(e.getKey())))
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    final Map<Bytes32, BeaconState> statesToPersist =
+        hotStates.entrySet().stream()
+            .filter(e -> blockTree.isRootAtEpochBoundary(e.getKey()))
+            .filter(e -> baseStore.shouldPersistStateAtEpoch(blockTree.getEpoch(e.getKey())))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    if (statesToPersist.size() > 0) {
+      LOG.trace("Persist {} hot states", statesToPersist.size());
+    }
+    return statesToPersist;
   }
 
   private static Map<Bytes32, Bytes32> collectFinalizedRoots(

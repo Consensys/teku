@@ -30,6 +30,7 @@ import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.ProtoArrayStorage;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
+import tech.pegasys.teku.storage.store.StoreOptions;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class FileBackedStorageSystem extends AbstractStorageSystem {
@@ -43,7 +44,7 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
   private final Database database;
   private final RestartedStorageSupplier restartedSupplier;
 
-  public FileBackedStorageSystem(
+  private FileBackedStorageSystem(
       final StubMetricsSystem metricsSystem,
       final EventBus eventBus,
       final TrackingReorgEventChannel reorgEventChannel,
@@ -135,6 +136,7 @@ public class FileBackedStorageSystem extends AbstractStorageSystem {
     final RecentChainData recentChainData =
         StorageBackedRecentChainData.createImmediately(
             metricsSystem,
+            StoreOptions.createDefault(),
             chainStorageServer,
             chainStorageServer,
             new StubProtoArrayStorageChannel(),

@@ -112,6 +112,9 @@ class Store implements UpdatableStore {
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final Map<Bytes32, BeaconState> block_states,
       final Map<Checkpoint, BeaconState> checkpoint_states) {
+    LOG.trace(
+        "Create store with hot state persistence configured to {}",
+        hotStatePersistenceFrequencyInEpochs);
 
     // Set up metrics
     this.metricsSystem = metricsSystem;
@@ -927,7 +930,9 @@ class Store implements UpdatableStore {
         && Objects.equals(finalized_checkpoint, store.finalized_checkpoint)
         && Objects.equals(best_justified_checkpoint, store.best_justified_checkpoint)
         && Objects.equals(blocks, store.blocks)
-        && Objects.equals(checkpoint_states, store.checkpoint_states);
+        && Objects.equals(checkpoint_states, store.checkpoint_states)
+        && Objects.equals(
+            hotStatePersistenceFrequencyInEpochs, store.hotStatePersistenceFrequencyInEpochs);
   }
 
   @Override

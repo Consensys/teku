@@ -28,12 +28,14 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubReorgEventChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
+import tech.pegasys.teku.storage.store.StoreOptions;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class MemoryOnlyRecentChainData extends RecentChainData {
 
   private MemoryOnlyRecentChainData(
       final MetricsSystem metricsSystem,
+      final StoreOptions storeOptions,
       final EventBus eventBus,
       final StorageUpdateChannel storageUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
@@ -41,6 +43,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       final ReorgEventChannel reorgEventChannel) {
     super(
         metricsSystem,
+        storeOptions,
         BlockProvider.NOOP,
         StateProvider.NOOP,
         storageUpdateChannel,
@@ -75,20 +78,29 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
   }
 
   public static class Builder {
-    EventBus eventBus = new EventBus();
-    StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
-    ProtoArrayStorageChannel protoArrayStorageChannel = new StubProtoArrayStorageChannel();
-    FinalizedCheckpointChannel finalizedCheckpointChannel = new StubFinalizedCheckpointChannel();
-    ReorgEventChannel reorgEventChannel = new StubReorgEventChannel();
+    private StoreOptions storeOptions = StoreOptions.createDefault();
+    private EventBus eventBus = new EventBus();
+    private StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
+    private ProtoArrayStorageChannel protoArrayStorageChannel = new StubProtoArrayStorageChannel();
+    private FinalizedCheckpointChannel finalizedCheckpointChannel =
+        new StubFinalizedCheckpointChannel();
+    private ReorgEventChannel reorgEventChannel = new StubReorgEventChannel();
 
     public RecentChainData build() {
       return new MemoryOnlyRecentChainData(
           new NoOpMetricsSystem(),
+          storeOptions,
           eventBus,
           storageUpdateChannel,
           protoArrayStorageChannel,
           finalizedCheckpointChannel,
           reorgEventChannel);
+    }
+
+    public Builder storeOptions(final StoreOptions storeOptions) {
+      checkNotNull(storeOptions);
+      this.storeOptions = storeOptions;
+      return this;
     }
 
     public Builder eventBus(final EventBus eventBus) {

@@ -31,6 +31,7 @@ import tech.pegasys.teku.storage.server.rocksdb.InMemoryRocksDbDatabaseFactory;
 import tech.pegasys.teku.storage.server.rocksdb.core.MockRocksDbInstance;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
+import tech.pegasys.teku.storage.store.StoreOptions;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class InMemoryStorageSystem extends AbstractStorageSystem {
@@ -132,6 +133,7 @@ public class InMemoryStorageSystem extends AbstractStorageSystem {
     final RecentChainData recentChainData =
         StorageBackedRecentChainData.createImmediately(
             metricsSystem,
+            StoreOptions.createDefault(),
             chainStorageServer,
             chainStorageServer,
             new StubProtoArrayStorageChannel(),

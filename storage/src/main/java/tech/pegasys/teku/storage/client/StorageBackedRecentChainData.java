@@ -35,6 +35,7 @@ import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.store.StoreBuilder;
+import tech.pegasys.teku.storage.store.StoreOptions;
 import tech.pegasys.teku.util.config.Constants;
 
 public class StorageBackedRecentChainData extends RecentChainData {
@@ -42,9 +43,11 @@ public class StorageBackedRecentChainData extends RecentChainData {
   private final BlockProvider blockProvider;
   private final StateProvider stateProvider;
   private final StorageQueryChannel storageQueryChannel;
+  private final StoreOptions storeOptions;
 
   public StorageBackedRecentChainData(
       final MetricsSystem metricsSystem,
+      final StoreOptions storeOptions,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
@@ -53,6 +56,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final EventBus eventBus) {
     super(
         metricsSystem,
+        storeOptions,
         storageQueryChannel::getHotBlocksByRoot,
         storageQueryChannel::getHotStateByBlockRoot,
         storageUpdateChannel,
@@ -60,6 +64,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
         finalizedCheckpointChannel,
         reorgEventChannel,
         eventBus);
+    this.storeOptions = storeOptions;
     this.storageQueryChannel = storageQueryChannel;
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
     this.stateProvider = storageQueryChannel::getHotStateByBlockRoot;
@@ -68,6 +73,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
 
   public static SafeFuture<RecentChainData> create(
       final MetricsSystem metricsSystem,
+      final StoreOptions storeOptions,
       final AsyncRunner asyncRunner,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
@@ -78,6 +84,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
             metricsSystem,
+            storeOptions,
             storageQueryChannel,
             storageUpdateChannel,
             protoArrayStorageChannel,
@@ -91,6 +98,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
   @VisibleForTesting
   public static RecentChainData createImmediately(
       final MetricsSystem metricsSystem,
+      final StoreOptions storeOptions,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
@@ -100,6 +108,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
             metricsSystem,
+            storeOptions,
             storageQueryChannel,
             storageUpdateChannel,
             protoArrayStorageChannel,
@@ -133,6 +142,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
               .get()
               .blockProvider(blockProvider)
               .stateProvider(stateProvider)
+              .storeOptions(storeOptions)
               .build()
               .thenApply(
                   store -> {

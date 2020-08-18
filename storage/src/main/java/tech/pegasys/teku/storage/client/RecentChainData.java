@@ -50,6 +50,7 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.store.EmptyStoreResults;
 import tech.pegasys.teku.storage.store.StoreBuilder;
+import tech.pegasys.teku.storage.store.StoreOptions;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreUpdateHandler;
@@ -67,6 +68,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   protected final ProtoArrayStorageChannel protoArrayStorageChannel;
   protected final MetricsSystem metricsSystem;
   private final ReorgEventChannel reorgEventChannel;
+  private final StoreOptions storeOptions;
 
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
   private final SafeFuture<Void> storeInitializedFuture = new SafeFuture<>();
@@ -80,6 +82,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   RecentChainData(
       final MetricsSystem metricsSystem,
+      final StoreOptions storeOptions,
       final BlockProvider blockProvider,
       final StateProvider stateProvider,
       final StorageUpdateChannel storageUpdateChannel,
@@ -88,6 +91,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final ReorgEventChannel reorgEventChannel,
       final EventBus eventBus) {
     this.metricsSystem = metricsSystem;
+    this.storeOptions = storeOptions;
     this.blockProvider = blockProvider;
     this.stateProvider = stateProvider;
     this.reorgEventChannel = reorgEventChannel;
@@ -112,7 +116,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public SafeFuture<Void> initializeFromGenesis(final BeaconState genesisState) {
     final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisState);
-    return StoreBuilder.buildForkChoiceStore(metricsSystem, blockProvider, stateProvider, genesis)
+    return StoreBuilder.forkChoiceStoreBuilder(metricsSystem, blockProvider, stateProvider, genesis)
+        .storeOptions(storeOptions)
+        .build()
         .thenAccept(
             store -> {
               final boolean result = setStore(store);

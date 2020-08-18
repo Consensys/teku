@@ -36,6 +36,7 @@ public class StoreBuilder {
   BlockProvider blockProvider;
   StateProvider stateProvider;
   StateGenerationQueue stateGenerationQueue;
+  StoreOptions storeOptions = StoreOptions.createDefault();
 
   final Map<Bytes32, Bytes32> childToParentRoot = new HashMap<>();
   UInt64 time;
@@ -50,14 +51,6 @@ public class StoreBuilder {
 
   public static StoreBuilder create() {
     return new StoreBuilder();
-  }
-
-  public static SafeFuture<UpdatableStore> buildForkChoiceStore(
-      final MetricsSystem metricsSystem,
-      final BlockProvider blockProvider,
-      final StateProvider stateProvider,
-      final AnchorPoint anchor) {
-    return forkChoiceStoreBuilder(metricsSystem, blockProvider, stateProvider, anchor).build();
   }
 
   public static StoreBuilder forkChoiceStoreBuilder(
@@ -102,7 +95,7 @@ public class StoreBuilder {
         childToParentRoot,
         latestFinalized,
         votes,
-        StoreOptions.createDefault());
+        storeOptions);
   }
 
   private void createDefaults() {
@@ -128,6 +121,12 @@ public class StoreBuilder {
   public StoreBuilder metricsSystem(final MetricsSystem metricsSystem) {
     checkNotNull(metricsSystem);
     this.metricsSystem = metricsSystem;
+    return this;
+  }
+
+  public StoreBuilder storeOptions(final StoreOptions storeOptions) {
+    checkNotNull(storeOptions);
+    this.storeOptions = storeOptions;
     return this;
   }
 

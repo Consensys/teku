@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Objects;
 import tech.pegasys.teku.util.config.Constants;
 
 public class StoreOptions {
@@ -66,6 +67,31 @@ public class StoreOptions {
     return hotStatePersistenceFrequencyInEpochs;
   }
 
+  @Override
+  public boolean equals(final Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (!(o instanceof StoreOptions)) {
+      return false;
+    }
+    final StoreOptions that = (StoreOptions) o;
+    return getStateCacheSize() == that.getStateCacheSize()
+        && getBlockCacheSize() == that.getBlockCacheSize()
+        && getCheckpointStateCacheSize() == that.getCheckpointStateCacheSize()
+        && getHotStatePersistenceFrequencyInEpochs()
+            == that.getHotStatePersistenceFrequencyInEpochs();
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        getStateCacheSize(),
+        getBlockCacheSize(),
+        getCheckpointStateCacheSize(),
+        getHotStatePersistenceFrequencyInEpochs());
+  }
+
   public static class Builder {
     private int stateCacheSize = DEFAULT_STATE_CACHE_SIZE;
     private int blockCacheSize = DEFAULT_BLOCK_CACHE_SIZE;
@@ -103,14 +129,14 @@ public class StoreOptions {
 
     public Builder hotStatePersistenceFrequencyInEpochs(
         final int hotStatePersistenceFrequencyInEpochs) {
-      validateCacheSize(hotStatePersistenceFrequencyInEpochs);
       this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
       return this;
     }
 
     private void validateCacheSize(final int cacheSize) {
       checkArgument(cacheSize >= 0, "Cache size cannot be negative");
-      checkArgument(cacheSize >= MAX_CACHE_SIZE, "Max cache size is %s", MAX_CACHE_SIZE);
+      checkArgument(
+          cacheSize <= MAX_CACHE_SIZE, "Cache size %s exceeds max: %s", cacheSize, MAX_CACHE_SIZE);
     }
   }
 }

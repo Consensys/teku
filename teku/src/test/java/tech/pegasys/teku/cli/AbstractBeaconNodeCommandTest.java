@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -31,9 +32,10 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public abstract class AbstractBeaconNodeCommandTest {
   private static final Logger LOG = LogManager.getLogger();
-  final StringWriter stringWriter = new StringWriter();
-  protected final PrintWriter outputWriter = new PrintWriter(stringWriter, true);
-  protected final PrintWriter errorWriter = new PrintWriter(stringWriter, true);
+  final StringWriter output = new StringWriter();
+  final StringWriter errorOutput = new StringWriter();
+  protected final PrintWriter outputWriter = new PrintWriter(output, true);
+  protected final PrintWriter errorWriter = new PrintWriter(errorOutput, true);
 
   @SuppressWarnings("unchecked")
   final Consumer<TekuConfiguration> startAction = mock(Consumer.class);
@@ -48,12 +50,13 @@ public abstract class AbstractBeaconNodeCommandTest {
       final ArgumentCaptor<TekuConfiguration> configCaptor =
           ArgumentCaptor.forClass(TekuConfiguration.class);
       verify(startAction).accept(configCaptor.capture());
+      assertThat(errorOutput.toString()).isEmpty();
 
       return configCaptor.getValue();
     } catch (Throwable t) {
       // Ensure we get the errors reported by Teku printed when a test provides invalid input
       // Otherwise it's a nightmare trying to guess why the test is failing
-      LOG.error("Failed to parse Teku configuration: " + stringWriter);
+      LOG.error("Failed to parse Teku configuration: " + errorOutput);
       throw t;
     }
   }
@@ -61,6 +64,11 @@ public abstract class AbstractBeaconNodeCommandTest {
   public TekuConfiguration getTekuConfigurationFromArguments(String... arguments) {
     beaconNodeCommand.parse(arguments);
     return getResultingTekuConfiguration();
+  }
+
+  public String getErrorOutput(String... arguments) {
+    beaconNodeCommand.parse(arguments);
+    return errorOutput.toString();
   }
 
   public TekuConfiguration getTekuConfigurationFromFile(String resourceFilename) {
@@ -72,6 +80,6 @@ public abstract class AbstractBeaconNodeCommandTest {
 
   public String getCommandLineOutput() {
     verifyNoInteractions(startAction);
-    return new String(stringWriter.getBuffer());
+    return new String(output.getBuffer());
   }
 }
