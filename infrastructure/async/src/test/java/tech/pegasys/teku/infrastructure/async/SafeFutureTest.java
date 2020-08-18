@@ -745,12 +745,13 @@ public class SafeFutureTest {
     final Runnable action = mock(Runnable.class);
     SafeFuture<String> source = new SafeFuture<>();
 
-    source.alwaysRun(action);
+    final SafeFuture<String> result = source.alwaysRun(action);
 
     verifyNoInteractions(action);
 
     source.complete("Yay");
     verify(action).run();
+    assertThat(result).isCompletedWithValue("Yay");
   }
 
   @Test
@@ -758,12 +759,14 @@ public class SafeFutureTest {
     final Runnable action = mock(Runnable.class);
     SafeFuture<String> source = new SafeFuture<>();
 
-    source.alwaysRun(action);
+    final SafeFuture<String> result = source.alwaysRun(action);
 
     verifyNoInteractions(action);
 
-    source.completeExceptionally(new RuntimeException("Sigh"));
+    final RuntimeException exception = new RuntimeException("Sigh");
+    source.completeExceptionally(exception);
     verify(action).run();
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(exception);
   }
 
   @Test
