@@ -530,9 +530,8 @@ class Store implements UpdatableStore {
     Optional<BeaconState> inMemoryState = getBlockStateIfAvailable(blockRoot);
     Optional<SignedBeaconBlock> inMemoryBlock = getBlockIfAvailable(blockRoot);
     if (inMemoryState.isPresent() && inMemoryBlock.isPresent()) {
-      return SafeFuture.completedFuture(Optional.of(
-              new SignedBlockAndState(inMemoryBlock.get(), inMemoryState.get())
-      ));
+      return SafeFuture.completedFuture(
+          Optional.of(new SignedBlockAndState(inMemoryBlock.get(), inMemoryState.get())));
     }
     return regenerateState(blockRoot, this::cacheBlockAndState);
   }
