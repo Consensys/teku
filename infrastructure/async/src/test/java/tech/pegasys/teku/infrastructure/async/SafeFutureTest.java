@@ -15,6 +15,10 @@ package tech.pegasys.teku.infrastructure.async;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.io.IOException;
@@ -734,6 +738,49 @@ public class SafeFutureTest {
     SafeFuture<String> future = SafeFuture.notInterrupted(interruptor).thenApply(__ -> "aaa");
 
     assertThatThrownBy(future::get).hasMessageContaining("test");
+  }
+
+  @Test
+  void alwaysRun_shouldRunWhenFutureCompletesSuccessfully() {
+    final Runnable action = mock(Runnable.class);
+    SafeFuture<String> source = new SafeFuture<>();
+
+    final SafeFuture<String> result = source.alwaysRun(action);
+
+    verifyNoInteractions(action);
+
+    source.complete("Yay");
+    verify(action).run();
+    assertThat(result).isCompletedWithValue("Yay");
+  }
+
+  @Test
+  void alwaysRun_shouldRunWhenFutureCompletesExceptionally() {
+    final Runnable action = mock(Runnable.class);
+    SafeFuture<String> source = new SafeFuture<>();
+
+    final SafeFuture<String> result = source.alwaysRun(action);
+
+    verifyNoInteractions(action);
+
+    final RuntimeException exception = new RuntimeException("Sigh");
+    source.completeExceptionally(exception);
+    verify(action).run();
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(exception);
+  }
+
+  @Test
+  void alwaysRun_shouldReturnFailedFutureWhenRunnableThrows() {
+    final Runnable action = mock(Runnable.class);
+    final RuntimeException exception = new RuntimeException("Oops");
+    doThrow(exception).when(action).run();
+    SafeFuture<String> source = new SafeFuture<>();
+
+    final SafeFuture<String> result = source.alwaysRun(action);
+
+    source.complete("Yay");
+    verify(action).run();
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(exception);
   }
 
   private List<Throwable> collectUncaughtExceptions() {
