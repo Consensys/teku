@@ -64,7 +64,8 @@ import tech.pegasys.teku.util.collections.LimitedMap;
 
 class Store implements UpdatableStore {
   private static final Logger LOG = LogManager.getLogger();
-  static final int HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS = 1;
+
+  private final int hotStatePersistenceFrequencyInEpochs;
 
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock readLock = lock.readLock();
@@ -97,6 +98,7 @@ class Store implements UpdatableStore {
 
   private Store(
       final MetricsSystem metricsSystem,
+      int hotStatePersistenceFrequencyInEpochs,
       final BlockProvider blockProvider,
       final StateGenerationQueue stateGenerationQueue,
       final UInt64 time,
@@ -134,6 +136,7 @@ class Store implements UpdatableStore {
     checkpointStateRequestMissCounter = checkpointStateRequestCounter.labels("miss");
 
     // Store instance variables
+    this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
     this.time = time;
     this.genesis_time = genesis_time;
     this.justified_checkpoint = justified_checkpoint;
@@ -173,19 +176,17 @@ class Store implements UpdatableStore {
       final Map<Bytes32, Bytes32> childToParentRoot,
       final SignedBlockAndState finalizedBlockAndState,
       final Map<UInt64, VoteTracker> votes,
-      final StorePruningOptions pruningOptions) {
+      final StoreOptions options) {
 
     // Create limited collections for non-final data
     final Map<Bytes32, SignedBeaconBlock> blocks =
         ConcurrentLimitedMap.create(
-            pruningOptions.getBlockCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+            options.getBlockCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
     final Map<Bytes32, BeaconState> blockStates =
-        LimitedMap.create(
-            pruningOptions.getStateCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+        LimitedMap.create(options.getStateCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
     final Map<Checkpoint, BeaconState> checkpointStates =
         LimitedMap.create(
-            pruningOptions.getCheckpointStateCacheSize(),
-            LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+            options.getCheckpointStateCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
 
     // Build block tree structure
     HashTree.Builder treeBuilder = HashTree.builder().rootHash(finalizedBlockAndState.getRoot());
@@ -229,6 +230,7 @@ class Store implements UpdatableStore {
 
               return new Store(
                   metricsSystem,
+                  options.getHotStatePersistenceFrequencyInEpochs(),
                   blockProvider,
                   stateGenerationQueue,
                   time,
@@ -565,10 +567,7 @@ class Store implements UpdatableStore {
                 final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
                 if (blockState.isEmpty()
                     && blockTree.isRootAtEpochBoundary(root)
-                    && blockTree
-                        .getEpoch(root)
-                        .mod(HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS)
-                        .equals(UInt64.ZERO)) {
+                    && shouldPersistStateAtEpoch(blockTree.getEpoch(root))) {
                   latestEpochBoundary.compareAndExchange(null, root);
                 }
                 blockState.ifPresent(
@@ -625,6 +624,11 @@ class Store implements UpdatableStore {
                               });
                     })
                 .orElse(EmptyStoreResults.EMPTY_BLOCK_AND_STATE_FUTURE));
+  }
+
+  boolean shouldPersistStateAtEpoch(final UInt64 epoch) {
+    return hotStatePersistenceFrequencyInEpochs > 0
+        && epoch.mod(hotStatePersistenceFrequencyInEpochs).equals(UInt64.ZERO);
   }
 
   private void cacheBlockAndState(final SignedBlockAndState blockAndState) {

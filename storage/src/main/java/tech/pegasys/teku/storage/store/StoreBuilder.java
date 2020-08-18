@@ -102,7 +102,7 @@ public class StoreBuilder {
         childToParentRoot,
         latestFinalized,
         votes,
-        StorePruningOptions.createDefault());
+        StoreOptions.createDefault());
   }
 
   private void createDefaults() {

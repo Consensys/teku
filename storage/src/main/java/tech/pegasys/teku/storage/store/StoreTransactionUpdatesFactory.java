@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.storage.store;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,7 +30,6 @@ import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.events.FinalizedChainData;
 import tech.pegasys.teku.storage.store.Store.Transaction;
 
@@ -128,11 +125,7 @@ class StoreTransactionUpdatesFactory {
     final BlockTree blockTree = updatedBlockTree.orElse(baseStore.blockTree);
     return hotStates.entrySet().stream()
         .filter(e -> blockTree.isRootAtEpochBoundary(e.getKey()))
-        .filter(
-            e ->
-                compute_epoch_at_slot(e.getValue().getSlot())
-                    .mod(Store.HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS)
-                    .equals(UInt64.ZERO))
+        .filter(e -> baseStore.shouldPersistStateAtEpoch(blockTree.getEpoch(e.getKey())))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 

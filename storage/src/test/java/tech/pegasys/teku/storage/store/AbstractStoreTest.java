@@ -46,8 +46,12 @@ public abstract class AbstractStoreTest {
     final int cacheMultiplier = 3;
 
     // Create a new store with a small cache
-    final StorePruningOptions pruningOptions =
-        StorePruningOptions.create(cacheSize, cacheSize, cacheSize);
+    final StoreOptions pruningOptions =
+        StoreOptions.create(
+            cacheSize,
+            cacheSize,
+            cacheSize,
+            StoreOptions.DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS);
 
     final UpdatableStore store = createGenesisStore(pruningOptions);
     final List<SignedBlockAndState> blocks =
@@ -72,8 +76,12 @@ public abstract class AbstractStoreTest {
     final int epochsToProcess = cacheSize * 3;
 
     // Create a new store with a small cache
-    final StorePruningOptions pruningOptions =
-        StorePruningOptions.create(cacheSize, cacheSize, cacheSize);
+    final StoreOptions pruningOptions =
+        StoreOptions.create(
+            cacheSize,
+            cacheSize,
+            cacheSize,
+            StoreOptions.DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS);
 
     final UpdatableStore store = createGenesisStore(pruningOptions);
     while (chainBuilder.getLatestEpoch().longValue() < epochsToProcess) {
@@ -109,10 +117,10 @@ public abstract class AbstractStoreTest {
   }
 
   protected UpdatableStore createGenesisStore() {
-    return createGenesisStore(StorePruningOptions.createDefault());
+    return createGenesisStore(StoreOptions.createDefault());
   }
 
-  protected UpdatableStore createGenesisStore(final StorePruningOptions pruningOptions) {
+  protected UpdatableStore createGenesisStore(final StoreOptions pruningOptions) {
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
     final SafeFuture<UpdatableStore> result =

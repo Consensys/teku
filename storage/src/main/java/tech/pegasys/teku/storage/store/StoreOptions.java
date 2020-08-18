@@ -15,31 +15,47 @@ package tech.pegasys.teku.storage.store;
 
 import tech.pegasys.teku.util.config.Constants;
 
-public class StorePruningOptions {
+public class StoreOptions {
   public static final int DEFAULT_STATE_CACHE_SIZE = Constants.SLOTS_PER_EPOCH * 5;
   // Max block size is about 20x smaller than the minimum state size
   public static final int DEFAULT_BLOCK_CACHE_SIZE = DEFAULT_STATE_CACHE_SIZE * 2;
   public static final int DEFAULT_CHECKPOINT_STATE_CACHE_SIZE = 20;
+  public static final int DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS = 1;
 
   private final int stateCacheSize;
   private final int blockCacheSize;
   private final int checkpointStateCacheSize;
+  private final int hotStatePersistenceFrequencyInEpochs;
 
-  private StorePruningOptions(
-      final int stateCacheSize, final int blockCacheSize, final int checkpointStateCacheSize) {
+  private StoreOptions(
+      final int stateCacheSize,
+      final int blockCacheSize,
+      final int checkpointStateCacheSize,
+      final int hotStatePersistenceFrequencyInEpochs) {
     this.stateCacheSize = stateCacheSize;
     this.blockCacheSize = blockCacheSize;
     this.checkpointStateCacheSize = checkpointStateCacheSize;
+    this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
   }
 
-  public static StorePruningOptions createDefault() {
-    return new StorePruningOptions(
-        DEFAULT_STATE_CACHE_SIZE, DEFAULT_BLOCK_CACHE_SIZE, DEFAULT_CHECKPOINT_STATE_CACHE_SIZE);
+  public static StoreOptions createDefault() {
+    return new StoreOptions(
+        DEFAULT_STATE_CACHE_SIZE,
+        DEFAULT_BLOCK_CACHE_SIZE,
+        DEFAULT_CHECKPOINT_STATE_CACHE_SIZE,
+        DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS);
   }
 
-  public static StorePruningOptions create(
-      final int stateCacheSize, final int blockCacheSize, final int checkpointStateCacheSize) {
-    return new StorePruningOptions(stateCacheSize, blockCacheSize, checkpointStateCacheSize);
+  public static StoreOptions create(
+      final int stateCacheSize,
+      final int blockCacheSize,
+      final int checkpointStateCacheSize,
+      final int hotStatePersistenceFrequencyInEpochs) {
+    return new StoreOptions(
+        stateCacheSize,
+        blockCacheSize,
+        checkpointStateCacheSize,
+        hotStatePersistenceFrequencyInEpochs);
   }
 
   public int getStateCacheSize() {
@@ -52,5 +68,9 @@ public class StorePruningOptions {
 
   public int getCheckpointStateCacheSize() {
     return checkpointStateCacheSize;
+  }
+
+  public int getHotStatePersistenceFrequencyInEpochs() {
+    return hotStatePersistenceFrequencyInEpochs;
   }
 }
