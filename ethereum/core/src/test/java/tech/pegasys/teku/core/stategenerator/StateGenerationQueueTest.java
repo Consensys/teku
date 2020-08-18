@@ -106,7 +106,7 @@ class StateGenerationQueueTest {
     task1.regenerationResult.complete(task1State);
     assertThat(result1).isCompletedWithValue(task1State);
 
-    task2.assertRegneratedAfterRebase(task1State);
+    task2.assertRegeneratedAfterRebase(task1State);
     final SignedBlockAndState task2State =
         dataStructureUtil.randomSignedBlockAndState(UInt64.valueOf(2));
     task2.regenerationResult.complete(task2State);
@@ -208,7 +208,7 @@ class StateGenerationQueueTest {
       assertThat(regenerated).isFalse();
     }
 
-    public void assertRegneratedAfterRebase(final SignedBlockAndState newBaseState) {
+    public void assertRegeneratedAfterRebase(final SignedBlockAndState newBaseState) {
       assertThat(rebasedTo).contains(newBaseState);
       assertThat(regenerated).isTrue();
       // Assert that rebase is valid

@@ -49,10 +49,11 @@ public class PeerSync {
    * may be empty we check that we're progressing through slots, even if not many blocks are being
    * returned.
    */
-  private static final UInt64 MIN_SLOTS_TO_PROGRESS_PER_REQUEST = UInt64.valueOf(50);
+  static final UInt64 MIN_SLOTS_TO_PROGRESS_PER_REQUEST = UInt64.valueOf(50);
 
   private static final Logger LOG = LogManager.getLogger();
   private static final UInt64 STEP = UInt64.ONE;
+  static final int MAX_THROTTLED_REQUESTS = 10;
 
   private final AtomicBoolean stopped = new AtomicBoolean(false);
   private final RecentChainData storageClient;
@@ -150,7 +151,7 @@ public class PeerSync {
                     "Received {} consecutive excessively throttled response from {}",
                     throttledRequests,
                     peer.getId());
-                if (throttledRequests > 10) {
+                if (throttledRequests > MAX_THROTTLED_REQUESTS) {
                   LOG.debug(
                       "Rejecting peer {} as sync target because it excessively throttled returned blocks",
                       peer.getId());
@@ -224,8 +225,7 @@ public class PeerSync {
         .importBlock(block)
         .thenAccept(
             (result) -> {
-              LOG.trace(
-                  "Block import result for block at {}: {}", block.getMessage().getSlot(), result);
+              LOG.trace("Block import result for block at {}: {}", block.getSlot(), result);
               if (!result.isSuccessful()) {
                 this.blockImportFailureResult.inc();
                 throw new FailedBlockImportException(block, result);

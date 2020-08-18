@@ -17,11 +17,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.stubbing.OngoingStubbing;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.data.BlockProcessingRecord;
@@ -45,6 +49,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
+import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -83,6 +88,7 @@ public class PeerSyncTest {
   public void setUp() {
     when(storageClient.getFinalizedEpoch()).thenReturn(UInt64.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
+    when(peer.getId()).thenReturn(new MockNodeId());
     // By default set up block import to succeed
     final BlockProcessingRecord processingRecord = mock(BlockProcessingRecord.class);
     final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
@@ -409,15 +415,17 @@ public class PeerSyncTest {
   @Disabled("Needs to be updated to throttle multiple requests")
   void sync_failSyncIfPeerThrottlesTooAggressively() {
     final UInt64 startSlot = UInt64.ONE;
-    UInt64 peerHeadSlot = Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(startSlot);
+    UInt64 minPeerSlot = Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(startSlot);
+    withPeerFinalizedEpoch(compute_epoch_at_slot(minPeerSlot));
 
-    withPeerHeadSlot(peerHeadSlot);
-
-    final SafeFuture<Void> requestFuture1 = new SafeFuture<>();
-    final SafeFuture<Void> requestFuture2 = new SafeFuture<>();
-    when(peer.requestBlocksByRange(any(), any(), any(), any()))
-        .thenReturn(requestFuture1)
-        .thenReturn(requestFuture2);
+    final List<SafeFuture<Void>> requestFutures = new ArrayList<>();
+    OngoingStubbing<SafeFuture<Void>> requestStub =
+        when(peer.requestBlocksByRange(any(), any(), any(), any()));
+    for (int i = 0; i < PeerSync.MAX_THROTTLED_REQUESTS + 1; i++) {
+      final SafeFuture<Void> future = new SafeFuture<>();
+      requestStub = requestStub.thenReturn(future);
+      requestFutures.add(future);
+    }
 
     final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isNotDone();
@@ -429,10 +437,21 @@ public class PeerSyncTest {
             eq(UInt64.ONE),
             responseListenerArgumentCaptor.capture());
 
-    // Peer only returns a couple of blocks
-    final int lastReceivedBlockSlot = 3;
-    completeRequestWithBlockAtSlot(requestFuture1, lastReceivedBlockSlot);
+    // Peer only returns a couple of blocks for each request
+    int nextBlock = startSlot.intValue();
+    for (int i = 0; i < PeerSync.MAX_THROTTLED_REQUESTS; i++) {
+      completeRequestWithBlockAtSlot(requestFutures.get(i), nextBlock);
+      nextBlock += 1;
+    }
 
+    // We haven't hit our limit yet
+    assertThat(syncFuture).isNotDone();
+
+    // Next request hits our limit
+    final int lastRequestIndex = PeerSync.MAX_THROTTLED_REQUESTS;
+    completeRequestWithBlockAtSlot(requestFutures.get(lastRequestIndex), nextBlock + 2);
+
+    // We hit our limit
     assertThat(syncFuture).isCompletedWithValue(PeerSyncResult.EXCESSIVE_THROTTLING);
     // We don't disconnect the peer, the SyncManager just excludes the peer as a sync target for a
     // period
@@ -440,17 +459,22 @@ public class PeerSyncTest {
   }
 
   @Test
-  void sync_continueSyncIfPeerThrottlesAReasonableAmount() {
+  void sync_resetThrottlingLimit() {
     final UInt64 startSlot = UInt64.ONE;
-    UInt64 peerHeadSlot = UInt64.valueOf(1000000);
+    UInt64 minPeerSlot =
+        Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE
+            .plus(startSlot)
+            .plus(PeerSync.MIN_SLOTS_TO_PROGRESS_PER_REQUEST);
+    withPeerFinalizedEpoch(compute_epoch_at_slot(minPeerSlot));
 
-    withPeerHeadSlot(peerHeadSlot);
-
-    final SafeFuture<Void> requestFuture1 = new SafeFuture<>();
-    final SafeFuture<Void> requestFuture2 = new SafeFuture<>();
-    when(peer.requestBlocksByRange(any(), any(), any(), any()))
-        .thenReturn(requestFuture1)
-        .thenReturn(requestFuture2);
+    final List<SafeFuture<Void>> requestFutures = new ArrayList<>();
+    OngoingStubbing<SafeFuture<Void>> requestStub =
+        when(peer.requestBlocksByRange(any(), any(), any(), any()));
+    for (int i = 0; i < PeerSync.MAX_THROTTLED_REQUESTS + 1; i++) {
+      final SafeFuture<Void> future = new SafeFuture<>();
+      requestStub = requestStub.thenReturn(future);
+      requestFutures.add(future);
+    }
 
     final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isNotDone();
@@ -462,28 +486,41 @@ public class PeerSyncTest {
             eq(UInt64.ONE),
             responseListenerArgumentCaptor.capture());
 
-    // Peer only returns some blocks but not as many as were requested
-    final int lastReceivedBlockSlot = 70;
-    completeRequestWithBlockAtSlot(requestFuture1, lastReceivedBlockSlot);
+    // Peer only returns a couple of blocks for each request
+    int nextBlock = startSlot.intValue();
+    for (int i = 0; i < PeerSync.MAX_THROTTLED_REQUESTS; i++) {
+      completeRequestWithBlockAtSlot(requestFutures.get(i), nextBlock);
+      nextBlock += 1;
+    }
 
+    // We haven't hit our limit yet
     assertThat(syncFuture).isNotDone();
 
-    // Next request should start after the last received block
+    // Don't throttle the next request
+    final int lastRequestIndex = PeerSync.MAX_THROTTLED_REQUESTS;
+    nextBlock = nextBlock + PeerSync.MIN_SLOTS_TO_PROGRESS_PER_REQUEST.intValue();
+    completeRequestWithBlockAtSlot(requestFutures.get(lastRequestIndex), nextBlock);
+
+    // We should continue syncing
+    assertThat(syncFuture).isNotDone();
     verify(peer)
         .requestBlocksByRange(
-            eq(UInt64.valueOf(lastReceivedBlockSlot + 1)),
+            eq(UInt64.valueOf(nextBlock + 1)),
             eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
             eq(UInt64.ONE),
             any());
-
     verify(peer, never()).disconnectCleanly(any());
   }
 
   private void completeRequestWithBlockAtSlot(
       final SafeFuture<Void> requestFuture1, final int lastBlockSlot) {
-    final ResponseStreamListener<SignedBeaconBlock> responseListener1 =
+    // Capture latest response listener
+    verify(peer, atLeastOnce())
+        .requestBlocksByRange(any(), any(), any(), responseListenerArgumentCaptor.capture());
+    final ResponseStreamListener<SignedBeaconBlock> responseListener =
         responseListenerArgumentCaptor.getValue();
-    List<SignedBeaconBlock> blocks = respondWithBlocksAtSlots(responseListener1, 1, lastBlockSlot);
+
+    List<SignedBeaconBlock> blocks = respondWithBlocksAtSlots(responseListener, lastBlockSlot);
     for (SignedBeaconBlock block : blocks) {
       verify(blockImporter).importBlock(block);
     }
@@ -511,6 +548,21 @@ public class PeerSyncTest {
                 PEER_FINALIZED_EPOCH,
                 PEER_HEAD_BLOCK_ROOT,
                 peerHeadSlot));
+
+    when(peer.getStatus()).thenReturn(peer_status);
+  }
+
+  private void withPeerFinalizedEpoch(final UInt64 finalizedEpoch) {
+    final UInt64 headSlot =
+        compute_start_slot_at_epoch(finalizedEpoch).plus(2 * Constants.SLOTS_PER_EPOCH);
+    final PeerStatus peer_status =
+        PeerStatus.fromStatusMessage(
+            new StatusMessage(
+                Constants.GENESIS_FORK_VERSION,
+                Bytes32.ZERO,
+                finalizedEpoch,
+                PEER_HEAD_BLOCK_ROOT,
+                headSlot));
 
     when(peer.getStatus()).thenReturn(peer_status);
   }
