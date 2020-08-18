@@ -41,9 +41,11 @@ public class StoreOptionsTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {
       "--Xhot-state-persistence-frequency", "1.5",
     };
-    final String error = getErrorOutput(args);
-    assertThat(error).isNotEmpty();
-    assertThat(error).contains("Invalid value");
+    beaconNodeCommand.parse(args);
+    final String output = getCommandLineOutput();
+
+    assertThat(output).isNotEmpty();
+    assertThat(output).contains("Invalid value");
   }
 
   @Test
@@ -51,8 +53,10 @@ public class StoreOptionsTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {
       "--Xhot-state-persistence-frequency", "",
     };
-    final String error = getErrorOutput(args);
-    assertThat(error).isNotEmpty();
-    assertThat(error).contains("Invalid value");
+    beaconNodeCommand.parse(args);
+    final String output = getCommandLineOutput();
+
+    assertThat(output).isNotEmpty();
+    assertThat(output).contains("Invalid value");
   }
 }

@@ -33,9 +33,8 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
 public abstract class AbstractBeaconNodeCommandTest {
   private static final Logger LOG = LogManager.getLogger();
   final StringWriter output = new StringWriter();
-  final StringWriter errorOutput = new StringWriter();
   protected final PrintWriter outputWriter = new PrintWriter(output, true);
-  protected final PrintWriter errorWriter = new PrintWriter(errorOutput, true);
+  protected final PrintWriter errorWriter = new PrintWriter(output, true);
 
   @SuppressWarnings("unchecked")
   final Consumer<TekuConfiguration> startAction = mock(Consumer.class);
@@ -50,13 +49,13 @@ public abstract class AbstractBeaconNodeCommandTest {
       final ArgumentCaptor<TekuConfiguration> configCaptor =
           ArgumentCaptor.forClass(TekuConfiguration.class);
       verify(startAction).accept(configCaptor.capture());
-      assertThat(errorOutput.toString()).isEmpty();
+      assertThat(output.toString()).isEmpty();
 
       return configCaptor.getValue();
     } catch (Throwable t) {
       // Ensure we get the errors reported by Teku printed when a test provides invalid input
       // Otherwise it's a nightmare trying to guess why the test is failing
-      LOG.error("Failed to parse Teku configuration: " + errorOutput);
+      LOG.error("Failed to parse Teku configuration: " + output);
       throw t;
     }
   }
@@ -64,11 +63,6 @@ public abstract class AbstractBeaconNodeCommandTest {
   public TekuConfiguration getTekuConfigurationFromArguments(String... arguments) {
     beaconNodeCommand.parse(arguments);
     return getResultingTekuConfiguration();
-  }
-
-  public String getErrorOutput(String... arguments) {
-    beaconNodeCommand.parse(arguments);
-    return errorOutput.toString();
   }
 
   public TekuConfiguration getTekuConfigurationFromFile(String resourceFilename) {
