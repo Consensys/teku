@@ -236,7 +236,7 @@ class Store implements UpdatableStore {
                   justifiedCheckpoint,
                   finalizedCheckpoint,
                   bestJustifiedCheckpoint,
-                  new BlockTree(hashTree, blockRootToSlot),
+                  BlockTree.create(hashTree, blockRootToSlot),
                   finalizedBlockAndState,
                   votes,
                   blocks,

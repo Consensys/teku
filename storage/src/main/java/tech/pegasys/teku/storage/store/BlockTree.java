@@ -34,10 +34,15 @@ public class BlockTree {
   private final HashTree hashTree;
   final Map<Bytes32, UInt64> blockRootToSlot;
 
-  public BlockTree(final HashTree hashTree, final Map<Bytes32, UInt64> blockRootToSlot) {
+  private BlockTree(final HashTree hashTree, final Map<Bytes32, UInt64> blockRootToSlot) {
     validate(hashTree, blockRootToSlot);
     this.hashTree = hashTree;
     this.blockRootToSlot = blockRootToSlot;
+  }
+
+  public static BlockTree create(
+      final HashTree hashTree, final Map<Bytes32, UInt64> blockRootToSlot) {
+    return new BlockTree(hashTree, blockRootToSlot);
   }
 
   private void validate(final HashTree hashTree, final Map<Bytes32, UInt64> blockRootToSlot) {
@@ -84,15 +89,25 @@ public class BlockTree {
     return hashTree.breadthFirstStream().collect(Collectors.toList());
   }
 
+  /**
+   * Returns true if the block root is at an internal epoch boundary. The rootHash is not considered
+   * an epoch boundary. A block is at an epoch boundary if it is the first block within an epoch.
+   *
+   * @param blockRoot The block root to check.
+   * @return True if the block root is at an internal epoch boundary.
+   */
   public boolean isRootAtEpochBoundary(Bytes32 blockRoot) {
     assertBlockIsInTree(blockRoot);
     return hashTree
         .getParent(blockRoot)
         .map(
             parentRoot -> {
-              final UInt64 blockEpoch = blockRootToSlot.get(blockRoot);
+              final UInt64 blockEpoch = getEpoch(blockRoot);
               final UInt64 parentEpoch =
-                  Optional.ofNullable(blockRootToSlot.get(parentRoot)).orElse(blockEpoch);
+                  Optional.of(parentRoot)
+                      .filter(this::contains)
+                      .map(this::getEpoch)
+                      .orElse(blockEpoch);
               return blockEpoch.isGreaterThan(parentEpoch);
             })
         .orElse(false);
