@@ -145,7 +145,9 @@ public class ForkChoice {
                       final AttestationProcessingResult result =
                           on_attestation(
                               transaction, attestation, targetState, getForkChoiceStrategy());
-                      return transaction.commit().thenApply(__ -> result);
+                      return result.isSuccessful()
+                          ? transaction.commit().thenApply(__ -> result)
+                          : SafeFuture.completedFuture(result);
                     }));
   }
 
