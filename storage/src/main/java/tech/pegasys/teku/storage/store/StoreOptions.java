@@ -13,9 +13,13 @@
 
 package tech.pegasys.teku.storage.store;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import tech.pegasys.teku.util.config.Constants;
 
 public class StoreOptions {
+  public static int MAX_CACHE_SIZE = 10_000;
+
   public static final int DEFAULT_STATE_CACHE_SIZE = Constants.SLOTS_PER_EPOCH * 5;
   // Max block size is about 20x smaller than the minimum state size
   public static final int DEFAULT_BLOCK_CACHE_SIZE = DEFAULT_STATE_CACHE_SIZE * 2;
@@ -38,24 +42,12 @@ public class StoreOptions {
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
   }
 
-  public static StoreOptions createDefault() {
-    return new StoreOptions(
-        DEFAULT_STATE_CACHE_SIZE,
-        DEFAULT_BLOCK_CACHE_SIZE,
-        DEFAULT_CHECKPOINT_STATE_CACHE_SIZE,
-        DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS);
+  public static Builder builder() {
+    return new Builder();
   }
 
-  public static StoreOptions create(
-      final int stateCacheSize,
-      final int blockCacheSize,
-      final int checkpointStateCacheSize,
-      final int hotStatePersistenceFrequencyInEpochs) {
-    return new StoreOptions(
-        stateCacheSize,
-        blockCacheSize,
-        checkpointStateCacheSize,
-        hotStatePersistenceFrequencyInEpochs);
+  public static StoreOptions createDefault() {
+    return builder().build();
   }
 
   public int getStateCacheSize() {
@@ -72,5 +64,53 @@ public class StoreOptions {
 
   public int getHotStatePersistenceFrequencyInEpochs() {
     return hotStatePersistenceFrequencyInEpochs;
+  }
+
+  public static class Builder {
+    private int stateCacheSize = DEFAULT_STATE_CACHE_SIZE;
+    private int blockCacheSize = DEFAULT_BLOCK_CACHE_SIZE;
+    private int checkpointStateCacheSize = DEFAULT_CHECKPOINT_STATE_CACHE_SIZE;
+    private int hotStatePersistenceFrequencyInEpochs =
+        DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS;
+
+    private Builder() {}
+
+    public StoreOptions build() {
+      return new StoreOptions(
+          stateCacheSize,
+          blockCacheSize,
+          checkpointStateCacheSize,
+          hotStatePersistenceFrequencyInEpochs);
+    }
+
+    public Builder stateCacheSize(final int stateCacheSize) {
+      validateCacheSize(stateCacheSize);
+      this.stateCacheSize = stateCacheSize;
+      return this;
+    }
+
+    public Builder blockCacheSize(final int blockCacheSize) {
+      validateCacheSize(blockCacheSize);
+      this.blockCacheSize = blockCacheSize;
+      return this;
+    }
+
+    public Builder checkpointStateCacheSize(final int checkpointStateCacheSize) {
+      validateCacheSize(checkpointStateCacheSize);
+      this.checkpointStateCacheSize = checkpointStateCacheSize;
+      return this;
+    }
+
+    public Builder hotStatePersistenceFrequencyInEpochs(
+        final int hotStatePersistenceFrequencyInEpochs) {
+      validateCacheSize(hotStatePersistenceFrequencyInEpochs);
+      this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
+      return this;
+    }
+
+    private void validateCacheSize(final int cacheSize) {
+      checkArgument(cacheSize >= 0, "Cache size cannot be negative");
+      checkArgument(cacheSize >= MAX_CACHE_SIZE, "Max cache size is %s", MAX_CACHE_SIZE);
+    }
   }
 }

@@ -47,11 +47,11 @@ public abstract class AbstractStoreTest {
 
     // Create a new store with a small cache
     final StoreOptions pruningOptions =
-        StoreOptions.create(
-            cacheSize,
-            cacheSize,
-            cacheSize,
-            StoreOptions.DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS);
+        StoreOptions.builder()
+            .checkpointStateCacheSize(cacheSize)
+            .blockCacheSize(cacheSize)
+            .stateCacheSize(cacheSize)
+            .build();
 
     final UpdatableStore store = createGenesisStore(pruningOptions);
     final List<SignedBlockAndState> blocks =
@@ -77,11 +77,11 @@ public abstract class AbstractStoreTest {
 
     // Create a new store with a small cache
     final StoreOptions pruningOptions =
-        StoreOptions.create(
-            cacheSize,
-            cacheSize,
-            cacheSize,
-            StoreOptions.DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS);
+        StoreOptions.builder()
+            .checkpointStateCacheSize(cacheSize)
+            .blockCacheSize(cacheSize)
+            .stateCacheSize(cacheSize)
+            .build();
 
     final UpdatableStore store = createGenesisStore(pruningOptions);
     while (chainBuilder.getLatestEpoch().longValue() < epochsToProcess) {
