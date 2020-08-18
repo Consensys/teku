@@ -465,9 +465,14 @@ class Store implements UpdatableStore {
     if (latestStateAtEpoch.getSlot().isGreaterThan(checkpoint.getEpochStartSlot())) {
       throw new IllegalArgumentException("Latest state must be at or prior to checkpoint slot");
     }
-    final BeaconState checkpointState = regenerateCheckpointState(checkpoint, latestStateAtEpoch);
-    putCheckpointState(checkpoint, checkpointState);
-    return checkpointState;
+    return getCheckpointStateIfAvailable(checkpoint)
+        .orElseGet(
+            () -> {
+              final BeaconState checkpointState =
+                  regenerateCheckpointState(checkpoint, latestStateAtEpoch);
+              putCheckpointState(checkpoint, checkpointState);
+              return checkpointState;
+            });
   }
 
   private Optional<BeaconState> getCheckpointStateIfAvailable(final Checkpoint checkpoint) {
