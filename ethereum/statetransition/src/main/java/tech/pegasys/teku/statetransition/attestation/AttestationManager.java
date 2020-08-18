@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.util.events.Subscribers;
@@ -39,7 +40,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
       SafeFuture.completedFuture(AttestationProcessingResult.SAVED_FOR_FUTURE);
 
   private final EventBus eventBus;
-  private final ForkChoiceAttestationProcessor attestationProcessor;
+  private final ForkChoice attestationProcessor;
 
   private final PendingPool<ValidateableAttestation> pendingAttestations;
   private final FutureItems<ValidateableAttestation> futureAttestations;
@@ -50,7 +51,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
 
   AttestationManager(
       final EventBus eventBus,
-      final ForkChoiceAttestationProcessor attestationProcessor,
+      final ForkChoice attestationProcessor,
       final PendingPool<ValidateableAttestation> pendingAttestations,
       final FutureItems<ValidateableAttestation> futureAttestations,
       final AggregatingAttestationPool aggregatingAttestationPool) {
@@ -65,11 +66,11 @@ public class AttestationManager extends Service implements SlotEventsChannel {
       final EventBus eventBus,
       final PendingPool<ValidateableAttestation> pendingAttestations,
       final FutureItems<ValidateableAttestation> futureAttestations,
-      final ForkChoiceAttestationProcessor forkChoiceAttestationProcessor,
+      final ForkChoice attestationProcessor,
       final AggregatingAttestationPool aggregatingAttestationPool) {
     return new AttestationManager(
         eventBus,
-        forkChoiceAttestationProcessor,
+        attestationProcessor,
         pendingAttestations,
         futureAttestations,
         aggregatingAttestationPool);
@@ -83,10 +84,10 @@ public class AttestationManager extends Service implements SlotEventsChannel {
   @Override
   public void onSlot(final UInt64 slot) {
     List<ValidateableAttestation> attestations = futureAttestations.prune(slot);
-    attestations.stream()
-        .map(ValidateableAttestation::getIndexedAttestation)
-        .forEach(attestationProcessor::applyIndexedAttestationToForkChoice);
-
+    if (attestations.isEmpty()) {
+      return;
+    }
+    attestationProcessor.applyIndexedAttestations(attestations);
     attestations.forEach(this::notifySubscribers);
   }
 
@@ -121,7 +122,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
     }
 
     return attestationProcessor
-        .processAttestation(attestation)
+        .onAttestation(attestation)
         .thenApply(
             result -> {
               switch (result.getStatus()) {
