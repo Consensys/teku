@@ -93,13 +93,12 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
       attestation.getAttesting_indices().stream()
           .parallel()
           .forEach(
-              validatorIndex -> {
-                processAttestation(
-                    store,
-                    validatorIndex,
-                    attestation.getData().getBeacon_block_root(),
-                    attestation.getData().getTarget().getEpoch());
-              });
+              validatorIndex ->
+                  processAttestation(
+                      store,
+                      validatorIndex,
+                      attestation.getData().getBeacon_block_root(),
+                      attestation.getData().getTarget().getEpoch()));
     } finally {
       votesLock.writeLock().unlock();
     }
@@ -175,7 +174,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
       MutableStore store, UInt64 validatorIndex, Bytes32 blockRoot, UInt64 targetEpoch) {
     VoteTracker vote = store.getVote(validatorIndex);
 
-    if (targetEpoch.compareTo(vote.getNextEpoch()) > 0 || vote.equals(VoteTracker.Default())) {
+    if (targetEpoch.isGreaterThan(vote.getNextEpoch()) || vote.equals(VoteTracker.Default())) {
       vote.setNextRoot(blockRoot);
       vote.setNextEpoch(targetEpoch);
     }
