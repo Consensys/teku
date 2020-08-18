@@ -265,6 +265,11 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
+  public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot) {
+    return hotDao.getHotBlock(blockRoot);
+  }
+
+  @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {

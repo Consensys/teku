@@ -23,7 +23,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.core.lookup.StateProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.core.stategenerator.StateGenerationQueue.RegenerationTask;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
@@ -38,7 +38,7 @@ class StateGenerationQueueTest {
   private static final int ACTIVE_REGENERATION_LIMIT = 2;
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-  private final StateProvider stateProvider = mock(StateProvider.class);
+  private final StateAndBlockProvider stateProvider = mock(StateAndBlockProvider.class);
   private final StateGenerationQueue stateGenerationQueue =
       new StateGenerationQueue(stateProvider, metricsSystem, () -> ACTIVE_REGENERATION_LIMIT);
 
@@ -46,7 +46,8 @@ class StateGenerationQueueTest {
   void setUp() {
     stateGenerationQueue.startMetrics();
     // Don't find any states by default
-    when(stateProvider.getState(any())).thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(stateProvider.getBlockAndState(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
   }
 
   @Test

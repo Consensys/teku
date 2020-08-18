@@ -27,14 +27,14 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 
 public class StateGenerationQueue {
-  private final StateProvider stateProvider;
+  private final StateAndBlockProvider stateAndBlockProvider;
   private final MetricsSystem metricsSystem;
 
   private final ConcurrentHashMap<Bytes32, SafeFuture<SignedBlockAndState>> inProgressGeneration =
@@ -47,11 +47,11 @@ public class StateGenerationQueue {
   private final Counter rebasedRegenerationCounter;
 
   StateGenerationQueue(
-      final StateProvider stateProvider,
+      final StateAndBlockProvider stateAndBlockProvider,
       final MetricsSystem metricsSystem,
       final IntSupplier activeRegenerationLimit) {
     this.metricsSystem = metricsSystem;
-    this.stateProvider = stateProvider;
+    this.stateAndBlockProvider = stateAndBlockProvider;
     this.activeRegenerationLimit = activeRegenerationLimit;
 
     final LabelledMetric<Counter> labelledCounter =
@@ -66,7 +66,7 @@ public class StateGenerationQueue {
   }
 
   public static StateGenerationQueue create(
-      final StateProvider stateProvider, final MetricsSystem metricsSystem) {
+      final StateAndBlockProvider stateProvider, final MetricsSystem metricsSystem) {
     return new StateGenerationQueue(
         stateProvider,
         metricsSystem,
@@ -105,7 +105,7 @@ public class StateGenerationQueue {
             baseBlockAndState,
             epochBoundaryRoot,
             blockProvider,
-            stateProvider,
+            stateAndBlockProvider,
             cacheHandler));
   }
 
@@ -191,7 +191,7 @@ public class StateGenerationQueue {
     private final SignedBlockAndState baseBlockAndState;
     private final Optional<Bytes32> epochBoundaryRoot;
     private final BlockProvider blockProvider;
-    private final StateProvider stateProvider;
+    private final StateAndBlockProvider stateAndBlockProvider;
     private final Bytes32 blockRoot;
     private final Consumer<SignedBlockAndState> cacheHandler;
 
@@ -201,13 +201,13 @@ public class StateGenerationQueue {
         final SignedBlockAndState baseBlockAndState,
         final Optional<Bytes32> epochBoundaryRoot,
         final BlockProvider blockProvider,
-        final StateProvider stateProvider,
+        final StateAndBlockProvider stateAndBlockProvider,
         final Consumer<SignedBlockAndState> cacheHandler) {
       this.tree = tree;
       this.baseBlockAndState = baseBlockAndState;
       this.epochBoundaryRoot = epochBoundaryRoot;
       this.blockProvider = blockProvider;
-      this.stateProvider = stateProvider;
+      this.stateAndBlockProvider = stateAndBlockProvider;
       this.blockRoot = blockRoot;
       this.cacheHandler = cacheHandler;
     }
@@ -238,14 +238,14 @@ public class StateGenerationQueue {
           newBaseBlockAndState,
           epochBoundaryRoot.filter(treeFromAncestor::contains),
           blockProvider,
-          stateProvider,
+          stateAndBlockProvider,
           cacheHandler);
     }
 
     private SafeFuture<RegenerationTask> resolveAgainstLatestEpochBoundary() {
       SafeFuture<Optional<SignedBlockAndState>> epochBoundaryBaseFuture =
           epochBoundaryRoot
-              .map(this::retrieveBlockAndState)
+              .map(stateAndBlockProvider::getBlockAndState)
               .orElseGet(() -> SafeFuture.completedFuture(Optional.empty()));
 
       return epochBoundaryBaseFuture.thenApply(
@@ -255,21 +255,6 @@ public class StateGenerationQueue {
             }
             return rebase(newBase.get());
           });
-    }
-
-    private SafeFuture<Optional<SignedBlockAndState>> retrieveBlockAndState(
-        final Bytes32 blockRoot) {
-      return stateProvider
-          .getState(blockRoot)
-          .thenCompose(
-              state -> {
-                if (state.isEmpty()) {
-                  return SafeFuture.completedFuture(Optional.empty());
-                }
-                return blockProvider
-                    .getBlock(blockRoot)
-                    .thenApply(block -> block.map(b -> new SignedBlockAndState(b, state.get())));
-              });
     }
 
     public SafeFuture<SignedBlockAndState> regenerate() {

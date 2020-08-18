@@ -87,6 +87,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot) {
+    return Optional.empty();
+  }
+
+  @Override
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return Stream.empty();

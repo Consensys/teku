@@ -15,11 +15,11 @@ package tech.pegasys.teku.core.lookup;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-public interface StateProvider {
-  StateProvider NOOP = (root) -> SafeFuture.completedFuture(Optional.empty());
+public interface StateAndBlockProvider {
+  StateAndBlockProvider NOOP = (root) -> SafeFuture.completedFuture(Optional.empty());
 
-  SafeFuture<Optional<BeaconState>> getState(final Bytes32 blockRoot);
+  SafeFuture<Optional<SignedBlockAndState>> getBlockAndState(final Bytes32 blockRoot);
 }

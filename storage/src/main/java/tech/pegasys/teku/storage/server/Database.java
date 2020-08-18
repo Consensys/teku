@@ -74,6 +74,8 @@ public interface Database extends AutoCloseable {
    */
   Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots);
 
+  Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot);
+
   /**
    * Return a {@link Stream} of blocks beginning at startSlot and ending at endSlot, both inclusive.
    *

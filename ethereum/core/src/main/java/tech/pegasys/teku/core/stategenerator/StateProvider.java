@@ -18,6 +18,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
 @FunctionalInterface
-interface SynchronousStateProvider {
+interface StateProvider {
   Optional<BeaconState> getState(final Bytes32 blockRoot);
 }

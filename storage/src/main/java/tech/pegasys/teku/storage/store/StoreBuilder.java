@@ -22,7 +22,7 @@ import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.core.stategenerator.StateGenerationQueue;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -34,7 +34,7 @@ import tech.pegasys.teku.storage.events.AnchorPoint;
 public class StoreBuilder {
   MetricsSystem metricsSystem;
   BlockProvider blockProvider;
-  StateProvider stateProvider;
+  StateAndBlockProvider stateProvider;
   StateGenerationQueue stateGenerationQueue;
   StoreOptions storeOptions = StoreOptions.createDefault();
 
@@ -56,7 +56,7 @@ public class StoreBuilder {
   public static StoreBuilder forkChoiceStoreBuilder(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
-      final StateProvider stateProvider,
+      final StateAndBlockProvider stateProvider,
       final AnchorPoint anchor) {
     final UInt64 genesisTime = anchor.getState().getGenesis_time();
     final UInt64 slot = anchor.getState().getSlot();
@@ -136,7 +136,7 @@ public class StoreBuilder {
     return this;
   }
 
-  public StoreBuilder stateProvider(final StateProvider stateProvider) {
+  public StoreBuilder stateProvider(final StateAndBlockProvider stateProvider) {
     checkNotNull(stateProvider);
     this.stateProvider = stateProvider;
     return this;
