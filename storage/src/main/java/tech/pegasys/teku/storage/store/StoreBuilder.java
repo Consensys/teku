@@ -34,7 +34,7 @@ import tech.pegasys.teku.storage.events.AnchorPoint;
 public class StoreBuilder {
   MetricsSystem metricsSystem;
   BlockProvider blockProvider;
-  StateAndBlockProvider stateProvider;
+  StateAndBlockProvider stateAndBlockProvider;
   StateGenerationQueue stateGenerationQueue;
   StoreOptions storeOptions = StoreOptions.createDefault();
 
@@ -56,7 +56,7 @@ public class StoreBuilder {
   public static StoreBuilder forkChoiceStoreBuilder(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
-      final StateAndBlockProvider stateProvider,
+      final StateAndBlockProvider stateAndBlockProvider,
       final AnchorPoint anchor) {
     final UInt64 genesisTime = anchor.getState().getGenesis_time();
     final UInt64 slot = anchor.getState().getSlot();
@@ -68,7 +68,7 @@ public class StoreBuilder {
     return create()
         .metricsSystem(metricsSystem)
         .blockProvider(blockProvider)
-        .stateProvider(stateProvider)
+        .stateProvider(stateAndBlockProvider)
         .time(time)
         .genesisTime(genesisTime)
         .finalizedCheckpoint(anchor.getCheckpoint())
@@ -100,7 +100,8 @@ public class StoreBuilder {
 
   private void createDefaults() {
     if (stateGenerationQueue == null) {
-      stateGenerationQueue = StateGenerationQueue.create(stateProvider, metricsSystem);
+      checkState(stateAndBlockProvider != null, "StateAndBlockProvider must be defined");
+      stateGenerationQueue = StateGenerationQueue.create(stateAndBlockProvider, metricsSystem);
     }
   }
 
@@ -138,7 +139,7 @@ public class StoreBuilder {
 
   public StoreBuilder stateProvider(final StateAndBlockProvider stateProvider) {
     checkNotNull(stateProvider);
-    this.stateProvider = stateProvider;
+    this.stateAndBlockProvider = stateProvider;
     return this;
   }
 
