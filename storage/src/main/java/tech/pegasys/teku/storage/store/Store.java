@@ -536,6 +536,12 @@ class Store implements UpdatableStore {
 
   private SafeFuture<Optional<SignedBlockAndState>> getAndCacheBlockAndState(
       final Bytes32 blockRoot) {
+    Optional<BeaconState> inMemoryState = getBlockStateIfAvailable(blockRoot);
+    Optional<SignedBeaconBlock> inMemoryBlock = getBlockIfAvailable(blockRoot);
+    if (inMemoryState.isPresent() && inMemoryBlock.isPresent()) {
+      return SafeFuture.completedFuture(
+          Optional.of(new SignedBlockAndState(inMemoryBlock.get(), inMemoryState.get())));
+    }
     return regenerateState(blockRoot, this::cacheBlockAndState);
   }
 
