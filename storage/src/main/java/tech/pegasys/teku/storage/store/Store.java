@@ -13,25 +13,7 @@
 
 package tech.pegasys.teku.storage.store;
 
-import static tech.pegasys.teku.core.lookup.BlockProvider.fromDynamicMap;
-import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
-
 import com.google.common.collect.Sets;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -60,6 +42,25 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.util.collections.ConcurrentLimitedMap;
 import tech.pegasys.teku.util.collections.LimitStrategy;
 import tech.pegasys.teku.util.collections.LimitedMap;
+
+import javax.annotation.CheckReturnValue;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import static tech.pegasys.teku.core.lookup.BlockProvider.fromDynamicMap;
+import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
 
 class Store implements UpdatableStore {
   private static final Logger LOG = LogManager.getLogger();
@@ -526,6 +527,13 @@ class Store implements UpdatableStore {
 
   private SafeFuture<Optional<SignedBlockAndState>> getAndCacheBlockAndState(
       final Bytes32 blockRoot) {
+    Optional<BeaconState> inMemoryState = getBlockStateIfAvailable(blockRoot);
+    Optional<SignedBeaconBlock> inMemoryBlock = getBlockIfAvailable(blockRoot);
+    if (inMemoryState.isPresent() && inMemoryBlock.isPresent()) {
+      return SafeFuture.completedFuture(Optional.of(
+              new SignedBlockAndState(inMemoryBlock.get(), inMemoryState.get())
+      ));
+    }
     return regenerateState(blockRoot, this::cacheBlockAndState);
   }
 
