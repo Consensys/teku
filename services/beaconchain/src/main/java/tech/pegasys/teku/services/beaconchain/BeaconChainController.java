@@ -64,7 +64,6 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.attestation.ForkChoiceAttestationProcessor;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
@@ -346,15 +345,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         PendingPool.createForAttestations();
     final FutureItems<ValidateableAttestation> futureAttestations =
         new FutureItems<>(ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
-    final ForkChoiceAttestationProcessor forkChoiceAttestationProcessor =
-        new ForkChoiceAttestationProcessor(recentChainData, forkChoice);
     attestationManager =
         AttestationManager.create(
-            eventBus,
-            pendingAttestations,
-            futureAttestations,
-            forkChoiceAttestationProcessor,
-            attestationPool);
+            eventBus, pendingAttestations, futureAttestations, forkChoice, attestationPool);
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingAttestations);
