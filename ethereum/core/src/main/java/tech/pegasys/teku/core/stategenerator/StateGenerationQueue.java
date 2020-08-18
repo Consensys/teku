@@ -24,6 +24,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
@@ -37,11 +39,24 @@ public class StateGenerationQueue {
   private final Queue<RegenerationTask> queuedRegenerations = new ConcurrentLinkedQueue<>();
   private final MetricsSystem metricsSystem;
   private final IntSupplier activeRegenerationLimit;
+  private final Counter duplicateRegenerationCounter;
+  private final Counter newRegenerationCounter;
+  private final Counter rebasedRegenerationCounter;
 
   StateGenerationQueue(
       final MetricsSystem metricsSystem, final IntSupplier activeRegenerationLimit) {
     this.metricsSystem = metricsSystem;
     this.activeRegenerationLimit = activeRegenerationLimit;
+
+    final LabelledMetric<Counter> labelledCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.BEACON,
+            "regenerations_total",
+            "Total number of regenerations requested",
+            "type");
+    duplicateRegenerationCounter = labelledCounter.labels("duplicate");
+    newRegenerationCounter = labelledCounter.labels("new");
+    rebasedRegenerationCounter = labelledCounter.labels("rebase");
   }
 
   public static StateGenerationQueue create(final MetricsSystem metricsSystem) {
@@ -82,6 +97,7 @@ public class StateGenerationQueue {
     final SafeFuture<SignedBlockAndState> inProgress =
         inProgressGeneration.putIfAbsent(task.getBlockRoot(), future);
     if (inProgress != null) {
+      duplicateRegenerationCounter.inc();
       return inProgress;
     }
     Optional<Bytes32> maybeAncestorRoot = task.getTree().getParent(task.getBlockRoot());
@@ -89,6 +105,7 @@ public class StateGenerationQueue {
       final Bytes32 ancestorRoot = maybeAncestorRoot.get();
       final SafeFuture<SignedBlockAndState> parentFuture = inProgressGeneration.get(ancestorRoot);
       if (parentFuture != null) {
+        rebasedRegenerationCounter.inc();
         parentFuture
             .thenAccept(ancestorState -> queueRegeneration(task.rebase(ancestorState)))
             .finish(
@@ -105,6 +122,7 @@ public class StateGenerationQueue {
               .filter(root -> !root.equals(task.getTree().getRootHash()))
               .flatMap(task.getTree()::getParent);
     }
+    newRegenerationCounter.inc();
     queueRegeneration(task);
     return future;
   }
