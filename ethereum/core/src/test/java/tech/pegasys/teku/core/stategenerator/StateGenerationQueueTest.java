@@ -16,6 +16,8 @@ package tech.pegasys.teku.core.stategenerator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -57,6 +59,39 @@ class StateGenerationQueueTest {
         stateGenerationQueue.regenerateStateForBlock(task);
     assertThat(result).isNotDone();
     task.assertRegeneratedWithoutRebase();
+    task.assertEpochBoundaryNeverQueried();
+
+    final SignedBlockAndState expectedResult =
+        dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
+    task.regenerationResult.complete(expectedResult);
+    assertThat(result).isCompletedWithValue(expectedResult);
+    assertAllRegenerationsComplete();
+  }
+
+  @Test
+  void shouldResolveAgainstEpochBoundaryBlockWhenProvided() {
+    final StubRegenerationTask task = createRandomTaskWithEpochBoundaryRoot();
+    final SafeFuture<SignedBlockAndState> result =
+        stateGenerationQueue.regenerateStateForBlock(task);
+    assertThat(result).isNotDone();
+    task.assertEpochBoundaryQueried();
+    task.assertRebasedToEpochBoundary();
+
+    final SignedBlockAndState expectedResult =
+        dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
+    task.regenerationResult.complete(expectedResult);
+    assertThat(result).isCompletedWithValue(expectedResult);
+    assertAllRegenerationsComplete();
+  }
+
+  @Test
+  void shouldResolveAgainstEpochBoundaryBlockWhenProvided_epochBoundaryMissing() {
+    final StubRegenerationTask task = createRandomTaskWithEpochBoundaryUnavailable();
+    final SafeFuture<SignedBlockAndState> result =
+        stateGenerationQueue.regenerateStateForBlock(task);
+    assertThat(result).isNotDone();
+    task.assertEpochBoundaryQueried();
+    task.assertRegeneratedWithoutRebase();
 
     final SignedBlockAndState expectedResult =
         dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
@@ -96,7 +131,7 @@ class StateGenerationQueueTest {
     final SignedBlockAndState task1State = blocks.get(6);
     final List<SignedBlockAndState> task1Blocks = blocks.subList(0, 6);
     final HashTree task1Tree = createHashTreeForChain(task1Blocks);
-    final StubRegenerationTask task1 = new StubRegenerationTask(task1State.getRoot(), task1Tree);
+    final StubRegenerationTask task1 = StubRegenerationTask.create(task1State.getRoot(), task1Tree);
     final SafeFuture<SignedBlockAndState> result1 =
         stateGenerationQueue.regenerateStateForBlock(task1);
     assertThat(result1).isNotDone();
@@ -104,7 +139,7 @@ class StateGenerationQueueTest {
 
     final Bytes32 task2Target = blocks.get(9).getRoot();
     final HashTree task2Tree = createHashTreeForChain(blocks);
-    final StubRegenerationTask task2 = new StubRegenerationTask(task2Target, task2Tree);
+    final StubRegenerationTask task2 = StubRegenerationTask.create(task2Target, task2Tree);
     final SafeFuture<SignedBlockAndState> result2 =
         stateGenerationQueue.regenerateStateForBlock(task2);
     assertThat(result2).isNotDone();
@@ -131,7 +166,7 @@ class StateGenerationQueueTest {
     final SignedBlockAndState task1State = blocks.get(6);
     final List<SignedBlockAndState> task1Blocks = blocks.subList(0, 6);
     final HashTree task1Tree = createHashTreeForChain(task1Blocks);
-    final StubRegenerationTask task1 = new StubRegenerationTask(task1State.getRoot(), task1Tree);
+    final StubRegenerationTask task1 = StubRegenerationTask.create(task1State.getRoot(), task1Tree);
     final SafeFuture<SignedBlockAndState> result1 =
         stateGenerationQueue.regenerateStateForBlock(task1);
     assertThat(result1).isNotDone();
@@ -139,7 +174,7 @@ class StateGenerationQueueTest {
 
     final Bytes32 task2Target = blocks.get(9).getRoot();
     final HashTree task2Tree = createHashTreeForChain(blocks.subList(7, 10));
-    final StubRegenerationTask task2 = new StubRegenerationTask(task2Target, task2Tree);
+    final StubRegenerationTask task2 = StubRegenerationTask.create(task2Target, task2Tree);
     final SafeFuture<SignedBlockAndState> result2 =
         stateGenerationQueue.regenerateStateForBlock(task2);
     assertThat(result2).isNotDone();
@@ -158,7 +193,23 @@ class StateGenerationQueueTest {
   private StubRegenerationTask createRandomTask() {
     final Bytes32 targetBlockRoot = dataStructureUtil.randomBytes32();
     final HashTree tree = createHashTree(targetBlockRoot);
-    return new StubRegenerationTask(targetBlockRoot, tree);
+    return StubRegenerationTask.create(targetBlockRoot, tree);
+  }
+
+  private StubRegenerationTask createRandomTaskWithEpochBoundaryRoot() {
+    final Bytes32 targetBlockRoot = dataStructureUtil.randomBytes32();
+    final SignedBlockAndState epochBoundaryBlock =
+        dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
+    final HashTree tree = createHashTree(targetBlockRoot);
+    return StubRegenerationTask.create(targetBlockRoot, tree, epochBoundaryBlock);
+  }
+
+  private StubRegenerationTask createRandomTaskWithEpochBoundaryUnavailable() {
+    final Bytes32 targetBlockRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 epochBoundary = dataStructureUtil.randomBytes32();
+    final HashTree tree = createHashTree(targetBlockRoot);
+    return StubRegenerationTask.createWithEpochBoundaryUnavailable(
+        targetBlockRoot, tree, epochBoundary);
   }
 
   private void assertAllRegenerationsComplete() {
@@ -191,8 +242,36 @@ class StateGenerationQueueTest {
     private boolean regenerated = false;
     private Optional<SignedBlockAndState> rebasedTo = Optional.empty();
 
-    public StubRegenerationTask(final Bytes32 blockRoot, final HashTree tree) {
-      super(blockRoot, tree, null, Optional.empty(), null, null, null);
+    private StubRegenerationTask(
+        final Bytes32 blockRoot,
+        final HashTree tree,
+        Optional<Bytes32> epochBoundaryRoot,
+        final StateAndBlockProvider stateAndBlockProvider) {
+      super(blockRoot, tree, null, epochBoundaryRoot, null, stateAndBlockProvider, null);
+    }
+
+    public static StubRegenerationTask create(final Bytes32 blockRoot, final HashTree tree) {
+      return new StubRegenerationTask(
+          blockRoot, tree, Optional.empty(), mock(StateAndBlockProvider.class));
+    }
+
+    public static StubRegenerationTask create(
+        final Bytes32 blockRoot, final HashTree tree, final SignedBlockAndState epochBoundary) {
+      final Bytes32 epochBoundaryRoot = epochBoundary.getRoot();
+      final StateAndBlockProvider stateAndBlockProvider = mock(StateAndBlockProvider.class);
+      when(stateAndBlockProvider.getBlockAndState(epochBoundaryRoot))
+          .thenReturn(SafeFuture.completedFuture(Optional.of(epochBoundary)));
+      return new StubRegenerationTask(
+          blockRoot, tree, Optional.of(epochBoundaryRoot), stateAndBlockProvider);
+    }
+
+    public static StubRegenerationTask createWithEpochBoundaryUnavailable(
+        final Bytes32 blockRoot, final HashTree tree, final Bytes32 epochBoundaryRoot) {
+      final StateAndBlockProvider stateAndBlockProvider = mock(StateAndBlockProvider.class);
+      when(stateAndBlockProvider.getBlockAndState(epochBoundaryRoot))
+          .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+      return new StubRegenerationTask(
+          blockRoot, tree, Optional.of(epochBoundaryRoot), stateAndBlockProvider);
     }
 
     @Override
@@ -202,7 +281,7 @@ class StateGenerationQueueTest {
     }
 
     @Override
-    public SafeFuture<SignedBlockAndState> regenerate() {
+    public SafeFuture<SignedBlockAndState> regenerateState() {
       regenerated = true;
       return regenerationResult;
     }
@@ -210,6 +289,21 @@ class StateGenerationQueueTest {
     public void assertRegeneratedWithoutRebase() {
       assertThat(rebasedTo).isEmpty();
       assertThat(regenerated).isTrue();
+    }
+
+    public void assertRebasedToEpochBoundary() {
+      final Optional<SignedBlockAndState> epochBoundary =
+          epochBoundaryRoot.map(stateAndBlockProvider::getBlockAndState).flatMap(SafeFuture::join);
+      assertThat(rebasedTo).contains(epochBoundary.get());
+      assertThat(regenerated).isTrue();
+    }
+
+    public void assertEpochBoundaryQueried() {
+      verify(stateAndBlockProvider).getBlockAndState(epochBoundaryRoot.get());
+    }
+
+    public void assertEpochBoundaryNeverQueried() {
+      verify(stateAndBlockProvider, never()).getBlockAndState(any());
     }
 
     public void assertNotRegenerated() {

@@ -189,9 +189,9 @@ public class StateGenerationQueue {
     private static final Logger LOG = LogManager.getLogger();
     private final HashTree tree;
     private final SignedBlockAndState baseBlockAndState;
-    private final Optional<Bytes32> epochBoundaryRoot;
+    protected final Optional<Bytes32> epochBoundaryRoot;
     private final BlockProvider blockProvider;
-    private final StateAndBlockProvider stateAndBlockProvider;
+    protected final StateAndBlockProvider stateAndBlockProvider;
     private final Bytes32 blockRoot;
     private final Consumer<SignedBlockAndState> cacheHandler;
 
@@ -261,7 +261,7 @@ public class StateGenerationQueue {
       return resolveAgainstLatestEpochBoundary().thenCompose(RegenerationTask::regenerateState);
     }
 
-    private SafeFuture<SignedBlockAndState> regenerateState() {
+    protected SafeFuture<SignedBlockAndState> regenerateState() {
       final StateGenerator stateGenerator =
           StateGenerator.create(tree, baseBlockAndState, blockProvider);
       return stateGenerator.regenerateStateForBlock(blockRoot).thenPeek(cacheHandler);
