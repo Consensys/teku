@@ -18,7 +18,7 @@ import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
@@ -33,11 +33,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ForkChoice {
 
-  private final ReentrantLock lock = new ReentrantLock();
+  private final Semaphore lock = new Semaphore(1);
   private final RecentChainData recentChainData;
   private final StateTransition stateTransition;
 
@@ -176,7 +177,11 @@ public class ForkChoice {
   }
 
   private <T> SafeFuture<T> withLock(final Supplier<SafeFuture<T>> action) {
-    lock.lock();
-    return SafeFuture.ofComposed(action::get).alwaysRun(lock::unlock);
+    try {
+      lock.acquire();
+    } catch (InterruptedException e) {
+      throw new ShuttingDownException();
+    }
+    return SafeFuture.ofComposed(action::get).alwaysRun(lock::release);
   }
 }
