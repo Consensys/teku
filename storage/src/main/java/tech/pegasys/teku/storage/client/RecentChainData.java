@@ -63,7 +63,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
   protected final ProtoArrayStorageChannel protoArrayStorageChannel;
-  private final MetricsSystem metricsSystem;
+  protected final MetricsSystem metricsSystem;
   private final ReorgEventChannel reorgEventChannel;
 
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
@@ -389,23 +389,5 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     }
 
     return store.retrieveCheckpointState(checkpoint);
-  }
-
-  private static class ChainHead extends SignedBlockAndState {
-    private final UInt64 forkChoiceSlot;
-
-    public ChainHead(SignedBeaconBlock block, BeaconState state, UInt64 forkChoiceSlot) {
-      super(block, state);
-      this.forkChoiceSlot = forkChoiceSlot;
-    }
-
-    public static ChainHead create(SignedBlockAndState blockAndState, UInt64 forkChoiceSlot) {
-      return new ChainHead(blockAndState.getBlock(), blockAndState.getState(), forkChoiceSlot);
-    }
-
-    /** @return The slot at which the chain head was calculated */
-    public UInt64 getForkChoiceSlot() {
-      return forkChoiceSlot;
-    }
   }
 }

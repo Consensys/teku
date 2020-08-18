@@ -49,7 +49,7 @@ class StoreTest extends AbstractStoreTest {
           SafeFuture<Optional<SignedBeaconBlock>> result = store.retrieveSignedBlock(root);
           assertThat(result).isCompleted();
           assertThat(result)
-              .withFailMessage("Expected block %s to be available", expectedBlock.getSlot())
+              .describedAs("block %s", expectedBlock.getSlot())
               .isCompletedWithValue(Optional.of(expectedBlock));
         });
   }
@@ -63,7 +63,7 @@ class StoreTest extends AbstractStoreTest {
           SafeFuture<Optional<BeaconBlock>> result = store.retrieveBlock(root);
           assertThat(result).isCompleted();
           assertThat(result)
-              .withFailMessage("Expected block %s to be available", expectedBlock.getSlot())
+              .describedAs("block %s", expectedBlock.getSlot())
               .isCompletedWithValue(Optional.of(expectedBlock));
         });
   }
@@ -76,8 +76,7 @@ class StoreTest extends AbstractStoreTest {
           SafeFuture<Optional<SignedBlockAndState>> result = store.retrieveBlockAndState(root);
           assertThat(result).isCompleted();
           assertThat(result)
-              .withFailMessage(
-                  "Expected block and state at %s to be available", blockAndState.getSlot())
+              .describedAs("block and state at %s", blockAndState.getSlot())
               .isCompletedWithValue(Optional.of(blockAndState));
         });
   }
@@ -90,7 +89,7 @@ class StoreTest extends AbstractStoreTest {
           SafeFuture<Optional<BeaconState>> result = store.retrieveBlockState(root);
           assertThat(result).isCompleted();
           assertThat(result)
-              .withFailMessage("Expected state at %s to be available", blockAndState.getSlot())
+              .describedAs("State at %s", blockAndState.getSlot())
               .isCompletedWithValue(Optional.of(blockAndState.getState()));
         });
   }
@@ -102,8 +101,7 @@ class StoreTest extends AbstractStoreTest {
           SafeFuture<Optional<BeaconState>> result =
               store.retrieveCheckpointState(checkpointState.getCheckpoint());
           assertThat(result)
-              .withFailMessage(
-                  "Expected checkpoint state for checkpoint %s", checkpointState.getCheckpoint())
+              .describedAs("Checkpoint state for checkpoint %s", checkpointState.getCheckpoint())
               .isCompletedWithValue(Optional.of(checkpointState.getState()));
         });
   }
@@ -134,6 +132,56 @@ class StoreTest extends AbstractStoreTest {
     assertThat(checkpointState.getSlot()).isEqualTo(checkpoint.getEpochStartSlot());
     assertThat(checkpointState.getLatest_block_header().hash_tree_root())
         .isEqualTo(checkpoint.getRoot());
+  }
+
+  @Test
+  public void getCheckpointState_forGenesis() {
+    final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
+    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
+    final BlockProvider blockProvider = blockProviderFromChainBuilder();
+
+    final UpdatableStore store =
+        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis).join();
+    final Checkpoint checkpoint = new Checkpoint(UInt64.ZERO, genesisBlockAndState.getRoot());
+
+    final BeaconState baseState = genesisBlockAndState.getState();
+    final BeaconState result = store.getCheckpointState(checkpoint, baseState);
+    assertThat(result).isEqualTo(baseState);
+  }
+
+  @Test
+  public void getCheckpointState_forEpochPastGenesis() {
+    final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
+    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
+    final BlockProvider blockProvider = blockProviderFromChainBuilder();
+
+    final UpdatableStore store =
+        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis).join();
+    final Checkpoint checkpoint = new Checkpoint(UInt64.ONE, genesisBlockAndState.getRoot());
+
+    final BeaconState baseState = genesisBlockAndState.getState();
+    final BeaconState result = store.getCheckpointState(checkpoint, baseState);
+    assertThat(result.getSlot()).isGreaterThan(baseState.getSlot());
+    assertThat(result.getSlot()).isEqualTo(checkpoint.getEpochStartSlot());
+    assertThat(result.getLatest_block_header().hash_tree_root()).isEqualTo(checkpoint.getRoot());
+  }
+
+  @Test
+  public void getCheckpointState_invalidState() {
+    final SignedBlockAndState genesisBlockAndState = chainBuilder.generateGenesis();
+    final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
+    final BlockProvider blockProvider = blockProviderFromChainBuilder();
+
+    final UpdatableStore store =
+        StoreBuilder.buildForkChoiceStore(new StubMetricsSystem(), blockProvider, genesis).join();
+    final SignedBlockAndState futureBlockAndState =
+        chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(UInt64.valueOf(2)));
+
+    final Checkpoint checkpoint = new Checkpoint(UInt64.ONE, futureBlockAndState.getRoot());
+
+    assertThatThrownBy(() -> store.getCheckpointState(checkpoint, futureBlockAndState.getState()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Latest state must be at or prior to checkpoint slot");
   }
 
   @Test

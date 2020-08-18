@@ -30,6 +30,8 @@ import tech.pegasys.teku.core.VoluntaryExitGenerator;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.VoluntaryExitValidator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -49,13 +51,14 @@ public class VoluntaryExitTopicHandlerTest {
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(5, recentChainData);
 
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final VoluntaryExitGenerator exitGenerator =
       new VoluntaryExitGenerator(beaconChainUtil.getValidatorKeys());
   private final VoluntaryExitValidator validator = mock(VoluntaryExitValidator.class);
 
   private VoluntaryExitTopicHandler topicHandler =
       new VoluntaryExitTopicHandler(
-          gossipEncoding, dataStructureUtil.randomForkInfo(), validator, consumer);
+          asyncRunner, gossipEncoding, dataStructureUtil.randomForkInfo(), validator, consumer);
 
   @BeforeEach
   public void setup() {
@@ -68,8 +71,9 @@ public class VoluntaryExitTopicHandlerTest {
         exitGenerator.withEpoch(recentChainData.getBestState().orElseThrow(), 3, 3);
     when(validator.validate(exit)).thenReturn(ACCEPT);
     Bytes serialized = gossipEncoding.encode(exit);
-    final ValidationResult result = topicHandler.handleMessage(serialized).join();
-    assertThat(result).isEqualTo(ValidationResult.Valid);
+    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    asyncRunner.executeQueuedActions();
+    assertThat(result).isCompletedWithValue(ValidationResult.Valid);
     verify(consumer).forward(exit);
   }
 
@@ -79,8 +83,9 @@ public class VoluntaryExitTopicHandlerTest {
         exitGenerator.withEpoch(recentChainData.getBestState().orElseThrow(), 3, 3);
     when(validator.validate(exit)).thenReturn(IGNORE);
     Bytes serialized = gossipEncoding.encode(exit);
-    final ValidationResult result = topicHandler.handleMessage(serialized).join();
-    assertThat(result).isEqualTo(ValidationResult.Ignore);
+    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    asyncRunner.executeQueuedActions();
+    assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verifyNoInteractions(consumer);
   }
 
@@ -99,7 +104,7 @@ public class VoluntaryExitTopicHandlerTest {
     final ForkInfo forkInfo = mock(ForkInfo.class);
     when(forkInfo.getForkDigest()).thenReturn(forkDigest);
     final VoluntaryExitTopicHandler topicHandler =
-        new VoluntaryExitTopicHandler(gossipEncoding, forkInfo, validator, consumer);
+        new VoluntaryExitTopicHandler(asyncRunner, gossipEncoding, forkInfo, validator, consumer);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/voluntary_exit/ssz_snappy");
   }
 }

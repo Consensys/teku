@@ -108,7 +108,11 @@ public class SignedAggregateAndProofValidator {
                         if (maybeState.isEmpty()) {
                           return SAVE_FOR_FUTURE;
                         }
-                        final BeaconState state = maybeState.get();
+
+                        final BeaconState state =
+                            attestationValidator.resolveStateForAttestation(
+                                aggregate, maybeState.get());
+
                         final Optional<BLSPublicKey> aggregatorPublicKey =
                             ValidatorsUtil.getValidatorPubKey(state, aggregateAndProof.getIndex());
                         if (aggregatorPublicKey.isEmpty()) {

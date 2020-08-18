@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -48,10 +49,11 @@ public class PeerSync {
    * may be empty we check that we're progressing through slots, even if not many blocks are being
    * returned.
    */
-  private static final UInt64 MIN_SLOTS_TO_PROGRESS_PER_REQUEST = UInt64.valueOf(50);
+  static final UInt64 MIN_SLOTS_TO_PROGRESS_PER_REQUEST = UInt64.valueOf(50);
 
   private static final Logger LOG = LogManager.getLogger();
   private static final UInt64 STEP = UInt64.ONE;
+  static final int MAX_THROTTLED_REQUESTS = 10;
 
   private final AtomicBoolean stopped = new AtomicBoolean(false);
   private final RecentChainData storageClient;
@@ -61,6 +63,7 @@ public class PeerSync {
   private final Counter blockImportSuccessResult;
   private final Counter blockImportFailureResult;
 
+  private final AtomicInteger throttledRequestCount = new AtomicInteger(0);
   private volatile UInt64 startingSlot = UInt64.valueOf(0);
 
   public PeerSync(
@@ -90,7 +93,7 @@ public class PeerSync {
 
     this.startingSlot = firstNonFinalSlot;
 
-    return executeSync(peer, peer.getStatus(), firstNonFinalSlot, SafeFuture.COMPLETE)
+    return executeSync(peer, firstNonFinalSlot, SafeFuture.COMPLETE)
         .whenComplete(
             (res, err) -> {
               if (err != null) {
@@ -107,14 +110,12 @@ public class PeerSync {
 
   @SuppressWarnings("FutureReturnValueIgnored")
   private SafeFuture<PeerSyncResult> executeSync(
-      final Eth2Peer peer,
-      final PeerStatus status,
-      final UInt64 startSlot,
-      final SafeFuture<Void> readyForRequest) {
+      final Eth2Peer peer, final UInt64 startSlot, final SafeFuture<Void> readyForRequest) {
     if (stopped.get()) {
       return SafeFuture.completedFuture(PeerSyncResult.CANCELLED);
     }
 
+    final PeerStatus status = peer.getStatus();
     final UInt64 count = calculateNumberOfBlocksToRequest(startSlot, status);
     if (count.longValue() == 0) {
       return completeSyncWithPeer(peer, status);
@@ -145,12 +146,21 @@ public class PeerSync {
                   nextSlot);
               if (count.compareTo(MIN_SLOTS_TO_PROGRESS_PER_REQUEST) > 0
                   && startSlot.plus(MIN_SLOTS_TO_PROGRESS_PER_REQUEST).compareTo(nextSlot) > 0) {
+                final int throttledRequests = throttledRequestCount.incrementAndGet();
                 LOG.debug(
-                    "Rejecting peer {} as sync target because it excessively throttled returned blocks",
+                    "Received {} consecutive excessively throttled response from {}",
+                    throttledRequests,
                     peer.getId());
-                return SafeFuture.completedFuture(PeerSyncResult.EXCESSIVE_THROTTLING);
+                if (throttledRequests > MAX_THROTTLED_REQUESTS) {
+                  LOG.debug(
+                      "Rejecting peer {} as sync target because it excessively throttled returned blocks",
+                      peer.getId());
+                  return SafeFuture.completedFuture(PeerSyncResult.EXCESSIVE_THROTTLING);
+                }
+              } else {
+                throttledRequestCount.set(0);
               }
-              return executeSync(peer, status, nextSlot, blockRequest.getReadyForNextRequest());
+              return executeSync(peer, nextSlot, blockRequest.getReadyForNextRequest());
             })
         .exceptionally(err -> handleFailedRequestToPeer(peer, err));
   }
@@ -215,8 +225,7 @@ public class PeerSync {
         .importBlock(block)
         .thenAccept(
             (result) -> {
-              LOG.trace(
-                  "Block import result for block at {}: {}", block.getMessage().getSlot(), result);
+              LOG.trace("Block import result for block at {}: {}", block.getSlot(), result);
               if (!result.isSuccessful()) {
                 this.blockImportFailureResult.inc();
                 throw new FailedBlockImportException(block, result);

@@ -25,6 +25,7 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.SignedAggregateAndProofValidator;
@@ -37,12 +38,17 @@ public class AggregateTopicHandlerTest {
   private final GossipedOperationConsumer<ValidateableAttestation> attestationConsumer =
       mock(GossipedOperationConsumer.class);
 
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final SignedAggregateAndProofValidator validator =
       mock(SignedAggregateAndProofValidator.class);
   private final AggregateAttestationTopicHandler topicHandler =
       new AggregateAttestationTopicHandler(
-          gossipEncoding, dataStructureUtil.randomForkInfo(), validator, attestationConsumer);
+          asyncRunner,
+          gossipEncoding,
+          dataStructureUtil.randomForkInfo(),
+          validator,
+          attestationConsumer);
 
   @Test
   public void handleMessage_validAggregate() {
@@ -52,11 +58,10 @@ public class AggregateTopicHandlerTest {
     when(validator.validate(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
-    final ValidationResult result =
-        topicHandler
-            .handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()))
-            .join();
-    assertThat(result).isEqualTo(ValidationResult.Valid);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
+    asyncRunner.executeQueuedActions();
+    assertThat(result).isCompletedWithValue(ValidationResult.Valid);
     verify(attestationConsumer).forward(aggregate);
   }
 
@@ -68,11 +73,10 @@ public class AggregateTopicHandlerTest {
     when(validator.validate(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
-    final ValidationResult result =
-        topicHandler
-            .handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()))
-            .join();
-    assertThat(result).isEqualTo(ValidationResult.Ignore);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
+    asyncRunner.executeQueuedActions();
+    assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verify(attestationConsumer).forward(aggregate);
   }
 
@@ -84,11 +88,10 @@ public class AggregateTopicHandlerTest {
     when(validator.validate(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
 
-    final ValidationResult result =
-        topicHandler
-            .handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()))
-            .join();
-    assertThat(result).isEqualTo(ValidationResult.Ignore);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
+    asyncRunner.executeQueuedActions();
+    assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verify(attestationConsumer, never()).forward(aggregate);
   }
 
@@ -100,11 +103,10 @@ public class AggregateTopicHandlerTest {
     when(validator.validate(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.REJECT));
 
-    final ValidationResult result =
-        topicHandler
-            .handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()))
-            .join();
-    assertThat(result).isEqualTo(ValidationResult.Invalid);
+    final SafeFuture<ValidationResult> result =
+        topicHandler.handleMessage(gossipEncoding.encode(aggregate.getSignedAggregateAndProof()));
+    asyncRunner.executeQueuedActions();
+    assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
     verify(attestationConsumer, never()).forward(aggregate);
   }
 
@@ -115,7 +117,7 @@ public class AggregateTopicHandlerTest {
     when(forkInfo.getForkDigest()).thenReturn(forkDigest);
     final AggregateAttestationTopicHandler topicHandler =
         new AggregateAttestationTopicHandler(
-            gossipEncoding, forkInfo, validator, attestationConsumer);
+            asyncRunner, gossipEncoding, forkInfo, validator, attestationConsumer);
     assertThat(topicHandler.getTopic())
         .isEqualTo("/eth2/11223344/beacon_aggregate_and_proof/ssz_snappy");
   }
