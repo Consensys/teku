@@ -14,9 +14,8 @@
 package tech.pegasys.teku.storage.server.rocksdb;
 
 import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystem;
+import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -25,9 +24,11 @@ public class V5RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
   @Override
   protected StorageSystem createStorageSystem(
       final File tempDir, final StateStorageMode storageMode) {
-    final Path dbDir = Paths.get(tempDir.getAbsolutePath(), "db");
-    final Path archiveDir = Paths.get(tempDir.getAbsolutePath(), "archive");
-
-    return FileBackedStorageSystem.createV5StorageSystem(dbDir, archiveDir, storageMode, 1L);
+    return FileBackedStorageSystemBuilder.create()
+        .dataDir(tempDir.toPath())
+        .version(DatabaseVersion.V5)
+        .storageMode(storageMode)
+        .stateStorageFrequency(1L)
+        .build();
   }
 }

@@ -56,14 +56,14 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class ChainDataProviderTest {
   private final StorageSystem storageSystem =
-      InMemoryStorageSystem.createEmptyLatestStorageSystem(StateStorageMode.ARCHIVE);
+      InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private CombinedChainDataClient combinedChainDataClient;
   private StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
   private tech.pegasys.teku.datastructures.state.BeaconState beaconStateInternal;

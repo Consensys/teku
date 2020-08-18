@@ -36,7 +36,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.sync.SyncState;
 import tech.pegasys.teku.sync.SyncStateTracker;
@@ -46,7 +46,7 @@ public class ValidatorApiHandlerIntegrationTest {
 
   // Use full storage system
   private final StorageSystem storageSystem =
-      InMemoryStorageSystem.createEmptyLatestStorageSystem(StateStorageMode.ARCHIVE);
+      InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private final CombinedChainDataClient combinedChainDataClient =
       storageSystem.combinedChainDataClient();
   private final EventBus eventBus = storageSystem.eventBus();

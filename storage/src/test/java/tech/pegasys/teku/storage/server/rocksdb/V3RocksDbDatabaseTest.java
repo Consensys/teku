@@ -30,7 +30,8 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystem;
+import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -39,7 +40,11 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
   @Override
   protected StorageSystem createStorageSystem(
       final File tempDir, final StateStorageMode storageMode) {
-    return FileBackedStorageSystem.createV3StorageSystem(tempDir.toPath(), storageMode);
+    return FileBackedStorageSystemBuilder.create()
+        .dataDir(tempDir.toPath())
+        .version(DatabaseVersion.V3)
+        .storageMode(storageMode)
+        .build();
   }
 
   @Test
