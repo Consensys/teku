@@ -17,17 +17,19 @@ import java.io.File;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.StoreOptions;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
-public class InMemoryV5RocksDbDatabaseTest extends V4RocksDbDatabaseTest {
+public class InMemoryV5RocksDbDatabaseTest extends AbstractRocksDbDatabaseWithHotStatesTest {
 
   @Override
   protected StorageSystem createStorageSystem(
-      final File tempDir, final StateStorageMode storageMode) {
+      final File tempDir, final StateStorageMode storageMode, final StoreOptions storeOptions) {
     return InMemoryStorageSystemBuilder.create()
         .version(DatabaseVersion.V5)
         .storageMode(storageMode)
         .stateStorageFrequency(1L)
+        .storeOptions(storeOptions)
         .build();
   }
 }

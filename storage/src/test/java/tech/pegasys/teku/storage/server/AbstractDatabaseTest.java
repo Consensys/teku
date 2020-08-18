@@ -109,7 +109,8 @@ public abstract class AbstractDatabaseTest {
   }
 
   // This method shouldn't be called outside of createStorage
-  protected abstract StorageSystem createStorageSystemInternal(final StateStorageMode storageMode);
+  protected abstract StorageSystem createStorageSystemInternal(
+      final StateStorageMode storageMode, final StoreOptions storeOptions);
 
   protected void restartStorage() {
     final StorageSystem storage = storageSystem.restarted(storageMode);
@@ -117,8 +118,13 @@ public abstract class AbstractDatabaseTest {
   }
 
   protected StorageSystem createStorage(final StateStorageMode storageMode) {
+    return createStorage(storageMode, StoreOptions.createDefault());
+  }
+
+  protected StorageSystem createStorage(
+      final StateStorageMode storageMode, final StoreOptions storeOptions) {
     this.storageMode = storageMode;
-    storageSystem = createStorageSystemInternal(storageMode);
+    storageSystem = createStorageSystemInternal(storageMode, storeOptions);
     setDefaultStorage(storageSystem);
 
     return storageSystem;
@@ -215,7 +221,7 @@ public abstract class AbstractDatabaseTest {
     final Set<Bytes32> rootsToPrune = new HashSet<>(block10Roots);
     rootsToPrune.add(genesisBlockAndState.getRoot());
     // Check that all blocks at slot 10 were pruned
-    assertStoreWasPruned(store, rootsToPrune, Set.of(genesisCheckpoint));
+    assertRecentDataWasPruned(store, rootsToPrune, Set.of(genesisCheckpoint));
   }
 
   @Test
@@ -596,7 +602,7 @@ public abstract class AbstractDatabaseTest {
     final Set<Checkpoint> checkpointsToPrune = Set.of(genesisCheckpoint);
 
     // Check data was pruned from store
-    assertStoreWasPruned(store, blocksToPrune, checkpointsToPrune);
+    assertRecentDataWasPruned(store, blocksToPrune, checkpointsToPrune);
 
     restartStorage();
 
@@ -786,15 +792,19 @@ public abstract class AbstractDatabaseTest {
     }
   }
 
-  protected void assertStoreWasPruned(
+  protected void assertRecentDataWasPruned(
       final UpdatableStore store,
       final Set<Bytes32> prunedBlocks,
       final Set<Checkpoint> prunedCheckpoints) {
-    // Check pruned data has been removed from store
     for (Bytes32 prunedBlock : prunedBlocks) {
+      // Check pruned data has been removed from store
       assertThat(store.containsBlock(prunedBlock)).isFalse();
       assertThatSafeFuture(store.retrieveBlock(prunedBlock)).isCompletedWithEmptyOptional();
       assertThatSafeFuture(store.retrieveBlockState(prunedBlock)).isCompletedWithEmptyOptional();
+
+      // Check hot data was pruned from db
+      assertThat(database.getHotBlocks(Set.of(prunedBlock))).isEmpty();
+      assertThat(database.getHotState(prunedBlock)).isEmpty();
     }
   }
 

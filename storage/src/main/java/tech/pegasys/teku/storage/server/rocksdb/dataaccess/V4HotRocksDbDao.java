@@ -217,6 +217,11 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     @Override
     public void deleteHotBlock(final Bytes32 blockRoot) {
       transaction.delete(V4SchemaHot.HOT_BLOCKS_BY_ROOT, blockRoot);
+      deleteHotState(blockRoot);
+    }
+
+    @Override
+    public void deleteHotState(final Bytes32 blockRoot) {
       transaction.delete(V4SchemaHot.HOT_STATES_BY_ROOT, blockRoot);
     }
 

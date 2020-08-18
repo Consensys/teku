@@ -29,6 +29,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.StoreOptions;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -38,13 +39,14 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
   private final List<File> tmpDirectories = new ArrayList<>();
 
   protected abstract StorageSystem createStorageSystem(
-      final File tempDir, final StateStorageMode storageMode);
+      final File tempDir, final StateStorageMode storageMode, final StoreOptions storeOptions);
 
   @Override
-  protected StorageSystem createStorageSystemInternal(final StateStorageMode storageMode) {
+  protected StorageSystem createStorageSystemInternal(
+      final StateStorageMode storageMode, final StoreOptions storeOptions) {
     final File tmpDir = Files.createTempDir();
     tmpDirectories.add(tmpDir);
-    return createStorageSystem(tmpDir, storageMode);
+    return createStorageSystem(tmpDir, storageMode, storeOptions);
   }
 
   @Override
@@ -58,7 +60,8 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
 
   protected StorageSystem createStorage(final File tempDir, final StateStorageMode storageMode) {
     this.storageMode = storageMode;
-    final StorageSystem storage = createStorageSystem(tempDir, storageMode);
+    final StorageSystem storage =
+        createStorageSystem(tempDir, storageMode, StoreOptions.createDefault());
     setDefaultStorage(storage);
     return storage;
   }

@@ -298,6 +298,11 @@ public class V3RocksDbDao
     }
 
     @Override
+    public void deleteHotState(final Bytes32 blockRoot) {
+      // No-op
+    }
+
+    @Override
     public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
       transaction.put(V3Schema.MIN_GENESIS_TIME_BLOCK, event);
     }
