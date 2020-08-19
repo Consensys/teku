@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.util.collections.LimitStrategy;
 import tech.pegasys.teku.util.collections.LimitedMap;
 
 class StateCache {
@@ -26,7 +25,7 @@ class StateCache {
   private final Map<Bytes32, BeaconState> knownStates;
 
   public StateCache(final int maxCachedStates, final Map<Bytes32, BeaconState> knownStates) {
-    this.cache = LimitedMap.create(maxCachedStates, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+    this.cache = LimitedMap.create(maxCachedStates);
     this.knownStates = knownStates;
   }
 

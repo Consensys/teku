@@ -47,18 +47,15 @@ import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
-import tech.pegasys.teku.util.collections.LimitStrategy;
+import tech.pegasys.teku.util.collections.LimitedSet;
 import tech.pegasys.teku.util.config.Constants;
 
 public class SignedAggregateAndProofValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Set<AggregatorIndexAndEpoch> receivedAggregatorIndexAndEpochs =
-      ConcurrentLimitedSet.create(
-          VALID_AGGREGATE_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+      LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
   private final Set<Bytes32> receivedValidAggregations =
-      ConcurrentLimitedSet.create(
-          VALID_AGGREGATE_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+      LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
   private final AttestationValidator attestationValidator;
   private final RecentChainData recentChainData;
 
