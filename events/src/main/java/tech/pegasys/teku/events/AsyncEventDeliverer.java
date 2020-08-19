@@ -21,8 +21,12 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.LockSupport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -47,13 +51,23 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
   }
 
   @Override
-  void subscribe(final T subscriber, final int numberOfThreads) {
+  void subscribe(final T subscriber) {
+    // Single threaded so executes task on the queue reader thread directly.
+    subscribe(subscriber, Runnable::run);
+  }
+
+  @Override
+  void subscribe(final T subscriber, final AsyncRunner asyncRunner) {
+    // Multithreaded so the queue reader thread executes tasks using the AsyncRunner
+    final Executor eventExecutor = task -> asyncRunner.runAsync(task::run).reportExceptions();
+    subscribe(subscriber, eventExecutor);
+  }
+
+  private void subscribe(final T subscriber, final Executor eventExecutor) {
     final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
     eventQueuesBySubscriber.put(subscriber, queue);
-    super.subscribe(subscriber, numberOfThreads);
-    for (int i = 0; i < numberOfThreads; i++) {
-      executor.execute(new QueueReader(queue));
-    }
+    super.subscribe(subscriber);
+    executor.execute(new QueueReader(queue, eventExecutor));
   }
 
   @Override
@@ -97,9 +111,11 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
 
   class QueueReader implements Runnable {
     private final BlockingQueue<Runnable> queue;
+    private final Executor eventExecutor;
 
-    public QueueReader(final BlockingQueue<Runnable> queue) {
+    public QueueReader(final BlockingQueue<Runnable> queue, final Executor eventExecutor) {
       this.queue = queue;
+      this.eventExecutor = eventExecutor;
     }
 
     @Override
@@ -114,7 +130,16 @@ public class AsyncEventDeliverer<T> extends DirectEventDeliverer<T> {
     }
 
     void deliverNextEvent() throws InterruptedException {
-      queue.take().run();
+      final Runnable task = queue.take();
+      while (!stopped.get()) {
+        try {
+          eventExecutor.execute(task);
+          return;
+        } catch (final RejectedExecutionException e) {
+          LOG.warn("Rejected execution while trying to deliver event. Retrying delivery.", e);
+          LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(500));
+        }
+      }
     }
   }
 }
