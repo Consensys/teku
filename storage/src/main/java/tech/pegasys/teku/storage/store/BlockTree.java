@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -100,16 +99,9 @@ public class BlockTree {
     assertBlockIsInTree(blockRoot);
     return hashTree
         .getParent(blockRoot)
-        .map(
-            parentRoot -> {
-              final UInt64 blockEpoch = getEpoch(blockRoot);
-              final UInt64 parentEpoch =
-                  Optional.of(parentRoot)
-                      .filter(this::contains)
-                      .map(this::getEpoch)
-                      .orElse(blockEpoch);
-              return blockEpoch.isGreaterThan(parentEpoch);
-            })
+        .filter(this::contains)
+        .map(this::getEpoch)
+        .map(parentEpoch -> getEpoch(blockRoot).isGreaterThan(parentEpoch))
         .orElse(false);
   }
 
