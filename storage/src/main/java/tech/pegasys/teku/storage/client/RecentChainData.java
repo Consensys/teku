@@ -29,6 +29,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -49,6 +50,7 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.store.EmptyStoreResults;
 import tech.pegasys.teku.storage.store.StoreBuilder;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreUpdateHandler;
@@ -59,12 +61,14 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private static final Logger LOG = LogManager.getLogger();
 
   private final BlockProvider blockProvider;
+  private final StateAndBlockProvider stateProvider;
   protected final EventBus eventBus;
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
   protected final ProtoArrayStorageChannel protoArrayStorageChannel;
   protected final MetricsSystem metricsSystem;
   private final ReorgEventChannel reorgEventChannel;
+  private final StoreConfig storeConfig;
 
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
   private final SafeFuture<Void> storeInitializedFuture = new SafeFuture<>();
@@ -78,14 +82,18 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   RecentChainData(
       final MetricsSystem metricsSystem,
+      final StoreConfig storeConfig,
       final BlockProvider blockProvider,
+      final StateAndBlockProvider stateProvider,
       final StorageUpdateChannel storageUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ReorgEventChannel reorgEventChannel,
       final EventBus eventBus) {
     this.metricsSystem = metricsSystem;
+    this.storeConfig = storeConfig;
     this.blockProvider = blockProvider;
+    this.stateProvider = stateProvider;
     this.reorgEventChannel = reorgEventChannel;
     this.eventBus = eventBus;
     this.storageUpdateChannel = storageUpdateChannel;
@@ -108,7 +116,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public SafeFuture<Void> initializeFromGenesis(final BeaconState genesisState) {
     final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisState);
-    return StoreBuilder.buildForkChoiceStore(metricsSystem, blockProvider, genesis)
+    return StoreBuilder.forkChoiceStoreBuilder(metricsSystem, blockProvider, stateProvider, genesis)
+        .storeConfig(storeConfig)
+        .build()
         .thenAccept(
             store -> {
               final boolean result = setStore(store);

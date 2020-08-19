@@ -76,6 +76,7 @@ public class TekuConfigurationBuilder {
   private String dataPath;
   private StateStorageMode dataStorageMode;
   private String dataStorageCreateDbVersion;
+  private int hotStatePersistenceFrequencyInEpochs;
   private long dataStorageFrequency;
   private int restApiPort;
   private boolean restApiDocsEnabled;
@@ -375,6 +376,12 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
+  public TekuConfigurationBuilder setHotStatePersistenceFrequencyInEpochs(
+      final int hotStatePersistenceFrequencyInEpochs) {
+    this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
+    return this;
+  }
+
   public TekuConfigurationBuilder setRestApiPort(final int restApiPort) {
     this.restApiPort = restApiPort;
     return this;
@@ -507,6 +514,7 @@ public class TekuConfigurationBuilder {
         dataStorageMode,
         dataStorageFrequency,
         dataStorageCreateDbVersion,
+        hotStatePersistenceFrequencyInEpochs,
         restApiPort,
         restApiDocsEnabled,
         restApiEnabled,

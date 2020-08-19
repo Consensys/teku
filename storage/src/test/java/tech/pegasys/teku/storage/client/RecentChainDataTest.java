@@ -48,7 +48,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel.ReorgEvent;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -58,9 +58,9 @@ import tech.pegasys.teku.util.config.StateStorageMode;
 
 class RecentChainDataTest {
   private final StorageSystem storageSystem =
-      InMemoryStorageSystem.createEmptyLatestStorageSystem(StateStorageMode.PRUNE);
+      InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.PRUNE);
   private final StorageSystem preGenesisStorageSystem =
-      InMemoryStorageSystem.createEmptyLatestStorageSystem(StateStorageMode.PRUNE);
+      InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.PRUNE);
 
   private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();

@@ -64,6 +64,8 @@ public interface Database extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getSignedBlock(Bytes32 root);
 
+  Optional<BeaconState> getHotState(Bytes32 root);
+
   /**
    * Returns latest finalized block or any known blocks that descend from the latest finalized block
    *
@@ -71,6 +73,8 @@ public interface Database extends AutoCloseable {
    * @return A map from root too block of any found blocks
    */
   Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots);
+
+  Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot);
 
   /**
    * Return a {@link Stream} of blocks beginning at startSlot and ending at endSlot, both inclusive.
