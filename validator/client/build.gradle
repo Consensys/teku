@@ -10,6 +10,7 @@ dependencies {
   implementation project(':services:serviceutils')
   implementation project(':validator:anticorruption')
   implementation project(':validator:api')
+  implementation project(':validator:remote')
   implementation project(':util')
 
   implementation 'org.apache.tuweni:tuweni-bytes'

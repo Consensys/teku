@@ -42,8 +42,7 @@ import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
-import tech.pegasys.teku.util.collections.LimitStrategy;
+import tech.pegasys.teku.util.collections.LimitedSet;
 import tech.pegasys.teku.util.config.Constants;
 
 public class AttestationValidator {
@@ -54,8 +53,7 @@ public class AttestationValidator {
       UInt64.valueOf(Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY);
 
   private final Set<ValidatorAndTargetEpoch> receivedValidAttestations =
-      ConcurrentLimitedSet.create(
-          VALID_ATTESTATION_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+      LimitedSet.create(VALID_ATTESTATION_SET_SIZE);
   private final RecentChainData recentChainData;
 
   public AttestationValidator(final RecentChainData recentChainData) {

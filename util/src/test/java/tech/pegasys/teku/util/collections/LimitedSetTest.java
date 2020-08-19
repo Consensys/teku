@@ -21,26 +21,8 @@ import org.junit.jupiter.api.Test;
 public class LimitedSetTest {
 
   @Test
-  public void create_evictOldest() {
-    final Set<Integer> set = LimitedSet.create(1, 2, LimitStrategy.DROP_OLDEST_ELEMENT);
-    set.add(1);
-    assertThat(set.size()).isEqualTo(1);
-    set.add(2);
-    assertThat(set.size()).isEqualTo(2);
-
-    // Access element 1 then add a new element that will put us over the limit
-    set.add(1);
-
-    set.add(3);
-    assertThat(set.size()).isEqualTo(2);
-    // Element 1 should have been evicted
-    assertThat(set.contains(3)).isTrue();
-    assertThat(set.contains(2)).isTrue();
-  }
-
-  @Test
   public void create_evictLeastRecentlyAccessed() {
-    final Set<Integer> set = LimitedSet.create(1, 2, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+    final Set<Integer> set = LimitedSet.create(2);
     set.add(1);
     assertThat(set.size()).isEqualTo(1);
     set.add(2);

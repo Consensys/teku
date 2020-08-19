@@ -19,12 +19,13 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.util.config.Constants;
 
 public class BitlistDeserializer extends JsonDeserializer<Bitlist> {
   @Override
   public Bitlist deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
     Bytes data = Bytes.fromHexString(p.getValueAsString());
-    int length = data.bitLength();
+    int length = Constants.MAX_VALIDATORS_PER_COMMITTEE;
     return Bitlist.fromBytes(data, length);
   }
 }
