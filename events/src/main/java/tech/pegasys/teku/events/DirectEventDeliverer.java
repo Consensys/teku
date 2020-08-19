@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 class DirectEventDeliverer<T> extends EventDeliverer<T> {
-  protected final ChannelExceptionHandler exceptionHandler;
+  private final ChannelExceptionHandler exceptionHandler;
   private final LabelledMetric<Counter> consumedEventCounter;
   private final LabelledMetric<Counter> failedEventCounter;
 
