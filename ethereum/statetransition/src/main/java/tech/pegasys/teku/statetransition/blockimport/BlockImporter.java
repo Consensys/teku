@@ -39,13 +39,13 @@ public class BlockImporter {
   private final ForkChoice forkChoice;
   private final EventBus eventBus;
 
-  private Subscribers<VerifiedBlockOperationsListener<Attestation>> attestationSubscribers =
+  private final Subscribers<VerifiedBlockOperationsListener<Attestation>> attestationSubscribers =
       Subscribers.create(true);
-  private Subscribers<VerifiedBlockOperationsListener<AttesterSlashing>>
+  private final Subscribers<VerifiedBlockOperationsListener<AttesterSlashing>>
       attesterSlashingSubscribers = Subscribers.create(true);
-  private Subscribers<VerifiedBlockOperationsListener<ProposerSlashing>>
+  private final Subscribers<VerifiedBlockOperationsListener<ProposerSlashing>>
       proposerSlashingSubscribers = Subscribers.create(true);
-  private Subscribers<VerifiedBlockOperationsListener<SignedVoluntaryExit>>
+  private final Subscribers<VerifiedBlockOperationsListener<SignedVoluntaryExit>>
       voluntaryExitSubscribers = Subscribers.create(true);
 
   public BlockImporter(
@@ -68,9 +68,9 @@ public class BlockImporter {
 
     return recentChainData
         .retrieveBlockState(block.getParent_root())
+        .thenCompose(preState -> forkChoice.onBlock(block, preState))
         .thenApply(
-            preState -> {
-              BlockImportResult result = forkChoice.onBlock(block, preState);
+            result -> {
               if (!result.isSuccessful()) {
                 LOG.trace(
                     "Failed to import block for reason {}: {}",
