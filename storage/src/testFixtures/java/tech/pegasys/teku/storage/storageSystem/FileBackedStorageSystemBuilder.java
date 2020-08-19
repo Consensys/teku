@@ -22,14 +22,14 @@ import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
-import tech.pegasys.teku.storage.store.StoreOptions;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class FileBackedStorageSystemBuilder {
   // Optional
   private DatabaseVersion version = DatabaseVersion.DEFAULT_VERSION;
   private StateStorageMode storageMode = StateStorageMode.ARCHIVE;
-  private StoreOptions storeOptions = StoreOptions.createDefault();
+  private StoreConfig storeConfig = StoreConfig.createDefault();
 
   // Version-dependent fields
   private Path dataDir;
@@ -60,7 +60,7 @@ public class FileBackedStorageSystemBuilder {
     }
 
     validate();
-    return StorageSystem.create(database, createRestartSupplier(), storageMode, storeOptions);
+    return StorageSystem.create(database, createRestartSupplier(), storageMode, storeConfig);
   }
 
   private FileBackedStorageSystemBuilder copy() {
@@ -69,7 +69,7 @@ public class FileBackedStorageSystemBuilder {
         .dataDir(dataDir)
         .storageMode(storageMode)
         .stateStorageFrequency(stateStorageFrequency)
-        .storeOptions(storeOptions);
+        .storeConfig(storeConfig);
   }
 
   private void validate() {
@@ -101,9 +101,9 @@ public class FileBackedStorageSystemBuilder {
     return this;
   }
 
-  public FileBackedStorageSystemBuilder storeOptions(final StoreOptions storeOptions) {
-    checkNotNull(storeOptions);
-    this.storeOptions = storeOptions;
+  public FileBackedStorageSystemBuilder storeConfig(final StoreConfig storeConfig) {
+    checkNotNull(storeConfig);
+    this.storeConfig = storeConfig;
     return this;
   }
 

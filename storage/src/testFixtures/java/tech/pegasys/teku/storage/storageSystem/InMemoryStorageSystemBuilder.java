@@ -21,14 +21,14 @@ import tech.pegasys.teku.storage.server.rocksdb.InMemoryRocksDbDatabaseFactory;
 import tech.pegasys.teku.storage.server.rocksdb.core.MockRocksDbInstance;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
-import tech.pegasys.teku.storage.store.StoreOptions;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class InMemoryStorageSystemBuilder {
   // Optional
   private DatabaseVersion version = DatabaseVersion.DEFAULT_VERSION;
   private StateStorageMode storageMode = StateStorageMode.ARCHIVE;
-  private StoreOptions storeOptions = StoreOptions.createDefault();
+  private StoreConfig storeConfig = StoreConfig.createDefault();
   private long stateStorageFrequency = 1L;
 
   // Internal variables
@@ -66,7 +66,7 @@ public class InMemoryStorageSystemBuilder {
         throw new UnsupportedOperationException("Unsupported database version: " + version);
     }
 
-    return StorageSystem.create(database, createRestartSupplier(), storageMode, storeOptions);
+    return StorageSystem.create(database, createRestartSupplier(), storageMode, storeConfig);
   }
 
   private InMemoryStorageSystemBuilder copy() {
@@ -75,7 +75,7 @@ public class InMemoryStorageSystemBuilder {
             .version(version)
             .storageMode(storageMode)
             .stateStorageFrequency(stateStorageFrequency)
-            .storeOptions(storeOptions);
+            .storeConfig(storeConfig);
 
     copy.unifiedDb = unifiedDb;
     copy.hotDb = hotDb;
@@ -101,9 +101,9 @@ public class InMemoryStorageSystemBuilder {
     return this;
   }
 
-  public InMemoryStorageSystemBuilder storeOptions(final StoreOptions storeOptions) {
-    checkNotNull(storeOptions);
-    this.storeOptions = storeOptions;
+  public InMemoryStorageSystemBuilder storeConfig(final StoreConfig storeConfig) {
+    checkNotNull(storeConfig);
+    this.storeConfig = storeConfig;
     return this;
   }
 

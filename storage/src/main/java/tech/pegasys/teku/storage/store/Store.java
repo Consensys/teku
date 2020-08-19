@@ -179,17 +179,17 @@ class Store implements UpdatableStore {
       final Map<Bytes32, Bytes32> childToParentRoot,
       final SignedBlockAndState finalizedBlockAndState,
       final Map<UInt64, VoteTracker> votes,
-      final StoreOptions options) {
+      final StoreConfig config) {
 
     // Create limited collections for non-final data
     final Map<Bytes32, SignedBeaconBlock> blocks =
         ConcurrentLimitedMap.create(
-            options.getBlockCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+            config.getBlockCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
     final Map<Bytes32, BeaconState> blockStates =
-        LimitedMap.create(options.getStateCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+        LimitedMap.create(config.getStateCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
     final Map<Checkpoint, BeaconState> checkpointStates =
         LimitedMap.create(
-            options.getCheckpointStateCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+            config.getCheckpointStateCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
 
     // Build block tree structure
     HashTree.Builder treeBuilder = HashTree.builder().rootHash(finalizedBlockAndState.getRoot());
@@ -233,7 +233,7 @@ class Store implements UpdatableStore {
 
               return new Store(
                   metricsSystem,
-                  options.getHotStatePersistenceFrequencyInEpochs(),
+                  config.getHotStatePersistenceFrequencyInEpochs(),
                   blockProvider,
                   stateGenerationQueue,
                   time,

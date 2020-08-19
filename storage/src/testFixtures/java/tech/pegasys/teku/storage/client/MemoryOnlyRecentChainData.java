@@ -28,14 +28,14 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubReorgEventChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
-import tech.pegasys.teku.storage.store.StoreOptions;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class MemoryOnlyRecentChainData extends RecentChainData {
 
   private MemoryOnlyRecentChainData(
       final MetricsSystem metricsSystem,
-      final StoreOptions storeOptions,
+      final StoreConfig storeConfig,
       final EventBus eventBus,
       final StorageUpdateChannel storageUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
@@ -43,7 +43,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       final ReorgEventChannel reorgEventChannel) {
     super(
         metricsSystem,
-        storeOptions,
+        storeConfig,
         BlockProvider.NOOP,
         StateAndBlockProvider.NOOP,
         storageUpdateChannel,
@@ -78,7 +78,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
   }
 
   public static class Builder {
-    private StoreOptions storeOptions = StoreOptions.createDefault();
+    private StoreConfig storeConfig = StoreConfig.createDefault();
     private EventBus eventBus = new EventBus();
     private StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
     private ProtoArrayStorageChannel protoArrayStorageChannel = new StubProtoArrayStorageChannel();
@@ -89,7 +89,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
     public RecentChainData build() {
       return new MemoryOnlyRecentChainData(
           new NoOpMetricsSystem(),
-          storeOptions,
+          storeConfig,
           eventBus,
           storageUpdateChannel,
           protoArrayStorageChannel,
@@ -97,9 +97,9 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
           reorgEventChannel);
     }
 
-    public Builder storeOptions(final StoreOptions storeOptions) {
-      checkNotNull(storeOptions);
-      this.storeOptions = storeOptions;
+    public Builder storeConfig(final StoreConfig storeConfig) {
+      checkNotNull(storeConfig);
+      this.storeConfig = storeConfig;
       return this;
     }
 

@@ -55,7 +55,7 @@ import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.storage.store.StoreOptions;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
@@ -110,7 +110,7 @@ public abstract class AbstractDatabaseTest {
 
   // This method shouldn't be called outside of createStorage
   protected abstract StorageSystem createStorageSystemInternal(
-      final StateStorageMode storageMode, final StoreOptions storeOptions);
+      final StateStorageMode storageMode, final StoreConfig storeConfig);
 
   protected void restartStorage() {
     final StorageSystem storage = storageSystem.restarted(storageMode);
@@ -118,13 +118,13 @@ public abstract class AbstractDatabaseTest {
   }
 
   protected StorageSystem createStorage(final StateStorageMode storageMode) {
-    return createStorage(storageMode, StoreOptions.createDefault());
+    return createStorage(storageMode, StoreConfig.createDefault());
   }
 
   protected StorageSystem createStorage(
-      final StateStorageMode storageMode, final StoreOptions storeOptions) {
+      final StateStorageMode storageMode, final StoreConfig storeConfig) {
     this.storageMode = storageMode;
-    storageSystem = createStorageSystemInternal(storageMode, storeOptions);
+    storageSystem = createStorageSystemInternal(storageMode, storeConfig);
     setDefaultStorage(storageSystem);
 
     return storageSystem;
@@ -460,7 +460,7 @@ public abstract class AbstractDatabaseTest {
     initGenesis();
 
     final int startSlot = genesisBlockAndState.getSlot().intValue();
-    final int minFinalSlot = startSlot + StoreOptions.DEFAULT_STATE_CACHE_SIZE + 10;
+    final int minFinalSlot = startSlot + StoreConfig.DEFAULT_STATE_CACHE_SIZE + 10;
     final UInt64 finalizedEpoch = ChainProperties.computeBestEpochFinalizableAtSlot(minFinalSlot);
     final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 

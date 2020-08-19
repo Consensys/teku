@@ -77,7 +77,7 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
-import tech.pegasys.teku.storage.store.StoreOptions;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.sync.BlockManager;
 import tech.pegasys.teku.sync.DefaultSyncService;
@@ -176,13 +176,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private SafeFuture<?> initialize() {
-    final StoreOptions storeOptions =
-        StoreOptions.builder()
+    final StoreConfig storeConfig =
+        StoreConfig.builder()
             .hotStatePersistenceFrequencyInEpochs(config.getHotStatePersistenceFrequencyInEpochs())
             .build();
     return StorageBackedRecentChainData.create(
             metricsSystem,
-            storeOptions,
+            storeConfig,
             asyncRunner,
             eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner),
             eventChannels.getPublisher(StorageUpdateChannel.class, asyncRunner),

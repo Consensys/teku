@@ -29,7 +29,7 @@ import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.ProtoArrayStorage;
-import tech.pegasys.teku.storage.store.StoreOptions;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class StorageSystem implements AutoCloseable {
@@ -71,7 +71,7 @@ public class StorageSystem implements AutoCloseable {
       final Database database,
       final RestartedStorageSupplier restartedSupplier,
       final StateStorageMode storageMode,
-      final StoreOptions storeOptions) {
+      final StoreConfig storeConfig) {
     final StubMetricsSystem metricsSystem = new StubMetricsSystem();
     final EventBus eventBus = new EventBus();
 
@@ -86,7 +86,7 @@ public class StorageSystem implements AutoCloseable {
     final RecentChainData recentChainData =
         StorageBackedRecentChainData.createImmediately(
             metricsSystem,
-            storeOptions,
+            storeConfig,
             chainStorageServer,
             chainStorageServer,
             new StubProtoArrayStorageChannel(),

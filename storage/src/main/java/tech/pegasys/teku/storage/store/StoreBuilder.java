@@ -36,7 +36,7 @@ public class StoreBuilder {
   BlockProvider blockProvider;
   StateAndBlockProvider stateAndBlockProvider;
   StateGenerationQueue stateGenerationQueue;
-  StoreOptions storeOptions = StoreOptions.createDefault();
+  StoreConfig storeConfig = StoreConfig.createDefault();
 
   final Map<Bytes32, Bytes32> childToParentRoot = new HashMap<>();
   UInt64 time;
@@ -95,7 +95,7 @@ public class StoreBuilder {
         childToParentRoot,
         latestFinalized,
         votes,
-        storeOptions);
+        storeConfig);
   }
 
   private void createDefaults() {
@@ -125,9 +125,9 @@ public class StoreBuilder {
     return this;
   }
 
-  public StoreBuilder storeOptions(final StoreOptions storeOptions) {
-    checkNotNull(storeOptions);
-    this.storeOptions = storeOptions;
+  public StoreBuilder storeConfig(final StoreConfig storeConfig) {
+    checkNotNull(storeConfig);
+    this.storeConfig = storeConfig;
     return this;
   }
 

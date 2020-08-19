@@ -43,7 +43,7 @@ import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubReorgEventChannel;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.store.StoreBuilder;
-import tech.pegasys.teku.storage.store.StoreOptions;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class StorageBackedRecentChainDataTest {
@@ -65,12 +65,12 @@ public class StorageBackedRecentChainDataTest {
     when(storageQueryChannel.onStoreRequest()).thenReturn(storeRequestFuture);
 
     final EventBus eventBus = new EventBus();
-    final StoreOptions storeOptions =
-        StoreOptions.builder().hotStatePersistenceFrequencyInEpochs(5).build();
+    final StoreConfig storeConfig =
+        StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(5).build();
     final SafeFuture<RecentChainData> client =
         StorageBackedRecentChainData.create(
             new StubMetricsSystem(),
-            storeOptions,
+            storeConfig,
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
@@ -97,7 +97,7 @@ public class StorageBackedRecentChainDataTest {
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
     final UpdatableStore expectedStore =
-        genesisStoreBuilder.storeOptions(storeOptions).build().join();
+        genesisStoreBuilder.storeConfig(storeConfig).build().join();
     assertThat(client.get().getStore()).isEqualTo(expectedStore);
   }
 
@@ -108,12 +108,12 @@ public class StorageBackedRecentChainDataTest {
     when(storageQueryChannel.onStoreRequest()).thenReturn(storeRequestFuture);
 
     final EventBus eventBus = new EventBus();
-    final StoreOptions storeOptions =
-        StoreOptions.builder().hotStatePersistenceFrequencyInEpochs(5).build();
+    final StoreConfig storeConfig =
+        StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(5).build();
     final SafeFuture<RecentChainData> client =
         StorageBackedRecentChainData.create(
             new StubMetricsSystem(),
-            storeOptions,
+            storeConfig,
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
@@ -140,7 +140,7 @@ public class StorageBackedRecentChainDataTest {
                 BlockProvider.NOOP,
                 StateAndBlockProvider.NOOP,
                 AnchorPoint.fromGenesisState(INITIAL_STATE))
-            .storeOptions(storeOptions)
+            .storeConfig(storeConfig)
             .build()
             .join();
     final SafeFuture<Void> initialized = client.get().initializeFromGenesis(INITIAL_STATE);
@@ -162,7 +162,7 @@ public class StorageBackedRecentChainDataTest {
     final SafeFuture<RecentChainData> client =
         StorageBackedRecentChainData.create(
             new StubMetricsSystem(),
-            StoreOptions.createDefault(),
+            StoreConfig.createDefault(),
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
@@ -205,7 +205,7 @@ public class StorageBackedRecentChainDataTest {
     final SafeFuture<RecentChainData> client =
         StorageBackedRecentChainData.create(
             new StubMetricsSystem(),
-            StoreOptions.createDefault(),
+            StoreConfig.createDefault(),
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,

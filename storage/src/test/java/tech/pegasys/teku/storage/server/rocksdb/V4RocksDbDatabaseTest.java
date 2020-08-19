@@ -17,20 +17,20 @@ import java.io.File;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.storage.store.StoreOptions;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class V4RocksDbDatabaseTest extends AbstractRocksDbDatabaseWithHotStatesTest {
 
   @Override
   protected StorageSystem createStorageSystem(
-      final File tempDir, final StateStorageMode storageMode, final StoreOptions storeOptions) {
+      final File tempDir, final StateStorageMode storageMode, final StoreConfig storeConfig) {
     return FileBackedStorageSystemBuilder.create()
         .dataDir(tempDir.toPath())
         .version(DatabaseVersion.V4)
         .storageMode(storageMode)
         .stateStorageFrequency(1L)
-        .storeOptions(storeOptions)
+        .storeConfig(storeConfig)
         .build();
   }
 }

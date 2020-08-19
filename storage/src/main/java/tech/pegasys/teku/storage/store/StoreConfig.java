@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Objects;
 import tech.pegasys.teku.util.config.Constants;
 
-public class StoreOptions {
+public class StoreConfig {
   public static int MAX_CACHE_SIZE = 10_000;
 
   public static final int DEFAULT_STATE_CACHE_SIZE = Constants.SLOTS_PER_EPOCH * 5;
@@ -32,7 +32,7 @@ public class StoreOptions {
   private final int checkpointStateCacheSize;
   private final int hotStatePersistenceFrequencyInEpochs;
 
-  private StoreOptions(
+  private StoreConfig(
       final int stateCacheSize,
       final int blockCacheSize,
       final int checkpointStateCacheSize,
@@ -47,7 +47,7 @@ public class StoreOptions {
     return new Builder();
   }
 
-  public static StoreOptions createDefault() {
+  public static StoreConfig createDefault() {
     return builder().build();
   }
 
@@ -72,10 +72,10 @@ public class StoreOptions {
     if (o == this) {
       return true;
     }
-    if (!(o instanceof StoreOptions)) {
+    if (!(o instanceof StoreConfig)) {
       return false;
     }
-    final StoreOptions that = (StoreOptions) o;
+    final StoreConfig that = (StoreConfig) o;
     return getStateCacheSize() == that.getStateCacheSize()
         && getBlockCacheSize() == that.getBlockCacheSize()
         && getCheckpointStateCacheSize() == that.getCheckpointStateCacheSize()
@@ -101,8 +101,8 @@ public class StoreOptions {
 
     private Builder() {}
 
-    public StoreOptions build() {
-      return new StoreOptions(
+    public StoreConfig build() {
+      return new StoreConfig(
           stateCacheSize,
           blockCacheSize,
           checkpointStateCacheSize,

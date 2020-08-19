@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.storage.store.StoreOptions;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public abstract class AbstractRocksDbDatabaseWithHotStatesTest extends AbstractRocksDbDatabaseTest {
@@ -33,9 +33,9 @@ public abstract class AbstractRocksDbDatabaseWithHotStatesTest extends AbstractR
   @Test
   public void shouldPersistHotStates_everyEpoch() {
     final int storageFrequency = 1;
-    StoreOptions storeOptions =
-        StoreOptions.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
-    createStorage(StateStorageMode.ARCHIVE, storeOptions);
+    StoreConfig storeConfig =
+        StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
+    createStorage(StateStorageMode.ARCHIVE, storeConfig);
     initGenesis();
 
     final UInt64 latestEpoch = UInt64.valueOf(3);
@@ -62,9 +62,9 @@ public abstract class AbstractRocksDbDatabaseWithHotStatesTest extends AbstractR
   @Test
   public void shouldPersistHotStates_never() {
     final int storageFrequency = 0;
-    StoreOptions storeOptions =
-        StoreOptions.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
-    createStorage(StateStorageMode.ARCHIVE, storeOptions);
+    StoreConfig storeConfig =
+        StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
+    createStorage(StateStorageMode.ARCHIVE, storeConfig);
     initGenesis();
 
     final UInt64 latestEpoch = UInt64.valueOf(3);
@@ -84,9 +84,9 @@ public abstract class AbstractRocksDbDatabaseWithHotStatesTest extends AbstractR
   @Test
   public void shouldPersistHotStates_everyThirdEpoch() {
     final int storageFrequency = 3;
-    StoreOptions storeOptions =
-        StoreOptions.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
-    createStorage(StateStorageMode.ARCHIVE, storeOptions);
+    StoreConfig storeConfig =
+        StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
+    createStorage(StateStorageMode.ARCHIVE, storeConfig);
     initGenesis();
 
     final UInt64 latestEpoch = UInt64.valueOf(3 * storageFrequency);
@@ -116,9 +116,9 @@ public abstract class AbstractRocksDbDatabaseWithHotStatesTest extends AbstractR
   @Test
   public void shouldClearStaleHotStates() {
     final int storageFrequency = 1;
-    StoreOptions storeOptions =
-        StoreOptions.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
-    createStorage(StateStorageMode.ARCHIVE, storeOptions);
+    StoreConfig storeConfig =
+        StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
+    createStorage(StateStorageMode.ARCHIVE, storeConfig);
     initGenesis();
 
     final UInt64 latestEpoch = UInt64.valueOf(3);
