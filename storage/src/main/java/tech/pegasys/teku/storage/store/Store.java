@@ -182,9 +182,9 @@ class Store implements UpdatableStore {
 
     // Create limited collections for non-final data
     final Map<Bytes32, SignedBeaconBlock> blocks = LimitedMap.create(config.getBlockCacheSize());
-    final Map<Bytes32, BeaconState> blockStates = LimitedMap.create(config.getStateCacheSize());
+    final Map<Bytes32, BeaconState> blockStates = LimitedMap.createSoft(config.getStateCacheSize());
     final Map<Checkpoint, BeaconState> checkpointStates =
-        LimitedMap.create(config.getCheckpointStateCacheSize());
+        LimitedMap.createSoft(config.getCheckpointStateCacheSize());
 
     // Build block tree structure
     HashTree.Builder treeBuilder = HashTree.builder().rootHash(finalizedBlockAndState.getRoot());
