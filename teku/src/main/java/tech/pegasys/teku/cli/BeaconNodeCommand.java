@@ -41,6 +41,7 @@ import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.cli.options.OutputOptions;
 import tech.pegasys.teku.cli.options.P2POptions;
 import tech.pegasys.teku.cli.options.RemoteValidatorApiOptions;
+import tech.pegasys.teku.cli.options.StoreOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.cli.subcommand.DepositCommand;
 import tech.pegasys.teku.cli.subcommand.GenesisCommand;
@@ -147,6 +148,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   @Mixin(name = "Data")
   private DataOptions dataOptions;
+
+  @Mixin(name = "Store")
+  private StoreOptions storeOptions;
 
   @Mixin(name = "REST API")
   private BeaconRestApiOptions beaconRestApiOptions;
@@ -353,6 +357,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setDataStorageMode(dataOptions.getDataStorageMode())
         .setDataStorageFrequency(dataOptions.getDataStorageFrequency())
         .setDataStorageCreateDbVersion(dataOptions.getCreateDbVersion())
+        .setHotStatePersistenceFrequencyInEpochs(
+            storeOptions.getHotStatePersistenceFrequencyInEpochs())
         .setRestApiPort(beaconRestApiOptions.getRestApiPort())
         .setRestApiDocsEnabled(beaconRestApiOptions.isRestApiDocsEnabled())
         .setRestApiEnabled(beaconRestApiOptions.isRestApiEnabled())

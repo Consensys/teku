@@ -55,7 +55,7 @@ import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
-import tech.pegasys.teku.storage.store.StorePruningOptions;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
@@ -109,7 +109,8 @@ public abstract class AbstractDatabaseTest {
   }
 
   // This method shouldn't be called outside of createStorage
-  protected abstract StorageSystem createStorageSystemInternal(final StateStorageMode storageMode);
+  protected abstract StorageSystem createStorageSystemInternal(
+      final StateStorageMode storageMode, final StoreConfig storeConfig);
 
   protected void restartStorage() {
     final StorageSystem storage = storageSystem.restarted(storageMode);
@@ -117,8 +118,13 @@ public abstract class AbstractDatabaseTest {
   }
 
   protected StorageSystem createStorage(final StateStorageMode storageMode) {
+    return createStorage(storageMode, StoreConfig.createDefault());
+  }
+
+  protected StorageSystem createStorage(
+      final StateStorageMode storageMode, final StoreConfig storeConfig) {
     this.storageMode = storageMode;
-    storageSystem = createStorageSystemInternal(storageMode);
+    storageSystem = createStorageSystemInternal(storageMode, storeConfig);
     setDefaultStorage(storageSystem);
 
     return storageSystem;
@@ -215,7 +221,7 @@ public abstract class AbstractDatabaseTest {
     final Set<Bytes32> rootsToPrune = new HashSet<>(block10Roots);
     rootsToPrune.add(genesisBlockAndState.getRoot());
     // Check that all blocks at slot 10 were pruned
-    assertStoreWasPruned(store, rootsToPrune, Set.of(genesisCheckpoint));
+    assertRecentDataWasPruned(store, rootsToPrune, Set.of(genesisCheckpoint));
   }
 
   @Test
@@ -454,7 +460,7 @@ public abstract class AbstractDatabaseTest {
     initGenesis();
 
     final int startSlot = genesisBlockAndState.getSlot().intValue();
-    final int minFinalSlot = startSlot + StorePruningOptions.DEFAULT_STATE_CACHE_SIZE + 10;
+    final int minFinalSlot = startSlot + StoreConfig.DEFAULT_STATE_CACHE_SIZE + 10;
     final UInt64 finalizedEpoch = ChainProperties.computeBestEpochFinalizableAtSlot(minFinalSlot);
     final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch);
 
@@ -596,7 +602,7 @@ public abstract class AbstractDatabaseTest {
     final Set<Checkpoint> checkpointsToPrune = Set.of(genesisCheckpoint);
 
     // Check data was pruned from store
-    assertStoreWasPruned(store, blocksToPrune, checkpointsToPrune);
+    assertRecentDataWasPruned(store, blocksToPrune, checkpointsToPrune);
 
     restartStorage();
 
@@ -786,15 +792,19 @@ public abstract class AbstractDatabaseTest {
     }
   }
 
-  protected void assertStoreWasPruned(
+  protected void assertRecentDataWasPruned(
       final UpdatableStore store,
       final Set<Bytes32> prunedBlocks,
       final Set<Checkpoint> prunedCheckpoints) {
-    // Check pruned data has been removed from store
     for (Bytes32 prunedBlock : prunedBlocks) {
+      // Check pruned data has been removed from store
       assertThat(store.containsBlock(prunedBlock)).isFalse();
       assertThatSafeFuture(store.retrieveBlock(prunedBlock)).isCompletedWithEmptyOptional();
       assertThatSafeFuture(store.retrieveBlockState(prunedBlock)).isCompletedWithEmptyOptional();
+
+      // Check hot data was pruned from db
+      assertThat(database.getHotBlocks(Set.of(prunedBlock))).isEmpty();
+      assertThat(database.getHotState(prunedBlock)).isEmpty();
     }
   }
 

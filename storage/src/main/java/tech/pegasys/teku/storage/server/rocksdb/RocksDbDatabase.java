@@ -253,10 +253,20 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
+  public Optional<BeaconState> getHotState(final Bytes32 root) {
+    return hotDao.getHotState(root);
+  }
+
+  @Override
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots) {
     return blockRoots.stream()
         .flatMap(root -> hotDao.getHotBlock(root).stream())
         .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
+  }
+
+  @Override
+  public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot) {
+    return hotDao.getHotBlock(blockRoot);
   }
 
   @Override
@@ -362,6 +372,7 @@ public class RocksDbDatabase implements Database {
                 updater.setFinalizedCheckpoint(checkpoint);
                 UInt64 finalizedSlot = checkpoint.getEpochStartSlot().plus(SLOTS_PER_EPOCH);
                 updater.pruneHotStateRoots(hotDao.getStateRootsBeforeSlot(finalizedSlot));
+                updater.deleteHotState(checkpoint.getRoot());
               });
 
       update.getJustifiedCheckpoint().ifPresent(updater::setJustifiedCheckpoint);
@@ -369,6 +380,7 @@ public class RocksDbDatabase implements Database {
       update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
 
       updater.addHotBlocks(update.getHotBlocks());
+      updater.addHotStates(update.getHotStates());
 
       if (update.getStateRoots().size() > 0) {
         updater.addHotStateRoots(update.getStateRoots());

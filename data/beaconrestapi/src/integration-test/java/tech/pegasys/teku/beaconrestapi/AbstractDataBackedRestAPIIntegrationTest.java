@@ -52,7 +52,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -107,7 +107,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected ForkChoice forkChoice;
 
   private void setupStorage(final StateStorageMode storageMode, final boolean useMockForkChoice) {
-    setupStorage(InMemoryStorageSystem.createEmptyV3StorageSystem(storageMode), useMockForkChoice);
+    setupStorage(InMemoryStorageSystemBuilder.buildDefault(storageMode), useMockForkChoice);
   }
 
   private void setupStorage(final StorageSystem storageSystem, final boolean useMockForkChoice) {

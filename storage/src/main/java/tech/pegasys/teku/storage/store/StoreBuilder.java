@@ -22,6 +22,7 @@ import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.core.stategenerator.StateGenerationQueue;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -33,7 +34,9 @@ import tech.pegasys.teku.storage.events.AnchorPoint;
 public class StoreBuilder {
   MetricsSystem metricsSystem;
   BlockProvider blockProvider;
+  StateAndBlockProvider stateAndBlockProvider;
   StateGenerationQueue stateGenerationQueue;
+  StoreConfig storeConfig = StoreConfig.createDefault();
 
   final Map<Bytes32, Bytes32> childToParentRoot = new HashMap<>();
   UInt64 time;
@@ -50,16 +53,10 @@ public class StoreBuilder {
     return new StoreBuilder();
   }
 
-  public static SafeFuture<UpdatableStore> buildForkChoiceStore(
-      final MetricsSystem metricsSystem,
-      final BlockProvider blockProvider,
-      final AnchorPoint anchor) {
-    return forkChoiceStoreBuilder(metricsSystem, blockProvider, anchor).build();
-  }
-
   public static StoreBuilder forkChoiceStoreBuilder(
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
+      final StateAndBlockProvider stateAndBlockProvider,
       final AnchorPoint anchor) {
     final UInt64 genesisTime = anchor.getState().getGenesis_time();
     final UInt64 slot = anchor.getState().getSlot();
@@ -71,7 +68,7 @@ public class StoreBuilder {
     return create()
         .metricsSystem(metricsSystem)
         .blockProvider(blockProvider)
-        .stateGenerationQueue(StateGenerationQueue.create(metricsSystem))
+        .stateProvider(stateAndBlockProvider)
         .time(time)
         .genesisTime(genesisTime)
         .finalizedCheckpoint(anchor.getCheckpoint())
@@ -83,7 +80,9 @@ public class StoreBuilder {
   }
 
   public SafeFuture<UpdatableStore> build() {
+    createDefaults();
     assertValid();
+
     return Store.create(
         metricsSystem,
         blockProvider,
@@ -96,7 +95,14 @@ public class StoreBuilder {
         childToParentRoot,
         latestFinalized,
         votes,
-        StorePruningOptions.createDefault());
+        storeConfig);
+  }
+
+  private void createDefaults() {
+    if (stateGenerationQueue == null) {
+      checkState(stateAndBlockProvider != null, "StateAndBlockProvider must be defined");
+      stateGenerationQueue = StateGenerationQueue.create(stateAndBlockProvider, metricsSystem);
+    }
   }
 
   private void assertValid() {
@@ -119,9 +125,21 @@ public class StoreBuilder {
     return this;
   }
 
+  public StoreBuilder storeConfig(final StoreConfig storeConfig) {
+    checkNotNull(storeConfig);
+    this.storeConfig = storeConfig;
+    return this;
+  }
+
   public StoreBuilder blockProvider(final BlockProvider blockProvider) {
     checkNotNull(blockProvider);
     this.blockProvider = blockProvider;
+    return this;
+  }
+
+  public StoreBuilder stateProvider(final StateAndBlockProvider stateProvider) {
+    checkNotNull(stateProvider);
+    this.stateAndBlockProvider = stateProvider;
     return this;
   }
 

@@ -19,6 +19,7 @@ import com.google.common.eventbus.EventBus;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -27,12 +28,14 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubReorgEventChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class MemoryOnlyRecentChainData extends RecentChainData {
 
   private MemoryOnlyRecentChainData(
       final MetricsSystem metricsSystem,
+      final StoreConfig storeConfig,
       final EventBus eventBus,
       final StorageUpdateChannel storageUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
@@ -40,7 +43,9 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       final ReorgEventChannel reorgEventChannel) {
     super(
         metricsSystem,
+        storeConfig,
         BlockProvider.NOOP,
+        StateAndBlockProvider.NOOP,
         storageUpdateChannel,
         protoArrayStorageChannel,
         finalizedCheckpointChannel,
@@ -73,20 +78,29 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
   }
 
   public static class Builder {
-    EventBus eventBus = new EventBus();
-    StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
-    ProtoArrayStorageChannel protoArrayStorageChannel = new StubProtoArrayStorageChannel();
-    FinalizedCheckpointChannel finalizedCheckpointChannel = new StubFinalizedCheckpointChannel();
-    ReorgEventChannel reorgEventChannel = new StubReorgEventChannel();
+    private StoreConfig storeConfig = StoreConfig.createDefault();
+    private EventBus eventBus = new EventBus();
+    private StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
+    private ProtoArrayStorageChannel protoArrayStorageChannel = new StubProtoArrayStorageChannel();
+    private FinalizedCheckpointChannel finalizedCheckpointChannel =
+        new StubFinalizedCheckpointChannel();
+    private ReorgEventChannel reorgEventChannel = new StubReorgEventChannel();
 
     public RecentChainData build() {
       return new MemoryOnlyRecentChainData(
           new NoOpMetricsSystem(),
+          storeConfig,
           eventBus,
           storageUpdateChannel,
           protoArrayStorageChannel,
           finalizedCheckpointChannel,
           reorgEventChannel);
+    }
+
+    public Builder storeConfig(final StoreConfig storeConfig) {
+      checkNotNull(storeConfig);
+      this.storeConfig = storeConfig;
+      return this;
     }
 
     public Builder eventBus(final EventBus eventBus) {

@@ -22,6 +22,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -34,6 +36,8 @@ import tech.pegasys.teku.storage.events.FinalizedChainData;
 import tech.pegasys.teku.storage.store.Store.Transaction;
 
 class StoreTransactionUpdatesFactory {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final Store baseStore;
   private final Store.Transaction tx;
 
@@ -43,7 +47,7 @@ class StoreTransactionUpdatesFactory {
   private final Set<Bytes32> prunedHotBlockRoots =
       Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-  private volatile Optional<HashTree> updatedBlockTree = Optional.empty();
+  private volatile Optional<BlockTree> updatedBlockTree = Optional.empty();
 
   private StoreTransactionUpdatesFactory(final Store baseStore, final Transaction tx) {
     this.baseStore = baseStore;
@@ -70,9 +74,7 @@ class StoreTransactionUpdatesFactory {
     if (newFinalizedCheckpoint.isPresent() || hotBlocks.size() > 0) {
       final Bytes32 updatedRoot =
           newFinalizedCheckpoint.map(Checkpoint::getRoot).orElse(baseStore.blockTree.getRootHash());
-      HashTree.Builder blockTreeUpdater =
-          baseStore.blockTree.withRoot(updatedRoot).blocks(hotBlocks.values());
-      updatedBlockTree = Optional.of(blockTreeUpdater.build());
+      updatedBlockTree = Optional.of(baseStore.blockTree.updated(updatedRoot, hotBlocks.values()));
     }
 
     if (newFinalizedCheckpoint.isPresent()) {
@@ -118,6 +120,24 @@ class StoreTransactionUpdatesFactory {
             });
   }
 
+  /**
+   * Pull subset of hot states that sit at epoch boundaries to persist
+   *
+   * @return
+   */
+  private Map<Bytes32, BeaconState> getHotStatesToPersist() {
+    final BlockTree blockTree = updatedBlockTree.orElse(baseStore.blockTree);
+    final Map<Bytes32, BeaconState> statesToPersist =
+        hotStates.entrySet().stream()
+            .filter(e -> blockTree.isRootAtEpochBoundary(e.getKey()))
+            .filter(e -> baseStore.shouldPersistStateAtEpoch(blockTree.getEpoch(e.getKey())))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    if (statesToPersist.size() > 0) {
+      LOG.trace("Persist {} hot states", statesToPersist.size());
+    }
+    return statesToPersist;
+  }
+
   private static Map<Bytes32, Bytes32> collectFinalizedRoots(
       final Store baseStore,
       final Bytes32 newlyFinalizedBlockRoot,
@@ -125,8 +145,8 @@ class StoreTransactionUpdatesFactory {
 
     final HashTree finalizedTree =
         baseStore.blockTree.contains(newlyFinalizedBlockRoot)
-            ? baseStore.blockTree
-            : baseStore.blockTree.updater().blocks(newBlocks).build();
+            ? baseStore.blockTree.getHashTree()
+            : baseStore.blockTree.getHashTree().updater().blocks(newBlocks).build();
 
     final HashMap<Bytes32, Bytes32> childToParent = new HashMap<>();
     finalizedTree.processHashesInChain(newlyFinalizedBlockRoot, childToParent::put);
@@ -151,7 +171,7 @@ class StoreTransactionUpdatesFactory {
     return states;
   }
 
-  private void calculatePrunedHotBlockRoots(Transaction tx, final HashTree prunedTree) {
+  private void calculatePrunedHotBlockRoots(Transaction tx, final BlockTree prunedTree) {
     tx.getBlockRoots().stream()
         .filter(root -> !prunedTree.contains(root))
         .forEach(prunedHotBlockRoots::add);
@@ -164,6 +184,7 @@ class StoreTransactionUpdatesFactory {
         finalizedChainData,
         hotBlocks,
         hotStates,
+        getHotStatesToPersist(),
         prunedHotBlockRoots,
         updatedBlockTree,
         stateRoots);

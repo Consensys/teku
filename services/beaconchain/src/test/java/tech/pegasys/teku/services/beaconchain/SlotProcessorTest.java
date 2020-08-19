@@ -39,7 +39,7 @@ import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesE
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.EventSink;
@@ -53,7 +53,7 @@ public class SlotProcessorTest {
   private final EventLogger eventLogger = mock(EventLogger.class);
 
   private final StorageSystem storageSystem =
-      InMemoryStorageSystem.createEmptyV3StorageSystem(StateStorageMode.ARCHIVE);
+      InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
   private final EventBus eventBus = storageSystem.eventBus();
 

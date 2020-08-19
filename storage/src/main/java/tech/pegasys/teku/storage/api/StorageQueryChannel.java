@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -34,6 +35,8 @@ public interface StorageQueryChannel extends ChannelInterface {
   SafeFuture<Optional<SignedBeaconBlock>> getLatestFinalizedBlockAtSlot(final UInt64 slot);
 
   SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot);
+
+  SafeFuture<Optional<SignedBlockAndState>> getHotBlockAndStateByBlockRoot(final Bytes32 blockRoot);
 
   /**
    * Returns "hot" blocks - the latest finalized block or blocks that descend from the latest

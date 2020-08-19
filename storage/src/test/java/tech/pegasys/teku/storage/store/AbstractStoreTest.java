@@ -25,6 +25,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.core.stategenerator.StateGenerationQueue;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -45,8 +46,12 @@ public abstract class AbstractStoreTest {
     final int cacheMultiplier = 3;
 
     // Create a new store with a small cache
-    final StorePruningOptions pruningOptions =
-        StorePruningOptions.create(cacheSize, cacheSize, cacheSize);
+    final StoreConfig pruningOptions =
+        StoreConfig.builder()
+            .checkpointStateCacheSize(cacheSize)
+            .blockCacheSize(cacheSize)
+            .stateCacheSize(cacheSize)
+            .build();
 
     final UpdatableStore store = createGenesisStore(pruningOptions);
     final List<SignedBlockAndState> blocks =
@@ -71,8 +76,12 @@ public abstract class AbstractStoreTest {
     final int epochsToProcess = cacheSize * 3;
 
     // Create a new store with a small cache
-    final StorePruningOptions pruningOptions =
-        StorePruningOptions.create(cacheSize, cacheSize, cacheSize);
+    final StoreConfig pruningOptions =
+        StoreConfig.builder()
+            .checkpointStateCacheSize(cacheSize)
+            .blockCacheSize(cacheSize)
+            .stateCacheSize(cacheSize)
+            .build();
 
     final UpdatableStore store = createGenesisStore(pruningOptions);
     while (chainBuilder.getLatestEpoch().longValue() < epochsToProcess) {
@@ -108,17 +117,17 @@ public abstract class AbstractStoreTest {
   }
 
   protected UpdatableStore createGenesisStore() {
-    return createGenesisStore(StorePruningOptions.createDefault());
+    return createGenesisStore(StoreConfig.createDefault());
   }
 
-  protected UpdatableStore createGenesisStore(final StorePruningOptions pruningOptions) {
+  protected UpdatableStore createGenesisStore(final StoreConfig pruningOptions) {
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
     final SafeFuture<UpdatableStore> result =
         Store.create(
             new StubMetricsSystem(),
             blockProviderFromChainBuilder(),
-            StateGenerationQueue.create(new StubMetricsSystem()),
+            StateGenerationQueue.create(StateAndBlockProvider.NOOP, new StubMetricsSystem()),
             genesis.getState().getGenesis_time(),
             genesis.getState().getGenesis_time(),
             genesisCheckpoint,

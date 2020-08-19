@@ -39,7 +39,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -62,7 +62,7 @@ public abstract class AbstractCombinedChainDataClientTest {
   protected abstract StateStorageMode getStorageMode();
 
   protected StorageSystem createStorageSystem() {
-    return InMemoryStorageSystem.createEmptyV3StorageSystem(getStorageMode());
+    return InMemoryStorageSystemBuilder.buildDefault(getStorageMode());
   }
 
   @ParameterizedTest(name = "{0}")

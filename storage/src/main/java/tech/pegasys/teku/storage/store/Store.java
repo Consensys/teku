@@ -63,6 +63,8 @@ import tech.pegasys.teku.util.collections.LimitedMap;
 class Store implements UpdatableStore {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final int hotStatePersistenceFrequencyInEpochs;
+
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock readLock = lock.readLock();
   private final Counter stateRequestCachedCounter;
@@ -80,7 +82,7 @@ class Store implements UpdatableStore {
 
   private final BlockProvider blockProvider;
 
-  HashTree blockTree;
+  BlockTree blockTree;
   UInt64 time;
   UInt64 genesis_time;
   Checkpoint justified_checkpoint;
@@ -94,6 +96,7 @@ class Store implements UpdatableStore {
 
   private Store(
       final MetricsSystem metricsSystem,
+      int hotStatePersistenceFrequencyInEpochs,
       final BlockProvider blockProvider,
       final StateGenerationQueue stateGenerationQueue,
       final UInt64 time,
@@ -101,12 +104,15 @@ class Store implements UpdatableStore {
       final Checkpoint justified_checkpoint,
       final Checkpoint finalized_checkpoint,
       final Checkpoint best_justified_checkpoint,
-      final HashTree blockTree,
+      final BlockTree blockTree,
       final SignedBlockAndState finalizedBlockAndState,
       final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final Map<Bytes32, BeaconState> block_states,
       final Map<Checkpoint, BeaconState> checkpoint_states) {
+    LOG.trace(
+        "Create store with hot state persistence configured to {}",
+        hotStatePersistenceFrequencyInEpochs);
 
     // Set up metrics
     this.metricsSystem = metricsSystem;
@@ -131,6 +137,7 @@ class Store implements UpdatableStore {
     checkpointStateRequestMissCounter = checkpointStateRequestCounter.labels("miss");
 
     // Store instance variables
+    this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
     this.time = time;
     this.genesis_time = genesis_time;
     this.justified_checkpoint = justified_checkpoint;
@@ -170,26 +177,24 @@ class Store implements UpdatableStore {
       final Map<Bytes32, Bytes32> childToParentRoot,
       final SignedBlockAndState finalizedBlockAndState,
       final Map<UInt64, VoteTracker> votes,
-      final StorePruningOptions pruningOptions) {
+      final StoreConfig config) {
 
     // Create limited collections for non-final data
-    final Map<Bytes32, SignedBeaconBlock> blocks =
-        LimitedMap.create(pruningOptions.getBlockCacheSize());
-    final Map<Bytes32, BeaconState> blockStates =
-        LimitedMap.create(pruningOptions.getStateCacheSize());
+    final Map<Bytes32, SignedBeaconBlock> blocks = LimitedMap.create(config.getBlockCacheSize());
+    final Map<Bytes32, BeaconState> blockStates = LimitedMap.create(config.getStateCacheSize());
     final Map<Checkpoint, BeaconState> checkpointStates =
-        LimitedMap.create(pruningOptions.getCheckpointStateCacheSize());
+        LimitedMap.create(config.getCheckpointStateCacheSize());
 
     // Build block tree structure
     HashTree.Builder treeBuilder = HashTree.builder().rootHash(finalizedBlockAndState.getRoot());
     childToParentRoot.forEach(treeBuilder::childAndParentRoots);
-    final HashTree blockTree = treeBuilder.build();
-    if (blockTree.size() < childToParentRoot.size()) {
+    final HashTree hashTree = treeBuilder.build();
+    if (hashTree.size() < childToParentRoot.size()) {
       // This should be an error, but keeping this as a warning now for backwards-compatibility
       // reasons.  Some existing databases may have unpruned fork blocks, and could become
       // unusable
       // if we throw here.  In the future, we should convert this to an error.
-      LOG.warn("Ignoring {} non-canonical blocks", childToParentRoot.size() - blockTree.size());
+      LOG.warn("Ignoring {} non-canonical blocks", childToParentRoot.size() - hashTree.size());
     }
 
     // Create state generator
@@ -199,10 +204,11 @@ class Store implements UpdatableStore {
             fromMap(blocks),
             blockProvider);
     final StateGenerator stateGenerator =
-        StateGenerator.create(blockTree, finalizedBlockAndState, blockProviderWithBlocks);
+        StateGenerator.create(hashTree, finalizedBlockAndState, blockProviderWithBlocks);
 
     // Process blocks
-    LOG.info("Process {} block(s) to regenerate state", blockTree.size());
+    LOG.info("Process {} block(s) to regenerate state", hashTree.size());
+    final Map<Bytes32, UInt64> blockRootToSlot = new HashMap<>();
     final AtomicInteger processedBlocks = new AtomicInteger(0);
     return stateGenerator
         .regenerateAllStates(
@@ -213,13 +219,15 @@ class Store implements UpdatableStore {
               }
               blocks.put(block.getRoot(), block);
               blockStates.put(block.getRoot(), state);
+              blockRootToSlot.put(block.getRoot(), block.getSlot());
             })
         .thenApply(
             __ -> {
-              LOG.info("Finished processing {} block(s)", blockTree.size());
+              LOG.info("Finished processing {} block(s)", hashTree.size());
 
               return new Store(
                   metricsSystem,
+                  config.getHotStatePersistenceFrequencyInEpochs(),
                   blockProvider,
                   stateGenerationQueue,
                   time,
@@ -227,7 +235,7 @@ class Store implements UpdatableStore {
                   justifiedCheckpoint,
                   finalizedCheckpoint,
                   bestJustifiedCheckpoint,
-                  blockTree,
+                  BlockTree.create(hashTree, blockRootToSlot),
                   finalizedBlockAndState,
                   votes,
                   blocks,
@@ -378,7 +386,7 @@ class Store implements UpdatableStore {
   public List<Bytes32> getOrderedBlockRoots() {
     readLock.lock();
     try {
-      return blockTree.breadthFirstStream().collect(Collectors.toList());
+      return blockTree.getOrderedBlockRoots();
     } finally {
       readLock.unlock();
     }
@@ -550,22 +558,30 @@ class Store implements UpdatableStore {
     final HashTree.Builder treeBuilder = HashTree.builder();
     final AtomicReference<Bytes32> baseBlockRoot = new AtomicReference<>();
     final AtomicReference<BeaconState> baseState = new AtomicReference<>();
+    final AtomicReference<Bytes32> latestEpochBoundary = new AtomicReference<>();
     readLock.lock();
     try {
-      this.blockTree.processHashesInChainWhile(
-          blockRoot,
-          (root, parent) -> {
-            treeBuilder.childAndParentRoots(root, parent);
-            final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
-            blockState.ifPresent(
-                (state) -> {
-                  // We found a base state
-                  treeBuilder.rootHash(root);
-                  baseBlockRoot.set(root);
-                  baseState.set(state);
-                });
-            return blockState.isEmpty();
-          });
+      this.blockTree
+          .getHashTree()
+          .processHashesInChainWhile(
+              blockRoot,
+              (root, parent) -> {
+                treeBuilder.childAndParentRoots(root, parent);
+                final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
+                if (blockState.isEmpty()
+                    && blockTree.isRootAtEpochBoundary(root)
+                    && shouldPersistStateAtEpoch(blockTree.getEpoch(root))) {
+                  latestEpochBoundary.compareAndExchange(null, root);
+                }
+                blockState.ifPresent(
+                    (state) -> {
+                      // We found a base state
+                      treeBuilder.rootHash(root);
+                      baseBlockRoot.set(root);
+                      baseState.set(state);
+                    });
+                return blockState.isEmpty();
+              });
     } finally {
       readLock.unlock();
     }
@@ -598,7 +614,12 @@ class Store implements UpdatableStore {
                       final HashTree tree = treeBuilder.build();
                       return stateGenerationQueue
                           .regenerateStateForBlock(
-                              blockRoot, tree, baseBlockAndState, blockProvider, cacheHandler)
+                              blockRoot,
+                              tree,
+                              baseBlockAndState,
+                              Optional.ofNullable(latestEpochBoundary.get()),
+                              blockProvider,
+                              cacheHandler)
                           .thenApply(
                               result -> {
                                 stateRequestRegenerateCounter.inc();
@@ -606,6 +627,11 @@ class Store implements UpdatableStore {
                               });
                     })
                 .orElse(EmptyStoreResults.EMPTY_BLOCK_AND_STATE_FUTURE));
+  }
+
+  boolean shouldPersistStateAtEpoch(final UInt64 epoch) {
+    return hotStatePersistenceFrequencyInEpochs > 0
+        && epoch.mod(hotStatePersistenceFrequencyInEpochs).equals(UInt64.ZERO);
   }
 
   private void cacheBlockAndState(final SignedBlockAndState blockAndState) {
@@ -821,7 +847,7 @@ class Store implements UpdatableStore {
 
       Store.this.lock.readLock().lock();
       try {
-        final HashTree.Builder treeBuilder = Store.this.blockTree.updater();
+        final HashTree.Builder treeBuilder = Store.this.blockTree.getHashTree().updater();
         this.blocks.values().forEach(treeBuilder::block);
         return treeBuilder.build().breadthFirstStream().collect(Collectors.toList());
       } finally {
@@ -904,7 +930,9 @@ class Store implements UpdatableStore {
         && Objects.equals(finalized_checkpoint, store.finalized_checkpoint)
         && Objects.equals(best_justified_checkpoint, store.best_justified_checkpoint)
         && Objects.equals(blocks, store.blocks)
-        && Objects.equals(checkpoint_states, store.checkpoint_states);
+        && Objects.equals(checkpoint_states, store.checkpoint_states)
+        && Objects.equals(
+            hotStatePersistenceFrequencyInEpochs, store.hotStatePersistenceFrequencyInEpochs);
   }
 
   @Override
