@@ -31,7 +31,6 @@ import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.storage.events.FinalizedChainData;
 import tech.pegasys.teku.storage.store.Store.Transaction;
 
@@ -44,26 +43,31 @@ class StoreTransactionUpdatesFactory {
   private final Map<Bytes32, SignedBeaconBlock> hotBlocks;
   private final Map<Bytes32, BeaconState> hotStates;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
+  private final SignedBlockAndState latestFinalizedBlockAndState;
   private final Set<Bytes32> prunedHotBlockRoots =
       Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   private volatile Optional<BlockTree> updatedBlockTree = Optional.empty();
 
-  private StoreTransactionUpdatesFactory(final Store baseStore, final Transaction tx) {
+  public StoreTransactionUpdatesFactory(
+      final Store baseStore,
+      final Transaction tx,
+      final SignedBlockAndState latestFinalizedBlockAndState) {
     this.baseStore = baseStore;
     this.tx = tx;
+    this.latestFinalizedBlockAndState = latestFinalizedBlockAndState;
     // Save copy of tx data that may be pruned
     hotBlocks = new ConcurrentHashMap<>(tx.blocks);
     hotStates = new ConcurrentHashMap<>(tx.block_states);
     stateRoots = new ConcurrentHashMap<>(tx.stateRoots);
   }
 
-  public static SafeFuture<StoreTransactionUpdates> create(
-      final Store baseStore, final Transaction tx) {
-    return new StoreTransactionUpdatesFactory(baseStore, tx).build();
+  public static StoreTransactionUpdates create(
+      final Store baseStore, final Transaction tx, final SignedBlockAndState latestFinalized) {
+    return new StoreTransactionUpdatesFactory(baseStore, tx, latestFinalized).build();
   }
 
-  private SafeFuture<StoreTransactionUpdates> build() {
+  public StoreTransactionUpdates build() {
     // If a new checkpoint has been finalized, calculated what to finalize and what to prune
     final Checkpoint prevFinalizedCheckpoint = baseStore.getFinalizedCheckpoint();
     final Optional<Checkpoint> newFinalizedCheckpoint =
@@ -77,47 +81,34 @@ class StoreTransactionUpdatesFactory {
       updatedBlockTree = Optional.of(baseStore.blockTree.updated(updatedRoot, hotBlocks.values()));
     }
 
-    if (newFinalizedCheckpoint.isPresent()) {
-      return buildFinalizedUpdates(newFinalizedCheckpoint.get());
-    } else {
-      return SafeFuture.completedFuture(createStoreTransactionUpdates(Optional.empty()));
-    }
+    return newFinalizedCheckpoint
+        .map(this::buildFinalizedUpdates)
+        .orElseGet(() -> createStoreTransactionUpdates(Optional.empty()));
   }
 
-  private SafeFuture<StoreTransactionUpdates> buildFinalizedUpdates(
-      final Checkpoint finalizedCheckpoint) {
+  private StoreTransactionUpdates buildFinalizedUpdates(final Checkpoint finalizedCheckpoint) {
+    final Map<Bytes32, Bytes32> finalizedChildToParent =
+        collectFinalizedRoots(
+            baseStore, latestFinalizedBlockAndState.getRoot(), hotBlocks.values());
+    Set<SignedBeaconBlock> finalizedBlocks = collectFinalizedBlocks(tx, finalizedChildToParent);
+    Map<Bytes32, BeaconState> finalizedStates = collectFinalizedStates(tx, finalizedChildToParent);
 
-    return tx.retrieveBlockAndState(finalizedCheckpoint.getRoot())
-        .thenApply(
-            maybeLatestFinalized -> {
-              final SignedBlockAndState latestFinalized =
-                  maybeLatestFinalized.orElseThrow(
-                      () -> new IllegalStateException("Missing latest finalized block and state"));
+    // Prune collections
+    calculatePrunedHotBlockRoots(tx, updatedBlockTree.orElseThrow());
+    prunedHotBlockRoots.forEach(hotBlocks::remove);
+    prunedHotBlockRoots.forEach(hotStates::remove);
 
-              final Map<Bytes32, Bytes32> finalizedChildToParent =
-                  collectFinalizedRoots(baseStore, latestFinalized.getRoot(), hotBlocks.values());
-              Set<SignedBeaconBlock> finalizedBlocks =
-                  collectFinalizedBlocks(tx, finalizedChildToParent);
-              Map<Bytes32, BeaconState> finalizedStates =
-                  collectFinalizedStates(tx, finalizedChildToParent);
+    final Optional<FinalizedChainData> finalizedChainData =
+        Optional.of(
+            FinalizedChainData.builder()
+                .finalizedCheckpoint(finalizedCheckpoint)
+                .latestFinalizedBlockAndState(latestFinalizedBlockAndState)
+                .finalizedChildAndParent(finalizedChildToParent)
+                .finalizedBlocks(finalizedBlocks)
+                .finalizedStates(finalizedStates)
+                .build());
 
-              // Prune collections
-              calculatePrunedHotBlockRoots(tx, updatedBlockTree.orElseThrow());
-              prunedHotBlockRoots.forEach(hotBlocks::remove);
-              prunedHotBlockRoots.forEach(hotStates::remove);
-
-              final Optional<FinalizedChainData> finalizedChainData =
-                  Optional.of(
-                      FinalizedChainData.builder()
-                          .finalizedCheckpoint(finalizedCheckpoint)
-                          .latestFinalizedBlockAndState(latestFinalized)
-                          .finalizedChildAndParent(finalizedChildToParent)
-                          .finalizedBlocks(finalizedBlocks)
-                          .finalizedStates(finalizedStates)
-                          .build());
-
-              return createStoreTransactionUpdates(finalizedChainData);
-            });
+    return createStoreTransactionUpdates(finalizedChainData);
   }
 
   /**
@@ -188,5 +179,5 @@ class StoreTransactionUpdatesFactory {
         prunedHotBlockRoots,
         updatedBlockTree,
         stateRoots);
-  };
+  }
 }
