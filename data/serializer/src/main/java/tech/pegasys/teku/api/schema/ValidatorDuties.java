@@ -15,6 +15,8 @@ package tech.pegasys.teku.api.schema;
 
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES48;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -35,14 +37,15 @@ public class ValidatorDuties {
   @Schema(type = "string", format = "uint64")
   public final UInt64 attestation_slot;
 
+  @JsonCreator
   public ValidatorDuties(
-      BLSPubKey validator_pubkey,
-      Integer validator_index,
-      Integer attestation_committee_index,
-      Integer attestation_committee_position,
-      Integer aggregator_modulo,
-      List<UInt64> block_proposal_slots,
-      UInt64 attestation_slot) {
+      @JsonProperty("validator_pubkey") BLSPubKey validator_pubkey,
+      @JsonProperty("validator_index") Integer validator_index,
+      @JsonProperty("attestation_committee_index") Integer attestation_committee_index,
+      @JsonProperty("attestation_committee_position") Integer attestation_committee_position,
+      @JsonProperty("aggregator_modulo") Integer aggregator_modulo,
+      @JsonProperty("block_proposal_slots") List<UInt64> block_proposal_slots,
+      @JsonProperty("attestation_slot") UInt64 attestation_slot) {
     this.validator_pubkey = validator_pubkey;
     this.validator_index = validator_index;
     this.attestation_committee_index = attestation_committee_index;
