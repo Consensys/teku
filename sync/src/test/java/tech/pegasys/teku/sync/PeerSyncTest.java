@@ -43,6 +43,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.util.config.Constants;
@@ -437,6 +438,38 @@ public class PeerSyncTest extends AbstractSyncTest {
     // We don't disconnect the peer, the SyncManager just excludes the peer as a sync target for a
     // period
     verify(peer, never()).disconnectCleanly(any());
+  }
+
+  @Test
+  void sync_stopSyncIfPeerSendsBlocksInWrongOrder() {
+    final UInt64 startSlot = UInt64.ONE;
+    UInt64 peerHeadSlot = UInt64.valueOf(1000000);
+
+    withPeerHeadSlot(peerHeadSlot);
+
+    final SafeFuture<Void> requestFuture = new SafeFuture<>();
+    when(peer.requestBlocksByRange(any(), any(), any(), any())).thenReturn(requestFuture);
+
+    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
+    assertThat(syncFuture).isNotDone();
+
+    verify(peer)
+        .requestBlocksByRange(
+            eq(startSlot),
+            eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
+            eq(UInt64.ONE),
+            responseListenerArgumentCaptor.capture());
+
+    requestFuture.completeExceptionally(
+        new BlocksByRangeResponseInvalidResponseException(
+            peer,
+            BlocksByRangeResponseInvalidResponseException.InvalidResponseType
+                .BLOCK_SLOT_NOT_GREATER_THAN_PREVIOUS_BLOCK_SLOT));
+
+    // Peer returns some blocks but they are not ordered
+    assertThat(syncFuture).isCompletedWithValue(PeerSyncResult.INVALID_RESPONSE);
+
+    verify(peer).disconnectCleanly(any());
   }
 
   @Test
