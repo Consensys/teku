@@ -28,8 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
-import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
-import tech.pegasys.teku.util.collections.LimitStrategy;
+import tech.pegasys.teku.util.collections.LimitedSet;
 
 public class GossipHandler implements Function<MessageApi, CompletableFuture<ValidationResult>> {
   private static final Logger LOG = LogManager.getLogger();
@@ -44,8 +43,7 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
   private final Topic topic;
   private final PubsubPublisherApi publisher;
   private final TopicHandler handler;
-  private final Set<Bytes> processedMessages =
-      ConcurrentLimitedSet.create(MAX_SENT_MESSAGES, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+  private final Set<Bytes> processedMessages = LimitedSet.create(MAX_SENT_MESSAGES);
 
   public GossipHandler(
       final Topic topic, final PubsubPublisherApi publisher, final TopicHandler handler) {

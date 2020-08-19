@@ -22,28 +22,14 @@ public final class LimitedSet {
   private LimitedSet() {}
 
   /**
-   * Creates a limited set with a default initial capacity.
+   * Creates a limited set. The returned set is safe for concurrent access and evicts the least
+   * recently used items.
    *
    * @param maxSize The maximum number of elements to keep in the set.
-   * @param mode A mode that determines which element is evicted when the set exceeds its max size.
-   * @param <T> The type of object in the set.
-   * @return A set that will evict elements when the max size is exceeded.
-   */
-  public static <T> Set<T> create(final int maxSize, final LimitStrategy mode) {
-    return create(16, maxSize, mode);
-  }
-
-  /**
-   * Creates a limited set.
-   *
-   * @param initialCapacity The initial size to allocate for the set.
-   * @param maxSize The maximum number of elements to keep in the set.
-   * @param mode A mode that determines which element is evicted when the set exceeds its max size.
    * @param <T> The type of object held in the set.
    * @return A set that will evict elements when the max size is exceeded.
    */
-  public static <T> Set<T> create(
-      final int initialCapacity, final int maxSize, final LimitStrategy mode) {
-    return Collections.newSetFromMap(LimitedMap.create(initialCapacity, maxSize, mode));
+  public static <T> Set<T> create(final int maxSize) {
+    return Collections.newSetFromMap(LimitedMap.create(maxSize));
   }
 }
