@@ -19,6 +19,7 @@ import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
@@ -39,6 +40,7 @@ public class StoreBuilder {
   StoreConfig storeConfig = StoreConfig.createDefault();
 
   final Map<Bytes32, Bytes32> childToParentRoot = new HashMap<>();
+  final Map<Bytes32, UInt64> rootToSlotMap = new HashMap<>();
   UInt64 time;
   UInt64 genesisTime;
   Checkpoint justifiedCheckpoint;
@@ -65,6 +67,9 @@ public class StoreBuilder {
     Map<Bytes32, Bytes32> childToParentMap = new HashMap<>();
     childToParentMap.put(anchor.getRoot(), anchor.getParentRoot());
 
+    Map<Bytes32, UInt64> rootToSlotMap = new HashMap<>();
+    rootToSlotMap.put(anchor.getRoot(), anchor.getState().getSlot());
+
     return create()
         .metricsSystem(metricsSystem)
         .blockProvider(blockProvider)
@@ -75,6 +80,7 @@ public class StoreBuilder {
         .justifiedCheckpoint(anchor.getCheckpoint())
         .bestJustifiedCheckpoint(anchor.getCheckpoint())
         .childToParentMap(childToParentMap)
+        .rootToSlotMap(rootToSlotMap)
         .latestFinalized(anchor.toSignedBlockAndState())
         .votes(new HashMap<>());
   }
@@ -93,6 +99,7 @@ public class StoreBuilder {
         finalizedCheckpoint,
         bestJustifiedCheckpoint,
         childToParentRoot,
+        rootToSlotMap,
         latestFinalized,
         votes,
         storeConfig);
@@ -114,9 +121,13 @@ public class StoreBuilder {
     checkState(justifiedCheckpoint != null, "Justified checkpoint must be defined");
     checkState(finalizedCheckpoint != null, "Finalized checkpoint must be defined");
     checkState(bestJustifiedCheckpoint != null, "Best justified checkpoint must be defined");
-    checkState(!childToParentRoot.isEmpty(), "Parent and child block data must be supplied");
     checkState(latestFinalized != null, "Latest finalized block state must be defined");
     checkState(votes != null, "Votes must be defined");
+    checkState(!childToParentRoot.isEmpty(), "Parent and child block data must be supplied");
+    checkState(!rootToSlotMap.isEmpty(), "Root to slot mapping must be supplied");
+    checkState(
+        Objects.equals(childToParentRoot.keySet(), rootToSlotMap.keySet()),
+        "Child-parent and root-slot mappings must be consistent");
   }
 
   public StoreBuilder metricsSystem(final MetricsSystem metricsSystem) {
@@ -182,6 +193,12 @@ public class StoreBuilder {
   public StoreBuilder childToParentMap(final Map<Bytes32, Bytes32> childToParent) {
     checkNotNull(childToParent);
     this.childToParentRoot.putAll(childToParent);
+    return this;
+  }
+
+  public StoreBuilder rootToSlotMap(final Map<Bytes32, UInt64> rootToSlotMap) {
+    checkNotNull(rootToSlotMap);
+    this.rootToSlotMap.putAll(rootToSlotMap);
     return this;
   }
 
