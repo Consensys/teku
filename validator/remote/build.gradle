@@ -1,0 +1,15 @@
+dependencies {
+  implementation project(':bls')
+  implementation project(':data:serializer')
+  implementation project(':ethereum:datastructures')
+  implementation project(':events')
+  implementation project(':infrastructure:async')
+  implementation project(':services:serviceutils')
+  implementation project(':validator:api')
+
+  implementation 'com.squareup.okhttp3:okhttp'
+
+  testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':infrastructure:async'))
+  testImplementation 'com.squareup.okhttp3:mockwebserver'
+}

@@ -117,8 +117,7 @@ public class GetAggregate implements Handler {
       throws com.fasterxml.jackson.core.JsonProcessingException {
     if (optionalAttestation.isPresent()) {
       ctx.status(SC_OK);
-      String json = jsonProvider.objectToJSON(optionalAttestation.get());
-      return json;
+      return jsonProvider.objectToJSON(optionalAttestation.get());
     } else {
       ctx.status(SC_NOT_FOUND);
       return "";
