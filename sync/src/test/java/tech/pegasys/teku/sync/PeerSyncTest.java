@@ -22,6 +22,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +33,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.mockito.stubbing.OngoingStubbing;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.data.BlockProcessingRecord;
@@ -39,22 +41,14 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
-import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
-import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
-public class PeerSyncTest {
-
-  private final Eth2Peer peer = mock(Eth2Peer.class);
-  private BlockImporter blockImporter = mock(BlockImporter.class);
-  private RecentChainData storageClient = mock(RecentChainData.class);
+public class PeerSyncTest extends AbstractSyncTest {
 
   private static final SignedBeaconBlock BLOCK = new DataStructureUtil().randomSignedBeaconBlock(1);
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");
@@ -70,14 +64,8 @@ public class PeerSyncTest {
               PEER_HEAD_BLOCK_ROOT,
               PEER_HEAD_SLOT));
 
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final PeerSync peerSync =
       new PeerSync(asyncRunner, storageClient, blockImporter, new NoOpMetricsSystem());
-
-  @SuppressWarnings("unchecked")
-  private final ArgumentCaptor<ResponseStreamListener<SignedBeaconBlock>>
-      responseListenerArgumentCaptor = ArgumentCaptor.forClass(ResponseStreamListener.class);
 
   @BeforeEach
   public void setUp() {
@@ -90,6 +78,7 @@ public class PeerSyncTest {
         SafeFuture.completedFuture(BlockImportResult.successful(processingRecord));
     when(processingRecord.getBlock()).thenReturn(block);
     when(blockImporter.importBlock(any())).thenReturn(result);
+    when(storageClient.getHeadSlot()).thenReturn(UInt64.ONE);
   }
 
   @Test
@@ -212,7 +201,7 @@ public class PeerSyncTest {
     final ResponseStreamListener<SignedBeaconBlock> responseListener =
         responseListenerArgumentCaptor.getValue();
     final List<SignedBeaconBlock> blocks =
-        respondWithBlocksAtSlots(responseListener, 1, PEER_HEAD_SLOT.intValue());
+        respondWithBlocksAtSlots(responseListener, UInt64.ONE, PEER_HEAD_SLOT);
     for (SignedBeaconBlock block : blocks) {
       verify(blockImporter).importBlock(block);
     }
@@ -315,7 +304,7 @@ public class PeerSyncTest {
     when(storageClient.getFinalizedEpoch()).thenReturn(PEER_FINALIZED_EPOCH);
 
     // Respond with blocks and check they're passed to the block importer.
-    completeRequestWithBlockAtSlot(requestFuture2, updatedPeerHeadSlot.intValue());
+    completeRequestWithBlockAtSlot(requestFuture2, updatedPeerHeadSlot);
 
     // Check that the sync is done and the peer was not disconnected.
     assertThat(syncFuture).isCompleted();
@@ -408,15 +397,17 @@ public class PeerSyncTest {
   @Test
   void sync_failSyncIfPeerThrottlesTooAggressively() {
     final UInt64 startSlot = UInt64.ONE;
-    UInt64 peerHeadSlot = Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(startSlot);
+    UInt64 minPeerSlot = Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(startSlot);
+    withPeerFinalizedEpoch(compute_epoch_at_slot(minPeerSlot));
 
-    withPeerHeadSlot(peerHeadSlot);
-
-    final SafeFuture<Void> requestFuture1 = new SafeFuture<>();
-    final SafeFuture<Void> requestFuture2 = new SafeFuture<>();
-    when(peer.requestBlocksByRange(any(), any(), any(), any()))
-        .thenReturn(requestFuture1)
-        .thenReturn(requestFuture2);
+    final List<SafeFuture<Void>> requestFutures = new ArrayList<>();
+    OngoingStubbing<SafeFuture<Void>> requestStub =
+        when(peer.requestBlocksByRange(any(), any(), any(), any()));
+    for (int i = 0; i < PeerSync.MAX_THROTTLED_REQUESTS + 1; i++) {
+      final SafeFuture<Void> future = new SafeFuture<>();
+      requestStub = requestStub.thenReturn(future);
+      requestFutures.add(future);
+    }
 
     final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isNotDone();
@@ -428,10 +419,21 @@ public class PeerSyncTest {
             eq(UInt64.ONE),
             responseListenerArgumentCaptor.capture());
 
-    // Peer only returns a couple of blocks
-    final int lastReceivedBlockSlot = 3;
-    completeRequestWithBlockAtSlot(requestFuture1, lastReceivedBlockSlot);
+    // Peer only returns a couple of blocks for each request
+    int nextBlock = startSlot.intValue();
+    for (int i = 0; i < PeerSync.MAX_THROTTLED_REQUESTS; i++) {
+      completeRequestWithBlockAtSlot(requestFutures.get(i), nextBlock);
+      nextBlock += 1;
+    }
 
+    // We haven't hit our limit yet
+    assertThat(syncFuture).isNotDone();
+
+    // Next request hits our limit
+    final int lastRequestIndex = PeerSync.MAX_THROTTLED_REQUESTS;
+    completeRequestWithBlockAtSlot(requestFutures.get(lastRequestIndex), nextBlock + 2);
+
+    // We hit our limit
     assertThat(syncFuture).isCompletedWithValue(PeerSyncResult.EXCESSIVE_THROTTLING);
     // We don't disconnect the peer, the SyncManager just excludes the peer as a sync target for a
     // period
@@ -506,42 +508,24 @@ public class PeerSyncTest {
             eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
             eq(UInt64.ONE),
             any());
-
     verify(peer, never()).disconnectCleanly(any());
   }
 
-  private void completeRequestWithBlockAtSlot(
-      final SafeFuture<Void> requestFuture1, final int lastBlockSlot) {
-    final ResponseStreamListener<SignedBeaconBlock> responseListener1 =
-        responseListenerArgumentCaptor.getValue();
-    List<SignedBeaconBlock> blocks = respondWithBlocksAtSlots(responseListener1, 1, lastBlockSlot);
-    for (SignedBeaconBlock block : blocks) {
-      verify(blockImporter).importBlock(block);
-    }
-    requestFuture1.complete(null);
-    asyncRunner.executeQueuedActions();
-  }
-
-  private List<SignedBeaconBlock> respondWithBlocksAtSlots(
-      final ResponseStreamListener<SignedBeaconBlock> responseListener, int... slots) {
-    List<SignedBeaconBlock> blocks = new ArrayList<>();
-    for (int slot : slots) {
-      final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
-      blocks.add(block);
-      responseListener.onResponse(block).join();
-    }
-    return blocks;
-  }
-
   private void withPeerHeadSlot(final UInt64 peerHeadSlot) {
+    withPeerHeadSlot(peerHeadSlot, PEER_FINALIZED_EPOCH, PEER_HEAD_BLOCK_ROOT);
+  }
+
+  private void withPeerFinalizedEpoch(final UInt64 finalizedEpoch) {
+    final UInt64 headSlot =
+        compute_start_slot_at_epoch(finalizedEpoch).plus(2 * Constants.SLOTS_PER_EPOCH);
     final PeerStatus peer_status =
         PeerStatus.fromStatusMessage(
             new StatusMessage(
                 Constants.GENESIS_FORK_VERSION,
                 Bytes32.ZERO,
-                PEER_FINALIZED_EPOCH,
+                finalizedEpoch,
                 PEER_HEAD_BLOCK_ROOT,
-                peerHeadSlot));
+                headSlot));
 
     when(peer.getStatus()).thenReturn(peer_status);
   }

@@ -67,8 +67,8 @@ public class EventChannels {
    *
    * <p>Any methods which return a future, will complete that future via {@code responseRunner}. As
    * a result, any handlers chained to the returned future via methods like {@link
-   * tech.pegasys.teku.util.async.SafeFuture#thenApply(Function)} will be executed on one of {@code
-   * responseRunner}'s threads.
+   * tech.pegasys.teku.infrastructure.async.SafeFuture#thenApply(Function)} will be executed on one
+   * of {@code responseRunner}'s threads.
    *
    * @param channelInterface the interface defining the channel
    * @param responseRunner the {@link AsyncRunner} to use when completing any returned futures
@@ -82,7 +82,8 @@ public class EventChannels {
 
   public <T extends ChannelInterface> EventChannels subscribe(
       final Class<T> channelInterface, final T subscriber) {
-    return subscribeMultithreaded(channelInterface, subscriber, 1);
+    getChannel(channelInterface).subscribe(subscriber);
+    return this;
   }
 
   /**
@@ -92,15 +93,15 @@ public class EventChannels {
    * always use the publisher thread to process events.
    *
    * <p>Events are still placed into an ordered queue and started in order, but as multiple threads
-   * pull from the queue, the execution order can no longer be guaranteed.
+   * are used for execution, the execution order can no longer be guaranteed.
    *
    * @param channelInterface the channel to subscribe to
    * @param subscriber the subscriber to notify of events
-   * @param requestedParallelism the number of threads to use to process events
+   * @param asyncRunner the runner to use to execute tasks
    */
   public <T extends ChannelInterface> EventChannels subscribeMultithreaded(
-      final Class<T> channelInterface, final T subscriber, final int requestedParallelism) {
-    getChannel(channelInterface).subscribeMultithreaded(subscriber, requestedParallelism);
+      final Class<T> channelInterface, final T subscriber, final AsyncRunner asyncRunner) {
+    getChannel(channelInterface).subscribeMultithreaded(subscriber, asyncRunner);
     return this;
   }
 

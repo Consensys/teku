@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.util.collections;
 
-import java.util.LinkedHashMap;
+import com.google.common.cache.CacheBuilder;
 import java.util.Map;
 
 /** Helper that creates a map with a maximum capacity. */
@@ -21,36 +21,15 @@ public final class LimitedMap {
   private LimitedMap() {}
 
   /**
-   * Creates a limited map with a default initial capacity.
+   * Creates a limited map. The returned map is safe for concurrent access and evicts the least
+   * recently used items.
    *
    * @param maxSize The maximum number of elements to keep in the map.
-   * @param mode A mode that determines which element is evicted when the map exceeds its max size.
    * @param <K> The key type of the map.
    * @param <V> The value type of the map.
    * @return A map that will evict elements when the max size is exceeded.
    */
-  public static <K, V> Map<K, V> create(final int maxSize, final LimitStrategy mode) {
-    return create(16, maxSize, mode);
-  }
-
-  /**
-   * Creates a limited map.
-   *
-   * @param initialCapacity The initial size to allocate for the map.
-   * @param maxSize The maximum number of elements to keep in the map.
-   * @param mode A mode that determines which element is evicted when the map exceeds its max size.
-   * @param <K> The key type of the map.
-   * @param <V> The value type of the map.
-   * @return A map that will evict elements when the max size is exceeded.
-   */
-  public static <K, V> Map<K, V> create(
-      final int initialCapacity, final int maxSize, final LimitStrategy mode) {
-    final boolean useAccessOrder = mode.equals(LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
-    return new LinkedHashMap<>(initialCapacity, 0.75f, useAccessOrder) {
-      @Override
-      protected boolean removeEldestEntry(final Map.Entry<K, V> eldest) {
-        return size() > maxSize;
-      }
-    };
+  public static <K, V> Map<K, V> create(final int maxSize) {
+    return CacheBuilder.newBuilder().maximumSize(maxSize).<K, V>build().asMap();
   }
 }

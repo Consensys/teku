@@ -239,6 +239,15 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     finish(res -> onFinished.run(), err -> onFinished.run());
   }
 
+  public SafeFuture<T> alwaysRun(final Runnable action) {
+    return exceptionallyCompose(
+            error -> {
+              action.run();
+              return failedFuture(error);
+            })
+        .thenPeek(value -> action.run());
+  }
+
   public void finish(final Consumer<T> onSuccess, final Consumer<Throwable> onError) {
     handle(
             (result, error) -> {

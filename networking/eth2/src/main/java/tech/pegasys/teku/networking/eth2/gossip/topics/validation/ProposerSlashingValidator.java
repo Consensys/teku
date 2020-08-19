@@ -30,16 +30,14 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
-import tech.pegasys.teku.util.collections.LimitStrategy;
+import tech.pegasys.teku.util.collections.LimitedSet;
 
 public class ProposerSlashingValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;
   private final Set<UInt64> receivedValidSlashingForProposerSet =
-      ConcurrentLimitedSet.create(
-          VALID_VALIDATOR_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+      LimitedSet.create(VALID_VALIDATOR_SET_SIZE);
   private final ProposerSlashingStateTransitionValidator transitionValidator;
   private final ProposerSlashingSignatureVerifier signatureValidator;
 
