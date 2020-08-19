@@ -62,9 +62,12 @@ public class ProtoNode {
   public void adjustWeight(long delta) {
     if (delta < 0) {
       UInt64 deltaAbsoluteValue = UInt64.valueOf(Math.abs(delta));
-      if (deltaAbsoluteValue.compareTo(weight) > 0) {
+      if (deltaAbsoluteValue.isGreaterThan(weight)) {
         throw new RuntimeException(
-            "ProtoNode: Delta to be subtracted is greater than node weight.");
+            "ProtoNode: Delta to be subtracted is greater than node weight. Attempting to subtract "
+                + deltaAbsoluteValue
+                + " from "
+                + weight);
       }
       weight = weight.minus(deltaAbsoluteValue);
     } else {

@@ -18,6 +18,7 @@ import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
 
 import com.google.common.collect.Sets;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -140,7 +141,7 @@ class Store implements UpdatableStore {
     this.blocks = blocks;
     this.block_states = block_states;
     this.checkpoint_states = checkpoint_states;
-    this.votes = new ConcurrentHashMap<>(votes);
+    this.votes = new HashMap<>(votes);
     this.blockTree = blockTree;
 
     // Track latest finalized block
@@ -509,7 +510,16 @@ class Store implements UpdatableStore {
   public Set<UInt64> getVotedValidatorIndices() {
     readLock.lock();
     try {
-      return votes.keySet();
+      return new HashSet<>(votes.keySet());
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  private VoteTracker getVote(UInt64 validatorIndex) {
+    readLock.lock();
+    try {
+      return votes.get(validatorIndex);
     } finally {
       readLock.unlock();
     }
@@ -526,6 +536,12 @@ class Store implements UpdatableStore {
 
   private SafeFuture<Optional<SignedBlockAndState>> getAndCacheBlockAndState(
       final Bytes32 blockRoot) {
+    Optional<BeaconState> inMemoryState = getBlockStateIfAvailable(blockRoot);
+    Optional<SignedBeaconBlock> inMemoryBlock = getBlockIfAvailable(blockRoot);
+    if (inMemoryState.isPresent() && inMemoryBlock.isPresent()) {
+      return SafeFuture.completedFuture(
+          Optional.of(new SignedBlockAndState(inMemoryBlock.get(), inMemoryState.get())));
+    }
     return regenerateState(blockRoot, this::cacheBlockAndState);
   }
 
@@ -706,7 +722,7 @@ class Store implements UpdatableStore {
     public VoteTracker getVote(UInt64 validatorIndex) {
       VoteTracker vote = votes.get(validatorIndex);
       if (vote == null) {
-        vote = Store.this.votes.get(validatorIndex);
+        vote = Store.this.getVote(validatorIndex);
         if (vote == null) {
           vote = VoteTracker.Default();
         } else {
