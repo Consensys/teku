@@ -25,7 +25,20 @@ public class StoreOptions {
       arity = "1")
   private int hotStatePersistenceFrequencyInEpochs = 0;
 
+  @Option(
+      hidden = true,
+      names = {"--Xdisable-block-processing-at-startup"},
+      paramLabel = "<BOOLEAN>",
+      fallbackValue = "true",
+      description = "Disable block processing at startup.",
+      arity = "0..1")
+  private boolean disableBlockProcessingAtStartup = false;
+
   public int getHotStatePersistenceFrequencyInEpochs() {
     return hotStatePersistenceFrequencyInEpochs;
+  }
+
+  public boolean isBlockProcessingAtStartupDisabled() {
+    return disableBlockProcessingAtStartup;
   }
 }

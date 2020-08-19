@@ -59,4 +59,37 @@ public class StoreOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(output).isNotEmpty();
     assertThat(output).contains("Invalid value");
   }
+
+  @Test
+  public void disableBlockProcessingAtStartup_shouldRespectCLIArg_true() {
+    final String[] args = {
+      "--Xdisable-block-processing-at-startup", "true",
+    };
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(args);
+    assertThat(tekuConfiguration.isBlockProcessingAtStartupDisabled()).isTrue();
+  }
+
+  @Test
+  public void disableBlockProcessingAtStartup_shouldRespectCLIArg_false() {
+    final String[] args = {
+      "--Xdisable-block-processing-at-startup", "false",
+    };
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(args);
+    assertThat(tekuConfiguration.isBlockProcessingAtStartupDisabled()).isFalse();
+  }
+
+  @Test
+  public void disableBlockProcessingAtStartup_shouldRespectCLIArg_implicit() {
+    final String[] args = {
+      "--Xdisable-block-processing-at-startup",
+    };
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(args);
+    assertThat(tekuConfiguration.isBlockProcessingAtStartupDisabled()).isTrue();
+  }
+
+  @Test
+  public void disableBlockProcessingAtStartup_default() {
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    assertThat(tekuConfiguration.isBlockProcessingAtStartupDisabled()).isFalse();
+  }
 }

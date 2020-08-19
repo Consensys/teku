@@ -179,6 +179,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final StoreConfig storeConfig =
         StoreConfig.builder()
             .hotStatePersistenceFrequencyInEpochs(config.getHotStatePersistenceFrequencyInEpochs())
+            .disableBlockProcessingAtStartup(config.isBlockProcessingAtStartupDisabled())
             .build();
     return StorageBackedRecentChainData.create(
             metricsSystem,
