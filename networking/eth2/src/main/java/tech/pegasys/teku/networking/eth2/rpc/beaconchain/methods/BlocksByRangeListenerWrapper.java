@@ -94,7 +94,7 @@ public class BlocksByRangeListenerWrapper implements ResponseStreamListener<Sign
     }
 
     UInt64 lastBlockSlot = maybeSlotOfLastBlock.get();
-    return blockSlot.compareTo(lastBlockSlot) > 0;
+    return blockSlot.isGreaterThan(lastBlockSlot);
   }
 
   private boolean blockParentRootMatches(Bytes32 blockParentRoot) {
