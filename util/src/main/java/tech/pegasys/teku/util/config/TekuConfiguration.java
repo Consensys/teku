@@ -107,6 +107,7 @@ public class TekuConfiguration implements MetricsConfig {
 
   // Store
   private final int hotStatePersistenceFrequencyInEpochs;
+  private final boolean isBlockProcessingAtStartupDisabled;
 
   // Beacon REST API
   private final int restApiPort;
@@ -181,6 +182,7 @@ public class TekuConfiguration implements MetricsConfig {
       final long dataStorageFrequency,
       final String dataStorageCreateDbVersion,
       final int hotStatePersistenceFrequencyInEpochs,
+      final boolean isBlockProcessingAtStartupDisabled,
       final int restApiPort,
       final boolean restApiDocsEnabled,
       final boolean restApiEnabled,
@@ -246,6 +248,7 @@ public class TekuConfiguration implements MetricsConfig {
     this.dataStorageFrequency = dataStorageFrequency;
     this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
+    this.isBlockProcessingAtStartupDisabled = isBlockProcessingAtStartupDisabled;
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
@@ -506,6 +509,10 @@ public class TekuConfiguration implements MetricsConfig {
 
   public int getHotStatePersistenceFrequencyInEpochs() {
     return hotStatePersistenceFrequencyInEpochs;
+  }
+
+  public boolean isBlockProcessingAtStartupDisabled() {
+    return isBlockProcessingAtStartupDisabled;
   }
 
   public int getRestApiPort() {
