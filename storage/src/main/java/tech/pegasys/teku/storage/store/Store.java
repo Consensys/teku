@@ -198,7 +198,39 @@ class Store implements UpdatableStore {
       LOG.warn("Ignoring {} non-canonical blocks", childToParentRoot.size() - blockTree.size());
     }
 
-    // Create state generator
+    return processBlocks(
+            config, blockProvider, blockTree, finalizedBlockAndState, blocks, blockStates)
+        .thenApply(
+            __ ->
+                new Store(
+                    metricsSystem,
+                    config.getHotStatePersistenceFrequencyInEpochs(),
+                    blockProvider,
+                    stateGenerationQueue,
+                    time,
+                    genesisTime,
+                    justifiedCheckpoint,
+                    finalizedCheckpoint,
+                    bestJustifiedCheckpoint,
+                    blockTree,
+                    finalizedBlockAndState,
+                    votes,
+                    blocks,
+                    blockStates,
+                    checkpointStates));
+  }
+
+  private static SafeFuture<Void> processBlocks(
+      final StoreConfig config,
+      final BlockProvider blockProvider,
+      final BlockTree blockTree,
+      final SignedBlockAndState finalizedBlockAndState,
+      final Map<Bytes32, SignedBeaconBlock> blocks,
+      final Map<Bytes32, BeaconState> blockStates) {
+    if (config.isBlockProcessingAtStartupDisabled()) {
+      return SafeFuture.COMPLETE;
+    }
+
     final BlockProvider blockProviderWithBlocks =
         BlockProvider.combined(
             fromMap(Map.of(finalizedBlockAndState.getRoot(), finalizedBlockAndState.getBlock())),
@@ -221,26 +253,9 @@ class Store implements UpdatableStore {
               blocks.put(block.getRoot(), block);
               blockStates.put(block.getRoot(), state);
             })
-        .thenApply(
+        .thenAccept(
             __ -> {
               LOG.info("Finished processing {} block(s)", blockTree.size());
-
-              return new Store(
-                  metricsSystem,
-                  config.getHotStatePersistenceFrequencyInEpochs(),
-                  blockProvider,
-                  stateGenerationQueue,
-                  time,
-                  genesisTime,
-                  justifiedCheckpoint,
-                  finalizedCheckpoint,
-                  bestJustifiedCheckpoint,
-                  blockTree,
-                  finalizedBlockAndState,
-                  votes,
-                  blocks,
-                  blockStates,
-                  checkpointStates);
             });
   }
 
