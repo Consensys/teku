@@ -93,7 +93,7 @@ public class PeerSync {
 
     this.startingSlot = firstNonFinalSlot;
 
-    return executeSync(peer, firstNonFinalSlot, SafeFuture.COMPLETE)
+    return executeSync(peer, firstNonFinalSlot, SafeFuture.COMPLETE, true)
         .whenComplete(
             (res, err) -> {
               if (err != null) {
@@ -110,7 +110,10 @@ public class PeerSync {
 
   @SuppressWarnings("FutureReturnValueIgnored")
   private SafeFuture<PeerSyncResult> executeSync(
-      final Eth2Peer peer, final UInt64 startSlot, final SafeFuture<Void> readyForRequest) {
+      final Eth2Peer peer,
+      final UInt64 startSlot,
+      final SafeFuture<Void> readyForRequest,
+      final boolean findCommonAncestor) {
     if (stopped.get()) {
       return SafeFuture.completedFuture(PeerSyncResult.CANCELLED);
     }
@@ -123,24 +126,39 @@ public class PeerSync {
 
     return readyForRequest
         .thenCompose(
-            (__) -> {
+            __ -> {
+              if (!findCommonAncestor) {
+                return SafeFuture.completedFuture(startSlot);
+              }
+              CommonAncestor ancestor = new CommonAncestor(storageClient);
+              return ancestor.getCommonAncestor(peer, status, startSlot);
+            })
+        .thenCompose(
+            (ancestorStartSlot) -> {
+              if (findCommonAncestor) {
+                LOG.trace("Start sync from slot {}, instead of {}", ancestorStartSlot, startSlot);
+              }
               LOG.debug(
-                  "Request {} blocks starting at {} from peer {}", count, startSlot, peer.getId());
+                  "Request {} blocks starting at {} from peer {}",
+                  count,
+                  ancestorStartSlot,
+                  peer.getId());
               final SafeFuture<Void> readyForNextRequest =
                   asyncRunner.getDelayedFuture(
                       NEXT_REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
               final PeerSyncBlockRequest request =
                   new PeerSyncBlockRequest(
-                      readyForNextRequest, startSlot.plus(count), this::blockResponseListener);
-              return peer.requestBlocksByRange(startSlot, count, STEP, request)
+                      readyForNextRequest,
+                      ancestorStartSlot.plus(count),
+                      this::blockResponseListener);
+              return peer.requestBlocksByRange(ancestorStartSlot, count, STEP, request)
                   .thenApply((res) -> request);
             })
         .thenCompose(
             (blockRequest) -> {
               final UInt64 nextSlot = blockRequest.getActualEndSlot().plus(UInt64.ONE);
               LOG.trace(
-                  "Completed request starting at {} for {} slots from peer {}. Next request starts from {}",
-                  startSlot,
+                  "Completed request for {} slots from peer {}. Next request starts from {}",
                   count,
                   peer.getId(),
                   nextSlot);
@@ -160,7 +178,7 @@ public class PeerSync {
               } else {
                 throttledRequestCount.set(0);
               }
-              return executeSync(peer, nextSlot, blockRequest.getReadyForNextRequest());
+              return executeSync(peer, nextSlot, blockRequest.getReadyForNextRequest(), false);
             })
         .exceptionally(err -> handleFailedRequestToPeer(peer, err));
   }
