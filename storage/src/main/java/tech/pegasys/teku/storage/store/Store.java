@@ -771,31 +771,40 @@ class Store implements UpdatableStore {
     @CheckReturnValue
     @Override
     public SafeFuture<Void> commit() {
-      final StoreTransactionUpdates updates;
-      // Lock so that we have a consistent view while calculating our updates
-      final Lock writeLock = Store.this.lock.writeLock();
-      writeLock.lock();
-      try {
-        updates = StoreTransactionUpdatesFactory.create(Store.this, this).join();
-      } finally {
-        writeLock.unlock();
-      }
-
-      return storageUpdateChannel
-          .onStorageUpdate(updates.createStorageUpdate())
-          .thenAccept(
-              __ -> {
-                // Propagate changes to Store
+      return retrieveBlockAndState(getFinalizedCheckpoint().getRoot())
+          .thenCompose(
+              maybeLatestFinalized -> {
+                final SignedBlockAndState latestFinalized =
+                    maybeLatestFinalized.orElseThrow(
+                        () ->
+                            new IllegalStateException("Missing latest finalized block and state"));
+                final StoreTransactionUpdates updates;
+                // Lock so that we have a consistent view while calculating our updates
+                final Lock writeLock = Store.this.lock.writeLock();
                 writeLock.lock();
                 try {
-                  // Add new data
-                  updates.applyToStore(Store.this);
+                  updates =
+                      StoreTransactionUpdatesFactory.create(Store.this, this, latestFinalized);
                 } finally {
                   writeLock.unlock();
                 }
 
-                // Signal back changes to the handler
-                finalized_checkpoint.ifPresent(updateHandler::onNewFinalizedCheckpoint);
+                return storageUpdateChannel
+                    .onStorageUpdate(updates.createStorageUpdate())
+                    .thenAccept(
+                        __ -> {
+                          // Propagate changes to Store
+                          writeLock.lock();
+                          try {
+                            // Add new data
+                            updates.applyToStore(Store.this);
+                          } finally {
+                            writeLock.unlock();
+                          }
+
+                          // Signal back changes to the handler
+                          finalized_checkpoint.ifPresent(updateHandler::onNewFinalizedCheckpoint);
+                        });
               });
     }
 
