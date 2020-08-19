@@ -141,10 +141,7 @@ class EventChannel<T> {
   }
 
   void subscribe(final T listener) {
-    if (!hasSubscriber.compareAndSet(false, true) && !allowMultipleSubscribers) {
-      throw new IllegalStateException("Only one subscriber is supported by this event channel");
-    }
-    invoker.subscribe(listener);
+    subscribeMultithreaded(listener, 1);
   }
 
   /**
@@ -154,16 +151,17 @@ class EventChannel<T> {
    * always use the publisher thread to process events.
    *
    * <p>Events are still placed into an ordered queue and started in order, but as multiple threads
-   * are used for execution, the execution order can no longer be guaranteed.
+   * pull from the queue, the execution order can no longer be guaranteed.
    *
    * @param listener the listener to notify of events
-   * @param asyncRunner the runner to use to execute tasks
+   * @param requestedParallelism the number of threads to use to process events
    */
-  void subscribeMultithreaded(final T listener, final AsyncRunner asyncRunner) {
+  void subscribeMultithreaded(final T listener, final int requestedParallelism) {
+    checkArgument(requestedParallelism > 0, "Number of threads must be at least 1");
     if (!hasSubscriber.compareAndSet(false, true) && !allowMultipleSubscribers) {
       throw new IllegalStateException("Only one subscriber is supported by this event channel");
     }
-    invoker.subscribe(listener, asyncRunner);
+    invoker.subscribe(listener, requestedParallelism);
   }
 
   public void stop() {

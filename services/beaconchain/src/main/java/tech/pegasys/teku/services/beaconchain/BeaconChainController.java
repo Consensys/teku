@@ -336,7 +336,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             DutyMetrics.create(metricsSystem, timeProvider, recentChainData));
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationTopicSubscriber)
-        .subscribeMultithreaded(ValidatorApiChannel.class, validatorApiHandler, asyncRunner);
+        .subscribe(ValidatorApiChannel.class, validatorApiHandler);
   }
 
   private void initGenesisHandler() {
