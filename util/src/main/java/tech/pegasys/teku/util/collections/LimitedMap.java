@@ -30,6 +30,27 @@ public final class LimitedMap {
    * @return A map that will evict elements when the max size is exceeded.
    */
   public static <K, V> Map<K, V> create(final int maxSize) {
-    return CacheBuilder.newBuilder().maximumSize(maxSize).<K, V>build().asMap();
+    return defaultBuilder(maxSize).<K, V>build().asMap();
+  }
+
+  /**
+   * Creates a limited map using soft references for values. The returned map is safe for concurrent
+   * access and evicts the least recently used items.
+   *
+   * <p>Items may be evicted before maxSize is reached if the garbage collector needs to free up
+   * memory.
+   *
+   * @param maxSize The maximum number of elements to keep in the map.
+   * @param <K> The key type of the map.
+   * @param <V> The value type of the map.
+   * @return A map that will evict elements when the max size is exceeded or when the GC evicts
+   *     them.
+   */
+  public static <K, V> Map<K, V> createSoft(final int maxSize) {
+    return defaultBuilder(maxSize).softValues().<K, V>build().asMap();
+  }
+
+  private static CacheBuilder<Object, Object> defaultBuilder(final int maxSize) {
+    return CacheBuilder.newBuilder().maximumSize(maxSize);
   }
 }

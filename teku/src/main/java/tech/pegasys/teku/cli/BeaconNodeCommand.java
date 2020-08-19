@@ -359,6 +359,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setDataStorageCreateDbVersion(dataOptions.getCreateDbVersion())
         .setHotStatePersistenceFrequencyInEpochs(
             storeOptions.getHotStatePersistenceFrequencyInEpochs())
+        .setIsBlockProcessingAtStartupDisabled(storeOptions.isBlockProcessingAtStartupDisabled())
         .setRestApiPort(beaconRestApiOptions.getRestApiPort())
         .setRestApiDocsEnabled(beaconRestApiOptions.isRestApiDocsEnabled())
         .setRestApiEnabled(beaconRestApiOptions.isRestApiEnabled())
