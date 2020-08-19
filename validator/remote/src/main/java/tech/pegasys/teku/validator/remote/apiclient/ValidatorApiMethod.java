@@ -14,16 +14,16 @@
 package tech.pegasys.teku.validator.remote.apiclient;
 
 public enum ValidatorApiMethod {
-  GET_FORK("/node/fork"),
-  GET_DUTIES("/validator/duties"),
-  GET_UNSIGNED_BLOCK("/validator/block"),
-  SEND_SIGNED_BLOCK("/validator/block"),
-  GET_UNSIGNED_ATTESTATION("/validator/attestation"),
-  SEND_SIGNED_ATTESTATION("/validator/attestation"),
-  GET_AGGREGATE("/validator/aggregate_attestation"),
-  SEND_SIGNED_AGGREGATE_AND_PROOF("/validator/aggregate_and_proofs"),
-  SUBSCRIBE_TO_COMMITTEE_FOR_AGGREGATION("/validator/beacon_committee_subscription"),
-  SUBSCRIBE_TO_PERSISTENT_SUBNETS("/validator/persistent_subnets_subscription");
+  GET_FORK("node/fork"),
+  GET_DUTIES("validator/duties"),
+  GET_UNSIGNED_BLOCK("validator/block"),
+  SEND_SIGNED_BLOCK("validator/block"),
+  GET_UNSIGNED_ATTESTATION("validator/attestation"),
+  SEND_SIGNED_ATTESTATION("validator/attestation"),
+  GET_AGGREGATE("validator/aggregate_attestation"),
+  SEND_SIGNED_AGGREGATE_AND_PROOF("validator/aggregate_and_proofs"),
+  SUBSCRIBE_TO_COMMITTEE_FOR_AGGREGATION("validator/beacon_committee_subscription"),
+  SUBSCRIBE_TO_PERSISTENT_SUBNETS("validator/persistent_subnets_subscription");
 
   private final String path;
 

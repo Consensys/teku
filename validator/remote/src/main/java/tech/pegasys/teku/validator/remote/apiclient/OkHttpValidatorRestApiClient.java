@@ -40,7 +40,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -184,11 +183,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   private HttpUrl.Builder urlBuilder(final ValidatorApiMethod apiMethod) {
-    return new HttpUrl.Builder()
-        .scheme(baseEndpoint.scheme())
-        .host(baseEndpoint.host())
-        .port(baseEndpoint.port())
-        .encodedPath(apiMethod.getPath());
+    return baseEndpoint.resolve(apiMethod.getPath()).newBuilder();
   }
 
   private <T> Optional<T> executeCall(final Request request, final Class<T> responseClass) {
@@ -215,7 +210,8 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
           }
         case 400:
           {
-            LOG.warn("Invalid params response from Beacon Node API - {}", response.body().string());
+            LOG.error(
+                "Invalid params response from Beacon Node API - {}", response.body().string());
             return Optional.empty();
           }
         default:
@@ -249,7 +245,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   private String removeQuotesIfPresent(final String value) {
-    StringUtils.strip(value, "\"");
     if (value.startsWith("\"") && value.endsWith("\"")) {
       return value.substring(1, value.length() - 1);
     } else {

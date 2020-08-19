@@ -45,7 +45,10 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
@@ -53,13 +56,15 @@ import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 class RemoteValidatorApiHandlerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
+
   private final ValidatorRestApiClient apiClient = mock(ValidatorRestApiClient.class);
 
   private RemoteValidatorApiHandler apiHandler;
 
   @BeforeEach
   public void beforeEach() {
-    apiHandler = new RemoteValidatorApiHandler(apiClient);
+    apiHandler = new RemoteValidatorApiHandler(apiClient, asyncRunner);
   }
 
   @Test
@@ -329,7 +334,7 @@ class RemoteValidatorApiHandlerTest {
 
   private <T> Optional<T> unwrapToOptional(SafeFuture<Optional<T>> future) {
     try {
-      return future.get();
+      return Waiter.waitFor(future);
     } catch (Exception e) {
       fail("Error unwrapping optional from SafeFuture", e);
       throw new RuntimeException(e);
@@ -338,7 +343,7 @@ class RemoteValidatorApiHandlerTest {
 
   private <T> T unwrapToValue(SafeFuture<Optional<T>> future) {
     try {
-      return future.get().orElseThrow();
+      return Waiter.waitFor(future).orElseThrow();
     } catch (Exception e) {
       fail("Error unwrapping value from SafeFuture", e);
       throw new RuntimeException(e);

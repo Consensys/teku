@@ -60,7 +60,7 @@ public class ValidatorClientService extends Service {
     if (config.getConfig().isRemoteValidatorApiEnabled()) {
       validatorApiChannel =
           new MetricRecordingValidatorApiChannel(
-              metricsSystem, new RemoteValidatorApiHandler(config));
+              metricsSystem, new RemoteValidatorApiHandler(config, asyncRunner));
     } else {
       validatorApiChannel =
           new MetricRecordingValidatorApiChannel(

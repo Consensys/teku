@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -32,6 +34,7 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
@@ -42,21 +45,27 @@ import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 
 public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
+  private static final Logger LOG = LogManager.getLogger();
+
   private final ValidatorRestApiClient apiClient;
+  private final AsyncRunner asyncRunner;
 
   @SuppressWarnings("unused")
-  public RemoteValidatorApiHandler(final ServiceConfig config) {
+  public RemoteValidatorApiHandler(final ServiceConfig config, final AsyncRunner asyncRunner) {
     // TODO: create config for validator client [https://github.com/PegaSysEng/teku/issues/2450]
     apiClient = new OkHttpValidatorRestApiClient("http://127.0.0.1:8888");
+    this.asyncRunner = asyncRunner;
   }
 
-  public RemoteValidatorApiHandler(final ValidatorRestApiClient apiClient) {
+  public RemoteValidatorApiHandler(
+      final ValidatorRestApiClient apiClient, final AsyncRunner asyncRunner) {
     this.apiClient = apiClient;
+    this.asyncRunner = asyncRunner;
   }
 
   @Override
   public SafeFuture<Optional<ForkInfo>> getForkInfo() {
-    return SafeFuture.supplyAsync(() -> apiClient.getFork().map(this::mapGetForkResponse));
+    return asyncRunner.runAsync(() -> apiClient.getFork().map(this::mapGetForkResponse));
   }
 
   private ForkInfo mapGetForkResponse(final GetForkResponse response) {
@@ -71,7 +80,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
       return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
     }
 
-    return SafeFuture.supplyAsync(
+    return asyncRunner.runAsync(
         () -> {
           final List<BLSPubKey> blsPubKeys =
               publicKeys.stream().map(BLSPubKey::new).collect(Collectors.toList());
@@ -102,7 +111,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<Attestation>> createUnsignedAttestation(
       final UInt64 slot, final int committeeIndex) {
-    return SafeFuture.supplyAsync(
+    return asyncRunner.runAsync(
         () ->
             apiClient
                 .createUnsignedAttestation(slot, committeeIndex)
@@ -114,7 +123,10 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
     final tech.pegasys.teku.api.schema.Attestation schemaAttestation =
         new tech.pegasys.teku.api.schema.Attestation(attestation);
 
-    apiClient.sendSignedAttestation(schemaAttestation);
+    asyncRunner
+        .runAsync(() -> apiClient.sendSignedAttestation(schemaAttestation))
+        .finish(error -> LOG.error("Failed to send signed attestation", error));
+    ;
   }
 
   @Override
@@ -126,7 +138,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
-    return SafeFuture.supplyAsync(
+    return asyncRunner.runAsync(
         () -> {
           final tech.pegasys.teku.api.schema.BLSSignature schemaBLSSignature =
               new tech.pegasys.teku.api.schema.BLSSignature(randaoReveal);
@@ -139,12 +151,18 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public void sendSignedBlock(final SignedBeaconBlock block) {
-    apiClient.sendSignedBlock(new tech.pegasys.teku.api.schema.SignedBeaconBlock(block));
+    asyncRunner
+        .runAsync(
+            () ->
+                apiClient.sendSignedBlock(
+                    new tech.pegasys.teku.api.schema.SignedBeaconBlock(block)))
+        .finish(error -> LOG.error("Failed to send signed block", error));
+    ;
   }
 
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(final Bytes32 attestationHashTreeRoot) {
-    return SafeFuture.supplyAsync(
+    return asyncRunner.runAsync(
         () ->
             apiClient
                 .createAggregate(attestationHashTreeRoot)
@@ -153,14 +171,25 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
-    apiClient.sendAggregateAndProof(
-        new tech.pegasys.teku.api.schema.SignedAggregateAndProof(aggregateAndProof));
+    asyncRunner
+        .runAsync(
+            () ->
+                apiClient.sendAggregateAndProof(
+                    new tech.pegasys.teku.api.schema.SignedAggregateAndProof(aggregateAndProof)))
+        .finish(error -> LOG.error("Failed to send aggregate and proof", error));
+    ;
   }
 
   @Override
   public void subscribeToBeaconCommitteeForAggregation(
       final int committeeIndex, final UInt64 aggregationSlot) {
-    apiClient.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot);
+    asyncRunner
+        .runAsync(
+            () ->
+                apiClient.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot))
+        .finish(
+            error -> LOG.error("Failed to subscribe to beacon committee for aggregation", error));
+    ;
   }
 
   @Override
@@ -173,6 +202,8 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                         s.getSubnetId(), s.getUnsubscriptionSlot()))
             .collect(Collectors.toSet());
 
-    apiClient.subscribeToPersistentSubnets(schemaSubscriptions);
+    asyncRunner
+        .runAsync(() -> apiClient.subscribeToPersistentSubnets(schemaSubscriptions))
+        .finish(error -> LOG.error("Failed to subscribe to persistent subnets", error));
   }
 }
