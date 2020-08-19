@@ -37,11 +37,7 @@ abstract class EventDeliverer<T> {
             "channel");
   }
 
-  void subscribe(final T subscriber, final AsyncRunner asyncRunner) {
-    subscribe(subscriber);
-  }
-
-  void subscribe(final T subscriber) {
+  void subscribe(final T subscriber, final int numberOfThreads) {
     subscribers.subscribe(subscriber);
   }
 
