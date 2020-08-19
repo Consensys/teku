@@ -25,9 +25,13 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class CommonAncestor {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int MINIMUM_VIABLE_SLOTS = 10000;
-  private static final int OPTIMISTIC_HISTORY_LENGTH = 3000;
   private final RecentChainData storageClient;
+
+  static final UInt64 OPTIMISTIC_HISTORY_LENGTH = UInt64.valueOf(3000);
+  // prysm allows a maximum range of 1000 blocks (endSlot - startSlot) due to database limitations
+  static final UInt64 MAX_BLOCK_RANGE = UInt64.valueOf(1000);
+  static final UInt64 SAMPLE_RATE = UInt64.valueOf(50);
+  static final UInt64 BLOCK_COUNT = MAX_BLOCK_RANGE.dividedBy(SAMPLE_RATE);
 
   public CommonAncestor(final RecentChainData storageClient) {
     this.storageClient = storageClient;
@@ -35,40 +39,31 @@ public class CommonAncestor {
 
   public SafeFuture<UInt64> getCommonAncestor(
       final Eth2Peer peer, final PeerStatus status, final UInt64 firstNonFinalSlot) {
-    final UInt64 localHead = storageClient.getHeadSlot();
-    // more than 10000 blocks behind, try to find a better starting slot if we have non finalized
-    // data
-    if (localHead.isGreaterThanOrEqualTo(firstNonFinalSlot.plus(MINIMUM_VIABLE_SLOTS))
-        && firstNonFinalSlot.plus(MINIMUM_VIABLE_SLOTS).isLessThan(status.getHeadSlot())) {
-      final UInt64 localNonFinalisedSlotCount = localHead.minus(firstNonFinalSlot);
-      final UInt64 count = UInt64.valueOf(20);
-      final UInt64 freq = UInt64.valueOf(50);
-      final UInt64 firstRequestedSlot =
-          localNonFinalisedSlotCount.isGreaterThanOrEqualTo(UInt64.valueOf(MINIMUM_VIABLE_SLOTS))
-              ? localHead.minus(OPTIMISTIC_HISTORY_LENGTH)
-              : firstNonFinalSlot;
-      final UInt64 lastSlot = firstRequestedSlot.plus(count.times(freq));
-      LOG.debug(
-          "Local head slot {}. Have {} non finalized slots, "
-              + "will sample ahead every {} slots from {} to {}. Peer head is {}",
-          localHead,
-          localNonFinalisedSlotCount,
-          freq,
-          firstRequestedSlot,
-          lastSlot,
-          status.getHeadSlot());
-
-      final BestBlockListener blockListener =
-          new BestBlockListener(storageClient, firstNonFinalSlot);
-
-      final PeerSyncBlockRequest request =
-          new PeerSyncBlockRequest(SafeFuture.COMPLETE, lastSlot, blockListener);
-
-      return peer.requestBlocksByRange(firstRequestedSlot, count, freq, request)
-          .thenApply(__ -> blockListener.getBestSlot());
+    final UInt64 lowestHeadSlot = storageClient.getHeadSlot().min(status.getHeadSlot());
+    if (lowestHeadSlot.isLessThan(firstNonFinalSlot.plus(OPTIMISTIC_HISTORY_LENGTH))) {
+      return SafeFuture.completedFuture(firstNonFinalSlot);
     }
 
-    return SafeFuture.completedFuture(firstNonFinalSlot);
+    final UInt64 localNonFinalisedSlotCount = lowestHeadSlot.minus(firstNonFinalSlot);
+    final UInt64 firstRequestedSlot = lowestHeadSlot.minus(OPTIMISTIC_HISTORY_LENGTH);
+    final UInt64 lastSlot = firstRequestedSlot.plus(MAX_BLOCK_RANGE);
+
+    LOG.debug(
+        "Local head slot {}. Have {} non finalized slots, "
+            + "will sample ahead every {} slots from {} to {}. Peer head is {}",
+        storageClient.getHeadSlot(),
+        localNonFinalisedSlotCount,
+        SAMPLE_RATE,
+        firstRequestedSlot,
+        lastSlot,
+        status.getHeadSlot());
+
+    final BestBlockListener blockListener = new BestBlockListener(storageClient, firstNonFinalSlot);
+    final PeerSyncBlockRequest request =
+        new PeerSyncBlockRequest(SafeFuture.COMPLETE, lastSlot, blockListener);
+
+    return peer.requestBlocksByRange(firstRequestedSlot, BLOCK_COUNT, SAMPLE_RATE, request)
+        .thenApply(__ -> blockListener.getBestSlot());
   }
 
   private static class BestBlockListener implements ResponseStreamListener<SignedBeaconBlock> {

@@ -34,7 +34,8 @@ public class CommonAncestorTest extends AbstractSyncTest {
   void shouldNotSearchCommonAncestorWithoutSufficientLocalData()
       throws ExecutionException, InterruptedException {
     final UInt64 firstNonFinalSlot = dataStructureUtil.randomUInt64();
-    final UInt64 currentLocalHead = firstNonFinalSlot.plus(9999);
+    final UInt64 currentLocalHead =
+        firstNonFinalSlot.plus(CommonAncestor.OPTIMISTIC_HISTORY_LENGTH.minus(1));
     final CommonAncestor commonAncestor = new CommonAncestor(storageClient);
     final PeerStatus status =
         withPeerHeadSlot(
@@ -51,8 +52,10 @@ public class CommonAncestorTest extends AbstractSyncTest {
   void shouldNotSearchCommonAncestorWithoutSufficientRemoteData()
       throws ExecutionException, InterruptedException {
     final UInt64 firstNonFinalSlot = dataStructureUtil.randomUInt64();
-    final UInt64 currentLocalHead = firstNonFinalSlot.plus(20000);
-    final UInt64 currentRemoteHead = firstNonFinalSlot.plus(9999);
+    final UInt64 currentLocalHead =
+        firstNonFinalSlot.plus(CommonAncestor.OPTIMISTIC_HISTORY_LENGTH);
+    final UInt64 currentRemoteHead =
+        firstNonFinalSlot.plus(CommonAncestor.OPTIMISTIC_HISTORY_LENGTH.minus(1));
     final CommonAncestor commonAncestor = new CommonAncestor(storageClient);
     final PeerStatus status =
         withPeerHeadSlot(
@@ -69,11 +72,18 @@ public class CommonAncestorTest extends AbstractSyncTest {
   void shouldSearchCommonAncestorWithSufficientRemoteData()
       throws ExecutionException, InterruptedException {
     final UInt64 firstNonFinalSlot = dataStructureUtil.randomUInt64();
-    final UInt64 currentLocalHead = firstNonFinalSlot.plus(100000);
-    final UInt64 currentRemoteHead = firstNonFinalSlot.plus(100001);
+    final UInt64 currentLocalHead =
+        firstNonFinalSlot.plus(CommonAncestor.OPTIMISTIC_HISTORY_LENGTH.times(10));
+    final UInt64 currentRemoteHead =
+        firstNonFinalSlot.plus(CommonAncestor.OPTIMISTIC_HISTORY_LENGTH.times(9));
     final CommonAncestor commonAncestor = new CommonAncestor(storageClient);
+    final UInt64 syncStartSlot = currentRemoteHead.minus(CommonAncestor.OPTIMISTIC_HISTORY_LENGTH);
     final SafeFuture<Void> requestFuture1 = new SafeFuture<>();
-    when(peer.requestBlocksByRange(any(), eq(UInt64.valueOf(20)), eq(UInt64.valueOf(50)), any()))
+    when(peer.requestBlocksByRange(
+            eq(syncStartSlot),
+            eq(CommonAncestor.BLOCK_COUNT),
+            eq(CommonAncestor.SAMPLE_RATE),
+            any()))
         .thenReturn(requestFuture1);
     final PeerStatus status =
         withPeerHeadSlot(
@@ -88,9 +98,9 @@ public class CommonAncestorTest extends AbstractSyncTest {
 
     verify(peer)
         .requestBlocksByRange(
-            eq(currentLocalHead.minus(3000)),
-            eq(UInt64.valueOf(20)),
-            eq(UInt64.valueOf(50)),
+            eq(syncStartSlot),
+            eq(CommonAncestor.BLOCK_COUNT),
+            eq(CommonAncestor.SAMPLE_RATE),
             responseListenerArgumentCaptor.capture());
 
     assertThat(futureSlot.isDone()).isFalse();
