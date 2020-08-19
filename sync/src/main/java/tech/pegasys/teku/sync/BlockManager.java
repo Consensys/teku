@@ -32,8 +32,7 @@ import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
-import tech.pegasys.teku.util.collections.LimitStrategy;
+import tech.pegasys.teku.util.collections.LimitedSet;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class BlockManager extends Service implements SlotEventsChannel {
@@ -46,8 +45,7 @@ public class BlockManager extends Service implements SlotEventsChannel {
 
   private final FutureItems<SignedBeaconBlock> futureBlocks;
   private final FetchRecentBlocksService recentBlockFetcher;
-  private final Set<Bytes32> invalidBlockRoots =
-      ConcurrentLimitedSet.create(500, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+  private final Set<Bytes32> invalidBlockRoots = LimitedSet.create(500);
 
   BlockManager(
       final EventBus eventBus,

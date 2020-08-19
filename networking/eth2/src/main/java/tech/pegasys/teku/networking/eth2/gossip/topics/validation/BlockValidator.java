@@ -39,8 +39,7 @@ import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
-import tech.pegasys.teku.util.collections.LimitStrategy;
+import tech.pegasys.teku.util.collections.LimitedSet;
 
 public class BlockValidator {
   private static final Logger LOG = LogManager.getLogger();
@@ -48,7 +47,7 @@ public class BlockValidator {
   private final RecentChainData recentChainData;
   private final StateTransition stateTransition;
   private final Set<SlotAndProposer> receivedValidBlockInfoSet =
-      ConcurrentLimitedSet.create(VALID_BLOCK_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+      LimitedSet.create(VALID_BLOCK_SET_SIZE);
 
   public BlockValidator(RecentChainData recentChainData, StateTransition stateTransition) {
     this.recentChainData = recentChainData;
