@@ -69,7 +69,7 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath()).isEqualTo(ValidatorApiMethod.GET_FORK.getPath());
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_FORK.getPath());
   }
 
   @Test
@@ -111,7 +111,7 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("POST");
-    assertThat(request.getPath()).isEqualTo(ValidatorApiMethod.GET_DUTIES.getPath());
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_DUTIES.getPath());
     assertThat(request.getBody().readString(StandardCharsets.UTF_8))
         .isEqualTo(asJson(validatorDutiesRequest));
   }
@@ -230,7 +230,7 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("POST");
-    assertThat(request.getPath()).isEqualTo(ValidatorApiMethod.SEND_SIGNED_BLOCK.getPath());
+    assertThat(request.getPath()).contains(ValidatorApiMethod.SEND_SIGNED_BLOCK.getPath());
     assertThat(request.getBody().readString(StandardCharsets.UTF_8))
         .isEqualTo(asJson(signedBeaconBlock));
   }
@@ -340,7 +340,7 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("POST");
-    assertThat(request.getPath()).isEqualTo(ValidatorApiMethod.SEND_SIGNED_ATTESTATION.getPath());
+    assertThat(request.getPath()).contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION.getPath());
     assertThat(request.getBody().readString(StandardCharsets.UTF_8)).isEqualTo(asJson(attestation));
   }
 

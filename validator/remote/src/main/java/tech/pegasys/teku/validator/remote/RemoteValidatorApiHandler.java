@@ -177,7 +177,6 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                 apiClient.sendAggregateAndProof(
                     new tech.pegasys.teku.api.schema.SignedAggregateAndProof(aggregateAndProof)))
         .finish(error -> LOG.error("Failed to send aggregate and proof", error));
-    ;
   }
 
   @Override
@@ -189,7 +188,6 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                 apiClient.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot))
         .finish(
             error -> LOG.error("Failed to subscribe to beacon committee for aggregation", error));
-    ;
   }
 
   @Override
