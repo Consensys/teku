@@ -38,6 +38,7 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeListenerWrapper;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler;
@@ -191,7 +192,9 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> blocksByRange =
         rpcMethods.beaconBlocksByRange();
     return requestStream(
-        blocksByRange, new BeaconBlocksByRangeRequestMessage(startSlot, count, step), listener);
+        blocksByRange,
+        new BeaconBlocksByRangeRequestMessage(startSlot, count, step),
+        new BlocksByRangeListenerWrapper(this, listener, startSlot, count, step));
   }
 
   public SafeFuture<MetadataMessage> requestMetadata() {

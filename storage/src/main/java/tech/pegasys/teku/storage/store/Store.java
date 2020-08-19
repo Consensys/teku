@@ -58,8 +58,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.metrics.SettableGauge;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.util.collections.ConcurrentLimitedMap;
-import tech.pegasys.teku.util.collections.LimitStrategy;
 import tech.pegasys.teku.util.collections.LimitedMap;
 
 class Store implements UpdatableStore {
@@ -182,14 +180,10 @@ class Store implements UpdatableStore {
       final StoreConfig config) {
 
     // Create limited collections for non-final data
-    final Map<Bytes32, SignedBeaconBlock> blocks =
-        ConcurrentLimitedMap.create(
-            config.getBlockCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
-    final Map<Bytes32, BeaconState> blockStates =
-        LimitedMap.create(config.getStateCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+    final Map<Bytes32, SignedBeaconBlock> blocks = LimitedMap.create(config.getBlockCacheSize());
+    final Map<Bytes32, BeaconState> blockStates = LimitedMap.create(config.getStateCacheSize());
     final Map<Checkpoint, BeaconState> checkpointStates =
-        LimitedMap.create(
-            config.getCheckpointStateCacheSize(), LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+        LimitedMap.create(config.getCheckpointStateCacheSize());
 
     // Build block tree structure
     HashTree.Builder treeBuilder = HashTree.builder().rootHash(finalizedBlockAndState.getRoot());

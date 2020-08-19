@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -93,7 +94,7 @@ public class PeerSync {
 
     this.startingSlot = firstNonFinalSlot;
 
-    return executeSync(peer, firstNonFinalSlot, SafeFuture.COMPLETE)
+    return executeSync(peer, firstNonFinalSlot, SafeFuture.COMPLETE, true)
         .whenComplete(
             (res, err) -> {
               if (err != null) {
@@ -110,7 +111,10 @@ public class PeerSync {
 
   @SuppressWarnings("FutureReturnValueIgnored")
   private SafeFuture<PeerSyncResult> executeSync(
-      final Eth2Peer peer, final UInt64 startSlot, final SafeFuture<Void> readyForRequest) {
+      final Eth2Peer peer,
+      final UInt64 startSlot,
+      final SafeFuture<Void> readyForRequest,
+      final boolean findCommonAncestor) {
     if (stopped.get()) {
       return SafeFuture.completedFuture(PeerSyncResult.CANCELLED);
     }
@@ -123,24 +127,39 @@ public class PeerSync {
 
     return readyForRequest
         .thenCompose(
-            (__) -> {
+            __ -> {
+              if (!findCommonAncestor) {
+                return SafeFuture.completedFuture(startSlot);
+              }
+              CommonAncestor ancestor = new CommonAncestor(storageClient);
+              return ancestor.getCommonAncestor(peer, status, startSlot);
+            })
+        .thenCompose(
+            (ancestorStartSlot) -> {
+              if (findCommonAncestor) {
+                LOG.trace("Start sync from slot {}, instead of {}", ancestorStartSlot, startSlot);
+              }
               LOG.debug(
-                  "Request {} blocks starting at {} from peer {}", count, startSlot, peer.getId());
+                  "Request {} blocks starting at {} from peer {}",
+                  count,
+                  ancestorStartSlot,
+                  peer.getId());
               final SafeFuture<Void> readyForNextRequest =
                   asyncRunner.getDelayedFuture(
                       NEXT_REQUEST_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
               final PeerSyncBlockRequest request =
                   new PeerSyncBlockRequest(
-                      readyForNextRequest, startSlot.plus(count), this::blockResponseListener);
-              return peer.requestBlocksByRange(startSlot, count, STEP, request)
+                      readyForNextRequest,
+                      ancestorStartSlot.plus(count),
+                      this::blockResponseListener);
+              return peer.requestBlocksByRange(ancestorStartSlot, count, STEP, request)
                   .thenApply((res) -> request);
             })
         .thenCompose(
             (blockRequest) -> {
               final UInt64 nextSlot = blockRequest.getActualEndSlot().plus(UInt64.ONE);
               LOG.trace(
-                  "Completed request starting at {} for {} slots from peer {}. Next request starts from {}",
-                  startSlot,
+                  "Completed request for {} slots from peer {}. Next request starts from {}",
                   count,
                   peer.getId(),
                   nextSlot);
@@ -160,7 +179,7 @@ public class PeerSync {
               } else {
                 throttledRequestCount.set(0);
               }
-              return executeSync(peer, nextSlot, blockRequest.getReadyForNextRequest());
+              return executeSync(peer, nextSlot, blockRequest.getReadyForNextRequest(), false);
             })
         .exceptionally(err -> handleFailedRequestToPeer(peer, err));
   }
@@ -181,9 +200,16 @@ public class PeerSync {
         return PeerSyncResult.IMPORT_FAILED;
       }
     }
+
     if (rootException instanceof CancellationException) {
       return PeerSyncResult.CANCELLED;
     }
+
+    if (rootException instanceof BlocksByRangeResponseInvalidResponseException) {
+      disconnectFromPeer(peer);
+      return PeerSyncResult.INVALID_RESPONSE;
+    }
+
     if (err instanceof RuntimeException) {
       throw (RuntimeException) err;
     } else {
