@@ -23,7 +23,7 @@ public class StoreOptions {
       description =
           "How frequently to persist hot states in epochs.  A value less than or equal to zero disables hot state persistence.",
       arity = "1")
-  private int hotStatePersistenceFrequencyInEpochs = 0;
+  private int hotStatePersistenceFrequencyInEpochs = 1;
 
   @Option(
       hidden = true,
@@ -32,7 +32,7 @@ public class StoreOptions {
       fallbackValue = "true",
       description = "Disable block processing at startup.",
       arity = "0..1")
-  private boolean disableBlockProcessingAtStartup = false;
+  private boolean disableBlockProcessingAtStartup = true;
 
   public int getHotStatePersistenceFrequencyInEpochs() {
     return hotStatePersistenceFrequencyInEpochs;

@@ -33,7 +33,7 @@ public class StoreOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void hotStatePersistenceFrequency_shouldSetDefaultValue() {
     final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
-    assertThat(tekuConfiguration.getHotStatePersistenceFrequencyInEpochs()).isEqualTo(0);
+    assertThat(tekuConfiguration.getHotStatePersistenceFrequencyInEpochs()).isEqualTo(1);
   }
 
   @Test
@@ -90,6 +90,6 @@ public class StoreOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void disableBlockProcessingAtStartup_default() {
     final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
-    assertThat(tekuConfiguration.isBlockProcessingAtStartupDisabled()).isFalse();
+    assertThat(tekuConfiguration.isBlockProcessingAtStartupDisabled()).isTrue();
   }
 }
