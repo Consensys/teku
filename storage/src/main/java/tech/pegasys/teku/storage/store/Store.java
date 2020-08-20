@@ -400,26 +400,23 @@ class Store implements UpdatableStore {
   }
 
   private SafeFuture<Optional<BeaconState>> getAndCacheBlockState(final Bytes32 blockRoot) {
-    Optional<BeaconState> inMemoryState = getBlockStateIfAvailable(blockRoot);
-    if (inMemoryState.isPresent()) {
-      return SafeFuture.completedFuture(inMemoryState);
-    }
-    return regenerateState(blockRoot).thenApply(res -> res.map(SignedBlockAndState::getState));
+    return getOrRegenerateBlockAndState(blockRoot)
+        .thenApply(res -> res.map(SignedBlockAndState::getState));
   }
 
   private SafeFuture<Optional<SignedBlockAndState>> getAndCacheBlockAndState(
       final Bytes32 blockRoot) {
-    Optional<BeaconState> inMemoryState = getBlockStateIfAvailable(blockRoot);
-    Optional<SignedBeaconBlock> inMemoryBlock = getBlockIfAvailable(blockRoot);
-    if (inMemoryState.isPresent() && inMemoryBlock.isPresent()) {
-      return SafeFuture.completedFuture(
-          Optional.of(new SignedBlockAndState(inMemoryBlock.get(), inMemoryState.get())));
-    }
-    return regenerateState(blockRoot)
+    return getOrRegenerateBlockAndState(blockRoot)
         .thenPeek(result -> result.map(SignedBlockAndState::getBlock).ifPresent(this::putBlock));
   }
 
-  private SafeFuture<Optional<SignedBlockAndState>> regenerateState(final Bytes32 blockRoot) {
+  private SafeFuture<Optional<SignedBlockAndState>> getOrRegenerateBlockAndState(
+      final Bytes32 blockRoot) {
+    // Avoid generating the hash tree to rebuild if the state is already available.
+    final Optional<SignedBlockAndState> cachedResult = states.getIfAvailable(blockRoot);
+    if (cachedResult.isPresent()) {
+      return SafeFuture.completedFuture(cachedResult);
+    }
     return createStateGenerationTask(blockRoot)
         .thenCompose(
             maybeTask ->
