@@ -28,7 +28,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.services.remotevalidator.RemoteValidatorSubscriptions.SubscriptionStatus;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
-public class RemoteValidatorApi {
+class RemoteValidatorApi {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -36,7 +36,7 @@ public class RemoteValidatorApi {
   private final Javalin app;
   private final JsonProvider jsonProvider = new JsonProvider();
 
-  public RemoteValidatorApi(
+  RemoteValidatorApi(
       final TekuConfiguration configuration,
       final RemoteValidatorSubscriptions subscriptionManager) {
     checkNotNull(configuration, "TekuConfiguration can't be null");
@@ -102,11 +102,11 @@ public class RemoteValidatorApi {
     subscriptionManager.unsubscribe(handler.getSessionId());
   }
 
-  public void start() {
+  void start() {
     app.start();
   }
 
-  public void stop() {
+  void stop() {
     app.stop();
   }
 }
