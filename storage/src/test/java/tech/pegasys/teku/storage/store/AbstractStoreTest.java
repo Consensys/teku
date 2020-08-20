@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
-import tech.pegasys.teku.core.stategenerator.StateGenerationQueue;
+import tech.pegasys.teku.core.stategenerator.CachingTaskQueue;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -127,7 +127,8 @@ public abstract class AbstractStoreTest {
         Store.create(
             new StubMetricsSystem(),
             blockProviderFromChainBuilder(),
-            StateGenerationQueue.create(StateAndBlockProvider.NOOP, new StubMetricsSystem()),
+            StateAndBlockProvider.NOOP,
+            CachingTaskQueue.create(new StubMetricsSystem(), "memory_states", 100),
             genesis.getState().getGenesis_time(),
             genesis.getState().getGenesis_time(),
             genesisCheckpoint,
