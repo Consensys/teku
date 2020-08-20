@@ -16,13 +16,13 @@ package tech.pegasys.teku.services.remotevalidator;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class BeaconChainEvent {
+class BeaconChainEvent {
 
-  public static final String ATTESTATION = "BroadcastAttestationEvent";
-  public static final String AGGREGATION = "BroadcastAggregatesEvent";
-  public static final String IMPORTED_BLOCK = "ImportedBlockEvent";
-  public static final String ON_SLOT = "OnSlotEvent";
-  public static final String REORG_OCCURRED = "ReorgOccurredEvent";
+  static final String ATTESTATION = "BroadcastAttestationEvent";
+  static final String AGGREGATION = "BroadcastAggregatesEvent";
+  static final String IMPORTED_BLOCK = "ImportedBlockEvent";
+  static final String ON_SLOT = "OnSlotEvent";
+  static final String REORG_OCCURRED = "ReorgOccurredEvent";
 
   private String name;
   private UInt64 data;
