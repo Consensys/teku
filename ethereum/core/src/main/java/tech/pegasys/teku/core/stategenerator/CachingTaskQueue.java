@@ -145,7 +145,7 @@ public class CachingTaskQueue<K, V> {
   }
 
   public Optional<V> getIfAvailable(final K key) {
-    return Optional.of(cache.get(key));
+    return Optional.ofNullable(cache.get(key));
   }
 
   private SafeFuture<Optional<V>> queueTask(final CacheableTask<K, V> task) {
