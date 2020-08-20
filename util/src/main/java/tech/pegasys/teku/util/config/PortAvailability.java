@@ -15,6 +15,7 @@ package tech.pegasys.teku.util.config;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,11 +27,12 @@ public class PortAvailability {
     if (!isPortValid(port)) {
       return false;
     }
-    try (final ServerSocket serverSocket = new ServerSocket(port)) {
+    try (final ServerSocket serverSocket = new ServerSocket()) {
       serverSocket.setReuseAddress(true);
+      serverSocket.bind(new InetSocketAddress(port));
       return true;
     } catch (IOException ex) {
-      LOG.trace("failed to open port for TCP", ex);
+      LOG.trace(String.format("failed to open port %d for TCP", port), ex);
     }
     return false;
   }
@@ -39,11 +41,12 @@ public class PortAvailability {
     if (!isPortValid(port)) {
       return false;
     }
-    try (final DatagramSocket datagramSocket = new DatagramSocket(port)) {
+    try (final DatagramSocket datagramSocket = new DatagramSocket(null)) {
       datagramSocket.setReuseAddress(true);
+      datagramSocket.bind(new InetSocketAddress(port));
       return true;
     } catch (IOException ex) {
-      LOG.trace("failed to open port for UDP", ex);
+      LOG.trace(String.format("failed to open port %d for UDP", port), ex);
     }
     return false;
   }
