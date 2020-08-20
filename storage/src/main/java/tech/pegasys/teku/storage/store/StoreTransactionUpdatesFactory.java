@@ -17,7 +17,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -60,7 +59,7 @@ class StoreTransactionUpdatesFactory {
     // Save copy of tx data that may be pruned
     hotBlocks =
         tx.blockAndStates.entrySet().stream()
-            .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue().getBlock()));
+            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getBlock()));
     hotBlockAndStates = new ConcurrentHashMap<>(tx.blockAndStates);
     stateRoots = new ConcurrentHashMap<>(tx.stateRoots);
   }
