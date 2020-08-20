@@ -18,6 +18,10 @@ package tech.pegasys.teku.datastructures.forkchoice;
  * commonly because the blockRoot is for a block after the epoch start slot.
  */
 public class InvalidCheckpointException extends RuntimeException {
+  public InvalidCheckpointException(final String message) {
+    super(message);
+  }
+
   public InvalidCheckpointException(final Throwable cause) {
     super(cause);
   }
