@@ -25,7 +25,7 @@ public class PortAvailabilityTest {
 
   @Test
   void isValidPort_shouldRejectBelowBounds() {
-    assertThat(PortAvailability.isPortValid(0)).isFalse();
+    assertThat(PortAvailability.isPortValid(-1)).isFalse();
   }
 
   @Test
@@ -35,6 +35,7 @@ public class PortAvailabilityTest {
 
   @Test
   void isValidPort_shouldBeValidInsideBounds() {
+    assertThat(PortAvailability.isPortValid(0)).isTrue();
     assertThat(PortAvailability.isPortValid(1)).isTrue();
     assertThat(PortAvailability.isPortValid(1025)).isTrue();
     assertThat(PortAvailability.isPortValid(65535)).isTrue();
@@ -47,6 +48,20 @@ public class PortAvailabilityTest {
       assertThat(PortAvailability.isPortAvailableForTcp(port)).isFalse();
       assertThat(PortAvailability.isPortAvailable(port)).isFalse();
     }
+  }
+
+  @Test
+  void shouldDetectPortAvailableForTcp() {
+    final int port = 0;
+    assertThat(PortAvailability.isPortAvailableForTcp(port)).isTrue();
+    assertThat(PortAvailability.isPortAvailable(port)).isTrue();
+  }
+
+  @Test
+  void shouldDetectPortAvailableForUdp() {
+    final int port = 0;
+    assertThat(PortAvailability.isPortAvailableForUdp(port)).isTrue();
+    assertThat(PortAvailability.isPortAvailable(port)).isTrue();
   }
 
   @Test

@@ -49,7 +49,7 @@ public class PortAvailability {
   }
 
   public static boolean isPortValid(final int port) {
-    return (port >= 1 && port <= 65535);
+    return (port >= 0 && port <= 65535);
   }
 
   public static boolean isPortAvailable(final int port) {
