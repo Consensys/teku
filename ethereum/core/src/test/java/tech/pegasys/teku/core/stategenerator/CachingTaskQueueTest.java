@@ -64,9 +64,10 @@ class CachingTaskQueueTest {
   void shouldCacheResultOfPreviousTask() {
     final StubTask task1 = new StubTask(4);
     final StubTask task2 = new StubTask(4);
-    taskQueue.perform(task1);
+    final SafeFuture<Optional<String>> result1 = taskQueue.perform(task1);
     task1.completeTask();
     task1.assertPerformedWithoutRebase();
+    assertThat(result1).isCompletedWithValue(task1.getExpectedValue());
 
     final SafeFuture<Optional<String>> result = taskQueue.perform(task2);
     assertThat(result).isCompletedWithValue(task2.getExpectedValue());
