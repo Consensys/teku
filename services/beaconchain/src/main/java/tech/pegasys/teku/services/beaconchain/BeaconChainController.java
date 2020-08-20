@@ -18,11 +18,13 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
+import com.google.common.base.Throwables;
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
 import java.io.IOException;
+import java.net.BindException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -160,7 +162,20 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             p2pNetwork.start(),
             syncService.start(),
             syncStateTracker.start())
-        .reportExceptions();
+        .finish(
+            error -> {
+              Throwable rootCause = Throwables.getRootCause(error);
+              if (rootCause instanceof BindException) {
+                final String errorWhilePerformingDescription =
+                    "starting P2P services on port " + this.p2pNetwork.getListenPort() + ".";
+                STATUS_LOG.fatalError(errorWhilePerformingDescription, rootCause);
+                System.exit(1);
+              } else {
+                Thread.currentThread()
+                    .getUncaughtExceptionHandler()
+                    .uncaughtException(Thread.currentThread(), error);
+              }
+            });
   }
 
   @Override
@@ -391,6 +406,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                   config.isLogWirePlain(),
                   config.isLogWireMuxFrames(),
                   config.isLogWireGossip()));
+
+      p2pConfig.validateListenPortAvailable();
       final Eth2Config eth2Config = new Eth2Config(config.isP2pSnappyEnabled());
 
       this.p2pNetwork =
