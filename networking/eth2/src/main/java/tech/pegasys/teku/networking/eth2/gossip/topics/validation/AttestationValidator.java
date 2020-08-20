@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_seed;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.get_beacon_committee;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -25,6 +26,7 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.Interna
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.SAVE_FOR_FUTURE;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
+import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.VALID_ATTESTATION_SET_SIZE;
 
@@ -104,12 +106,13 @@ public class AttestationValidator {
   }
 
   SafeFuture<InternalValidationResult> singleOrAggregateAttestationChecks(
-      final Attestation attestation, final OptionalInt receivedOnSubnetId) {
+      final ValidateableAttestation validateableAttestation, final OptionalInt receivedOnSubnetId) {
     // attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (within a
     // MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot +
     // ATTESTATION_PROPAGATION_SLOT_RANGE >= current_slot >= attestation.data.slot (a client MAY
     // queue
     // future attestations for processing at the appropriate slot).
+    Attestation attestation = validateableAttestation.getAttestation();
     final UInt64 currentTimeMillis = secondsToMillis(recentChainData.getStore().getTime());
     if (isCurrentTimeAfterAttestationPropagationSlotRange(currentTimeMillis, attestation)
         || isFromFarFuture(attestation, currentTimeMillis)) {
@@ -153,6 +156,9 @@ public class AttestationValidator {
               if (!is_valid_indexed_attestation(state, indexedAttestation).isSuccessful()) {
                 return REJECT;
               }
+
+              // Save committee shuffling seed since the state is available and attestation is valid
+              validateableAttestation.saveCommitteeShufflingSeed(state);
               return ACCEPT;
             });
   }

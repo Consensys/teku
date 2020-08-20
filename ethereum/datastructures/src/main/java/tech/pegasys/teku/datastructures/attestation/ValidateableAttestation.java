@@ -15,16 +15,22 @@ package tech.pegasys.teku.datastructures.attestation;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Suppliers;
-import java.util.Collection;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
+import java.util.Collection;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
+
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_seed;
+import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 
 public class ValidateableAttestation {
   private final Attestation attestation;
@@ -33,6 +39,7 @@ public class ValidateableAttestation {
   private final AtomicBoolean gossiped = new AtomicBoolean(false);
 
   private volatile Optional<IndexedAttestation> maybeIndexedAttestation = Optional.empty();
+  private volatile Optional<Bytes32> maybeCommitteeShufflingSeed = Optional.empty();
 
   public static ValidateableAttestation fromAttestation(Attestation attestation) {
     return new ValidateableAttestation(attestation, Optional.empty());
@@ -50,6 +57,10 @@ public class ValidateableAttestation {
     this.hashTreeRoot = Suppliers.memoize(attestation::hash_tree_root);
   }
 
+  public Optional<IndexedAttestation> getMaybeIndexedAttestation() {
+    return maybeIndexedAttestation;
+  }
+
   public IndexedAttestation getIndexedAttestation() {
     return maybeIndexedAttestation.orElseThrow(
         () ->
@@ -57,8 +68,25 @@ public class ValidateableAttestation {
                 "ValidateableAttestation does not have an IndexedAttestation yet."));
   }
 
-  public void setIndexedAttestation(IndexedAttestation maybeIndexedAttestation) {
-    this.maybeIndexedAttestation = Optional.of(maybeIndexedAttestation);
+  public Optional<Bytes32> getMaybeCommitteeShufflingSeed() {
+    return maybeCommitteeShufflingSeed;
+  }
+
+  public Bytes32 getCommitteeShufflingSeed() {
+    return maybeCommitteeShufflingSeed.orElseThrow(
+            () ->
+                    new UnsupportedOperationException(
+                            "ValidateableAttestation does not have a committee shuffling seed yet."));
+  }
+
+  public void setIndexedAttestation(IndexedAttestation indexedAttestation) {
+    this.maybeIndexedAttestation = Optional.of(indexedAttestation);
+  }
+
+  public void saveCommitteeShufflingSeed(BeaconState state) {
+    Bytes32 committeeShufflingSeed = get_seed(
+            state, compute_epoch_at_slot(attestation.getData().getSlot()), DOMAIN_BEACON_ATTESTER);
+    this.maybeCommitteeShufflingSeed = Optional.of(committeeShufflingSeed);
   }
 
   public boolean markGossiped() {

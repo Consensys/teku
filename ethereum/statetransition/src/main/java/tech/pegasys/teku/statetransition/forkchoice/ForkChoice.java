@@ -13,13 +13,6 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
-import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.Semaphore;
-import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
@@ -35,6 +28,14 @@ import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.Semaphore;
+import java.util.function.Supplier;
+
+import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
+import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
 
 public class ForkChoice {
 
@@ -136,15 +137,15 @@ public class ForkChoice {
   public SafeFuture<AttestationProcessingResult> onAttestation(
       final ValidateableAttestation attestation) {
     return recentChainData
-        .retrieveCheckpointState(attestation.getData().getTarget())
+        .retrieveBlockState(attestation.getData().getBeacon_block_root())
         .thenCompose(
-            targetState ->
+            attestedBlockState ->
                 withLock(
                     () -> {
                       final StoreTransaction transaction = recentChainData.startStoreTransaction();
                       final AttestationProcessingResult result =
                           on_attestation(
-                              transaction, attestation, targetState, getForkChoiceStrategy());
+                              transaction, attestation, attestedBlockState, getForkChoiceStrategy());
                       return result.isSuccessful()
                           ? transaction.commit().thenApply(__ -> result)
                           : SafeFuture.completedFuture(result);
