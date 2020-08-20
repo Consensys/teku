@@ -25,13 +25,12 @@ import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
-public class RemoteValidatorBeaconChainEventsAdapter
-    implements SlotEventsChannel, ReorgEventChannel {
+class RemoteValidatorBeaconChainEventsAdapter implements SlotEventsChannel, ReorgEventChannel {
 
   private final ServiceConfig config;
   private final BeaconChainEventsListener listener;
 
-  public RemoteValidatorBeaconChainEventsAdapter(
+  RemoteValidatorBeaconChainEventsAdapter(
       final ServiceConfig config, final BeaconChainEventsListener listener) {
     checkNotNull(config, "ServiceConfig can't be null");
     checkNotNull(listener, "BeaconChainEventsListener can't be null");
