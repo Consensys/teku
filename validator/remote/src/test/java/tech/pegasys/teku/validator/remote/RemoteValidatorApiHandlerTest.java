@@ -45,9 +45,8 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
@@ -56,7 +55,7 @@ import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 class RemoteValidatorApiHandlerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final ValidatorRestApiClient apiClient = mock(ValidatorRestApiClient.class);
 
@@ -181,6 +180,7 @@ class RemoteValidatorApiHandlerTest {
         ArgumentCaptor.forClass(tech.pegasys.teku.api.schema.Attestation.class);
 
     apiHandler.sendSignedAttestation(attestation);
+    asyncRunner.executeQueuedActions();
 
     verify(apiClient).sendSignedAttestation(argumentCaptor.capture());
     assertThat(argumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(schemaAttestation);
@@ -196,6 +196,7 @@ class RemoteValidatorApiHandlerTest {
         ArgumentCaptor.forClass(tech.pegasys.teku.api.schema.Attestation.class);
 
     apiHandler.sendSignedAttestation(attestation, Optional.of(1));
+    asyncRunner.executeQueuedActions();
 
     verify(apiClient).sendSignedAttestation(argumentCaptor.capture());
     assertThat(argumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(schemaAttestation);
@@ -245,6 +246,7 @@ class RemoteValidatorApiHandlerTest {
         ArgumentCaptor.forClass(tech.pegasys.teku.api.schema.SignedBeaconBlock.class);
 
     apiHandler.sendSignedBlock(signedBeaconBlock);
+    asyncRunner.executeQueuedActions();
 
     verify(apiClient).sendSignedBlock(argumentCaptor.capture());
     assertThat(argumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(schemaSignedBlock);
@@ -290,6 +292,7 @@ class RemoteValidatorApiHandlerTest {
         ArgumentCaptor.forClass(tech.pegasys.teku.api.schema.SignedAggregateAndProof.class);
 
     apiHandler.sendAggregateAndProof(signedAggregateAndProof);
+    asyncRunner.executeQueuedActions();
 
     verify(apiClient).sendAggregateAndProof(argumentCaptor.capture());
     assertThat(argumentCaptor.getValue())
@@ -303,6 +306,7 @@ class RemoteValidatorApiHandlerTest {
     final UInt64 aggregationSlot = UInt64.ONE;
 
     apiHandler.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot);
+    asyncRunner.executeQueuedActions();
 
     verify(apiClient)
         .subscribeToBeaconCommitteeForAggregation(eq(committeeIndex), eq(aggregationSlot));
@@ -322,6 +326,7 @@ class RemoteValidatorApiHandlerTest {
         ArgumentCaptor.forClass(Set.class);
 
     apiHandler.subscribeToPersistentSubnets(Set.of(subnetSubscription));
+    asyncRunner.executeQueuedActions();
 
     verify(apiClient).subscribeToPersistentSubnets(argumentCaptor.capture());
 
@@ -334,6 +339,7 @@ class RemoteValidatorApiHandlerTest {
 
   private <T> Optional<T> unwrapToOptional(SafeFuture<Optional<T>> future) {
     try {
+      asyncRunner.executeQueuedActions();
       return Waiter.waitFor(future);
     } catch (Exception e) {
       fail("Error unwrapping optional from SafeFuture", e);
@@ -343,6 +349,7 @@ class RemoteValidatorApiHandlerTest {
 
   private <T> T unwrapToValue(SafeFuture<Optional<T>> future) {
     try {
+      asyncRunner.executeQueuedActions();
       return Waiter.waitFor(future).orElseThrow();
     } catch (Exception e) {
       fail("Error unwrapping value from SafeFuture", e);
