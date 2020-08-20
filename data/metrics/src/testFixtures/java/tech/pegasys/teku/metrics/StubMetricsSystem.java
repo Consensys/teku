@@ -25,8 +25,8 @@ import org.hyperledger.besu.plugin.services.metrics.OperationTimer;
 
 public class StubMetricsSystem implements MetricsSystem {
 
-  private Map<MetricCategory, Map<String, StubCounter>> counters = new ConcurrentHashMap<>();
-  private Map<MetricCategory, Map<String, StubGauge>> gauges = new ConcurrentHashMap<>();
+  private final Map<MetricCategory, Map<String, StubCounter>> counters = new ConcurrentHashMap<>();
+  private final Map<MetricCategory, Map<String, StubGauge>> gauges = new ConcurrentHashMap<>();
 
   @Override
   public LabelledMetric<Counter> createLabelledCounter(
