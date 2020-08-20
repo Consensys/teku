@@ -17,7 +17,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.metrics.SettableGauge;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 
-public class RemoteValidatorMetrics {
+class RemoteValidatorMetrics {
 
   private final SettableGauge connectedValidatorsGauge;
 
@@ -30,7 +30,7 @@ public class RemoteValidatorMetrics {
             "Number of validator nodes connected to the Remote Validator Service");
   }
 
-  public void updateConnectedValidators(final int value) {
+  void updateConnectedValidators(final int value) {
     connectedValidatorsGauge.set(value);
   }
 }
