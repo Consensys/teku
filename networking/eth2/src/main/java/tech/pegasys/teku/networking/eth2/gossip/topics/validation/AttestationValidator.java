@@ -30,6 +30,7 @@ import static tech.pegasys.teku.util.config.Constants.VALID_ATTESTATION_SET_SIZE
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
@@ -124,14 +125,17 @@ public class AttestationValidator {
     // If it's not in the store, it may not have been processed yet so save for future.
     return recentChainData
         .retrieveBlockState(attestation.getData().getBeacon_block_root())
+        .thenCompose(
+            maybeState ->
+                maybeState.isEmpty()
+                    ? SafeFuture.completedFuture(Optional.empty())
+                    : resolveStateForAttestation(attestation, maybeState.get()))
         .thenApply(
             maybeState -> {
               if (maybeState.isEmpty()) {
                 return SAVE_FOR_FUTURE;
               }
-
-              final BeaconState state = resolveStateForAttestation(attestation, maybeState.get());
-
+              final BeaconState state = maybeState.get();
               // The attestation's committee index (attestation.data.index) is for the correct
               // subnet.
               if (receivedOnSubnetId.isPresent()
@@ -165,7 +169,7 @@ public class AttestationValidator {
    * @param blockState The state corresponding to the block being attested to
    * @return The state to use for validation of this attestation
    */
-  public BeaconState resolveStateForAttestation(
+  public SafeFuture<Optional<BeaconState>> resolveStateForAttestation(
       final Attestation attestation, final BeaconState blockState) {
     final Bytes32 blockRoot = attestation.getData().getBeacon_block_root();
     final Checkpoint targetEpoch = attestation.getData().getTarget();
@@ -173,15 +177,12 @@ public class AttestationValidator {
         CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(targetEpoch.getEpoch());
     final UInt64 earliestEpoch = compute_epoch_at_slot(earliestSlot);
 
-    final BeaconState state;
     if (blockState.getSlot().isLessThan(earliestSlot)) {
       final Checkpoint checkpoint = new Checkpoint(earliestEpoch, blockRoot);
-      state = recentChainData.getStore().getCheckpointState(checkpoint, blockState);
+      return recentChainData.getStore().retrieveCheckpointState(checkpoint, blockState);
     } else {
-      state = blockState;
+      return SafeFuture.completedFuture(Optional.of(blockState));
     }
-
-    return state;
   }
 
   private ValidatorAndTargetEpoch getValidatorAndTargetEpoch(final Attestation attestation) {
