@@ -188,10 +188,15 @@ public class RocksDbDatabase implements Database {
 
     final Map<UInt64, VoteTracker> votes = hotDao.getVotes();
 
-    // Build child-parent lookup
+    // Build maps with block information
     final Map<Bytes32, Bytes32> childToParentLookup = new HashMap<>();
+    final Map<Bytes32, UInt64> rootToSlot = new HashMap<>();
     try (final Stream<SignedBeaconBlock> hotBlocks = hotDao.streamHotBlocks()) {
-      hotBlocks.forEach(b -> childToParentLookup.put(b.getRoot(), b.getParent_root()));
+      hotBlocks.forEach(
+          b -> {
+            childToParentLookup.put(b.getRoot(), b.getParent_root());
+            rootToSlot.put(b.getRoot(), b.getSlot());
+          });
     }
 
     // Validate finalized data is consistent and available
@@ -213,6 +218,7 @@ public class RocksDbDatabase implements Database {
             .justifiedCheckpoint(justifiedCheckpoint)
             .bestJustifiedCheckpoint(bestJustifiedCheckpoint)
             .childToParentMap(childToParentLookup)
+            .rootToSlotMap(rootToSlot)
             .latestFinalized(latestFinalized)
             .votes(votes));
   }

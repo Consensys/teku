@@ -134,6 +134,7 @@ public abstract class AbstractStoreTest {
             genesisCheckpoint,
             genesisCheckpoint,
             Map.of(genesis.getRoot(), genesis.getParentRoot()),
+            Map.of(genesis.getRoot(), genesis.getSlot()),
             genesis,
             Collections.emptyMap(),
             pruningOptions);

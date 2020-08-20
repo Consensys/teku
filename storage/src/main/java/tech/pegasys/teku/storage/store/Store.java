@@ -175,40 +175,73 @@ class Store implements UpdatableStore {
       final Checkpoint finalizedCheckpoint,
       final Checkpoint bestJustifiedCheckpoint,
       final Map<Bytes32, Bytes32> childToParentRoot,
+      final Map<Bytes32, UInt64> rootToSlotMap,
       final SignedBlockAndState finalizedBlockAndState,
       final Map<UInt64, VoteTracker> votes,
       final StoreConfig config) {
 
     // Create limited collections for non-final data
     final Map<Bytes32, SignedBeaconBlock> blocks = LimitedMap.create(config.getBlockCacheSize());
-    final Map<Bytes32, BeaconState> blockStates = LimitedMap.create(config.getStateCacheSize());
+    final Map<Bytes32, BeaconState> blockStates = LimitedMap.createSoft(config.getStateCacheSize());
     final Map<Checkpoint, BeaconState> checkpointStates =
-        LimitedMap.create(config.getCheckpointStateCacheSize());
+        LimitedMap.createSoft(config.getCheckpointStateCacheSize());
 
     // Build block tree structure
     HashTree.Builder treeBuilder = HashTree.builder().rootHash(finalizedBlockAndState.getRoot());
     childToParentRoot.forEach(treeBuilder::childAndParentRoots);
-    final HashTree hashTree = treeBuilder.build();
-    if (hashTree.size() < childToParentRoot.size()) {
+    final BlockTree blockTree = BlockTree.create(treeBuilder.build(), rootToSlotMap);
+    if (blockTree.size() < childToParentRoot.size()) {
       // This should be an error, but keeping this as a warning now for backwards-compatibility
       // reasons.  Some existing databases may have unpruned fork blocks, and could become
       // unusable
       // if we throw here.  In the future, we should convert this to an error.
-      LOG.warn("Ignoring {} non-canonical blocks", childToParentRoot.size() - hashTree.size());
+      LOG.warn("Ignoring {} non-canonical blocks", childToParentRoot.size() - blockTree.size());
     }
 
-    // Create state generator
+    return processBlocks(
+            config, blockProvider, blockTree, finalizedBlockAndState, blocks, blockStates)
+        .thenApply(
+            __ ->
+                new Store(
+                    metricsSystem,
+                    config.getHotStatePersistenceFrequencyInEpochs(),
+                    blockProvider,
+                    stateGenerationQueue,
+                    time,
+                    genesisTime,
+                    justifiedCheckpoint,
+                    finalizedCheckpoint,
+                    bestJustifiedCheckpoint,
+                    blockTree,
+                    finalizedBlockAndState,
+                    votes,
+                    blocks,
+                    blockStates,
+                    checkpointStates));
+  }
+
+  private static SafeFuture<Void> processBlocks(
+      final StoreConfig config,
+      final BlockProvider blockProvider,
+      final BlockTree blockTree,
+      final SignedBlockAndState finalizedBlockAndState,
+      final Map<Bytes32, SignedBeaconBlock> blocks,
+      final Map<Bytes32, BeaconState> blockStates) {
+    if (config.isBlockProcessingAtStartupDisabled()) {
+      return SafeFuture.COMPLETE;
+    }
+
     final BlockProvider blockProviderWithBlocks =
         BlockProvider.combined(
             fromMap(Map.of(finalizedBlockAndState.getRoot(), finalizedBlockAndState.getBlock())),
             fromMap(blocks),
             blockProvider);
     final StateGenerator stateGenerator =
-        StateGenerator.create(hashTree, finalizedBlockAndState, blockProviderWithBlocks);
+        StateGenerator.create(
+            blockTree.getHashTree(), finalizedBlockAndState, blockProviderWithBlocks);
 
     // Process blocks
-    LOG.info("Process {} block(s) to regenerate state", hashTree.size());
-    final Map<Bytes32, UInt64> blockRootToSlot = new HashMap<>();
+    LOG.info("Process {} block(s) to regenerate state", blockTree.size());
     final AtomicInteger processedBlocks = new AtomicInteger(0);
     return stateGenerator
         .regenerateAllStates(
@@ -219,28 +252,10 @@ class Store implements UpdatableStore {
               }
               blocks.put(block.getRoot(), block);
               blockStates.put(block.getRoot(), state);
-              blockRootToSlot.put(block.getRoot(), block.getSlot());
             })
-        .thenApply(
+        .thenAccept(
             __ -> {
-              LOG.info("Finished processing {} block(s)", hashTree.size());
-
-              return new Store(
-                  metricsSystem,
-                  config.getHotStatePersistenceFrequencyInEpochs(),
-                  blockProvider,
-                  stateGenerationQueue,
-                  time,
-                  genesisTime,
-                  justifiedCheckpoint,
-                  finalizedCheckpoint,
-                  bestJustifiedCheckpoint,
-                  BlockTree.create(hashTree, blockRootToSlot),
-                  finalizedBlockAndState,
-                  votes,
-                  blocks,
-                  blockStates,
-                  checkpointStates);
+              LOG.info("Finished processing {} block(s)", blockTree.size());
             });
   }
 

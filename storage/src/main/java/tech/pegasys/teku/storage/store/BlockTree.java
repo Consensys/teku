@@ -111,6 +111,10 @@ public class BlockTree {
     return compute_epoch_at_slot(slot);
   }
 
+  public int size() {
+    return hashTree.size();
+  }
+
   private void assertBlockIsInTree(Bytes32 blockRoot) {
     if (!contains(blockRoot)) {
       throw new IllegalArgumentException(

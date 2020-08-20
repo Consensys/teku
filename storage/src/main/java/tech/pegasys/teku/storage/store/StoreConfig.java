@@ -31,16 +31,19 @@ public class StoreConfig {
   private final int blockCacheSize;
   private final int checkpointStateCacheSize;
   private final int hotStatePersistenceFrequencyInEpochs;
+  private final boolean disableBlockProcessingAtStartup;
 
   private StoreConfig(
       final int stateCacheSize,
       final int blockCacheSize,
       final int checkpointStateCacheSize,
-      final int hotStatePersistenceFrequencyInEpochs) {
+      final int hotStatePersistenceFrequencyInEpochs,
+      boolean disableBlockProcessingAtStartup) {
     this.stateCacheSize = stateCacheSize;
     this.blockCacheSize = blockCacheSize;
     this.checkpointStateCacheSize = checkpointStateCacheSize;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
+    this.disableBlockProcessingAtStartup = disableBlockProcessingAtStartup;
   }
 
   public static Builder builder() {
@@ -65,6 +68,10 @@ public class StoreConfig {
 
   public int getHotStatePersistenceFrequencyInEpochs() {
     return hotStatePersistenceFrequencyInEpochs;
+  }
+
+  public boolean isBlockProcessingAtStartupDisabled() {
+    return disableBlockProcessingAtStartup;
   }
 
   @Override
@@ -98,6 +105,7 @@ public class StoreConfig {
     private int checkpointStateCacheSize = DEFAULT_CHECKPOINT_STATE_CACHE_SIZE;
     private int hotStatePersistenceFrequencyInEpochs =
         DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS;
+    private boolean disableBlockProcessingAtStartup = false;
 
     private Builder() {}
 
@@ -106,7 +114,8 @@ public class StoreConfig {
           stateCacheSize,
           blockCacheSize,
           checkpointStateCacheSize,
-          hotStatePersistenceFrequencyInEpochs);
+          hotStatePersistenceFrequencyInEpochs,
+          disableBlockProcessingAtStartup);
     }
 
     public Builder stateCacheSize(final int stateCacheSize) {
@@ -130,6 +139,11 @@ public class StoreConfig {
     public Builder hotStatePersistenceFrequencyInEpochs(
         final int hotStatePersistenceFrequencyInEpochs) {
       this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
+      return this;
+    }
+
+    public Builder disableBlockProcessingAtStartup(final boolean disableBlockProcessingAtStartup) {
+      this.disableBlockProcessingAtStartup = disableBlockProcessingAtStartup;
       return this;
     }
 
