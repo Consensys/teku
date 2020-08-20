@@ -26,21 +26,11 @@ public class PortAvailability {
     if (!isPortValid(port)) {
       return false;
     }
-    ServerSocket serverSocket = null;
-    try {
-      serverSocket = new ServerSocket(port);
+    try (final ServerSocket serverSocket = new ServerSocket(port)) {
       serverSocket.setReuseAddress(true);
       return true;
     } catch (IOException ex) {
       LOG.trace("failed to open port for TCP", ex);
-    } finally {
-      if (serverSocket != null) {
-        try {
-          serverSocket.close();
-        } catch (IOException ex) {
-          LOG.trace("failed to close port", ex);
-        }
-      }
     }
     return false;
   }
@@ -49,17 +39,11 @@ public class PortAvailability {
     if (!isPortValid(port)) {
       return false;
     }
-    DatagramSocket datagramSocket = null;
-    try {
-      datagramSocket = new DatagramSocket(port);
+    try (final DatagramSocket datagramSocket = new DatagramSocket(port)) {
       datagramSocket.setReuseAddress(true);
       return true;
     } catch (IOException ex) {
       LOG.trace("failed to open port for UDP", ex);
-    } finally {
-      if (datagramSocket != null) {
-        datagramSocket.close();
-      }
     }
     return false;
   }

@@ -94,19 +94,7 @@ public class NetworkConfig {
               "Advertised ip (%s) is set incorrectly.", this.advertisedIp.orElse("EMPTY")));
     }
 
-    if (listenPort == 0) {
-      this.listenPort = listenPort;
-    } else {
-      if (PortAvailability.isPortAvailable(listenPort)) {
-        this.listenPort = listenPort;
-      } else {
-        throw new InvalidConfigurationException(
-            String.format(
-                "P2P Port %d (TCP/UDP) is already in use. "
-                    + "Check for other processes using this port.",
-                listenPort));
-      }
-    }
+    this.listenPort = listenPort;
     this.advertisedPort = advertisedPort;
     this.staticPeers = staticPeers;
     this.isDiscoveryEnabled = isDiscoveryEnabled;
@@ -114,6 +102,16 @@ public class NetworkConfig {
     this.targetPeerRange = targetPeerRange;
     this.gossipConfig = gossipConfig;
     this.wireLogsConfig = wireLogsConfig;
+  }
+
+  public void validateListenPortAvailable() {
+    if (listenPort != 0 && !PortAvailability.isPortAvailable(listenPort)) {
+      throw new InvalidConfigurationException(
+          String.format(
+              "P2P Port %d (TCP/UDP) is already in use. "
+                  + "Check for other processes using this port.",
+              listenPort));
+    }
   }
 
   public PrivKey getPrivateKey() {

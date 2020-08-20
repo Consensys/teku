@@ -42,29 +42,19 @@ public class PortAvailabilityTest {
 
   @Test
   void shouldDetectPortNotAvailableForTcp() throws IOException {
-    final int port = 30304;
-    ServerSocket serverSocket = new ServerSocket(port);
-    assertThat(PortAvailability.isPortAvailableForTcp(port)).isFalse();
-    assertThat(PortAvailability.isPortAvailableForUdp(port)).isTrue();
-    assertThat(PortAvailability.isPortAvailable(port)).isFalse();
-    serverSocket.close();
-  }
-
-  @Test
-  void shouldDetectPortAvailable() {
-    final int port = 30304;
-    assertThat(PortAvailability.isPortAvailableForTcp(port)).isTrue();
-    assertThat(PortAvailability.isPortAvailableForUdp(port)).isTrue();
-    assertThat(PortAvailability.isPortAvailable(port)).isTrue();
+    try (final ServerSocket serverSocket = new ServerSocket(0)) {
+      final int port = serverSocket.getLocalPort();
+      assertThat(PortAvailability.isPortAvailableForTcp(port)).isFalse();
+      assertThat(PortAvailability.isPortAvailable(port)).isFalse();
+    }
   }
 
   @Test
   void shouldDetectPortNotAvailableForUdp() throws SocketException {
-    final int port = 30304;
-    DatagramSocket datagramSocket = new DatagramSocket(port);
-    assertThat(PortAvailability.isPortAvailableForTcp(port)).isTrue();
-    assertThat(PortAvailability.isPortAvailableForUdp(port)).isFalse();
-    assertThat(PortAvailability.isPortAvailable(port)).isFalse();
-    datagramSocket.close();
+    try (final DatagramSocket datagramSocket = new DatagramSocket(0)) {
+      final int port = datagramSocket.getPort();
+      assertThat(PortAvailability.isPortAvailableForUdp(port)).isFalse();
+      assertThat(PortAvailability.isPortAvailable(port)).isFalse();
+    }
   }
 }
