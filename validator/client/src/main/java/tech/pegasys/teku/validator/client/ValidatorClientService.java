@@ -40,7 +40,9 @@ public class ValidatorClientService extends Service {
   private final ValidatorTimingChannel blockProductionTimingChannel;
 
   private ValidatorClientService(
-      final EventChannels eventChannels, final ValidatorTimingChannel attestationTimingChannel, final ValidatorTimingChannel blockProductionTimingChannel) {
+      final EventChannels eventChannels,
+      final ValidatorTimingChannel attestationTimingChannel,
+      final ValidatorTimingChannel blockProductionTimingChannel) {
     this.eventChannels = eventChannels;
     this.attestationTimingChannel = attestationTimingChannel;
     this.blockProductionTimingChannel = blockProductionTimingChannel;
@@ -73,7 +75,8 @@ public class ValidatorClientService extends Service {
         createDutyLoader(metricsSystem, validatorApiChannel, asyncRunner, validators);
     final StableSubnetSubscriber stableSubnetSubscriber =
         new StableSubnetSubscriber(validatorApiChannel, new Random(), validators.size());
-    final AttestationDutyScheduler attestationDutyScheduler = new AttestationDutyScheduler(metricsSystem, dutyLoader, stableSubnetSubscriber);
+    final AttestationDutyScheduler attestationDutyScheduler =
+        new AttestationDutyScheduler(metricsSystem, dutyLoader, stableSubnetSubscriber);
     final BlockDutyScheduler blockDutyScheduler = new BlockDutyScheduler(metricsSystem, dutyLoader);
 
     ValidatorAnticorruptionLayer.initAnticorruptionLayer(config);

@@ -1,5 +1,33 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.validator.client;
 
+import static java.util.Collections.emptyList;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -8,24 +36,6 @@ import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.duties.BlockProductionDuty;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static java.util.Collections.emptyList;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
   private final BlockDutyScheduler dutyScheduler =
@@ -39,6 +49,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                   forkProvider,
                   () -> new ScheduledDuties(dutyFactory),
                   Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))));
+
   @Test
   public void shouldFetchDutiesForCurrentEpoch() {
     dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.ONE));
@@ -46,6 +57,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     verify(validatorApiChannel).getDuties(UInt64.ONE, VALIDATOR_KEYS);
     verify(validatorApiChannel, never()).getDuties(UInt64.valueOf(2), VALIDATOR_KEYS);
   }
+
   @Disabled
   @Test
   public void shouldNotPerformDutiesForSameSlotTwice() {
@@ -73,6 +85,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     // But shouldn't produce another block and get ourselves slashed.
     verifyNoMoreInteractions(blockCreationDuty);
   }
+
   @Disabled
   @Test
   public void shouldScheduleBlockProposalDuty() {
@@ -95,6 +108,7 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     dutyScheduler.onBlockProductionDue(blockProposerSlot);
     verify(blockCreationDuty).performDuty();
   }
+
   @Test
   public void shouldNotScheduleAttestationDutiesTwice() {
     final UInt64 attestationSlot = UInt64.valueOf(5);

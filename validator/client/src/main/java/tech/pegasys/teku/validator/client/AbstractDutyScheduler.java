@@ -1,17 +1,27 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.validator.client;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-
-public abstract class AbstractDutyScheduler  implements ValidatorTimingChannel {
+public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private final DutyLoader epochDutiesScheduler;
 
   protected final NavigableMap<UInt64, DutyQueue> dutiesByEpoch = new TreeMap<>();
@@ -42,23 +52,14 @@ public abstract class AbstractDutyScheduler  implements ValidatorTimingChannel {
   }
 
   @Override
-  public void onBlockProductionDue(final UInt64 slot) {
-
-  }
+  public void onBlockProductionDue(final UInt64 slot) {}
 
   @Override
-  public void onBlockImportedForSlot(final UInt64 slot) {
-
-  }
+  public void onBlockImportedForSlot(final UInt64 slot) {}
 
   @Override
-  public void onAttestationCreationDue(final UInt64 slot) {
-
-  }
+  public void onAttestationCreationDue(final UInt64 slot) {}
 
   @Override
-  public void onAttestationAggregationDue(final UInt64 slot) {
-
-  }
-
+  public void onAttestationAggregationDue(final UInt64 slot) {}
 }
