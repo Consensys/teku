@@ -24,6 +24,8 @@ import java.util.OptionalInt;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
+import tech.pegasys.teku.util.config.PortAvailability;
 
 public class NetworkConfig {
   private static final Logger LOG = LogManager.getLogger();
@@ -87,7 +89,9 @@ public class NetworkConfig {
     this.advertisedIp = advertisedIp.filter(ip -> !ip.isBlank());
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     if (this.advertisedIp.map(ip -> !isInetAddress(ip)).orElse(false)) {
-      throw new IllegalArgumentException("Advertised ip is set incorrectly.");
+      throw new InvalidConfigurationException(
+          String.format(
+              "Advertised ip (%s) is set incorrectly.", this.advertisedIp.orElse("EMPTY")));
     }
 
     this.listenPort = listenPort;
@@ -98,6 +102,16 @@ public class NetworkConfig {
     this.targetPeerRange = targetPeerRange;
     this.gossipConfig = gossipConfig;
     this.wireLogsConfig = wireLogsConfig;
+  }
+
+  public void validateListenPortAvailable() {
+    if (listenPort != 0 && !PortAvailability.isPortAvailable(listenPort)) {
+      throw new InvalidConfigurationException(
+          String.format(
+              "P2P Port %d (TCP/UDP) is already in use. "
+                  + "Check for other processes using this port.",
+              listenPort));
+    }
   }
 
   public PrivKey getPrivateKey() {
