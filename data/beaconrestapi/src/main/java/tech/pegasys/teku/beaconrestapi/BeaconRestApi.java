@@ -18,6 +18,7 @@ import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
 import static tech.pegasys.teku.beaconrestapi.HostAllowlistUtils.isHostAuthorized;
 
+import com.google.common.base.Throwables;
 import com.google.common.io.Resources;
 import io.javalin.Javalin;
 import io.javalin.http.ForbiddenResponse;
@@ -28,6 +29,7 @@ import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import java.io.IOException;
+import java.net.BindException;
 import java.nio.charset.Charset;
 import kotlin.text.Charsets;
 import org.apache.commons.lang3.StringUtils;
@@ -70,6 +72,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToPersist
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class BeaconRestApi {
@@ -160,7 +163,17 @@ public class BeaconRestApi {
   }
 
   public void start() {
-    app.start();
+    try {
+      app.start();
+    } catch (RuntimeException ex) {
+      if (Throwables.getRootCause(ex) instanceof BindException) {
+        throw new InvalidConfigurationException(
+            String.format(
+                "TCP Port %d is already in use. "
+                    + "You may need to stop another process or change the HTTP port for this process.",
+                getListenPort()));
+      }
+    }
   }
 
   public int getListenPort() {
