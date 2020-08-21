@@ -549,10 +549,14 @@ public final class DataStructureUtil {
   }
 
   public BeaconState randomBeaconState() {
-    return randomBeaconState(100);
+    return randomBeaconState(100, 100);
   }
 
   public BeaconState randomBeaconState(final int validatorCount) {
+    return randomBeaconState(validatorCount, 100);
+  }
+
+  public BeaconState randomBeaconState(final int validatorCount, final int numItemsInSSZLists) {
     return BeaconState.create(
         randomUInt64(),
         randomBytes32(),
@@ -561,7 +565,11 @@ public final class DataStructureUtil {
         randomBeaconBlockHeader(),
         randomSSZVector(Bytes32.ZERO, Constants.SLOTS_PER_HISTORICAL_ROOT, this::randomBytes32),
         randomSSZVector(Bytes32.ZERO, Constants.SLOTS_PER_HISTORICAL_ROOT, this::randomBytes32),
-        randomSSZList(Bytes32.class, 100, Constants.HISTORICAL_ROOTS_LIMIT, this::randomBytes32),
+        randomSSZList(
+            Bytes32.class,
+            numItemsInSSZLists,
+            Constants.HISTORICAL_ROOTS_LIMIT,
+            this::randomBytes32),
         randomEth1Data(),
         randomSSZList(
             Eth1Data.class, EPOCHS_PER_ETH1_VOTING_PERIOD * SLOTS_PER_EPOCH, this::randomEth1Data),
@@ -577,12 +585,12 @@ public final class DataStructureUtil {
         randomSSZVector(UInt64.ZERO, Constants.EPOCHS_PER_SLASHINGS_VECTOR, this::randomUInt64),
         randomSSZList(
             PendingAttestation.class,
-            100,
+            numItemsInSSZLists,
             Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
             this::randomPendingAttestation),
         randomSSZList(
             PendingAttestation.class,
-            100,
+            numItemsInSSZLists,
             Constants.MAX_ATTESTATIONS * Constants.SLOTS_PER_EPOCH,
             this::randomPendingAttestation),
         randomBitvector(Constants.JUSTIFICATION_BITS_LENGTH),
