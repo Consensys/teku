@@ -77,7 +77,11 @@ public class ForkChoice {
                           recentChainData.getStore().getJustifiedCheckpoint();
                       if (!justifiedCheckpoint.equals(retrievedJustifiedCheckpoint)) {
                         LOG.info(
-                            "Skipping head block update as justified checkpoint was updated while loading checkpoint state.");
+                            "Skipping head block update as justified checkpoint was updated while loading checkpoint state. Was {} ({}) but now {} ({})",
+                            retrievedJustifiedCheckpoint.getEpoch(),
+                            retrievedJustifiedCheckpoint.getRoot(),
+                            justifiedCheckpoint.getEpoch(),
+                            justifiedCheckpoint.getRoot());
                       }
                       final StoreTransaction transaction = recentChainData.startStoreTransaction();
                       final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
@@ -96,7 +100,8 @@ public class ForkChoice {
                                   .orElseThrow(
                                       () ->
                                           new IllegalStateException(
-                                              "Unable to retrieve the slot of fork choice head"))));
+                                              "Unable to retrieve the slot of fork choice head: "
+                                                  + headBlockRoot))));
                       return transaction.commit();
                     }))
         .join();
