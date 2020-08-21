@@ -143,7 +143,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
             compute_epoch_at_slot(validateableAttestation.getData().getSlot()),
             DOMAIN_BEACON_ATTESTER);
 
-    return committeeShufflingSeed.equals(validateableAttestation.getCommitteeShufflingSeed());
+    return committeeShufflingSeed.equals(validateableAttestation.getRandaoMix());
   }
 
   private boolean isValid(

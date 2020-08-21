@@ -406,7 +406,7 @@ public class ForkChoiceUtil {
               attestation.setIndexedAttestation(indexedAttestation);
 
               if (attestation.getMaybeIndexedAttestation().isEmpty()) {
-                attestation.saveCommitteeShufflingSeed(attestedBlockState);
+                attestation.saveRandaoMix(attestedBlockState);
               }
 
               return SUCCESSFUL;
