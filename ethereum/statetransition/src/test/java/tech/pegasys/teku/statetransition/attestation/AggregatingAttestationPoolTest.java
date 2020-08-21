@@ -27,6 +27,7 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator.AttestationInvalidReason;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
@@ -270,16 +271,36 @@ class AggregatingAttestationPoolTest {
   @Test
   public void getSize_shouldDecrementForAllRemovedAttestationsWhileKeepingOthers() {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
+
     addAttestationFromValidators(attestationData, 1, 2, 3);
     addAttestationFromValidators(attestationData, 4, 5);
     addAttestationFromValidators(attestationData, 6);
     addAttestationFromValidators(attestationData, 7, 8);
+
     final Attestation attestationToRemove =
         addAttestationFromValidators(attestationData, 1, 2, 3, 4, 5);
     assertThat(aggregatingPool.getSize()).isEqualTo(5);
 
     aggregatingPool.remove(attestationToRemove);
     assertThat(aggregatingPool.getSize()).isEqualTo(2);
+  }
+
+  @Test
+  public void getAttestationsForBlock_shouldNotAddAttestationsFromWrongFork() {
+    final AttestationData attestationData1 = dataStructureUtil.randomAttestationData();
+    final AttestationData attestationData2 = dataStructureUtil.randomAttestationData();
+
+    addAttestationFromValidators(attestationData1, 1, 2, 3);
+    Attestation attestation2 = addAttestationFromValidators(attestationData2, 4, 5);
+
+    when(forkChecker.areAttestationsFromCorrectFork(any())).thenReturn(false);
+    when(forkChecker.areAttestationsFromCorrectFork(
+            ArgumentMatchers.argThat(arg -> arg.getAttestationData().equals(attestationData2))))
+        .thenReturn(true);
+
+    final BeaconState state = dataStructureUtil.randomBeaconState();
+    assertThat(aggregatingPool.getAttestationsForBlock(state, forkChecker))
+        .containsExactly(attestation2);
   }
 
   private Attestation addAttestationFromValidators(

@@ -18,6 +18,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_randao_m
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
 import static tech.pegasys.teku.util.config.Constants.MIN_SEED_LOOKAHEAD;
 
+import java.util.HashSet;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -25,7 +26,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class AttestationForkChecker {
 
-  private final Set<Bytes32> validRandaoMixes;
+  private final Set<Bytes32> validRandaoMixes = new HashSet<>();
 
   public AttestationForkChecker(BeaconState currentState) {
 
@@ -37,7 +38,8 @@ public class AttestationForkChecker {
 
     Bytes32 randaoMixCurrentEpoch = get_randao_mix(currentState, randaoIndexCurrentEpoch);
     Bytes32 randaoMixPreviousEpoch = get_randao_mix(currentState, randaoIndexPreviousEpoch);
-    this.validRandaoMixes = Set.of(randaoMixCurrentEpoch, randaoMixPreviousEpoch);
+    validRandaoMixes.add(randaoMixCurrentEpoch);
+    validRandaoMixes.add(randaoMixPreviousEpoch);
   }
 
   public boolean areAttestationsFromCorrectFork(
