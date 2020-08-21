@@ -149,12 +149,13 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     verifyNoMoreInteractions(validatorApiChannel);
   }
 
+  @Disabled
   @Test
   public void shouldDelayExecutingDutiesUntilSchedulingIsComplete() {
     final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
     final StubMetricsSystem metricsSystem = new StubMetricsSystem();
     final ValidatorTimingChannel dutyScheduler =
-        new DutyScheduler(
+        new AttestationDutyScheduler(
             metricsSystem,
             new RetryingDutyLoader(
                 asyncRunner,
