@@ -62,7 +62,6 @@ class Store implements UpdatableStore {
   private final ReadWriteLock lock = new ReentrantReadWriteLock();
   private final Lock readLock = lock.readLock();
   private final MetricsSystem metricsSystem;
-  private final CachingTaskQueue<Checkpoint, BeaconState> checkpointStateTaskQueue;
   private final StateAndBlockProvider stateAndBlockProvider;
 
   private Optional<SettableGauge> blockCountGauge = Optional.empty();
@@ -77,6 +76,7 @@ class Store implements UpdatableStore {
   Checkpoint best_justified_checkpoint;
   final CachingTaskQueue<Bytes32, SignedBlockAndState> states;
   final Map<Bytes32, SignedBeaconBlock> blocks;
+  private final CachingTaskQueue<Checkpoint, BeaconState> checkpointStates;
   final Map<UInt64, VoteTracker> votes;
   SignedBlockAndState finalizedBlockAndState;
 
@@ -95,7 +95,7 @@ class Store implements UpdatableStore {
       final SignedBlockAndState finalizedBlockAndState,
       final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SignedBeaconBlock> blocks,
-      final CachingTaskQueue<Checkpoint, BeaconState> checkpointStateTaskQueue) {
+      final CachingTaskQueue<Checkpoint, BeaconState> checkpointStates) {
     this.stateAndBlockProvider = stateAndBlockProvider;
     LOG.trace(
         "Create store with hot state persistence configured to {}",
@@ -104,7 +104,7 @@ class Store implements UpdatableStore {
     // Set up metrics
     this.metricsSystem = metricsSystem;
     this.states = states;
-    this.checkpointStateTaskQueue = checkpointStateTaskQueue;
+    this.checkpointStates = checkpointStates;
 
     // Store instance variables
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
@@ -204,7 +204,7 @@ class Store implements UpdatableStore {
                   "memory_block_count",
                   "Number of beacon blocks held in the in-memory store"));
       states.startMetrics();
-      checkpointStateTaskQueue.startMetrics();
+      checkpointStates.startMetrics();
     } finally {
       lock.writeLock().unlock();
     }
@@ -368,14 +368,13 @@ class Store implements UpdatableStore {
 
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint) {
-    return checkpointStateTaskQueue.perform(
-        new CheckpointStateTask(checkpoint, this::retrieveBlockState));
+    return checkpointStates.perform(new CheckpointStateTask(checkpoint, this::retrieveBlockState));
   }
 
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(
       Checkpoint checkpoint, final BeaconState latestStateAtEpoch) {
-    return checkpointStateTaskQueue.perform(
+    return checkpointStates.perform(
         new CheckpointStateTask(
             checkpoint, blockRoot -> SafeFuture.completedFuture(Optional.of(latestStateAtEpoch))));
   }
@@ -537,11 +536,16 @@ class Store implements UpdatableStore {
     }
 
     @Override
-    public void putBlockAndState(SignedBeaconBlock block, BeaconState state) {
-      blockAndStates.put(block.getRoot(), new SignedBlockAndState(block, state));
+    public void putBlockAndState(final SignedBeaconBlock block, final BeaconState state) {
+      putBlockAndState(new SignedBlockAndState(block, state));
+    }
+
+    @Override
+    public void putBlockAndState(final SignedBlockAndState blockAndState) {
+      blockAndStates.put(blockAndState.getRoot(), blockAndState);
       putStateRoot(
-          state.hash_tree_root(),
-          new SlotAndBlockRoot(block.getSlot(), block.getMessage().hash_tree_root()));
+          blockAndState.getState().hash_tree_root(),
+          new SlotAndBlockRoot(blockAndState.getSlot(), blockAndState.getRoot()));
     }
 
     @Override
