@@ -39,6 +39,6 @@ public class StoreAssertions {
             "metricsSystem",
             "states",
             "stateAndBlockProvider",
-            "checkpointStateTaskQueue");
+            "checkpointStates");
   }
 }
