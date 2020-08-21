@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
@@ -42,10 +43,14 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
 
   private final NavigableMap<Integer, Set<ValidateableAttestation>> attestationsByValidatorCount =
       new TreeMap<>(Comparator.reverseOrder()); // Most validators first
-  private final AttestationData attestationData;
 
-  public MatchingDataAttestationGroup(final AttestationData attestationData) {
+  private final AttestationData attestationData;
+  private final Bytes32 randaoMix;
+
+  public MatchingDataAttestationGroup(
+      final AttestationData attestationData, final Bytes32 randaoMix) {
     this.attestationData = attestationData;
+    this.randaoMix = randaoMix;
   }
 
   public AttestationData getAttestationData() {
@@ -124,6 +129,10 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
       }
     }
     return numRemoved;
+  }
+
+  public Bytes32 getRandaoMix() {
+    return randaoMix;
   }
 
   private class AggregatingIterator implements Iterator<ValidateableAttestation> {

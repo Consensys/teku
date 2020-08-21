@@ -136,18 +136,15 @@ public class ForkChoice {
   public SafeFuture<AttestationProcessingResult> onAttestation(
       final ValidateableAttestation attestation) {
     return recentChainData
-        .retrieveBlockState(attestation.getData().getBeacon_block_root())
+        .retrieveCheckpointState(attestation.getData().getTarget())
         .thenCompose(
-            attestedBlockState ->
+            targetBlockState ->
                 withLock(
                     () -> {
                       final StoreTransaction transaction = recentChainData.startStoreTransaction();
                       final AttestationProcessingResult result =
                           on_attestation(
-                              transaction,
-                              attestation,
-                              attestedBlockState,
-                              getForkChoiceStrategy());
+                              transaction, attestation, targetBlockState, getForkChoiceStrategy());
                       return result.isSuccessful()
                           ? transaction.commit().thenApply(__ -> result)
                           : SafeFuture.completedFuture(result);

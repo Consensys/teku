@@ -14,9 +14,10 @@
 package tech.pegasys.teku.statetransition.attestation;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_seed;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_randao_mix;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_RETENTION_EPOCHS;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
+import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
+import static tech.pegasys.teku.util.config.Constants.MIN_SEED_LOOKAHEAD;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.Collection;
@@ -66,7 +67,10 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     final Bytes32 dataRoot = attestationData.hash_tree_root();
     final boolean add =
         attestationGroupByDataHash
-            .computeIfAbsent(dataRoot, key -> new MatchingDataAttestationGroup(attestationData))
+            .computeIfAbsent(
+                dataRoot,
+                key ->
+                    new MatchingDataAttestationGroup(attestationData, attestation.getRandaoMix()))
             .add(attestation);
     if (add) {
       size.incrementAndGet();
@@ -122,28 +126,34 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   public synchronized SSZList<Attestation> getAttestationsForBlock(
       final BeaconState stateAtBlockSlot) {
     final SSZMutableList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
+
+    UInt64 randaoIndexCurrentEpoch =
+        compute_epoch_at_slot(stateAtBlockSlot.getSlot())
+            .plus(EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD - 1);
+    UInt64 randaoIndexPreviousEpoch =
+        compute_epoch_at_slot(stateAtBlockSlot.getSlot())
+            .plus(EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD - 2);
+
+    Bytes32 randaoMixCurrentEpoch = get_randao_mix(stateAtBlockSlot, randaoIndexCurrentEpoch);
+    Bytes32 randaoMixPreviousEpoch = get_randao_mix(stateAtBlockSlot, randaoIndexPreviousEpoch);
+    Set<Bytes32> validRandaoMixes = Set.of(randaoMixCurrentEpoch, randaoMixPreviousEpoch);
+
     dataHashBySlot.descendingMap().values().stream()
         .flatMap(Collection::stream)
         .map(attestationGroupByDataHash::get)
         .filter(Objects::nonNull)
         .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
+        .filter(group -> fromCorrectFork(group, validRandaoMixes))
         .flatMap(MatchingDataAttestationGroup::stream)
         .limit(attestations.getMaxSize())
-        .filter(attestation -> fromCorrectFork(stateAtBlockSlot, attestation))
         .map(ValidateableAttestation::getAttestation)
         .forEach(attestations::add);
     return attestations;
   }
 
   private boolean fromCorrectFork(
-      final BeaconState stateAtBlockSlot, final ValidateableAttestation validateableAttestation) {
-    Bytes32 committeeShufflingSeed =
-        get_seed(
-            stateAtBlockSlot,
-            compute_epoch_at_slot(validateableAttestation.getData().getSlot()),
-            DOMAIN_BEACON_ATTESTER);
-
-    return committeeShufflingSeed.equals(validateableAttestation.getRandaoMix());
+      final MatchingDataAttestationGroup attestationGroup, Set<Bytes32> validRandaoMixes) {
+    return validRandaoMixes.contains(attestationGroup.getRandaoMix());
   }
 
   private boolean isValid(

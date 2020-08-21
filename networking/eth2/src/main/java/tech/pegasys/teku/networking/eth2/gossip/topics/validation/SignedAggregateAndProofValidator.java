@@ -89,7 +89,7 @@ public class SignedAggregateAndProofValidator {
     }
 
     return attestationValidator
-        .singleOrAggregateAttestationChecks(aggregate, OptionalInt.empty())
+        .singleOrAggregateAttestationChecks(attestation, OptionalInt.empty())
         .thenCompose(
             aggregateInternalValidationResult -> {
               if (aggregateInternalValidationResult == REJECT

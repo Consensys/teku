@@ -68,7 +68,8 @@ public class AttestationValidator {
       return SafeFuture.completedFuture(internalValidationResult);
     }
 
-    return singleOrAggregateAttestationChecks(attestation, OptionalInt.of(receivedOnSubnetId))
+    return singleOrAggregateAttestationChecks(
+            validateableAttestation, OptionalInt.of(receivedOnSubnetId))
         .thenApply(
             result -> {
               if (result != ACCEPT) {

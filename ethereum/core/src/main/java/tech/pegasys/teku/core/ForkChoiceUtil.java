@@ -343,7 +343,7 @@ public class ForkChoiceUtil {
    *
    * @param store
    * @param validateableAttestation
-   * @param maybeAttestedBlockState The state corresponding to the attestation target
+   * @param maybeTargetState The state corresponding to the attestation target
    * @see
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_attestation</a>
    */
@@ -351,14 +351,13 @@ public class ForkChoiceUtil {
   public static AttestationProcessingResult on_attestation(
       final MutableStore store,
       final ValidateableAttestation validateableAttestation,
-      final Optional<BeaconState> maybeAttestedBlockState,
+      final Optional<BeaconState> maybeTargetState,
       final ForkChoiceStrategy forkChoiceStrategy) {
 
     Attestation attestation = validateableAttestation.getAttestation();
 
     return validateOnAttestation(store, attestation, forkChoiceStrategy)
-        .ifSuccessful(
-            () -> indexAndValidateAttestation(validateableAttestation, maybeAttestedBlockState))
+        .ifSuccessful(() -> indexAndValidateAttestation(validateableAttestation, maybeTargetState))
         .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation))
         .ifSuccessful(
             () -> {
@@ -373,18 +372,17 @@ public class ForkChoiceUtil {
    * Returns the indexed attestation if attestation is valid, else, returns an empty optional.
    *
    * @param attestation
-   * @param maybeAttestedBlockState The state corresponding to the attestation target, if it is
-   *     available
+   * @param maybeTargetState The state corresponding to the attestation target, if it is available
    * @return
    */
   private static AttestationProcessingResult indexAndValidateAttestation(
-      ValidateableAttestation attestation, Optional<BeaconState> maybeAttestedBlockState) {
-    BeaconState attestedBlockState;
+      ValidateableAttestation attestation, Optional<BeaconState> maybeTargetState) {
+    BeaconState targetState;
     try {
-      if (maybeAttestedBlockState.isEmpty()) {
+      if (maybeTargetState.isEmpty()) {
         return AttestationProcessingResult.UNKNOWN_BLOCK;
       }
-      attestedBlockState = maybeAttestedBlockState.get();
+      targetState = maybeTargetState.get();
     } catch (final InvalidCheckpointException e) {
       LOG.debug("on_attestation: Attestation target checkpoint is invalid", e);
       return AttestationProcessingResult.invalid("Invalid target checkpoint: " + e.getMessage());
@@ -395,18 +393,18 @@ public class ForkChoiceUtil {
     try {
       indexedAttestation =
           maybeIndexedAttestation.orElse(
-              get_indexed_attestation(attestedBlockState, attestation.getAttestation()));
+              get_indexed_attestation(targetState, attestation.getAttestation()));
     } catch (IllegalArgumentException e) {
       LOG.debug("on_attestation: Attestation is not valid: ", e);
       return AttestationProcessingResult.invalid(e.getMessage());
     }
-    return is_valid_indexed_attestation(attestedBlockState, indexedAttestation)
+    return is_valid_indexed_attestation(targetState, indexedAttestation)
         .ifSuccessful(
             () -> {
               attestation.setIndexedAttestation(indexedAttestation);
 
               if (attestation.getMaybeIndexedAttestation().isEmpty()) {
-                attestation.saveRandaoMix(attestedBlockState);
+                attestation.saveRandaoMix(targetState);
               }
 
               return SUCCESSFUL;
