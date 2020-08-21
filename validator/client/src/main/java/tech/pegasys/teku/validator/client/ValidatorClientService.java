@@ -36,12 +36,14 @@ import tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler;
 
 public class ValidatorClientService extends Service {
   private final EventChannels eventChannels;
-  private final ValidatorTimingChannel validatorTimingChannel;
+  private final ValidatorTimingChannel attestationTimingChannel;
+  private final ValidatorTimingChannel blockProductionTimingChannel;
 
   private ValidatorClientService(
-      final EventChannels eventChannels, final ValidatorTimingChannel validatorTimingChannel) {
+      final EventChannels eventChannels, final ValidatorTimingChannel attestationTimingChannel, final ValidatorTimingChannel blockProductionTimingChannel) {
     this.eventChannels = eventChannels;
-    this.validatorTimingChannel = validatorTimingChannel;
+    this.attestationTimingChannel = attestationTimingChannel;
+    this.blockProductionTimingChannel = blockProductionTimingChannel;
   }
 
   public static ValidatorClientService create(final ServiceConfig config) {
@@ -71,12 +73,12 @@ public class ValidatorClientService extends Service {
         createDutyLoader(metricsSystem, validatorApiChannel, asyncRunner, validators);
     final StableSubnetSubscriber stableSubnetSubscriber =
         new StableSubnetSubscriber(validatorApiChannel, new Random(), validators.size());
-    final DutyScheduler dutyScheduler =
-        new DutyScheduler(metricsSystem, dutyLoader, stableSubnetSubscriber);
+    final AttestationDutyScheduler attestationDutyScheduler = new AttestationDutyScheduler(metricsSystem, dutyLoader, stableSubnetSubscriber);
+    final BlockDutyScheduler blockDutyScheduler = new BlockDutyScheduler(metricsSystem, dutyLoader);
 
     ValidatorAnticorruptionLayer.initAnticorruptionLayer(config);
 
-    return new ValidatorClientService(eventChannels, dutyScheduler);
+    return new ValidatorClientService(eventChannels, attestationDutyScheduler, blockDutyScheduler);
   }
 
   private static RetryingDutyLoader createDutyLoader(
@@ -99,7 +101,8 @@ public class ValidatorClientService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    eventChannels.subscribe(ValidatorTimingChannel.class, validatorTimingChannel);
+    eventChannels.subscribe(ValidatorTimingChannel.class, blockProductionTimingChannel);
+    eventChannels.subscribe(ValidatorTimingChannel.class, attestationTimingChannel);
     return SafeFuture.COMPLETE;
   }
 
