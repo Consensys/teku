@@ -132,16 +132,30 @@ public class ForkChoice {
           }
           return transaction
               .commit()
-              .thenRun(
-                  () ->
-                      result
-                          .getBlockProcessingRecord()
-                          .ifPresent(
-                              record ->
-                                  forkChoiceStrategy.onBlock(
-                                      block.getMessage(), record.getPostState())))
+              .thenRun(() -> updateForkChoiceForImportedBlock(block, forkChoiceStrategy, result))
               .thenApply(__ -> result);
         });
+  }
+
+  private void updateForkChoiceForImportedBlock(
+      final SignedBeaconBlock block,
+      final ForkChoiceStrategy forkChoiceStrategy,
+      final BlockImportResult result) {
+    result
+        .getBlockProcessingRecord()
+        .ifPresent(
+            record -> {
+              forkChoiceStrategy.onBlock(block.getMessage(), record.getPostState());
+              // If the new block builds on our current chain head, and is after the current head
+              // slot, immediately make it the new head
+              if (recentChainData
+                      .getHeadBlock()
+                      .map(currentHead -> currentHead.getRoot().equals(block.getParent_root()))
+                      .orElse(false)
+                  && recentChainData.getHeadSlot().isLessThan(block.getSlot())) {
+                recentChainData.updateHead(block.getRoot(), block.getSlot());
+              }
+            });
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
