@@ -38,7 +38,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 class StoreTest extends AbstractStoreTest {
 
   @Test
-  public void retrieveSignedBlock_withLimitedCache() throws Exception {
+  public void retrieveSignedBlock_withLimitedCache() {
     processChainWithLimitedCache(
         (store, blockAndState) -> {
           final Bytes32 root = blockAndState.getRoot();
@@ -121,53 +121,55 @@ class StoreTest extends AbstractStoreTest {
 
     final SafeFuture<Optional<BeaconState>> result = store.retrieveCheckpointState(checkpoint);
     assertThatSafeFuture(result).isCompletedWithNonEmptyOptional();
-    final BeaconState checkpointState = result.join().get();
+    final BeaconState checkpointState = result.join().orElseThrow();
     assertThat(checkpointState.getSlot()).isEqualTo(checkpoint.getEpochStartSlot());
     assertThat(checkpointState.getLatest_block_header().hash_tree_root())
         .isEqualTo(checkpoint.getRoot());
   }
 
   @Test
-  public void getCheckpointState_forGenesis() {
+  public void retrieveCheckpointState_forGenesis() {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState genesisBlockAndState = chainBuilder.getLatestBlockAndState();
     final Checkpoint checkpoint = new Checkpoint(UInt64.ZERO, genesisBlockAndState.getRoot());
 
     final BeaconState baseState = genesisBlockAndState.getState();
-    final BeaconState result = store.getCheckpointState(checkpoint, baseState);
-    assertThat(result).isEqualTo(baseState);
+    final SafeFuture<Optional<BeaconState>> result =
+        store.retrieveCheckpointState(checkpoint, baseState);
+    assertThatSafeFuture(result).isCompletedWithOptionalContaining(baseState);
   }
 
   @Test
-  public void getCheckpointState_forEpochPastGenesis() {
+  public void retrieveCheckpointState_forEpochPastGenesis() {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState genesisBlockAndState = chainBuilder.getLatestBlockAndState();
     final Checkpoint checkpoint = new Checkpoint(UInt64.ONE, genesisBlockAndState.getRoot());
 
     final BeaconState baseState = genesisBlockAndState.getState();
-    final BeaconState result = store.getCheckpointState(checkpoint, baseState);
+    final SafeFuture<Optional<BeaconState>> resultFuture =
+        store.retrieveCheckpointState(checkpoint, baseState);
+    assertThatSafeFuture(resultFuture).isCompletedWithNonEmptyOptional();
+    final BeaconState result = resultFuture.join().orElseThrow();
     assertThat(result.getSlot()).isGreaterThan(baseState.getSlot());
     assertThat(result.getSlot()).isEqualTo(checkpoint.getEpochStartSlot());
     assertThat(result.getLatest_block_header().hash_tree_root()).isEqualTo(checkpoint.getRoot());
   }
 
   @Test
-  public void getCheckpointState_invalidState() {
+  public void retrieveCheckpointState_invalidState() {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState futureBlockAndState =
         chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(UInt64.valueOf(2)));
 
     final Checkpoint checkpoint = new Checkpoint(UInt64.ONE, futureBlockAndState.getRoot());
 
-    assertThatThrownBy(() -> store.getCheckpointState(checkpoint, futureBlockAndState.getState()))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Latest state must be at or prior to checkpoint slot");
+    assertThatSafeFuture(store.retrieveCheckpointState(checkpoint, futureBlockAndState.getState()))
+        .isCompletedExceptionallyWith(InvalidCheckpointException.class);
   }
 
   @Test
   public void
-      retrieveCheckpointState_shouldThrowInvalidCheckpointExceptionWhenEpochBeforeBlockRoot()
-          throws Exception {
+      retrieveCheckpointState_shouldThrowInvalidCheckpointExceptionWhenEpochBeforeBlockRoot() {
     final UpdatableStore store = createGenesisStore();
     final Bytes32 futureRoot =
         chainBuilder.generateBlockAtSlot(compute_start_slot_at_epoch(UInt64.valueOf(2))).getRoot();

@@ -31,7 +31,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
-import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -177,14 +176,11 @@ public class CombinedChainDataClient {
     final Checkpoint checkpoint = new Checkpoint(epoch, latestBlockAndState.getRoot());
     return recentChainData
         .getStore()
-        .retrieveCheckpointState(checkpoint)
+        .retrieveCheckpointState(checkpoint, latestBlockAndState.getState())
         .thenApply(
             checkpointState -> {
-              if (checkpointState.isEmpty()) {
-                return CheckpointStateGenerator.generate(checkpoint, latestBlockAndState);
-              }
               final SignedBeaconBlock block = latestBlockAndState.getBlock();
-              return new CheckpointState(checkpoint, block, checkpointState.get());
+              return new CheckpointState(checkpoint, block, checkpointState.orElseThrow());
             });
   }
 

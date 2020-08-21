@@ -100,15 +100,19 @@ public class SignedAggregateAndProofValidator {
 
               return recentChainData
                   .retrieveBlockState(aggregate.getData().getBeacon_block_root())
+                  .thenCompose(
+                      maybeState ->
+                          maybeState.isEmpty()
+                              ? SafeFuture.completedFuture(Optional.empty())
+                              : attestationValidator.resolveStateForAttestation(
+                                  aggregate, maybeState.get()))
                   .thenApply(
                       maybeState -> {
                         if (maybeState.isEmpty()) {
                           return SAVE_FOR_FUTURE;
                         }
 
-                        final BeaconState state =
-                            attestationValidator.resolveStateForAttestation(
-                                aggregate, maybeState.get());
+                        final BeaconState state = maybeState.get();
 
                         final Optional<BLSPublicKey> aggregatorPublicKey =
                             ValidatorsUtil.getValidatorPubKey(state, aggregateAndProof.getIndex());

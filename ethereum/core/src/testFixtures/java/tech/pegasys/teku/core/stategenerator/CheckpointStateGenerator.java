@@ -38,9 +38,10 @@ public abstract class CheckpointStateGenerator {
 
   public static BeaconState regenerateCheckpointState(
       final Checkpoint checkpoint, BeaconState baseState) {
-    checkArgument(
-        baseState.getSlot().compareTo(checkpoint.getEpochStartSlot()) <= 0,
-        "Checkpoint state must be at or prior to checkpoint slot boundary");
+    if (baseState.getSlot().isGreaterThan(checkpoint.getEpochStartSlot())) {
+      throw new InvalidCheckpointException(
+          "Checkpoint state must be at or prior to checkpoint slot boundary");
+    }
     try {
       if (baseState.getSlot().equals(checkpoint.getEpochStartSlot())) {
         return baseState;
