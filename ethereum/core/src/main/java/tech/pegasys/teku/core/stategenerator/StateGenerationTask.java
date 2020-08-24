@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.core.stategenerator;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -41,6 +43,9 @@ public class StateGenerationTask implements CacheableTask<Bytes32, SignedBlockAn
       final Optional<Bytes32> epochBoundaryRoot,
       final BlockProvider blockProvider,
       final StateAndBlockProvider stateAndBlockProvider) {
+    checkArgument(
+        tree.getRootHash().equals(baseBlockAndState.getRoot()),
+        "Tree must be rooted at the base block");
     this.tree = tree;
     this.baseBlockAndState = baseBlockAndState;
     this.epochBoundaryRoot = epochBoundaryRoot;

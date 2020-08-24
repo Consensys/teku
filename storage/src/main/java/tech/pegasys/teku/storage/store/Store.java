@@ -137,7 +137,6 @@ class Store implements UpdatableStore {
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
       final StateAndBlockProvider stateAndBlockProvider,
-      final CachingTaskQueue<Bytes32, SignedBlockAndState> stateTaskQueue,
       final UInt64 time,
       final UInt64 genesisTime,
       final Checkpoint justifiedCheckpoint,
@@ -154,6 +153,8 @@ class Store implements UpdatableStore {
     final CachingTaskQueue<Checkpoint, BeaconState> checkpointStateTaskQueue =
         CachingTaskQueue.create(
             metricsSystem, "memory_checkpoint_states", config.getCheckpointStateCacheSize());
+    final CachingTaskQueue<Bytes32, SignedBlockAndState> stateTaskQueue =
+        CachingTaskQueue.create(metricsSystem, "memory_states", config.getStateCacheSize());
 
     // Build block tree structure
     HashTree.Builder treeBuilder = HashTree.builder().rootHash(finalizedBlockAndState.getRoot());
