@@ -41,7 +41,7 @@ class StoreTransactionUpdatesFactory {
   private final Store.Transaction tx;
 
   private final Map<Bytes32, SignedBeaconBlock> hotBlocks;
-  private final Map<Bytes32, BeaconState> hotStates;
+  private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final SignedBlockAndState latestFinalizedBlockAndState;
   private final Set<Bytes32> prunedHotBlockRoots =
@@ -57,8 +57,10 @@ class StoreTransactionUpdatesFactory {
     this.tx = tx;
     this.latestFinalizedBlockAndState = latestFinalizedBlockAndState;
     // Save copy of tx data that may be pruned
-    hotBlocks = new ConcurrentHashMap<>(tx.blocks);
-    hotStates = new ConcurrentHashMap<>(tx.block_states);
+    hotBlocks =
+        tx.blockAndStates.entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getBlock()));
+    hotBlockAndStates = new ConcurrentHashMap<>(tx.blockAndStates);
     stateRoots = new ConcurrentHashMap<>(tx.stateRoots);
   }
 
@@ -96,7 +98,7 @@ class StoreTransactionUpdatesFactory {
     // Prune collections
     calculatePrunedHotBlockRoots(tx, updatedBlockTree.orElseThrow());
     prunedHotBlockRoots.forEach(hotBlocks::remove);
-    prunedHotBlockRoots.forEach(hotStates::remove);
+    prunedHotBlockRoots.forEach(hotBlockAndStates::remove);
 
     final Optional<FinalizedChainData> finalizedChainData =
         Optional.of(
@@ -119,10 +121,10 @@ class StoreTransactionUpdatesFactory {
   private Map<Bytes32, BeaconState> getHotStatesToPersist() {
     final BlockTree blockTree = updatedBlockTree.orElse(baseStore.blockTree);
     final Map<Bytes32, BeaconState> statesToPersist =
-        hotStates.entrySet().stream()
+        hotBlockAndStates.entrySet().stream()
             .filter(e -> blockTree.isRootAtEpochBoundary(e.getKey()))
             .filter(e -> baseStore.shouldPersistStateAtEpoch(blockTree.getEpoch(e.getKey())))
-            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+            .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getState()));
     if (statesToPersist.size() > 0) {
       LOG.trace("Persist {} hot states", statesToPersist.size());
     }
@@ -174,7 +176,7 @@ class StoreTransactionUpdatesFactory {
         tx,
         finalizedChainData,
         hotBlocks,
-        hotStates,
+        hotBlockAndStates,
         getHotStatesToPersist(),
         prunedHotBlockRoots,
         updatedBlockTree,

@@ -29,8 +29,6 @@ public class StoreAssertions {
             "lock",
             "readLock",
             "blockProvider",
-            "block_states",
-            "checkpoint_states",
             "blocks",
             "stateRequestCachedCounter",
             "stateRequestRegenerateCounter",
@@ -39,7 +37,8 @@ public class StoreAssertions {
             "checkpointStateRequestRegenerateCounter",
             "checkpointStateRequestMissCounter",
             "metricsSystem",
-            "stateGenerationQueue",
-            "checkpointStateTaskQueue");
+            "states",
+            "stateAndBlockProvider",
+            "checkpointStates");
   }
 }
