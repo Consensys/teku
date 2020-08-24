@@ -57,8 +57,8 @@ public class TrackingReorgEventChannel implements ReorgEventChannel {
         return false;
       }
       final ReorgEvent that = (ReorgEvent) o;
-      return Objects.equals(bestBlockRoot, that.bestBlockRoot) &&
-          Objects.equals(bestSlot, that.bestSlot);
+      return Objects.equals(bestBlockRoot, that.bestBlockRoot)
+          && Objects.equals(bestSlot, that.bestSlot);
     }
 
     @Override
