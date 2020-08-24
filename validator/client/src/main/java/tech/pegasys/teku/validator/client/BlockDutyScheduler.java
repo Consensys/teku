@@ -54,17 +54,4 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
   public void onBlockProductionDue(final UInt64 slot) {
     notifyDutyQueue(DutyQueue::onBlockProductionDue, slot);
   }
-
-  @Override
-  public void onBlockImportedForSlot(final UInt64 slot) {
-    // From an epoch x we can calculate duties for epoch's x and x+1 and importing more blocks from
-    // epoch x won't change those duties.
-    // However, importing a block from epoch x-1 will change the duties for x+1 (2 epochs after the
-    // block is imported) because it adds another randao reveal.
-    // So invalidate any duties for slot.
-    // They will be recalculated on the next slot event if required which avoids requesting duties
-    // too often if we're syncing a batch of blocks
-    final UInt64 firstInvalidatedEpoch = compute_epoch_at_slot(slot).plus(2);
-    removeEpochs(dutiesByEpoch.tailMap(firstInvalidatedEpoch, true));
-  }
 }

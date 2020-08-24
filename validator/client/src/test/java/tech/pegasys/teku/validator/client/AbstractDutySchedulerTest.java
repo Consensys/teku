@@ -13,27 +13,26 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static java.util.Collections.emptyList;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
-
-import java.util.Collection;
-import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.duties.ValidatorDutyFactory;
+
+import java.util.Collection;
+import java.util.Optional;
+import java.util.Set;
+
+import static java.util.Collections.emptyList;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 @SuppressWarnings("FutureReturnValueIgnored")
 public abstract class AbstractDutySchedulerTest {
@@ -62,9 +61,6 @@ public abstract class AbstractDutySchedulerTest {
     when(dutyFactory.createAttestationProductionDuty(any()))
         .thenReturn(mock(AttestationProductionDuty.class));
     when(forkProvider.getForkInfo()).thenReturn(completedFuture(fork));
-    final SafeFuture<BLSSignature> rejectAggregationSignature =
-        SafeFuture.failedFuture(new UnsupportedOperationException("This test ignores aggregation"));
-    when(validator1Signer.signAggregationSlot(any(), any())).thenReturn(rejectAggregationSignature);
-    when(validator2Signer.signAggregationSlot(any(), any())).thenReturn(rejectAggregationSignature);
   }
+
 }

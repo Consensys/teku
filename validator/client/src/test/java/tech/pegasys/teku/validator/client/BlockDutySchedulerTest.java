@@ -13,6 +13,20 @@
 
 package tech.pegasys.teku.validator.client;
 
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
+import tech.pegasys.teku.validator.api.ValidatorDuties;
+import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
+import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
+import tech.pegasys.teku.validator.client.duties.BlockProductionDuty;
+import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import static java.util.Collections.emptyList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -23,19 +37,8 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.validator.api.ValidatorDuties;
-import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
-import tech.pegasys.teku.validator.client.duties.BlockProductionDuty;
-import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
 public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
   private final BlockDutyScheduler dutyScheduler =
@@ -58,7 +61,6 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     verify(validatorApiChannel, never()).getDuties(UInt64.valueOf(2), VALIDATOR_KEYS);
   }
 
-  @Disabled
   @Test
   public void shouldNotPerformDutiesForSameSlotTwice() {
     final UInt64 blockProposerSlot = UInt64.valueOf(5);
@@ -86,7 +88,6 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     verifyNoMoreInteractions(blockCreationDuty);
   }
 
-  @Disabled
   @Test
   public void shouldScheduleBlockProposalDuty() {
     final UInt64 blockProposerSlot = UInt64.valueOf(5);
@@ -160,5 +161,35 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
 
     dutyScheduler.onAttestationCreationDue(attestationSlot);
     verifyNoMoreInteractions(attestationDuty);
+  }
+
+  @Test
+  public void shouldDelayExecutingDutiesUntilSchedulingIsComplete() {
+    final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
+    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
+    final ValidatorTimingChannel dutyScheduler =
+        new BlockDutyScheduler(
+            metricsSystem,
+            new RetryingDutyLoader(
+                asyncRunner,
+                new ValidatorApiDutyLoader(
+                    metricsSystem,
+                    validatorApiChannel,
+                    forkProvider,
+                    () -> scheduledDuties,
+                    Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))));
+    final SafeFuture<Optional<List<ValidatorDuties>>> epoch0Duties = new SafeFuture<>();
+
+    when(validatorApiChannel.getDuties(eq(ZERO), any())).thenReturn(epoch0Duties);
+    when(validatorApiChannel.getDuties(eq(ONE), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(emptyList())));
+    dutyScheduler.onSlot(ZERO);
+
+    dutyScheduler.onBlockProductionDue(ZERO);
+    // Duties haven't been loaded yet.
+    verify(scheduledDuties, never()).produceBlock(ZERO);
+
+    epoch0Duties.complete(Optional.of(emptyList()));
+    verify(scheduledDuties).produceBlock(ZERO);
   }
 }
