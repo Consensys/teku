@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.api;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -45,6 +46,24 @@ public class TrackingReorgEventChannel implements ReorgEventChannel {
 
     public UInt64 getBestSlot() {
       return bestSlot;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final ReorgEvent that = (ReorgEvent) o;
+      return Objects.equals(bestBlockRoot, that.bestBlockRoot) &&
+          Objects.equals(bestSlot, that.bestSlot);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(bestBlockRoot, bestSlot);
     }
   }
 }

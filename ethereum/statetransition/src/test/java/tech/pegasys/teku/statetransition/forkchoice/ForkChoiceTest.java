@@ -14,16 +14,18 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel.ReorgEvent;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -32,7 +34,7 @@ import tech.pegasys.teku.util.config.StateStorageMode;
 
 class ForkChoiceTest {
 
-  private final StateTransition stateTransition = mock(StateTransition.class);
+  private final StateTransition stateTransition = new StateTransition();
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.PRUNE);
   private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
@@ -45,6 +47,8 @@ class ForkChoiceTest {
   public void setup() {
     final SafeFuture<Void> initialized = recentChainData.initializeFromGenesis(genesis.getState());
     assertThat(initialized).isCompleted();
+
+    storageSystem.chainUpdater().setTime(UInt64.valueOf(492849242972424L));
   }
 
   @Test
@@ -60,5 +64,35 @@ class ForkChoiceTest {
     assertThat(reorgEvents).hasSize(1);
     assertThat(reorgEvents.get(0).getBestSlot()).isEqualTo(ONE);
     assertThat(reorgEvents.get(0).getBestBlockRoot()).isEqualTo(slot1Block.getRoot());
+  }
+
+  @Test
+  void onBlock_shouldImmediatelyMakeChildOfCurrentHeadTheNewHead() {
+    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
+    final SafeFuture<BlockImportResult> importResult =
+        forkChoice.onBlock(blockAndState.getBlock(), Optional.of(genesis.getState()));
+    assertThat(importResult).isCompleted();
+    assertThat(importResult.join().isSuccessful()).isTrue();
+
+    assertThat(recentChainData.getHeadBlock()).contains(blockAndState.getBlock());
+    assertThat(recentChainData.getHeadSlot()).isEqualTo(blockAndState.getSlot());
+  }
+
+  @Test
+  void onBlock_shouldTriggerReorgWhenSelectingChildOfChainHeadWhenForkChoiceSlotHasAdvanced() {
+    // Advance the current head
+    final UInt64 nodeSlot = UInt64.valueOf(5);
+    forkChoice.processHead(nodeSlot);
+
+    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
+    final SafeFuture<BlockImportResult> importResult =
+        forkChoice.onBlock(blockAndState.getBlock(), Optional.of(genesis.getState()));
+    assertThat(importResult).isCompleted();
+    assertThat(importResult.join().isSuccessful()).isTrue();
+
+    assertThat(recentChainData.getHeadBlock()).contains(blockAndState.getBlock());
+    assertThat(recentChainData.getHeadSlot()).isEqualTo(blockAndState.getSlot());
+    assertThat(storageSystem.reorgEventChannel().getReorgEvents())
+        .contains(new ReorgEvent(blockAndState.getRoot(), blockAndState.getSlot()));
   }
 }
