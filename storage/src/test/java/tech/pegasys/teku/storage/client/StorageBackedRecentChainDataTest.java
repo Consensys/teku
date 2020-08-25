@@ -42,6 +42,7 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubReorgEventChannel;
 import tech.pegasys.teku.storage.events.AnchorPoint;
+import tech.pegasys.teku.storage.store.StoreAssertions;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -98,7 +99,7 @@ public class StorageBackedRecentChainDataTest {
     assertStoreIsSet(client.get());
     final UpdatableStore expectedStore =
         genesisStoreBuilder.storeConfig(storeConfig).build().join();
-    assertThat(client.get().getStore()).isEqualTo(expectedStore);
+    StoreAssertions.assertStoresMatch(client.get().getStore(), expectedStore);
   }
 
   @Test
@@ -147,7 +148,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(initialized).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
-    assertThat(client.get().getStore()).isEqualTo(genesisStore);
+    StoreAssertions.assertStoresMatch(client.get().getStore(), genesisStore);
   }
 
   @Test
@@ -190,7 +191,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
-    assertThat(client.get().getStore()).isEqualTo(genesisStoreBuilder.build().join());
+    StoreAssertions.assertStoresMatch(client.get().getStore(), genesisStoreBuilder.build().join());
   }
 
   @Test

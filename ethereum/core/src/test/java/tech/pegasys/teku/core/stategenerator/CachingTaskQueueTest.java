@@ -16,6 +16,7 @@ package tech.pegasys.teku.core.stategenerator;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
@@ -140,6 +141,65 @@ class CachingTaskQueueTest {
     assertThat(resultB).isCompletedWithValue(taskB.getExpectedValue());
     assertNewTaskCount(1);
     assertRebasedTaskCount(1);
+  }
+
+  @Test
+  void getIfAvailable_shouldReturnValueWhenPresent() {
+    final StubTask task = new StubTask(1);
+    final SafeFuture<Optional<String>> result = taskQueue.perform(task);
+    task.completeTask();
+    assertThat(result).isCompleted();
+
+    assertThat(taskQueue.getIfAvailable(1)).isEqualTo(task.getExpectedValue());
+  }
+
+  @Test
+  void getIfAvailable_shouldReturnEmptyWhenTaskInProgress() {
+    final StubTask task = new StubTask(1);
+    final SafeFuture<Optional<String>> result = taskQueue.perform(task);
+    assertThat(result).isNotCompleted();
+
+    assertThat(taskQueue.getIfAvailable(1)).isEmpty();
+  }
+
+  @Test
+  void getIfAvailable_shouldReturnEmptyWhenAbsent() {
+    assertThat(taskQueue.getIfAvailable(1)).isEmpty();
+  }
+
+  @Test
+  void cache_shouldAddItemToCache() {
+    taskQueue.cache(1, "1");
+    assertThat(taskQueue.getIfAvailable(1)).contains("1");
+  }
+
+  @Test
+  void cacheAll_shouldAddAllItemsToCache() {
+    final Map<Integer, String> items = Map.of(1, "1", 2, "2", 3, "3");
+    taskQueue.cacheAll(items);
+    items.forEach((key, value) -> assertThat(taskQueue.getIfAvailable(key)).contains(value));
+  }
+
+  @Test
+  void remove_shouldRemoveItemFromCache() {
+    taskQueue.cache(1, "1");
+    taskQueue.remove(1);
+    assertThat(taskQueue.getIfAvailable(1)).isEmpty();
+  }
+
+  @Test
+  void remove_shouldNotCancelPendingTasks() {
+    final StubTask task = new StubTask(1);
+    final SafeFuture<Optional<String>> result = taskQueue.perform(task);
+    assertThat(result).isNotDone();
+
+    taskQueue.remove(task.getKey());
+
+    assertThat(result).isNotDone();
+    task.completeTask();
+    assertThat(result).isCompletedWithValue(task.getExpectedValue());
+    // Should have been re-added to the cache when the task completed.
+    assertThat(taskQueue.getIfAvailable(task.getKey())).isEqualTo(task.getExpectedValue());
   }
 
   private void assertCacheSizeMetric(final int expectedSize) {

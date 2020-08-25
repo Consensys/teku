@@ -132,16 +132,33 @@ public class ForkChoice {
           }
           return transaction
               .commit()
-              .thenRun(
-                  () ->
-                      result
-                          .getBlockProcessingRecord()
-                          .ifPresent(
-                              record ->
-                                  forkChoiceStrategy.onBlock(
-                                      block.getMessage(), record.getPostState())))
+              .thenRun(() -> updateForkChoiceForImportedBlock(block, forkChoiceStrategy, result))
               .thenApply(__ -> result);
         });
+  }
+
+  private void updateForkChoiceForImportedBlock(
+      final SignedBeaconBlock block,
+      final ForkChoiceStrategy forkChoiceStrategy,
+      final BlockImportResult result) {
+    result
+        .getBlockProcessingRecord()
+        .ifPresent(
+            record -> {
+              forkChoiceStrategy.onBlock(block.getMessage(), record.getPostState());
+              // If the new block builds on our current chain head immediately make it the new head
+              // Since fork choice works by walking down the tree selecting the child block with
+              // the greatest weight, when a block has only one child it will automatically become
+              // a better choice than the block itself.  So the first block we receive that is a
+              // child of our current chain head, must be the new chain head. If we'd had any other
+              // child of the current chain head we'd have already selected it as head.
+              if (recentChainData
+                  .getHeadBlock()
+                  .map(currentHead -> currentHead.getRoot().equals(block.getParent_root()))
+                  .orElse(false)) {
+                recentChainData.updateHead(block.getRoot(), block.getSlot());
+              }
+            });
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
