@@ -11,12 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.services.remotevalidator;
+package tech.pegasys.teku.validator.eventadapter;
 
-import tech.pegasys.teku.validator.remote.BeaconChainEvent;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-@FunctionalInterface
-interface BeaconChainEventsListener {
+public interface BeaconChainEventAdapter {
 
-  void onEvent(BeaconChainEvent event);
+  SafeFuture<Void> start();
+
+  SafeFuture<Void> stop();
 }
