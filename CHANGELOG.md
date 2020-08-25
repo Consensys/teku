@@ -6,6 +6,40 @@ we recommend most users use the latest `master` branch of Teku.
 ## Upcoming Breaking Changes
 
 - REST API endpoints will be updated to match emerging standards in a future release.
+- `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments still work but will be removed in a future release.
+
+## 0.12.4
+
+### Additions and Improvements
+
+- Includes a significant number of bug fixes and performance improvements as a result of the recent issues on the Medalla testnet. See https://github.com/PegaSysEng/teku/issues/2596 for a full list of related issues.
+- Support loading an entire directory of validator keys using `--validator-keys=<keyDir>:<passDir>`. Individual keystore and password files can also be specified using this new argument. 
+- Major reduction in CPU and memory usage during periods of non-finalization by intelligently queuing and combining requests for beacon states and checkpoint states
+- Fixed slow startup times during long periods of non-finalization.  Non-finalized states are now periodically persisted to disk to avoid needing to replay large numbers of blocks to regenerate state.
+- Reduced sync times during long periods of non-finalization by searching for a more recent common ancestor than the finalized checkpoint 
+- Added explicit UInt64 overflow and underflow protection
+- Local signing is now multithreaded to better utilise CPU when running large numbers of validators
+- Improved sync performance by continuing to update the target peer's status during the sync process
+- Removed support for SecIO. Only the NOISE handshake is now supported.
+- Provide a more userfriendly error message and exit if the P2P network port is already in use
+- Added new metrics 
+  - `validator_attestation_publication_delay` reports a histogram showing real time between when validations were due and when they were published to the network
+
+### Bug Fixes
+
+- Fixed issue where attestations were created for the wrong head because fork choice had not yet been run. Results in a significant improvement in attestation inclusion rate.
+- Fixed issue where invalid blocks were produced because they included attestations from forks that had different attestation committees
+- Fixed issue where sync could appear to stall because fork choice data wasn't being updated during sync
+- Fixed race condition when updating fork choice votes which could lead to `ProtoNode: Delta to be subtracted is greater than node weight` errors
+- Reduce `RejectedExecutionException` noise in logs when Teku is unable to keep up with incoming gossip messages. Other performance improvements should also improve the ability to keep up. 
+- Fixed cases where states were regenerated without first checking if a cached version was available
+- Fixed excessive memory usage in discovery when parsing an invalid RLP message
+- Fixed issue where maximum cache sizes could be exceeded resulting in excessive memory usage
+- Be more lenient in detecting peers that excessively throttle requests for blocks to better handle long stretches of empty slots
+- Fixed error when validating gossiped attestations that point to old blocks
+- Fixed netty thread blocked error messages from metrics by avoiding contention on key locks while retrieving metrics
+- Fixed issue where sockets were left open when using an external signer
+
 
 ## 0.12.3
 
