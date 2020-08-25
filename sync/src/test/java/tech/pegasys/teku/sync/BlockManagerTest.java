@@ -36,6 +36,7 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.ImportedBlocks;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -63,7 +64,8 @@ public class BlockManagerTest {
       BeaconChainUtil.create(localRecentChainData, validatorKeys);
   private final BeaconChainUtil remoteChain =
       BeaconChainUtil.create(remoteRecentChainData, validatorKeys);
-  private final ForkChoice forkChoice = new ForkChoice(localRecentChainData, new StateTransition());
+  private final ForkChoice forkChoice =
+      new ForkChoice(new SyncForkChoiceExecutor(), localRecentChainData, new StateTransition());
   private final ImportedBlocks importedBlocks = new ImportedBlocks(localEventBus);
 
   private final BlockImporter blockImporter =

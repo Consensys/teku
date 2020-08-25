@@ -34,6 +34,7 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -85,7 +86,8 @@ public class SyncingNodeManager {
 
     final Eth2Network eth2Network = networkBuilder.startNetwork();
 
-    ForkChoice forkChoice = new ForkChoice(recentChainData, new StateTransition());
+    ForkChoice forkChoice =
+        new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
     BlockImporter blockImporter = new BlockImporter(recentChainData, forkChoice, eventBus);
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
     final FutureItems<SignedBeaconBlock> futureBlocks =
