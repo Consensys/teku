@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
+import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
 
 public class BlockFactory {
   private final BlockProposalUtil blockCreator;
@@ -87,7 +88,9 @@ public class BlockFactory {
 
     // Collect attestations to include
     final BeaconState blockSlotState = stateTransition.process_slots(previousState, newSlot);
-    SSZList<Attestation> attestations = attestationPool.getAttestationsForBlock(blockSlotState);
+    SSZList<Attestation> attestations =
+        attestationPool.getAttestationsForBlock(
+            blockSlotState, new AttestationForkChecker(blockSlotState));
 
     // Collect slashings to include
     final SSZList<ProposerSlashing> proposerSlashings =

@@ -18,6 +18,7 @@ import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggre
 import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import java.util.stream.IntStream;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -33,7 +34,7 @@ class MatchingDataAttestationGroupTest {
   private final AttestationData attestationData = dataStructureUtil.randomAttestationData(SLOT);
 
   private final MatchingDataAttestationGroup group =
-      new MatchingDataAttestationGroup(attestationData);
+      new MatchingDataAttestationGroup(attestationData, Bytes32.ZERO);
 
   @Test
   public void isEmpty_shouldBeEmptyInitially() {

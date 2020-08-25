@@ -234,7 +234,7 @@ public class SnappyCompressorTest {
 
   @Test
   public void uncompress_partialValueWhenFullFrameUnavailable() throws Exception {
-    final BeaconState state = dataStructureUtil.randomBeaconState(0);
+    final BeaconState state = dataStructureUtil.randomBeaconState();
     final Bytes serializedState =
         Bytes.wrap(SimpleOffsetSerializer.serialize(state).toArrayUnsafe());
 

@@ -69,7 +69,8 @@ public class AttestationValidator {
       return SafeFuture.completedFuture(internalValidationResult);
     }
 
-    return singleOrAggregateAttestationChecks(attestation, OptionalInt.of(receivedOnSubnetId))
+    return singleOrAggregateAttestationChecks(
+            validateableAttestation, OptionalInt.of(receivedOnSubnetId))
         .thenApply(
             result -> {
               if (result != ACCEPT) {
@@ -105,12 +106,13 @@ public class AttestationValidator {
   }
 
   SafeFuture<InternalValidationResult> singleOrAggregateAttestationChecks(
-      final Attestation attestation, final OptionalInt receivedOnSubnetId) {
+      final ValidateableAttestation validateableAttestation, final OptionalInt receivedOnSubnetId) {
     // attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (within a
     // MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot +
     // ATTESTATION_PROPAGATION_SLOT_RANGE >= current_slot >= attestation.data.slot (a client MAY
     // queue
     // future attestations for processing at the appropriate slot).
+    Attestation attestation = validateableAttestation.getAttestation();
     final UInt64 currentTimeMillis = secondsToMillis(recentChainData.getStore().getTime());
     if (isCurrentTimeAfterAttestationPropagationSlotRange(currentTimeMillis, attestation)
         || isFromFarFuture(attestation, currentTimeMillis)) {
@@ -157,6 +159,9 @@ public class AttestationValidator {
               if (!is_valid_indexed_attestation(state, indexedAttestation).isSuccessful()) {
                 return REJECT;
               }
+
+              // Save committee shuffling seed since the state is available and attestation is valid
+              validateableAttestation.saveCommitteeShufflingSeed(state);
               return ACCEPT;
             });
   }
