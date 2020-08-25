@@ -209,6 +209,18 @@ public class CachingTaskQueue<K, V> {
     }
   }
 
+  public void cache(final K key, final V value) {
+    cache.put(key, value);
+  }
+
+  public void cacheAll(final Map<K, V> values) {
+    cache.putAll(values);
+  }
+
+  public void remove(final K key) {
+    cache.remove(key);
+  }
+
   public interface CacheableTask<K, V> {
     /**
      * The key that uniquely identifies this task. Two tasks with equal keys should also have

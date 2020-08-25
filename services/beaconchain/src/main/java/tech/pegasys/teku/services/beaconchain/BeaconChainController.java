@@ -68,6 +68,8 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceExecutor;
+import tech.pegasys.teku.statetransition.forkchoice.SingleThreadedForkChoiceExecutor;
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -134,6 +136,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private SyncStateTracker syncStateTracker;
   private UInt64 genesisTimeTracker = ZERO;
+  private ForkChoiceExecutor forkChoiceExecutor;
 
   public BeaconChainController(final ServiceConfig serviceConfig) {
     this.asyncRunner = serviceConfig.createAsyncRunner("beaconchain");
@@ -184,6 +187,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return SafeFuture.allOf(
         SafeFuture.fromRunnable(() -> eventBus.unregister(this)),
         SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::stop)),
+        SafeFuture.fromRunnable(() -> forkChoiceExecutor.stop()),
         syncStateTracker.stop(),
         syncService.stop(),
         attestationManager.stop(),
@@ -288,7 +292,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initForkChoice() {
     LOG.debug("BeaconChainController.initForkChoice()");
-    forkChoice = new ForkChoice(recentChainData, stateTransition);
+    forkChoiceExecutor = SingleThreadedForkChoiceExecutor.create();
+    forkChoice = new ForkChoice(forkChoiceExecutor, recentChainData, stateTransition);
   }
 
   public void initMetrics() {
