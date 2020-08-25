@@ -37,6 +37,7 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.services.remotevalidator.RemoteValidatorSubscriptions.SubscriptionStatus;
 import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.validator.remote.BeaconChainEvent;
 
 class RemoteValidatorApiTest {
 

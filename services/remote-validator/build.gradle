@@ -10,6 +10,7 @@ dependencies {
   implementation project(':storage:api')
   implementation project(':util')
   implementation project(':validator:api')
+  implementation project(':validator:remote')
 
   implementation 'io.javalin:javalin'
 
