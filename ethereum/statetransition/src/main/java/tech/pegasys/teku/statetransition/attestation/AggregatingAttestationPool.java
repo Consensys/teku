@@ -66,7 +66,14 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
             .computeIfAbsent(
                 dataRoot,
                 key ->
-                    new MatchingDataAttestationGroup(attestationData, attestation.getRandaoMix()))
+                    new MatchingDataAttestationGroup(
+                        attestationData,
+                        attestation
+                            .getRandaoMix()
+                            .orElseThrow(
+                                () ->
+                                    new UnsupportedOperationException(
+                                        "ValidateableAttestation does not have a randao mix."))))
             .add(attestation);
     if (add) {
       size.incrementAndGet();

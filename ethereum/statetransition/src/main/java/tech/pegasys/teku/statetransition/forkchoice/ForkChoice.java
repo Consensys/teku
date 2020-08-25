@@ -172,7 +172,13 @@ public class ForkChoice {
               final StoreTransaction transaction = recentChainData.startStoreTransaction();
               final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
               attestations.stream()
-                  .map(ValidateableAttestation::getIndexedAttestation)
+                  .map(
+                      a ->
+                          a.getIndexedAttestation()
+                              .orElseThrow(
+                                  () ->
+                                      new UnsupportedOperationException(
+                                          "ValidateableAttestation does not have an IndexedAttestation.")))
                   .forEach(
                       attestation -> forkChoiceStrategy.onAttestation(transaction, attestation));
               return transaction.commit();

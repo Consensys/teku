@@ -362,7 +362,12 @@ public class ForkChoiceUtil {
         .ifSuccessful(
             () -> {
               IndexedAttestation indexedAttestation =
-                  validateableAttestation.getIndexedAttestation();
+                  validateableAttestation
+                      .getIndexedAttestation()
+                      .orElseThrow(
+                          () ->
+                              new UnsupportedOperationException(
+                                  "ValidateableAttestation does not have an IndexedAttestation yet."));
               forkChoiceStrategy.onAttestation(store, indexedAttestation);
               return SUCCESSFUL;
             });
@@ -389,7 +394,7 @@ public class ForkChoiceUtil {
     }
 
     IndexedAttestation indexedAttestation;
-    Optional<IndexedAttestation> maybeIndexedAttestation = attestation.getMaybeIndexedAttestation();
+    Optional<IndexedAttestation> maybeIndexedAttestation = attestation.getIndexedAttestation();
     try {
       indexedAttestation =
           maybeIndexedAttestation.orElse(

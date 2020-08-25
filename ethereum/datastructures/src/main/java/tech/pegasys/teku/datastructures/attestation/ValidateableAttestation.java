@@ -38,8 +38,8 @@ public class ValidateableAttestation {
   private final Supplier<Bytes32> hashTreeRoot;
   private final AtomicBoolean gossiped = new AtomicBoolean(false);
 
-  private volatile Optional<IndexedAttestation> maybeIndexedAttestation = Optional.empty();
-  private volatile Optional<Bytes32> maybeRandaoMix = Optional.empty();
+  private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
+  private volatile Optional<Bytes32> randaoMix = Optional.empty();
 
   public static ValidateableAttestation fromAttestation(Attestation attestation) {
     return new ValidateableAttestation(attestation, Optional.empty());
@@ -57,34 +57,20 @@ public class ValidateableAttestation {
     this.hashTreeRoot = Suppliers.memoize(attestation::hash_tree_root);
   }
 
-  public Optional<IndexedAttestation> getMaybeIndexedAttestation() {
-    return maybeIndexedAttestation;
+  public Optional<IndexedAttestation> getIndexedAttestation() {
+    return indexedAttestation;
   }
 
-  public IndexedAttestation getIndexedAttestation() {
-    return maybeIndexedAttestation.orElseThrow(
-        () ->
-            new UnsupportedOperationException(
-                "ValidateableAttestation does not have an IndexedAttestation yet."));
-  }
-
-  public Optional<Bytes32> getMaybeRandaoMix() {
-    return maybeRandaoMix;
-  }
-
-  public Bytes32 getRandaoMix() {
-    return maybeRandaoMix.orElseThrow(
-        () ->
-            new UnsupportedOperationException(
-                "ValidateableAttestation does not have a randao mix yet."));
+  public Optional<Bytes32> getRandaoMix() {
+    return randaoMix;
   }
 
   public void setIndexedAttestation(IndexedAttestation indexedAttestation) {
-    this.maybeIndexedAttestation = Optional.of(indexedAttestation);
+    this.indexedAttestation = Optional.of(indexedAttestation);
   }
 
   public void saveRandaoMix(BeaconState state) {
-    if (maybeRandaoMix.isPresent()) {
+    if (randaoMix.isPresent()) {
       return;
     }
 
@@ -92,7 +78,7 @@ public class ValidateableAttestation {
         compute_epoch_at_slot(attestation.getData().getSlot())
             .plus(EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD - 1);
     Bytes32 mix = get_randao_mix(state, randaoIndex);
-    this.maybeRandaoMix = Optional.of(mix);
+    this.randaoMix = Optional.of(mix);
   }
 
   public boolean markGossiped() {
