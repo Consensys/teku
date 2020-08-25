@@ -22,6 +22,19 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
+/**
+ * Executes fork choice tasks using a single thread. This ensures that only one task is in progress
+ * at a time while ensuring that only a single thread is ever blocked waiting for tasks to complete.
+ *
+ * <p>Tasks may perform their operation using multiple threads (e.g. when committing transactions)
+ * but this executor will block until the returned future completes, ensure the task is fully
+ * completed before beginning the next one.
+ *
+ * <p>The net result is equivalent to having an exclusive lock to perform tasks, but the single
+ * executor thread blocks, rather than potentially blocking calling threads waiting to acquire the
+ * lock. This avoids the risk of all threads in a thread pool blocking on the lock and deadlocking
+ * if the task being performed needs a task to execute in that thread pool.
+ */
 public class SingleThreadedForkChoiceExecutor implements ForkChoiceExecutor {
   private static final Logger LOG = LogManager.getLogger();
   private final AtomicBoolean stopped = new AtomicBoolean(false);
