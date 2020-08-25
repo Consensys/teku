@@ -366,7 +366,12 @@ public class ForkChoiceUtil {
         .ifSuccessful(
             () -> {
               IndexedAttestation indexedAttestation =
-                  validateableAttestation.getIndexedAttestation();
+                  validateableAttestation
+                      .getIndexedAttestation()
+                      .orElseThrow(
+                          () ->
+                              new UnsupportedOperationException(
+                                  "ValidateableAttestation does not have an IndexedAttestation yet."));
               forkChoiceStrategy.onAttestation(store, indexedAttestation);
               return SUCCESSFUL;
             });
@@ -393,8 +398,11 @@ public class ForkChoiceUtil {
     }
 
     IndexedAttestation indexedAttestation;
+    Optional<IndexedAttestation> maybeIndexedAttestation = attestation.getIndexedAttestation();
     try {
-      indexedAttestation = get_indexed_attestation(targetState, attestation.getAttestation());
+      indexedAttestation =
+          maybeIndexedAttestation.orElse(
+              get_indexed_attestation(targetState, attestation.getAttestation()));
     } catch (IllegalArgumentException e) {
       LOG.debug("on_attestation: Attestation is not valid: ", e);
       return AttestationProcessingResult.invalid(e.getMessage());
@@ -403,6 +411,8 @@ public class ForkChoiceUtil {
         .ifSuccessful(
             () -> {
               attestation.setIndexedAttestation(indexedAttestation);
+              attestation.saveCommitteeShufflingSeed(targetState);
+
               return SUCCESSFUL;
             });
   }

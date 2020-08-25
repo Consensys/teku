@@ -63,7 +63,17 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     final Bytes32 dataRoot = attestationData.hash_tree_root();
     final boolean add =
         attestationGroupByDataHash
-            .computeIfAbsent(dataRoot, key -> new MatchingDataAttestationGroup(attestationData))
+            .computeIfAbsent(
+                dataRoot,
+                key ->
+                    new MatchingDataAttestationGroup(
+                        attestationData,
+                        attestation
+                            .getCommitteeShufflingSeed()
+                            .orElseThrow(
+                                () ->
+                                    new UnsupportedOperationException(
+                                        "ValidateableAttestation does not have a randao mix."))))
             .add(attestation);
     if (add) {
       size.incrementAndGet();
@@ -117,13 +127,15 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   }
 
   public synchronized SSZList<Attestation> getAttestationsForBlock(
-      final BeaconState stateAtBlockSlot) {
+      final BeaconState stateAtBlockSlot, final AttestationForkChecker forkChecker) {
     final SSZMutableList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
+
     dataHashBySlot.descendingMap().values().stream()
         .flatMap(Collection::stream)
         .map(attestationGroupByDataHash::get)
         .filter(Objects::nonNull)
         .filter(group -> isValid(stateAtBlockSlot, group.getAttestationData()))
+        .filter(forkChecker::areAttestationsFromCorrectFork)
         .flatMap(MatchingDataAttestationGroup::stream)
         .limit(attestations.getMaxSize())
         .map(ValidateableAttestation::getAttestation)
