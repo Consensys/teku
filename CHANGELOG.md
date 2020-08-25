@@ -29,6 +29,7 @@ we recommend most users use the latest `master` branch of Teku.
 
 - Fixed issue where attestations were created for the wrong head because fork choice had not yet been run. Results in a significant improvement in attestation inclusion rate.
 - Fixed issue where invalid blocks were produced because they included attestations from forks that had different attestation committees
+- Fixed issue where block production may be scheduled for the wrong slot due to calculating duties one epoch ahead
 - Fixed issue where sync could appear to stall because fork choice data wasn't being updated during sync
 - Fixed race condition when updating fork choice votes which could lead to `ProtoNode: Delta to be subtracted is greater than node weight` errors
 - Reduce `RejectedExecutionException` noise in logs when Teku is unable to keep up with incoming gossip messages. Other performance improvements should also improve the ability to keep up. 
