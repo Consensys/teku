@@ -32,6 +32,7 @@ import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
@@ -212,7 +213,8 @@ public class ForkChoiceUtil {
       Optional<BeaconState> maybePreState,
       final StateTransition st,
       final ForkChoiceStrategy forkChoiceStrategy,
-      final Consumer<BeaconState> beaconStateConsumer) {
+      final Consumer<BeaconState> beaconStateConsumer,
+      final IndexedAttestationProvider indexedAttestationProvider) {
     final BeaconBlock block = signed_block.getMessage();
 
     // Return early if precondition checks fail;
@@ -228,7 +230,7 @@ public class ForkChoiceUtil {
 
     // Check the block is valid and compute the post-state
     try {
-      state = st.initiate(preState, signed_block, true, beaconStateConsumer);
+      state = st.initiate(preState, signed_block, true, beaconStateConsumer, indexedAttestationProvider);
     } catch (StateTransitionException e) {
       return BlockImportResult.failedStateTransition(e);
     }

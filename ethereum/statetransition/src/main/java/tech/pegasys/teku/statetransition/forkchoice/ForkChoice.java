@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.lookup.CachingIndexedAttestationProvider;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -113,6 +114,8 @@ public class ForkChoice {
         () -> {
           final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
           final StoreTransaction transaction = recentChainData.startStoreTransaction();
+          final CachingIndexedAttestationProvider indexedAttestationProvider =
+              new CachingIndexedAttestationProvider();
           final BlockImportResult result =
               on_block(
                   transaction,
@@ -125,11 +128,17 @@ public class ForkChoice {
                           beaconState.hash_tree_root(),
                           new SlotAndBlockRoot(
                               beaconState.getSlot(),
-                              beaconState.getLatest_block_header().hash_tree_root())));
+                              beaconState.getLatest_block_header().hash_tree_root())),
+                  indexedAttestationProvider);
 
           if (!result.isSuccessful()) {
             return SafeFuture.completedFuture(result);
           }
+          indexedAttestationProvider
+              .getIndexedAttestations()
+              .forEach(
+                  indexedAttestation ->
+                      forkChoiceStrategy.onAttestation(transaction, indexedAttestation));
           return transaction
               .commit()
               .thenRun(() -> updateForkChoiceForImportedBlock(block, forkChoiceStrategy, result))

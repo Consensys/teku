@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.core.blockvalidator;
 
+import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -62,9 +63,13 @@ public interface BlockValidator {
    *     information (randao history) to recover committees for the block slot, attestations slots,
    *     etc
    * @param block Block to be validated
+   * @param indexedAttestationProvider the provider to use to calculate indexed attestations
    * @return Result promise
    */
-  SafeFuture<BlockValidationResult> validatePreState(BeaconState preState, SignedBeaconBlock block);
+  SafeFuture<BlockValidationResult> validatePreState(
+      BeaconState preState,
+      SignedBeaconBlock block,
+      IndexedAttestationProvider indexedAttestationProvider);
 
   /**
    * Validates the block against the state after block processing
@@ -80,12 +85,16 @@ public interface BlockValidator {
       BeaconState postState, SignedBeaconBlock block);
 
   /**
-   * Combines {@link #validatePreState(BeaconState, SignedBeaconBlock)} and {@link
-   * #validatePostState(BeaconState, SignedBeaconBlock)}
+   * Combines {@link #validatePreState(BeaconState, SignedBeaconBlock, IndexedAttestationProvider)}
+   * and {@link #validatePostState(BeaconState, SignedBeaconBlock)}
    */
   default SafeFuture<BlockValidationResult> validate(
-      BeaconState preState, SignedBeaconBlock block, BeaconState postState) {
-    SafeFuture<BlockValidationResult> preFut = validatePreState(preState, block);
+      BeaconState preState,
+      SignedBeaconBlock block,
+      BeaconState postState,
+      IndexedAttestationProvider indexedAttestationProvider) {
+    SafeFuture<BlockValidationResult> preFut =
+        validatePreState(preState, block, indexedAttestationProvider);
     SafeFuture<BlockValidationResult> postFut = validatePostState(postState, block);
     return preFut.thenCombine(postFut, (pre, post) -> !pre.isValid() ? pre : post);
   }
