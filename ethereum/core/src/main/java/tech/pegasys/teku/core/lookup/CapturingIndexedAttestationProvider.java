@@ -20,7 +20,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 
-public class CachingIndexedAttestationProvider implements IndexedAttestationProvider {
+public class CapturingIndexedAttestationProvider implements IndexedAttestationProvider {
   private final Map<Attestation, IndexedAttestation> indexedAttestations = new HashMap<>();
 
   @Override

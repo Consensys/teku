@@ -24,7 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.core.lookup.CachingIndexedAttestationProvider;
+import tech.pegasys.teku.core.lookup.CapturingIndexedAttestationProvider;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -114,8 +114,8 @@ public class ForkChoice {
         () -> {
           final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
           final StoreTransaction transaction = recentChainData.startStoreTransaction();
-          final CachingIndexedAttestationProvider indexedAttestationProvider =
-              new CachingIndexedAttestationProvider();
+          final CapturingIndexedAttestationProvider indexedAttestationProvider =
+              new CapturingIndexedAttestationProvider();
           final BlockImportResult result =
               on_block(
                   transaction,
