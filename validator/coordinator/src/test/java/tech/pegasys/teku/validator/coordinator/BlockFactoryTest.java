@@ -90,7 +90,7 @@ class BlockFactoryTest {
   @BeforeEach
   void setUp() {
     when(depositProvider.getDeposits(any(), any())).thenReturn(deposits);
-    when(attestationsPool.getAttestationsForBlock(any())).thenReturn(attestations);
+    when(attestationsPool.getAttestationsForBlock(any(), any())).thenReturn(attestations);
     when(attesterSlashingPool.getItemsForBlock(any())).thenReturn(attesterSlashings);
     when(proposerSlashingPool.getItemsForBlock(any())).thenReturn(proposerSlashings);
     when(voluntaryExitPool.getItemsForBlock(any())).thenReturn(voluntaryExits);
