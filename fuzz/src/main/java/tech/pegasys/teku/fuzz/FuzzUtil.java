@@ -23,6 +23,7 @@ import tech.pegasys.teku.core.BlockProcessorUtil;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
+import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
@@ -93,10 +94,11 @@ public class FuzzUtil {
           structuredInput
               .getState()
               .updated(
-                  state -> {
-                    BlockProcessorUtil.process_attestations(
-                        state, SSZList.singleton(structuredInput.getAttestation()));
-                  });
+                  state ->
+                      BlockProcessorUtil.process_attestations(
+                          state,
+                          SSZList.singleton(structuredInput.getAttestation()),
+                          IndexedAttestationProvider.DIRECT_PROVIDER));
       Bytes output = SimpleOffsetSerializer.serialize(postState);
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {

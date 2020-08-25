@@ -49,6 +49,7 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -118,7 +119,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     forkChoice =
         useMockForkChoice
             ? mock(ForkChoice.class)
-            : new ForkChoice(recentChainData, stateTransition);
+            : new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, stateTransition);
     beaconChainUtil =
         BeaconChainUtil.create(recentChainData, chainBuilder.getValidatorKeys(), forkChoice, true);
   }
@@ -274,7 +275,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   }
 
   protected Response post(final String route, final String postData) throws IOException {
-    System.out.println(postData);
     final RequestBody body = RequestBody.create(JSON, postData);
     final Request request = new Request.Builder().url(getUrl() + route).post(body).build();
     return client.newCall(request).execute();

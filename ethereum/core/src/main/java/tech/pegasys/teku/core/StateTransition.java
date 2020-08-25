@@ -29,6 +29,7 @@ import tech.pegasys.teku.core.epoch.EpochProcessor;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
+import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -72,14 +73,20 @@ public class StateTransition {
   public BeaconState initiate(
       BeaconState preState, SignedBeaconBlock signed_block, boolean validateStateRootAndSignatures)
       throws StateTransitionException {
-    return initiate(preState, signed_block, validateStateRootAndSignatures, interimState -> {});
+    return initiate(
+        preState,
+        signed_block,
+        validateStateRootAndSignatures,
+        interimState -> {},
+        IndexedAttestationProvider.DIRECT_PROVIDER);
   }
 
   public BeaconState initiate(
       BeaconState preState,
       SignedBeaconBlock signed_block,
       boolean validateStateRootAndSignatures,
-      final Consumer<BeaconState> beaconStateConsumer)
+      final Consumer<BeaconState> beaconStateConsumer,
+      final IndexedAttestationProvider indexedAttestationProvider)
       throws StateTransitionException {
     try {
       BlockValidator blockValidator =
@@ -103,7 +110,9 @@ public class StateTransition {
       BeaconState postState = process_block(postSlotState, block);
 
       BlockValidationResult blockValidationResult =
-          blockValidator.validate(postSlotState, signed_block, postState).join();
+          blockValidator
+              .validate(postSlotState, signed_block, postState, indexedAttestationProvider)
+              .join();
 
       if (!blockValidationResult.isValid()) {
         throw new BlockProcessingException(blockValidationResult.getReason());
