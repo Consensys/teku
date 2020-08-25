@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import com.google.common.base.Throwables;
 import io.libp2p.core.pubsub.ValidationResult;
+import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -63,6 +64,9 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable, TWrap
   protected ValidationResult handleMessageProcessingError(Throwable err) {
     if (Throwables.getRootCause(err) instanceof DecodingException) {
       LOG.trace("Received malformed gossip message on {}", getTopic());
+    } else if (Throwables.getRootCause(err) instanceof RejectedExecutionException) {
+      LOG.warn(
+          "Discarding gossip message for topic {} because the executor queue is full", getTopic());
     } else {
       LOG.warn("Encountered exception while processing message for topic {}", getTopic(), err);
     }
