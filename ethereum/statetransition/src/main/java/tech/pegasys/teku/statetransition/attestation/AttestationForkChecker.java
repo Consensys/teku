@@ -33,7 +33,7 @@ public class AttestationForkChecker {
     Bytes32 currentEpochSeed = get_seed(state, epoch, DOMAIN_BEACON_ATTESTER);
     validCommitteeShufflingSeeds.add(currentEpochSeed);
 
-    if (epoch != UInt64.ZERO) {
+    if (!epoch.equals(UInt64.ZERO)) {
       Bytes32 previousEpochSeed = get_seed(state, epoch.minus(UInt64.ONE), DOMAIN_BEACON_ATTESTER);
       validCommitteeShufflingSeeds.add(previousEpochSeed);
     }
