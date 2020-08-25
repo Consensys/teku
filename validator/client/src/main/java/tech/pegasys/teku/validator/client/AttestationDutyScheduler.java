@@ -13,17 +13,13 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 
 public class AttestationDutyScheduler extends AbstractDutyScheduler {
-  private static final Logger LOG = LogManager.getLogger();
   private UInt64 lastAttestationCreationSlot;
   private final StableSubnetSubscriber stableSubnetSubscriber;
 
@@ -44,17 +40,13 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
   @Override
   public void onSlot(final UInt64 slot) {
     super.onSlot(slot);
-    final UInt64 epochNumber = compute_epoch_at_slot(slot);
-    dutiesByEpoch.computeIfAbsent(epochNumber.plus(ONE), this::requestDutiesForEpoch);
     stableSubnetSubscriber.onSlot(slot);
   }
 
   @Override
-  public void onChainReorg(final UInt64 newSlot) {
-    super.onChainReorg(newSlot);
-    LOG.debug("Chain reorganisation detected. Recalculating validator attestation duties");
-    final UInt64 nextEpochNumber = compute_epoch_at_slot(newSlot).plus(ONE);
-    dutiesByEpoch.put(nextEpochNumber, requestDutiesForEpoch(nextEpochNumber));
+  protected void recalculateDuties(final UInt64 epochNumber) {
+    super.recalculateDuties(epochNumber);
+    super.recalculateDuties(epochNumber.plus(ONE));
   }
 
   @Override

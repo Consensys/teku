@@ -184,6 +184,34 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   }
 
   @Test
+  public void shouldNotPerformDutiesForSameSlotTwice() {
+    final UInt64 attestationProductionSlot = UInt64.valueOf(5);
+    final ValidatorDuties validator1Duties =
+        ValidatorDuties.withDuties(
+            VALIDATOR1_KEY, 5, 3, 6, 0, List.of(), attestationProductionSlot);
+    when(validatorApiChannel.getDuties(eq(ZERO), any()))
+        .thenReturn(completedFuture(Optional.of(List.of(validator1Duties))));
+
+    final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
+    when(attestationDuty.performDuty()).thenReturn(new SafeFuture<>());
+    when(dutyFactory.createAttestationProductionDuty(attestationProductionSlot))
+        .thenReturn(attestationDuty);
+
+    // Load duties
+    dutyScheduler.onSlot(compute_start_slot_at_epoch(ZERO));
+    verify(attestationDuty).addValidator(validator1, 3, 6, 5);
+
+    // Execute
+    dutyScheduler.onAttestationCreationDue(attestationProductionSlot);
+    verify(attestationDuty).performDuty();
+
+    // Somehow we triggered the same slot again.
+    dutyScheduler.onAttestationCreationDue(attestationProductionSlot);
+    // But shouldn't produce another block and get ourselves slashed.
+    verifyNoMoreInteractions(attestationDuty);
+  }
+
+  @Test
   public void shouldScheduleAttestationDuties() {
     final UInt64 attestationSlot = UInt64.valueOf(5);
     final int validator1Index = 5;

@@ -48,15 +48,18 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   public void onSlot(final UInt64 slot) {
     final UInt64 epochNumber = compute_epoch_at_slot(slot);
     removePriorEpochs(epochNumber);
-    dutiesByEpoch.computeIfAbsent(epochNumber, this::requestDutiesForEpoch);
+    recalculateDuties(epochNumber);
   }
 
   @Override
   public void onChainReorg(final UInt64 newSlot) {
-    LOG.debug("Chain reorganisation detected. Recalculating validator attestation duties");
+    LOG.debug("Chain reorganisation detected. Recalculating validator duties");
     dutiesByEpoch.clear();
-    final UInt64 epochNumber = compute_epoch_at_slot(newSlot);
-    dutiesByEpoch.put(epochNumber, requestDutiesForEpoch(epochNumber));
+    recalculateDuties(compute_epoch_at_slot(newSlot));
+  }
+
+  protected void recalculateDuties(final UInt64 epochNumber) {
+    dutiesByEpoch.computeIfAbsent(epochNumber, this::requestDutiesForEpoch);
   }
 
   protected void removePriorEpochs(final UInt64 epochNumber) {
