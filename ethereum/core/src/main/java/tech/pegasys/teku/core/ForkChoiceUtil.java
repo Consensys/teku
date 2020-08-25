@@ -230,7 +230,9 @@ public class ForkChoiceUtil {
 
     // Check the block is valid and compute the post-state
     try {
-      state = st.initiate(preState, signed_block, true, beaconStateConsumer, indexedAttestationProvider);
+      state =
+          st.initiate(
+              preState, signed_block, true, beaconStateConsumer, indexedAttestationProvider);
     } catch (StateTransitionException e) {
       return BlockImportResult.failedStateTransition(e);
     }
