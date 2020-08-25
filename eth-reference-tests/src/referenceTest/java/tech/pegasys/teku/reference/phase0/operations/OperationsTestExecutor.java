@@ -21,6 +21,7 @@ import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
 import com.google.common.collect.ImmutableMap;
 import tech.pegasys.teku.core.BlockProcessorUtil;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
+import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
@@ -78,7 +79,10 @@ public class OperationsTestExecutor<T> implements TestExecutor {
                   "attestation.ssz",
                   Attestation.class,
                   (state, data) ->
-                      BlockProcessorUtil.process_attestations(state, SSZList.singleton(data))))
+                      BlockProcessorUtil.process_attestations(
+                          state,
+                          SSZList.singleton(data),
+                          IndexedAttestationProvider.DIRECT_PROVIDER)))
           .build();
 
   private final String dataFileName;

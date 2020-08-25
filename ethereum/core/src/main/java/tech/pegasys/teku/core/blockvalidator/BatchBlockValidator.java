@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.core.blockvalidator;
 
+import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -25,12 +26,14 @@ public class BatchBlockValidator implements BlockValidator {
 
   @Override
   public SafeFuture<BlockValidationResult> validatePreState(
-      BeaconState preState, SignedBeaconBlock block) {
+      BeaconState preState,
+      SignedBeaconBlock block,
+      IndexedAttestationProvider indexedAttestationProvider) {
     BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
     SimpleBlockValidator blockValidator =
         new SimpleBlockValidator(true, true, true, signatureVerifier);
     SafeFuture<BlockValidationResult> noBLSValidationResultFut =
-        blockValidator.validatePreState(preState, block);
+        blockValidator.validatePreState(preState, block, indexedAttestationProvider);
     // during the above validatePreState() call BatchSignatureVerifier just collected
     // a bunch of signatures to be verified in optimized batched way on the following step
     if (!noBLSValidationResultFut.join().isValid()) {
@@ -40,7 +43,8 @@ public class BatchBlockValidator implements BlockValidator {
       boolean batchBLSResult = signatureVerifier.batchVerify();
       if (!batchBLSResult) {
         // validate again naively to get exact invalid signature
-        return new SimpleBlockValidator().validatePreState(preState, block);
+        return new SimpleBlockValidator()
+            .validatePreState(preState, block, indexedAttestationProvider);
       } else {
         return SafeFuture.completedFuture(new BlockValidationResult(true));
       }
