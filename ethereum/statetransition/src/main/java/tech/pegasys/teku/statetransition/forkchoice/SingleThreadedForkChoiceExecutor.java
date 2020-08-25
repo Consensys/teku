@@ -42,7 +42,7 @@ public class SingleThreadedForkChoiceExecutor implements ForkChoiceExecutor {
   public <T> SafeFuture<T> performTask(final ForkChoiceTask<T> task) {
     final SafeFuture<T> result = new SafeFuture<>();
     try {
-      executor.submit(() -> syncPerformTask(task).propagateTo(result));
+      executor.execute(() -> syncPerformTask(task).propagateTo(result));
     } catch (final RejectedExecutionException e) {
       if (stopped.get()) {
         LOG.debug("Ignoring fork choice task because shutdown is in progress");
