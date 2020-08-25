@@ -13,23 +13,6 @@
 
 package tech.pegasys.teku.validator.client;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.metrics.StubMetricsSystem;
-import tech.pegasys.teku.validator.api.ValidatorDuties;
-import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
-import tech.pegasys.teku.validator.client.duties.AggregationDuty;
-import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
-import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -45,6 +28,21 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.metrics.StubMetricsSystem;
+import tech.pegasys.teku.validator.api.ValidatorDuties;
+import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
+import tech.pegasys.teku.validator.client.duties.AggregationDuty;
+import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
+import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+
 public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   private final AttestationDutyScheduler dutyScheduler =
       new AttestationDutyScheduler(
@@ -59,14 +57,6 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
                   Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))),
           stableSubnetSubscriber);
 
-
-  @BeforeEach
-  public void setup() {
-        final SafeFuture<BLSSignature> rejectAggregationSignature =
-        SafeFuture.failedFuture(new UnsupportedOperationException("This test ignores aggregation"));
-    when(validator1Signer.signAggregationSlot(any(), any())).thenReturn(rejectAggregationSignature);
-    when(validator2Signer.signAggregationSlot(any(), any())).thenReturn(rejectAggregationSignature);
-  }
   @Test
   public void shouldFetchDutiesForCurrentAndNextEpoch() {
     dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.ONE));

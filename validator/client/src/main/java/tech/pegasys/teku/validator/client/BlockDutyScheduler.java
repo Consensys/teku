@@ -13,16 +13,11 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 
 public class BlockDutyScheduler extends AbstractDutyScheduler {
-  private static final Logger LOG = LogManager.getLogger();
 
   public BlockDutyScheduler(
       final MetricsSystem metricsSystem, final DutyLoader epochDutiesScheduler) {
@@ -33,21 +28,6 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
         "scheduled_block_duties_current",
         "Current number of pending block duties that have been scheduled",
         () -> dutiesByEpoch.values().stream().mapToInt(DutyQueue::countDuties).sum());
-  }
-
-  @Override
-  public void onSlot(final UInt64 slot) {
-    final UInt64 epochNumber = compute_epoch_at_slot(slot);
-    removePriorEpochs(epochNumber);
-    dutiesByEpoch.computeIfAbsent(epochNumber, this::requestDutiesForEpoch);
-  }
-
-  @Override
-  public void onChainReorg(final UInt64 newSlot) {
-    LOG.debug("Chain reorganisation detected. Recalculating validator block duties");
-    dutiesByEpoch.clear();
-    final UInt64 epochNumber = compute_epoch_at_slot(newSlot);
-    dutiesByEpoch.put(epochNumber, requestDutiesForEpoch(epochNumber));
   }
 
   @Override

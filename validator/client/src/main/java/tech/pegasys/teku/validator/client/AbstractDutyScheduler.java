@@ -18,10 +18,13 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
+  private static final Logger LOG = LogManager.getLogger();
   private final DutyLoader epochDutiesScheduler;
 
   protected final NavigableMap<UInt64, DutyQueue> dutiesByEpoch = new TreeMap<>();
@@ -39,6 +42,21 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
     if (dutyQueue != null) {
       action.accept(dutyQueue, slot);
     }
+  }
+
+  @Override
+  public void onSlot(final UInt64 slot) {
+    final UInt64 epochNumber = compute_epoch_at_slot(slot);
+    removePriorEpochs(epochNumber);
+    dutiesByEpoch.computeIfAbsent(epochNumber, this::requestDutiesForEpoch);
+  }
+
+  @Override
+  public void onChainReorg(final UInt64 newSlot) {
+    LOG.debug("Chain reorganisation detected. Recalculating validator attestation duties");
+    dutiesByEpoch.clear();
+    final UInt64 epochNumber = compute_epoch_at_slot(newSlot);
+    dutiesByEpoch.put(epochNumber, requestDutiesForEpoch(epochNumber));
   }
 
   protected void removePriorEpochs(final UInt64 epochNumber) {

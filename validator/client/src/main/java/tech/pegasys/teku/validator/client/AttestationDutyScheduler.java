@@ -43,20 +43,17 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
 
   @Override
   public void onSlot(final UInt64 slot) {
+    super.onSlot(slot);
     final UInt64 epochNumber = compute_epoch_at_slot(slot);
-    removePriorEpochs(epochNumber);
-    dutiesByEpoch.computeIfAbsent(epochNumber, this::requestDutiesForEpoch);
     dutiesByEpoch.computeIfAbsent(epochNumber.plus(ONE), this::requestDutiesForEpoch);
     stableSubnetSubscriber.onSlot(slot);
   }
 
   @Override
   public void onChainReorg(final UInt64 newSlot) {
+    super.onChainReorg(newSlot);
     LOG.debug("Chain reorganisation detected. Recalculating validator attestation duties");
-    dutiesByEpoch.clear();
-    final UInt64 epochNumber = compute_epoch_at_slot(newSlot);
-    final UInt64 nextEpochNumber = epochNumber.plus(ONE);
-    dutiesByEpoch.put(epochNumber, requestDutiesForEpoch(epochNumber));
+    final UInt64 nextEpochNumber = compute_epoch_at_slot(newSlot).plus(ONE);
     dutiesByEpoch.put(nextEpochNumber, requestDutiesForEpoch(nextEpochNumber));
   }
 
