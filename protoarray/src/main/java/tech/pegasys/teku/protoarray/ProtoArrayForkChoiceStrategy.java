@@ -91,7 +91,6 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
     votesLock.writeLock().lock();
     try {
       attestation.getAttesting_indices().stream()
-          .parallel()
           .forEach(
               validatorIndex ->
                   processAttestation(
