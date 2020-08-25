@@ -15,7 +15,6 @@ package tech.pegasys.teku.core;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
@@ -44,6 +43,7 @@ import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
+import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
@@ -322,9 +322,13 @@ public final class BlockProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attestations</a>
    */
   public static void process_attestations(
-      MutableBeaconState state, SSZList<Attestation> attestations) throws BlockProcessingException {
+      MutableBeaconState state,
+      SSZList<Attestation> attestations,
+      IndexedAttestationProvider indexedAttestationProvider)
+      throws BlockProcessingException {
     process_attestations_no_validation(state, attestations);
-    verify_attestations(state, attestations, BLSSignatureVerifier.SIMPLE);
+    verify_attestations(
+        state, attestations, BLSSignatureVerifier.SIMPLE, indexedAttestationProvider);
   }
 
   public static void process_attestations_no_validation(
@@ -366,12 +370,15 @@ public final class BlockProcessorUtil {
   }
 
   public static void verify_attestations(
-      BeaconState state, SSZList<Attestation> attestations, BLSSignatureVerifier signatureVerifier)
+      BeaconState state,
+      SSZList<Attestation> attestations,
+      BLSSignatureVerifier signatureVerifier,
+      IndexedAttestationProvider indexedAttestationProvider)
       throws BlockProcessingException {
 
     Optional<AttestationProcessingResult> processResult =
         attestations.stream()
-            .map(attesation -> get_indexed_attestation(state, attesation))
+            .map(attesation -> indexedAttestationProvider.getIndexedAttestation(state, attesation))
             .map(attestation -> is_valid_indexed_attestation(state, attestation, signatureVerifier))
             .filter(result -> !result.isSuccessful())
             .findAny();
