@@ -49,12 +49,12 @@ public class EventChannelBeaconChainEventAdapter
         .subscribe(SlotEventsChannel.class, this)
         .subscribe(ReorgEventChannel.class, this);
 
-    return SafeFuture.completedFuture(null);
+    return SafeFuture.COMPLETE;
   }
 
   @Override
   public SafeFuture<Void> stop() {
-    return SafeFuture.completedFuture(null);
+    return SafeFuture.COMPLETE;
   }
 
   @Subscribe
