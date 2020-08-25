@@ -40,6 +40,7 @@ import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.statetransition.util.StartupUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -74,7 +75,10 @@ public class BeaconChainUtil {
   public static BeaconChainUtil create(
       final RecentChainData storageClient, final List<BLSKeyPair> validatorKeys) {
     return create(
-        storageClient, validatorKeys, new ForkChoice(storageClient, new StateTransition()), true);
+        storageClient,
+        validatorKeys,
+        new ForkChoice(new SyncForkChoiceExecutor(), storageClient, new StateTransition()),
+        true);
   }
 
   public static BeaconChainUtil create(
@@ -84,7 +88,7 @@ public class BeaconChainUtil {
     return new BeaconChainUtil(
         validatorKeys,
         storageClient,
-        new ForkChoice(storageClient, new StateTransition()),
+        new ForkChoice(new SyncForkChoiceExecutor(), storageClient, new StateTransition()),
         signDeposits);
   }
 

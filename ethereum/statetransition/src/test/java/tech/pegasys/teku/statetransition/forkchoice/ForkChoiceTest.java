@@ -44,7 +44,8 @@ class ForkChoiceTest {
   private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
-  private final ForkChoice forkChoice = new ForkChoice(recentChainData, stateTransition);
+  private final ForkChoice forkChoice =
+      new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, stateTransition);
 
   @BeforeEach
   public void setup() {
