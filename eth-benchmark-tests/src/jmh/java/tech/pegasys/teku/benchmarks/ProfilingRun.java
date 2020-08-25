@@ -38,6 +38,7 @@ import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.statetransition.util.StartupUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -80,7 +81,8 @@ public class ProfilingRun {
       RecentChainData recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
       BeaconChainUtil localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
       recentChainData.initializeFromGenesis(initialState).join();
-      ForkChoice forkChoice = new ForkChoice(recentChainData, new StateTransition());
+      ForkChoice forkChoice =
+          new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
       BlockImporter blockImporter = new BlockImporter(recentChainData, forkChoice, localEventBus);
 
       System.out.println("Start blocks import from " + blocksFile);
@@ -148,7 +150,8 @@ public class ProfilingRun {
       BeaconChainUtil localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
       recentChainData.initializeFromGenesis(initialState).join();
       initialState = null;
-      ForkChoice forkChoice = new ForkChoice(recentChainData, new StateTransition());
+      ForkChoice forkChoice =
+          new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
       BlockImporter blockImporter = new BlockImporter(recentChainData, forkChoice, localEventBus);
 
       System.out.println("Start blocks import from " + blocksFile);

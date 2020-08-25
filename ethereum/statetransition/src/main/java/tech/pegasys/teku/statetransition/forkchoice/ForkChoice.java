@@ -18,8 +18,6 @@ import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Semaphore;
-import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -34,17 +32,21 @@ import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceExecutor.ForkChoiceTask;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ForkChoice {
   private static final Logger LOG = LogManager.getLogger();
-  private final Semaphore lock = new Semaphore(1);
+  private final ForkChoiceExecutor forkChoiceExecutor;
   private final RecentChainData recentChainData;
   private final StateTransition stateTransition;
 
-  public ForkChoice(final RecentChainData recentChainData, final StateTransition stateTransition) {
+  public ForkChoice(
+      final ForkChoiceExecutor forkChoiceExecutor,
+      final RecentChainData recentChainData,
+      final StateTransition stateTransition) {
+    this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
     this.stateTransition = stateTransition;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
@@ -69,7 +71,7 @@ public class ForkChoice {
         .retrieveCheckpointState(retrievedJustifiedCheckpoint)
         .thenCompose(
             justifiedCheckpointState ->
-                withLock(
+                onForkChoiceThread(
                     () -> {
                       final Checkpoint finalizedCheckpoint =
                           recentChainData.getStore().getFinalizedCheckpoint();
@@ -109,7 +111,7 @@ public class ForkChoice {
 
   public SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block, Optional<BeaconState> preState) {
-    return withLock(
+    return onForkChoiceThread(
         () -> {
           final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
           final StoreTransaction transaction = recentChainData.startStoreTransaction();
@@ -167,7 +169,7 @@ public class ForkChoice {
         .retrieveCheckpointState(attestation.getData().getTarget())
         .thenCompose(
             targetState ->
-                withLock(
+                onForkChoiceThread(
                     () -> {
                       final StoreTransaction transaction = recentChainData.startStoreTransaction();
                       final AttestationProcessingResult result =
@@ -184,7 +186,7 @@ public class ForkChoice {
   }
 
   public void applyIndexedAttestations(final List<ValidateableAttestation> attestations) {
-    withLock(
+    onForkChoiceThread(
             () -> {
               final StoreTransaction transaction = recentChainData.startStoreTransaction();
               final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
@@ -206,12 +208,7 @@ public class ForkChoice {
                     "Attempting to perform fork choice operations before store has been initialized"));
   }
 
-  private <T> SafeFuture<T> withLock(final Supplier<SafeFuture<T>> action) {
-    try {
-      lock.acquire();
-    } catch (InterruptedException e) {
-      throw new ShuttingDownException();
-    }
-    return SafeFuture.ofComposed(action::get).alwaysRun(lock::release);
+  private <T> SafeFuture<T> onForkChoiceThread(final ForkChoiceTask<T> task) {
+    return forkChoiceExecutor.performTask(task);
   }
 }
