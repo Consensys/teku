@@ -13,17 +13,6 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggregateAttestations;
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_RETENTION_EPOCHS;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
-
-import java.util.Optional;
-import java.util.stream.IntStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +27,18 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.util.config.Constants;
+
+import java.util.Optional;
+import java.util.stream.IntStream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.statetransition.attestation.AggregatorUtil.aggregateAttestations;
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_RETENTION_EPOCHS;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 class AggregatingAttestationPoolTest {
 
@@ -311,7 +312,7 @@ class AggregatingAttestationPoolTest {
         new Attestation(bitlist, data, dataStructureUtil.randomSignature());
     ValidateableAttestation validateableAttestation =
         ValidateableAttestation.fromAttestation(attestation);
-    validateableAttestation.saveRandaoMix(dataStructureUtil.randomBeaconState(100, 15));
+    validateableAttestation.saveCommitteeShufflingSeed(dataStructureUtil.randomBeaconState(100, 15));
     aggregatingPool.add(validateableAttestation);
     return attestation;
   }

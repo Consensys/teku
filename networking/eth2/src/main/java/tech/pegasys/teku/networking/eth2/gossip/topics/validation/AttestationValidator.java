@@ -161,7 +161,7 @@ public class AttestationValidator {
               }
 
               // Save committee shuffling seed since the state is available and attestation is valid
-              validateableAttestation.saveRandaoMix(state);
+              validateableAttestation.saveCommitteeShufflingSeed(state);
               return ACCEPT;
             });
   }

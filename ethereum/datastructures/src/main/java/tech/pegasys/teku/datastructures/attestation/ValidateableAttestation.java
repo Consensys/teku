@@ -13,17 +13,8 @@
 
 package tech.pegasys.teku.datastructures.attestation;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_randao_mix;
-import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_HISTORICAL_VECTOR;
-import static tech.pegasys.teku.util.config.Constants.MIN_SEED_LOOKAHEAD;
-
 import com.google.common.base.Objects;
 import com.google.common.base.Suppliers;
-import java.util.Collection;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
@@ -32,6 +23,15 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+import java.util.Collection;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
+
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_seed;
+import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
+
 public class ValidateableAttestation {
   private final Attestation attestation;
   private final Optional<SignedAggregateAndProof> maybeAggregate;
@@ -39,7 +39,7 @@ public class ValidateableAttestation {
   private final AtomicBoolean gossiped = new AtomicBoolean(false);
 
   private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
-  private volatile Optional<Bytes32> randaoMix = Optional.empty();
+  private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
 
   public static ValidateableAttestation fromAttestation(Attestation attestation) {
     return new ValidateableAttestation(attestation, Optional.empty());
@@ -61,24 +61,22 @@ public class ValidateableAttestation {
     return indexedAttestation;
   }
 
-  public Optional<Bytes32> getRandaoMix() {
-    return randaoMix;
+  public Optional<Bytes32> getCommitteeShufflingSeed() {
+    return committeeShufflingSeed;
   }
 
   public void setIndexedAttestation(IndexedAttestation indexedAttestation) {
     this.indexedAttestation = Optional.of(indexedAttestation);
   }
 
-  public void saveRandaoMix(BeaconState state) {
-    if (randaoMix.isPresent()) {
+  public void saveCommitteeShufflingSeed(BeaconState state) {
+    if (committeeShufflingSeed.isPresent()) {
       return;
     }
 
-    UInt64 randaoIndex =
-        compute_epoch_at_slot(attestation.getData().getSlot())
-            .plus(EPOCHS_PER_HISTORICAL_VECTOR - MIN_SEED_LOOKAHEAD - 1);
-    Bytes32 mix = get_randao_mix(state, randaoIndex);
-    this.randaoMix = Optional.of(mix);
+    Bytes32 committeeShufflingSeed =
+            get_seed(state, compute_epoch_at_slot(attestation.getData().getSlot()), DOMAIN_BEACON_ATTESTER);
+    this.committeeShufflingSeed = Optional.of(committeeShufflingSeed);
   }
 
   public boolean markGossiped() {

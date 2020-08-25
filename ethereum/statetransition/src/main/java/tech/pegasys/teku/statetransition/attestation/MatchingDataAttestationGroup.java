@@ -13,6 +13,11 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.AttestationData;
+
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -22,10 +27,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.operations.AttestationData;
 
 /**
  * Maintains an aggregated collection of attestations which all share the same {@link
@@ -45,12 +46,12 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
       new TreeMap<>(Comparator.reverseOrder()); // Most validators first
 
   private final AttestationData attestationData;
-  private final Bytes32 randaoMix;
+  private final Bytes32 committeeShufflingSeed;
 
   public MatchingDataAttestationGroup(
-      final AttestationData attestationData, final Bytes32 randaoMix) {
+      final AttestationData attestationData, final Bytes32 committeeShufflingSeed) {
     this.attestationData = attestationData;
-    this.randaoMix = randaoMix;
+    this.committeeShufflingSeed = committeeShufflingSeed;
   }
 
   public AttestationData getAttestationData() {
@@ -131,8 +132,8 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
     return numRemoved;
   }
 
-  public Bytes32 getRandaoMix() {
-    return randaoMix;
+  public Bytes32 getCommitteeShufflingSeed() {
+    return committeeShufflingSeed;
   }
 
   private class AggregatingIterator implements Iterator<ValidateableAttestation> {
