@@ -24,6 +24,7 @@ import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.util.bytes.KeyFormatter;
 
 /**
  * A wrapper for a {@link Signer} which adds slashing protection.
@@ -71,14 +72,18 @@ public class SlashingProtectedSigner implements Signer {
 
   private Supplier<String> slashableBlockMessage(final BeaconBlock block) {
     return () ->
-        "Refusing to sign block at slot "
+        "Validator "
+            + getShortKey()
+            + " refusing to sign block at slot "
             + block.getSlot()
             + " as it may violate a slashing condition";
   }
 
   private Supplier<String> slashableAttestationMessage(final AttestationData attestationData) {
     return () ->
-        "Refusing to sign attestation at slot "
+        "Validator "
+            + getShortKey()
+            + " refusing to sign attestation at slot "
             + attestationData.getSlot()
             + " with source epoch "
             + attestationData.getSource().getEpoch()
@@ -120,5 +125,9 @@ public class SlashingProtectedSigner implements Signer {
   @Override
   public boolean isLocal() {
     return delegate.isLocal();
+  }
+
+  private String getShortKey() {
+    return KeyFormatter.shortPublicKey(validatorPublicKey);
   }
 }
