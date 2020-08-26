@@ -13,7 +13,15 @@
 
 package tech.pegasys.teku.cli.deposit;
 
+import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
+
 import com.google.common.annotations.VisibleForTesting;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.Optional;
+import java.util.function.IntConsumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.web3j.crypto.CipherException;
@@ -34,15 +42,6 @@ import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 import tech.pegasys.teku.validator.client.loader.KeystoresValidatorKeyProvider;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.Optional;
-import java.util.function.IntConsumer;
-
-import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 
 public class RegisterParams {
 
@@ -82,7 +81,6 @@ public class RegisterParams {
       description =
           "Deposit amount in Gwei. Defaults to the amount required to activate a validator on the specified network.")
   private UInt64 amount;
-
 
   private final IntConsumer shutdownFunction;
   private final ConsoleAdapter consoleAdapter;
@@ -134,7 +132,8 @@ public class RegisterParams {
 
   BLSPublicKey getWithdrawalPublicKey() {
     if (withdrawalKeyOptions.withdrawalKey != null) {
-      return BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString(withdrawalKeyOptions.withdrawalKey));
+      return BLSPublicKey.fromBytesCompressed(
+          Bytes48.fromHexString(withdrawalKeyOptions.withdrawalKey));
     } else if (withdrawalKeyOptions.keystoreOptions != null) {
       return getWithdrawalKeyFromKeystore();
     } else {
@@ -155,17 +154,21 @@ public class RegisterParams {
   }
 
   private BLSPublicKey getWithdrawalKeyFromKeystore() {
-    KeystoresValidatorKeyProvider keystoresValidatorKeyProvider = new KeystoresValidatorKeyProvider();
+    KeystoresValidatorKeyProvider keystoresValidatorKeyProvider =
+        new KeystoresValidatorKeyProvider();
     try {
-      Bytes32 privateKeyBytes = keystoresValidatorKeyProvider.loadBLSPrivateKey(withdrawalKeyOptions.keystoreOptions.withdrawalKeystoreFile.toPath(),
-              keystoresValidatorKeyProvider.loadPassword(withdrawalKeyOptions.keystoreOptions.withdrawalKeystorePasswordFile.toPath()));
+      Bytes32 privateKeyBytes =
+          keystoresValidatorKeyProvider.loadBLSPrivateKey(
+              withdrawalKeyOptions.keystoreOptions.withdrawalKeystoreFile.toPath(),
+              keystoresValidatorKeyProvider.loadPassword(
+                  withdrawalKeyOptions.keystoreOptions.withdrawalKeystorePasswordFile.toPath()));
       BLSKeyPair blsKeyPair = new BLSKeyPair(BLSSecretKey.fromBytes(privateKeyBytes));
       return blsKeyPair.getPublicKey();
     } catch (final IllegalArgumentException | UncheckedIOException e) {
       throw new ParameterException(
-              spec.commandLine(),
-              "Error: Unable to decrypt withdrawal key from keystore: " + e.getMessage(),
-              e);
+          spec.commandLine(),
+          "Error: Unable to decrypt withdrawal key from keystore: " + e.getMessage(),
+          e);
     }
   }
 

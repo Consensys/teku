@@ -13,7 +13,12 @@
 
 package tech.pegasys.teku.cli.deposit;
 
+import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
+
 import com.google.common.annotations.VisibleForTesting;
+import java.io.File;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine.ArgGroup;
@@ -30,12 +35,6 @@ import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
-
-import java.io.File;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
-import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 @Command(
     name = "register",
@@ -58,7 +57,6 @@ public class DepositRegisterCommand implements Runnable {
 
   @ArgGroup(exclusive = true, multiplicity = "1")
   private ValidatorKeyOptions validatorKeyOptions;
-
 
   @Mixin private VerboseOutputParam verboseOutputParam;
 

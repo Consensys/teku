@@ -13,17 +13,16 @@
 
 package tech.pegasys.teku.cli.deposit;
 
+import java.io.File;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
-import java.io.File;
-
 class WithdrawalPublicKeyOptions {
   @Option(
-          names = {"--withdrawal-public-key"},
-          paramLabel = "<PUBLIC_KEY>",
-          required = true,
-          description = "Public withdrawal key for the validator")
+      names = {"--withdrawal-public-key"},
+      paramLabel = "<PUBLIC_KEY>",
+      required = true,
+      description = "Public withdrawal key for the validator")
   String withdrawalKey;
 
   @ArgGroup(exclusive = false, multiplicity = "1")
@@ -31,18 +30,18 @@ class WithdrawalPublicKeyOptions {
 
   static class WithdrawalEncryptedKeystoreOptions {
     @Option(
-            names = {"--withdrawal-keystore-file"},
-            required = true,
-            paramLabel = "<FILE>",
-            description =
-                    "Path to encrypted (V3) keystore containing withdrawal key for the validator")
+        names = {"--withdrawal-keystore-file"},
+        required = true,
+        paramLabel = "<FILE>",
+        description = "Path to encrypted (V3) keystore containing withdrawal key for the validator")
     File withdrawalKeystoreFile;
 
     @Option(
-            names = {"--withdrawal-keystore-password-file"},
-            required = true,
-            paramLabel = "<FILE>",
-            description = "Path to file containing password to decrypt validator withdrawal key keystore")
+        names = {"--withdrawal-keystore-password-file"},
+        required = true,
+        paramLabel = "<FILE>",
+        description =
+            "Path to file containing password to decrypt validator withdrawal key keystore")
     File withdrawalKeystorePasswordFile;
   }
 }
