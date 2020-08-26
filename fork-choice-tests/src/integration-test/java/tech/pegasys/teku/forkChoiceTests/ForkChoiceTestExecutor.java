@@ -11,16 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.reference.phase0.fork_choice;
+package tech.pegasys.teku.forkChoiceTests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -48,23 +46,18 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.phase0.TestExecutor;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.SingleThreadedForkChoiceExecutor;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
-public class ForkChoiceTestExecutor implements TestExecutor {
+public class ForkChoiceTestExecutor {
   private static final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 
-  public static ImmutableMap<String, TestExecutor> FORK_CHOICE_TEST_TYPES =
-      ImmutableMap.of("fork_choice/integration_tests", new ForkChoiceTestExecutor());
-
   public static Stream<Arguments> loadForkChoiceTests() {
-    Path path =
-        Paths.get(
-            "src/referenceTest/java/tech/pegasys/teku/reference/phase0/fork_choice/integration_tests/");
+    Path path = Paths.get("src/integration-test/resources/");
     List<File> testFiles = findForkChoiceTestsByPath(path);
     return testFiles.stream().flatMap(file -> parseForkChoiceFile(file.toPath()).stream());
   }
@@ -111,7 +104,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     switch (stepKind) {
       case slot:
         {
-          return UnsignedLong.valueOf((Integer) value);
+          return UInt64.valueOf((Integer) value);
         }
       case block:
         {
@@ -157,19 +150,6 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     return clazz.cast(value);
   }
 
-  @Override
-  public void runTest(TestDefinition testDefinition) throws Throwable {
-    Path testDirectory = testDefinition.getTestDirectory();
-    Arguments arguments = parseForkChoiceFile(testDirectory).get();
-    Object[] objects = arguments.get();
-    BeaconState genesis = (BeaconState) objects[0];
-    @SuppressWarnings("unchecked")
-    List<Object> steps = (List<Object>) objects[1];
-    String testName = (String) objects[2];
-    Boolean protoArrayFC = (Boolean) objects[3];
-    runForkChoiceTests(genesis, steps, testName, protoArrayFC);
-  }
-
   @ParameterizedTest(name = "{index}.{2} fork choice test")
   @MethodSource("loadForkChoiceTests")
   void runForkChoiceTests(
@@ -178,9 +158,10 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
     EventBus eventBus = new EventBus();
     RecentChainData storageClient = MemoryOnlyRecentChainData.create(eventBus);
-    storageClient.initializeFromGenesis(genesis);
+    storageClient.initializeFromGenesis(genesis).join();
 
-    ForkChoice forkChoice = new ForkChoice(storageClient, st);
+    ForkChoice forkChoice =
+        new ForkChoice(SingleThreadedForkChoiceExecutor.create(), storageClient, st);
 
     @SuppressWarnings("ModifiedButNotUsed")
     List<SignedBeaconBlock> blockBuffer = new ArrayList<>();
@@ -190,10 +171,10 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     for (Object step : steps) {
       blockBuffer.removeIf(block -> processBlock(storageClient, forkChoice, block));
       attestationBuffer.removeIf(attestation -> processAttestation(forkChoice, attestation));
-      if (step instanceof UnsignedLong) {
+      if (step instanceof UInt64) {
         UpdatableStore.StoreTransaction transaction = storageClient.startStoreTransaction();
-        while (ForkChoiceUtil.get_current_slot(transaction).compareTo((UnsignedLong) step) < 0) {
-          ForkChoiceUtil.on_tick(transaction, transaction.getTime().plus(UnsignedLong.ONE));
+        while (ForkChoiceUtil.get_current_slot(transaction).compareTo((UInt64) step) < 0) {
+          ForkChoiceUtil.on_tick(transaction, transaction.getTime().plus(UInt64.ONE));
         }
         assertEquals(step, ForkChoiceUtil.get_current_slot(transaction));
         transaction.commit().join();
@@ -247,8 +228,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
               }
             case "justified_checkpoint_epoch":
               {
-                UnsignedLong expected = UnsignedLong.valueOf((Integer) e.getValue());
-                UnsignedLong actual = storageClient.getStore().getJustifiedCheckpoint().getEpoch();
+                UInt64 expected = UInt64.valueOf((Integer) e.getValue());
+                UInt64 actual = storageClient.getStore().getJustifiedCheckpoint().getEpoch();
                 assertEquals(
                     expected,
                     actual,
@@ -278,7 +259,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       RecentChainData recentChainData, ForkChoice fc, SignedBeaconBlock block) {
     BlockImportResult blockImportResult =
         fc.onBlock(
-            block, recentChainData.getStore().getBlockStateIfAvailable(block.getParent_root()));
+                block, recentChainData.getStore().getBlockStateIfAvailable(block.getParent_root()))
+            .join();
     return blockImportResult.isSuccessful();
   }
 
