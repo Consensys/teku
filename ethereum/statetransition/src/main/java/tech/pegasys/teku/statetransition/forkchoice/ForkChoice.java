@@ -85,6 +85,7 @@ public class ForkChoice {
                             retrievedJustifiedCheckpoint.getRoot(),
                             justifiedCheckpoint.getEpoch(),
                             justifiedCheckpoint.getRoot());
+                        return SafeFuture.COMPLETE;
                       }
                       final StoreTransaction transaction = recentChainData.startStoreTransaction();
                       final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
@@ -136,8 +137,10 @@ public class ForkChoice {
           if (!result.isSuccessful()) {
             return SafeFuture.completedFuture(result);
           }
-          indexedAttestationProvider
-              .getIndexedAttestations()
+          indexedAttestationProvider.getIndexedAttestations().stream()
+              .filter(
+                  attestation ->
+                      forkChoiceStrategy.contains(attestation.getData().getBeacon_block_root()))
               .forEach(
                   indexedAttestation ->
                       forkChoiceStrategy.onAttestation(transaction, indexedAttestation));
