@@ -90,8 +90,8 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   public void onAttestation(final MutableStore store, final IndexedAttestation attestation) {
     votesLock.writeLock().lock();
     try {
-      attestation.getAttesting_indices().stream()
-          .parallel()
+      attestation
+          .getAttesting_indices()
           .forEach(
               validatorIndex ->
                   processAttestation(
