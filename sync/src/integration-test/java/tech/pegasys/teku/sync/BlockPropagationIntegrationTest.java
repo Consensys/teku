@@ -93,7 +93,7 @@ public class BlockPropagationIntegrationTest {
           assertThat(node1.network().getPeerCount()).isEqualTo(1);
           assertThat(node2.network().getPeerCount()).isEqualTo(1);
         });
-    // TODO (#1855): debug this - we shouldn't have to wait here
+    // Wait for subscriptions to complete (jvm-libp2p does this asynchronously)
     Thread.sleep(2000);
 
     // Update slot so that blocks can be imported
