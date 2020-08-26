@@ -15,9 +15,11 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import com.google.common.base.Throwables;
 import io.libp2p.core.pubsub.ValidationResult;
+import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -29,6 +31,11 @@ import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable, TWrapped>
     implements TopicHandler {
   private static final Logger LOG = LogManager.getLogger();
+  private final AsyncRunner asyncRunner;
+
+  protected Eth2TopicHandler(final AsyncRunner asyncRunner) {
+    this.asyncRunner = asyncRunner;
+  }
 
   @Override
   public SafeFuture<ValidationResult> handleMessage(final Bytes bytes) {
@@ -36,12 +43,14 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable, TWrap
         .thenApply(this::wrapMessage)
         .thenCompose(
             wrapped ->
-                validateData(wrapped)
-                    .thenApply(
-                        internalValidation -> {
-                          processMessage(wrapped, internalValidation);
-                          return internalValidation.getGossipSubValidationResult();
-                        }))
+                asyncRunner.runAsync(
+                    () ->
+                        validateData(wrapped)
+                            .thenApply(
+                                internalValidation -> {
+                                  processMessage(wrapped, internalValidation);
+                                  return internalValidation.getGossipSubValidationResult();
+                                })))
         .exceptionally(this::handleMessageProcessingError);
   }
 
@@ -55,6 +64,9 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable, TWrap
   protected ValidationResult handleMessageProcessingError(Throwable err) {
     if (Throwables.getRootCause(err) instanceof DecodingException) {
       LOG.trace("Received malformed gossip message on {}", getTopic());
+    } else if (Throwables.getRootCause(err) instanceof RejectedExecutionException) {
+      LOG.warn(
+          "Discarding gossip message for topic {} because the executor queue is full", getTopic());
     } else {
       LOG.warn("Encountered exception while processing message for topic {}", getTopic(), err);
     }
@@ -79,6 +91,10 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable, TWrap
 
   public abstract static class SimpleEth2TopicHandler<T extends SimpleOffsetSerializable>
       extends Eth2TopicHandler<T, T> {
+
+    protected SimpleEth2TopicHandler(final AsyncRunner asyncRunner) {
+      super(asyncRunner);
+    }
 
     @Override
     public T deserialize(Bytes bytes) throws DecodingException {

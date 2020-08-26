@@ -14,11 +14,13 @@
 package tech.pegasys.teku;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Throwables;
 import com.google.common.eventbus.SubscriberExceptionContext;
 import com.google.common.eventbus.SubscriberExceptionHandler;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.reflect.Method;
 import java.nio.channels.ClosedChannelException;
+import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.events.ChannelExceptionHandler;
@@ -87,6 +89,9 @@ public final class TekuDefaultExceptionHandler
       LOG.debug("Channel unexpectedly closed", exception);
     } else if (isSpecFailure(exception)) {
       statusLog.specificationFailure(subscriberDescription, exception);
+    } else if (Throwables.getRootCause(exception) instanceof RejectedExecutionException) {
+      LOG.error(
+          "Unexpected rejected execution due to full task queue in {}", subscriberDescription);
     } else {
       statusLog.unexpectedFailure(subscriberDescription, exception);
     }

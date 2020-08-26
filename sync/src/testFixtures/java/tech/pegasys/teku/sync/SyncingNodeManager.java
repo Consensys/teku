@@ -16,7 +16,6 @@ package tech.pegasys.teku.sync;
 import static tech.pegasys.teku.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.function.Consumer;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -26,6 +25,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilder;
@@ -34,6 +34,7 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -85,7 +86,8 @@ public class SyncingNodeManager {
 
     final Eth2Network eth2Network = networkBuilder.startNetwork();
 
-    ForkChoice forkChoice = new ForkChoice(recentChainData, new StateTransition());
+    ForkChoice forkChoice =
+        new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
     BlockImporter blockImporter = new BlockImporter(recentChainData, forkChoice, eventBus);
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
     final FutureItems<SignedBeaconBlock> futureBlocks =
@@ -145,7 +147,7 @@ public class SyncingNodeManager {
     return syncService;
   }
 
-  public void setSlot(UnsignedLong slot) {
+  public void setSlot(UInt64 slot) {
     eventChannels().getPublisher(SlotEventsChannel.class).onSlot(slot);
     chainUtil().setSlot(slot);
   }

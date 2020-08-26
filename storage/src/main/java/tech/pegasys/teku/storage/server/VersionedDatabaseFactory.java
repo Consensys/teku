@@ -23,9 +23,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.storage.server.metadata.DatabaseMetadata;
+import tech.pegasys.teku.storage.server.network.DatabaseNetwork;
 import tech.pegasys.teku.storage.server.noop.NoOpDatabase;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
+import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class VersionedDatabaseFactory implements DatabaseFactory {
@@ -36,6 +39,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   @VisibleForTesting static final String ARCHIVE_PATH = "archive";
   @VisibleForTesting static final String DB_VERSION_PATH = "db.version";
   @VisibleForTesting static final String METADATA_FILENAME = "metadata.yml";
+  @VisibleForTesting static final String NETWORK_FILENAME = "network.yml";
 
   private final MetricsSystem metricsSystem;
   private final File dataDirectory;
@@ -45,17 +49,20 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final StateStorageMode stateStorageMode;
   private final DatabaseVersion createDatabaseVersion;
   private final long stateStorageFrequency;
+  private final Eth1Address eth1Address;
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
       final String dataPath,
-      final StateStorageMode dataStorageMode) {
+      final StateStorageMode dataStorageMode,
+      final Eth1Address depositContractAddress) {
     this(
         metricsSystem,
         dataPath,
         dataStorageMode,
         DatabaseVersion.DEFAULT_VERSION.getValue(),
-        DEFAULT_STORAGE_FREQUENCY);
+        DEFAULT_STORAGE_FREQUENCY,
+        depositContractAddress);
   }
 
   public VersionedDatabaseFactory(
@@ -63,7 +70,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final String dataPath,
       final StateStorageMode dataStorageMode,
       final String createDatabaseVersion,
-      final long stateStorageFrequency) {
+      final long stateStorageFrequency,
+      final Eth1Address eth1Address) {
     this.metricsSystem = metricsSystem;
     this.dataDirectory = Paths.get(dataPath).toFile();
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
@@ -71,6 +79,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
     this.stateStorageMode = dataStorageMode;
     this.stateStorageFrequency = stateStorageFrequency;
+    this.eth1Address = eth1Address;
 
     this.createDatabaseVersion =
         DatabaseVersion.fromString(createDatabaseVersion).orElse(DatabaseVersion.DEFAULT_VERSION);
@@ -124,18 +133,28 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   }
 
   private Database createV3Database() {
-    final RocksDbConfiguration rocksDbConfiguration =
-        RocksDbConfiguration.v3And4Settings(dbDirectory.toPath());
-    return RocksDbDatabase.createV3(metricsSystem, rocksDbConfiguration, stateStorageMode);
+    try {
+      DatabaseNetwork.init(getNetworkFile(), Constants.GENESIS_FORK_VERSION, eth1Address);
+      final RocksDbConfiguration rocksDbConfiguration =
+          RocksDbConfiguration.v3And4Settings(dbDirectory.toPath());
+      return RocksDbDatabase.createV3(metricsSystem, rocksDbConfiguration, stateStorageMode);
+    } catch (final IOException e) {
+      throw new DatabaseStorageException("Failed to read network configuration file", e);
+    }
   }
 
   private Database createV4Database() {
-    return RocksDbDatabase.createV4(
-        metricsSystem,
-        RocksDbConfiguration.v3And4Settings(dbDirectory.toPath()),
-        RocksDbConfiguration.v3And4Settings(archiveDirectory.toPath()),
-        stateStorageMode,
-        stateStorageFrequency);
+    try {
+      DatabaseNetwork.init(getNetworkFile(), Constants.GENESIS_FORK_VERSION, eth1Address);
+      return RocksDbDatabase.createV4(
+          metricsSystem,
+          RocksDbConfiguration.v3And4Settings(dbDirectory.toPath()),
+          RocksDbConfiguration.v3And4Settings(archiveDirectory.toPath()),
+          stateStorageMode,
+          stateStorageFrequency);
+    } catch (final IOException e) {
+      throw new DatabaseStorageException("Failed to read configuration file", e);
+    }
   }
 
   /**
@@ -147,6 +166,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     try {
       final DatabaseMetadata metaData =
           DatabaseMetadata.init(getMetadataFile(), DatabaseMetadata.v5Defaults());
+      DatabaseNetwork.init(getNetworkFile(), Constants.GENESIS_FORK_VERSION, eth1Address);
       return RocksDbDatabase.createV4(
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
@@ -160,6 +180,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   private File getMetadataFile() {
     return dataDirectory.toPath().resolve(METADATA_FILENAME).toFile();
+  }
+
+  private File getNetworkFile() {
+    return dataDirectory.toPath().resolve(NETWORK_FILENAME).toFile();
   }
 
   private void validateDataPaths() {

@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.List;
@@ -38,7 +39,7 @@ class CombinedChainDataClientTest {
   @Test
   public void getCommitteesFromStateWithCache_shouldReturnCommitteeAssignments() {
     BeaconState state = dataStructureUtil.randomBeaconState();
-    List<CommitteeAssignment> data = client.getCommitteesFromState(state, state.getSlot());
+    List<CommitteeAssignment> data = client.getCommitteesFromState(state, get_current_epoch(state));
     assertThat(data.size()).isEqualTo(SLOTS_PER_EPOCH);
   }
 }

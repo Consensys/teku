@@ -17,44 +17,162 @@ import com.google.common.eventbus.EventBus;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
+import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
+import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
+import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.ProtoArrayStorage;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
-public interface StorageSystem extends AutoCloseable {
+public class StorageSystem implements AutoCloseable {
+  private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+  private final ChainUpdater chainUpdater;
+  private final TrackingEth1EventsChannel eth1EventsChannel = new TrackingEth1EventsChannel();
 
-  DepositStorage createDepositStorage(final boolean eth1DepositsFromStorageEnabled);
+  private final EventBus eventBus;
+  private final TrackingReorgEventChannel reorgEventChannel;
+  private final StubMetricsSystem metricsSystem;
+  private final RecentChainData recentChainData;
+  private final StateStorageMode storageMode;
+  private final CombinedChainDataClient combinedChainDataClient;
+  private final Database database;
+  private final RestartedStorageSupplier restartedSupplier;
 
-  ProtoArrayStorage createProtoArrayStorage();
+  private StorageSystem(
+      final StubMetricsSystem metricsSystem,
+      final EventBus eventBus,
+      final TrackingReorgEventChannel reorgEventChannel,
+      final StateStorageMode storageMode,
+      final Database database,
+      final RecentChainData recentChainData,
+      final CombinedChainDataClient combinedChainDataClient,
+      final RestartedStorageSupplier restartedSupplier) {
+    this.metricsSystem = metricsSystem;
+    this.recentChainData = recentChainData;
+    this.eventBus = eventBus;
+    this.reorgEventChannel = reorgEventChannel;
+    this.storageMode = storageMode;
+    this.database = database;
+    this.combinedChainDataClient = combinedChainDataClient;
+    this.restartedSupplier = restartedSupplier;
 
-  Database getDatabase();
+    chainUpdater = new ChainUpdater(this.recentChainData, chainBuilder);
+  }
 
-  StorageSystem restarted(StateStorageMode storageMode);
+  static StorageSystem create(
+      final Database database,
+      final RestartedStorageSupplier restartedSupplier,
+      final StateStorageMode storageMode,
+      final StoreConfig storeConfig) {
+    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
+    final EventBus eventBus = new EventBus();
 
-  StorageSystem restarted();
+    // Create and start storage server
+    final ChainStorage chainStorageServer = ChainStorage.create(eventBus, database);
+    chainStorageServer.start();
 
-  StubMetricsSystem getMetricsSystem();
+    // Create recent chain data
+    final FinalizedCheckpointChannel finalizedCheckpointChannel =
+        new StubFinalizedCheckpointChannel();
+    final TrackingReorgEventChannel reorgEventChannel = new TrackingReorgEventChannel();
+    final RecentChainData recentChainData =
+        StorageBackedRecentChainData.createImmediately(
+            metricsSystem,
+            storeConfig,
+            chainStorageServer,
+            chainStorageServer,
+            new StubProtoArrayStorageChannel(),
+            finalizedCheckpointChannel,
+            reorgEventChannel,
+            eventBus);
 
-  RecentChainData recentChainData();
+    // Create combined client
+    final CombinedChainDataClient combinedChainDataClient =
+        new CombinedChainDataClient(recentChainData, chainStorageServer);
 
-  CombinedChainDataClient combinedChainDataClient();
+    // Return storage system
+    return new StorageSystem(
+        metricsSystem,
+        eventBus,
+        reorgEventChannel,
+        storageMode,
+        database,
+        recentChainData,
+        combinedChainDataClient,
+        restartedSupplier);
+  }
 
-  EventBus eventBus();
+  public StubMetricsSystem getMetricsSystem() {
+    return metricsSystem;
+  }
 
-  TrackingReorgEventChannel reorgEventChannel();
+  public RecentChainData recentChainData() {
+    return recentChainData;
+  }
 
-  TrackingEth1EventsChannel eth1EventsChannel();
+  public ChainBuilder chainBuilder() {
+    return chainBuilder;
+  }
 
-  ChainBuilder chainBuilder();
+  public ChainUpdater chainUpdater() {
+    return chainUpdater;
+  }
 
-  ChainUpdater chainUpdater();
+  public DepositStorage createDepositStorage(final boolean eth1DepositsFromStorageEnabled) {
+    return DepositStorage.create(eth1EventsChannel, database, eth1DepositsFromStorageEnabled);
+  }
 
-  interface RestartedStorageSupplier {
+  public ProtoArrayStorage createProtoArrayStorage() {
+    return new ProtoArrayStorage(database);
+  }
+
+  public Database getDatabase() {
+    return database;
+  }
+
+  public StorageSystem restarted() {
+    return restarted(storageMode);
+  }
+
+  public StorageSystem restarted(final StateStorageMode storageMode) {
+    try {
+      database.close();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+    return restartedSupplier.restart(storageMode);
+  }
+
+  public CombinedChainDataClient combinedChainDataClient() {
+    return combinedChainDataClient;
+  }
+
+  public EventBus eventBus() {
+    return eventBus;
+  }
+
+  public TrackingReorgEventChannel reorgEventChannel() {
+    return reorgEventChannel;
+  }
+
+  public TrackingEth1EventsChannel eth1EventsChannel() {
+    return eth1EventsChannel;
+  }
+
+  @Override
+  public void close() throws Exception {
+    this.database.close();
+  }
+
+  public static interface RestartedStorageSupplier {
     StorageSystem restart(final StateStorageMode storageMode);
   }
 }

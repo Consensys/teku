@@ -41,6 +41,7 @@ import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.cli.options.OutputOptions;
 import tech.pegasys.teku.cli.options.P2POptions;
 import tech.pegasys.teku.cli.options.RemoteValidatorApiOptions;
+import tech.pegasys.teku.cli.options.StoreOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.cli.subcommand.DepositCommand;
 import tech.pegasys.teku.cli.subcommand.GenesisCommand;
@@ -147,6 +148,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   @Mixin(name = "Data")
   private DataOptions dataOptions;
+
+  @Mixin(name = "Store")
+  private StoreOptions storeOptions;
 
   @Mixin(name = "REST API")
   private BeaconRestApiOptions beaconRestApiOptions;
@@ -259,7 +263,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
     } catch (InvalidConfigurationException | DatabaseStorageException ex) {
       reportUserError(ex);
     } catch (CompletionException e) {
-      if (Throwables.getRootCause(e) instanceof InvalidConfigurationException) {
+      if (Throwables.getRootCause(e) instanceof InvalidConfigurationException
+          || Throwables.getRootCause(e) instanceof DatabaseStorageException) {
         reportUserError(Throwables.getRootCause(e));
       } else {
         reportUnexpectedError(e);
@@ -296,11 +301,12 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   private TekuConfiguration tekuConfiguration() {
-    // TODO (#2408): validate option dependencies
     return TekuConfiguration.builder()
         .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
         .setStartupTargetPeerCount(networkOptions.getStartupTargetPeerCount())
         .setStartupTimeoutSeconds(networkOptions.getStartupTimeoutSeconds())
+        .setPeerRateLimit(networkOptions.getPeerRateLimit())
+        .setPeerRequestLimit(networkOptions.getPeerRequestLimit())
         .setP2pEnabled(p2POptions.isP2pEnabled())
         .setP2pInterface(p2POptions.getP2pInterface())
         .setP2pPort(p2POptions.getP2pPort())
@@ -311,6 +317,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setP2pPrivateKeyFile(p2POptions.getP2pPrivateKeyFile())
         .setP2pPeerLowerBound(p2POptions.getP2pLowerBound())
         .setP2pPeerUpperBound(p2POptions.getP2pUpperBound())
+        .setTargetSubnetSubscriberCount(p2POptions.getP2pTargetSubnetSubscriberCount())
         .setP2pStaticPeers(p2POptions.getP2pStaticPeers())
         .setP2pSnappyEnabled(p2POptions.isP2pSnappyEnabled())
         .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
@@ -319,9 +326,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setInitialState(networkOptions.getInitialState())
         .setInteropNumberOfValidators(interopOptions.getInteropNumberOfValidators())
         .setInteropEnabled(interopOptions.isInteropEnabled())
-        .setValidatorKeyFile(validatorOptions.getValidatorKeyFile())
         .setValidatorKeystoreFiles(validatorOptions.getValidatorKeystoreFiles())
         .setValidatorKeystorePasswordFiles(validatorOptions.getValidatorKeystorePasswordFiles())
+        .setValidatorKeys(validatorOptions.getValidatorKeys())
         .setValidatorExternalSignerPublicKeys(
             validatorOptions.getValidatorExternalSignerPublicKeys())
         .setValidatorExternalSignerUrl(validatorOptions.getValidatorExternalSignerUrl())
@@ -350,6 +357,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setDataStorageMode(dataOptions.getDataStorageMode())
         .setDataStorageFrequency(dataOptions.getDataStorageFrequency())
         .setDataStorageCreateDbVersion(dataOptions.getCreateDbVersion())
+        .setHotStatePersistenceFrequencyInEpochs(
+            storeOptions.getHotStatePersistenceFrequencyInEpochs())
+        .setIsBlockProcessingAtStartupDisabled(storeOptions.isBlockProcessingAtStartupDisabled())
         .setRestApiPort(beaconRestApiOptions.getRestApiPort())
         .setRestApiDocsEnabled(beaconRestApiOptions.isRestApiDocsEnabled())
         .setRestApiEnabled(beaconRestApiOptions.isRestApiEnabled())

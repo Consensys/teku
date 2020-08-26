@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.dataaccess;
 
-import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +24,7 @@ import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /**
  * Provides an abstract "data access object" interface for working with hot data (non-finalized)
@@ -33,7 +32,7 @@ import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
  */
 public interface RocksDbHotDao extends AutoCloseable {
 
-  Optional<UnsignedLong> getGenesisTime();
+  Optional<UInt64> getGenesisTime();
 
   Optional<Checkpoint> getJustifiedCheckpoint();
 
@@ -46,22 +45,24 @@ public interface RocksDbHotDao extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getHotBlock(final Bytes32 root);
 
+  Optional<BeaconState> getHotState(final Bytes32 root);
+
   Map<Bytes32, SignedBeaconBlock> getHotBlocks();
 
-  List<Bytes32> getStateRootsBeforeSlot(final UnsignedLong slot);
+  List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot);
 
   Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot);
 
   @MustBeClosed
   Stream<SignedBeaconBlock> streamHotBlocks();
 
-  Map<UnsignedLong, VoteTracker> getVotes();
+  Map<UInt64, VoteTracker> getVotes();
 
   HotUpdater hotUpdater();
 
   interface HotUpdater extends AutoCloseable {
 
-    void setGenesisTime(final UnsignedLong genesisTime);
+    void setGenesisTime(final UInt64 genesisTime);
 
     void setJustifiedCheckpoint(final Checkpoint checkpoint);
 
@@ -73,9 +74,17 @@ public interface RocksDbHotDao extends AutoCloseable {
 
     void addHotBlock(final SignedBeaconBlock block);
 
-    void addVotes(final Map<UnsignedLong, VoteTracker> states);
+    void addHotState(final Bytes32 blockRoot, final BeaconState state);
 
-    void addHotBlocks(final Map<Bytes32, SignedBeaconBlock> blocks);
+    default void addHotStates(final Map<Bytes32, BeaconState> states) {
+      states.forEach(this::addHotState);
+    }
+
+    void addVotes(final Map<UInt64, VoteTracker> states);
+
+    default void addHotBlocks(final Map<Bytes32, SignedBeaconBlock> blocks) {
+      blocks.values().forEach(this::addHotBlock);
+    }
 
     void addHotStateRoots(final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap);
 
@@ -83,7 +92,7 @@ public interface RocksDbHotDao extends AutoCloseable {
 
     void deleteHotBlock(final Bytes32 blockRoot);
 
-    void putProtoArraySnapshot(final ProtoArraySnapshot protoArraySnapshot);
+    void deleteHotState(final Bytes32 blockRoot);
 
     void commit();
 

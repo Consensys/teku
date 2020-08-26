@@ -19,13 +19,13 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageHandler.NODE_NOT_READY;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
@@ -37,17 +37,17 @@ class StatusMessageHandlerTest {
       new StatusMessage(
           Bytes4.rightPad(Bytes.of(4)),
           Bytes32.fromHexStringLenient("0x11"),
-          UnsignedLong.ZERO,
+          UInt64.ZERO,
           Bytes32.fromHexStringLenient("0x11"),
-          UnsignedLong.ZERO);
+          UInt64.ZERO);
   private static final PeerStatus PEER_STATUS = PeerStatus.fromStatusMessage(REMOTE_STATUS);
   private static final StatusMessage LOCAL_STATUS =
       new StatusMessage(
           Bytes4.rightPad(Bytes.of(4)),
           Bytes32.fromHexStringLenient("0x22"),
-          UnsignedLong.ZERO,
+          UInt64.ZERO,
           Bytes32.fromHexStringLenient("0x22"),
-          UnsignedLong.ZERO);
+          UInt64.ZERO);
 
   @SuppressWarnings("unchecked")
   private final ResponseCallback<StatusMessage> callback = mock(ResponseCallback.class);
@@ -60,6 +60,7 @@ class StatusMessageHandlerTest {
   @BeforeEach
   public void setUp() {
     when(statusMessageFactory.createStatusMessage()).thenReturn(Optional.of(LOCAL_STATUS));
+    when(peer.wantToMakeRequest()).thenReturn(true);
   }
 
   @Test
@@ -68,8 +69,7 @@ class StatusMessageHandlerTest {
     handler.onIncomingMessage(peer, REMOTE_STATUS, callback);
 
     verify(peer).updateStatus(PEER_STATUS);
-    verify(callback).respond(LOCAL_STATUS);
-    verify(callback).completeSuccessfully();
+    verify(callback).respondAndCompleteSuccessfully(LOCAL_STATUS);
     verifyNoMoreInteractions(callback);
   }
 

@@ -18,10 +18,10 @@ import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class BeaconValidators {
@@ -51,7 +51,7 @@ public class BeaconValidators {
   public BeaconValidators(
       tech.pegasys.teku.datastructures.state.BeaconState state,
       final boolean activeOnly,
-      final UnsignedLong epoch,
+      final UInt64 epoch,
       final int pageSize,
       final int pageToken) {
     this(
@@ -92,9 +92,9 @@ public class BeaconValidators {
 
   BeaconValidators(
       final List<Validator> list,
-      final List<UnsignedLong> balances,
+      final List<UInt64> balances,
       final boolean activeOnly,
-      final UnsignedLong epoch,
+      final UInt64 epoch,
       final int pageSize,
       final int pageToken) {
 
@@ -128,8 +128,7 @@ public class BeaconValidators {
     }
   }
 
-  public static long getEffectiveListSize(
-      List<Validator> list, boolean activeOnly, UnsignedLong epoch) {
+  public static long getEffectiveListSize(List<Validator> list, boolean activeOnly, UInt64 epoch) {
     if (!activeOnly) {
       return list.size();
     } else {
@@ -137,7 +136,7 @@ public class BeaconValidators {
     }
   }
 
-  private static boolean is_active_validator(Validator validator, UnsignedLong epoch) {
+  private static boolean is_active_validator(Validator validator, UInt64 epoch) {
     return validator.activation_epoch.compareTo(epoch) <= 0
         && epoch.compareTo(validator.exit_epoch) < 0;
   }

@@ -15,7 +15,6 @@ package tech.pegasys.teku.sync;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.google.common.primitives.UnsignedLong;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -25,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
@@ -32,8 +32,7 @@ import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
-import tech.pegasys.teku.util.collections.LimitStrategy;
+import tech.pegasys.teku.util.collections.LimitedSet;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class BlockManager extends Service implements SlotEventsChannel {
@@ -46,8 +45,7 @@ public class BlockManager extends Service implements SlotEventsChannel {
 
   private final FutureItems<SignedBeaconBlock> futureBlocks;
   private final FetchRecentBlocksService recentBlockFetcher;
-  private final Set<Bytes32> invalidBlockRoots =
-      ConcurrentLimitedSet.create(500, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+  private final Set<Bytes32> invalidBlockRoots = LimitedSet.create(500);
 
   BlockManager(
       final EventBus eventBus,
@@ -95,7 +93,7 @@ public class BlockManager extends Service implements SlotEventsChannel {
   }
 
   @Override
-  public void onSlot(final UnsignedLong slot) {
+  public void onSlot(final UInt64 slot) {
     pendingBlocks.onSlot(slot);
     futureBlocks.prune(slot).forEach(this::importBlock);
   }

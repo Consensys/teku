@@ -53,7 +53,7 @@ public class P2POptions {
 
   @Option(
       names = {"--p2p-discovery-bootnodes"},
-      paramLabel = "<enode://id@host:port>",
+      paramLabel = "<enr:-...>",
       description = "List of ENRs of the bootnodes",
       split = ",",
       arity = "0..*")
@@ -93,6 +93,14 @@ public class P2POptions {
       description = "Upper bound on the target number of peers",
       arity = "1")
   private int p2pUpperBound = 74;
+
+  @Option(
+      names = {"--Xp2p-target-subnet-subscriber-count"},
+      paramLabel = "<INTEGER>",
+      description = "Target number of peers subscribed to each attestation subnet",
+      arity = "1",
+      hidden = true)
+  private int p2pTargetSubnetSubscriberCount = 2;
 
   @Option(
       names = {"--p2p-static-peers"},
@@ -147,6 +155,10 @@ public class P2POptions {
 
   public int getP2pUpperBound() {
     return p2pUpperBound;
+  }
+
+  public int getP2pTargetSubnetSubscriberCount() {
+    return p2pTargetSubnetSubscriberCount;
   }
 
   public List<String> getP2pStaticPeers() {

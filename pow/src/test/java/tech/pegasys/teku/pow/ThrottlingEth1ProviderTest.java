@@ -20,7 +20,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,13 +27,14 @@ import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ThrottlingEth1ProviderTest {
 
-  private static final UnsignedLong ONE = UnsignedLong.valueOf(1);
-  private static final UnsignedLong TWO = UnsignedLong.valueOf(2);
-  private static final UnsignedLong THREE = UnsignedLong.valueOf(3);
-  private static final UnsignedLong FOUR = UnsignedLong.valueOf(4);
+  private static final UInt64 ONE = UInt64.valueOf(1);
+  private static final UInt64 TWO = UInt64.valueOf(2);
+  private static final UInt64 THREE = UInt64.valueOf(3);
+  private static final UInt64 FOUR = UInt64.valueOf(4);
 
   private final Block block1 = mock(Block.class);
   private final Block block2 = mock(Block.class);
@@ -52,7 +52,7 @@ class ThrottlingEth1ProviderTest {
   @BeforeEach
   void setUp() {
 
-    when(delegateProvider.getEth1Block(any(UnsignedLong.class))).thenAnswer(returnBlockFuture);
+    when(delegateProvider.getEth1Block(any(UInt64.class))).thenAnswer(returnBlockFuture);
     when(delegateProvider.getEth1Block(any(String.class))).thenAnswer(returnBlockFuture);
     when(delegateProvider.getLatestEth1Block()).thenAnswer(returnBlockFuture);
   }

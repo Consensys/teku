@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
+import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -33,25 +34,55 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
     final Map<String, StorageSystemSupplier> storageSystems = new HashMap<>();
     for (StateStorageMode mode : StateStorageMode.values()) {
       storageSystems.put(
-          "v3 (in-memory)", (dataPath) -> InMemoryStorageSystem.createEmptyV3StorageSystem(mode));
+          "v3 (in-memory)",
+          (dataPath) ->
+              InMemoryStorageSystemBuilder.create()
+                  .version(DatabaseVersion.V3)
+                  .storageMode(mode)
+                  .build());
       storageSystems.put(
           "v3 (file-backed)",
-          (dataPath) -> FileBackedStorageSystem.createV3StorageSystem(dataPath, mode));
+          (dataPath) ->
+              FileBackedStorageSystemBuilder.create()
+                  .version(DatabaseVersion.V3)
+                  .dataDir(dataPath)
+                  .storageMode(mode)
+                  .build());
       for (Long storageFrequency : stateStorageFrequencyOptions) {
         storageSystems.put(
             describeStorage("v4 (in-memory)", storageFrequency),
-            (dataPath) -> InMemoryStorageSystem.createEmptyV4StorageSystem(mode, storageFrequency));
+            (dataPath) ->
+                InMemoryStorageSystemBuilder.create()
+                    .version(DatabaseVersion.V4)
+                    .storageMode(mode)
+                    .stateStorageFrequency(storageFrequency)
+                    .build());
         storageSystems.put(
             describeStorage("v5 (in-memory)", storageFrequency),
-            (dataPath) -> InMemoryStorageSystem.createEmptyV5StorageSystem(mode, storageFrequency));
+            (dataPath) ->
+                InMemoryStorageSystemBuilder.create()
+                    .version(DatabaseVersion.V5)
+                    .storageMode(mode)
+                    .stateStorageFrequency(storageFrequency)
+                    .build());
         storageSystems.put(
             describeStorage("v4 (file-backed)", storageFrequency),
             (dataPath) ->
-                FileBackedStorageSystem.createV4StorageSystem(dataPath, mode, storageFrequency));
+                FileBackedStorageSystemBuilder.create()
+                    .version(DatabaseVersion.V4)
+                    .dataDir(dataPath)
+                    .storageMode(mode)
+                    .stateStorageFrequency(storageFrequency)
+                    .build());
         storageSystems.put(
             describeStorage("v5 (file-backed)", storageFrequency),
             (dataPath) ->
-                FileBackedStorageSystem.createV5StorageSystem(dataPath, mode, storageFrequency));
+                FileBackedStorageSystemBuilder.create()
+                    .version(DatabaseVersion.V5)
+                    .dataDir(dataPath)
+                    .storageMode(mode)
+                    .stateStorageFrequency(storageFrequency)
+                    .build());
       }
     }
     return storageSystems.entrySet().stream()

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import com.google.common.collect.Maps;
-import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -25,28 +24,28 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Eth1DataCache {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final UnsignedLong cacheDuration;
+  private final UInt64 cacheDuration;
   private final Eth1VotingPeriod eth1VotingPeriod;
 
-  private final NavigableMap<UnsignedLong, Eth1Data> eth1ChainCache = new ConcurrentSkipListMap<>();
+  private final NavigableMap<UInt64, Eth1Data> eth1ChainCache = new ConcurrentSkipListMap<>();
 
   public Eth1DataCache(final Eth1VotingPeriod eth1VotingPeriod) {
     this.eth1VotingPeriod = eth1VotingPeriod;
     cacheDuration = eth1VotingPeriod.getCacheDurationInSeconds();
   }
 
-  public void onBlockWithDeposit(final UnsignedLong blockTimestamp, final Eth1Data eth1Data) {
+  public void onBlockWithDeposit(final UInt64 blockTimestamp, final Eth1Data eth1Data) {
     eth1ChainCache.put(blockTimestamp, eth1Data);
     prune(blockTimestamp);
   }
 
-  public void onEth1Block(final Bytes32 blockHash, final UnsignedLong blockTimestamp) {
-    final Map.Entry<UnsignedLong, Eth1Data> previousBlock =
-        eth1ChainCache.floorEntry(blockTimestamp);
+  public void onEth1Block(final Bytes32 blockHash, final UInt64 blockTimestamp) {
+    final Map.Entry<UInt64, Eth1Data> previousBlock = eth1ChainCache.floorEntry(blockTimestamp);
     if (previousBlock == null) {
       // This block is either before any deposits so will never be voted for
       // or before the cache period so would be immediately pruned anyway.
@@ -62,7 +61,7 @@ public class Eth1DataCache {
   }
 
   public Eth1Data getEth1Vote(BeaconState state) {
-    NavigableMap<UnsignedLong, Eth1Data> votesToConsider =
+    NavigableMap<UInt64, Eth1Data> votesToConsider =
         getVotesToConsider(state.getSlot(), state.getGenesis_time(), state.getEth1_data());
     Map<Eth1Data, Eth1Vote> validVotes = new HashMap<>();
 
@@ -87,8 +86,8 @@ public class Eth1DataCache {
     return vote.orElse(defaultVote);
   }
 
-  private NavigableMap<UnsignedLong, Eth1Data> getVotesToConsider(
-      final UnsignedLong slot, final UnsignedLong genesisTime, final Eth1Data dataFromState) {
+  private NavigableMap<UInt64, Eth1Data> getVotesToConsider(
+      final UInt64 slot, final UInt64 genesisTime, final Eth1Data dataFromState) {
     return Maps.filterValues(
         eth1ChainCache.subMap(
             eth1VotingPeriod.getSpecRangeLowerBound(slot, genesisTime),
@@ -98,15 +97,15 @@ public class Eth1DataCache {
         eth1Data -> eth1Data.getDeposit_count().compareTo(dataFromState.getDeposit_count()) >= 0);
   }
 
-  private void prune(final UnsignedLong latestBlockTimestamp) {
+  private void prune(final UInt64 latestBlockTimestamp) {
     if (latestBlockTimestamp.compareTo(cacheDuration) <= 0 || eth1ChainCache.isEmpty()) {
       // Keep everything
       return;
     }
-    final UnsignedLong earliestBlockTimestampToKeep = latestBlockTimestamp.minus(cacheDuration);
+    final UInt64 earliestBlockTimestampToKeep = latestBlockTimestamp.minus(cacheDuration);
     // Make sure we have at least one entry prior to the cache period so that if we get an empty
     // block before any deposit in the cached period, we can look back and get the deposit info
-    final UnsignedLong earliestKeyToKeep = eth1ChainCache.floorKey(earliestBlockTimestampToKeep);
+    final UInt64 earliestKeyToKeep = eth1ChainCache.floorKey(earliestBlockTimestampToKeep);
     if (earliestKeyToKeep == null) {
       return;
     }

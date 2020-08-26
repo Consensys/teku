@@ -18,7 +18,6 @@ import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetF
 import static tech.pegasys.teku.infrastructure.async.Waiter.ensureConditionRemainsMet;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -36,6 +35,7 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
@@ -55,7 +55,7 @@ public class GossipMessageHandlerIntegrationTest {
   @MethodSource("getEncodings")
   public void shouldGossipBlocksAcrossToIndirectlyConnectedPeers(
       final String testName, GossipEncoding gossipEncoding) throws Exception {
-    final UnsignedLong blockSlot = UnsignedLong.valueOf(2L);
+    final UInt64 blockSlot = UInt64.valueOf(2L);
 
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder = b -> b.gossipEncoding(gossipEncoding);
 
@@ -81,7 +81,7 @@ public class GossipMessageHandlerIntegrationTest {
           assertThat(node2.network().getPeerCount()).isEqualTo(2);
           assertThat(node3.network().getPeerCount()).isEqualTo(1);
         });
-    // TODO (#1855): debug this - we shouldn't have to wait here
+    // Wait for subscriptions to complete (jvm-libp2p does this asynchronously)
     Thread.sleep(2000);
 
     // Propagate block from network 1
@@ -104,7 +104,7 @@ public class GossipMessageHandlerIntegrationTest {
   @MethodSource("getEncodings")
   public void shouldNotGossipInvalidBlocks(final String testName, GossipEncoding gossipEncoding)
       throws Exception {
-    final UnsignedLong blockSlot = UnsignedLong.valueOf(2L);
+    final UInt64 blockSlot = UInt64.valueOf(2L);
 
     final Consumer<Eth2P2PNetworkBuilder> networkBuilder = b -> b.gossipEncoding(gossipEncoding);
 
@@ -131,7 +131,7 @@ public class GossipMessageHandlerIntegrationTest {
           assertThat(node3.network().getPeerCount()).isEqualTo(1);
         });
 
-    // TODO (#1855): debug this - we shouldn't have to wait here
+    // Wait for subscriptions to complete (jvm-libp2p does this asynchronously)
     Thread.sleep(2000);
 
     // Propagate invalid block from network 1
@@ -188,7 +188,7 @@ public class GossipMessageHandlerIntegrationTest {
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState bestBlockAndState =
-        node1.storageClient().getBestBlockAndState().orElseThrow();
+        node1.storageClient().getHeadBlockAndState().orElseThrow();
     Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
     processedAttestationSubscribers.forEach(
         s -> s.accept(ValidateableAttestation.fromAttestation(validAttestation)));
@@ -236,7 +236,7 @@ public class GossipMessageHandlerIntegrationTest {
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState bestBlockAndState =
-        node1.storageClient().getBestBlockAndState().orElseThrow();
+        node1.storageClient().getHeadBlockAndState().orElseThrow();
     ValidateableAttestation validAttestation =
         ValidateableAttestation.fromAttestation(
             attestationGenerator.validAttestation(bestBlockAndState));
@@ -298,7 +298,7 @@ public class GossipMessageHandlerIntegrationTest {
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(validatorKeys);
     final BeaconBlockAndState bestBlockAndState =
-        node1.storageClient().getBestBlockAndState().orElseThrow();
+        node1.storageClient().getHeadBlockAndState().orElseThrow();
     ValidateableAttestation validAttestation =
         ValidateableAttestation.fromAttestation(
             attestationGenerator.validAttestation(bestBlockAndState));

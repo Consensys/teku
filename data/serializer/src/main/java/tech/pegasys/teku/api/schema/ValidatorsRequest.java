@@ -17,14 +17,15 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES48;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.primitives.UnsignedLong;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.util.config.Constants;
 
 public class ValidatorsRequest {
   @Schema(type = "string", format = "uint64")
-  public final UnsignedLong epoch;
+  public final UInt64 epoch;
 
   @ArraySchema(
       schema = @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES48))
@@ -32,9 +33,14 @@ public class ValidatorsRequest {
 
   @JsonCreator
   public ValidatorsRequest(
-      @JsonProperty(value = "epoch") UnsignedLong epoch,
+      @JsonProperty(value = "epoch") UInt64 epoch,
       @JsonProperty(value = "pubkeys", required = true) final List<BLSPubKey> pubkeys) {
     this.epoch = epoch;
     this.pubkeys = pubkeys;
+    // Restrict valid epoch values to ones that can be converted to slot without overflowing
+    if (epoch != null
+        && epoch.isGreaterThan(UInt64.MAX_VALUE.dividedBy(Constants.SLOTS_PER_EPOCH))) {
+      throw new IllegalArgumentException("Epoch is too large.");
+    }
   }
 }

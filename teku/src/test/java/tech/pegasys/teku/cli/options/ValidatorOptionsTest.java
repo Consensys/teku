@@ -37,10 +37,11 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
                 "0xad113a7d152dc74ae2b26db65bfb89ed07501c818bf47671c6d34e5a2f7224e4c5525dd4fddaa93aa328da86b7205009"));
     final TekuConfiguration config = getTekuConfigurationFromFile("validatorOptions_config.yaml");
 
-    assertThat(config.getValidatorsKeyFile()).isEqualTo("the-unencrypted-file");
     assertThat(config.getValidatorKeystoreFiles()).containsExactly("a.key", "b.key");
     assertThat(config.getValidatorKeystorePasswordFiles())
         .containsExactly("a.password", "b.password");
+    assertThat(config.getValidatorKeys())
+        .containsExactlyInAnyOrder("a.key:a.password", "b.json:b.txt");
     assertThat(config.getValidatorExternalSignerPublicKeys()).containsExactly(publicKey);
     assertThat(config.getValidatorExternalSignerUrl()).isEqualTo(new URL("https://signer.url/"));
     assertThat(config.getValidatorExternalSignerTimeout()).isEqualTo(1234);

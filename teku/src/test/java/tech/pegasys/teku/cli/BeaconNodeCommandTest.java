@@ -245,7 +245,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       "--Xremote-validator-api-interface", "127.0.0.1",
       "--Xremote-validator-api-port", "9999",
       "--Xremote-validator-api-max-subscribers", "1000",
-      "--Xremote-validator-api-enabled", "false"
+      "--Xremote-validator-api-enabled", "false",
+      "--Xpeer-rate-limit", "500",
+      "--Xpeer-request-limit", "50"
     };
   }
 
@@ -262,6 +264,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setP2pPort(9000)
         .setP2pPrivateKeyFile(null)
         .setInteropEnabled(false)
+        .setPeerRateLimit(500)
+        .setPeerRequestLimit(50)
         .setInteropGenesisTime(0)
         .setInteropOwnedValidatorCount(0)
         .setLogDestination(DEFAULT_BOTH)
@@ -282,6 +286,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setNetwork(NetworkDefinition.fromCliArg("minimal"))
         .setP2pEnabled(false)
         .setP2pInterface("1.2.3.4")
+        .setPeerRateLimit(500)
+        .setPeerRequestLimit(50)
         .setP2pPort(1234)
         .setP2pDiscoveryEnabled(false)
         .setP2pAdvertisedPort(OptionalInt.of(9000))
@@ -289,6 +295,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setP2pPrivateKeyFile("path/to/file")
         .setP2pPeerLowerBound(64)
         .setP2pPeerUpperBound(74)
+        .setTargetSubnetSubscriberCount(2)
         .setP2pStaticPeers(Collections.emptyList())
         .setInteropGenesisTime(1)
         .setInteropOwnedValidatorStartIndex(0)
@@ -309,13 +316,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setLogFile(DEFAULT_LOG_FILE)
         .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN)
         .setLogIncludeEventsEnabled(true)
-        .setValidatorKeystoreFiles(Collections.emptyList())
-        .setValidatorKeystorePasswordFiles(Collections.emptyList())
+        .setLogIncludeValidatorDutiesEnabled(true)
         .setValidatorExternalSignerTimeout(1000)
         .setDataPath(dataPath.toString())
         .setDataStorageMode(PRUNE)
         .setDataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
         .setDataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION.getValue())
+        .setHotStatePersistenceFrequencyInEpochs(1)
+        .setIsBlockProcessingAtStartupDisabled(true)
         .setRestApiPort(5051)
         .setRestApiDocsEnabled(false)
         .setRestApiEnabled(false)

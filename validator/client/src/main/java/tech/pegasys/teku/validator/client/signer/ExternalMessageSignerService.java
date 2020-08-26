@@ -34,6 +34,7 @@ public class ExternalMessageSignerService implements MessageSignerService {
   private final URL signingServiceUrl;
   private final BLSPublicKey blsPublicKey;
   private final Duration timeout;
+  private final HttpClient httpClient = HttpClient.newHttpClient();
 
   public ExternalMessageSignerService(
       final URL signingServiceUrl, final BLSPublicKey blsPublicKey, final Duration timeout) {
@@ -72,6 +73,11 @@ public class ExternalMessageSignerService implements MessageSignerService {
     return sign(signingRoot);
   }
 
+  @Override
+  public boolean isLocal() {
+    return false;
+  }
+
   private SafeFuture<BLSSignature> sign(final Bytes signingRoot) {
     final String publicKey = blsPublicKey.toBytesCompressed().toString();
     return SafeFuture.ofComposed(
@@ -85,7 +91,7 @@ public class ExternalMessageSignerService implements MessageSignerService {
                   .header("Content-Type", "application/json")
                   .POST(BodyPublishers.ofString(requestBody))
                   .build();
-          return HttpClient.newHttpClient()
+          return httpClient
               .sendAsync(request, BodyHandlers.ofString())
               .handleAsync(this::getBlsSignature);
         });

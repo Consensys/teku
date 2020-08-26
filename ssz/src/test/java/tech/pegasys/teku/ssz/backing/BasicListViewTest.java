@@ -16,8 +16,8 @@ package tech.pegasys.teku.ssz.backing;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.BasicViewTypes;
 import tech.pegasys.teku.ssz.backing.type.ListViewType;
@@ -30,22 +30,22 @@ public class BasicListViewTest {
     ListViewType<UInt64View> listType = new ListViewType<>(BasicViewTypes.UINT64_TYPE, 7);
     ListViewWrite<UInt64View> listView = listType.getDefault().createWritableCopy();
     TreeNode n0 = listView.commitChanges().getBackingNode();
-    listView.append(new UInt64View(UnsignedLong.valueOf(0x111)));
+    listView.append(new UInt64View(UInt64.valueOf(0x111)));
     TreeNode n1 = listView.commitChanges().getBackingNode();
-    listView.append(new UInt64View(UnsignedLong.valueOf(0x222)));
-    listView.append(new UInt64View(UnsignedLong.valueOf(0x333)));
-    listView.append(new UInt64View(UnsignedLong.valueOf(0x444)));
+    listView.append(new UInt64View(UInt64.valueOf(0x222)));
+    listView.append(new UInt64View(UInt64.valueOf(0x333)));
+    listView.append(new UInt64View(UInt64.valueOf(0x444)));
     TreeNode n2 = listView.commitChanges().getBackingNode();
-    listView.append(new UInt64View(UnsignedLong.valueOf(0x555)));
+    listView.append(new UInt64View(UInt64.valueOf(0x555)));
     TreeNode n3 = listView.commitChanges().getBackingNode();
-    listView.append(new UInt64View(UnsignedLong.valueOf(0x666)));
-    listView.append(new UInt64View(UnsignedLong.valueOf(0x777)));
+    listView.append(new UInt64View(UInt64.valueOf(0x666)));
+    listView.append(new UInt64View(UInt64.valueOf(0x777)));
     TreeNode n4 = listView.commitChanges().getBackingNode();
-    listView.set(0, new UInt64View(UnsignedLong.valueOf(0x800)));
+    listView.set(0, new UInt64View(UInt64.valueOf(0x800)));
     TreeNode n5 = listView.commitChanges().getBackingNode();
-    listView.set(1, new UInt64View(UnsignedLong.valueOf(0x801)));
-    listView.set(2, new UInt64View(UnsignedLong.valueOf(0x802)));
-    listView.set(3, new UInt64View(UnsignedLong.valueOf(0x803)));
+    listView.set(1, new UInt64View(UInt64.valueOf(0x801)));
+    listView.set(2, new UInt64View(UInt64.valueOf(0x802)));
+    listView.set(3, new UInt64View(UInt64.valueOf(0x803)));
     TreeNode n6 = listView.commitChanges().getBackingNode();
 
     assertThat(listType.createFromBackingNode(n0).size()).isEqualTo(0);
@@ -80,15 +80,15 @@ public class BasicListViewTest {
                 listType
                     .createFromBackingNode(n3)
                     .createWritableCopy()
-                    .set(7, new UInt64View(UnsignedLong.valueOf(0xaaa))));
+                    .set(7, new UInt64View(UInt64.valueOf(0xaaa))));
     assertThatExceptionOfType(IndexOutOfBoundsException.class)
         .isThrownBy(() -> listType.createFromBackingNode(n3).get(7));
     assertThatExceptionOfType(IndexOutOfBoundsException.class)
         .isThrownBy(() -> listType.createFromBackingNode(n3).get(8));
     assertThatExceptionOfType(IndexOutOfBoundsException.class)
-        .isThrownBy(() -> listView.set(7, new UInt64View(UnsignedLong.valueOf(0xaaa))));
+        .isThrownBy(() -> listView.set(7, new UInt64View(UInt64.valueOf(0xaaa))));
     assertThatExceptionOfType(IndexOutOfBoundsException.class)
-        .isThrownBy(() -> listView.append(new UInt64View(UnsignedLong.valueOf(0xaaa))));
+        .isThrownBy(() -> listView.append(new UInt64View(UInt64.valueOf(0xaaa))));
 
     listView.clear();
     assertThat(listView.commitChanges().hashTreeRoot()).isEqualTo(n0.hashTreeRoot());

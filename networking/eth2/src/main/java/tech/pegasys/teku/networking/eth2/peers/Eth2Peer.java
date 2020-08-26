@@ -17,7 +17,6 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -37,18 +36,23 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeListenerWrapper;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.Eth2RpcMethod;
+import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStream;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamImpl;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.peer.DelegatingPeer;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.util.time.TimeProvider;
 
 public class Eth2Peer extends DelegatingPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -57,22 +61,29 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   private final StatusMessageFactory statusMessageFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
   private volatile Optional<PeerStatus> remoteStatus = Optional.empty();
-  private volatile Optional<UnsignedLong> remoteMetadataSeqNumber = Optional.empty();
+  private volatile Optional<UInt64> remoteMetadataSeqNumber = Optional.empty();
   private volatile Optional<Bitvector> remoteAttSubnets = Optional.empty();
   private final SafeFuture<PeerStatus> initialStatus = new SafeFuture<>();
   private final AtomicBoolean chainValidated = new AtomicBoolean(false);
   private final AtomicInteger outstandingRequests = new AtomicInteger(0);
   private final AtomicInteger outstandingPings = new AtomicInteger();
+  private final RateTracker blockRequestTracker;
+  private final RateTracker requestTracker;
 
   public Eth2Peer(
       final Peer peer,
       final BeaconChainMethods rpcMethods,
       final StatusMessageFactory statusMessageFactory,
-      final MetadataMessagesFactory metadataMessagesFactory) {
+      final MetadataMessagesFactory metadataMessagesFactory,
+      final TimeProvider timeProvider,
+      final int peerRateLimit,
+      final int peerRequestLimit) {
     super(peer);
     this.rpcMethods = rpcMethods;
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
+    this.blockRequestTracker = new RateTracker(peerRateLimit, 60, timeProvider);
+    this.requestTracker = new RateTracker(peerRequestLimit, 60, timeProvider);
   }
 
   public void updateStatus(final PeerStatus status) {
@@ -80,8 +91,8 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     initialStatus.complete(status);
   }
 
-  public void updateMetadataSeqNumber(final UnsignedLong seqNumber) {
-    Optional<UnsignedLong> curValue = this.remoteMetadataSeqNumber;
+  public void updateMetadataSeqNumber(final UInt64 seqNumber) {
+    Optional<UInt64> curValue = this.remoteMetadataSeqNumber;
     remoteMetadataSeqNumber = Optional.of(seqNumber);
     if (curValue.isEmpty() || seqNumber.compareTo(curValue.get()) > 0) {
       requestMetadata()
@@ -109,7 +120,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     return remoteAttSubnets;
   }
 
-  public UnsignedLong finalizedEpoch() {
+  public UInt64 finalizedEpoch() {
     return getStatus().getFinalizedEpoch();
   }
 
@@ -142,7 +153,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
         .thenPeek(this::updateStatus);
   }
 
-  SafeFuture<Void> sendGoodbye(final UnsignedLong reason) {
+  SafeFuture<Void> sendGoodbye(final UInt64 reason) {
     final Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> goodByeMethod = rpcMethods.goodBye();
     return sendMessage(goodByeMethod, new GoodbyeMessage(reason));
   }
@@ -159,11 +170,11 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     return requestStream(blockByRoot, new BeaconBlocksByRootRequestMessage(blockRoots), listener);
   }
 
-  public SafeFuture<SignedBeaconBlock> requestBlockBySlot(final UnsignedLong slot) {
+  public SafeFuture<SignedBeaconBlock> requestBlockBySlot(final UInt64 slot) {
     final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> blocksByRange =
         rpcMethods.beaconBlocksByRange();
     final BeaconBlocksByRangeRequestMessage request =
-        new BeaconBlocksByRangeRequestMessage(slot, UnsignedLong.ONE, UnsignedLong.ONE);
+        new BeaconBlocksByRangeRequestMessage(slot, UInt64.ONE, UInt64.ONE);
     return requestSingleItem(blocksByRange, request);
   }
 
@@ -174,21 +185,44 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   }
 
   public SafeFuture<Void> requestBlocksByRange(
-      final UnsignedLong startSlot,
-      final UnsignedLong count,
-      final UnsignedLong step,
+      final UInt64 startSlot,
+      final UInt64 count,
+      final UInt64 step,
       final ResponseStreamListener<SignedBeaconBlock> listener) {
     final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> blocksByRange =
         rpcMethods.beaconBlocksByRange();
     return requestStream(
-        blocksByRange, new BeaconBlocksByRangeRequestMessage(startSlot, count, step), listener);
+        blocksByRange,
+        new BeaconBlocksByRangeRequestMessage(startSlot, count, step),
+        new BlocksByRangeListenerWrapper(this, listener, startSlot, count, step));
   }
 
   public SafeFuture<MetadataMessage> requestMetadata() {
     return requestSingleItem(rpcMethods.getMetadata(), EmptyMessage.EMPTY_MESSAGE);
   }
 
-  public SafeFuture<UnsignedLong> sendPing() {
+  public boolean wantToReceiveObjects(
+      final ResponseCallback<SignedBeaconBlock> callback, final long objectCount) {
+    if (blockRequestTracker.wantToRequestObjects(objectCount) == 0L) {
+      LOG.debug("Peer {} disconnected due to block rate limits", getId());
+      callback.completeWithErrorResponse(
+          new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
+      disconnectCleanly(DisconnectReason.RATE_LIMITING);
+      return false;
+    }
+    return true;
+  }
+
+  public boolean wantToMakeRequest() {
+    if (requestTracker.wantToRequestObjects(1L) == 0L) {
+      LOG.debug("Peer {} disconnected due to request rate limits", getId());
+      disconnectCleanly(DisconnectReason.RATE_LIMITING);
+      return false;
+    }
+    return true;
+  }
+
+  public SafeFuture<UInt64> sendPing() {
     outstandingPings.getAndIncrement();
     return requestSingleItem(rpcMethods.ping(), metadataMessagesFactory.createPingMessage())
         .thenApply(PingMessage::getSeqNumber)

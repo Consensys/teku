@@ -21,7 +21,6 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import io.javalin.websocket.WsConnectContext;
 import java.io.IOException;
@@ -35,8 +34,10 @@ import org.eclipse.jetty.websocket.servlet.ServletUpgradeRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.services.remotevalidator.RemoteValidatorSubscriptions.SubscriptionStatus;
 import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.validator.remote.BeaconChainEvent;
 
 class RemoteValidatorApiTest {
 
@@ -92,7 +93,7 @@ class RemoteValidatorApiTest {
     verify(subscriptionManager).subscribe(any(), subscriberCallbackArgCaptor.capture());
 
     final Consumer<BeaconChainEvent> subscriberCallback = subscriberCallbackArgCaptor.getValue();
-    subscriberCallback.accept(new BeaconChainEvent("foo", UnsignedLong.ONE));
+    subscriberCallback.accept(new BeaconChainEvent("foo", UInt64.ONE));
 
     verify(remoteEndpoint).sendString(eq("{\"name\":\"foo\",\"data\":\"1\"}"));
   }
@@ -108,7 +109,7 @@ class RemoteValidatorApiTest {
     verify(subscriptionManager).subscribe(any(), subscriberCallbackArgCaptor.capture());
 
     final Consumer<BeaconChainEvent> subscriberCallback = subscriberCallbackArgCaptor.getValue();
-    subscriberCallback.accept(new BeaconChainEvent("foo", UnsignedLong.ONE));
+    subscriberCallback.accept(new BeaconChainEvent("foo", UInt64.ONE));
 
     verify(wsSession)
         .close(eq(StatusCode.SERVER_ERROR), eq("Unexpected error on Remote Validator server"));

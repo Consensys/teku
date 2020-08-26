@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.events;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -24,32 +23,36 @@ import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class StorageUpdate {
 
-  private final Optional<UnsignedLong> genesisTime;
+  private final Optional<UInt64> genesisTime;
   private final Optional<FinalizedChainData> finalizedChainData;
   private final Optional<Checkpoint> justifiedCheckpoint;
   private final Optional<Checkpoint> bestJustifiedCheckpoint;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final Map<Bytes32, SignedBeaconBlock> hotBlocks;
-  private final Map<UnsignedLong, VoteTracker> votes;
+  private final Map<Bytes32, BeaconState> hotStates;
+  private final Map<UInt64, VoteTracker> votes;
   private final Set<Bytes32> deletedHotBlocks;
 
   public StorageUpdate(
-      final Optional<UnsignedLong> genesisTime,
+      final Optional<UInt64> genesisTime,
       final Optional<FinalizedChainData> finalizedChainData,
       final Optional<Checkpoint> justifiedCheckpoint,
       final Optional<Checkpoint> bestJustifiedCheckpoint,
       final Map<Bytes32, SignedBeaconBlock> hotBlocks,
+      final Map<Bytes32, BeaconState> hotStates,
       final Set<Bytes32> deletedHotBlocks,
-      final Map<UnsignedLong, VoteTracker> votes,
+      final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots) {
     this.genesisTime = genesisTime;
     this.finalizedChainData = finalizedChainData;
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.hotBlocks = hotBlocks;
+    this.hotStates = hotStates;
     this.deletedHotBlocks = deletedHotBlocks;
     this.votes = votes;
     this.stateRoots = stateRoots;
@@ -66,7 +69,7 @@ public class StorageUpdate {
         && stateRoots.isEmpty();
   }
 
-  public Optional<UnsignedLong> getGenesisTime() {
+  public Optional<UInt64> getGenesisTime() {
     return genesisTime;
   }
 
@@ -84,6 +87,10 @@ public class StorageUpdate {
 
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks() {
     return hotBlocks;
+  }
+
+  public Map<Bytes32, BeaconState> getHotStates() {
+    return hotStates;
   }
 
   public Set<Bytes32> getDeletedHotBlocks() {
@@ -108,7 +115,7 @@ public class StorageUpdate {
     return finalizedChainData.map(FinalizedChainData::getLatestFinalizedState);
   }
 
-  public Map<UnsignedLong, VoteTracker> getVotes() {
+  public Map<UInt64, VoteTracker> getVotes() {
     return votes;
   }
 

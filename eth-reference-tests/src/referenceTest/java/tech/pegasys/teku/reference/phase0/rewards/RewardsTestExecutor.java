@@ -20,7 +20,6 @@ import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Supplier;
@@ -29,6 +28,7 @@ import tech.pegasys.teku.core.epoch.MatchingAttestations;
 import tech.pegasys.teku.core.epoch.RewardsAndPenaltiesCalculator;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 
 public class RewardsTestExecutor implements TestExecutor {
@@ -73,8 +73,8 @@ public class RewardsTestExecutor implements TestExecutor {
 
     public Deltas getDeltas() {
       return new Deltas(
-          rewards.stream().map(UnsignedLong::fromLongBits).collect(toList()),
-          penalties.stream().map(UnsignedLong::fromLongBits).collect(toList()));
+          rewards.stream().map(UInt64::fromLongBits).collect(toList()),
+          penalties.stream().map(UInt64::fromLongBits).collect(toList()));
     }
   }
 }

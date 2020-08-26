@@ -41,16 +41,16 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public abstract class BeaconBlocksByRootIntegrationTest {
   protected final StorageSystem storageSystem1 =
-      InMemoryStorageSystem.createEmptyV3StorageSystem(StateStorageMode.ARCHIVE);
+      InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   protected final StorageSystem storageSystem2 =
-      InMemoryStorageSystem.createEmptyV3StorageSystem(StateStorageMode.ARCHIVE);
+      InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
 
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
   private Eth2Peer peer1;

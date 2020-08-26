@@ -19,15 +19,16 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.validator.remote.BeaconChainEvent;
 
-public class RemoteValidatorSubscriptions implements BeaconChainEventsListener {
+class RemoteValidatorSubscriptions implements BeaconChainEventsListener {
 
   private final int maxSubscribers;
   private final RemoteValidatorMetrics metrics;
 
   private final Map<String, Consumer<BeaconChainEvent>> subscriptions = new ConcurrentHashMap<>();
 
-  public RemoteValidatorSubscriptions(
+  RemoteValidatorSubscriptions(
       final TekuConfiguration configuration, final RemoteValidatorMetrics metrics) {
     checkNotNull(configuration, "TekuConfiguration can't be null");
     checkNotNull(metrics, "RemoteValidatorMetrics can't be null");
@@ -85,11 +86,11 @@ public class RemoteValidatorSubscriptions implements BeaconChainEventsListener {
       this.info = info;
     }
 
-    public boolean hasSubscribed() {
+    boolean hasSubscribed() {
       return hasSubscribed;
     }
 
-    public String getInfo() {
+    String getInfo() {
       return info;
     }
   }

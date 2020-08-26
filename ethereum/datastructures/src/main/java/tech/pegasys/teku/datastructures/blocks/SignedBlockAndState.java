@@ -16,10 +16,10 @@ package tech.pegasys.teku.datastructures.blocks;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /** Helper datastructure that holds a signed block with its corresponding state */
 public class SignedBlockAndState {
@@ -53,7 +53,7 @@ public class SignedBlockAndState {
     return state.hash_tree_root();
   }
 
-  public UnsignedLong getSlot() {
+  public UInt64 getSlot() {
     return getBlock().getSlot();
   }
 
@@ -74,7 +74,8 @@ public class SignedBlockAndState {
       return false;
     }
     final SignedBlockAndState that = (SignedBlockAndState) o;
-    return Objects.equals(block, that.block) && Objects.equals(state, that.state);
+    return Objects.equals(getBlock(), that.getBlock())
+        && Objects.equals(getState(), that.getState());
   }
 
   @Override

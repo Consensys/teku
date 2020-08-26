@@ -162,7 +162,10 @@ public class Eth2NetworkFactory {
                 rpcEncoding,
                 eth2RpcPingInterval,
                 eth2RpcOutstandingPingThreshold,
-                eth2StatusUpdateInterval);
+                eth2StatusUpdateInterval,
+                StubTimeProvider.withTimeInSeconds(1000),
+                500,
+                50);
 
         List<RpcMethod> rpcMethods =
             eth2PeerManager.getBeaconChainMethods().all().stream()
@@ -193,12 +196,16 @@ public class Eth2NetworkFactory {
                 new Eth2PeerSelectionStrategy(
                     config.getTargetPeerRange(),
                     gossipNetwork ->
-                        PeerSubnetSubscriptions.create(gossipNetwork, subnetTopicProvider),
+                        PeerSubnetSubscriptions.create(
+                            gossipNetwork,
+                            subnetTopicProvider,
+                            config.getTargetSubnetSubscriberCount()),
                     reputationManager,
                     Collections::shuffle),
                 config);
 
         return new ActiveEth2Network(
+            asyncRunner,
             metricsSystem,
             network,
             eth2PeerManager,
@@ -232,6 +239,7 @@ public class Eth2NetworkFactory {
           false,
           emptyList(),
           new TargetPeerRange(20, 30, 0),
+          2,
           GossipConfig.DEFAULT_CONFIG,
           new WireLogsConfig(false, false, true, false));
     }

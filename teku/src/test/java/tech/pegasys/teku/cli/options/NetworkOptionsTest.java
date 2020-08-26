@@ -78,4 +78,17 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--initial-state", initialState);
     assertThat(config.getInitialState()).isEqualTo(initialState);
   }
+
+  @Test
+  public void setPeerRateLimit() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments("--Xpeer-rate-limit", "10");
+    assertThat(config.getPeerRateLimit()).isEqualTo(10);
+  }
+
+  @Test
+  public void setPeerRequestLimit() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xpeer-request-limit", "10");
+    assertThat(config.getPeerRequestLimit()).isEqualTo(10);
+  }
 }

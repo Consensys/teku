@@ -13,8 +13,12 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+
 public interface ResponseCallback<T> {
-  void respond(T data);
+  SafeFuture<Void> respond(T data);
+
+  void respondAndCompleteSuccessfully(T data);
 
   void completeSuccessfully();
 

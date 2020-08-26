@@ -13,31 +13,29 @@
 
 package tech.pegasys.teku.sync;
 
-import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SyncStatus {
-  private final UnsignedLong startingSlot;
-  private final UnsignedLong currentSlot;
-  private final UnsignedLong highestSlot;
+  private final UInt64 startingSlot;
+  private final UInt64 currentSlot;
+  private final UInt64 highestSlot;
 
   public SyncStatus(
-      final UnsignedLong startingSlot,
-      final UnsignedLong currentSlot,
-      final UnsignedLong highest_slot) {
+      final UInt64 startingSlot, final UInt64 currentSlot, final UInt64 highest_slot) {
     this.startingSlot = startingSlot;
     this.currentSlot = currentSlot;
     this.highestSlot = highest_slot;
   }
 
-  public UnsignedLong getStartingSlot() {
+  public UInt64 getStartingSlot() {
     return startingSlot;
   }
 
-  public UnsignedLong getCurrentSlot() {
+  public UInt64 getCurrentSlot() {
     return currentSlot;
   }
 
-  public UnsignedLong getHighestSlot() {
+  public UInt64 getHighestSlot() {
     return highestSlot;
   }
 }

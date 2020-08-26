@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.services.remotevalidator;
 
+import tech.pegasys.teku.validator.remote.BeaconChainEvent;
+
 @FunctionalInterface
-public interface BeaconChainEventsListener {
+interface BeaconChainEventsListener {
 
   void onEvent(BeaconChainEvent event);
 }

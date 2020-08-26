@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.SUCCESS_RESPONSE_CODE;
 import static tech.pegasys.teku.util.bytes.ByteUtil.toByteExactUnsigned;
+import static tech.pegasys.teku.util.bytes.ByteUtil.toUnsignedInt;
 
 import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
@@ -62,7 +63,7 @@ public class RpcResponseDecoder<T> {
     }
 
     if (respCodeMaybe.isEmpty()) {
-      respCodeMaybe = Optional.of((int) data.readByte());
+      respCodeMaybe = Optional.of(toUnsignedInt(data.readByte()));
     }
     int respCode = respCodeMaybe.get();
 

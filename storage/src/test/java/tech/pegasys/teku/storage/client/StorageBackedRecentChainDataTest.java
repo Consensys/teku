@@ -20,7 +20,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -28,10 +27,12 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
 import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -41,13 +42,15 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubReorgEventChannel;
 import tech.pegasys.teku.storage.events.AnchorPoint;
+import tech.pegasys.teku.storage.store.StoreAssertions;
 import tech.pegasys.teku.storage.store.StoreBuilder;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class StorageBackedRecentChainDataTest {
 
   private static final BeaconState INITIAL_STATE =
-      new DataStructureUtil(3).randomBeaconState(UnsignedLong.ZERO);
+      new DataStructureUtil(3).randomBeaconState(UInt64.ZERO);
 
   private final StorageQueryChannel storageQueryChannel = mock(StorageQueryChannel.class);
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
@@ -63,9 +66,12 @@ public class StorageBackedRecentChainDataTest {
     when(storageQueryChannel.onStoreRequest()).thenReturn(storeRequestFuture);
 
     final EventBus eventBus = new EventBus();
+    final StoreConfig storeConfig =
+        StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(5).build();
     final SafeFuture<RecentChainData> client =
         StorageBackedRecentChainData.create(
             new StubMetricsSystem(),
+            storeConfig,
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
@@ -85,12 +91,15 @@ public class StorageBackedRecentChainDataTest {
         StoreBuilder.forkChoiceStoreBuilder(
             new StubMetricsSystem(),
             BlockProvider.NOOP,
+            StateAndBlockProvider.NOOP,
             AnchorPoint.fromGenesisState(INITIAL_STATE));
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
-    assertThat(client.get().getStore()).isEqualTo(genesisStoreBuilder.build());
+    final UpdatableStore expectedStore =
+        genesisStoreBuilder.storeConfig(storeConfig).build().join();
+    StoreAssertions.assertStoresMatch(client.get().getStore(), expectedStore);
   }
 
   @Test
@@ -100,9 +109,12 @@ public class StorageBackedRecentChainDataTest {
     when(storageQueryChannel.onStoreRequest()).thenReturn(storeRequestFuture);
 
     final EventBus eventBus = new EventBus();
+    final StoreConfig storeConfig =
+        StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(5).build();
     final SafeFuture<RecentChainData> client =
         StorageBackedRecentChainData.create(
             new StubMetricsSystem(),
+            storeConfig,
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
@@ -124,14 +136,19 @@ public class StorageBackedRecentChainDataTest {
 
     // Now set the genesis state
     final UpdatableStore genesisStore =
-        StoreBuilder.buildForkChoiceStore(
-            new StubMetricsSystem(),
-            BlockProvider.NOOP,
-            AnchorPoint.fromGenesisState(INITIAL_STATE));
-    client.get().initializeFromGenesis(INITIAL_STATE);
+        StoreBuilder.forkChoiceStoreBuilder(
+                new StubMetricsSystem(),
+                BlockProvider.NOOP,
+                StateAndBlockProvider.NOOP,
+                AnchorPoint.fromGenesisState(INITIAL_STATE))
+            .storeConfig(storeConfig)
+            .build()
+            .join();
+    final SafeFuture<Void> initialized = client.get().initializeFromGenesis(INITIAL_STATE);
+    assertThat(initialized).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
-    assertThat(client.get().getStore()).isEqualTo(genesisStore);
+    StoreAssertions.assertStoresMatch(client.get().getStore(), genesisStore);
   }
 
   @Test
@@ -146,6 +163,7 @@ public class StorageBackedRecentChainDataTest {
     final SafeFuture<RecentChainData> client =
         StorageBackedRecentChainData.create(
             new StubMetricsSystem(),
+            StoreConfig.createDefault(),
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
@@ -167,12 +185,13 @@ public class StorageBackedRecentChainDataTest {
         StoreBuilder.forkChoiceStoreBuilder(
             new StubMetricsSystem(),
             BlockProvider.NOOP,
+            StateAndBlockProvider.NOOP,
             AnchorPoint.fromGenesisState(INITIAL_STATE));
     storeRequestFuture.complete(Optional.of(genesisStoreBuilder));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
-    assertThat(client.get().getStore()).isEqualTo(genesisStoreBuilder.build());
+    StoreAssertions.assertStoresMatch(client.get().getStore(), genesisStoreBuilder.build().join());
   }
 
   @Test
@@ -187,6 +206,7 @@ public class StorageBackedRecentChainDataTest {
     final SafeFuture<RecentChainData> client =
         StorageBackedRecentChainData.create(
             new StubMetricsSystem(),
+            StoreConfig.createDefault(),
             asyncRunner,
             storageQueryChannel,
             storageUpdateChannel,
@@ -217,8 +237,10 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client.getStore()).isNotNull();
 
     // With a store set, we shouldn't be allowed to overwrite the store by setting the genesis state
-    assertThatThrownBy(() -> client.initializeFromGenesis(INITIAL_STATE))
-        .isInstanceOf(IllegalStateException.class)
+    final SafeFuture<Void> initialized = client.initializeFromGenesis(INITIAL_STATE);
+    assertThat(initialized).isCompletedExceptionally();
+    assertThatThrownBy(initialized::get)
+        .hasCauseInstanceOf(IllegalStateException.class)
         .hasMessageContaining("Failed to set genesis state: store has already been initialized");
   }
 }

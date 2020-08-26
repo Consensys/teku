@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.api;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -26,8 +24,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -52,6 +51,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -94,7 +94,7 @@ public class ValidatorDataProviderTest {
 
   @Test
   void getUnsignedBeaconBlockAtSlot_shouldThrowIfHistoricSlotRequested() {
-    when(combinedChainDataClient.getBestSlot()).thenReturn(ONE);
+    when(combinedChainDataClient.getHeadSlot()).thenReturn(ONE);
 
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(ZERO, signature, Optional.empty()));
@@ -102,18 +102,18 @@ public class ValidatorDataProviderTest {
 
   @Test
   void getUnsignedBeaconBlockAtSlot_shouldThrowIfFarFutureSlotRequested() {
-    when(combinedChainDataClient.getBestSlot()).thenReturn(ONE);
+    when(combinedChainDataClient.getHeadSlot()).thenReturn(ONE);
 
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(
             () ->
                 provider.getUnsignedBeaconBlockAtSlot(
-                    UnsignedLong.valueOf(10L), signature, Optional.empty()));
+                    UInt64.valueOf(10L), signature, Optional.empty()));
   }
 
   @Test
   void getUnsignedBeaconBlockAtSlot_shouldCreateAnUnsignedBlock() {
-    when(combinedChainDataClient.getBestSlot()).thenReturn(ZERO);
+    when(combinedChainDataClient.getHeadSlot()).thenReturn(ZERO);
     when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockInternal)));
 
@@ -216,9 +216,8 @@ public class ValidatorDataProviderTest {
     final int attestationCommitteeIndex = 2;
     final int attestationCommitteePosition = 5;
     final int aggregatorModulo = 12;
-    final List<UnsignedLong> blockProposalSlots =
-        List.of(UnsignedLong.valueOf(66), UnsignedLong.valueOf(77));
-    final UnsignedLong attestationSlot = UnsignedLong.valueOf(50);
+    final List<UInt64> blockProposalSlots = List.of(UInt64.valueOf(66), UInt64.valueOf(77));
+    final UInt64 attestationSlot = UInt64.valueOf(50);
     when(validatorApiChannel.getDuties(smallRequest.epoch, List.of(publicKey)))
         .thenReturn(
             SafeFuture.completedFuture(

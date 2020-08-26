@@ -16,7 +16,6 @@ package tech.pegasys.teku.sync;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -31,6 +30,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -58,7 +58,7 @@ public class BlockPropagationIntegrationTest {
   public void shouldFetchUnknownAncestorsOfPropagatedBlock(
       final String testName, final RpcEncoding encoding, final GossipEncoding gossipEncoding)
       throws Exception {
-    UnsignedLong currentSlot = UnsignedLong.valueOf(Constants.GENESIS_SLOT);
+    UInt64 currentSlot = UInt64.valueOf(Constants.GENESIS_SLOT);
 
     // Setup node 1
     SyncingNodeManager node1 =
@@ -72,7 +72,7 @@ public class BlockPropagationIntegrationTest {
     // Add some blocks to node1, which node 2 will need to fetch
     final List<SignedBeaconBlock> blocksToFetch = new ArrayList<>();
     for (int i = 0; i < 3; i++) {
-      currentSlot = currentSlot.plus(UnsignedLong.ONE);
+      currentSlot = currentSlot.plus(UInt64.ONE);
       final SignedBeaconBlock block = node1.chainUtil().createAndImportBlockAtSlot(currentSlot);
       blocksToFetch.add(block);
     }
@@ -93,11 +93,11 @@ public class BlockPropagationIntegrationTest {
           assertThat(node1.network().getPeerCount()).isEqualTo(1);
           assertThat(node2.network().getPeerCount()).isEqualTo(1);
         });
-    // TODO (#1855): debug this - we shouldn't have to wait here
+    // Wait for subscriptions to complete (jvm-libp2p does this asynchronously)
     Thread.sleep(2000);
 
     // Update slot so that blocks can be imported
-    currentSlot = currentSlot.plus(UnsignedLong.ONE);
+    currentSlot = currentSlot.plus(UInt64.ONE);
     node1.setSlot(currentSlot);
     node2.setSlot(currentSlot);
 

@@ -13,23 +13,28 @@
 
 package tech.pegasys.teku.protoarray;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface ForkChoiceStrategy {
 
-  Bytes32 findHead(final MutableStore store);
+  Bytes32 findHead(
+      final MutableStore store,
+      final Checkpoint finalizedCheckpoint,
+      final Checkpoint justifiedCheckpoint,
+      final BeaconState justifiedCheckpointState);
 
   void onAttestation(final MutableStore store, final IndexedAttestation attestation);
 
   void onBlock(final BeaconBlock block, final BeaconState state);
 
-  Optional<UnsignedLong> blockSlot(Bytes32 blockRoot);
+  Optional<UInt64> blockSlot(Bytes32 blockRoot);
 
   Optional<Bytes32> blockParentRoot(Bytes32 blockRoot);
 

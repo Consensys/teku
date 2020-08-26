@@ -8,11 +8,15 @@ dependencies {
   implementation project(':ssz')
   implementation project(':util')
 
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
+  implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.apache.tuweni:tuweni-crypto'
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.apache.tuweni:tuweni-bytes'
 
   testImplementation testFixtures(project(':bls'))
+  testImplementation testFixtures(project(':data:metrics'))
+  testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':protoarray'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
 
@@ -25,6 +29,7 @@ dependencies {
   testFixturesImplementation project(':ethereum:datastructures')
   testFixturesImplementation testFixtures(project(':ethereum:datastructures'))
   testFixturesImplementation project(':infrastructure:async')
+  testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation project(':ssz')
   testFixturesImplementation project(':util')
 

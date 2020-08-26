@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,6 +33,7 @@ import org.web3j.crypto.WalletUtils;
 import org.web3j.utils.Numeric;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 class RegisterParamsTest {
@@ -161,6 +161,6 @@ class RegisterParamsTest {
         new RegisterParams(commandSpec, eth1PrivateKeyOptions, SHUTDOWN_FUNCTION, consoleAdapter);
 
     assertThat(registerParams.getAmount())
-        .isEqualTo(UnsignedLong.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
+        .isEqualTo(UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
   }
 }

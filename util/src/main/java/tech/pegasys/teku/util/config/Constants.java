@@ -13,21 +13,21 @@
 
 package tech.pegasys.teku.util.config;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.util.resource.ResourceLoader;
 
 public class Constants {
 
   // Non-configurable constants
-  public static UnsignedLong FAR_FUTURE_EPOCH = UnsignedLong.MAX_VALUE;
-  public static UnsignedLong BASE_REWARDS_PER_EPOCH = UnsignedLong.valueOf(4);
+  public static UInt64 FAR_FUTURE_EPOCH = UInt64.MAX_VALUE;
+  public static UInt64 BASE_REWARDS_PER_EPOCH = UInt64.valueOf(4);
   public static int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
   public static int JUSTIFICATION_BITS_LENGTH = 4;
 
@@ -39,17 +39,17 @@ public class Constants {
   public static int CHURN_LIMIT_QUOTIENT;
   public static int SHUFFLE_ROUND_COUNT;
   public static int MIN_GENESIS_ACTIVE_VALIDATOR_COUNT;
-  public static UnsignedLong MIN_GENESIS_TIME;
-  public static UnsignedLong HYSTERESIS_QUOTIENT;
-  public static UnsignedLong HYSTERESIS_DOWNWARD_MULTIPLIER;
-  public static UnsignedLong HYSTERESIS_UPWARD_MULTIPLIER;
+  public static UInt64 MIN_GENESIS_TIME;
+  public static UInt64 HYSTERESIS_QUOTIENT;
+  public static UInt64 HYSTERESIS_DOWNWARD_MULTIPLIER;
+  public static UInt64 HYSTERESIS_UPWARD_MULTIPLIER;
   public static final int MAX_REQUEST_BLOCKS = 1024;
 
   // Gwei values
   public static long MIN_DEPOSIT_AMOUNT;
   public static long MAX_EFFECTIVE_BALANCE;
   public static long EJECTION_BALANCE;
-  public static UnsignedLong EFFECTIVE_BALANCE_INCREMENT;
+  public static UInt64 EFFECTIVE_BALANCE_INCREMENT;
 
   // Initial values
   public static Bytes4 GENESIS_FORK_VERSION = Bytes4.fromHexString("0x00000000");
@@ -58,17 +58,17 @@ public class Constants {
   public static Bytes BLS_WITHDRAWAL_PREFIX;
 
   // Time parameters
-  public static UnsignedLong GENESIS_DELAY;
+  public static UInt64 GENESIS_DELAY;
   public static int SECONDS_PER_SLOT = 12;
   public static int MIN_ATTESTATION_INCLUSION_DELAY;
   public static int SLOTS_PER_EPOCH;
   public static int MIN_SEED_LOOKAHEAD;
   public static int MAX_SEED_LOOKAHEAD;
-  public static UnsignedLong MIN_EPOCHS_TO_INACTIVITY_PENALTY;
+  public static UInt64 MIN_EPOCHS_TO_INACTIVITY_PENALTY;
   public static int EPOCHS_PER_ETH1_VOTING_PERIOD;
   public static int SLOTS_PER_HISTORICAL_ROOT;
   public static int MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
-  public static UnsignedLong SHARD_COMMITTEE_PERIOD;
+  public static UInt64 SHARD_COMMITTEE_PERIOD;
   public static int MAX_EPOCHS_PER_CROSSLINK;
 
   // State list lengths
@@ -80,8 +80,8 @@ public class Constants {
   // Reward and penalty quotients
   public static int BASE_REWARD_FACTOR;
   public static int WHISTLEBLOWER_REWARD_QUOTIENT;
-  public static UnsignedLong PROPOSER_REWARD_QUOTIENT;
-  public static UnsignedLong INACTIVITY_PENALTY_QUOTIENT;
+  public static UInt64 PROPOSER_REWARD_QUOTIENT;
+  public static UInt64 INACTIVITY_PENALTY_QUOTIENT;
   public static int MIN_SLASHING_PENALTY_QUOTIENT;
 
   // Max transactions per block
@@ -102,7 +102,7 @@ public class Constants {
 
   // Honest Validator
   public static int TARGET_AGGREGATORS_PER_COMMITTEE = 16;
-  public static UnsignedLong SECONDS_PER_ETH1_BLOCK = UnsignedLong.valueOf(14L);
+  public static UInt64 SECONDS_PER_ETH1_BLOCK = UInt64.valueOf(14L);
 
   // Deposit
   public static String DEPOSIT_NORMAL = "normal";
@@ -116,14 +116,16 @@ public class Constants {
   public static int EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 256;
 
   // Sync
-  public static final UnsignedLong MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UnsignedLong.valueOf(200);
+  public static final UInt64 MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UInt64.valueOf(200);
 
+  public static int DEPOSIT_CHAIN_ID;
+  public static int DEPOSIT_NETWORK_ID;
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");
 
-  public static UnsignedLong BYTES_PER_LENGTH_OFFSET = UnsignedLong.valueOf(4L);
+  public static UInt64 BYTES_PER_LENGTH_OFFSET = UInt64.valueOf(4L);
 
-  public static UnsignedLong ETH1_FOLLOW_DISTANCE = UnsignedLong.valueOf(1024);
+  public static UInt64 ETH1_FOLLOW_DISTANCE = UInt64.valueOf(1024);
 
   // Teku specific
   public static final Bytes32 ZERO_HASH = Bytes32.ZERO;
@@ -150,7 +152,7 @@ public class Constants {
   public static final int ATTESTATION_SUBNET_COUNT = 64;
   public static final int TTFB_TIMEOUT = 5; // in sec
   public static final int RESP_TIMEOUT = 10; // in sec
-  public static final UnsignedLong ATTESTATION_PROPAGATION_SLOT_RANGE = UnsignedLong.valueOf(32);
+  public static final UInt64 ATTESTATION_PROPAGATION_SLOT_RANGE = UInt64.valueOf(32);
   public static final int MAXIMUM_GOSSIP_CLOCK_DISPARITY = 500; // in ms
 
   // Teku Networking Specific

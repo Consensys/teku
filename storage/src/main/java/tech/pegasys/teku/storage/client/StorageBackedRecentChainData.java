@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.client;
 
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -25,6 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
@@ -33,15 +35,19 @@ import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.store.StoreBuilder;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.util.config.Constants;
 
 public class StorageBackedRecentChainData extends RecentChainData {
   private static final Logger LOG = LogManager.getLogger();
   private final BlockProvider blockProvider;
+  private final StateAndBlockProvider stateProvider;
   private final StorageQueryChannel storageQueryChannel;
+  private final StoreConfig storeConfig;
 
   public StorageBackedRecentChainData(
       final MetricsSystem metricsSystem,
+      final StoreConfig storeConfig,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
@@ -50,19 +56,24 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final EventBus eventBus) {
     super(
         metricsSystem,
+        storeConfig,
         storageQueryChannel::getHotBlocksByRoot,
+        storageQueryChannel::getHotBlockAndStateByBlockRoot,
         storageUpdateChannel,
         protoArrayStorageChannel,
         finalizedCheckpointChannel,
         reorgEventChannel,
         eventBus);
+    this.storeConfig = storeConfig;
     this.storageQueryChannel = storageQueryChannel;
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
+    this.stateProvider = storageQueryChannel::getHotBlockAndStateByBlockRoot;
     eventBus.register(this);
   }
 
   public static SafeFuture<RecentChainData> create(
       final MetricsSystem metricsSystem,
+      final StoreConfig storeConfig,
       final AsyncRunner asyncRunner,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
@@ -73,6 +84,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
             metricsSystem,
+            storeConfig,
             storageQueryChannel,
             storageUpdateChannel,
             protoArrayStorageChannel,
@@ -86,6 +98,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
   @VisibleForTesting
   public static RecentChainData createImmediately(
       final MetricsSystem metricsSystem,
+      final StoreConfig storeConfig,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
@@ -95,6 +108,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
             metricsSystem,
+            storeConfig,
             storageQueryChannel,
             storageUpdateChannel,
             protoArrayStorageChannel,
@@ -118,13 +132,24 @@ public class StorageBackedRecentChainData extends RecentChainData {
 
   private SafeFuture<RecentChainData> processStoreFuture(
       SafeFuture<Optional<StoreBuilder>> storeFuture) {
-    return storeFuture.thenApply(
-        maybeStore -> {
-          maybeStore
-              .map(builder -> builder.blockProvider(blockProvider).build())
-              .ifPresent(this::setStore);
-          STATUS_LOG.finishInitializingChainData();
-          return this;
+    return storeFuture.thenCompose(
+        maybeStoreBuilder -> {
+          if (maybeStoreBuilder.isEmpty()) {
+            STATUS_LOG.finishInitializingChainData();
+            return completedFuture(this);
+          }
+          return maybeStoreBuilder
+              .get()
+              .blockProvider(blockProvider)
+              .stateProvider(stateProvider)
+              .storeConfig(storeConfig)
+              .build()
+              .thenApply(
+                  store -> {
+                    setStore(store);
+                    STATUS_LOG.finishInitializingChainData();
+                    return this;
+                  });
         });
   }
 

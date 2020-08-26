@@ -39,13 +39,19 @@ import tech.pegasys.teku.beaconrestapi.handlers.network.GetListenPort;
 import tech.pegasys.teku.beaconrestapi.handlers.network.GetPeerCount;
 import tech.pegasys.teku.beaconrestapi.handlers.network.GetPeerId;
 import tech.pegasys.teku.beaconrestapi.handlers.network.GetPeers;
+import tech.pegasys.teku.beaconrestapi.handlers.node.GetAttestationsInPoolCount;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetFork;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
+import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAggregate;
+import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAggregateAndProof;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToBeaconCommittee;
+import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToPersistentSubnets;
+import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
@@ -54,6 +60,7 @@ import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
 class BeaconRestApiTest {
+
   private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(new EventBus());
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
@@ -62,6 +69,7 @@ class BeaconRestApiTest {
   private final SyncService syncService = mock(SyncService.class);
   private final BlockImporter blockImporter = mock(BlockImporter.class);
   private static final Integer THE_PORT = 12345;
+  private AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
 
   @BeforeEach
   public void setup() {
@@ -70,7 +78,13 @@ class BeaconRestApiTest {
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
         new DataProvider(
-            storageClient, combinedChainDataClient, null, syncService, null, blockImporter),
+            storageClient,
+            combinedChainDataClient,
+            null,
+            syncService,
+            null,
+            blockImporter,
+            attestationPool),
         config,
         app);
   }
@@ -181,6 +195,35 @@ class BeaconRestApiTest {
   @Test
   public void shouldHaveValidatorDutiesEndpoint() {
     verify(app).post(eq(PostDuties.ROUTE), any(PostDuties.class));
+  }
+
+  @Test
+  public void shouldHaveValidatorCreateAggregateEndpoint() {
+    verify(app).get(eq(GetAggregate.ROUTE), any(GetAggregate.class));
+  }
+
+  @Test
+  public void shouldHaveValidatorPostAggregateAndProofEndpoint() {
+    verify(app).post(eq(PostAggregateAndProof.ROUTE), any(PostAggregateAndProof.class));
+  }
+
+  @Test
+  public void shouldHaveAttestationsInPoolCountEndpoint() {
+    verify(app).get(eq(GetAttestationsInPoolCount.ROUTE), any(GetAttestationsInPoolCount.class));
+  }
+
+  @Test
+  public void shouldHaveSubscribeToBeaconCommitteeEndpoint() {
+    verify(app)
+        .post(eq(PostSubscribeToBeaconCommittee.ROUTE), any(PostSubscribeToBeaconCommittee.class));
+  }
+
+  @Test
+  public void shouldHaveSubscribeToPersistentSubnetsEndpoint() {
+    verify(app)
+        .post(
+            eq(PostSubscribeToPersistentSubnets.ROUTE),
+            any(PostSubscribeToPersistentSubnets.class));
   }
 
   @Test

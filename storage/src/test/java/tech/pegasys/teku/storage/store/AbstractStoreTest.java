@@ -25,6 +25,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -44,10 +45,14 @@ public abstract class AbstractStoreTest {
     final int cacheMultiplier = 3;
 
     // Create a new store with a small cache
-    final StorePruningOptions pruningOptions =
-        StorePruningOptions.create(cacheSize, cacheSize, cacheSize);
+    final StoreConfig pruningOptions =
+        StoreConfig.builder()
+            .checkpointStateCacheSize(cacheSize)
+            .blockCacheSize(cacheSize)
+            .stateCacheSize(cacheSize)
+            .build();
 
-    final Store store = createGenesisStore(pruningOptions);
+    final UpdatableStore store = createGenesisStore(pruningOptions);
     final List<SignedBlockAndState> blocks =
         chainBuilder.generateBlocksUpToSlot(cacheMultiplier * cacheSize);
 
@@ -70,10 +75,14 @@ public abstract class AbstractStoreTest {
     final int epochsToProcess = cacheSize * 3;
 
     // Create a new store with a small cache
-    final StorePruningOptions pruningOptions =
-        StorePruningOptions.create(cacheSize, cacheSize, cacheSize);
+    final StoreConfig pruningOptions =
+        StoreConfig.builder()
+            .checkpointStateCacheSize(cacheSize)
+            .blockCacheSize(cacheSize)
+            .stateCacheSize(cacheSize)
+            .build();
 
-    final Store store = createGenesisStore(pruningOptions);
+    final UpdatableStore store = createGenesisStore(pruningOptions);
     while (chainBuilder.getLatestEpoch().longValue() < epochsToProcess) {
       SignedBlockAndState block = chainBuilder.generateNextBlock();
       addBlock(store, block);
@@ -96,35 +105,41 @@ public abstract class AbstractStoreTest {
     allCheckpoints.forEach(c -> chainProcessor.accept(store, c));
   }
 
-  protected void addBlock(final Store store, final SignedBlockAndState block) {
+  protected void addBlock(final UpdatableStore store, final SignedBlockAndState block) {
     addBlocks(store, List.of(block));
   }
 
-  protected void addBlocks(final Store store, final List<SignedBlockAndState> blocks) {
+  protected void addBlocks(final UpdatableStore store, final List<SignedBlockAndState> blocks) {
     final UpdatableStore.StoreTransaction tx = store.startTransaction(storageUpdateChannel);
     blocks.forEach(tx::putBlockAndState);
     assertThat(tx.commit()).isCompletedWithValue(null);
   }
 
-  protected Store createGenesisStore() {
-    return createGenesisStore(StorePruningOptions.createDefault());
+  protected UpdatableStore createGenesisStore() {
+    return createGenesisStore(StoreConfig.createDefault());
   }
 
-  protected Store createGenesisStore(final StorePruningOptions pruningOptions) {
+  protected UpdatableStore createGenesisStore(final StoreConfig pruningOptions) {
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
-    return new Store(
-        new StubMetricsSystem(),
-        blockProviderFromChainBuilder(),
-        genesis.getState().getGenesis_time(),
-        genesis.getState().getGenesis_time(),
-        genesisCheckpoint,
-        genesisCheckpoint,
-        genesisCheckpoint,
-        Map.of(genesis.getRoot(), genesis.getParentRoot()),
-        genesis,
-        Collections.emptyMap(),
-        pruningOptions);
+    final SafeFuture<UpdatableStore> result =
+        Store.create(
+            new StubMetricsSystem(),
+            blockProviderFromChainBuilder(),
+            StateAndBlockProvider.NOOP,
+            genesis.getState().getGenesis_time(),
+            genesis.getState().getGenesis_time(),
+            genesisCheckpoint,
+            genesisCheckpoint,
+            genesisCheckpoint,
+            Map.of(genesis.getRoot(), genesis.getParentRoot()),
+            Map.of(genesis.getRoot(), genesis.getSlot()),
+            genesis,
+            Collections.emptyMap(),
+            pruningOptions);
+
+    assertThat(result).isCompleted();
+    return result.join();
   }
 
   protected BlockProvider blockProviderFromChainBuilder() {

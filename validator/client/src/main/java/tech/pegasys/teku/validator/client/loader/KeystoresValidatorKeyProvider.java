@@ -24,7 +24,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.signers.bls.keystore.KeyStore;
@@ -46,12 +52,35 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
 
     StatusLogger.STATUS_LOG.loadingValidators(keystorePasswordFilePairs.size());
     // return distinct loaded key pairs
-    return keystorePasswordFilePairs.stream()
-        .parallel()
-        .map(pair -> loadBLSPrivateKey(pair.getLeft(), loadPassword(pair.getRight())))
-        .distinct()
-        .map(privKey -> new BLSKeyPair(BLSSecretKey.fromBytes(privKey)))
-        .collect(toList());
+
+    final ExecutorService executorService =
+        Executors.newFixedThreadPool(Math.min(4, Runtime.getRuntime().availableProcessors()));
+    try {
+      final List<Future<Bytes32>> futures =
+          keystorePasswordFilePairs.stream()
+              .map(
+                  pair ->
+                      executorService.submit(
+                          () -> loadBLSPrivateKey(pair.getLeft(), loadPassword(pair.getRight()))))
+              .collect(toList());
+
+      Set<Bytes32> result = new HashSet<>();
+      for (Future<Bytes32> future : futures) {
+        result.add(future.get());
+      }
+      return result.stream()
+          .map(privKey -> new BLSKeyPair(BLSSecretKey.fromBytes(privKey)))
+          .collect(toList());
+    } catch (InterruptedException e) {
+      throw new RuntimeException("Interrupted while attempting to load validator key files", e);
+    } catch (ExecutionException e) {
+      if (e.getCause() instanceof RuntimeException) {
+        throw (RuntimeException) e.getCause();
+      }
+      throw new RuntimeException("Unable to load validator key files", e);
+    } finally {
+      executorService.shutdownNow();
+    }
   }
 
   private Bytes32 loadBLSPrivateKey(final Path keystoreFile, final String password) {

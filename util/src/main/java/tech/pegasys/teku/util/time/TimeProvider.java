@@ -13,15 +13,15 @@
 
 package tech.pegasys.teku.util.time;
 
-import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface TimeProvider {
 
-  UnsignedLong MILLIS_PER_SECOND = UnsignedLong.valueOf(1000);
+  UInt64 MILLIS_PER_SECOND = UInt64.valueOf(1000);
 
-  UnsignedLong getTimeInMillis();
+  UInt64 getTimeInMillis();
 
-  default UnsignedLong getTimeInSeconds() {
+  default UInt64 getTimeInSeconds() {
     return getTimeInMillis().dividedBy(MILLIS_PER_SECOND);
   }
 }

@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.pow;
 
-import com.google.common.primitives.UnsignedLong;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.time.TimeProvider;
 
 public class ErrorTrackingEth1Provider implements Eth1Provider {
@@ -32,7 +32,7 @@ public class ErrorTrackingEth1Provider implements Eth1Provider {
   }
 
   @Override
-  public SafeFuture<EthBlock.Block> getEth1Block(final UnsignedLong blockNumber) {
+  public SafeFuture<EthBlock.Block> getEth1Block(final UInt64 blockNumber) {
     return logStatus(delegate.getEth1Block(blockNumber));
   }
 
@@ -47,7 +47,7 @@ public class ErrorTrackingEth1Provider implements Eth1Provider {
   }
 
   @Override
-  public SafeFuture<EthBlock.Block> getGuaranteedEth1Block(final UnsignedLong blockNumber) {
+  public SafeFuture<EthBlock.Block> getGuaranteedEth1Block(final UInt64 blockNumber) {
     return logStatus(delegate.getGuaranteedEth1Block(blockNumber));
   }
 
@@ -58,7 +58,7 @@ public class ErrorTrackingEth1Provider implements Eth1Provider {
 
   @Override
   public SafeFuture<EthCall> ethCall(
-      final String from, final String to, final String data, final UnsignedLong blockNumber) {
+      final String from, final String to, final String data, final UInt64 blockNumber) {
     return logStatus(delegate.ethCall(from, to, data, blockNumber));
   }
 

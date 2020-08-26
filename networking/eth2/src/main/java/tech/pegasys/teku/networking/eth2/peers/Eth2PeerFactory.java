@@ -17,20 +17,37 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.util.time.TimeProvider;
 
 public class Eth2PeerFactory {
 
   private final StatusMessageFactory statusMessageFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
+  private final TimeProvider timeProvider;
+  private final int peerRateLimit;
+  private final int peerRequestLimit;
 
   public Eth2PeerFactory(
       final StatusMessageFactory statusMessageFactory,
-      final MetadataMessagesFactory metadataMessagesFactory) {
+      final MetadataMessagesFactory metadataMessagesFactory,
+      final TimeProvider timeProvider,
+      final int peerRateLimit,
+      final int peerRequestLimit) {
+    this.timeProvider = timeProvider;
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
+    this.peerRateLimit = peerRateLimit;
+    this.peerRequestLimit = peerRequestLimit;
   }
 
   public Eth2Peer create(final Peer peer, final BeaconChainMethods rpcMethods) {
-    return new Eth2Peer(peer, rpcMethods, statusMessageFactory, metadataMessagesFactory);
+    return new Eth2Peer(
+        peer,
+        rpcMethods,
+        statusMessageFactory,
+        metadataMessagesFactory,
+        timeProvider,
+        peerRateLimit,
+        peerRequestLimit);
   }
 }

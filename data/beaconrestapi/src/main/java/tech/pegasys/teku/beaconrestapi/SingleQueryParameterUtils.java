@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BLSSignature;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.util.config.Constants;
 
 public class SingleQueryParameterUtils {
 
@@ -57,21 +58,32 @@ public class SingleQueryParameterUtils {
       throws IllegalArgumentException {
     String stringValue = validateQueryParameter(parameterMap, key);
     try {
-      return Integer.valueOf(stringValue);
+      return Integer.parseInt(stringValue);
     } catch (IllegalArgumentException ex) {
       throw new IllegalArgumentException(INVALID_NUMERIC_VALUE);
     }
   }
 
-  public static UnsignedLong getParameterValueAsUnsignedLong(
+  public static UInt64 getParameterValueAsUInt64(
       final Map<String, List<String>> parameterMap, final String key)
       throws IllegalArgumentException {
     String stringValue = validateQueryParameter(parameterMap, key);
     try {
-      return UnsignedLong.valueOf(stringValue);
+      return UInt64.valueOf(stringValue);
     } catch (IllegalArgumentException ex) {
       throw new IllegalArgumentException(INVALID_NUMERIC_VALUE);
     }
+  }
+
+  public static UInt64 getParameterValueAsEpoch(
+      final Map<String, List<String>> parameterMap, final String key)
+      throws IllegalArgumentException {
+    final UInt64 value = getParameterValueAsUInt64(parameterMap, key);
+    // Restrict valid epoch values to ones that can be converted to slot without overflowing
+    if (value.isGreaterThan(UInt64.MAX_VALUE.dividedBy(Constants.SLOTS_PER_EPOCH))) {
+      throw new IllegalArgumentException(INVALID_NUMERIC_VALUE);
+    }
+    return value;
   }
 
   public static long getParameterValueAsLong(
@@ -79,7 +91,7 @@ public class SingleQueryParameterUtils {
       throws IllegalArgumentException {
     String stringValue = validateQueryParameter(parameterMap, key);
     try {
-      return Long.valueOf(stringValue);
+      return Long.parseLong(stringValue);
     } catch (IllegalArgumentException ex) {
       throw new IllegalArgumentException(INVALID_NUMERIC_VALUE);
     }

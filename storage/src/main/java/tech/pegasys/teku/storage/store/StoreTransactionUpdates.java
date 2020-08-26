@@ -20,8 +20,8 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.storage.events.FinalizedChainData;
 import tech.pegasys.teku.storage.events.StorageUpdate;
@@ -32,23 +32,27 @@ class StoreTransactionUpdates {
 
   private final Optional<FinalizedChainData> finalizedChainData;
   private final Map<Bytes32, SignedBeaconBlock> hotBlocks;
-  private final Map<Bytes32, BeaconState> hotStates;
+  private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
+  // A subset of hot states to be persisted to disk
+  private final Map<Bytes32, BeaconState> hotStatesToPersist;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final Set<Bytes32> prunedHotBlockRoots;
-  private final Optional<HashTree> updatedBlockTree;
+  private final Optional<BlockTree> updatedBlockTree;
 
   StoreTransactionUpdates(
       final Transaction tx,
       final Optional<FinalizedChainData> finalizedChainData,
       final Map<Bytes32, SignedBeaconBlock> hotBlocks,
-      final Map<Bytes32, BeaconState> hotStates,
+      final Map<Bytes32, SignedBlockAndState> hotBlockAndStates,
+      final Map<Bytes32, BeaconState> hotStatesToPersist,
       final Set<Bytes32> prunedHotBlockRoots,
-      final Optional<HashTree> updatedBlockTree,
+      final Optional<BlockTree> updatedBlockTree,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots) {
     checkNotNull(tx, "Transaction is required");
     checkNotNull(finalizedChainData, "Finalized data is required");
     checkNotNull(hotBlocks, "Hot blocks are required");
-    checkNotNull(hotStates, "Hot states are required");
+    checkNotNull(hotBlockAndStates, "Hot states are required");
+    checkNotNull(hotStatesToPersist, "Hot states to persist are required");
     checkNotNull(prunedHotBlockRoots, "Pruned roots are required");
     checkNotNull(updatedBlockTree, "Update tree is required");
     checkNotNull(stateRoots, "State roots are required");
@@ -56,7 +60,8 @@ class StoreTransactionUpdates {
     this.tx = tx;
     this.finalizedChainData = finalizedChainData;
     this.hotBlocks = hotBlocks;
-    this.hotStates = hotStates;
+    this.hotBlockAndStates = hotBlockAndStates;
+    this.hotStatesToPersist = hotStatesToPersist;
     this.prunedHotBlockRoots = prunedHotBlockRoots;
     this.updatedBlockTree = updatedBlockTree;
     this.stateRoots = stateRoots;
@@ -69,6 +74,7 @@ class StoreTransactionUpdates {
         tx.justified_checkpoint,
         tx.best_justified_checkpoint,
         hotBlocks,
+        hotStatesToPersist,
         prunedHotBlockRoots,
         tx.votes,
         stateRoots);
@@ -81,7 +87,7 @@ class StoreTransactionUpdates {
     tx.justified_checkpoint.ifPresent(value -> store.justified_checkpoint = value);
     tx.best_justified_checkpoint.ifPresent(value -> store.best_justified_checkpoint = value);
     store.blocks.putAll(hotBlocks);
-    store.block_states.putAll(hotStates);
+    store.states.cacheAll(hotBlockAndStates);
     updatedBlockTree.ifPresent(updated -> store.blockTree = updated);
     store.votes.putAll(tx.votes);
 
@@ -96,7 +102,7 @@ class StoreTransactionUpdates {
     prunedHotBlockRoots.forEach(
         (root) -> {
           store.blocks.remove(root);
-          store.block_states.remove(root);
+          store.states.remove(root);
         });
   }
 }

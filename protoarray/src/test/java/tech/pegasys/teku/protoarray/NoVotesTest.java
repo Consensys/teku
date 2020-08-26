@@ -13,21 +13,21 @@
 
 package tech.pegasys.teku.protoarray;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.createProtoArrayForkChoiceStrategy;
 import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.createStoreToManipulateVotes;
 import static tech.pegasys.teku.protoarray.ProtoArrayTestUtil.getHash;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.forkchoice.MutableStore;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class NoVotesTest {
 
@@ -38,7 +38,7 @@ public class NoVotesTest {
     ProtoArrayForkChoiceStrategy forkChoice =
         createProtoArrayForkChoiceStrategy(getHash(0), ZERO, ONE, ONE);
 
-    List<UnsignedLong> balances = new ArrayList<>(Collections.nCopies(16, ZERO));
+    List<UInt64> balances = new ArrayList<>(Collections.nCopies(16, ZERO));
 
     // Check that the head is the finalized block.
     assertThat(forkChoice.findHead(store, unsigned(1), getHash(0), unsigned(1), balances))
@@ -188,7 +188,7 @@ public class NoVotesTest {
         .isEqualTo(getHash(6));
   }
 
-  private UnsignedLong unsigned(final int i) {
-    return UnsignedLong.valueOf(i);
+  private UInt64 unsigned(final int i) {
+    return UInt64.valueOf(i);
   }
 }

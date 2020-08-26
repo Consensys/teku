@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip;
 import java.util.concurrent.atomic.AtomicBoolean;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.AttesterSlashingTopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
@@ -29,6 +30,7 @@ public class AttesterSlashingGossipManager {
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
   public AttesterSlashingGossipManager(
+      final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
@@ -36,7 +38,11 @@ public class AttesterSlashingGossipManager {
       final GossipedOperationConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer) {
     final AttesterSlashingTopicHandler topicHandler =
         new AttesterSlashingTopicHandler(
-            gossipEncoding, forkInfo, attesterSlashingValidator, gossipedAttesterSlashingConsumer);
+            asyncRunner,
+            gossipEncoding,
+            forkInfo,
+            attesterSlashingValidator,
+            gossipedAttesterSlashingConsumer);
     this.channel = gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 

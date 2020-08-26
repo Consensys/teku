@@ -15,10 +15,10 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class BeaconBlocksByRangeRequestMessageTest {
 
@@ -26,7 +26,7 @@ class BeaconBlocksByRangeRequestMessageTest {
   public void shouldRoundTripViaSsz() {
     final BeaconBlocksByRangeRequestMessage request =
         new BeaconBlocksByRangeRequestMessage(
-            UnsignedLong.valueOf(2), UnsignedLong.valueOf(3), UnsignedLong.valueOf(4));
+            UInt64.valueOf(2), UInt64.valueOf(3), UInt64.valueOf(4));
     final Bytes data = SimpleOffsetSerializer.serialize(request);
     final BeaconBlocksByRangeRequestMessage result =
         SimpleOffsetSerializer.deserialize(data, BeaconBlocksByRangeRequestMessage.class);

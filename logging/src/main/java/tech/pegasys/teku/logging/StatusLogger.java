@@ -117,10 +117,11 @@ public class StatusLogger {
         () -> size);
   }
 
-  public void timeUntilGenesis(final long timeToGenesis) {
+  public void timeUntilGenesis(final long timeToGenesis, final int peerCount) {
     log.info(
-        "{} until genesis time is reached",
-        () -> DurationFormatUtils.formatDurationWords(timeToGenesis * 1000, true, true));
+        "{} until genesis time is reached. Peers: {}",
+        () -> DurationFormatUtils.formatDurationWords(timeToGenesis * 1000, true, true),
+        () -> peerCount);
   }
 
   public void loadingGenesisFile(final String genesisFile) {

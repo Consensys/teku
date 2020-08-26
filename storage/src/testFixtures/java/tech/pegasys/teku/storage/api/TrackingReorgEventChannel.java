@@ -13,16 +13,17 @@
 
 package tech.pegasys.teku.storage.api;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class TrackingReorgEventChannel implements ReorgEventChannel {
   private final List<ReorgEvent> reorgEvents = new ArrayList<>();
 
   @Override
-  public void reorgOccurred(final Bytes32 bestBlockRoot, final UnsignedLong bestSlot) {
+  public void reorgOccurred(final Bytes32 bestBlockRoot, final UInt64 bestSlot) {
     reorgEvents.add(new ReorgEvent(bestBlockRoot, bestSlot));
   }
 
@@ -32,9 +33,9 @@ public class TrackingReorgEventChannel implements ReorgEventChannel {
 
   public static class ReorgEvent {
     private final Bytes32 bestBlockRoot;
-    private final UnsignedLong bestSlot;
+    private final UInt64 bestSlot;
 
-    public ReorgEvent(final Bytes32 bestBlockRoot, final UnsignedLong bestSlot) {
+    public ReorgEvent(final Bytes32 bestBlockRoot, final UInt64 bestSlot) {
       this.bestBlockRoot = bestBlockRoot;
       this.bestSlot = bestSlot;
     }
@@ -43,8 +44,26 @@ public class TrackingReorgEventChannel implements ReorgEventChannel {
       return bestBlockRoot;
     }
 
-    public UnsignedLong getBestSlot() {
+    public UInt64 getBestSlot() {
       return bestSlot;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final ReorgEvent that = (ReorgEvent) o;
+      return Objects.equals(bestBlockRoot, that.bestBlockRoot)
+          && Objects.equals(bestSlot, that.bestSlot);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(bestBlockRoot, bestSlot);
     }
   }
 }

@@ -16,18 +16,18 @@ package tech.pegasys.teku.datastructures.state;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 class ForkTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private Bytes4 previousVersion = new Bytes4(Bytes.of(1, 2, 3, 4));
   private Bytes4 currentVersion = new Bytes4(Bytes.of(5, 6, 7, 8));
-  private UnsignedLong epoch = dataStructureUtil.randomUnsignedLong();
+  private UInt64 epoch = dataStructureUtil.randomUInt64();
 
   private Fork fork = new Fork(previousVersion, currentVersion, epoch);
 
@@ -64,8 +64,7 @@ class ForkTest {
   @Test
   void equalsReturnsFalseWhenEpochsAreDifferent() {
     Fork testFork =
-        new Fork(
-            previousVersion, currentVersion, epoch.plus(dataStructureUtil.randomUnsignedLong()));
+        new Fork(previousVersion, currentVersion, epoch.plus(dataStructureUtil.randomUInt64()));
 
     assertNotEquals(fork, testFork);
   }

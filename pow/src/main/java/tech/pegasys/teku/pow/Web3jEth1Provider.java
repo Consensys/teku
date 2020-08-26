@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.pow;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -28,6 +27,7 @@ import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 public class Web3jEth1Provider implements Eth1Provider {
@@ -42,7 +42,7 @@ public class Web3jEth1Provider implements Eth1Provider {
   }
 
   @Override
-  public SafeFuture<EthBlock.Block> getEth1Block(final UnsignedLong blockNumber) {
+  public SafeFuture<EthBlock.Block> getEth1Block(final UInt64 blockNumber) {
     LOG.trace("Getting eth1 block {}", blockNumber);
     DefaultBlockParameter blockParameter =
         DefaultBlockParameter.valueOf(blockNumber.bigIntegerValue());
@@ -69,7 +69,7 @@ public class Web3jEth1Provider implements Eth1Provider {
   }
 
   @Override
-  public SafeFuture<EthBlock.Block> getGuaranteedEth1Block(final UnsignedLong blockNumber) {
+  public SafeFuture<EthBlock.Block> getGuaranteedEth1Block(final UInt64 blockNumber) {
     return getEth1Block(blockNumber)
         .exceptionallyCompose(
             (err) -> {
@@ -104,7 +104,7 @@ public class Web3jEth1Provider implements Eth1Provider {
 
   @Override
   public SafeFuture<EthCall> ethCall(
-      final String from, String to, String data, final UnsignedLong blockNumber) {
+      final String from, String to, String data, final UInt64 blockNumber) {
     return SafeFuture.of(
         web3j
             .ethCall(

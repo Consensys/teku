@@ -13,20 +13,23 @@
 
 package tech.pegasys.teku.datastructures.forkchoice;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface ReadOnlyStore {
 
-  UnsignedLong getTime();
+  UInt64 getTime();
 
-  UnsignedLong getGenesisTime();
+  UInt64 getGenesisTime();
 
   Checkpoint getJustifiedCheckpoint();
 
@@ -38,7 +41,7 @@ public interface ReadOnlyStore {
    *
    * @return the slot of the latest finalized block.
    */
-  UnsignedLong getLatestFinalizedBlockSlot();
+  UInt64 getLatestFinalizedBlockSlot();
 
   SignedBlockAndState getLatestFinalizedBlockAndState();
 
@@ -54,7 +57,36 @@ public interface ReadOnlyStore {
    */
   List<Bytes32> getOrderedBlockRoots();
 
-  Optional<BeaconState> getCheckpointState(Checkpoint checkpoint);
+  Set<UInt64> getVotedValidatorIndices();
 
-  Set<UnsignedLong> getVotedValidatorIndices();
+  /**
+   * Returns a block state only if it is immediately available (not pruned).
+   *
+   * @param blockRoot The block root corresponding to the state to retrieve
+   * @return The block state if available.
+   */
+  Optional<BeaconState> getBlockStateIfAvailable(Bytes32 blockRoot);
+
+  /**
+   * Returns a block only if it is immediately available (not pruned).
+   *
+   * @param blockRoot The block root of the block to retrieve
+   * @return The block if available.
+   */
+  Optional<SignedBeaconBlock> getBlockIfAvailable(final Bytes32 blockRoot);
+
+  default SafeFuture<Optional<BeaconBlock>> retrieveBlock(Bytes32 blockRoot) {
+    return retrieveSignedBlock(blockRoot).thenApply(res -> res.map(SignedBeaconBlock::getMessage));
+  }
+
+  SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(Bytes32 blockRoot);
+
+  SafeFuture<Optional<SignedBlockAndState>> retrieveBlockAndState(Bytes32 blockRoot);
+
+  SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot);
+
+  SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint);
+
+  SafeFuture<Optional<BeaconState>> retrieveCheckpointState(
+      Checkpoint checkpoint, BeaconState latestStateAtEpoch);
 }

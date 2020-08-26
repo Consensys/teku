@@ -16,22 +16,22 @@ package tech.pegasys.teku.services.remotevalidator;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.eventbus.Subscribe;
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+import tech.pegasys.teku.validator.remote.BeaconChainEvent;
 
-public class RemoteValidatorBeaconChainEventsAdapter
-    implements SlotEventsChannel, ReorgEventChannel {
+class RemoteValidatorBeaconChainEventsAdapter implements SlotEventsChannel, ReorgEventChannel {
 
   private final ServiceConfig config;
   private final BeaconChainEventsListener listener;
 
-  public RemoteValidatorBeaconChainEventsAdapter(
+  RemoteValidatorBeaconChainEventsAdapter(
       final ServiceConfig config, final BeaconChainEventsListener listener) {
     checkNotNull(config, "ServiceConfig can't be null");
     checkNotNull(listener, "BeaconChainEventsListener can't be null");
@@ -70,13 +70,13 @@ public class RemoteValidatorBeaconChainEventsAdapter
   }
 
   @Override
-  public void onSlot(final UnsignedLong slot) {
+  public void onSlot(final UInt64 slot) {
     final BeaconChainEvent beaconChainEvent = new BeaconChainEvent(BeaconChainEvent.ON_SLOT, slot);
     listener.onEvent(beaconChainEvent);
   }
 
   @Override
-  public void reorgOccurred(final Bytes32 bestBlockRoot, final UnsignedLong bestSlot) {
+  public void reorgOccurred(final Bytes32 bestBlockRoot, final UInt64 bestSlot) {
     final BeaconChainEvent beaconChainEvent =
         new BeaconChainEvent(BeaconChainEvent.REORG_OCCURRED, bestSlot);
     listener.onEvent(beaconChainEvent);

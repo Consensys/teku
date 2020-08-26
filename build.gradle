@@ -218,7 +218,7 @@ allprojects {
   }
 }
 
-def refTestVersion = 'v0.12.1'
+def refTestVersion = 'v0.12.2'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
 def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/"
@@ -530,6 +530,10 @@ subprojects {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 
     testFixturesImplementation 'org.assertj:assertj-core'
+  }
+
+  if (project.name != 'unsigned' && project.name != 'errorprone-checks') {
+    dependencies.implementation(project(':infrastructure:unsigned'))
   }
 
   task integrationTest(type: Test, dependsOn:["compileIntegrationTestJava"]){
