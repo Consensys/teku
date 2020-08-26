@@ -89,19 +89,22 @@ public class BlockTree {
   }
 
   /**
-   * Returns true if the block root is at an internal epoch boundary. The rootHash is not considered
-   * an epoch boundary. A block is at an epoch boundary if it is the first block within an epoch.
+   * Returns true if the block root is at an epoch boundary where the epoch boundary spanned by this
+   * block is a multiple of n. The rootHash is not considered an epoch boundary. A block is at an
+   * epoch boundary if it is the first block at or after an epoch start slot.
    *
    * @param blockRoot The block root to check.
    * @return True if the block root is at an internal epoch boundary.
    */
-  public boolean isRootAtEpochBoundary(Bytes32 blockRoot) {
+  public boolean isRootAtNthEpochBoundary(Bytes32 blockRoot, final int n) {
+    checkArgument(n > 0, "Parameter n must be greater than 0");
     assertBlockIsInTree(blockRoot);
     return hashTree
         .getParent(blockRoot)
         .filter(this::contains)
         .map(this::getEpoch)
-        .map(parentEpoch -> getEpoch(blockRoot).isGreaterThan(parentEpoch))
+        .map(e -> e.dividedBy(n))
+        .map(parentEpoch -> getEpoch(blockRoot).dividedBy(n).isGreaterThan(parentEpoch))
         .orElse(false);
   }
 
