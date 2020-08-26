@@ -24,6 +24,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.teku.core.BlockProcessorUtil;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
+import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -66,7 +67,9 @@ public class SimpleBlockValidator implements BlockValidator {
 
   @Override
   public SafeFuture<BlockValidationResult> validatePreState(
-      BeaconState preState, SignedBeaconBlock block) {
+      BeaconState preState,
+      SignedBeaconBlock block,
+      IndexedAttestationProvider indexedAttestationProvider) {
     try {
       if (verifyBlockSignature) {
         verify_block_signature(preState, block);
@@ -76,7 +79,7 @@ public class SimpleBlockValidator implements BlockValidator {
         BeaconBlock blockMessage = block.getMessage();
         BeaconBlockBody blockBody = blockMessage.getBody();
         BlockProcessorUtil.verify_attestations(
-            preState, blockBody.getAttestations(), signatureVerifier);
+            preState, blockBody.getAttestations(), signatureVerifier, indexedAttestationProvider);
         BlockProcessorUtil.verify_randao(preState, blockMessage, signatureVerifier);
 
         if (!BlockProcessorUtil.verify_proposer_slashings(

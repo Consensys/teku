@@ -18,6 +18,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
+import com.google.common.collect.Maps;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,6 +34,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.core.signatures.MessageSignerService;
 import tech.pegasys.teku.core.signatures.TestMessageSignerService;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
@@ -47,6 +50,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.teku.datastructures.util.MockStartDepositGenerator;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
@@ -89,6 +93,14 @@ public class ChainBuilder {
     return Optional.ofNullable(blocksByHash.get(blockRoot));
   }
 
+  public BlockProvider getBlockProvider() {
+    return BlockProvider.fromDynamicMap(
+        () -> Maps.transformValues(blocksByHash, SignedBlockAndState::getBlock));
+  }
+
+  public StateAndBlockProvider getStateAndBlockProvider() {
+    return blockRoot -> SafeFuture.completedFuture(getBlockAndState(blockRoot));
+  }
   /**
    * Create an independent {@code ChainBuilder} with the same history as the current builder. This
    * independent copy can now create a divergent chain.
@@ -305,8 +317,19 @@ public class ChainBuilder {
         .map(this::getLatestBlockAndStateAtSlot)
         .filter(Objects::nonNull)
         .filter(b -> b.getSlot().compareTo(minBlockSlot) >= 0)
-        .map(SignedBlockAndState::toUnsigned)
-        .flatMap(head -> attestationGenerator.streamAttestations(head, head.getSlot()));
+        .flatMap(this::streamValidAttestationsWithTargetBlock);
+  }
+
+  /**
+   * Utility for streaming valid attestations with a specific target block.
+   *
+   * @param attestedHead the block to use as the attestation target
+   * @return a stream of valid attestations voting for the specified block
+   */
+  public Stream<Attestation> streamValidAttestationsWithTargetBlock(
+      final SignedBlockAndState attestedHead) {
+    return attestationGenerator.streamAttestations(
+        attestedHead.toUnsigned(), attestedHead.getSlot());
   }
 
   private void assertChainIsNotEmpty() {

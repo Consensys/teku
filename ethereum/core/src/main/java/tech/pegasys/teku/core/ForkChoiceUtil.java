@@ -32,6 +32,7 @@ import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
@@ -212,7 +213,8 @@ public class ForkChoiceUtil {
       Optional<BeaconState> maybePreState,
       final StateTransition st,
       final ForkChoiceStrategy forkChoiceStrategy,
-      final Consumer<BeaconState> beaconStateConsumer) {
+      final Consumer<BeaconState> beaconStateConsumer,
+      final IndexedAttestationProvider indexedAttestationProvider) {
     final BeaconBlock block = signed_block.getMessage();
 
     // Return early if precondition checks fail;
@@ -228,7 +230,9 @@ public class ForkChoiceUtil {
 
     // Check the block is valid and compute the post-state
     try {
-      state = st.initiate(preState, signed_block, true, beaconStateConsumer);
+      state =
+          st.initiate(
+              preState, signed_block, true, beaconStateConsumer, indexedAttestationProvider);
     } catch (StateTransitionException e) {
       return BlockImportResult.failedStateTransition(e);
     }
@@ -362,7 +366,12 @@ public class ForkChoiceUtil {
         .ifSuccessful(
             () -> {
               IndexedAttestation indexedAttestation =
-                  validateableAttestation.getIndexedAttestation();
+                  validateableAttestation
+                      .getIndexedAttestation()
+                      .orElseThrow(
+                          () ->
+                              new UnsupportedOperationException(
+                                  "ValidateableAttestation does not have an IndexedAttestation yet."));
               forkChoiceStrategy.onAttestation(store, indexedAttestation);
               return SUCCESSFUL;
             });
@@ -389,8 +398,11 @@ public class ForkChoiceUtil {
     }
 
     IndexedAttestation indexedAttestation;
+    Optional<IndexedAttestation> maybeIndexedAttestation = attestation.getIndexedAttestation();
     try {
-      indexedAttestation = get_indexed_attestation(targetState, attestation.getAttestation());
+      indexedAttestation =
+          maybeIndexedAttestation.orElse(
+              get_indexed_attestation(targetState, attestation.getAttestation()));
     } catch (IllegalArgumentException e) {
       LOG.debug("on_attestation: Attestation is not valid: ", e);
       return AttestationProcessingResult.invalid(e.getMessage());
@@ -399,6 +411,8 @@ public class ForkChoiceUtil {
         .ifSuccessful(
             () -> {
               attestation.setIndexedAttestation(indexedAttestation);
+              attestation.saveCommitteeShufflingSeed(targetState);
+
               return SUCCESSFUL;
             });
   }

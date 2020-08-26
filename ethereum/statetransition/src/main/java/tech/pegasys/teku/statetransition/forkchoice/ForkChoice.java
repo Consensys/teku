@@ -18,12 +18,11 @@ import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Semaphore;
-import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.lookup.CapturingIndexedAttestationProvider;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -34,17 +33,21 @@ import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceExecutor.ForkChoiceTask;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ForkChoice {
   private static final Logger LOG = LogManager.getLogger();
-  private final Semaphore lock = new Semaphore(1);
+  private final ForkChoiceExecutor forkChoiceExecutor;
   private final RecentChainData recentChainData;
   private final StateTransition stateTransition;
 
-  public ForkChoice(final RecentChainData recentChainData, final StateTransition stateTransition) {
+  public ForkChoice(
+      final ForkChoiceExecutor forkChoiceExecutor,
+      final RecentChainData recentChainData,
+      final StateTransition stateTransition) {
+    this.forkChoiceExecutor = forkChoiceExecutor;
     this.recentChainData = recentChainData;
     this.stateTransition = stateTransition;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
@@ -69,7 +72,7 @@ public class ForkChoice {
         .retrieveCheckpointState(retrievedJustifiedCheckpoint)
         .thenCompose(
             justifiedCheckpointState ->
-                withLock(
+                onForkChoiceThread(
                     () -> {
                       final Checkpoint finalizedCheckpoint =
                           recentChainData.getStore().getFinalizedCheckpoint();
@@ -82,6 +85,7 @@ public class ForkChoice {
                             retrievedJustifiedCheckpoint.getRoot(),
                             justifiedCheckpoint.getEpoch(),
                             justifiedCheckpoint.getRoot());
+                        return SafeFuture.COMPLETE;
                       }
                       final StoreTransaction transaction = recentChainData.startStoreTransaction();
                       final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
@@ -109,10 +113,12 @@ public class ForkChoice {
 
   public SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block, Optional<BeaconState> preState) {
-    return withLock(
+    return onForkChoiceThread(
         () -> {
           final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
           final StoreTransaction transaction = recentChainData.startStoreTransaction();
+          final CapturingIndexedAttestationProvider indexedAttestationProvider =
+              new CapturingIndexedAttestationProvider();
           final BlockImportResult result =
               on_block(
                   transaction,
@@ -125,23 +131,48 @@ public class ForkChoice {
                           beaconState.hash_tree_root(),
                           new SlotAndBlockRoot(
                               beaconState.getSlot(),
-                              beaconState.getLatest_block_header().hash_tree_root())));
+                              beaconState.getLatest_block_header().hash_tree_root())),
+                  indexedAttestationProvider);
 
           if (!result.isSuccessful()) {
             return SafeFuture.completedFuture(result);
           }
+          indexedAttestationProvider.getIndexedAttestations().stream()
+              .filter(
+                  attestation ->
+                      forkChoiceStrategy.contains(attestation.getData().getBeacon_block_root()))
+              .forEach(
+                  indexedAttestation ->
+                      forkChoiceStrategy.onAttestation(transaction, indexedAttestation));
           return transaction
               .commit()
-              .thenRun(
-                  () ->
-                      result
-                          .getBlockProcessingRecord()
-                          .ifPresent(
-                              record ->
-                                  forkChoiceStrategy.onBlock(
-                                      block.getMessage(), record.getPostState())))
+              .thenRun(() -> updateForkChoiceForImportedBlock(block, forkChoiceStrategy, result))
               .thenApply(__ -> result);
         });
+  }
+
+  private void updateForkChoiceForImportedBlock(
+      final SignedBeaconBlock block,
+      final ForkChoiceStrategy forkChoiceStrategy,
+      final BlockImportResult result) {
+    result
+        .getBlockProcessingRecord()
+        .ifPresent(
+            record -> {
+              forkChoiceStrategy.onBlock(block.getMessage(), record.getPostState());
+              // If the new block builds on our current chain head immediately make it the new head
+              // Since fork choice works by walking down the tree selecting the child block with
+              // the greatest weight, when a block has only one child it will automatically become
+              // a better choice than the block itself.  So the first block we receive that is a
+              // child of our current chain head, must be the new chain head. If we'd had any other
+              // child of the current chain head we'd have already selected it as head.
+              if (recentChainData
+                  .getHeadBlock()
+                  .map(currentHead -> currentHead.getRoot().equals(block.getParent_root()))
+                  .orElse(false)) {
+                recentChainData.updateHead(block.getRoot(), block.getSlot());
+              }
+            });
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
@@ -149,13 +180,13 @@ public class ForkChoice {
     return recentChainData
         .retrieveCheckpointState(attestation.getData().getTarget())
         .thenCompose(
-            targetState ->
-                withLock(
+            targetBlockState ->
+                onForkChoiceThread(
                     () -> {
                       final StoreTransaction transaction = recentChainData.startStoreTransaction();
                       final AttestationProcessingResult result =
                           on_attestation(
-                              transaction, attestation, targetState, getForkChoiceStrategy());
+                              transaction, attestation, targetBlockState, getForkChoiceStrategy());
                       return result.isSuccessful()
                           ? transaction.commit().thenApply(__ -> result)
                           : SafeFuture.completedFuture(result);
@@ -167,12 +198,18 @@ public class ForkChoice {
   }
 
   public void applyIndexedAttestations(final List<ValidateableAttestation> attestations) {
-    withLock(
+    onForkChoiceThread(
             () -> {
               final StoreTransaction transaction = recentChainData.startStoreTransaction();
               final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
               attestations.stream()
-                  .map(ValidateableAttestation::getIndexedAttestation)
+                  .map(
+                      a ->
+                          a.getIndexedAttestation()
+                              .orElseThrow(
+                                  () ->
+                                      new UnsupportedOperationException(
+                                          "ValidateableAttestation does not have an IndexedAttestation.")))
                   .forEach(
                       attestation -> forkChoiceStrategy.onAttestation(transaction, attestation));
               return transaction.commit();
@@ -189,12 +226,7 @@ public class ForkChoice {
                     "Attempting to perform fork choice operations before store has been initialized"));
   }
 
-  private <T> SafeFuture<T> withLock(final Supplier<SafeFuture<T>> action) {
-    try {
-      lock.acquire();
-    } catch (InterruptedException e) {
-      throw new ShuttingDownException();
-    }
-    return SafeFuture.ofComposed(action::get).alwaysRun(lock::release);
+  private <T> SafeFuture<T> onForkChoiceThread(final ForkChoiceTask<T> task) {
+    return forkChoiceExecutor.performTask(task);
   }
 }
