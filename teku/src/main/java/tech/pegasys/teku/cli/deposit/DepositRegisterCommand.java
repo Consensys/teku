@@ -13,15 +13,9 @@
 
 package tech.pegasys.teku.cli.deposit;
 
-import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
-
 import com.google.common.annotations.VisibleForTesting;
-import java.io.File;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -34,9 +28,14 @@ import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
+
+import java.io.File;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
+import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 @Command(
     name = "register",
@@ -60,12 +59,6 @@ public class DepositRegisterCommand implements Runnable {
   @ArgGroup(exclusive = true, multiplicity = "1")
   private ValidatorKeyOptions validatorKeyOptions;
 
-  @Option(
-      names = {"--withdrawal-public-key"},
-      paramLabel = "<PUBLIC_KEY>",
-      required = true,
-      description = "Public withdrawal key for the validator")
-  private String withdrawalKey;
 
   @Mixin private VerboseOutputParam verboseOutputParam;
 
@@ -88,7 +81,6 @@ public class DepositRegisterCommand implements Runnable {
     this.spec = spec;
     this.registerParams = registerParams;
     this.validatorKeyOptions = validatorKeyOptions;
-    this.withdrawalKey = withdrawalKey;
     this.verboseOutputParam = new VerboseOutputParam(true);
   }
 
@@ -98,10 +90,8 @@ public class DepositRegisterCommand implements Runnable {
 
     try (final RegisterAction registerAction =
         registerParams.createRegisterAction(verboseOutputParam.isVerboseOutputEnabled())) {
-      final BLSPublicKey withdrawalPublicKey =
-          BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString(this.withdrawalKey));
       registerAction.displayConfirmation(1);
-      registerAction.sendDeposit(validatorKey, withdrawalPublicKey).get();
+      registerAction.sendDeposit(validatorKey).get();
     } catch (final Throwable t) {
       SUB_COMMAND_LOG.sendDepositFailure(t);
       shutdownFunction.accept(1);

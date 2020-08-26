@@ -13,14 +13,9 @@
 
 package tech.pegasys.teku.cli.deposit;
 
-import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
-
 import com.google.common.annotations.VisibleForTesting;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Optional;
-import java.util.function.IntConsumer;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.WalletUtils;
@@ -31,10 +26,23 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
 import picocli.CommandLine.TypeConversionException;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.NetworkDefinition;
+import tech.pegasys.teku.validator.client.loader.KeystoresValidatorKeyProvider;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.Optional;
+import java.util.function.IntConsumer;
+
+import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 
 public class RegisterParams {
 
@@ -64,6 +72,9 @@ public class RegisterParams {
   @ArgGroup(exclusive = true, multiplicity = "1")
   private Eth1PrivateKeyOptions eth1PrivateKeyOptions;
 
+  @ArgGroup(exclusive = true, multiplicity = "1")
+  private WithdrawalPublicKeyOptions withdrawalKeyOptions;
+
   @Option(
       names = {"--deposit-amount-gwei"},
       paramLabel = "<GWEI>",
@@ -71,6 +82,7 @@ public class RegisterParams {
       description =
           "Deposit amount in Gwei. Defaults to the amount required to activate a validator on the specified network.")
   private UInt64 amount;
+
 
   private final IntConsumer shutdownFunction;
   private final ConsoleAdapter consoleAdapter;
@@ -96,6 +108,7 @@ public class RegisterParams {
     final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(network);
     Constants.setConstants(networkDefinition.getConstants());
     return new RegisterAction(
+        getWithdrawalPublicKey(),
         eth1NodeUrl,
         getEth1Credentials(),
         getContractAddress(networkDefinition),
@@ -119,18 +132,44 @@ public class RegisterParams {
                     "Selected network does not define a deposit contract address. Please specify one with --eth1-deposit-contract-address"));
   }
 
+  BLSPublicKey getWithdrawalPublicKey() {
+    if (withdrawalKeyOptions.withdrawalKey != null) {
+      return BLSPublicKey.fromBytesCompressed(Bytes48.fromHexString(withdrawalKeyOptions.withdrawalKey));
+    } else if (withdrawalKeyOptions.keystoreOptions != null) {
+      return getWithdrawalKeyFromKeystore();
+    } else {
+      // not meant to happen
+      throw new IllegalStateException("Withdrawal Key Options are not initialized");
+    }
+  }
+
   Credentials getEth1Credentials() {
     if (eth1PrivateKeyOptions.eth1PrivateKey != null) {
       return Credentials.create(eth1PrivateKeyOptions.eth1PrivateKey);
     } else if (eth1PrivateKeyOptions.keystoreOptions != null) {
-      return eth1CredentialsFromKeystore();
+      return getEth1CredentialsFromKeystore();
     } else {
       // not meant to happen
-      throw new IllegalStateException("Private Key Options are not initialized");
+      throw new IllegalStateException("Eth1 Private Key Options are not initialized");
     }
   }
 
-  private Credentials eth1CredentialsFromKeystore() {
+  private BLSPublicKey getWithdrawalKeyFromKeystore() {
+    KeystoresValidatorKeyProvider keystoresValidatorKeyProvider = new KeystoresValidatorKeyProvider();
+    try {
+      Bytes32 privateKeyBytes = keystoresValidatorKeyProvider.loadBLSPrivateKey(withdrawalKeyOptions.keystoreOptions.withdrawalKeystoreFile.toPath(),
+              keystoresValidatorKeyProvider.loadPassword(withdrawalKeyOptions.keystoreOptions.withdrawalKeystorePasswordFile.toPath()));
+      BLSKeyPair blsKeyPair = new BLSKeyPair(BLSSecretKey.fromBytes(privateKeyBytes));
+      return blsKeyPair.getPublicKey();
+    } catch (final IllegalArgumentException | UncheckedIOException e) {
+      throw new ParameterException(
+              spec.commandLine(),
+              "Error: Unable to decrypt withdrawal key from keystore: " + e.getMessage(),
+              e);
+    }
+  }
+
+  private Credentials getEth1CredentialsFromKeystore() {
     final String keystorePassword =
         KeystorePasswordOptions.readFromFile(
             spec.commandLine(), eth1PrivateKeyOptions.keystoreOptions.eth1KeystorePasswordFile);

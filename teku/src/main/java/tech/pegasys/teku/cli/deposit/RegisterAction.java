@@ -13,15 +13,7 @@
 
 package tech.pegasys.teku.cli.deposit;
 
-import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
-
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.Consumer;
-import java.util.function.IntConsumer;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import org.web3j.crypto.Credentials;
@@ -34,6 +26,15 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.services.powchain.DepositTransactionSender;
 import tech.pegasys.teku.util.config.Eth1Address;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+
+import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 public class RegisterAction implements AutoCloseable {
 
@@ -50,8 +51,10 @@ public class RegisterAction implements AutoCloseable {
   private Web3j web3j;
   private final Consumer<String> commandStdOutput;
   private final Consumer<String> commandErrorOutput;
+  private final BLSPublicKey withdrawalPublicKey;
 
   public RegisterAction(
+      final BLSPublicKey withdrawalPublicKey,
       final String eth1NodeUrl,
       final Credentials eth1Credentials,
       final Eth1Address contractAddress,
@@ -59,6 +62,7 @@ public class RegisterAction implements AutoCloseable {
       final UInt64 amount,
       final IntConsumer shutdownFunction,
       final ConsoleAdapter consoleAdapter) {
+    this.withdrawalPublicKey = withdrawalPublicKey;
     this.eth1NodeUrl = eth1NodeUrl;
     this.eth1Credentials = eth1Credentials;
     this.contractAddress = contractAddress;
@@ -118,8 +122,8 @@ public class RegisterAction implements AutoCloseable {
   }
 
   public SafeFuture<TransactionReceipt> sendDeposit(
-      final BLSKeyPair validatorKey, final BLSPublicKey withdrawalKey) {
+      final BLSKeyPair validatorKey) {
     return sender.sendDepositTransaction(
-        validatorKey, withdrawalKey, amount, commandStdOutput, commandErrorOutput);
+        validatorKey, withdrawalPublicKey, amount, commandStdOutput, commandErrorOutput);
   }
 }

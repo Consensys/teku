@@ -13,14 +13,7 @@
 
 package tech.pegasys.teku.cli.deposit;
 
-import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
-
 import com.google.common.annotations.VisibleForTesting;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import picocli.CommandLine.Command;
@@ -28,6 +21,14 @@ import picocli.CommandLine.Mixin;
 import tech.pegasys.teku.cli.deposit.GenerateAction.ValidatorKeys;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
+
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 @Command(
     name = "generate-and-register",
@@ -91,7 +92,6 @@ public class DepositGenerateAndRegisterCommand implements Runnable {
   private Function<ValidatorKeys, SafeFuture<TransactionReceipt>> registerValidator(
       final RegisterAction registerAction) {
     return validatorKey ->
-        registerAction.sendDeposit(
-            validatorKey.getValidatorKey(), validatorKey.getWithdrawalKey().getPublicKey());
+        registerAction.sendDeposit(validatorKey.getValidatorKey());
   }
 }
