@@ -8,9 +8,8 @@ dependencies {
   implementation project(':infrastructure:async')
   implementation project(':logging')
   implementation project(':services:serviceutils')
-  implementation project(':storage:api')
+  implementation project(':validator:anticorruption')
   implementation project(':validator:api')
-  implementation project(':validator:eventadapter')
   implementation project(':validator:remote')
   implementation project(':util')
 

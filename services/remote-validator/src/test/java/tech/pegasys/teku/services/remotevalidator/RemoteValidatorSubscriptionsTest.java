@@ -28,7 +28,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.services.remotevalidator.RemoteValidatorSubscriptions.SubscriptionStatus;
 import tech.pegasys.teku.util.config.TekuConfiguration;
-import tech.pegasys.teku.validator.remote.BeaconChainEvent;
 
 class RemoteValidatorSubscriptionsTest {
 

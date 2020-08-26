@@ -53,7 +53,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   @SuppressWarnings("unused")
   public RemoteValidatorApiHandler(final ServiceConfig config, final AsyncRunner asyncRunner) {
     // TODO: create config for validator client [https://github.com/PegaSysEng/teku/issues/2450]
-    apiClient = new OkHttpValidatorRestApiClient("http://127.0.0.1:5051");
+    apiClient = new OkHttpValidatorRestApiClient("http://127.0.0.1:8888");
     this.asyncRunner = asyncRunner;
   }
 

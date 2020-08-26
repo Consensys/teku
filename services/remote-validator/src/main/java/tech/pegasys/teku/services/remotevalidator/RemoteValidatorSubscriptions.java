@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import tech.pegasys.teku.util.config.TekuConfiguration;
-import tech.pegasys.teku.validator.remote.BeaconChainEvent;
 
 class RemoteValidatorSubscriptions implements BeaconChainEventsListener {
 
