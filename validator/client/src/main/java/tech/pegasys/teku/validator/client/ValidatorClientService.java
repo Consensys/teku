@@ -39,18 +39,15 @@ import tech.pegasys.teku.validator.remote.WebSocketBeaconChainEventAdapter;
 public class ValidatorClientService extends Service {
 
   private final EventChannels eventChannels;
-  private final ValidatorTimingChannel attestationTimingChannel;
-  private final ValidatorTimingChannel blockProductionTimingChannel;
+  private final ValidatorTimingChannel validatorTimingChannel;
   private final BeaconChainEventAdapter beaconChainEventAdapter;
 
   private ValidatorClientService(
       final EventChannels eventChannels,
-      final ValidatorTimingChannel attestationTimingChannel,
-      final ValidatorTimingChannel blockProductionTimingChannel,
+      final ValidatorTimingChannel validatorTimingChannel,
       final ServiceConfig serviceConfig) {
     this.eventChannels = eventChannels;
-    this.attestationTimingChannel = attestationTimingChannel;
-    this.blockProductionTimingChannel = blockProductionTimingChannel;
+    this.validatorTimingChannel = validatorTimingChannel;
 
     if (serviceConfig.getConfig().isRemoteValidatorApiEnabled()) {
       beaconChainEventAdapter = new WebSocketBeaconChainEventAdapter(serviceConfig);
@@ -86,12 +83,10 @@ public class ValidatorClientService extends Service {
         createDutyLoader(metricsSystem, validatorApiChannel, asyncRunner, validators);
     final StableSubnetSubscriber stableSubnetSubscriber =
         new StableSubnetSubscriber(validatorApiChannel, new Random(), validators.size());
-    final AttestationDutyScheduler attestationDutyScheduler =
-        new AttestationDutyScheduler(metricsSystem, dutyLoader, stableSubnetSubscriber);
-    final BlockDutyScheduler blockDutyScheduler = new BlockDutyScheduler(metricsSystem, dutyLoader);
+    final DutyScheduler dutyScheduler =
+        new DutyScheduler(metricsSystem, dutyLoader, stableSubnetSubscriber);
 
-    return new ValidatorClientService(
-        eventChannels, attestationDutyScheduler, blockDutyScheduler, config);
+    return new ValidatorClientService(eventChannels, dutyScheduler, config);
   }
 
   private static RetryingDutyLoader createDutyLoader(
@@ -114,8 +109,7 @@ public class ValidatorClientService extends Service {
 
   @Override
   protected SafeFuture<?> doStart() {
-    eventChannels.subscribe(ValidatorTimingChannel.class, blockProductionTimingChannel);
-    eventChannels.subscribe(ValidatorTimingChannel.class, attestationTimingChannel);
+    eventChannels.subscribe(ValidatorTimingChannel.class, validatorTimingChannel);
     return SafeFuture.of(beaconChainEventAdapter.start());
   }
 
