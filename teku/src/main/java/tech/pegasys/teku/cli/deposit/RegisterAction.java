@@ -13,15 +13,7 @@
 
 package tech.pegasys.teku.cli.deposit;
 
-import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
-
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.Consumer;
-import java.util.function.IntConsumer;
 import okhttp3.ConnectionPool;
 import okhttp3.OkHttpClient;
 import org.web3j.crypto.Credentials;
@@ -34,6 +26,15 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.services.powchain.DepositTransactionSender;
 import tech.pegasys.teku.util.config.Eth1Address;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+
+import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 public class RegisterAction implements AutoCloseable {
 
@@ -114,7 +115,7 @@ public class RegisterAction implements AutoCloseable {
       return;
     }
     System.out.println("Transaction cancelled.");
-    shutdownFunction.accept(0);
+    shutdownFunction.accept(1);
   }
 
   public SafeFuture<TransactionReceipt> sendDeposit(
