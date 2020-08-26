@@ -27,6 +27,7 @@ import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.logging.LogFormatter;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -78,7 +79,10 @@ public class BlockImporter {
                     block.getMessage());
                 return result;
               }
-              LOG.trace("Successfully imported block {}", block.getMessage().hash_tree_root());
+              LOG.trace(
+                  "Successfully imported block {} ({})",
+                  block::getSlot,
+                  () -> LogFormatter.formatHashRoot(block.getRoot()));
 
               final Optional<BlockProcessingRecord> record = result.getBlockProcessingRecord();
               eventBus.post(new ImportedBlockEvent(block));
