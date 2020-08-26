@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -124,6 +125,7 @@ public abstract class AbstractStoreTest {
     final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
     final SafeFuture<UpdatableStore> result =
         Store.create(
+            SYNC_RUNNER,
             new StubMetricsSystem(),
             blockProviderFromChainBuilder(),
             StateAndBlockProvider.NOOP,

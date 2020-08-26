@@ -47,6 +47,7 @@ import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.metrics.SettableGauge;
@@ -134,6 +135,7 @@ class Store implements UpdatableStore {
   }
 
   public static SafeFuture<UpdatableStore> create(
+      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
       final StateAndBlockProvider stateAndBlockProvider,
@@ -152,9 +154,13 @@ class Store implements UpdatableStore {
     final Map<Bytes32, SignedBeaconBlock> blocks = LimitedMap.create(config.getBlockCacheSize());
     final CachingTaskQueue<Checkpoint, BeaconState> checkpointStateTaskQueue =
         CachingTaskQueue.create(
-            metricsSystem, "memory_checkpoint_states", config.getCheckpointStateCacheSize());
+            asyncRunner,
+            metricsSystem,
+            "memory_checkpoint_states",
+            config.getCheckpointStateCacheSize());
     final CachingTaskQueue<Bytes32, SignedBlockAndState> stateTaskQueue =
-        CachingTaskQueue.create(metricsSystem, "memory_states", config.getStateCacheSize());
+        CachingTaskQueue.create(
+            asyncRunner, metricsSystem, "memory_states", config.getStateCacheSize());
 
     // Build block tree structure
     HashTree.Builder treeBuilder = HashTree.builder().rootHash(finalizedBlockAndState.getRoot());

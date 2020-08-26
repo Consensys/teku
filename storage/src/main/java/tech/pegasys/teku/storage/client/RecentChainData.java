@@ -38,6 +38,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
@@ -66,6 +67,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
   protected final ProtoArrayStorageChannel protoArrayStorageChannel;
+  protected final AsyncRunner asyncRunner;
   protected final MetricsSystem metricsSystem;
   private final ReorgEventChannel reorgEventChannel;
   private final StoreConfig storeConfig;
@@ -81,6 +83,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private volatile UInt64 genesisTime;
 
   RecentChainData(
+      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
       final BlockProvider blockProvider,
@@ -90,6 +93,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ReorgEventChannel reorgEventChannel,
       final EventBus eventBus) {
+    this.asyncRunner = asyncRunner;
     this.metricsSystem = metricsSystem;
     this.storeConfig = storeConfig;
     this.blockProvider = blockProvider;
@@ -116,7 +120,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public SafeFuture<Void> initializeFromGenesis(final BeaconState genesisState) {
     final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisState);
-    return StoreBuilder.forkChoiceStoreBuilder(metricsSystem, blockProvider, stateProvider, genesis)
+    return StoreBuilder.forkChoiceStoreBuilder(
+            asyncRunner, metricsSystem, blockProvider, stateProvider, genesis)
         .storeConfig(storeConfig)
         .build()
         .thenAccept(

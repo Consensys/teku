@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.util.collections.LimitedMap;
@@ -46,15 +47,18 @@ public class CachingTaskQueue<K, V> {
   private final Queue<CacheableTask<K, V>> queuedTasks = new ConcurrentLinkedQueue<>();
 
   private final Map<K, V> cache;
+  private final AsyncRunner asyncRunner;
   private final MetricsSystem metricsSystem;
   private final String metricsPrefix;
   private final IntSupplier activeTaskLimit;
 
   CachingTaskQueue(
+      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final String metricsPrefix,
       final IntSupplier activeTaskLimit,
       final int maxCacheSize) {
+    this.asyncRunner = asyncRunner;
     this.metricsSystem = metricsSystem;
     this.metricsPrefix = metricsPrefix;
     this.activeTaskLimit = activeTaskLimit;
@@ -73,8 +77,12 @@ public class CachingTaskQueue<K, V> {
   }
 
   public static <K, V> CachingTaskQueue<K, V> create(
-      final MetricsSystem metricsSystem, final String metricsPrefix, final int maxCacheSize) {
+      final AsyncRunner asyncRunner,
+      final MetricsSystem metricsSystem,
+      final String metricsPrefix,
+      final int maxCacheSize) {
     return new CachingTaskQueue<>(
+        asyncRunner,
         metricsSystem,
         metricsPrefix,
         () -> Math.max(2, Runtime.getRuntime().availableProcessors()),
@@ -174,7 +182,8 @@ public class CachingTaskQueue<K, V> {
       return;
     }
     activeTasks.incrementAndGet();
-    task.performTask()
+    asyncRunner
+        .runAsync(task::performTask)
         .thenPeek(result -> result.ifPresent(value -> cacheResult(task.getKey(), value)))
         .whenComplete((result, error) -> completePendingTask(task, result, error))
         .alwaysRun(
@@ -190,11 +199,16 @@ public class CachingTaskQueue<K, V> {
     lock.lock();
     try {
       final SafeFuture<Optional<V>> future = pendingTasks.remove(task.getKey());
-      if (error != null) {
-        future.completeExceptionally(error);
-      } else {
-        future.complete(result);
-      }
+      asyncRunner
+          .runAsync(
+              () -> {
+                if (error != null) {
+                  future.completeExceptionally(error);
+                } else {
+                  future.complete(result);
+                }
+              })
+          .reportExceptions();
     } finally {
       lock.unlock();
     }
