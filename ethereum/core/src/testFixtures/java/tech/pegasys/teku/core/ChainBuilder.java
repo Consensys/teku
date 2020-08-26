@@ -317,8 +317,19 @@ public class ChainBuilder {
         .map(this::getLatestBlockAndStateAtSlot)
         .filter(Objects::nonNull)
         .filter(b -> b.getSlot().compareTo(minBlockSlot) >= 0)
-        .map(SignedBlockAndState::toUnsigned)
-        .flatMap(head -> attestationGenerator.streamAttestations(head, head.getSlot()));
+        .flatMap(this::streamValidAttestationsWithTargetBlock);
+  }
+
+  /**
+   * Utility for streaming valid attestations with a specific target block.
+   *
+   * @param attestedHead the block to use as the attestation target
+   * @return a stream of valid attestations voting for the specified block
+   */
+  public Stream<Attestation> streamValidAttestationsWithTargetBlock(
+      final SignedBlockAndState attestedHead) {
+    return attestationGenerator.streamAttestations(
+        attestedHead.toUnsigned(), attestedHead.getSlot());
   }
 
   private void assertChainIsNotEmpty() {
