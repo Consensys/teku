@@ -276,9 +276,6 @@ public final class HashTreeUtil {
    *     Spec v0.5.1</a>
    */
   public static Bytes32 hash_tree_root_bitlist(Bitlist bitlist) {
-    // TODO (#2396): The following lines are a hack and can be fixed once we shift from Bytes to a
-    // real
-    // bitlist type.
     return mix_in_length(
         merkleize(
             bitfield_bytes(bitlist.serialize()),
