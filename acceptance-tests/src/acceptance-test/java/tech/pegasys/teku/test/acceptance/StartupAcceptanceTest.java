@@ -13,13 +13,12 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import java.io.File;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
-
-import java.io.File;
 
 public class StartupAcceptanceTest extends AcceptanceTestBase {
 
