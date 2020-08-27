@@ -50,10 +50,8 @@ public class RegisterAction implements AutoCloseable {
   private Web3j web3j;
   private final Consumer<String> commandStdOutput;
   private final Consumer<String> commandErrorOutput;
-  private final BLSPublicKey withdrawalPublicKey;
 
   public RegisterAction(
-      final BLSPublicKey withdrawalPublicKey,
       final String eth1NodeUrl,
       final Credentials eth1Credentials,
       final Eth1Address contractAddress,
@@ -61,7 +59,6 @@ public class RegisterAction implements AutoCloseable {
       final UInt64 amount,
       final IntConsumer shutdownFunction,
       final ConsoleAdapter consoleAdapter) {
-    this.withdrawalPublicKey = withdrawalPublicKey;
     this.eth1NodeUrl = eth1NodeUrl;
     this.eth1Credentials = eth1Credentials;
     this.contractAddress = contractAddress;
@@ -120,7 +117,8 @@ public class RegisterAction implements AutoCloseable {
     shutdownFunction.accept(0);
   }
 
-  public SafeFuture<TransactionReceipt> sendDeposit(final BLSKeyPair validatorKey) {
+  public SafeFuture<TransactionReceipt> sendDeposit(
+      final BLSKeyPair validatorKey, final BLSPublicKey withdrawalPublicKey) {
     return sender.sendDepositTransaction(
         validatorKey, withdrawalPublicKey, amount, commandStdOutput, commandErrorOutput);
   }

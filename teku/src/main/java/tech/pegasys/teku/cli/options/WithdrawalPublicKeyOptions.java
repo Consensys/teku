@@ -11,24 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.cli.deposit;
+package tech.pegasys.teku.cli.options;
 
 import java.io.File;
 import picocli.CommandLine.Option;
 
-class WithdrawalPublicKeyOptions {
+public class WithdrawalPublicKeyOptions {
 
   @Option(
       names = {"--withdrawal-public-key"},
       paramLabel = "<PUBLIC_KEY>",
       required = true,
       description = "Public withdrawal key for the validator")
-  String withdrawalKey;
+  public String withdrawalKey;
 
   @Option(
       names = {"--withdrawal-keystore-file"},
       required = true,
       paramLabel = "<FILE>",
       description = "Path to encrypted (V3) keystore containing withdrawal key for the validator")
-  File withdrawalKeystoreFile;
+  public File withdrawalKeystoreFile;
 }

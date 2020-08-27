@@ -21,7 +21,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.function.IntConsumer;
-import org.apache.tuweni.bytes.Bytes48;
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.WalletUtils;
@@ -32,10 +31,6 @@ import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
 import picocli.CommandLine.TypeConversionException;
-import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
-import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
-import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.Eth1Address;
@@ -69,9 +64,6 @@ public class RegisterParams {
   @ArgGroup(exclusive = true, multiplicity = "1")
   private Eth1PrivateKeyOptions eth1PrivateKeyOptions;
 
-  @ArgGroup(exclusive = true, multiplicity = "1")
-  private WithdrawalPublicKeyOptions withdrawalKeyOptions;
-
   @Option(
       names = {"--deposit-amount-gwei"},
       paramLabel = "<GWEI>",
@@ -104,7 +96,6 @@ public class RegisterParams {
     final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(network);
     Constants.setConstants(networkDefinition.getConstants());
     return new RegisterAction(
-        getWithdrawalPublicKey(),
         eth1NodeUrl,
         getEth1Credentials(),
         getContractAddress(networkDefinition),
@@ -128,18 +119,6 @@ public class RegisterParams {
                     "Selected network does not define a deposit contract address. Please specify one with --eth1-deposit-contract-address"));
   }
 
-  BLSPublicKey getWithdrawalPublicKey() {
-    if (withdrawalKeyOptions.withdrawalKey != null) {
-      return BLSPublicKey.fromBytesCompressed(
-          Bytes48.fromHexString(withdrawalKeyOptions.withdrawalKey));
-    } else if (withdrawalKeyOptions.withdrawalKeystoreFile != null) {
-      return getWithdrawalKeyFromKeystore();
-    } else {
-      // not meant to happen
-      throw new IllegalStateException("Withdrawal Key Options are not initialized");
-    }
-  }
-
   Credentials getEth1Credentials() {
     if (eth1PrivateKeyOptions.eth1PrivateKey != null) {
       return Credentials.create(eth1PrivateKeyOptions.eth1PrivateKey);
@@ -148,19 +127,6 @@ public class RegisterParams {
     } else {
       // not meant to happen
       throw new IllegalStateException("Eth1 Private Key Options are not initialized");
-    }
-  }
-
-  private BLSPublicKey getWithdrawalKeyFromKeystore() {
-    try {
-      final KeyStoreData keyStoreData =
-          KeyStoreLoader.loadFromFile(withdrawalKeyOptions.withdrawalKeystoreFile.toPath());
-      return BLSPublicKey.fromBytesCompressed(Bytes48.wrap(keyStoreData.getPubkey()));
-    } catch (final KeyStoreValidationException e) {
-      throw new ParameterException(
-          spec.commandLine(),
-          "Error: Unable to get withdrawal key from keystore: " + e.getMessage(),
-          e);
     }
   }
 

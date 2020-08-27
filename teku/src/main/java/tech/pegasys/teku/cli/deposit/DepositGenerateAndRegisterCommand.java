@@ -90,6 +90,8 @@ public class DepositGenerateAndRegisterCommand implements Runnable {
   @NotNull
   private Function<ValidatorKeys, SafeFuture<TransactionReceipt>> registerValidator(
       final RegisterAction registerAction) {
-    return validatorKey -> registerAction.sendDeposit(validatorKey.getValidatorKey());
+    return validatorKey ->
+        registerAction.sendDeposit(
+            validatorKey.getValidatorKey(), validatorKey.getWithdrawalKey().getPublicKey());
   }
 }
