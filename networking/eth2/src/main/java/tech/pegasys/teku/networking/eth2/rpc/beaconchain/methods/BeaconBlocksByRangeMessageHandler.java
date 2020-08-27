@@ -20,6 +20,7 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
 
 import com.google.common.base.Throwables;
+import java.nio.channels.ClosedChannelException;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -87,7 +88,8 @@ public class BeaconBlocksByRangeMessageHandler
                 LOG.trace("Rejecting beacon blocks by range request", error); // Keep full context
                 callback.completeWithErrorResponse((RpcException) rootCause);
               } else {
-                if (rootCause instanceof StreamClosedException) {
+                if (rootCause instanceof StreamClosedException
+                    || rootCause instanceof ClosedChannelException) {
                   LOG.trace("Stream closed while sending requested blocks", error);
                 } else {
                   LOG.error("Failed to process blocks by range request", error);
