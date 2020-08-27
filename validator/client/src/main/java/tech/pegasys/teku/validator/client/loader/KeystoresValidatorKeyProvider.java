@@ -13,13 +13,18 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
-
 import com.google.common.io.Files;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.signers.bls.keystore.KeyStore;
+import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
+import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.logging.StatusLogger;
+import tech.pegasys.teku.util.config.TekuConfiguration;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -31,16 +36,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.signers.bls.keystore.KeyStore;
-import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
-import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
-import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
-import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.bls.BLSSecretKey;
-import tech.pegasys.teku.logging.StatusLogger;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
 
@@ -83,7 +84,7 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
     }
   }
 
-  public Bytes32 loadBLSPrivateKey(final Path keystoreFile, final String password) {
+  private Bytes32 loadBLSPrivateKey(final Path keystoreFile, final String password) {
     try {
       final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(keystoreFile);
       if (!KeyStore.validatePassword(password, keyStoreData)) {
@@ -95,7 +96,7 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
     }
   }
 
-  public String loadPassword(final Path passwordFile) {
+  private String loadPassword(final Path passwordFile) {
     final String password;
     try {
       password = Files.asCharSource(passwordFile.toFile(), UTF_8).readFirstLine();
