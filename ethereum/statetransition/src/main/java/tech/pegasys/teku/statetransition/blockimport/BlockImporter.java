@@ -74,11 +74,11 @@ public class BlockImporter {
               if (!result.isSuccessful()) {
                 LOG.trace(
                     "Failed to import block for reason {}: {}",
-                    result::getFailureReason,
-                    () -> formatBlock(block));
+                    result.getFailureReason(),
+                    formatBlock(block));
                 return result;
               }
-              LOG.trace("Successfully imported block {}", () -> formatBlock(block));
+              LOG.trace("Successfully imported block {}", formatBlock(block));
 
               final Optional<BlockProcessingRecord> record = result.getBlockProcessingRecord();
               eventBus.post(new ImportedBlockEvent(block));
