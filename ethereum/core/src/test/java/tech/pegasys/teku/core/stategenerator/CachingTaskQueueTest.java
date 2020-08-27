@@ -14,6 +14,7 @@
 package tech.pegasys.teku.core.stategenerator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import java.util.List;
 import java.util.Map;
@@ -34,7 +35,7 @@ class CachingTaskQueueTest {
 
   private final CachingTaskQueue<Integer, String> taskQueue =
       new CachingTaskQueue<>(
-          metricsSystem, METRICS_PREFIX, () -> MAX_CONCURRENT_TASKS, MAX_CACHE_SIZE);
+          SYNC_RUNNER, metricsSystem, METRICS_PREFIX, () -> MAX_CONCURRENT_TASKS, MAX_CACHE_SIZE);
 
   @BeforeEach
   void setUp() {
