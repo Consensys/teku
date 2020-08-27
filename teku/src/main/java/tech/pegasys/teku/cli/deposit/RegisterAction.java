@@ -114,7 +114,7 @@ public class RegisterAction implements AutoCloseable {
       return;
     }
     System.out.println("Transaction cancelled.");
-    shutdownFunction.accept(0);
+    shutdownFunction.accept(1);
   }
 
   public SafeFuture<TransactionReceipt> sendDeposit(
