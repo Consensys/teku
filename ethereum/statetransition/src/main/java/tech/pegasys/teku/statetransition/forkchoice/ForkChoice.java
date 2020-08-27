@@ -166,10 +166,7 @@ public class ForkChoice {
               // a better choice than the block itself.  So the first block we receive that is a
               // child of our current chain head, must be the new chain head. If we'd had any other
               // child of the current chain head we'd have already selected it as head.
-              if (recentChainData
-                  .getHeadBlock()
-                  .map(currentHead -> currentHead.getRoot().equals(block.getParent_root()))
-                  .orElse(false)) {
+              if (recentChainData.isChildOfChainHead(block)) {
                 recentChainData.updateHead(block.getRoot(), block.getSlot());
               }
             });

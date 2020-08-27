@@ -93,7 +93,7 @@ class ForkChoiceTest {
   }
 
   @Test
-  void onBlock_shouldTriggerReorgWhenSelectingChildOfChainHeadWhenForkChoiceSlotHasAdvanced() {
+  void onBlock_shouldNotUpdateHeadWhenChainHeadHasAdvancedToIncludeEmptySlots() {
     // Advance the current head
     final UInt64 nodeSlot = UInt64.valueOf(5);
     forkChoice.processHead(nodeSlot);
@@ -103,10 +103,25 @@ class ForkChoiceTest {
         forkChoice.onBlock(blockAndState.getBlock(), Optional.of(genesis.getState()));
     assertBlockImportedSuccessfully(importResult);
 
+    assertThat(recentChainData.getHeadBlock()).contains(genesis.getBlock());
+    assertThat(recentChainData.getHeadSlot()).isEqualTo(genesis.getSlot());
+    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+  }
+
+  @Test
+  void onBlock_shouldUpdateHeadWhenChainHeadHasAdvancedToIncludeEmptySlotsButBlockIsAfterThem() {
+    // Advance the current head
+    final UInt64 nodeSlot = UInt64.valueOf(3);
+    forkChoice.processHead(nodeSlot);
+
+    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(UInt64.valueOf(4));
+    final SafeFuture<BlockImportResult> importResult =
+        forkChoice.onBlock(blockAndState.getBlock(), Optional.of(genesis.getState()));
+    assertBlockImportedSuccessfully(importResult);
+
     assertThat(recentChainData.getHeadBlock()).contains(blockAndState.getBlock());
     assertThat(recentChainData.getHeadSlot()).isEqualTo(blockAndState.getSlot());
-    assertThat(storageSystem.reorgEventChannel().getReorgEvents())
-        .contains(new ReorgEvent(blockAndState.getRoot(), blockAndState.getSlot()));
+    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
   }
 
   @Test

@@ -333,6 +333,21 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return chainHead.map(SignedBlockAndState::getSlot).orElse(UInt64.ZERO);
   }
 
+  /**
+   * Determine if
+   *
+   * @param block
+   * @return
+   */
+  public boolean isChildOfChainHead(final SignedBeaconBlock block) {
+    return chainHead
+        .map(
+            head ->
+                head.getRoot().equals(block.getParent_root())
+                    && head.getForkChoiceSlot().isLessThan(block.getSlot()))
+        .orElse(false);
+  }
+
   public boolean containsBlock(final Bytes32 root) {
     return Optional.ofNullable(store).map(s -> s.containsBlock(root)).orElse(false);
   }
