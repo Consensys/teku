@@ -334,10 +334,16 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   /**
-   * Determine if
+   * Determine if the specified block is a child of the current chain head.
    *
-   * @param block
-   * @return
+   * <p>The block parent root must be the same as the current chain head root and the block slot
+   * must be after the current fork choice head.
+   *
+   * <p>When this method returns true, updating the head to the specified block will not cause a
+   * reorg event.
+   *
+   * @param block the block to consider
+   * @return true if the block is a child of the current chain head state
    */
   public boolean isChildOfChainHead(final SignedBeaconBlock block) {
     return chainHead
