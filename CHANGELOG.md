@@ -12,6 +12,7 @@ we recommend most users use the latest `master` branch of Teku.
 
 ### Bug Fixes
 
+- Fix race condition when a block and its parents are received at around the same time which could cause the node to fall out of sync until it reverted to syncing mode to catch up
 - Fix issue where attestations from blocks could be processed prior to the block they target being available resulting in `ProtoNode: Delta to be subtracted is greater than node weight` errors
 - Return a non-zero exit code from `validator register` subcommand when the user does not confirm the transaction
 
