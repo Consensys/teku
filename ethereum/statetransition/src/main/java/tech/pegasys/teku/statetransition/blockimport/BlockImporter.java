@@ -62,7 +62,7 @@ public class BlockImporter {
     if (recentChainData.containsBlock(block.getMessage().hash_tree_root())) {
       LOG.trace(
           "Importing known block {}.  Return successful result without re-processing.",
-          formatBlock(block));
+          () -> formatBlock(block));
       return SafeFuture.completedFuture(BlockImportResult.knownBlock(block));
     }
 
