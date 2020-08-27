@@ -31,4 +31,12 @@ public class WithdrawalPublicKeyOptions {
       paramLabel = "<FILE>",
       description = "Path to encrypted (V3) keystore containing withdrawal key for the validator")
   public File withdrawalKeystoreFile;
+
+  public String getWithdrawalKey() {
+    return withdrawalKey;
+  }
+
+  public File getWithdrawalKeystoreFile() {
+    return withdrawalKeystoreFile;
+  }
 }

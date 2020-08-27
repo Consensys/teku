@@ -79,20 +79,22 @@ public class DepositRegisterCommand implements Runnable {
       final Function<String, String> envSupplier,
       final CommandSpec spec,
       final RegisterParams registerParams,
-      final ValidatorKeyOptions validatorKeyOptions) {
+      final ValidatorKeyOptions validatorKeyOptions,
+      final WithdrawalPublicKeyOptions withdrawalPublicKeyOptions) {
     this.shutdownFunction = shutdownFunction;
     this.envSupplier = envSupplier;
     this.spec = spec;
     this.registerParams = registerParams;
     this.validatorKeyOptions = validatorKeyOptions;
+    this.withdrawalKeyOptions = withdrawalPublicKeyOptions;
     this.verboseOutputParam = new VerboseOutputParam(true);
   }
 
   public BLSPublicKey getWithdrawalPublicKey() {
-    if (withdrawalKeyOptions.withdrawalKey != null) {
+    if (withdrawalKeyOptions.getWithdrawalKey() != null) {
       return BLSPublicKey.fromBytesCompressed(
-          Bytes48.fromHexString(withdrawalKeyOptions.withdrawalKey));
-    } else if (withdrawalKeyOptions.withdrawalKeystoreFile != null) {
+          Bytes48.fromHexString(withdrawalKeyOptions.getWithdrawalKey()));
+    } else if (withdrawalKeyOptions.getWithdrawalKeystoreFile() != null) {
       return getWithdrawalKeyFromKeystore();
     } else {
       // not meant to happen
@@ -103,7 +105,7 @@ public class DepositRegisterCommand implements Runnable {
   private BLSPublicKey getWithdrawalKeyFromKeystore() {
     try {
       final KeyStoreData keyStoreData =
-          KeyStoreLoader.loadFromFile(withdrawalKeyOptions.withdrawalKeystoreFile.toPath());
+          KeyStoreLoader.loadFromFile(withdrawalKeyOptions.getWithdrawalKeystoreFile().toPath());
       return BLSPublicKey.fromBytesCompressed(Bytes48.wrap(keyStoreData.getPubkey()));
     } catch (final KeyStoreValidationException e) {
       throw new CommandLine.ParameterException(
