@@ -14,6 +14,7 @@
 package tech.pegasys.teku.test.acceptance;
 
 import java.util.function.Consumer;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
