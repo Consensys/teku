@@ -55,7 +55,13 @@ public class BLS {
   }
 
   public static void resetBlsImplementation() {
-    BLS_IMPL = BlstBLS12381.INSTANCE.map(bls -> (BLS12381) bls).orElse(MikuliBLS12381.INSTANCE);
+    if (BlstBLS12381.INSTANCE.isPresent()) {
+      BLS_IMPL = BlstBLS12381.INSTANCE.get();
+      LOG.info("BLS: loaded BLST library");
+    } else {
+      BLS_IMPL = MikuliBLS12381.INSTANCE;
+      LOG.info("BLS: loaded Mikuli library");
+    }
   }
 
   /*
