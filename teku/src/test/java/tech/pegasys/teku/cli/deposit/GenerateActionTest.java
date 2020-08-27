@@ -13,22 +13,6 @@
 
 package tech.pegasys.teku.cli.deposit;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
-import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
-
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -38,6 +22,23 @@ import tech.pegasys.signers.bls.keystore.KeyStore;
 import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
 import tech.pegasys.teku.cli.deposit.GenerateAction.ValidatorPasswordOptions;
 import tech.pegasys.teku.cli.deposit.GenerateAction.WithdrawalPasswordOptions;
+
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.function.Function;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 class GenerateActionTest {
 
@@ -61,7 +62,7 @@ class GenerateActionTest {
     when(consoleAdapter.isConsoleAvailable()).thenReturn(true);
     when(consoleAdapter.readPassword(anyString(), any()))
         .thenReturn(EXPECTED_PASSWORD.toCharArray());
-    when(registerAction.sendDeposit(any())).thenReturn(completedFuture(null));
+    when(registerAction.sendDeposit(any(), any())).thenReturn(completedFuture(null));
   }
 
   @Test

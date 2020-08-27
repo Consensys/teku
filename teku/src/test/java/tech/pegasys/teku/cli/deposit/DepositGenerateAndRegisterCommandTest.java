@@ -53,7 +53,7 @@ class DepositGenerateAndRegisterCommandTest {
 
     when(generateParams.getValidatorCount()).thenReturn(1);
     when(generateAction.generateKeysStream()).thenReturn(validatorKeys.stream());
-    when(registerAction.sendDeposit(any()))
+    when(registerAction.sendDeposit(any(), any()))
         .thenReturn(SafeFuture.completedFuture(new TransactionReceipt()));
 
     final DepositGenerateAndRegisterCommand depositGenerateAndRegisterCommand =
@@ -64,7 +64,8 @@ class DepositGenerateAndRegisterCommandTest {
 
     final ValidatorKeys keys = validatorKeys.get(0);
     verify(generateAction).generateKeysStream();
-    verify(registerAction).sendDeposit(keys.getValidatorKey());
+    verify(registerAction)
+        .sendDeposit(keys.getValidatorKey(), keys.getWithdrawalKey().getPublicKey());
     verify(registerAction).close();
   }
 
@@ -75,7 +76,7 @@ class DepositGenerateAndRegisterCommandTest {
 
     when(generateParams.getValidatorCount()).thenReturn(noOfKeysToCreate);
     when(generateAction.generateKeysStream()).thenReturn(validatorKeys.stream());
-    when(registerAction.sendDeposit(any()))
+    when(registerAction.sendDeposit(any(), any()))
         .thenReturn(SafeFuture.completedFuture(new TransactionReceipt()));
 
     final DepositGenerateAndRegisterCommand depositGenerateAndRegisterCommand =
@@ -86,7 +87,10 @@ class DepositGenerateAndRegisterCommandTest {
 
     verify(generateAction).generateKeysStream();
     for (int i = 0; i < noOfKeysToCreate; i++) {
-      verify(registerAction).sendDeposit(validatorKeys.get(i).getValidatorKey());
+      verify(registerAction)
+          .sendDeposit(
+              validatorKeys.get(i).getValidatorKey(),
+              validatorKeys.get(i).getWithdrawalKey().getPublicKey());
     }
     verify(registerAction).close();
   }

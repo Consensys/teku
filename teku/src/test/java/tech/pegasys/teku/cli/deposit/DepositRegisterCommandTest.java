@@ -73,7 +73,7 @@ class DepositRegisterCommandTest {
 
     when(commandSpec.commandLine()).thenReturn(commandLine);
     when(registerParams.createRegisterAction(anyBoolean())).thenReturn(registerAction);
-    when(registerAction.sendDeposit(any())).thenReturn(completedFuture(null));
+    when(registerAction.sendDeposit(any(), any())).thenReturn(completedFuture(null));
   }
 
   @Test
@@ -89,11 +89,11 @@ class DepositRegisterCommandTest {
 
     final DepositRegisterCommand depositRegisterCommand =
         new DepositRegisterCommand(
-            shutdownFunction, envSupplier, commandSpec, registerParams, validatorKeyOptions, "");
+            shutdownFunction, envSupplier, commandSpec, registerParams, validatorKeyOptions);
 
     assertThatCode(depositRegisterCommand::run).doesNotThrowAnyException();
 
-    verify(registerAction).sendDeposit(any());
+    verify(registerAction).sendDeposit(any(), any());
   }
 
   @Test
@@ -106,11 +106,11 @@ class DepositRegisterCommandTest {
 
     final DepositRegisterCommand depositRegisterCommand =
         new DepositRegisterCommand(
-            shutdownFunction, envSupplier, commandSpec, registerParams, validatorKeyOptions, "");
+            shutdownFunction, envSupplier, commandSpec, registerParams, validatorKeyOptions);
 
     assertThatCode(depositRegisterCommand::run).doesNotThrowAnyException();
 
-    verify(registerAction).sendDeposit(any());
+    verify(registerAction).sendDeposit(any(), any());
   }
 
   private ValidatorKeyOptions buildValidatorKeyOptionsWithPasswordFile(
