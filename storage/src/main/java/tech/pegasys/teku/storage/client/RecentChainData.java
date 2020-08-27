@@ -236,12 +236,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       if (originalBestRoot
           .map(originalRoot -> hasReorgedFrom(originalRoot, originalForkChoiceSlot))
           .orElse(false)) {
-        LOG.info(
-            "Chain reorg from {} ({}) to {} ({})",
-            originalBestRoot.orElse(Bytes32.ZERO),
-            originalForkChoiceSlot,
-            newChainHead.getRoot(),
-            newChainHead.getForkChoiceSlot());
         reorgCounter.inc();
         reorgEventChannel.reorgOccurred(newChainHead.getRoot(), newChainHead.getSlot());
       }
