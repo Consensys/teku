@@ -14,15 +14,10 @@
 package tech.pegasys.teku.logging;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class LogFormatter {
   public static String formatHashRoot(final Bytes32 root) {
     final String hash = root.toUnprefixedHexString();
     return String.format("%s..%s", hash.substring(0, 6), hash.substring(hash.length() - 4));
-  }
-
-  public static String formatBlock(final UInt64 slot, final Bytes32 root) {
-    return String.format("%s (%s)", formatHashRoot(root), slot);
   }
 }
