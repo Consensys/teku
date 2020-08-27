@@ -445,16 +445,14 @@ class Store implements UpdatableStore {
     final AtomicReference<Bytes32> latestEpochBoundary = new AtomicReference<>();
     readLock.lock();
     try {
-      this.blockTree
+      blockTree
           .getHashTree()
           .processHashesInChainWhile(
               blockRoot,
               (root, parent) -> {
                 treeBuilder.childAndParentRoots(root, parent);
                 final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
-                if (blockState.isEmpty()
-                    && blockTree.isRootAtEpochBoundary(root)
-                    && shouldPersistStateAtEpoch(blockTree.getEpoch(root))) {
+                if (blockState.isEmpty() && shouldPersistState(blockTree, root)) {
                   latestEpochBoundary.compareAndExchange(null, root);
                 }
                 blockState.ifPresent(
@@ -505,9 +503,9 @@ class Store implements UpdatableStore {
                 }));
   }
 
-  boolean shouldPersistStateAtEpoch(final UInt64 epoch) {
+  boolean shouldPersistState(final BlockTree blockTree, final Bytes32 root) {
     return hotStatePersistenceFrequencyInEpochs > 0
-        && epoch.mod(hotStatePersistenceFrequencyInEpochs).equals(UInt64.ZERO);
+        && blockTree.isRootAtNthEpochBoundary(root, hotStatePersistenceFrequencyInEpochs);
   }
 
   private void putBlock(final SignedBeaconBlock block) {
