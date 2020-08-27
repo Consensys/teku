@@ -170,6 +170,7 @@ public class CachingTaskQueue<K, V> {
     activeTasks.incrementAndGet();
     asyncRunner
         .runAsync(task::performTask)
+        .thenPeek(result -> result.ifPresent(value -> cache(task.getKey(), value)))
         .whenComplete((result, error) -> completePendingTask(task, result, error))
         .alwaysRun(
             () -> {
@@ -181,7 +182,6 @@ public class CachingTaskQueue<K, V> {
 
   private synchronized void completePendingTask(
       final CacheableTask<K, V> task, final Optional<V> result, final Throwable error) {
-    result.ifPresent(value -> cache(task.getKey(), value));
     final SafeFuture<Optional<V>> future = pendingTasks.remove(task.getKey());
     asyncRunner
         .runAsync(
