@@ -103,7 +103,7 @@ public class BlockManager extends Service implements SlotEventsChannel {
   void onBlockImported(ImportedBlockEvent blockImportedEvent) {
     // Check if any pending blocks can now be imported
     final SignedBeaconBlock block = blockImportedEvent.getBlock();
-    final Bytes32 blockRoot = block.getRoot();
+    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     pendingBlocks.remove(block);
     final List<SignedBeaconBlock> children = pendingBlocks.getItemsDependingOn(blockRoot, false);
     children.forEach(pendingBlocks::remove);
@@ -158,16 +158,16 @@ public class BlockManager extends Service implements SlotEventsChannel {
   private boolean blockIsKnown(final SignedBeaconBlock block) {
     return pendingBlocks.contains(block)
         || futureBlocks.contains(block)
-        || recentChainData.containsBlock(block.getRoot());
+        || recentChainData.containsBlock(block.getMessage().hash_tree_root());
   }
 
   private boolean blockIsInvalid(final SignedBeaconBlock block) {
-    return invalidBlockRoots.contains(block.getRoot())
+    return invalidBlockRoots.contains(block.getMessage().hash_tree_root())
         || invalidBlockRoots.contains(block.getParent_root());
   }
 
   private void dropInvalidBlock(final SignedBeaconBlock block) {
-    final Bytes32 blockRoot = block.getRoot();
+    final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final Set<SignedBeaconBlock> blocksToDrop = new HashSet<>();
     blocksToDrop.add(block);
     blocksToDrop.addAll(pendingBlocks.getItemsDependingOn(blockRoot, true));
