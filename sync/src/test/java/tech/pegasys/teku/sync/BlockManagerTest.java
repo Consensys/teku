@@ -142,7 +142,7 @@ public class BlockManagerTest {
             pendingBlocks,
             futureBlocks,
             recentBlockFetcher);
-    blockManager.start();
+    assertThat(blockManager.start()).isCompleted();
 
     final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
     final UInt64 nextNextSlot = nextSlot.plus(UInt64.ONE);
