@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.client;
 
 import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.logging.LogFormatter.formatBlock;
 
 import com.google.common.eventbus.EventBus;
 import java.util.NavigableMap;
@@ -236,6 +237,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       if (originalBestRoot
           .map(originalRoot -> hasReorgedFrom(originalRoot, originalForkChoiceSlot))
           .orElse(false)) {
+        LOG.info(
+            "Chain reorg from {} to {}",
+            formatBlock(originalForkChoiceSlot, originalBestRoot.orElse(Bytes32.ZERO)),
+            formatBlock(newChainHead.getForkChoiceSlot(), newChainHead.getRoot()));
         reorgCounter.inc();
         reorgEventChannel.reorgOccurred(newChainHead.getRoot(), newChainHead.getSlot());
       }

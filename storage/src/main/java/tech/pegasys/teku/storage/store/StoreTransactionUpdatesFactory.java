@@ -122,8 +122,7 @@ class StoreTransactionUpdatesFactory {
     final BlockTree blockTree = updatedBlockTree.orElse(baseStore.blockTree);
     final Map<Bytes32, BeaconState> statesToPersist =
         hotBlockAndStates.entrySet().stream()
-            .filter(e -> blockTree.isRootAtEpochBoundary(e.getKey()))
-            .filter(e -> baseStore.shouldPersistStateAtEpoch(blockTree.getEpoch(e.getKey())))
+            .filter(e -> baseStore.shouldPersistState(blockTree, e.getKey()))
             .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().getState()));
     if (statesToPersist.size() > 0) {
       LOG.trace("Persist {} hot states", statesToPersist.size());
