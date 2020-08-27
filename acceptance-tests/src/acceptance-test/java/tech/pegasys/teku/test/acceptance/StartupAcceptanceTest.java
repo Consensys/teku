@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import java.io.File;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+
+import java.io.File;
 
 public class StartupAcceptanceTest extends AcceptanceTestBase {
 
@@ -43,6 +44,14 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     node2.start();
     node2.waitForGenesisTime(genesisTime);
     node2.waitForNewBlock();
+  }
+
+  @Test
+  public void shouldFinalize() throws Exception {
+    final TekuNode node1 = createTekuNode();
+    node1.start();
+    node1.waitForNewFinalization();
+    node1.stop();
   }
 
   @Test

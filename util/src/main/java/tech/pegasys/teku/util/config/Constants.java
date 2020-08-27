@@ -13,15 +13,16 @@
 
 package tech.pegasys.teku.util.config;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.util.resource.ResourceLoader;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
 
 public class Constants {
 
@@ -176,7 +177,7 @@ public class Constants {
 
   private static InputStream createInputStream(final String source) throws IOException {
     return ResourceLoader.classpathUrlOrFile(
-            Constants.class, name -> name + ".yaml", "mainnet", "minimal", "altona", "medalla")
+            Constants.class, name -> name + ".yaml", "mainnet", "minimal", "swift", "altona", "medalla")
         .load(source)
         .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
   }
