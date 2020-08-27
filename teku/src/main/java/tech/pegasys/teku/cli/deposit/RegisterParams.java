@@ -13,7 +13,14 @@
 
 package tech.pegasys.teku.cli.deposit;
 
+import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
+
 import com.google.common.annotations.VisibleForTesting;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Optional;
+import java.util.function.IntConsumer;
 import org.apache.tuweni.bytes.Bytes48;
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
@@ -33,14 +40,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.NetworkDefinition;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Optional;
-import java.util.function.IntConsumer;
-
-import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 
 public class RegisterParams {
 
@@ -154,7 +153,8 @@ public class RegisterParams {
 
   private BLSPublicKey getWithdrawalKeyFromKeystore() {
     try {
-      final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(withdrawalKeyOptions.withdrawalKeystoreFile.toPath());
+      final KeyStoreData keyStoreData =
+          KeyStoreLoader.loadFromFile(withdrawalKeyOptions.withdrawalKeystoreFile.toPath());
       return BLSPublicKey.fromBytesCompressed(Bytes48.wrap(keyStoreData.getPubkey()));
     } catch (final KeyStoreValidationException e) {
       throw new ParameterException(
