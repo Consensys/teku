@@ -21,8 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.IntSupplier;
 import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -39,8 +37,6 @@ public class CachingTaskQueue<K, V> {
   private final Counter duplicateTaskCounter;
   private final Counter newTaskCounter;
   private final Counter rebasedTaskCounter;
-
-  private final Lock lock = new ReentrantLock();
 
   private final ConcurrentMap<K, SafeFuture<Optional<V>>> pendingTasks = new ConcurrentHashMap<>();
   private final AtomicInteger activeTasks = new AtomicInteger(0);
@@ -112,44 +108,39 @@ public class CachingTaskQueue<K, V> {
         cache::size);
   }
 
-  public SafeFuture<Optional<V>> perform(final CacheableTask<K, V> task) {
-    lock.lock();
-    try {
-      // Check if a completed result is available
-      final V cachedResult = cache.get(task.getKey());
-      if (cachedResult != null) {
-        cachedTaskCounter.inc();
-        return SafeFuture.completedFuture(Optional.of(cachedResult));
-      }
-
-      // Check if the task is already scheduled
-      final SafeFuture<Optional<V>> currentPendingTask = pendingTasks.get(task.getKey());
-      if (currentPendingTask != null) {
-        duplicateTaskCounter.inc();
-        return currentPendingTask;
-      }
-
-      // Check if there's a better starting point (in cache or in progress)
-      final Optional<SafeFuture<Optional<V>>> newBase =
-          task.streamIntermediateSteps()
-              .map(
-                  key ->
-                      Optional.ofNullable(cache.get(key))
-                          .map(value -> SafeFuture.completedFuture(Optional.of(value)))
-                          .orElse(pendingTasks.get(key)))
-              .filter(Objects::nonNull)
-              .findFirst();
-      if (newBase.isPresent()) {
-        rebasedTaskCounter.inc();
-        return newBase.get().thenCompose(ancestorResult -> queueTask(task.rebase(ancestorResult)));
-      }
-
-      // Schedule the task for execution
-      newTaskCounter.inc();
-      return queueTask(task);
-    } finally {
-      lock.unlock();
+  public synchronized SafeFuture<Optional<V>> perform(final CacheableTask<K, V> task) {
+    // Check if a completed result is available
+    final V cachedResult = cache.get(task.getKey());
+    if (cachedResult != null) {
+      cachedTaskCounter.inc();
+      return SafeFuture.completedFuture(Optional.of(cachedResult));
     }
+
+    // Check if the task is already scheduled
+    final SafeFuture<Optional<V>> currentPendingTask = pendingTasks.get(task.getKey());
+    if (currentPendingTask != null) {
+      duplicateTaskCounter.inc();
+      return currentPendingTask;
+    }
+
+    // Check if there's a better starting point (in cache or in progress)
+    final Optional<SafeFuture<Optional<V>>> newBase =
+        task.streamIntermediateSteps()
+            .map(
+                key ->
+                    Optional.ofNullable(cache.get(key))
+                        .map(value -> SafeFuture.completedFuture(Optional.of(value)))
+                        .orElse(pendingTasks.get(key)))
+            .filter(Objects::nonNull)
+            .findFirst();
+    if (newBase.isPresent()) {
+      rebasedTaskCounter.inc();
+      return newBase.get().thenCompose(ancestorResult -> queueTask(task.rebase(ancestorResult)));
+    }
+
+    // Schedule the task for execution
+    newTaskCounter.inc();
+    return queueTask(task);
   }
 
   public Optional<V> getIfAvailable(final K key) {
@@ -164,14 +155,9 @@ public class CachingTaskQueue<K, V> {
     return generationResult;
   }
 
-  private void tryProcessNext() {
-    lock.lock();
-    try {
-      while (activeTasks.get() < activeTaskLimit.getAsInt() && !queuedTasks.isEmpty()) {
-        processNext();
-      }
-    } finally {
-      lock.unlock();
+  private synchronized void tryProcessNext() {
+    while (activeTasks.get() < activeTaskLimit.getAsInt() && !queuedTasks.isEmpty()) {
+      processNext();
     }
   }
 
@@ -184,7 +170,6 @@ public class CachingTaskQueue<K, V> {
     activeTasks.incrementAndGet();
     asyncRunner
         .runAsync(task::performTask)
-        .thenPeek(result -> result.ifPresent(value -> cacheResult(task.getKey(), value)))
         .whenComplete((result, error) -> completePendingTask(task, result, error))
         .alwaysRun(
             () -> {
@@ -194,33 +179,20 @@ public class CachingTaskQueue<K, V> {
         .reportExceptions();
   }
 
-  private void completePendingTask(
+  private synchronized void completePendingTask(
       final CacheableTask<K, V> task, final Optional<V> result, final Throwable error) {
-    lock.lock();
-    try {
-      final SafeFuture<Optional<V>> future = pendingTasks.remove(task.getKey());
-      asyncRunner
-          .runAsync(
-              () -> {
-                if (error != null) {
-                  future.completeExceptionally(error);
-                } else {
-                  future.complete(result);
-                }
-              })
-          .reportExceptions();
-    } finally {
-      lock.unlock();
-    }
-  }
-
-  private void cacheResult(final K key, final V value) {
-    lock.lock();
-    try {
-      cache.put(key, value);
-    } finally {
-      lock.unlock();
-    }
+    result.ifPresent(value -> cache(task.getKey(), value));
+    final SafeFuture<Optional<V>> future = pendingTasks.remove(task.getKey());
+    asyncRunner
+        .runAsync(
+            () -> {
+              if (error != null) {
+                future.completeExceptionally(error);
+              } else {
+                future.complete(result);
+              }
+            })
+        .reportExceptions();
   }
 
   public void cache(final K key, final V value) {
