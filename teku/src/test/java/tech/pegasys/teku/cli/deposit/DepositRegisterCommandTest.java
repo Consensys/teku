@@ -73,7 +73,7 @@ class DepositRegisterCommandTest {
 
     when(commandSpec.commandLine()).thenReturn(commandLine);
     when(registerParams.createRegisterAction(anyBoolean())).thenReturn(registerAction);
-    when(registerAction.sendDeposit(any(), any())).thenReturn(completedFuture(null));
+    when(registerAction.sendDeposit(any())).thenReturn(completedFuture(null));
   }
 
   @Test
@@ -93,7 +93,7 @@ class DepositRegisterCommandTest {
 
     assertThatCode(depositRegisterCommand::run).doesNotThrowAnyException();
 
-    verify(registerAction).sendDeposit(any(), any());
+    verify(registerAction).sendDeposit(any());
   }
 
   @Test
@@ -110,7 +110,7 @@ class DepositRegisterCommandTest {
 
     assertThatCode(depositRegisterCommand::run).doesNotThrowAnyException();
 
-    verify(registerAction).sendDeposit(any(), any());
+    verify(registerAction).sendDeposit(any());
   }
 
   private ValidatorKeyOptions buildValidatorKeyOptionsWithPasswordFile(

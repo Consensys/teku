@@ -61,7 +61,7 @@ class GenerateActionTest {
     when(consoleAdapter.isConsoleAvailable()).thenReturn(true);
     when(consoleAdapter.readPassword(anyString(), any()))
         .thenReturn(EXPECTED_PASSWORD.toCharArray());
-    when(registerAction.sendDeposit(any(), any())).thenReturn(completedFuture(null));
+    when(registerAction.sendDeposit(any())).thenReturn(completedFuture(null));
   }
 
   @Test
