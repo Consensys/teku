@@ -103,8 +103,8 @@ public class BlockTree {
         .getParent(blockRoot)
         .filter(this::contains)
         .map(this::getEpoch)
-        .map(e -> e.dividedBy(n))
-        .map(parentEpoch -> getEpoch(blockRoot).dividedBy(n).isGreaterThan(parentEpoch))
+        .map(
+            parentEpoch -> getEpoch(blockRoot).dividedBy(n).isGreaterThan(parentEpoch.dividedBy(n)))
         .orElse(false);
   }
 
