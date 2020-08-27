@@ -19,6 +19,7 @@ import java.util.Optional;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.util.Supplier;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -59,6 +60,7 @@ public class BlockImporter {
 
   @CheckReturnValue
   public SafeFuture<BlockImportResult> importBlock(SignedBeaconBlock block) {
+    LOG.trace("Import block {}", formatBlock(block));
     if (recentChainData.containsBlock(block.getMessage().hash_tree_root())) {
       LOG.trace(
           "Importing known block {}.  Return successful result without re-processing.",
@@ -74,7 +76,7 @@ public class BlockImporter {
               if (!result.isSuccessful()) {
                 LOG.trace(
                     "Failed to import block for reason {}: {}",
-                    result.getFailureReason(),
+                    result::getFailureReason,
                     formatBlock(block));
                 return result;
               }
@@ -110,7 +112,7 @@ public class BlockImporter {
                     "Failed to import proposed block for reason "
                         + result.getFailureReason()
                         + ": "
-                        + formatBlock(blockProposedEvent.getBlock()),
+                        + formatBlock(blockProposedEvent.getBlock()).get(),
                     result.getFailureCause().orElse(null));
               }
             })
@@ -152,7 +154,7 @@ public class BlockImporter {
     voluntaryExitSubscribers.subscribe(verifiedBlockVoluntaryExitsListener);
   }
 
-  private String formatBlock(final SignedBeaconBlock block) {
-    return LogFormatter.formatBlock(block.getSlot(), block.getRoot());
+  private Supplier<Object> formatBlock(final SignedBeaconBlock block) {
+    return () -> LogFormatter.formatBlock(block.getSlot(), block.getRoot());
   }
 }
