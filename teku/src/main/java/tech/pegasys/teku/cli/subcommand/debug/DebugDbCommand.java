@@ -30,6 +30,9 @@ import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
+import tech.pegasys.teku.infrastructure.async.ScheduledExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.server.Database;
@@ -137,13 +140,24 @@ public class DebugDbCommand implements Runnable {
           final Path outputFile)
       throws Exception {
     setConstants(networkOptions);
+    final AsyncRunner asyncRunner =
+        ScheduledExecutorAsyncRunner.create(
+            "async", 1, new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
     try (final Database database = createDatabase(dataOptions, networkOptions)) {
       final Optional<BeaconState> state =
           database
               .createMemoryStore()
-              .map(builder -> builder.blockProvider(BlockProvider.NOOP).build().join())
+              .map(
+                  builder ->
+                      builder
+                          .blockProvider(BlockProvider.NOOP)
+                          .asyncRunner(asyncRunner)
+                          .build()
+                          .join())
               .map(store -> store.getLatestFinalizedBlockAndState().getState());
       return writeState(outputFile, state);
+    } finally {
+      asyncRunner.shutdown();
     }
   }
 

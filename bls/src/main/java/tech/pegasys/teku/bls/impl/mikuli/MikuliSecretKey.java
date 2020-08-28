@@ -84,11 +84,6 @@ public class MikuliSecretKey implements SecretKey {
   }
 
   @Override
-  public String toString() {
-    return toBytes().toHexString();
-  }
-
-  @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
