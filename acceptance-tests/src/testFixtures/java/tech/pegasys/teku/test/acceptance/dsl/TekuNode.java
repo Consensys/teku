@@ -282,7 +282,6 @@ public class TekuNode extends Node {
     private final PrivKey privateKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
     private final PeerId peerId = PeerId.fromPubKey(privateKey.publicKey());
     private static final String VALIDATORS_FILE_PATH = "/validators.yml";
-    private static final String P2P_PRIVATE_KEY_FILE_PATH = "/p2p-private-key.key";
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 
     private Map<String, Object> configMap = new HashMap<>();
