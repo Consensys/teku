@@ -27,11 +27,13 @@ import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 
 public class StoreBuilder {
+  AsyncRunner asyncRunner;
   MetricsSystem metricsSystem;
   BlockProvider blockProvider;
   StateAndBlockProvider stateAndBlockProvider;
@@ -54,6 +56,7 @@ public class StoreBuilder {
   }
 
   public static StoreBuilder forkChoiceStoreBuilder(
+      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
       final StateAndBlockProvider stateAndBlockProvider,
@@ -69,6 +72,7 @@ public class StoreBuilder {
     rootToSlotMap.put(anchor.getRoot(), anchor.getState().getSlot());
 
     return create()
+        .asyncRunner(asyncRunner)
         .metricsSystem(metricsSystem)
         .blockProvider(blockProvider)
         .stateProvider(stateAndBlockProvider)
@@ -87,6 +91,7 @@ public class StoreBuilder {
     assertValid();
 
     return Store.create(
+        asyncRunner,
         metricsSystem,
         blockProvider,
         stateAndBlockProvider,
@@ -103,6 +108,7 @@ public class StoreBuilder {
   }
 
   private void assertValid() {
+    checkState(asyncRunner != null, "Async runner must be defined");
     checkState(metricsSystem != null, "Metrics system must be defined");
     checkState(blockProvider != null, "Block provider must be defined");
     checkState(stateAndBlockProvider != null, "StateAndBlockProvider must be defined");
@@ -118,6 +124,11 @@ public class StoreBuilder {
     checkState(
         Objects.equals(childToParentRoot.keySet(), rootToSlotMap.keySet()),
         "Child-parent and root-slot mappings must be consistent");
+  }
+
+  public StoreBuilder asyncRunner(final AsyncRunner asyncRunner) {
+    this.asyncRunner = asyncRunner;
+    return this;
   }
 
   public StoreBuilder metricsSystem(final MetricsSystem metricsSystem) {
