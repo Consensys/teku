@@ -20,6 +20,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
 
 public class DepositsFromBlockEventTest {
   final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -49,7 +50,7 @@ public class DepositsFromBlockEventTest {
             () ->
                 DepositsFromBlockEvent.create(
                     UInt64.ONE, dataStructureUtil.randomBytes32(), UInt64.ONE, depositStream))
-        .isInstanceOf(InvalidDepositsException.class)
+        .isInstanceOf(InvalidDepositEventsException.class)
         .hasMessageContaining(
             "Deposits must be ordered and contiguous. Deposit at index 3 does not follow prior deposit at index 1");
   }
@@ -69,7 +70,7 @@ public class DepositsFromBlockEventTest {
             () ->
                 DepositsFromBlockEvent.create(
                     UInt64.ONE, dataStructureUtil.randomBytes32(), UInt64.ONE, depositStream))
-        .isInstanceOf(InvalidDepositsException.class)
+        .isInstanceOf(InvalidDepositEventsException.class)
         .hasMessageContaining(
             "Deposits must be ordered and contiguous. Deposit at index 7 does not follow prior deposit at index 5");
   }
@@ -83,7 +84,7 @@ public class DepositsFromBlockEventTest {
             () ->
                 DepositsFromBlockEvent.create(
                     UInt64.ONE, dataStructureUtil.randomBytes32(), UInt64.ONE, depositStream))
-        .isInstanceOf(InvalidDepositsException.class)
+        .isInstanceOf(InvalidDepositEventsException.class)
         .hasMessageContaining(
             "Deposits must be ordered and contiguous. Deposit at index 1 does not follow prior deposit at index 1");
   }

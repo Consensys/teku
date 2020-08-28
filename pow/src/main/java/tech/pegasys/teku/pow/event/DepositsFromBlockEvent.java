@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
 
 public class DepositsFromBlockEvent {
   private final UInt64 blockNumber;
@@ -56,7 +57,7 @@ public class DepositsFromBlockEvent {
             String.format(
                 "Deposits must be ordered and contiguous. Deposit at index %s does not follow prior deposit at index %s",
                 currentIndex, previousIndex);
-        throw new InvalidDepositsException(error);
+        throw new InvalidDepositEventsException(error);
       }
       previousIndex = currentIndex;
     }

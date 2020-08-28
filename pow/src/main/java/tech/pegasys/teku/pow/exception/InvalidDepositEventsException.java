@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.pow.event;
+package tech.pegasys.teku.pow.exception;
 
-public class InvalidDepositsException extends IllegalArgumentException {
+public class InvalidDepositEventsException extends IllegalArgumentException {
 
-  public InvalidDepositsException(final String s) {
+  public InvalidDepositEventsException(final String s) {
     super(s);
   }
 }
