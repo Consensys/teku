@@ -19,9 +19,12 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.core.StateTransition;
@@ -174,9 +177,21 @@ class ForkChoiceTest {
     final Attestation attestation =
         chainBuilder
             .streamValidAttestationsWithTargetBlock(forkBlock)
-            .limit(3)
             .findFirst()
-            .orElseThrow();
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Failed to create attestation for block "
+                            + forkBlock.getRoot()
+                            + " genesis root: "
+                            + genesis.getRoot()
+                            + " chain head: "
+                            + chainBuilder.getLatestBlockAndState().getRoot()
+                            + " validators: "
+                            + chainBuilder.getValidatorKeys().stream()
+                                .map(BLSKeyPair::getPublicKey)
+                                .map(BLSPublicKey::toString)
+                                .collect(Collectors.joining(", "))));
     options.addAttestation(attestation);
     final SignedBlockAndState blockWithAttestations =
         chainBuilder.generateBlockAtSlot(UInt64.valueOf(4), options);
