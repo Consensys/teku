@@ -106,7 +106,11 @@ class ForkChoiceTest {
     assertThat(recentChainData.getHeadBlock()).contains(blockAndState.getBlock());
     assertThat(recentChainData.getHeadSlot()).isEqualTo(blockAndState.getSlot());
     assertThat(storageSystem.reorgEventChannel().getReorgEvents())
-        .contains(new ReorgEvent(blockAndState.getRoot(), blockAndState.getSlot()));
+        .contains(
+            new ReorgEvent(
+                blockAndState.getRoot(),
+                blockAndState.getSlot(),
+                blockAndState.getSlot().minus(1)));
   }
 
   @Test

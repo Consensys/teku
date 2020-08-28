@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.client;
 
 import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.teku.logging.LogFormatter.formatBlock;
 
 import com.google.common.eventbus.EventBus;
@@ -56,6 +57,7 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreUpdateHandler;
+import tech.pegasys.teku.util.config.Constants;
 
 /** This class is the ChainStorage client-side logic */
 public abstract class RecentChainData implements StoreUpdateHandler {
@@ -229,24 +231,49 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         LOG.info("Skipping head block update to avoid potential rollback of the chain head.");
         return;
       }
-      final Optional<Bytes32> originalBestRoot = originalHead.map(SignedBlockAndState::getRoot);
-      final UInt64 originalForkChoiceSlot =
-          originalHead.map(ChainHead::getForkChoiceSlot).orElse(UInt64.ZERO);
-
       this.chainHead = Optional.of(newChainHead);
-      if (originalBestRoot
-          .map(originalRoot -> hasReorgedFrom(originalRoot, originalForkChoiceSlot))
+      if (originalHead
+          .map(head -> hasReorgedFrom(head.getRoot(), head.getForkChoiceSlot()))
           .orElse(false)) {
+
+        final ChainHead previousChainHead = originalHead.get();
+
+        final UInt64 commonAncestorSlot =
+            findCommonAncestor(previousChainHead.getState(), newChainHead.getState());
+
         LOG.info(
             "Chain reorg from {} to {}",
-            formatBlock(originalForkChoiceSlot, originalBestRoot.orElse(Bytes32.ZERO)),
+            formatBlock(previousChainHead.getForkChoiceSlot(), previousChainHead.getRoot()),
             formatBlock(newChainHead.getForkChoiceSlot(), newChainHead.getRoot()));
+
         reorgCounter.inc();
-        reorgEventChannel.reorgOccurred(newChainHead.getRoot(), newChainHead.getSlot());
+        reorgEventChannel.reorgOccurred(
+            newChainHead.getRoot(), newChainHead.getSlot(), commonAncestorSlot);
       }
     }
 
     bestBlockInitialized.complete(null);
+  }
+
+  private UInt64 findCommonAncestor(final BeaconState state1, final BeaconState state2) {
+    UInt64 slot = state1.getSlot().min(state2.getSlot());
+    UInt64 minSlotWithHistoricRoot =
+        state1
+            .getSlot()
+            .max(state2.getSlot())
+            .max(Constants.SLOTS_PER_HISTORICAL_ROOT)
+            .minus(Constants.SLOTS_PER_HISTORICAL_ROOT);
+    while (slot.isGreaterThan(minSlotWithHistoricRoot)) {
+      if (get_block_root_at_slot(state1, slot).equals(get_block_root_at_slot(state2, slot))) {
+        return slot;
+      }
+      slot = slot.minus(1);
+    }
+    // Couldn't find a common ancestor in the available block roots so fallback to finalized
+    return state1
+        .getFinalized_checkpoint()
+        .getEpochStartSlot()
+        .min(state2.getFinalized_checkpoint().getEpochStartSlot());
   }
 
   private boolean hasReorgedFrom(

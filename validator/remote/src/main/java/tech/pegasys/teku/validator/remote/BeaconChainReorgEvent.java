@@ -11,14 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.api;
+package tech.pegasys.teku.validator.remote;
 
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class StubReorgEventChannel implements ReorgEventChannel {
+public class BeaconChainReorgEvent extends BeaconChainEvent {
 
-  @Override
-  public void reorgOccurred(
-      final Bytes32 bestBlockRoot, final UInt64 bestSlot, final UInt64 commonAncestorSlot) {}
+  private final UInt64 commonAncestorSlot;
+
+  public BeaconChainReorgEvent(
+      final String name, final UInt64 data, final UInt64 commonAncestorSlot) {
+    super(name, data);
+    this.commonAncestorSlot = commonAncestorSlot;
+  }
+
+  public UInt64 getCommonAncestorSlot() {
+    return commonAncestorSlot;
+  }
 }

@@ -272,6 +272,16 @@ public final class UInt64 implements Comparable<UInt64> {
   }
 
   /**
+   * Return the larger of this value or the specified value.
+   *
+   * @param other the value to compare with, treated as signed
+   * @return the larger value
+   */
+  public UInt64 max(final long other) {
+    return max(UInt64.valueOf(other));
+  }
+
+  /**
    * Return the smaller of this value or the specified value.
    *
    * @param other the value to compare with
@@ -279,6 +289,16 @@ public final class UInt64 implements Comparable<UInt64> {
    */
   public UInt64 min(final UInt64 other) {
     return compareTo(other) >= 0 ? other : this;
+  }
+
+  /**
+   * Return the smaller of this value or the specified value.
+   *
+   * @param other the value to compare with, treated as signed
+   * @return the larger value
+   */
+  public UInt64 min(final long other) {
+    return min(UInt64.valueOf(other));
   }
 
   @Override
