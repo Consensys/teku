@@ -1,0 +1,23 @@
+jar { enabled = false }
+
+dependencies {
+    integrationTestImplementation project(':bls')
+    integrationTestImplementation project(':data')
+    integrationTestImplementation project(':ethereum:core')
+    integrationTestImplementation project(':ethereum:datastructures')
+    integrationTestImplementation project(':ethereum:statetransition')
+    integrationTestImplementation project(':eth-tests')
+    integrationTestImplementation project(':protoarray')
+    integrationTestImplementation project(':ssz')
+    integrationTestImplementation project(':storage')
+    integrationTestImplementation project(':infrastructure:async')
+    integrationTestImplementation project(':util')
+
+    integrationTestImplementation testFixtures(project(':storage'))
+
+    integrationTestImplementation 'com.fasterxml.jackson.core:jackson-databind'
+    integrationTestImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+    integrationTestImplementation 'org.apache.tuweni:tuweni-bytes'
+    integrationTestImplementation 'org.apache.tuweni:tuweni-junit'
+    integrationTestImplementation 'org.miracl.milagro.amcl:milagro-crypto-java'
+}
