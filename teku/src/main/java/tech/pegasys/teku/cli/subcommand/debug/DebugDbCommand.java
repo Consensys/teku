@@ -149,7 +149,8 @@ public class DebugDbCommand implements Runnable {
     final AsyncRunner asyncRunner =
         ScheduledExecutorAsyncRunner.create(
             "async", 1, new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
-    try (final Database database = createDatabase(dataOptions, dataStorageOptions, networkOptions)) {
+    try (final Database database =
+        createDatabase(dataOptions, dataStorageOptions, networkOptions)) {
       final Optional<BeaconState> state =
           database
               .createMemoryStore()
