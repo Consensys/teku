@@ -238,8 +238,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
         final ChainHead previousChainHead = originalHead.get();
 
-        final UInt64 commonAncestorSlot =
-            findCommonAncestor(previousChainHead.getState(), newChainHead.getState());
+        final UInt64 commonAncestorSlot = findCommonAncestor(previousChainHead, newChainHead);
 
         LOG.info(
             "Chain reorg from {} to {}",
@@ -255,19 +254,34 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     bestBlockInitialized.complete(null);
   }
 
-  private UInt64 findCommonAncestor(final BeaconState state1, final BeaconState state2) {
-    UInt64 slot = state1.getSlot().min(state2.getSlot());
+  private UInt64 findCommonAncestor(final ChainHead chainHead1, final ChainHead chainHead2) {
+    if (chainHead1.getSlot().equals(UInt64.ZERO) || chainHead2.getSlot().equals(UInt64.ZERO)) {
+      // One fork has no blocks so the only possible common ancestor is genesis.
+      return UInt64.ZERO;
+    }
+    // Handle the case of empty slots being filled. The state doesn't include the block root for its
+    // own slot, so we need to check this explicitly before searching through the historical block
+    // roots
+    if (chainHead1.getRoot().equals(chainHead2.getParentRoot())) {
+      return chainHead1.getSlot();
+    }
+    if (chainHead2.getRoot().equals(chainHead1.getParentRoot())) {
+      return chainHead2.getSlot();
+    }
+    // Forks differ by more than just empty slots, go through the block histories
+    final BeaconState state1 = chainHead1.getState();
+    final BeaconState state2 = chainHead2.getState();
+    UInt64 slot = state1.getSlot().min(state2.getSlot()).minus(1);
+    final UInt64 longestChainSlot = state1.getSlot().max(state2.getSlot());
     UInt64 minSlotWithHistoricRoot =
-        state1
-            .getSlot()
-            .max(state2.getSlot())
-            .max(Constants.SLOTS_PER_HISTORICAL_ROOT)
+        longestChainSlot
+            .max(Constants.SLOTS_PER_HISTORICAL_ROOT) // 0 if we would have underflowed
             .minus(Constants.SLOTS_PER_HISTORICAL_ROOT);
     while (slot.isGreaterThan(minSlotWithHistoricRoot)) {
+      slot = slot.minus(1);
       if (get_block_root_at_slot(state1, slot).equals(get_block_root_at_slot(state2, slot))) {
         return slot;
       }
-      slot = slot.minus(1);
     }
     // Couldn't find a common ancestor in the available block roots so fallback to finalized
     return state1

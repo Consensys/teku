@@ -213,9 +213,9 @@ class RecentChainDataTest {
     importBlocksAndStates(storageClient, chainBuilder);
     storageClient.updateHead(slot2Block.getRoot(), slot2Block.getSlot());
     final List<ReorgEvent> reorgEvents = storageSystem.reorgEventChannel().getReorgEvents();
-    assertThat(reorgEvents).hasSize(1);
-    assertThat(reorgEvents.get(0).getBestBlockRoot()).isEqualTo(slot2Block.getRoot());
-    assertThat(reorgEvents.get(0).getBestSlot()).isEqualTo(slot2Block.getSlot());
+    assertThat(reorgEvents)
+        .containsExactly(
+            new ReorgEvent(slot2Block.getRoot(), slot2Block.getSlot(), slot1Block.getSlot()));
     assertThat(getReorgCountMetric(storageSystem)).isEqualTo(1);
   }
 
@@ -254,11 +254,10 @@ class RecentChainDataTest {
     preGenesisStorageClient.updateHead(
         latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
     // Check reorg event
-    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents().size()).isEqualTo(1);
-    final ReorgEvent reorgEvent =
-        preGenesisStorageSystem.reorgEventChannel().getReorgEvents().get(0);
-    assertThat(reorgEvent.getBestBlockRoot()).isEqualTo(latestForkBlockAndState.getRoot());
-    assertThat(reorgEvent.getBestSlot()).isEqualTo(latestForkBlockAndState.getSlot());
+    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents())
+        .containsExactly(
+            new ReorgEvent(
+                latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot(), ONE));
   }
 
   @Test
@@ -299,10 +298,10 @@ class RecentChainDataTest {
     preGenesisStorageClient.updateHead(
         latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot());
     // Check reorg event
-    final ReorgEvent reorgEvent =
-        preGenesisStorageSystem.reorgEventChannel().getReorgEvents().get(0);
-    assertThat(reorgEvent.getBestBlockRoot()).isEqualTo(latestForkBlockAndState.getRoot());
-    assertThat(reorgEvent.getBestSlot()).isEqualTo(latestForkBlockAndState.getSlot());
+    assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents())
+        .containsExactly(
+            new ReorgEvent(
+                latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot(), ONE));
   }
 
   @Test
