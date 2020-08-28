@@ -45,6 +45,12 @@ public class StatusLogger {
     log.warn("Spec failed for {}: {}", description, cause, cause);
   }
 
+  public void eth1DepositEventsFailure(final Throwable cause) {
+    log.fatal(
+        "Encountered a problem retrieving deposit events from eth1 endpoint: " + cause.toString(),
+        cause);
+  }
+
   public void unexpectedFailure(final String description, final Throwable cause) {
     log.error("PLEASE FIX OR REPORT | Unexpected exception thrown for {}", description, cause);
   }
