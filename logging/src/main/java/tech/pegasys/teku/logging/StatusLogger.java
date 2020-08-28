@@ -47,7 +47,7 @@ public class StatusLogger {
 
   public void eth1DepositEventsFailure(final Throwable cause) {
     log.fatal(
-        "Encountered a problem retrieving deposit events from eth1 endpoint: " + cause.toString(),
+        "PLEASE CHECK YOUR ETH1 NODE | Encountered a problem retrieving deposit events from eth1 endpoint.",
         cause);
   }
 
