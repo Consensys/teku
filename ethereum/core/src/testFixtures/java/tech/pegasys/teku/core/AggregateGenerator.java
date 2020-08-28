@@ -14,6 +14,7 @@
 package tech.pegasys.teku.core;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -31,7 +32,6 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
-import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class AggregateGenerator {
@@ -63,7 +63,7 @@ public class AggregateGenerator {
   private Signer getSignerForValidatorIndex(final int validatorIndex) {
     return new UnprotectedSigner(
         new LocalMessageSignerService(
-            validatorKeys.get(validatorIndex), DelayedExecutorAsyncRunner.create()));
+            validatorKeys.get(validatorIndex), SYNC_RUNNER));
   }
 
   public class Generator {
