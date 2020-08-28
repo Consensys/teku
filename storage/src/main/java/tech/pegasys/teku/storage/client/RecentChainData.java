@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.client;
 
 import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 import static tech.pegasys.teku.logging.LogFormatter.formatBlock;
 
 import com.google.common.eventbus.EventBus;
@@ -57,7 +56,6 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreUpdateHandler;
-import tech.pegasys.teku.util.config.Constants;
 
 /** This class is the ChainStorage client-side logic */
 public abstract class RecentChainData implements StoreUpdateHandler {
@@ -238,7 +236,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
         final ChainHead previousChainHead = originalHead.get();
 
-        final UInt64 commonAncestorSlot = findCommonAncestor(previousChainHead, newChainHead);
+        final UInt64 commonAncestorSlot = previousChainHead.findCommonAncestor(newChainHead);
 
         LOG.info(
             "Chain reorg from {} to {}",
@@ -252,42 +250,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     }
 
     bestBlockInitialized.complete(null);
-  }
-
-  private UInt64 findCommonAncestor(final ChainHead chainHead1, final ChainHead chainHead2) {
-    if (chainHead1.getSlot().equals(UInt64.ZERO) || chainHead2.getSlot().equals(UInt64.ZERO)) {
-      // One fork has no blocks so the only possible common ancestor is genesis.
-      return UInt64.ZERO;
-    }
-    final BeaconState state1 = chainHead1.getState();
-    final BeaconState state2 = chainHead2.getState();
-    UInt64 slot = state1.getSlot().min(state2.getSlot());
-    final UInt64 longestChainSlot = state1.getSlot().max(state2.getSlot());
-    UInt64 minSlotWithHistoricRoot =
-        longestChainSlot
-            .max(Constants.SLOTS_PER_HISTORICAL_ROOT) // Avoid underflow
-            .minus(Constants.SLOTS_PER_HISTORICAL_ROOT);
-    while (slot.isGreaterThan(minSlotWithHistoricRoot)) {
-      // The block root for the state's own slot is not included in the state so we have to get it
-      // from the ChainHead
-      final Bytes32 stateRootRootAtSlot =
-          state1.getSlot().isGreaterThan(slot)
-              ? get_block_root_at_slot(state1, slot)
-              : chainHead1.getRoot();
-      final Bytes32 state2RootAtSlot =
-          state2.getSlot().isGreaterThan(slot)
-              ? get_block_root_at_slot(state2, slot)
-              : chainHead2.getRoot();
-      if (stateRootRootAtSlot.equals(state2RootAtSlot)) {
-        return slot;
-      }
-      slot = slot.minus(1);
-    }
-    // Couldn't find a common ancestor in the available block roots so fallback to finalized
-    return state1
-        .getFinalized_checkpoint()
-        .getEpochStartSlot()
-        .min(state2.getFinalized_checkpoint().getEpochStartSlot());
   }
 
   private boolean hasReorgedFrom(
