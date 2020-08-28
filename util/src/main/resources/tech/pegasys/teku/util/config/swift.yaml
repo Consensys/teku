@@ -1,4 +1,8 @@
-# Minimal preset
+# Teku specific Swift preset:
+# Made for quick acceptance tests.
+# Copy of the minimal preset but
+# SECONDS_PER_SLOT is 1 instead of 6 and
+# SLOTS_PER_EPOCH is 4 instead of 8
 
 
 # Misc
