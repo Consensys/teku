@@ -62,8 +62,7 @@ public class AggregateGenerator {
 
   private Signer getSignerForValidatorIndex(final int validatorIndex) {
     return new UnprotectedSigner(
-        new LocalMessageSignerService(
-            validatorKeys.get(validatorIndex), SYNC_RUNNER));
+        new LocalMessageSignerService(validatorKeys.get(validatorIndex), SYNC_RUNNER));
   }
 
   public class Generator {

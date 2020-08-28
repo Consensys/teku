@@ -41,8 +41,7 @@ public class VoluntaryExitGenerator {
 
     BLSSignature exitSignature =
         new UnprotectedSigner(
-                new LocalMessageSignerService(
-                    getKeypair(validatorIndex, valid), SYNC_RUNNER))
+                new LocalMessageSignerService(getKeypair(validatorIndex, valid), SYNC_RUNNER))
             .signVoluntaryExit(exit, forkInfo)
             .join();
 
