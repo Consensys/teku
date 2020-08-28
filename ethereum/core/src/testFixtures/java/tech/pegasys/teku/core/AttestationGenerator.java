@@ -14,6 +14,7 @@
 package tech.pegasys.teku.core;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
@@ -44,7 +45,6 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Committee;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
-import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.util.config.Constants;
@@ -338,9 +338,7 @@ public class AttestationGenerator {
           AttestationUtil.getAggregationBits(committeSize, indexIntoCommittee);
 
       BLSSignature signature =
-          new UnprotectedSigner(
-                  new LocalMessageSignerService(
-                      attesterKeyPair, DelayedExecutorAsyncRunner.create()))
+          new UnprotectedSigner(new LocalMessageSignerService(attesterKeyPair, SYNC_RUNNER))
               .signAttestationData(attestationData, state.getForkInfo())
               .join();
       return new Attestation(aggregationBitfield, attestationData, signature);
