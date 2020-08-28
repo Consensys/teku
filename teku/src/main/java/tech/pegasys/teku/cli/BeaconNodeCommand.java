@@ -33,6 +33,7 @@ import picocli.CommandLine.Unmatched;
 import tech.pegasys.teku.cli.converter.MetricCategoryConverter;
 import tech.pegasys.teku.cli.options.BeaconRestApiOptions;
 import tech.pegasys.teku.cli.options.DataOptions;
+import tech.pegasys.teku.cli.options.DataStorageOptions;
 import tech.pegasys.teku.cli.options.DepositOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
@@ -46,6 +47,7 @@ import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.cli.subcommand.DepositCommand;
 import tech.pegasys.teku.cli.subcommand.GenesisCommand;
 import tech.pegasys.teku.cli.subcommand.PeerCommand;
+import tech.pegasys.teku.cli.subcommand.SlashingProtectionCommand;
 import tech.pegasys.teku.cli.subcommand.TransitionCommand;
 import tech.pegasys.teku.cli.subcommand.UnstableOptionsCommand;
 import tech.pegasys.teku.cli.subcommand.debug.DebugToolsCommand;
@@ -71,6 +73,7 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
       PeerCommand.class,
       DepositCommand.class,
       GenesisCommand.class,
+      SlashingProtectionCommand.class,
       DebugToolsCommand.class,
       UnstableOptionsCommand.class
     },
@@ -148,6 +151,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   @Mixin(name = "Data")
   private DataOptions dataOptions;
+
+  @Mixin(name = "DataStorage")
+  private DataStorageOptions dataStorageOptions;
 
   @Mixin(name = "Store")
   private StoreOptions storeOptions;
@@ -354,9 +360,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setMetricsCategories(metricsOptions.getMetricsCategories())
         .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist())
         .setDataPath(dataOptions.getDataPath())
-        .setDataStorageMode(dataOptions.getDataStorageMode())
-        .setDataStorageFrequency(dataOptions.getDataStorageFrequency())
-        .setDataStorageCreateDbVersion(dataOptions.getCreateDbVersion())
+        .setDataStorageMode(dataStorageOptions.getDataStorageMode())
+        .setDataStorageFrequency(dataStorageOptions.getDataStorageFrequency())
+        .setDataStorageCreateDbVersion(dataStorageOptions.getCreateDbVersion())
         .setHotStatePersistenceFrequencyInEpochs(
             storeOptions.getHotStatePersistenceFrequencyInEpochs())
         .setIsBlockProcessingAtStartupDisabled(storeOptions.isBlockProcessingAtStartupDisabled())

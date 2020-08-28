@@ -101,15 +101,15 @@ public class ValidatorSigningRecord {
         || attestationTargetEpoch.compareTo(targetEpoch) < 0;
   }
 
-  UInt64 getBlockSlot() {
+  public UInt64 getBlockSlot() {
     return blockSlot;
   }
 
-  UInt64 getAttestationSourceEpoch() {
+  public UInt64 getAttestationSourceEpoch() {
     return attestationSourceEpoch;
   }
 
-  UInt64 getAttestationTargetEpoch() {
+  public UInt64 getAttestationTargetEpoch() {
     return attestationTargetEpoch;
   }
 
