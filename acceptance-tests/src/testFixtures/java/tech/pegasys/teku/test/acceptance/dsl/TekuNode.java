@@ -40,7 +40,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
@@ -331,6 +330,11 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withGenesisTime(int time) {
+      configMap.put("Xinterop-genesis-time", time);
+      return this;
+    }
+
     public Config withRealNetwork() {
       configMap.put("p2p-enabled", true);
       return this;
@@ -377,14 +381,6 @@ public class TekuNode extends Node {
         validatorsFile.deleteOnExit();
         Files.writeString(validatorsFile.toPath(), validatorKeys.get());
         configFiles.put(validatorsFile, VALIDATORS_FILE_PATH);
-      }
-
-      if ((boolean) configMap.get("p2p-enabled")) {
-        final File p2pPrivateKeyFile = Files.createTempFile("p2p-private-key", ".key").toFile();
-        p2pPrivateKeyFile.deleteOnExit();
-        Files.writeString(p2pPrivateKeyFile.toPath(), Bytes.wrap(privateKey.bytes()).toHexString());
-        configFiles.put(p2pPrivateKeyFile, P2P_PRIVATE_KEY_FILE_PATH);
-        configMap.put("p2p-private-key-file", P2P_PRIVATE_KEY_FILE_PATH);
       }
 
       final File configFile = File.createTempFile("config", ".yaml");
