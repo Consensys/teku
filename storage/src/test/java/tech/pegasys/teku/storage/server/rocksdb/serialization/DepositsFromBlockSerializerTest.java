@@ -15,7 +15,7 @@ package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
@@ -28,11 +28,11 @@ public class DepositsFromBlockSerializerTest {
   @Test
   public void shouldEncodeAndDecodeWithMultipleDeposits() {
     final DepositsFromBlockEvent event =
-        new DepositsFromBlockEvent(
+        DepositsFromBlockEvent.create(
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomUInt64(),
-            List.of(
+            Stream.of(
                 dataStructureUtil.randomDepositEvent(),
                 dataStructureUtil.randomDepositEvent(),
                 dataStructureUtil.randomDepositEvent()));
@@ -44,11 +44,11 @@ public class DepositsFromBlockSerializerTest {
   @Test
   public void shouldEncodeAndDecodeWithSingleDeposit() {
     final DepositsFromBlockEvent event =
-        new DepositsFromBlockEvent(
+        DepositsFromBlockEvent.create(
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomUInt64(),
-            List.of(dataStructureUtil.randomDepositEvent()));
+            Stream.of(dataStructureUtil.randomDepositEvent()));
     final byte[] bytes = serializer.serialize(event);
     final DepositsFromBlockEvent result = serializer.deserialize(bytes);
     assertThat(result).isEqualToComparingFieldByField(event);

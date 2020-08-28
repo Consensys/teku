@@ -458,7 +458,8 @@ public final class DataStructureUtil {
     for (long i = 0; i < depositCount; i++) {
       deposits.add(randomDepositEvent(UInt64.valueOf(i)));
     }
-    return new DepositsFromBlockEvent(blockIndex, randomBytes32(), randomUInt64(), deposits);
+    return DepositsFromBlockEvent.create(
+        blockIndex, randomBytes32(), randomUInt64(), deposits.stream());
   }
 
   public MinGenesisTimeBlockEvent randomMinGenesisTimeBlockEvent(final long blockIndex) {

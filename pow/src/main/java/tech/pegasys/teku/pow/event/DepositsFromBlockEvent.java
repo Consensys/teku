@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.pow.event;
 
+import static java.util.stream.Collectors.toList;
+
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -26,7 +30,7 @@ public class DepositsFromBlockEvent {
   private final List<Deposit> deposits;
   private final UInt64 blockTimestamp;
 
-  public DepositsFromBlockEvent(
+  private DepositsFromBlockEvent(
       final UInt64 blockNumber,
       final Bytes32 blockHash,
       final UInt64 blockTimestamp,
@@ -36,6 +40,16 @@ public class DepositsFromBlockEvent {
     this.blockNumber = blockNumber;
     this.blockHash = blockHash;
     this.deposits = deposits;
+  }
+
+  public static DepositsFromBlockEvent create(
+      final UInt64 blockNumber,
+      final Bytes32 blockHash,
+      final UInt64 blockTimestamp,
+      final Stream<Deposit> deposits) {
+    final List<Deposit> sortedDeposits =
+        deposits.sorted(Comparator.comparing(Deposit::getMerkle_tree_index)).collect(toList());
+    return new DepositsFromBlockEvent(blockNumber, blockHash, blockTimestamp, sortedDeposits);
   }
 
   public UInt64 getFirstDepositIndex() {
