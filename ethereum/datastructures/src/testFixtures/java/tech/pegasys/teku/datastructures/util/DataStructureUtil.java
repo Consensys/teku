@@ -449,13 +449,15 @@ public final class DataStructureUtil {
   }
 
   public DepositsFromBlockEvent randomDepositsFromBlockEvent(
-      final long blockIndex, long depositCount) {
-    return randomDepositsFromBlockEvent(UInt64.valueOf(blockIndex), depositCount);
+      final long blockIndex, long depositIndexStartInclusive, long depositIndexEndExclusive) {
+    return randomDepositsFromBlockEvent(
+        UInt64.valueOf(blockIndex), depositIndexStartInclusive, depositIndexEndExclusive);
   }
 
-  public DepositsFromBlockEvent randomDepositsFromBlockEvent(UInt64 blockIndex, long depositCount) {
+  public DepositsFromBlockEvent randomDepositsFromBlockEvent(
+      UInt64 blockIndex, long depositIndexStartInclusive, long depositIndexEndExclusive) {
     List<tech.pegasys.teku.pow.event.Deposit> deposits = new ArrayList<>();
-    for (long i = 0; i < depositCount; i++) {
+    for (long i = depositIndexStartInclusive; i < depositIndexEndExclusive; i++) {
       deposits.add(randomDepositEvent(UInt64.valueOf(i)));
     }
     return DepositsFromBlockEvent.create(

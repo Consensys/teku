@@ -35,6 +35,7 @@ import tech.pegasys.teku.pow.Eth1HeadTracker;
 import tech.pegasys.teku.pow.Eth1Provider;
 import tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder;
 import tech.pegasys.teku.pow.ThrottlingEth1Provider;
+import tech.pegasys.teku.pow.ValidatingEth1EventsPublisher;
 import tech.pegasys.teku.pow.Web3jEth1Provider;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -67,13 +68,14 @@ public class PowchainService extends Service {
         DepositContractAccessor.create(
             eth1Provider, web3j, config.getConfig().getEth1DepositContractAddress().toHexString());
 
-    final Eth1EventsChannel eth1EventsChannel =
-        config.getEventChannels().getPublisher(Eth1EventsChannel.class);
+    final Eth1EventsChannel eth1EventsPublisher =
+        new ValidatingEth1EventsPublisher(
+            config.getEventChannels().getPublisher(Eth1EventsChannel.class));
     final Eth1DepositStorageChannel eth1DepositStorageChannel =
         config.getEventChannels().getPublisher(Eth1DepositStorageChannel.class, asyncRunner);
     final Eth1BlockFetcher eth1BlockFetcher =
         new Eth1BlockFetcher(
-            eth1EventsChannel,
+            eth1EventsPublisher,
             eth1Provider,
             config.getTimeProvider(),
             calculateEth1DataCacheDurationPriorToCurrentTime());
@@ -81,7 +83,7 @@ public class PowchainService extends Service {
     final DepositFetcher depositFetcher =
         new DepositFetcher(
             eth1Provider,
-            eth1EventsChannel,
+            eth1EventsPublisher,
             depositContractAccessor.getContract(),
             eth1BlockFetcher,
             asyncRunner);
@@ -90,7 +92,7 @@ public class PowchainService extends Service {
     final DepositProcessingController depositProcessingController =
         new DepositProcessingController(
             eth1Provider,
-            eth1EventsChannel,
+            eth1EventsPublisher,
             asyncRunner,
             depositFetcher,
             eth1BlockFetcher,
@@ -100,7 +102,7 @@ public class PowchainService extends Service {
         new Eth1DepositManager(
             eth1Provider,
             asyncRunner,
-            eth1EventsChannel,
+            eth1EventsPublisher,
             eth1DepositStorageChannel,
             depositProcessingController,
             new MinimumGenesisTimeBlockFinder(eth1Provider));

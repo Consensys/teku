@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.storage.server;
 
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.math.BigInteger;
 import java.nio.file.Path;
@@ -24,6 +26,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
@@ -36,13 +39,13 @@ public class DepositStorageTest {
   private DepositStorage depositStorage;
 
   private final DepositsFromBlockEvent block_99 =
-      dataStructureUtil.randomDepositsFromBlockEvent(99L, 10);
+      dataStructureUtil.randomDepositsFromBlockEvent(99L, 0, 10);
   private final MinGenesisTimeBlockEvent genesis_100 =
       dataStructureUtil.randomMinGenesisTimeBlockEvent(100L);
   private final DepositsFromBlockEvent block_100 =
-      dataStructureUtil.randomDepositsFromBlockEvent(100L, 10);
+      dataStructureUtil.randomDepositsFromBlockEvent(100L, 10, 20);
   private final DepositsFromBlockEvent block_101 =
-      dataStructureUtil.randomDepositsFromBlockEvent(101L, 10);
+      dataStructureUtil.randomDepositsFromBlockEvent(101L, 20, 21);
 
   @TempDir Path dataDirectory;
   private StorageSystem storageSystem;
@@ -57,6 +60,26 @@ public class DepositStorageTest {
 
     storageSystem.chainUpdater().initializeGenesis();
     depositStorage = storageSystem.createDepositStorage(true);
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void shouldRecordAndRetrieveDepositEvents(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
+    setup(storageSystemSupplier);
+
+    final UInt64 firstBlock = dataStructureUtil.randomUInt64();
+    final DepositsFromBlockEvent event1 =
+        dataStructureUtil.randomDepositsFromBlockEvent(firstBlock, 0, 10);
+    final DepositsFromBlockEvent event2 =
+        dataStructureUtil.randomDepositsFromBlockEvent(firstBlock.plus(ONE), 10, 11);
+
+    database.addDepositsFromBlockEvent(event1);
+    database.addDepositsFromBlockEvent(event2);
+    try (Stream<DepositsFromBlockEvent> events = database.streamDepositsFromBlocks()) {
+      assertThat(events.collect(toList())).containsExactly(event1, event2);
+    }
   }
 
   @ParameterizedTest(name = "{0}")

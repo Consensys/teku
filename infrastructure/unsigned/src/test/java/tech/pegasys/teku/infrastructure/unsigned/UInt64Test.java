@@ -228,6 +228,17 @@ class UInt64Test {
     assertThatThrownBy(() -> UInt64.ONE.plus(-1)).isInstanceOf(IllegalArgumentException.class);
   }
 
+  @Test
+  void increment() {
+    assertThat(UInt64.ONE.increment()).isEqualTo(UInt64.valueOf(2));
+    assertThat(UInt64.ONE.increment().increment()).isEqualTo(UInt64.valueOf(3));
+  }
+
+  @Test
+  void increment_shouldThrowArithmeticExceptionWhenResultOverflows() {
+    assertThatThrownBy(UInt64.MAX_VALUE::increment).isInstanceOf(ArithmeticException.class);
+  }
+
   @ParameterizedTest
   @MethodSource("additionNumbers")
   void subtract_shouldSubtractWhenNotOverflowing(
