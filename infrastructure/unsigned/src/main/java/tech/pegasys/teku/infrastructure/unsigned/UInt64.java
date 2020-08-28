@@ -278,7 +278,8 @@ public final class UInt64 implements Comparable<UInt64> {
    * @return the larger value
    */
   public UInt64 max(final long other) {
-    return max(UInt64.valueOf(other));
+    checkPositive(other);
+    return Long.compareUnsigned(value, other) >= 0 ? this : UInt64.valueOf(other);
   }
 
   /**
@@ -298,7 +299,8 @@ public final class UInt64 implements Comparable<UInt64> {
    * @return the larger value
    */
   public UInt64 min(final long other) {
-    return min(UInt64.valueOf(other));
+    checkPositive(other);
+    return Long.compareUnsigned(value, other) <= 0 ? this : UInt64.valueOf(other);
   }
 
   @Override
