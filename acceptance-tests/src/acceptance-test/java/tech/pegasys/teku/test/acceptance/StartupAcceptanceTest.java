@@ -46,6 +46,14 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
   }
 
   @Test
+  public void shouldFinalize() throws Exception {
+    final TekuNode node1 = createTekuNode();
+    node1.start();
+    node1.waitForNewFinalization();
+    node1.stop();
+  }
+
+  @Test
   public void shouldStartChainFromDepositContract() throws Exception {
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
