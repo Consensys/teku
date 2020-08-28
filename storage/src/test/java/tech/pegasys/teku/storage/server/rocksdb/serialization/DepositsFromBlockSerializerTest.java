@@ -33,9 +33,9 @@ public class DepositsFromBlockSerializerTest {
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomUInt64(),
             Stream.of(
-                dataStructureUtil.randomDepositEvent(),
-                dataStructureUtil.randomDepositEvent(),
-                dataStructureUtil.randomDepositEvent()));
+                dataStructureUtil.randomDepositEvent(3),
+                dataStructureUtil.randomDepositEvent(4),
+                dataStructureUtil.randomDepositEvent(5)));
     final byte[] bytes = serializer.serialize(event);
     final DepositsFromBlockEvent result = serializer.deserialize(bytes);
     assertThat(result).isEqualToComparingFieldByField(event);

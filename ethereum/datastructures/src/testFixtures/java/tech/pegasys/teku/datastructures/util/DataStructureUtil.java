@@ -479,6 +479,10 @@ public final class DataStructureUtil {
         randomDepositData());
   }
 
+  public tech.pegasys.teku.pow.event.Deposit randomDepositEvent(long index) {
+    return randomDepositEvent(UInt64.valueOf(index));
+  }
+
   public tech.pegasys.teku.pow.event.Deposit randomDepositEvent(UInt64 index) {
     return new tech.pegasys.teku.pow.event.Deposit(
         BLSPublicKey.random(nextSeed()), randomBytes32(), randomSignature(), randomUInt64(), index);
