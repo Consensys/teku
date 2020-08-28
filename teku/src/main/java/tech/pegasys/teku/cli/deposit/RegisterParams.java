@@ -123,14 +123,14 @@ public class RegisterParams {
     if (eth1PrivateKeyOptions.eth1PrivateKey != null) {
       return Credentials.create(eth1PrivateKeyOptions.eth1PrivateKey);
     } else if (eth1PrivateKeyOptions.keystoreOptions != null) {
-      return eth1CredentialsFromKeystore();
+      return getEth1CredentialsFromKeystore();
     } else {
       // not meant to happen
-      throw new IllegalStateException("Private Key Options are not initialized");
+      throw new IllegalStateException("Eth1 Private Key Options are not initialized");
     }
   }
 
-  private Credentials eth1CredentialsFromKeystore() {
+  private Credentials getEth1CredentialsFromKeystore() {
     final String keystorePassword =
         KeystorePasswordOptions.readFromFile(
             spec.commandLine(), eth1PrivateKeyOptions.keystoreOptions.eth1KeystorePasswordFile);

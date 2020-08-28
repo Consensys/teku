@@ -134,7 +134,7 @@ public class Constants {
   public static final long ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = 2; // in sec
   public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
   public static final int REPUTATION_MANAGER_CAPACITY = 1024;
-  public static final long STORAGE_REQUEST_TIMEOUT = 5; // in sec
+  public static final long STORAGE_REQUEST_TIMEOUT = 60; // in sec
   public static final int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
   public static final int PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD = 256;
   public static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
@@ -176,7 +176,13 @@ public class Constants {
 
   private static InputStream createInputStream(final String source) throws IOException {
     return ResourceLoader.classpathUrlOrFile(
-            Constants.class, name -> name + ".yaml", "mainnet", "minimal", "altona", "medalla")
+            Constants.class,
+            name -> name + ".yaml",
+            "mainnet",
+            "minimal",
+            "swift",
+            "altona",
+            "medalla")
         .load(source)
         .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
   }

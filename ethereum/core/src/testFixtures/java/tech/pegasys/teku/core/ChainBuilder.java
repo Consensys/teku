@@ -31,7 +31,6 @@ import java.util.TreeMap;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.lookup.BlockProvider;
@@ -50,6 +49,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.datastructures.util.MockStartBeaconStateGenerator;
 import tech.pegasys.teku.datastructures.util.MockStartDepositGenerator;
+import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
@@ -59,7 +59,7 @@ import tech.pegasys.teku.util.config.Constants;
 /** A utility for building small, valid chains of blocks with states for testing */
 public class ChainBuilder {
   private static final List<BLSKeyPair> DEFAULT_VALIDATOR_KEYS =
-      BLSKeyGenerator.generateKeyPairs(3);
+      Collections.unmodifiableList(new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 3));
 
   private final List<BLSKeyPair> validatorKeys;
   private final AttestationGenerator attestationGenerator;

@@ -114,12 +114,12 @@ public class RegisterAction implements AutoCloseable {
       return;
     }
     System.out.println("Transaction cancelled.");
-    shutdownFunction.accept(0);
+    shutdownFunction.accept(1);
   }
 
   public SafeFuture<TransactionReceipt> sendDeposit(
-      final BLSKeyPair validatorKey, final BLSPublicKey withdrawalKey) {
+      final BLSKeyPair validatorKey, final BLSPublicKey withdrawalPublicKey) {
     return sender.sendDepositTransaction(
-        validatorKey, withdrawalKey, amount, commandStdOutput, commandErrorOutput);
+        validatorKey, withdrawalPublicKey, amount, commandStdOutput, commandErrorOutput);
   }
 }
