@@ -1,0 +1,30 @@
+message:
+  slot: 7
+  proposer_index: 14
+  parent_root: '0x0faddc31046f5076712df587ec43ef96d1b30674d9e24d1672a8e748b020a143'
+  state_root: '0xbd429e33e40af55d8f6dcf5a829b1943f36b1317f12c1751ec75ec4b64647ca2'
+  body:
+    randao_reveal: '0xb48c88724f90ae9df877478c634b793af8f6ad36faa486b236fe98984c699438cf7975aa77c6330e7bca89efa898ee4b0d1c2cb4e57754318d5b43883302fe082e7676b42a557443f2d182ff86b42a3cd85f56c7bb34195ff76d27f76a470184'
+    eth1_data:
+      deposit_root: '0x5d3e4dd60fa8dfd93c477d57eeaf92e162dcb52c52c2022f57343d5a8a337602'
+      deposit_count: 32
+      block_hash: '0x4242424242424242424242424242424242424242424242424242424242424242'
+    graffiti: '0x0000000000000000000000000000000000000000000000000000000000000000'
+    proposer_slashings: []
+    attester_slashings: []
+    attestations:
+    - aggregation_bits: '0x1f'
+      data:
+        slot: 6
+        index: 0
+        beacon_block_root: '0x0faddc31046f5076712df587ec43ef96d1b30674d9e24d1672a8e748b020a143'
+        source:
+          epoch: 0
+          root: '0x0000000000000000000000000000000000000000000000000000000000000000'
+        target:
+          epoch: 0
+          root: '0xf5a574a2f93aee8095fe9b41579c9935700315030d22888004effa742f1da85a'
+      signature: '0x82b3183ac7d43b253b7945e0cc02dcba2c9bcfabf2fef28bb9d2fcd33eafb413d7bf1e4b219a11f1ed391d2c86194f9c15356bfe099a48366eefcbcc91f2ebfd1735cc5d1face50e24a13a5fc0dad0b42db9f8bb181dce4e7ee014a4b342db8e'
+    deposits: []
+    voluntary_exits: []
+signature: '0x89be27fb8ba481461b8695156ba232d88618d7bc9afaa52767e61f75011092c5adcff5eb74b762dbd68eb86f1348900c115acccb0ed7c238d6a9010a33bec2b3e72bccb8fa354b9c021ad69042c9440afaaea75bd31aa1b4f17ea92d5233c142'
