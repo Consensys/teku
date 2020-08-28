@@ -265,7 +265,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     final UInt64 longestChainSlot = state1.getSlot().max(state2.getSlot());
     UInt64 minSlotWithHistoricRoot =
         longestChainSlot
-            .max(Constants.SLOTS_PER_HISTORICAL_ROOT) // 0 if we would have underflowed
+            .max(Constants.SLOTS_PER_HISTORICAL_ROOT) // Avoid underflow
             .minus(Constants.SLOTS_PER_HISTORICAL_ROOT);
     while (slot.isGreaterThan(minSlotWithHistoricRoot)) {
       // The block root for the state's own slot is not included in the state so we have to get it
