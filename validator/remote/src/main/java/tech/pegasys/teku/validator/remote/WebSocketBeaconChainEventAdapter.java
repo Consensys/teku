@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.remote;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
+import java.net.URI;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -29,16 +30,15 @@ public class WebSocketBeaconChainEventAdapter implements BeaconChainEventAdapter
   private static final Logger LOG = LogManager.getLogger();
 
   private final JsonProvider jsonProvider = new JsonProvider();
+  private final URI endpoint;
+  private final Vertx vertx;
   private final BeaconChainEventMapper beaconChainEventMapper;
 
-  private final Vertx vertx;
-
-  // TODO properly configure port and url
-  private String host = "127.0.0.1";
-  private int port = 9999;
   private HttpClient httpClient;
 
   public WebSocketBeaconChainEventAdapter(final ServiceConfig config) {
+    endpoint = URI.create(config.getConfig().getBeaconNodeEventsWsEndpoint());
+
     beaconChainEventMapper =
         new BeaconChainEventMapper(
             config.getEventChannels().getPublisher(ValidatorTimingChannel.class));
@@ -52,12 +52,12 @@ public class WebSocketBeaconChainEventAdapter implements BeaconChainEventAdapter
     httpClient = vertx.createHttpClient();
 
     httpClient.webSocket(
-        port,
-        host,
-        "/",
+        endpoint.getPort(),
+        endpoint.getHost(),
+        endpoint.getPath(),
         ws -> {
           if (ws.succeeded()) {
-            LOG.debug("Listening for remote BeaconChain events on ws://127.0.0.1:9999");
+            LOG.debug("Listening for remote BeaconChain events on {}", endpoint);
 
             ws.result().textMessageHandler(this::handleTextMessage);
 

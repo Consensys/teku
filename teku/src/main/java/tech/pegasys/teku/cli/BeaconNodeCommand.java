@@ -42,6 +42,7 @@ import tech.pegasys.teku.cli.options.OutputOptions;
 import tech.pegasys.teku.cli.options.P2POptions;
 import tech.pegasys.teku.cli.options.RemoteValidatorApiOptions;
 import tech.pegasys.teku.cli.options.StoreOptions;
+import tech.pegasys.teku.cli.options.ValidatorNodeOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.cli.subcommand.DepositCommand;
 import tech.pegasys.teku.cli.subcommand.GenesisCommand;
@@ -96,6 +97,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   // allows two pass approach to obtain optional config file
   private static class ConfigFileCommand {
+
     @Option(
         names = {"-c", CONFIG_FILE_OPTION_NAME},
         arity = "1")
@@ -155,8 +157,11 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Mixin(name = "REST API")
   private BeaconRestApiOptions beaconRestApiOptions;
 
-  @Mixin(name = "REMOTE VALIDATOR API")
+  @Mixin(name = "Remote Validator API")
   private RemoteValidatorApiOptions remoteValidatorApiOptions;
+
+  @Mixin(name = "Validator Node")
+  private ValidatorNodeOptions validatorNodeOptions;
 
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
@@ -369,6 +374,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setRemoteValidatorApiPort(remoteValidatorApiOptions.getApiPort())
         .setRemoteValidatorApiMaxSubscribers(remoteValidatorApiOptions.getMaxSubscribers())
         .setRemoteValidatorApiEnabled(remoteValidatorApiOptions.isApiEnabled())
+        .setValidatorNodeOnly(validatorNodeOptions.isValidatorNodeOnly())
+        .setBeaconNodeApiEndpoint(validatorNodeOptions.getBeaconNodeApiEndpoint())
+        .setBeaconNodeEventsWsEndpoint(validatorNodeOptions.getBeaconNodeEventsWsEndpoint())
         .build();
   }
 }

@@ -32,6 +32,7 @@ import tech.pegasys.teku.metrics.MetricsConfig;
 
 /** Configuration of an instance of Teku. */
 public class TekuConfiguration implements MetricsConfig {
+
   // Network
   private final String constants;
   private final String initialState;
@@ -122,6 +123,11 @@ public class TekuConfiguration implements MetricsConfig {
   private final boolean remoteValidatorApiEnabled;
   private final int remoteValidatorApiMaxSubscribers;
 
+  // Validator Client
+  private final boolean validatorNodeOnly;
+  private final String beaconNodeApiEndpoint;
+  private final String beaconNodeEventsWsEndpoint;
+
   public static TekuConfigurationBuilder builder() {
     return new TekuConfigurationBuilder();
   }
@@ -192,7 +198,10 @@ public class TekuConfiguration implements MetricsConfig {
       final int remoteValidatorApiPort,
       final int remoteValidatorApiMaxSubscribers,
       final boolean remoteValidatorApiEnabled,
-      final Bytes32 graffiti) {
+      final Bytes32 graffiti,
+      final boolean validatorNodeOnly,
+      final String beaconNodeApiEndpoint,
+      final String beaconNodeEventsWsEndpoint) {
     this.constants = constants;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
@@ -259,6 +268,9 @@ public class TekuConfiguration implements MetricsConfig {
     this.remoteValidatorApiEnabled = remoteValidatorApiEnabled;
     this.remoteValidatorApiMaxSubscribers = remoteValidatorApiMaxSubscribers;
     this.graffiti = graffiti;
+    this.validatorNodeOnly = validatorNodeOnly;
+    this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
+    this.beaconNodeEventsWsEndpoint = beaconNodeEventsWsEndpoint;
   }
 
   public String getConstants() {
@@ -553,6 +565,18 @@ public class TekuConfiguration implements MetricsConfig {
 
   public Bytes32 getGraffiti() {
     return graffiti;
+  }
+
+  public boolean isValidatorNodeOnly() {
+    return validatorNodeOnly;
+  }
+
+  public String getBeaconNodeApiEndpoint() {
+    return beaconNodeApiEndpoint;
+  }
+
+  public String getBeaconNodeEventsWsEndpoint() {
+    return beaconNodeEventsWsEndpoint;
   }
 
   public List<Pair<Path, Path>> getValidatorKeystorePasswordFilePairs() {

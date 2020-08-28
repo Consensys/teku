@@ -90,6 +90,9 @@ public class TekuConfigurationBuilder {
   private int remoteValidatorApiMaxSubscribers;
   private boolean remoteValidatorApiEnabled;
   private Bytes32 graffiti;
+  private boolean validatorNodeOnly;
+  private String beaconNodeApiEndpoint;
+  private String beaconNodeEventsWsEndpoint;
 
   public TekuConfigurationBuilder setConstants(final String constants) {
     this.constants = constants;
@@ -443,6 +446,22 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
+  public TekuConfigurationBuilder setValidatorNodeOnly(final boolean isValidatorOnly) {
+    this.validatorNodeOnly = isValidatorOnly;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setBeaconNodeApiEndpoint(final String beaconNodeApiEndpoint) {
+    this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setBeaconNodeEventsWsEndpoint(
+      final String beaconNodeEventsWsEndpoint) {
+    this.beaconNodeEventsWsEndpoint = beaconNodeEventsWsEndpoint;
+    return this;
+  }
+
   public TekuConfiguration build() {
     if (network != null) {
       constants = getOrDefault(constants, network::getConstants);
@@ -463,6 +482,8 @@ public class TekuConfigurationBuilder {
       throw new InvalidConfigurationException(
           "eth1-deposit-contract-address is required if eth1-endpoint is specified.");
     }
+
+    // TODO validate config for validator node only
 
     p2pSnappyEnabled = Optional.ofNullable(p2pSnappyEnabled).orElse(DEFAULT_P2P_SNAPPY_ENABLED);
     return new TekuConfiguration(
@@ -531,7 +552,10 @@ public class TekuConfigurationBuilder {
         remoteValidatorApiPort,
         remoteValidatorApiMaxSubscribers,
         remoteValidatorApiEnabled,
-        graffiti);
+        graffiti,
+        validatorNodeOnly,
+        beaconNodeApiEndpoint,
+        beaconNodeEventsWsEndpoint);
   }
 
   private <T> T getOrDefault(final T explicitValue, final Supplier<T> predefinedNetworkValue) {

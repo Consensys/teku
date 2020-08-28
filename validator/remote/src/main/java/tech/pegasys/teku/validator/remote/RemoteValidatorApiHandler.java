@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -50,13 +51,12 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   private final ValidatorRestApiClient apiClient;
   private final AsyncRunner asyncRunner;
 
-  @SuppressWarnings("unused")
   public RemoteValidatorApiHandler(final ServiceConfig config, final AsyncRunner asyncRunner) {
-    // TODO: create config for validator client [https://github.com/PegaSysEng/teku/issues/2450]
-    apiClient = new OkHttpValidatorRestApiClient("http://127.0.0.1:5051");
+    apiClient = new OkHttpValidatorRestApiClient(config.getConfig().getBeaconNodeApiEndpoint());
     this.asyncRunner = asyncRunner;
   }
 
+  @VisibleForTesting
   public RemoteValidatorApiHandler(
       final ValidatorRestApiClient apiClient, final AsyncRunner asyncRunner) {
     this.apiClient = apiClient;

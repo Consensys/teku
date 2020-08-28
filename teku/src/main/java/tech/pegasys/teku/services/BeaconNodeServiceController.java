@@ -26,11 +26,11 @@ import tech.pegasys.teku.services.remotevalidator.RemoteValidatorService;
 import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 
-public class ServiceController extends Service {
+public class BeaconNodeServiceController extends Service {
 
   private final List<Service> services = new ArrayList<>();
 
-  public ServiceController(final ServiceConfig config) {
+  public BeaconNodeServiceController(final ServiceConfig config) {
     // Note services will be started in the order they are added here.
     services.add(new StorageService(config));
     services.add(new BeaconChainService(config));
