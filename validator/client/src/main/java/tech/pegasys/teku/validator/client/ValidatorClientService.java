@@ -24,27 +24,38 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.validator.anticorruption.ValidatorAnticorruptionLayer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.ValidatorDutyFactory;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.metrics.MetricRecordingValidatorApiChannel;
+import tech.pegasys.teku.validator.eventadapter.BeaconChainEventAdapter;
+import tech.pegasys.teku.validator.eventadapter.EventChannelBeaconChainEventAdapter;
 import tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler;
+import tech.pegasys.teku.validator.remote.WebSocketBeaconChainEventAdapter;
 
 public class ValidatorClientService extends Service {
+
   private final EventChannels eventChannels;
   private final ValidatorTimingChannel attestationTimingChannel;
   private final ValidatorTimingChannel blockProductionTimingChannel;
+  private final BeaconChainEventAdapter beaconChainEventAdapter;
 
   private ValidatorClientService(
       final EventChannels eventChannels,
       final ValidatorTimingChannel attestationTimingChannel,
-      final ValidatorTimingChannel blockProductionTimingChannel) {
+      final ValidatorTimingChannel blockProductionTimingChannel,
+      final ServiceConfig serviceConfig) {
     this.eventChannels = eventChannels;
     this.attestationTimingChannel = attestationTimingChannel;
     this.blockProductionTimingChannel = blockProductionTimingChannel;
+
+    if (serviceConfig.getConfig().isRemoteValidatorApiEnabled()) {
+      beaconChainEventAdapter = new WebSocketBeaconChainEventAdapter(serviceConfig);
+    } else {
+      beaconChainEventAdapter = new EventChannelBeaconChainEventAdapter(serviceConfig);
+    }
   }
 
   public static ValidatorClientService create(
@@ -76,9 +87,8 @@ public class ValidatorClientService extends Service {
         new AttestationDutyScheduler(metricsSystem, dutyLoader, stableSubnetSubscriber);
     final BlockDutyScheduler blockDutyScheduler = new BlockDutyScheduler(metricsSystem, dutyLoader);
 
-    ValidatorAnticorruptionLayer.initAnticorruptionLayer(config);
-
-    return new ValidatorClientService(eventChannels, attestationDutyScheduler, blockDutyScheduler);
+    return new ValidatorClientService(
+        eventChannels, attestationDutyScheduler, blockDutyScheduler, config);
   }
 
   private static RetryingDutyLoader createDutyLoader(
@@ -103,11 +113,11 @@ public class ValidatorClientService extends Service {
   protected SafeFuture<?> doStart() {
     eventChannels.subscribe(ValidatorTimingChannel.class, blockProductionTimingChannel);
     eventChannels.subscribe(ValidatorTimingChannel.class, attestationTimingChannel);
-    return SafeFuture.COMPLETE;
+    return SafeFuture.of(beaconChainEventAdapter.start());
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.COMPLETE;
+    return SafeFuture.of(beaconChainEventAdapter.start());
   }
 }

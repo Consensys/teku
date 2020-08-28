@@ -14,21 +14,34 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.AttestationData;
+import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.storage.api.TrackingReorgEventChannel.ReorgEvent;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -37,6 +50,7 @@ import tech.pegasys.teku.util.config.StateStorageMode;
 
 class ForkChoiceTest {
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final StateTransition stateTransition = new StateTransition();
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.PRUNE);
@@ -129,6 +143,89 @@ class ForkChoiceTest {
     assertThat(recentChainData.getBestBlockRoot()).contains(blockWithAttestations.getRoot());
   }
 
+  @Test
+  void onBlock_shouldNotProcessAttestationsForBlocksThatDoNotYetExist() {
+    final ChainBuilder forkChain = chainBuilder.fork();
+    // Create a fork block, but don't import it.
+    final SignedBlockAndState forkBlock =
+        forkChain.generateBlockAtSlot(
+            UInt64.valueOf(2),
+            BlockOptions.create()
+                .setEth1Data(new Eth1Data(Bytes32.ZERO, UInt64.valueOf(6), Bytes32.ZERO)));
+
+    // Now create the canonical chain and import.
+    final List<SignedBlockAndState> betterChain = chainBuilder.generateBlocksUpToSlot(3);
+    betterChain.forEach(blockAndState -> importBlock(chainBuilder, blockAndState));
+
+    // And create a block containing an attestation for forkBlock
+    final BlockOptions options = BlockOptions.create();
+    final Attestation attestation =
+        chainBuilder
+            .streamValidAttestationsWithTargetBlock(forkBlock)
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Failed to create attestation for block "
+                            + forkBlock.getRoot()
+                            + " genesis root: "
+                            + genesis.getRoot()
+                            + " chain head: "
+                            + chainBuilder.getLatestBlockAndState().getRoot()
+                            + " validators: "
+                            + chainBuilder.getValidatorKeys().stream()
+                                .map(BLSKeyPair::getPublicKey)
+                                .map(BLSPublicKey::toString)
+                                .collect(Collectors.joining(", "))));
+    options.addAttestation(attestation);
+    final SignedBlockAndState blockWithAttestations =
+        chainBuilder.generateBlockAtSlot(UInt64.valueOf(4), options);
+    importBlock(chainBuilder, blockWithAttestations);
+
+    // Apply these votes
+    forkChoice.processHead(blockWithAttestations.getSlot());
+    assertThat(recentChainData.getBestBlockRoot()).contains(blockWithAttestations.getRoot());
+
+    // Now we import the fork block
+    importBlock(forkChain, forkBlock);
+
+    // Then we get a later attestation from the same validator pointing to a different chain
+    final UInt64 updatedAttestationSlot =
+        applyAttestationFromValidator(UInt64.ZERO, blockWithAttestations);
+
+    // And we should be able to apply the new weightings without making the fork block's weight
+    // negative
+    assertDoesNotThrow(() -> forkChoice.processHead(updatedAttestationSlot));
+  }
+
+  private UInt64 applyAttestationFromValidator(
+      final UInt64 validatorIndex, final SignedBlockAndState targetBlock) {
+    // Note this attestation is wildly invalid but we're going to shove it straight into fork choice
+    // as pre-validated.
+    final UInt64 updatedAttestationSlot = UInt64.valueOf(20);
+    final ValidateableAttestation updatedVote =
+        ValidateableAttestation.fromAttestation(
+            new Attestation(
+                new Bitlist(16, 16),
+                new AttestationData(
+                    updatedAttestationSlot,
+                    UInt64.ONE,
+                    targetBlock.getRoot(),
+                    recentChainData.getStore().getJustifiedCheckpoint(),
+                    new Checkpoint(
+                        BeaconStateUtil.compute_epoch_at_slot(updatedAttestationSlot),
+                        targetBlock.getRoot())),
+                dataStructureUtil.randomSignature()));
+    updatedVote.setIndexedAttestation(
+        new IndexedAttestation(
+            SSZList.singleton(validatorIndex),
+            updatedVote.getData(),
+            updatedVote.getAttestation().getAggregate_signature()));
+
+    forkChoice.applyIndexedAttestations(List.of(updatedVote));
+    return updatedAttestationSlot;
+  }
+
   private void assertBlockImportedSuccessfully(final SafeFuture<BlockImportResult> importResult) {
     assertThat(importResult).isCompleted();
     final BlockImportResult result = importResult.join();
@@ -138,7 +235,9 @@ class ForkChoiceTest {
   private void importBlock(final ChainBuilder chainBuilder, final SignedBlockAndState block) {
     final SafeFuture<BlockImportResult> result =
         forkChoice.onBlock(
-            block.getBlock(), Optional.of(chainBuilder.getStateAtSlot(block.getSlot().minus(ONE))));
+            block.getBlock(),
+            Optional.of(
+                chainBuilder.getLatestBlockAndStateAtSlot(block.getSlot().minus(ONE)).getState()));
     assertBlockImportedSuccessfully(result);
   }
 }

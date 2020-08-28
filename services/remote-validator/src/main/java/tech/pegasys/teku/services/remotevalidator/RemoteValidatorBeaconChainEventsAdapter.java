@@ -24,6 +24,7 @@ import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestation
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+import tech.pegasys.teku.validator.remote.BeaconChainEvent;
 
 class RemoteValidatorBeaconChainEventsAdapter implements SlotEventsChannel, ReorgEventChannel {
 

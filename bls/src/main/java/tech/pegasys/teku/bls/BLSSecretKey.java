@@ -93,9 +93,4 @@ public final class BLSSecretKey {
   public int hashCode() {
     return Objects.hash(secretKey);
   }
-
-  @Override
-  public String toString() {
-    return "BLSSecretKey{" + toBytes() + '}';
-  }
 }

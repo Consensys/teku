@@ -14,12 +14,14 @@
 package tech.pegasys.teku.storage.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import com.google.common.eventbus.EventBus;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -34,6 +36,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 public class MemoryOnlyRecentChainData extends RecentChainData {
 
   private MemoryOnlyRecentChainData(
+      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
       final EventBus eventBus,
@@ -42,6 +45,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ReorgEventChannel reorgEventChannel) {
     super(
+        asyncRunner,
         metricsSystem,
         storeConfig,
         BlockProvider.NOOP,
@@ -88,6 +92,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
 
     public RecentChainData build() {
       return new MemoryOnlyRecentChainData(
+          SYNC_RUNNER,
           new NoOpMetricsSystem(),
           storeConfig,
           eventBus,

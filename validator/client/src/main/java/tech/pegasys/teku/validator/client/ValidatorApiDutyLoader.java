@@ -50,7 +50,7 @@ class ValidatorApiDutyLoader implements DutyLoader {
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,
         "local_validator_count",
-        "Current number of valdiators running in this validator client",
+        "Current number of validators running in this validator client",
         this.validators::size);
   }
 

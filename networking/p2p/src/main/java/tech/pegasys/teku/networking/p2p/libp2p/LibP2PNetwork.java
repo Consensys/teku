@@ -193,9 +193,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
             .setAgentVersion(VersionProvider.CLIENT_IDENTITY + "/" + VersionProvider.VERSION)
             .setPublicKey(ByteArrayExtKt.toProtobuf(privKey.publicKey().bytes()))
             .addListenAddrs(ByteArrayExtKt.toProtobuf(advertisedAddr.getBytes()))
-            .setObservedAddr(
-                ByteArrayExtKt.toProtobuf( // TODO (#1854): Report external IP?
-                    advertisedAddr.getBytes()))
+            .setObservedAddr(ByteArrayExtKt.toProtobuf(advertisedAddr.getBytes()))
             .addAllProtocols(ping.getProtocolDescriptor().getAnnounceProtocols())
             .addAllProtocols(gossip.getProtocolDescriptor().getAnnounceProtocols())
             .build();
