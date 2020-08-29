@@ -17,11 +17,10 @@ import static tech.pegasys.teku.validator.remote.BeaconChainEvent.REORG_OCCURRED
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = As.EXISTING_PROPERTY, property = "name")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "name")
 @JsonSubTypes({@JsonSubTypes.Type(value = BeaconChainReorgEvent.class, name = REORG_OCCURRED)})
 public class BeaconChainEvent {
 
