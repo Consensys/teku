@@ -20,7 +20,6 @@ import static tech.pegasys.teku.validator.remote.BeaconChainEvent.IMPORTED_BLOCK
 import static tech.pegasys.teku.validator.remote.BeaconChainEvent.ON_SLOT;
 import static tech.pegasys.teku.validator.remote.BeaconChainEvent.REORG_OCCURRED;
 
-import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -29,9 +28,6 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 public class BeaconChainEventMapper {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final String NAME_FIELD = "name";
-  private static final String SLOT_FIELD = "data";
-  private static final String COMMON_ANCESTOR_SLOT_FIELD = "commonAncestorSlot";
 
   private final ValidatorTimingChannel validatorTimingChannel;
 
@@ -39,12 +35,9 @@ public class BeaconChainEventMapper {
     this.validatorTimingChannel = validatorTimingChannel;
   }
 
-  void map(final Map<String, Object> event) {
-    checkArgument(event.containsKey(NAME_FIELD), "Event missing name field");
-    checkArgument(event.containsKey(SLOT_FIELD), "Event missing data field");
-    final UInt64 slot = UInt64.valueOf(event.get(SLOT_FIELD).toString());
-    final String name = event.get(NAME_FIELD).toString();
-    switch (name) {
+  void map(final BeaconChainEvent event) {
+    final UInt64 slot = event.getData();
+    switch (event.getName()) {
       case ATTESTATION:
         {
           validatorTimingChannel.onAttestationCreationDue(slot);
@@ -69,15 +62,14 @@ public class BeaconChainEventMapper {
       case REORG_OCCURRED:
         {
           checkArgument(
-              event.containsKey(COMMON_ANCESTOR_SLOT_FIELD),
-              "Reorg event missing commonAncestorSlot");
+              event instanceof BeaconChainReorgEvent, "Reorg event missing commonAncestorSlot");
           validatorTimingChannel.onChainReorg(
-              slot, UInt64.valueOf(event.get(COMMON_ANCESTOR_SLOT_FIELD).toString()));
+              slot, ((BeaconChainReorgEvent) event).getCommonAncestorSlot());
           break;
         }
       default:
         {
-          LOG.error("Invalid BeaconChainEvent type {}", name);
+          LOG.error("Invalid BeaconChainEvent type {}", event.getName());
         }
     }
   }

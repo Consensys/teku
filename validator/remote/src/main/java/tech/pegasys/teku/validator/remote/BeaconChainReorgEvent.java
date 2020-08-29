@@ -17,13 +17,16 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BeaconChainReorgEvent extends BeaconChainEvent {
 
-  private final UInt64 commonAncestorSlot;
+  private UInt64 commonAncestorSlot;
 
   public BeaconChainReorgEvent(
       final String name, final UInt64 data, final UInt64 commonAncestorSlot) {
     super(name, data);
     this.commonAncestorSlot = commonAncestorSlot;
   }
+
+  @SuppressWarnings("unused") // Used by JSON deserialization
+  public BeaconChainReorgEvent() {}
 
   public UInt64 getCommonAncestorSlot() {
     return commonAncestorSlot;

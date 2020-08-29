@@ -19,7 +19,6 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -93,11 +92,10 @@ class WebSocketBeaconChainEventAdapterTest {
     verifyNoInteractions(validatorTimingChannel);
   }
 
-  @SuppressWarnings("unchecked")
   private void mapEvent(final BeaconChainEvent event) throws Exception {
     final JsonProvider jsonProvider = new JsonProvider();
     final String json = jsonProvider.objectToJSON(event);
-    final Map<String, Object> parsedEvent = jsonProvider.jsonToObject(json, Map.class);
+    final BeaconChainEvent parsedEvent = jsonProvider.jsonToObject(json, BeaconChainEvent.class);
     mapper.map(parsedEvent);
   }
 }
