@@ -79,7 +79,8 @@ public class EventChannelBeaconChainEventAdapter
   }
 
   @Override
-  public void reorgOccurred(final Bytes32 bestBlockRoot, final UInt64 bestSlot) {
-    validatorTimingChannel.onChainReorg(bestSlot);
+  public void reorgOccurred(
+      final Bytes32 bestBlockRoot, final UInt64 bestSlot, final UInt64 commonAncestorSlot) {
+    validatorTimingChannel.onChainReorg(bestSlot, commonAncestorSlot);
   }
 }

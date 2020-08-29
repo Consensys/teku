@@ -13,11 +13,15 @@
 
 package tech.pegasys.teku.storage.client;
 
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
+
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.util.config.Constants;
 
 class ChainHead extends SignedBlockAndState {
   private final UInt64 forkChoiceSlot;
@@ -34,6 +38,38 @@ class ChainHead extends SignedBlockAndState {
   /** @return The slot at which the chain head was calculated */
   public UInt64 getForkChoiceSlot() {
     return forkChoiceSlot;
+  }
+
+  public UInt64 findCommonAncestor(final ChainHead other) {
+    if (getSlot().equals(UInt64.ZERO) || other.getSlot().equals(UInt64.ZERO)) {
+      // One fork has no blocks so the only possible common ancestor is genesis.
+      return UInt64.ZERO;
+    }
+    UInt64 slot = getSlot().min(other.getSlot());
+    final UInt64 longestChainSlot = getSlot().max(other.getSlot());
+    UInt64 minSlotWithHistoricRoot =
+        longestChainSlot
+            .max(Constants.SLOTS_PER_HISTORICAL_ROOT) // Avoid underflow
+            .minus(Constants.SLOTS_PER_HISTORICAL_ROOT);
+    while (slot.isGreaterThan(minSlotWithHistoricRoot)) {
+      if (getBlockRootAtSlot(slot).equals(other.getBlockRootAtSlot(slot))) {
+        return slot;
+      }
+      slot = slot.minus(1);
+    }
+    // Couldn't find a common ancestor in the available block roots so fallback to finalized
+    return getState()
+        .getFinalized_checkpoint()
+        .getEpochStartSlot()
+        .min(other.getState().getFinalized_checkpoint().getEpochStartSlot());
+  }
+
+  private Bytes32 getBlockRootAtSlot(final UInt64 slot) {
+    // The block root for the state's own slot is not included in the state so any slot greater than
+    // or equal to slot must have the head block root.
+    return slot.isGreaterThanOrEqualTo(getSlot())
+        ? getRoot()
+        : get_block_root_at_slot(getState(), slot);
   }
 
   @Override

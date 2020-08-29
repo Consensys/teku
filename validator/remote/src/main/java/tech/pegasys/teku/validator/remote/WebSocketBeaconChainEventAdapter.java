@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.remote;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClient;
+import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -89,10 +90,11 @@ public class WebSocketBeaconChainEventAdapter implements BeaconChainEventAdapter
     return future;
   }
 
+  @SuppressWarnings("unchecked")
   private void handleTextMessage(final String msg) {
-    final BeaconChainEvent event;
+    final Map<String, Object> event;
     try {
-      event = jsonProvider.jsonToObject(msg, BeaconChainEvent.class);
+      event = jsonProvider.jsonToObject(msg, Map.class);
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }

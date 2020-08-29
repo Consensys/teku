@@ -19,7 +19,7 @@ import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
 public interface ValidatorTimingChannel extends VoidReturningChannelInterface {
   void onSlot(UInt64 slot);
 
-  void onChainReorg(final UInt64 newSlot);
+  void onChainReorg(UInt64 newSlot, UInt64 commonAncestorSlot);
 
   void onBlockProductionDue(UInt64 slot);
 
