@@ -47,9 +47,9 @@ public class BlstBLS12381 implements BLS12381 {
     try {
       NativeUtils.loadLibraryFromJar("/" + System.mapLibraryName("jblst"));
       libraryLoaded = true;
-      LOG.info("Successfully loaded native BLS library");
+      LOG.debug("Successfully loaded native BLS library");
     } catch (Throwable e) {
-      LOG.warn("Couldn't load native BLS library: " + e);
+      LOG.debug("Couldn't load native BLS library: " + e);
       libraryLoaded = false;
     }
     INSTANCE = libraryLoaded ? Optional.of(new BlstBLS12381()) : Optional.empty();

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.core;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import java.util.List;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -24,7 +25,6 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -41,8 +41,7 @@ public class VoluntaryExitGenerator {
 
     BLSSignature exitSignature =
         new UnprotectedSigner(
-                new LocalMessageSignerService(
-                    getKeypair(validatorIndex, valid), DelayedExecutorAsyncRunner.create()))
+                new LocalMessageSignerService(getKeypair(validatorIndex, valid), SYNC_RUNNER))
             .signVoluntaryExit(exit, forkInfo)
             .join();
 

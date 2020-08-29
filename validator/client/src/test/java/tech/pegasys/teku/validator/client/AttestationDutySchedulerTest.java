@@ -133,18 +133,58 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   }
 
   @Test
-  public void shouldRefetchDutiesAfterReorg() {
+  public void shouldRefetchDutiesForMultipleEpochsAfterReorg() {
+    final UInt64 currentEpoch = UInt64.valueOf(5);
+    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+    final UInt64 nextEpoch = currentEpoch.plus(1);
+    final UInt64 commonAncestorEpoch = currentEpoch.minus(2);
+    final UInt64 commonAncestorSlot = compute_start_slot_at_epoch(commonAncestorEpoch);
     when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.ONE));
+    dutyScheduler.onSlot(currentSlot);
 
-    verify(validatorApiChannel).getDuties(UInt64.ONE, VALIDATOR_KEYS);
-    verify(validatorApiChannel).getDuties(UInt64.valueOf(2), VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(currentEpoch, VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(nextEpoch, VALIDATOR_KEYS);
 
-    dutyScheduler.onChainReorg(compute_start_slot_at_epoch(UInt64.valueOf(2)));
+    dutyScheduler.onChainReorg(currentSlot, commonAncestorSlot);
 
-    // Re-requests epoch 2 and also requests epoch 3 as the new chain is far enough along for that
-    verify(validatorApiChannel, times(2)).getDuties(UInt64.valueOf(2), VALIDATOR_KEYS);
-    verify(validatorApiChannel).getDuties(UInt64.valueOf(3), VALIDATOR_KEYS);
+    verify(validatorApiChannel, times(2)).getDuties(currentEpoch, VALIDATOR_KEYS);
+    verify(validatorApiChannel, times(2)).getDuties(nextEpoch, VALIDATOR_KEYS);
+    verifyNoMoreInteractions(validatorApiChannel);
+  }
+
+  @Test
+  public void shouldRefetchDutiesForNextEpochAfterReorg() {
+    final UInt64 currentEpoch = UInt64.valueOf(5);
+    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+    final UInt64 nextEpoch = currentEpoch.plus(1);
+    final UInt64 commonAncestorEpoch = currentEpoch.minus(1);
+    final UInt64 commonAncestorSlot = compute_start_slot_at_epoch(commonAncestorEpoch);
+    when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
+    dutyScheduler.onSlot(currentSlot);
+
+    verify(validatorApiChannel).getDuties(currentEpoch, VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(nextEpoch, VALIDATOR_KEYS);
+
+    dutyScheduler.onChainReorg(currentSlot, commonAncestorSlot);
+
+    verify(validatorApiChannel, times(2)).getDuties(nextEpoch, VALIDATOR_KEYS);
+    verifyNoMoreInteractions(validatorApiChannel);
+  }
+
+  @Test
+  public void shouldNotRefetchDutiesWhenCommonAncestorInCurrentEpoch() {
+    final UInt64 currentEpoch = UInt64.valueOf(5);
+    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+    final UInt64 nextEpoch = currentEpoch.plus(1);
+    final UInt64 commonAncestorSlot = compute_start_slot_at_epoch(currentEpoch);
+    when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
+    dutyScheduler.onSlot(currentSlot);
+
+    verify(validatorApiChannel).getDuties(currentEpoch, VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(nextEpoch, VALIDATOR_KEYS);
+
+    dutyScheduler.onChainReorg(currentSlot, commonAncestorSlot);
+
     verifyNoMoreInteractions(validatorApiChannel);
   }
 
