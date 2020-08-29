@@ -19,9 +19,11 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 class WebSocketBeaconChainEventAdapterTest {
@@ -35,59 +37,67 @@ class WebSocketBeaconChainEventAdapterTest {
   }
 
   @Test
-  public void mapAttestationEvent() {
+  public void mapAttestationEvent() throws Exception {
     final BeaconChainEvent event = new BeaconChainEvent(BeaconChainEvent.ATTESTATION, UInt64.ONE);
 
-    mapper.map(event);
+    mapEvent(event);
 
     verify(validatorTimingChannel).onAttestationCreationDue(eq(UInt64.ONE));
   }
 
   @Test
-  public void mapAggregationEvent() {
+  public void mapAggregationEvent() throws Exception {
     final BeaconChainEvent event = new BeaconChainEvent(BeaconChainEvent.AGGREGATION, UInt64.ONE);
 
-    mapper.map(event);
+    mapEvent(event);
 
     verify(validatorTimingChannel).onAttestationAggregationDue(eq(UInt64.ONE));
   }
 
   @Test
-  public void mapImportedBlockEvent() {
+  public void mapImportedBlockEvent() throws Exception {
     final BeaconChainEvent event =
         new BeaconChainEvent(BeaconChainEvent.IMPORTED_BLOCK, UInt64.ONE);
 
-    mapper.map(event);
+    mapEvent(event);
 
     verify(validatorTimingChannel).onBlockImportedForSlot(eq(UInt64.ONE));
   }
 
   @Test
-  public void mapOnSlotEvent() {
+  public void mapOnSlotEvent() throws Exception {
     final BeaconChainEvent event = new BeaconChainEvent(BeaconChainEvent.ON_SLOT, UInt64.ONE);
 
-    mapper.map(event);
+    mapEvent(event);
 
     verify(validatorTimingChannel).onSlot(eq(UInt64.ONE));
     verify(validatorTimingChannel).onBlockProductionDue(eq(UInt64.ONE));
   }
 
   @Test
-  public void mapReorgOccurredEvent() {
-    final BeaconChainEvent event =
-        new BeaconChainEvent(BeaconChainEvent.REORG_OCCURRED, UInt64.ONE);
+  public void mapReorgOccurredEvent() throws Exception {
+    final BeaconChainReorgEvent event =
+        new BeaconChainReorgEvent(BeaconChainEvent.REORG_OCCURRED, UInt64.ONE, UInt64.valueOf(10));
 
-    mapper.map(event);
+    mapEvent(event);
 
-    verify(validatorTimingChannel).onChainReorg(eq(UInt64.ONE));
+    verify(validatorTimingChannel).onChainReorg(eq(UInt64.ONE), eq(UInt64.valueOf(10)));
   }
 
   @Test
-  public void mapNonMappedEvent_ShouldDoNothing() {
+  public void mapNonMappedEvent_ShouldDoNothing() throws Exception {
     final BeaconChainEvent event = new BeaconChainEvent("foo", UInt64.ONE);
 
-    mapper.map(event);
+    mapEvent(event);
 
     verifyNoInteractions(validatorTimingChannel);
+  }
+
+  @SuppressWarnings("unchecked")
+  private void mapEvent(final BeaconChainEvent event) throws Exception {
+    final JsonProvider jsonProvider = new JsonProvider();
+    final String json = jsonProvider.objectToJSON(event);
+    final Map<String, Object> parsedEvent = jsonProvider.jsonToObject(json, Map.class);
+    mapper.map(parsedEvent);
   }
 }
