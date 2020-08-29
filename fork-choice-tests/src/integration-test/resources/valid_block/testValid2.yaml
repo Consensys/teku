@@ -1,0 +1,16 @@
+meta:
+  bls_setting: 0
+genesis: state_0.ssz
+steps:
+- checks:
+    head: '0xf5a574a2f93aee8095fe9b41579c9935700315030d22888004effa742f1da85a'
+- slot: 1
+- checks:
+    head: '0xf5a574a2f93aee8095fe9b41579c9935700315030d22888004effa742f1da85a'
+- slot: 2
+- checks:
+    head: '0xf5a574a2f93aee8095fe9b41579c9935700315030d22888004effa742f1da85a'
+- block: block_3.ssz
+- checks:
+    head: '0xc36ebcbf70b171bc57a2426a7a789d3161a66405932a7286a892e17a7bc1b379'
+    block_in_store: '0xc36ebcbf70b171bc57a2426a7a789d3161a66405932a7286a892e17a7bc1b379'

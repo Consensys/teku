@@ -57,7 +57,7 @@ public class ForkChoice {
     processHead();
   }
 
-  private void processHead() {
+  public void processHead() {
     processHead(Optional.empty());
   }
 

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static java.lang.StrictMath.toIntExact;
 import static tech.pegasys.teku.core.BlockProcessorUtil.getVoteCount;
 import static tech.pegasys.teku.core.BlockProcessorUtil.isEnoughVotesToUpdateEth1Data;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -150,8 +149,6 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
     return depositNavigableMap.size();
   }
 
-  // TODO (#2395): switch the MerkleTree to use UInt64s instead of using toIntExact() here,
-  //  it will result in an overflow at some point
   /**
    * @param fromDepositIndex inclusive
    * @param toDepositIndex exclusive
@@ -166,8 +163,7 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
             deposit ->
                 new DepositWithIndex(
                     depositMerkleTree.getProofWithViewBoundary(
-                        toIntExact(deposit.getIndex().longValue()),
-                        toIntExact(eth1DepositCount.longValue())),
+                        deposit.getIndex().intValue(), eth1DepositCount.intValue()),
                     deposit.getData(),
                     deposit.getIndex()))
         .collect(Collectors.toList());

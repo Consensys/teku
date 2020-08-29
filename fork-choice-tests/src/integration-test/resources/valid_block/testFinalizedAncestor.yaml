@@ -1,0 +1,205 @@
+meta:
+  bls_setting: 0
+genesis: state_0.ssz
+steps:
+- checks:
+    head: '0xf5a574a2f93aee8095fe9b41579c9935700315030d22888004effa742f1da85a'
+- slot: 1
+- checks:
+    head: '0xf5a574a2f93aee8095fe9b41579c9935700315030d22888004effa742f1da85a'
+- block: block_4.ssz
+- checks:
+    head: '0x344f0541f04ff47eec6c5bd9be122fdeac284c7b16cb1b0dff56bbe9ec119275'
+- slot: 2
+- checks:
+    head: '0x344f0541f04ff47eec6c5bd9be122fdeac284c7b16cb1b0dff56bbe9ec119275'
+- block: block_5.ssz
+- checks:
+    head: '0x0d1337a22073db0f7f236840400f869231a465647503e004c13f5f8660a5c480'
+- slot: 3
+- checks:
+    head: '0x0d1337a22073db0f7f236840400f869231a465647503e004c13f5f8660a5c480'
+- block: block_6.ssz
+- checks:
+    head: '0xb3e14634b53408b352be2bddd7d24405dab65a9dfc4dd964ad210620bdd3717d'
+- slot: 4
+- checks:
+    head: '0xb3e14634b53408b352be2bddd7d24405dab65a9dfc4dd964ad210620bdd3717d'
+- block: block_7.ssz
+- checks:
+    head: '0xeb8091dc3522af78693d6b4695d2a0ab6bc334ba7e9bd0e3c67faa50167d39b0'
+- slot: 5
+- checks:
+    head: '0xeb8091dc3522af78693d6b4695d2a0ab6bc334ba7e9bd0e3c67faa50167d39b0'
+- block: block_8.ssz
+- checks:
+    head: '0xf6556bad3f7a028c8f51c5b032b920ccb9c44a4b12f8ccf1521b9635b6c915a5'
+- slot: 6
+- checks:
+    head: '0xf6556bad3f7a028c8f51c5b032b920ccb9c44a4b12f8ccf1521b9635b6c915a5'
+- block: block_9.ssz
+- checks:
+    head: '0x0faddc31046f5076712df587ec43ef96d1b30674d9e24d1672a8e748b020a143'
+- slot: 7
+- checks:
+    head: '0x0faddc31046f5076712df587ec43ef96d1b30674d9e24d1672a8e748b020a143'
+- block: block_10.ssz
+- checks:
+    head: '0x543f3113031545d996afa719292764cceecc88ecfd56ae7670f706632a79ae51'
+- slot: 8
+- checks:
+    head: '0x543f3113031545d996afa719292764cceecc88ecfd56ae7670f706632a79ae51'
+- block: block_11.ssz
+- checks:
+    head: '0xc50bef1153bbabb4fa7d6347d45b12929b58bf15799fe194fd64586c2f502407'
+- slot: 9
+- checks:
+    head: '0xc50bef1153bbabb4fa7d6347d45b12929b58bf15799fe194fd64586c2f502407'
+- block: block_12.ssz
+- checks:
+    head: '0x823f0dfa1c572a039a6d7453ef76c07d5d28c68bb67cc0707796e3154c95544e'
+- slot: 10
+- checks:
+    head: '0x823f0dfa1c572a039a6d7453ef76c07d5d28c68bb67cc0707796e3154c95544e'
+- block: block_13.ssz
+- checks:
+    head: '0x2058cc1dede2d02ea828ee5c9b203e2f32afcc6fed9db26626d484e4f203cdce'
+- slot: 11
+- checks:
+    head: '0x2058cc1dede2d02ea828ee5c9b203e2f32afcc6fed9db26626d484e4f203cdce'
+- block: block_14.ssz
+- checks:
+    head: '0x557662a2ef1702e10054316c4c68427726809f355b5176bff41ad4ea210807a7'
+- slot: 12
+- checks:
+    head: '0x557662a2ef1702e10054316c4c68427726809f355b5176bff41ad4ea210807a7'
+- block: block_15.ssz
+- checks:
+    head: '0xd6c9f1515f3d05119ee326dcec094700ed4b0518552930c1787c1b55afcaffee'
+- slot: 13
+- checks:
+    head: '0xd6c9f1515f3d05119ee326dcec094700ed4b0518552930c1787c1b55afcaffee'
+- block: block_16.ssz
+- checks:
+    head: '0x260b9b1074f77e3e2da37fcc8db9c4907d850f632f0014899b3fe5a993f9585d'
+- slot: 14
+- checks:
+    head: '0x260b9b1074f77e3e2da37fcc8db9c4907d850f632f0014899b3fe5a993f9585d'
+- block: block_17.ssz
+- checks:
+    head: '0xbb14feb22384785f52a2fa0660dd4224f04d2039ad743d56cfecd1d831d7c621'
+- slot: 15
+- checks:
+    head: '0xbb14feb22384785f52a2fa0660dd4224f04d2039ad743d56cfecd1d831d7c621'
+- block: block_18.ssz
+- checks:
+    head: '0xaeab98bdb6d90d68551b5e59be9fbec5a1522ad01f862029520ae6589772a4af'
+- slot: 16
+- checks:
+    head: '0xaeab98bdb6d90d68551b5e59be9fbec5a1522ad01f862029520ae6589772a4af'
+- block: block_19.ssz
+- checks:
+    head: '0x68850009beb74b9b5279904c3e569180be601dd8214518df75e69755612091cc'
+- slot: 17
+- checks:
+    head: '0x68850009beb74b9b5279904c3e569180be601dd8214518df75e69755612091cc'
+- block: block_20.ssz
+- checks:
+    head: '0x1d271e38c38f981ae87a3f1a20a829aaaba49f79f797642fa55448fd28fe72c3'
+- slot: 18
+- checks:
+    head: '0x1d271e38c38f981ae87a3f1a20a829aaaba49f79f797642fa55448fd28fe72c3'
+- block: block_21.ssz
+- checks:
+    head: '0x8be7068a3b713b4c3f782cafbe47b58402b76874dfe238b0e1e74a61a35f0ad9'
+- slot: 19
+- checks:
+    head: '0x8be7068a3b713b4c3f782cafbe47b58402b76874dfe238b0e1e74a61a35f0ad9'
+- block: block_22.ssz
+- checks:
+    head: '0x1b385e0983564f9dea0e29fcb9ef499bc655ee08fef1d112f9a2599dc4620590'
+- slot: 20
+- checks:
+    head: '0x1b385e0983564f9dea0e29fcb9ef499bc655ee08fef1d112f9a2599dc4620590'
+- block: block_23.ssz
+- checks:
+    head: '0x77781186ffda8cf8bcc9cfa56d6c8071a4004ae4693007bd35fef28295769372'
+- slot: 21
+- checks:
+    head: '0x77781186ffda8cf8bcc9cfa56d6c8071a4004ae4693007bd35fef28295769372'
+- block: block_24.ssz
+- checks:
+    head: '0x7c1a4cb4520d5c810499d00d8e49c2fbfba009463910e8c57714391d991aa222'
+- slot: 22
+- checks:
+    head: '0x7c1a4cb4520d5c810499d00d8e49c2fbfba009463910e8c57714391d991aa222'
+- block: block_25.ssz
+- checks:
+    head: '0x1ced8ff3f6c9894b7eac17b199bb6b86763225ce72cfa08e170f420dd9bdc198'
+- slot: 23
+- checks:
+    head: '0x1ced8ff3f6c9894b7eac17b199bb6b86763225ce72cfa08e170f420dd9bdc198'
+- block: block_26.ssz
+- checks:
+    head: '0x44ff72911fc065899516064d2a3ef1a49cd7891500b67ccb09821b7ea8b3fc7f'
+- slot: 24
+- checks:
+    head: '0x44ff72911fc065899516064d2a3ef1a49cd7891500b67ccb09821b7ea8b3fc7f'
+- block: block_27.ssz
+- checks:
+    head: '0xcf02e0d58d81644a1e87460ad745235a337b02ad40c26dfdae30610aae1bd470'
+- slot: 25
+- checks:
+    head: '0xcf02e0d58d81644a1e87460ad745235a337b02ad40c26dfdae30610aae1bd470'
+- block: block_28.ssz
+- checks:
+    head: '0x02cbbeab456e4602fc23da3afff9cf28f28f4fad508129fc14f6f74a9117decf'
+- slot: 26
+- checks:
+    head: '0x02cbbeab456e4602fc23da3afff9cf28f28f4fad508129fc14f6f74a9117decf'
+- block: block_29.ssz
+- checks:
+    head: '0x9ae81554d39b1255428730eef80a173b9ec3901a8f935e88711fa55ebe377519'
+- slot: 27
+- checks:
+    head: '0x9ae81554d39b1255428730eef80a173b9ec3901a8f935e88711fa55ebe377519'
+- block: block_30.ssz
+- checks:
+    head: '0xd4e01be778bb7e5caf2227b06f56642aa57f64807a89feeef6b2763c36bdc961'
+- slot: 28
+- checks:
+    head: '0xd4e01be778bb7e5caf2227b06f56642aa57f64807a89feeef6b2763c36bdc961'
+- block: block_31.ssz
+- checks:
+    head: '0x4784c53155da608c199738b6944d23b1b3ad65f2cfe777efd137193fd23bec75'
+- slot: 29
+- checks:
+    head: '0x4784c53155da608c199738b6944d23b1b3ad65f2cfe777efd137193fd23bec75'
+- block: block_32.ssz
+- checks:
+    head: '0x1af48b91158b07c70ecb1489fc04cd8b40cba45ec85f049939e62b567a6e3fcd'
+- slot: 30
+- checks:
+    head: '0x1af48b91158b07c70ecb1489fc04cd8b40cba45ec85f049939e62b567a6e3fcd'
+- block: block_33.ssz
+- checks:
+    head: '0x05869e13ba78589bcebeb768fa51767f44a53b64233e2463bac6fccc8e70266e'
+- slot: 31
+- checks:
+    head: '0x05869e13ba78589bcebeb768fa51767f44a53b64233e2463bac6fccc8e70266e'
+- block: block_34.ssz
+- checks:
+    head: '0x7c21ec41f76bb18e5989823325de41d59e9da091cbab7d41c02bf4bdff207fd2'
+- slot: 32
+- checks:
+    head: '0x7c21ec41f76bb18e5989823325de41d59e9da091cbab7d41c02bf4bdff207fd2'
+- block: block_35.ssz
+- checks:
+    head: '0x07807f750b49cef37a4a3e6145aa7d968efc1516aa66c6aef68d1d228a5e518b'
+- slot: 33
+- checks:
+    head: '0x07807f750b49cef37a4a3e6145aa7d968efc1516aa66c6aef68d1d228a5e518b'
+- block: block_36.ssz
+- checks:
+    head: '0x07807f750b49cef37a4a3e6145aa7d968efc1516aa66c6aef68d1d228a5e518b'
+    block_not_in_store: '0xe9ff7a73eedb336c64c50e03b3feb7fa8eb3f2f9eead9c46a4ce65cb8d693d5f'
