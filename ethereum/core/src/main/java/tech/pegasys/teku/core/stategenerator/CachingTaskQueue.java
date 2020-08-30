@@ -141,7 +141,7 @@ public class CachingTaskQueue<K, V> {
       newBase
           .get()
           .thenAccept(ancestorResult -> queueTask(task.rebase(ancestorResult)))
-          .propagateExceptionTo(generationResult);
+          .finish(error -> completePendingTask(task, Optional.empty(), error));
       return generationResult;
     }
 
