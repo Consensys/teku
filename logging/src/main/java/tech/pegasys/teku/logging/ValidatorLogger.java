@@ -78,11 +78,13 @@ public class ValidatorLogger {
     return blockRoots.stream().map(LogFormatter::formatHashRoot).collect(Collectors.joining(", "));
   }
 
-  public void aggregationSkipped(final UInt64 slot) {
+  public void aggregationSkipped(final UInt64 slot, final int committeeIndex) {
     log.warn(
         print(
             PREFIX
-                + "Skipped aggregation for slot "
+                + "Skipped aggregation for committee "
+                + committeeIndex
+                + " at slot "
                 + slot
                 + " because there was nothing to aggregate",
             Color.YELLOW));
