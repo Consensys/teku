@@ -44,10 +44,12 @@ public class EnvironmentVariableDefaultProvider implements IDefaultValueProvider
   }
 
   private Stream<String> envVarNames(final OptionSpec spec) {
-    return Arrays.stream(spec.names())
-        .filter(name -> name.startsWith("--")) // Only long options are allowed
-        .flatMap(
-            name -> Stream.of(ENV_VAR_PREFIX).map(prefix -> prefix + nameToEnvVarSuffix(name)));
+    return spec.versionHelp() || spec.usageHelp()
+        ? Stream.empty()
+        : Arrays.stream(spec.names())
+            .filter(name -> name.startsWith("--")) // Only long options are allowed
+            .flatMap(
+                name -> Stream.of(ENV_VAR_PREFIX).map(prefix -> prefix + nameToEnvVarSuffix(name)));
   }
 
   private String nameToEnvVarSuffix(final String name) {
