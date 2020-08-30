@@ -118,8 +118,8 @@ public class RegisterAction implements AutoCloseable {
   }
 
   public SafeFuture<TransactionReceipt> sendDeposit(
-      final BLSKeyPair validatorKey, final BLSPublicKey withdrawalKey) {
+      final BLSKeyPair validatorKey, final BLSPublicKey withdrawalPublicKey) {
     return sender.sendDepositTransaction(
-        validatorKey, withdrawalKey, amount, commandStdOutput, commandErrorOutput);
+        validatorKey, withdrawalPublicKey, amount, commandStdOutput, commandErrorOutput);
   }
 }

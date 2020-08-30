@@ -21,7 +21,7 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
 
   public BlockDutyScheduler(
       final MetricsSystem metricsSystem, final DutyLoader epochDutiesScheduler) {
-    super(epochDutiesScheduler);
+    super(epochDutiesScheduler, 0);
 
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.VALIDATOR,

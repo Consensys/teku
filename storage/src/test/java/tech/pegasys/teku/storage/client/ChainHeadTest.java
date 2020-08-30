@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.util.config.Constants;
 
 public class ChainHeadTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -60,6 +62,69 @@ public class ChainHeadTest {
     final ChainHead otherChainHead = ChainHead.create(otherBlock, forkChoiceSlot);
 
     assertThat(chainHead).isNotEqualTo(otherChainHead);
+  }
+
+  @Test
+  void findCommonAncestor_atGenesisBlock() {
+    final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+    final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
+    final ChainHead chainHeadA = ChainHead.create(genesis, UInt64.valueOf(10));
+    final ChainHead chainHeadB = ChainHead.create(block2, UInt64.valueOf(12));
+    assertThat(chainHeadA.findCommonAncestor(chainHeadB)).isEqualTo(UInt64.ZERO);
+    assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.ZERO);
+  }
+
+  @Test
+  void findCommonAncestor_headBlockEmptyVsFull() {
+    final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+    chainBuilder.generateGenesis();
+    final SignedBlockAndState block1 = chainBuilder.generateBlockAtSlot(1);
+    final SignedBlockAndState block2 = chainBuilder.generateBlockAtSlot(2);
+    final ChainHead chainHeadA = ChainHead.create(block1, UInt64.valueOf(2));
+    final ChainHead chainHeadB = ChainHead.create(block2, UInt64.valueOf(2));
+    assertThat(chainHeadA.findCommonAncestor(chainHeadB)).isEqualTo(UInt64.ONE);
+    assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.ONE);
+  }
+
+  @Test
+  void findCommonAncestor_differingChains() {
+    final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+    chainBuilder.generateGenesis();
+    chainBuilder.generateBlockAtSlot(2);
+    final ChainBuilder fork = chainBuilder.fork();
+    chainBuilder.generateBlocksUpToSlot(4);
+    final SignedBlockAndState chainHead = chainBuilder.generateBlockAtSlot(5);
+
+    // Fork skips slot 3 so the chains are different
+    fork.generateBlockAtSlot(4);
+    fork.generateBlocksUpToSlot(6);
+    final SignedBlockAndState forkHead = fork.generateBlockAtSlot(7);
+
+    final ChainHead chainHeadA = ChainHead.create(chainHead, UInt64.valueOf(8));
+    final ChainHead chainHeadB = ChainHead.create(forkHead, UInt64.valueOf(9));
+    assertThat(chainHeadA.findCommonAncestor(chainHeadB)).isEqualTo(UInt64.valueOf(2));
+    assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.valueOf(2));
+  }
+
+  @Test
+  void findCommonAncestor_differingBeyondHistoricRoots() {
+    final ChainBuilder chainBuilder = ChainBuilder.createDefault();
+    chainBuilder.generateGenesis();
+    final ChainBuilder fork = chainBuilder.fork();
+
+    final SignedBlockAndState chainHead =
+        chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_HISTORICAL_ROOT + 2);
+
+    // Fork skips slot 1 so the chains are different
+    fork.generateBlockAtSlot(1);
+    final SignedBlockAndState forkHead =
+        fork.generateBlockAtSlot(Constants.SLOTS_PER_HISTORICAL_ROOT + 2);
+
+    final ChainHead chainHeadA = ChainHead.create(chainHead, chainHead.getSlot());
+    final ChainHead chainHeadB = ChainHead.create(forkHead, forkHead.getSlot());
+    assertThat(chainHeadA.findCommonAncestor(chainHeadB)).isEqualTo(UInt64.ZERO);
+    assertThat(chainHeadB.findCommonAncestor(chainHeadA)).isEqualTo(UInt64.ZERO);
   }
 
   private ChainHead copy(ChainHead original) {

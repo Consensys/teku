@@ -44,3 +44,5 @@ include 'eth-tests'
 include 'eth-reference-tests'
 include 'eth-benchmark-tests'
 include 'compatibility-tests:multiclient'
+include 'fork-choice-tests'
+
