@@ -154,6 +154,8 @@ class CachingTaskQueueTest {
     final SafeFuture<Optional<String>> resultB = taskQueue.perform(taskB);
     final SafeFuture<Optional<String>> resultC = taskQueue.perform(taskC);
 
+    assertPendingTaskCount(2); // B & C were de-duplicated
+
     taskA.assertPerformedWithoutRebase();
     // Task B will be scheduled for rebase when A completes
     // Task C should just use the pending future from B and never execute
@@ -167,6 +169,7 @@ class CachingTaskQueueTest {
 
     taskB.completeTask();
 
+    assertThat(resultA).isCompletedWithValue(taskA.getExpectedValue());
     assertThat(resultB).isCompletedWithValue(taskB.getExpectedValue());
     assertThat(resultC).isCompletedWithValue(taskC.getExpectedValue());
     taskC.assertNotRebased();
@@ -269,6 +272,14 @@ class CachingTaskQueueTest {
         metricsSystem
             .getCounter(TekuMetricCategory.STORAGE, METRICS_PREFIX + "_tasks_total")
             .getValue("rebase");
+    assertThat(value).isEqualTo(expectedCount);
+  }
+
+  private void assertPendingTaskCount(final int expectedCount) {
+    final double value =
+        metricsSystem
+            .getGauge(TekuMetricCategory.STORAGE, METRICS_PREFIX + "_tasks_requested")
+            .getValue();
     assertThat(value).isEqualTo(expectedCount);
   }
 
