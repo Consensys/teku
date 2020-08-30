@@ -145,6 +145,35 @@ class CachingTaskQueueTest {
   }
 
   @Test
+  void shouldNotPerformDuplicateTasksWhenTasksAreRebased() {
+    final StubTask taskA = new StubTask(1);
+    final StubTask taskB = new StubTask(5, 1);
+    final StubTask taskC = new StubTask(5, 1);
+
+    final SafeFuture<Optional<String>> resultA = taskQueue.perform(taskA);
+    final SafeFuture<Optional<String>> resultB = taskQueue.perform(taskB);
+    final SafeFuture<Optional<String>> resultC = taskQueue.perform(taskC);
+
+    taskA.assertPerformedWithoutRebase();
+    // Task B will be scheduled for rebase when A completes
+    // Task C should just use the pending future from B and never execute
+    taskC.assertNotRebased();
+    taskC.assertNotPerformed();
+
+    taskA.completeTask();
+    taskB.assertPerformedFrom(taskA.getExpectedValue().orElseThrow());
+    taskC.assertNotRebased();
+    taskC.assertNotPerformed();
+
+    taskB.completeTask();
+
+    assertThat(resultB).isCompletedWithValue(taskB.getExpectedValue());
+    assertThat(resultC).isCompletedWithValue(taskC.getExpectedValue());
+    taskC.assertNotRebased();
+    taskC.assertNotPerformed();
+  }
+
+  @Test
   void getIfAvailable_shouldReturnValueWhenPresent() {
     final StubTask task = new StubTask(1);
     final SafeFuture<Optional<String>> result = taskQueue.perform(task);
