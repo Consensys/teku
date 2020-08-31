@@ -47,7 +47,7 @@ public class SlashingProtectionImporter {
     metadata = jsonMapper.treeToValue(jsonNode.get("metadata"), Metadata.class);
     if (!metadata.interchangeFormatVersion.equals(UInt64.valueOf(2L))) {
       System.err.println(
-          "Import file " + inputFile.toString() + " Is not format version 2, cannot continue.");
+          "Import file " + inputFile.toString() + " is not format version 2, cannot continue.");
       System.exit(1);
     }
     if (metadata.interchangeFormat.equals(InterchangeFormat.minimal)) {
