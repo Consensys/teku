@@ -120,9 +120,10 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
     }
 
     private void validateDepositEvent(final DepositsFromBlockEvent event) {
-      final Optional<UInt64> expectedDepositIndex = lastDepositIndex.map(UInt64::increment);
-      if (!expectedDepositIndex.map(i -> i.equals(event.getFirstDepositIndex())).orElse(true)) {
-        throw InvalidDepositEventsException.expectedDepositAtIndex(expectedDepositIndex.get());
+      final UInt64 expectedDepositIndex =
+          lastDepositIndex.map(UInt64::increment).orElse(UInt64.ZERO);
+      if (!event.getFirstDepositIndex().equals(expectedDepositIndex)) {
+        throw InvalidDepositEventsException.expectedDepositAtIndex(expectedDepositIndex);
       }
     }
 

@@ -95,18 +95,21 @@ public class DepositStorageTest {
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
       throws ExecutionException, InterruptedException {
     setup(storageSystemSupplier);
+
+    final DepositsFromBlockEvent postGenesisDeposits =
+        dataStructureUtil.randomDepositsFromBlockEvent(101L, 0, 21);
     database.addMinGenesisTimeBlock(genesis_100);
-    database.addDepositsFromBlockEvent(block_101);
+    database.addDepositsFromBlockEvent(postGenesisDeposits);
 
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
     assertThat(future).isCompleted();
 
-    assertThat(eventsChannel.getOrderedList()).containsExactly(genesis_100, block_101);
+    assertThat(eventsChannel.getOrderedList()).containsExactly(genesis_100, postGenesisDeposits);
     assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis_100);
     assertThat(future.get().getLastProcessedBlockNumber())
-        .isEqualTo(block_101.getBlockNumber().bigIntegerValue());
+        .isEqualTo(postGenesisDeposits.getBlockNumber().bigIntegerValue());
     assertThat(future.get().getLastProcessedDepositIndex())
-        .hasValue(block_101.getLastDepositIndex().bigIntegerValue());
+        .hasValue(postGenesisDeposits.getLastDepositIndex().bigIntegerValue());
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 
@@ -154,22 +157,22 @@ public class DepositStorageTest {
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
       throws ExecutionException, InterruptedException {
     setup(storageSystemSupplier);
-    database.addDepositsFromBlockEvent(block_100);
+    database.addDepositsFromBlockEvent(block_99);
 
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
     assertThat(future).isCompleted();
 
-    assertThat(eventsChannel.getOrderedList()).containsExactly(block_100);
+    assertThat(eventsChannel.getOrderedList()).containsExactly(block_99);
     assertThat(future.get().getLastProcessedBlockNumber())
-        .isEqualTo(block_100.getBlockNumber().bigIntegerValue());
+        .isEqualTo(block_99.getBlockNumber().bigIntegerValue());
     assertThat(future.get().getLastProcessedDepositIndex())
-        .hasValue(block_100.getLastDepositIndex().bigIntegerValue());
+        .hasValue(block_99.getLastDepositIndex().bigIntegerValue());
     assertThat(future.get().isPastMinGenesisBlock()).isFalse();
 
-    depositStorage.onDepositsFromBlock(block_100); // Should ignore
-    depositStorage.onDepositsFromBlock(block_101); // Should store
+    depositStorage.onDepositsFromBlock(block_99); // Should ignore
+    depositStorage.onDepositsFromBlock(block_100); // Should store
     try (Stream<DepositsFromBlockEvent> deposits = database.streamDepositsFromBlocks()) {
-      assertThat(deposits).containsExactly(block_100, block_101);
+      assertThat(deposits).containsExactly(block_99, block_100);
     }
   }
 
@@ -180,16 +183,16 @@ public class DepositStorageTest {
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
       throws ExecutionException, InterruptedException {
     setup(storageSystemSupplier);
-    database.addDepositsFromBlockEvent(block_100);
+    database.addDepositsFromBlockEvent(block_99);
 
     SafeFuture<ReplayDepositsResult> firstReplay = depositStorage.replayDepositEvents();
     assertThat(firstReplay).isCompleted();
-    assertThat(eventsChannel.getOrderedList()).containsExactly(block_100);
+    assertThat(eventsChannel.getOrderedList()).containsExactly(block_99);
 
     SafeFuture<ReplayDepositsResult> secondReplay = depositStorage.replayDepositEvents();
     assertThat(secondReplay).isCompleted();
     assertThat(secondReplay.get()).isSameAs(firstReplay.get());
-    assertThat(eventsChannel.getOrderedList()).containsExactly(block_100);
+    assertThat(eventsChannel.getOrderedList()).containsExactly(block_99);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -224,12 +227,13 @@ public class DepositStorageTest {
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
       throws ExecutionException, InterruptedException {
     setup(storageSystemSupplier);
+    database.addDepositsFromBlockEvent(block_99);
     database.addDepositsFromBlockEvent(block_100);
     database.addDepositsFromBlockEvent(block_101);
 
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
     assertThat(future).isCompleted();
-    assertThat(eventsChannel.getOrderedList()).containsExactly(block_100, block_101);
+    assertThat(eventsChannel.getOrderedList()).containsExactly(block_99, block_100, block_101);
     assertThat(eventsChannel.getGenesis()).isNull();
     assertThat(future.get().getLastProcessedBlockNumber())
         .isEqualTo(block_101.getBlockNumber().bigIntegerValue());
@@ -277,17 +281,32 @@ public class DepositStorageTest {
 
   @ParameterizedTest(name = "{0}")
   @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void shouldFailIfDepositEventsDoNotStartAtIndex0(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
+    setup(storageSystemSupplier);
+    // Missing deposits from block_99
+    database.addDepositsFromBlockEvent(block_100);
+
+    SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
+    assertThat(future).isCompletedExceptionally();
+    assertThatThrownBy(future::get).hasCauseInstanceOf(InvalidDepositEventsException.class);
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
   public void shouldSendBlockThenGenesisWhenBlockNumberIsTheSame(
       final String storageType,
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier)
       throws ExecutionException, InterruptedException {
     setup(storageSystemSupplier);
+    database.addDepositsFromBlockEvent(block_99);
     database.addDepositsFromBlockEvent(block_100);
     database.addMinGenesisTimeBlock(genesis_100);
 
     SafeFuture<ReplayDepositsResult> future = depositStorage.replayDepositEvents();
     assertThat(future).isCompleted();
-    assertThat(eventsChannel.getOrderedList()).containsExactly(block_100, genesis_100);
+    assertThat(eventsChannel.getOrderedList()).containsExactly(block_99, block_100, genesis_100);
     assertThat(eventsChannel.getGenesis()).isEqualToComparingFieldByField(genesis_100);
 
     assertThat(future.get().getLastProcessedBlockNumber())
