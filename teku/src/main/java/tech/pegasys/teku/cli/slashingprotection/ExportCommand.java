@@ -24,7 +24,7 @@ import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 
 @CommandLine.Command(
     name = "export",
-    description = "Export slashing protection database in Minimal format.",
+    description = "Export slashing protection database in minimal format.",
     mixinStandardHelpOptions = true,
     abbreviateSynopsis = true,
     versionProvider = PicoCliVersionProvider.class,

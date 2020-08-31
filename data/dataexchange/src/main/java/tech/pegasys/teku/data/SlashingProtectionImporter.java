@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.data;
 
+import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
@@ -46,7 +48,7 @@ public class SlashingProtectionImporter {
     JsonNode jsonNode = jsonMapper.readTree(inputFile);
     metadata = jsonMapper.treeToValue(jsonNode.get("metadata"), Metadata.class);
     if (!metadata.interchangeFormatVersion.equals(UInt64.valueOf(2L))) {
-      System.err.println(
+      SUB_COMMAND_LOG.error(
           "Import file " + inputFile.toString() + " is not format version 2, cannot continue.");
       System.exit(1);
     }
@@ -100,7 +102,7 @@ public class SlashingProtectionImporter {
   private void updateLocalRecord(final MinimalSigningHistory minimalSigningHistory) {
     String validatorString = minimalSigningHistory.pubkey.toHexString().substring(2).toLowerCase();
 
-    System.out.println("Importing " + validatorString);
+    SUB_COMMAND_LOG.display("Importing " + validatorString);
     Path outputFile = slashingProtectionPath.resolve(validatorString.concat(".yml"));
     Optional<SlashingProtectionRecord> existingRecord = Optional.empty();
     if (outputFile.toFile().exists()) {
@@ -109,14 +111,14 @@ public class SlashingProtectionImporter {
             Optional.ofNullable(
                 yamlProvider.fileToObject(outputFile.toFile(), SlashingProtectionRecord.class));
       } catch (IOException e) {
-        System.err.println("Failed to read existing file: " + outputFile.toString());
+        SUB_COMMAND_LOG.error("Failed to read existing file: " + outputFile.toString());
         System.exit(1);
       }
     }
     if (existingRecord.isPresent()
         && metadata.genesisValidatorsRoot.compareTo(existingRecord.get().genesisValidatorsRoot)
             != 0) {
-      System.err.println(
+      SUB_COMMAND_LOG.error(
           "Validator "
               + minimalSigningHistory.pubkey.toHexString()
               + " has a different validators signing root to the data being imported");
@@ -129,7 +131,7 @@ public class SlashingProtectionImporter {
           minimalSigningHistory.toSlashingProtectionRecordMerging(
               existingRecord, metadata.genesisValidatorsRoot));
     } catch (IOException e) {
-      System.err.println(
+      SUB_COMMAND_LOG.error(
           "Validator " + minimalSigningHistory.pubkey.toHexString() + " was not updated.");
       System.exit(1);
     }

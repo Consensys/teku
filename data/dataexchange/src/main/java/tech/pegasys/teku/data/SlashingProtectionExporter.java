@@ -13,14 +13,18 @@
 
 package tech.pegasys.teku.data;
 
+import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
+
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BLSPubKey;
+import tech.pegasys.teku.api.schema.PublicKeyException;
 import tech.pegasys.teku.data.slashinginterchange.InterchangeFormat;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.data.slashinginterchange.MinimalSigningHistory;
@@ -51,31 +55,31 @@ public class SlashingProtectionExporter {
         this.genesisValidatorsRoot = slashingProtectionRecord.genesisValidatorsRoot;
       } else if (slashingProtectionRecord.genesisValidatorsRoot != null
           && !genesisValidatorsRoot.equals(slashingProtectionRecord.genesisValidatorsRoot)) {
-        System.err.println(
+        SUB_COMMAND_LOG.error(
             "the genesisValidatorsRoot of "
                 + file.getName()
                 + " does not match the expected "
                 + genesisValidatorsRoot.toHexString().toLowerCase());
         System.exit(1);
       }
-      final String pubkey = file.getName().substring(0, file.getName().length() - 4);
+      final String pubkey = file.getName().substring(0, file.getName().length() - ".yml".length());
       minimalSigningHistoryList.add(
           new MinimalSigningHistory(BLSPubKey.fromHexString(pubkey), slashingProtectionRecord));
     } catch (IOException e) {
-      System.err.println("Failed to read from file " + file.toString());
+      SUB_COMMAND_LOG.error("Failed to read from file " + file.toString());
+      System.exit(1);
+    } catch (PublicKeyException e) {
+      SUB_COMMAND_LOG.error("Public key in file " + file.getName() + " does not appear valid.");
       System.exit(1);
     }
   }
 
   public void saveToFile(final String toFileName) throws IOException {
-
-    jsonProvider
-        .getObjectMapper()
-        .writerWithDefaultPrettyPrinter()
-        .writeValue(
-            new File(toFileName),
+    Files.writeString(
+        Path.of(toFileName),
+        jsonProvider.objectToPrettyJSON(
             new MinimalSlashingProtectionInterchangeFormat(
                 new Metadata(InterchangeFormat.minimal, UInt64.valueOf(2L), genesisValidatorsRoot),
-                minimalSigningHistoryList));
+                minimalSigningHistoryList)));
   }
 }

@@ -152,7 +152,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Mixin(name = "Data")
   private DataOptions dataOptions;
 
-  @Mixin(name = "DataStorage")
+  @Mixin(name = "Data Storage")
   private DataStorageOptions dataStorageOptions;
 
   @Mixin(name = "Store")

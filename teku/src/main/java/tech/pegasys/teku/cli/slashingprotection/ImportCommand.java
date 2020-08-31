@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.slashingprotection;
 
+import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -26,7 +28,7 @@ import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 @CommandLine.Command(
     name = "import",
     description =
-        "Import slashing protection database. Supports Minimal or Complete interchange format.",
+        "Import slashing protection database. Supports minimal or complete interchange format.",
     mixinStandardHelpOptions = true,
     abbreviateSynopsis = true,
     versionProvider = PicoCliVersionProvider.class,
