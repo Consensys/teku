@@ -26,7 +26,9 @@ import io.libp2p.core.crypto.PrivKey;
 import java.io.IOException;
 import java.net.BindException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -385,11 +387,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     if (!config.isP2pEnabled()) {
       this.p2pNetwork = new NoOpEth2Network();
     } else {
-      final Optional<Bytes> bytes = getP2pPrivateKeyBytes();
-      final PrivKey pk =
-          bytes.isEmpty()
-              ? KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1()
-              : KeyKt.unmarshalPrivateKey(bytes.get().toArrayUnsafe());
+      final PrivKey pk = KeyKt.unmarshalPrivateKey(getP2pPrivateKeyBytes().toArrayUnsafe());
       final NetworkConfig p2pConfig =
           new NetworkConfig(
               pk,
@@ -460,20 +458,38 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             eventBus);
   }
 
-  private Optional<Bytes> getP2pPrivateKeyBytes() {
-    final Optional<Bytes> bytes;
-    final String p2pPrivateKeyFile = config.getP2pPrivateKeyFile();
-    if (p2pPrivateKeyFile != null) {
-      try {
-        bytes = Optional.of(Bytes.fromHexString(Files.readString(Paths.get(p2pPrivateKeyFile))));
-      } catch (IOException e) {
-        throw new RuntimeException("p2p private key file not found - " + p2pPrivateKeyFile);
+  private Bytes getP2pPrivateKeyBytes() {
+    final String p2pConfigKeyFile = config.getP2pPrivateKeyFile();
+    final Path p2pKeyFile;
+    if (p2pConfigKeyFile != null) {
+      p2pKeyFile = Paths.get(p2pConfigKeyFile);
+      if (!p2pKeyFile.toFile().canRead()) {
+        throw new RuntimeException("p2p private key file not found - " + p2pConfigKeyFile);
       }
     } else {
-      LOG.info("ENR key file not found. A new ENR will be generated.");
-      bytes = Optional.empty();
+      p2pKeyFile = Paths.get(config.getDataPath(), "generated-node-key.txt");
+      if (!p2pKeyFile.toFile().exists()) {
+        try {
+          final PrivKey privKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
+          final Bytes privKeyBytes = Bytes.wrap(KeyKt.marshalPrivateKey(privKey));
+          Files.writeString(p2pKeyFile, privKeyBytes.toHexString(), StandardOpenOption.CREATE_NEW);
+          LOG.info(
+              "Generated new p2p private key. It was stored and will be reused on next run if no private key option is supplied: "
+                  + p2pKeyFile);
+        } catch (IOException e) {
+          throw new RuntimeException(
+              "Couldn't write generated p2p private key file: " + p2pKeyFile, e);
+        }
+      } else {
+        LOG.info("Loading generated p2p private key from file: " + p2pKeyFile);
+      }
     }
-    return bytes;
+
+    try {
+      return Bytes.fromHexString(Files.readString(p2pKeyFile));
+    } catch (IOException e) {
+      throw new RuntimeException("Couldn't read p2p private key file: " + p2pKeyFile, e);
+    }
   }
 
   public void initAttestationPool() {
