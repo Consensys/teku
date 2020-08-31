@@ -229,20 +229,23 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         LOG.info("Skipping head block update to avoid potential rollback of the chain head.");
         return;
       }
-      final Optional<Bytes32> originalBestRoot = originalHead.map(SignedBlockAndState::getRoot);
-      final UInt64 originalForkChoiceSlot =
-          originalHead.map(ChainHead::getForkChoiceSlot).orElse(UInt64.ZERO);
-
       this.chainHead = Optional.of(newChainHead);
-      if (originalBestRoot
-          .map(originalRoot -> hasReorgedFrom(originalRoot, originalForkChoiceSlot))
+      if (originalHead
+          .map(head -> hasReorgedFrom(head.getRoot(), head.getForkChoiceSlot()))
           .orElse(false)) {
+
+        final ChainHead previousChainHead = originalHead.get();
+
+        final UInt64 commonAncestorSlot = previousChainHead.findCommonAncestor(newChainHead);
+
         LOG.info(
             "Chain reorg from {} to {}",
-            formatBlock(originalForkChoiceSlot, originalBestRoot.orElse(Bytes32.ZERO)),
+            formatBlock(previousChainHead.getForkChoiceSlot(), previousChainHead.getRoot()),
             formatBlock(newChainHead.getForkChoiceSlot(), newChainHead.getRoot()));
+
         reorgCounter.inc();
-        reorgEventChannel.reorgOccurred(newChainHead.getRoot(), newChainHead.getSlot());
+        reorgEventChannel.reorgOccurred(
+            newChainHead.getRoot(), newChainHead.getSlot(), commonAncestorSlot);
       }
     }
 

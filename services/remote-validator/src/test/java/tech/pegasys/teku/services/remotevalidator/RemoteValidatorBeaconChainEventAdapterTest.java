@@ -38,6 +38,7 @@ import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.validator.remote.BeaconChainEvent;
+import tech.pegasys.teku.validator.remote.BeaconChainReorgEvent;
 
 class RemoteValidatorBeaconChainEventAdapterTest {
 
@@ -132,10 +133,11 @@ class RemoteValidatorBeaconChainEventAdapterTest {
   @Test
   public void reorgOccurred_EventAdapterShouldInvokeListenerAndAdaptEvent() {
     final UInt64 slot = UInt64.ONE;
-    final BeaconChainEvent expectedAdaptedEvent =
-        new BeaconChainEvent(BeaconChainEvent.REORG_OCCURRED, slot);
+    final UInt64 commonAncestorSlot = UInt64.valueOf(13);
+    final BeaconChainReorgEvent expectedAdaptedEvent =
+        new BeaconChainReorgEvent(BeaconChainEvent.REORG_OCCURRED, slot, commonAncestorSlot);
 
-    eventsAdapter.reorgOccurred(Bytes32.ZERO, slot);
+    eventsAdapter.reorgOccurred(Bytes32.ZERO, slot, commonAncestorSlot);
     verify(listener).onEvent(beaconChainEventArgCaptor.capture());
 
     assertThat(beaconChainEventArgCaptor.getValue()).isEqualTo(expectedAdaptedEvent);

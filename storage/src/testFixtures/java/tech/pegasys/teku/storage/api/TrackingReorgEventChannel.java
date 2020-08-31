@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.api;
 
+import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -23,8 +24,9 @@ public class TrackingReorgEventChannel implements ReorgEventChannel {
   private final List<ReorgEvent> reorgEvents = new ArrayList<>();
 
   @Override
-  public void reorgOccurred(final Bytes32 bestBlockRoot, final UInt64 bestSlot) {
-    reorgEvents.add(new ReorgEvent(bestBlockRoot, bestSlot));
+  public void reorgOccurred(
+      final Bytes32 bestBlockRoot, final UInt64 bestSlot, final UInt64 commonAncestorSlot) {
+    reorgEvents.add(new ReorgEvent(bestBlockRoot, bestSlot, commonAncestorSlot));
   }
 
   public List<ReorgEvent> getReorgEvents() {
@@ -34,10 +36,13 @@ public class TrackingReorgEventChannel implements ReorgEventChannel {
   public static class ReorgEvent {
     private final Bytes32 bestBlockRoot;
     private final UInt64 bestSlot;
+    private final UInt64 commonAncestorSlot;
 
-    public ReorgEvent(final Bytes32 bestBlockRoot, final UInt64 bestSlot) {
+    public ReorgEvent(
+        final Bytes32 bestBlockRoot, final UInt64 bestSlot, final UInt64 commonAncestorSlot) {
       this.bestBlockRoot = bestBlockRoot;
       this.bestSlot = bestSlot;
+      this.commonAncestorSlot = commonAncestorSlot;
     }
 
     public Bytes32 getBestBlockRoot() {
@@ -46,6 +51,10 @@ public class TrackingReorgEventChannel implements ReorgEventChannel {
 
     public UInt64 getBestSlot() {
       return bestSlot;
+    }
+
+    public UInt64 getCommonAncestorSlot() {
+      return commonAncestorSlot;
     }
 
     @Override
@@ -58,12 +67,22 @@ public class TrackingReorgEventChannel implements ReorgEventChannel {
       }
       final ReorgEvent that = (ReorgEvent) o;
       return Objects.equals(bestBlockRoot, that.bestBlockRoot)
-          && Objects.equals(bestSlot, that.bestSlot);
+          && Objects.equals(bestSlot, that.bestSlot)
+          && Objects.equals(commonAncestorSlot, that.commonAncestorSlot);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(bestBlockRoot, bestSlot);
+      return Objects.hash(bestBlockRoot, bestSlot, commonAncestorSlot);
+    }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+          .add("bestBlockRoot", bestBlockRoot)
+          .add("bestSlot", bestSlot)
+          .add("commonAncestorSlot", commonAncestorSlot)
+          .toString();
     }
   }
 }

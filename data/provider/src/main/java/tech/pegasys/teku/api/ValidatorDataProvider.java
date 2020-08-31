@@ -158,7 +158,6 @@ public class ValidatorDataProvider {
   }
 
   public void submitAttestation(Attestation attestation) {
-    // TODO (#2410): extra validation for the attestation we're posting?
     if (attestation.signature.asInternalBLSSignature().toSSZBytes().isZero()) {
       throw new IllegalArgumentException("Signed attestations must have a non zero signature");
     }

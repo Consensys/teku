@@ -26,11 +26,14 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
   private final DutyLoader epochDutiesScheduler;
+  private final int lookAheadEpochs;
 
   protected final NavigableMap<UInt64, DutyQueue> dutiesByEpoch = new TreeMap<>();
 
-  protected AbstractDutyScheduler(final DutyLoader epochDutiesScheduler) {
+  protected AbstractDutyScheduler(
+      final DutyLoader epochDutiesScheduler, final int lookAheadEpochs) {
     this.epochDutiesScheduler = epochDutiesScheduler;
+    this.lookAheadEpochs = lookAheadEpochs;
   }
 
   protected DutyQueue requestDutiesForEpoch(final UInt64 epochNumber) {
@@ -52,14 +55,24 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   }
 
   @Override
-  public void onChainReorg(final UInt64 newSlot) {
-    LOG.debug("Chain reorganisation detected. Recalculating validator duties");
-    dutiesByEpoch.clear();
+  public void onChainReorg(final UInt64 newSlot, final UInt64 commonAncestorSlot) {
+    final UInt64 changedEpoch = compute_epoch_at_slot(commonAncestorSlot);
+    // Because duties for an epoch can be calculated from the very start of that epoch, the epoch
+    // containing the common ancestor is not affected by the reorg.
+    // Similarly epochs within the look-ahead distance of the common ancestor must not be affected
+    final UInt64 lastUnaffectedEpoch = changedEpoch.plus(lookAheadEpochs);
+    LOG.debug(
+        "Chain reorganisation detected. Invalidating validator duties after epoch {}",
+        lastUnaffectedEpoch);
+    removeEpochs(dutiesByEpoch.tailMap(lastUnaffectedEpoch, false));
     recalculateDuties(compute_epoch_at_slot(newSlot));
   }
 
   protected void recalculateDuties(final UInt64 epochNumber) {
     dutiesByEpoch.computeIfAbsent(epochNumber, this::requestDutiesForEpoch);
+    for (int i = 1; i <= lookAheadEpochs; i++) {
+      dutiesByEpoch.computeIfAbsent(epochNumber.plus(i), this::requestDutiesForEpoch);
+    }
   }
 
   protected void removePriorEpochs(final UInt64 epochNumber) {
