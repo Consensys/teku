@@ -13,10 +13,17 @@
 
 package tech.pegasys.teku.core.signatures.record;
 
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.common.base.MoreObjects;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.data.slashinginterchange.SlashingProtectionRecord;
+import tech.pegasys.teku.data.slashinginterchange.YamlProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /**
@@ -30,7 +37,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
  */
 public class ValidatorSigningRecord {
 
-  public static final UInt64 NEVER_SIGNED = UInt64.MAX_VALUE;
+  private static final YamlProvider yamlProvider = new YamlProvider();
+  public static final UInt64 NEVER_SIGNED = null;
 
   private final UInt64 blockSlot;
 
@@ -52,11 +60,24 @@ public class ValidatorSigningRecord {
   }
 
   public static ValidatorSigningRecord fromBytes(final Bytes data) {
-    return ValidatorSigningRecordSerialization.readRecord(data);
+    try {
+      final SlashingProtectionRecord spr =
+          yamlProvider.getObjectMapper().readValue(data.toArray(), SlashingProtectionRecord.class);
+      return ValidatorSigningRecord.fromSlashingProtectionRecord(spr);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   public Bytes toBytes() {
-    return ValidatorSigningRecordSerialization.writeRecord(this);
+    try {
+      return Bytes.wrap(
+          yamlProvider.getObjectMapper().writeValueAsBytes(this.toSlashingProtectionRecord(null)));
+    } catch (JsonGenerationException | JsonMappingException e) {
+      throw new IllegalStateException("Failed to serialize ValidatorSigningRecord", e);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   /**
@@ -73,6 +94,32 @@ public class ValidatorSigningRecord {
           new ValidatorSigningRecord(slot, attestationSourceEpoch, attestationTargetEpoch));
     }
     return Optional.empty();
+  }
+
+  public static ValidatorSigningRecord fromSlashingProtectionRecord(
+      final SlashingProtectionRecord slashingProtectionRecord) {
+    final UInt64 sourceEpoch =
+        slashingProtectionRecord.lastSignedAttestationSourceEpoch == null
+            ? NEVER_SIGNED
+            : slashingProtectionRecord.lastSignedAttestationSourceEpoch;
+    final UInt64 targetEpoch =
+        slashingProtectionRecord.lastSignedAttestationTargetEpoch == null
+            ? NEVER_SIGNED
+            : slashingProtectionRecord.lastSignedAttestationTargetEpoch;
+    return new ValidatorSigningRecord(
+        slashingProtectionRecord.lastSignedBlockSlot, sourceEpoch, targetEpoch);
+  }
+
+  public SlashingProtectionRecord toSlashingProtectionRecord(final Bytes32 validatorsRoot) {
+    final UInt64 sourceEpoch =
+        attestationSourceEpoch == null || attestationSourceEpoch.equals(UInt64.MAX_VALUE)
+            ? null
+            : attestationSourceEpoch;
+    final UInt64 targetEpoch =
+        attestationTargetEpoch == null || attestationTargetEpoch.equals(UInt64.MAX_VALUE)
+            ? null
+            : attestationTargetEpoch;
+    return new SlashingProtectionRecord(blockSlot, sourceEpoch, targetEpoch, validatorsRoot);
   }
 
   /**
@@ -92,13 +139,11 @@ public class ValidatorSigningRecord {
   }
 
   private boolean isSafeSourceEpoch(final UInt64 sourceEpoch) {
-    return attestationSourceEpoch.equals(NEVER_SIGNED)
-        || attestationSourceEpoch.compareTo(sourceEpoch) <= 0;
+    return attestationSourceEpoch == null || attestationSourceEpoch.compareTo(sourceEpoch) <= 0;
   }
 
   private boolean isSafeTargetEpoch(final UInt64 targetEpoch) {
-    return attestationTargetEpoch.equals(NEVER_SIGNED)
-        || attestationTargetEpoch.compareTo(targetEpoch) < 0;
+    return attestationTargetEpoch == null || attestationTargetEpoch.compareTo(targetEpoch) < 0;
   }
 
   public UInt64 getBlockSlot() {

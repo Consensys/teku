@@ -39,13 +39,13 @@ public class MetadataTest {
 
   @Test
   public void shouldSerializeMinimalFormat() throws JsonProcessingException {
-    final Metadata metadata = new Metadata(InterchangeFormat.minimal, UInt64.ONE, root);
+    final Metadata metadata = new Metadata(InterchangeFormat.minimal, UInt64.valueOf(2), root);
     assertThat(jsonProvider.objectToPrettyJSON(metadata)).isEqualTo(jsonData);
   }
 
   @Test
   public void shouldSerializeCompleteFormat() throws JsonProcessingException {
-    final Metadata metadata = new Metadata(InterchangeFormat.complete, UInt64.ONE, root);
+    final Metadata metadata = new Metadata(InterchangeFormat.complete, UInt64.valueOf(2), root);
     assertThat(jsonProvider.objectToPrettyJSON(metadata))
         .isEqualTo(jsonData.replace("minimal", "complete"));
   }
@@ -53,7 +53,7 @@ public class MetadataTest {
   @Test
   public void shouldDeserialize() throws JsonProcessingException {
     final Metadata metadata = jsonProvider.jsonToObject(jsonData, Metadata.class);
-    assertThat(metadata.interchangeFormatVersion).isEqualTo(UInt64.ONE);
+    assertThat(metadata.interchangeFormatVersion).isEqualTo(UInt64.valueOf(2));
     assertThat(metadata.interchangeFormat).isEqualTo(InterchangeFormat.minimal);
     assertThat(metadata.genesisValidatorsRoot).isEqualTo(root);
   }

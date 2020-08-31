@@ -46,6 +46,13 @@ public class SlashingProtectionRecord {
     this.genesisValidatorsRoot = genesisValidatorsRoot;
   }
 
+  public SlashingProtectionRecord() {
+    this.lastSignedBlockSlot = UInt64.ZERO;
+    this.lastSignedAttestationSourceEpoch = null;
+    this.lastSignedAttestationTargetEpoch = null;
+    this.genesisValidatorsRoot = null;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) return true;

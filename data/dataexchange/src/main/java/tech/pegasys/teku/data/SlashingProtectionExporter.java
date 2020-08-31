@@ -75,7 +75,7 @@ public class SlashingProtectionExporter {
         .writeValue(
             new File(toFileName),
             new MinimalSlashingProtectionInterchangeFormat(
-                new Metadata(InterchangeFormat.minimal, UInt64.ONE, genesisValidatorsRoot),
+                new Metadata(InterchangeFormat.minimal, UInt64.valueOf(2L), genesisValidatorsRoot),
                 minimalSigningHistoryList));
   }
 }

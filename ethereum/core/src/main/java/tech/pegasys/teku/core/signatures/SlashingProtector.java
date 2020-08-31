@@ -18,6 +18,8 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.record.ValidatorSigningRecord;
@@ -28,12 +30,16 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SlashingProtector {
+  private static final Logger LOG = LogManager.getLogger();
   private final Map<BLSPublicKey, ValidatorSigningRecord> signingRecords = new HashMap<>();
-  YamlProvider yamlProvider = new YamlProvider();
+  private final SyncDataAccessor dataAccessor;
+  private final YamlProvider yamlProvider = new YamlProvider();
   private final Path slashingProtectionBaseDir;
 
-  public SlashingProtector(final Path slashingProtectionBaseDir) {
+  public SlashingProtector(
+      final SyncDataAccessor dataAccessor, final Path slashingProtectionBaseDir) {
     this.slashingProtectionBaseDir = slashingProtectionBaseDir;
+    this.dataAccessor = dataAccessor;
   }
 
   public synchronized SafeFuture<Boolean> maySignBlock(
@@ -79,17 +85,24 @@ public class SlashingProtector {
     if (record != null) {
       return record;
     }
-    if (!validatorRecordPath(validator).toFile().exists()) {
-      return new ValidatorSigningRecord();
-    }
-    SlashingProtectionRecord slashingProtectionRecord =
-        yamlProvider.fileToObject(
-            validatorRecordPath(validator).toFile(), SlashingProtectionRecord.class);
     record =
-        new ValidatorSigningRecord(
-            slashingProtectionRecord.lastSignedBlockSlot,
-            slashingProtectionRecord.lastSignedAttestationSourceEpoch,
-            slashingProtectionRecord.lastSignedAttestationTargetEpoch);
+        dataAccessor
+            .read(validatorRecordPath(validator))
+            .map(
+                val -> {
+                  try {
+                    return yamlProvider
+                        .getObjectMapper()
+                        .readValue(val.toArray(), SlashingProtectionRecord.class);
+                  } catch (IOException e) {
+                    LOG.trace(
+                        "error parsing slashing protection file " + validatorRecordPath(validator),
+                        e);
+                  }
+                  return new SlashingProtectionRecord();
+                })
+            .map(ValidatorSigningRecord::fromSlashingProtectionRecord)
+            .orElseGet(ValidatorSigningRecord::new);
 
     signingRecords.put(validator, record);
     return record;
@@ -101,12 +114,9 @@ public class SlashingProtector {
       final ValidatorSigningRecord record)
       throws IOException {
     SlashingProtectionRecord slashingProtectionRecord =
-        new SlashingProtectionRecord(
-            record.getBlockSlot(),
-            record.getAttestationSourceEpoch(),
-            record.getAttestationTargetEpoch(),
-            validatorsRoot);
-    yamlProvider.writeToFile(validatorRecordPath(validator).toFile(), slashingProtectionRecord);
+        record.toSlashingProtectionRecord(validatorsRoot);
+    dataAccessor.syncedWrite(
+        validatorRecordPath(validator), yamlProvider.objectToYaml(slashingProtectionRecord));
     signingRecords.put(validator, record);
   }
 

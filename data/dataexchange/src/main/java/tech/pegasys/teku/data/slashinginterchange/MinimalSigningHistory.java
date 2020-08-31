@@ -84,8 +84,8 @@ public class MinimalSigningHistory {
       SlashingProtectionRecord record = maybeRecord.get();
       return new SlashingProtectionRecord(
           record.lastSignedBlockSlot.max(lastSignedBlockSlot),
-          record.lastSignedAttestationSourceEpoch.max(lastSignedAttestationSourceEpoch),
-          record.lastSignedAttestationTargetEpoch.max(lastSignedAttestationTargetEpoch),
+          nvlMax(record.lastSignedAttestationSourceEpoch, lastSignedAttestationSourceEpoch),
+          nvlMax(record.lastSignedAttestationTargetEpoch, lastSignedAttestationTargetEpoch),
           genesisValidatorsRoot);
     }
     return new SlashingProtectionRecord(
@@ -93,5 +93,14 @@ public class MinimalSigningHistory {
         lastSignedAttestationSourceEpoch,
         lastSignedAttestationTargetEpoch,
         genesisValidatorsRoot);
+  }
+
+  private UInt64 nvlMax(final UInt64 a, final UInt64 b) {
+    if (a == null) {
+      return b;
+    } else if (b == null) {
+      return a;
+    }
+    return a.max(b);
   }
 }

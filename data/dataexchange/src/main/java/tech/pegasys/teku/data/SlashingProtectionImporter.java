@@ -45,9 +45,9 @@ public class SlashingProtectionImporter {
     final ObjectMapper jsonMapper = jsonProvider.getObjectMapper();
     JsonNode jsonNode = jsonMapper.readTree(inputFile);
     metadata = jsonMapper.treeToValue(jsonNode.get("metadata"), Metadata.class);
-    if (!metadata.interchangeFormatVersion.equals(UInt64.ONE)) {
+    if (!metadata.interchangeFormatVersion.equals(UInt64.valueOf(2L))) {
       System.err.println(
-          "Import file " + inputFile.toString() + "Is not format version 1, cannot continue.");
+          "Import file " + inputFile.toString() + " Is not format version 2, cannot continue.");
       System.exit(1);
     }
     if (metadata.interchangeFormat.equals(InterchangeFormat.minimal)) {
@@ -86,8 +86,8 @@ public class SlashingProtectionImporter {
     SlashingProtectionRecord record =
         new SlashingProtectionRecord(
             lastSlot.orElse(UInt64.ZERO),
-            sourceEpoch.orElse(UInt64.MAX_VALUE),
-            targetEpoch.orElse(UInt64.MAX_VALUE),
+            sourceEpoch.orElse(null),
+            targetEpoch.orElse(null),
             metadata.genesisValidatorsRoot);
     return new MinimalSigningHistory(completeSigningHistory.pubkey, record);
   }

@@ -14,16 +14,20 @@
 package tech.pegasys.teku.core.signatures;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.core.signatures.record.ValidatorSigningRecord.NEVER_SIGNED;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.core.signatures.record.ValidatorSigningRecord;
+import tech.pegasys.teku.data.slashinginterchange.SlashingProtectionRecord;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ValidatorSigningRecordTest {
@@ -63,11 +67,7 @@ class ValidatorSigningRecordTest {
             "noExistingRecord",
             new ValidatorSigningRecord(),
             ONE,
-            Optional.of(
-                new ValidatorSigningRecord(
-                    ONE,
-                    ValidatorSigningRecord.NEVER_SIGNED,
-                    ValidatorSigningRecord.NEVER_SIGNED))),
+            Optional.of(new ValidatorSigningRecord(ONE, NEVER_SIGNED, NEVER_SIGNED))),
         Arguments.of("=", startingRecord, UInt64.valueOf(3), Optional.empty()),
         Arguments.of("<", startingRecord, UInt64.valueOf(2), Optional.empty()),
         Arguments.of(">", startingRecord, UInt64.valueOf(4), allowed(4, 6, 7)));
@@ -100,6 +100,43 @@ class ValidatorSigningRecordTest {
         attestationArguments(">", "=", startingRecord, 5, 6, disallowed()),
         attestationArguments(">", "<", startingRecord, 5, 5, disallowed()),
         attestationArguments(">", ">", startingRecord, 5, 7, allowed(1, 5, 7)));
+  }
+
+  @Test
+  public void roundtrip_shouldConvertToInterchangeFormat() {
+    DataStructureUtil data = new DataStructureUtil();
+    final UInt64 blockSlot = data.randomUInt64();
+    final UInt64 sourceEpoch = data.randomUInt64();
+    final UInt64 targetEpoch = sourceEpoch.plus(ONE);
+    final Bytes32 root = data.randomBytes32();
+    ValidatorSigningRecord signingRecord =
+        new ValidatorSigningRecord(blockSlot, sourceEpoch, targetEpoch);
+
+    SlashingProtectionRecord spr = signingRecord.toSlashingProtectionRecord(root);
+
+    assertThat(spr.lastSignedBlockSlot).isEqualTo(blockSlot);
+    assertThat(spr.lastSignedAttestationSourceEpoch).isEqualTo(sourceEpoch);
+    assertThat(spr.lastSignedAttestationTargetEpoch).isEqualTo(targetEpoch);
+    assertThat(spr.genesisValidatorsRoot).isEqualTo(root);
+
+    assertThat(signingRecord).isEqualTo(ValidatorSigningRecord.fromSlashingProtectionRecord(spr));
+  }
+
+  @Test
+  public void roundTrip_shouldConvertToInterchangeFormatNeverSignedAttestation() {
+    DataStructureUtil data = new DataStructureUtil();
+    final UInt64 blockSlot = data.randomUInt64();
+    final Bytes32 root = data.randomBytes32();
+    ValidatorSigningRecord signingRecord =
+        new ValidatorSigningRecord(blockSlot, NEVER_SIGNED, NEVER_SIGNED);
+    SlashingProtectionRecord spr = signingRecord.toSlashingProtectionRecord(root);
+
+    assertThat(spr.lastSignedBlockSlot).isEqualTo(blockSlot);
+    assertThat(spr.lastSignedAttestationSourceEpoch).isNull();
+    assertThat(spr.lastSignedAttestationTargetEpoch).isNull();
+    assertThat(spr.genesisValidatorsRoot).isEqualTo(root);
+
+    assertThat(signingRecord).isEqualTo(ValidatorSigningRecord.fromSlashingProtectionRecord(spr));
   }
 
   private static Optional<ValidatorSigningRecord> disallowed() {
