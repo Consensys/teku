@@ -15,8 +15,6 @@ package tech.pegasys.teku.statetransition.blockimport;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import java.util.Optional;
-import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.core.results.BlockImportResult;
@@ -34,6 +32,9 @@ import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.events.Subscribers;
+
+import javax.annotation.CheckReturnValue;
+import java.util.Optional;
 
 public class BlockImporter {
   private static final Logger LOG = LogManager.getLogger();

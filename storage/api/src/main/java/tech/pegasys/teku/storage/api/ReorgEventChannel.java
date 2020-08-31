@@ -30,5 +30,5 @@ public interface ReorgEventChannel extends VoidReturningChannelInterface {
    * @param commonAncestorSlot the last slot that both the old and new chains had a common block
    */
   void reorgOccurred(
-      final Bytes32 bestBlockRoot, final UInt64 bestSlot, final UInt64 commonAncestorSlot);
+      final Bytes32 bestBlockRoot, final UInt64 bestSlot, final Bytes32 oldBestBlockRoot, final UInt64 commonAncestorSlot);
 }

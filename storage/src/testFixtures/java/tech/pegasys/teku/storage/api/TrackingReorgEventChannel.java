@@ -14,18 +14,19 @@
 package tech.pegasys.teku.storage.api;
 
 import com.google.common.base.MoreObjects;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class TrackingReorgEventChannel implements ReorgEventChannel {
   private final List<ReorgEvent> reorgEvents = new ArrayList<>();
 
   @Override
   public void reorgOccurred(
-      final Bytes32 bestBlockRoot, final UInt64 bestSlot, final UInt64 commonAncestorSlot) {
+          final Bytes32 bestBlockRoot, final UInt64 bestSlot, final Bytes32 oldBestBlockRoot, final UInt64 commonAncestorSlot) {
     reorgEvents.add(new ReorgEvent(bestBlockRoot, bestSlot, commonAncestorSlot));
   }
 

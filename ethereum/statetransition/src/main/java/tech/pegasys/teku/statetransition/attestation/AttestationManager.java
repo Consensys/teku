@@ -15,13 +15,13 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -32,6 +32,8 @@ import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.util.events.Subscribers;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+
+import java.util.List;
 
 public class AttestationManager extends Service implements SlotEventsChannel {
 
@@ -112,7 +114,11 @@ public class AttestationManager extends Service implements SlotEventsChannel {
                               "Failed to process pending attestation dependent on " + blockRoot,
                               err));
             });
-    block.getMessage().getBody().getAttestations().forEach(aggregatingAttestationPool::remove);
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public void onAttestation(final Attestation attestation) {
+    onAttestation(ValidateableAttestation.fromAttestation(attestation));
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
