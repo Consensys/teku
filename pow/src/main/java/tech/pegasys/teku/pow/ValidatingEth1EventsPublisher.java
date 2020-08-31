@@ -42,8 +42,7 @@ public class ValidatingEth1EventsPublisher extends DelegatingEth1EventsChannel {
             .orElse(true);
 
     if (!depositIndexIsValid) {
-      throw new InvalidDepositEventsException(
-          "Expected next deposit at index " + expectedFirstDepositIndex.get());
+      throw InvalidDepositEventsException.expectedDepositAtIndex(expectedFirstDepositIndex.get());
     }
   }
 }

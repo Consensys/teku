@@ -31,7 +31,7 @@ public class DepositsFromBlockEvent {
   private final List<Deposit> deposits;
   private final UInt64 blockTimestamp;
 
-  private DepositsFromBlockEvent(
+  protected DepositsFromBlockEvent(
       final UInt64 blockNumber,
       final Bytes32 blockHash,
       final UInt64 blockTimestamp,
@@ -43,7 +43,7 @@ public class DepositsFromBlockEvent {
     this.deposits = deposits;
   }
 
-  private void assertDepositsValid(final List<Deposit> deposits) {
+  protected void assertDepositsValid(final List<Deposit> deposits) {
     checkArgument(!deposits.isEmpty(), "Attempting to notify no events in a block");
     if (deposits.size() <= 1) {
       return;

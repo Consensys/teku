@@ -57,8 +57,6 @@ public class DepositsFromBlockEventTest {
 
   @Test
   public void create_withMissingDepositAtEndOfList() {
-    final Deposit deposit1 = dataStructureUtil.randomDepositEvent(1);
-    final Deposit deposit3 = dataStructureUtil.randomDepositEvent(3);
     final Stream<Deposit> depositStream =
         Stream.of(
             dataStructureUtil.randomDepositEvent(4),

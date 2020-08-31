@@ -13,9 +13,19 @@
 
 package tech.pegasys.teku.pow.exception;
 
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
 public class InvalidDepositEventsException extends IllegalArgumentException {
 
   public InvalidDepositEventsException(final String s) {
     super(s);
+  }
+
+  public static InvalidDepositEventsException expectedDepositAtIndex(UInt64 expectedIndex) {
+    return expectedDepositAtIndex(expectedIndex.toString());
+  }
+
+  private static InvalidDepositEventsException expectedDepositAtIndex(String expectedIndex) {
+    return new InvalidDepositEventsException("Expected next deposit at index " + expectedIndex);
   }
 }

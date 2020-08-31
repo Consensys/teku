@@ -16,20 +16,37 @@ package tech.pegasys.teku.storage.api.schema;
 import java.math.BigInteger;
 
 public class ReplayDepositsResult {
-  private final BigInteger blockNumber;
+  private static final BigInteger NEGATIVE_ONE = BigInteger.valueOf(-1);
+  private static ReplayDepositsResult EMPTY =
+      new ReplayDepositsResult(NEGATIVE_ONE, NEGATIVE_ONE, false);
+
+  private final BigInteger lastProcessedBlockNumber;
+  private final BigInteger lastProcessedDepositIndex;
   private final boolean pastMinGenesisBlock;
 
-  public ReplayDepositsResult(final BigInteger blockNumber, final boolean pastMinGenesisBlock) {
-    this.blockNumber = blockNumber;
+  public ReplayDepositsResult(
+      final BigInteger lastProcessedBlockNumber,
+      final BigInteger lastProcessedDepositIndex,
+      final boolean pastMinGenesisBlock) {
+    this.lastProcessedBlockNumber = lastProcessedBlockNumber;
+    this.lastProcessedDepositIndex = lastProcessedDepositIndex;
     this.pastMinGenesisBlock = pastMinGenesisBlock;
   }
 
+  public static ReplayDepositsResult empty() {
+    return EMPTY;
+  }
+
   public BigInteger getLastProcessedBlockNumber() {
-    return blockNumber;
+    return lastProcessedBlockNumber;
+  }
+
+  public BigInteger getLastProcessedDepositIndex() {
+    return lastProcessedDepositIndex;
   }
 
   public BigInteger getFirstUnprocessedBlockNumber() {
-    return blockNumber.add(BigInteger.ONE);
+    return lastProcessedBlockNumber.add(BigInteger.ONE);
   }
 
   public boolean isPastMinGenesisBlock() {

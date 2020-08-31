@@ -37,10 +37,10 @@ import tech.pegasys.teku.util.config.Constants;
 
 class Eth1DepositManagerTest {
 
-  private static final BigInteger NEGATIVE_ONE = BigInteger.valueOf(-1);
   private static final SafeFuture<ReplayDepositsResult> NOTHING_REPLAYED =
-      SafeFuture.completedFuture(new ReplayDepositsResult(NEGATIVE_ONE, false));
+      SafeFuture.completedFuture(ReplayDepositsResult.empty());
   private static final int MIN_GENESIS_BLOCK_TIMESTAMP = 10_000;
+
   private final Eth1Provider eth1Provider = mock(Eth1Provider.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final Eth1EventsChannel eth1EventsChannel = mock(Eth1EventsChannel.class);
@@ -102,8 +102,11 @@ class Eth1DepositManagerTest {
   void shouldStartWithStoredDepositsAndHeadBeforeMinGenesisTime() {
     final BigInteger headBlockNumber = BigInteger.valueOf(100);
     final BigInteger lastReplayedBlock = BigInteger.valueOf(10);
+    final BigInteger lastReplayedDepositIndex = BigInteger.valueOf(11);
     when(eth1DepositStorageChannel.replayDepositEvents())
-        .thenReturn(SafeFuture.completedFuture(new ReplayDepositsResult(lastReplayedBlock, false)));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new ReplayDepositsResult(lastReplayedBlock, lastReplayedDepositIndex, false)));
     withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP - 1);
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
@@ -126,8 +129,11 @@ class Eth1DepositManagerTest {
     final BigInteger headBlockNumber = BigInteger.valueOf(100);
     final BigInteger minGenesisBlockNumber = BigInteger.valueOf(60);
     final BigInteger lastReplayedBlock = BigInteger.valueOf(10);
+    final BigInteger lastReplayedDepositIndex = BigInteger.valueOf(11);
     when(eth1DepositStorageChannel.replayDepositEvents())
-        .thenReturn(SafeFuture.completedFuture(new ReplayDepositsResult(lastReplayedBlock, false)));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new ReplayDepositsResult(lastReplayedBlock, lastReplayedDepositIndex, false)));
     withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
     withMinGenesisBlock(headBlockNumber, minGenesisBlockNumber);
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
@@ -199,8 +205,11 @@ class Eth1DepositManagerTest {
   void shouldStartWithStoredDepositsAndMinGenesisReachedLongerChain() {
     final BigInteger headBlockNumber = BigInteger.valueOf(100);
     final BigInteger lastReplayedBlock = BigInteger.valueOf(70);
+    final BigInteger lastReplayedDepositIndex = BigInteger.valueOf(11);
     when(eth1DepositStorageChannel.replayDepositEvents())
-        .thenReturn(SafeFuture.completedFuture(new ReplayDepositsResult(lastReplayedBlock, true)));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new ReplayDepositsResult(lastReplayedBlock, lastReplayedDepositIndex, true)));
     withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
@@ -219,8 +228,11 @@ class Eth1DepositManagerTest {
     // Head block number has wound up being before the last block we already processed
     final BigInteger headBlockNumber = BigInteger.valueOf(60);
     final BigInteger lastReplayedBlock = BigInteger.valueOf(70);
+    final BigInteger lastReplayedDepositIndex = BigInteger.valueOf(71);
     when(eth1DepositStorageChannel.replayDepositEvents())
-        .thenReturn(SafeFuture.completedFuture(new ReplayDepositsResult(lastReplayedBlock, true)));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new ReplayDepositsResult(lastReplayedBlock, lastReplayedDepositIndex, true)));
     withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
@@ -239,8 +251,11 @@ class Eth1DepositManagerTest {
     // Head block number has wound up being before the last block we already processed
     final BigInteger headBlockNumber = BigInteger.valueOf(60);
     final BigInteger lastReplayedBlock = BigInteger.valueOf(70);
+    final BigInteger lastReplayedDepositIndex = BigInteger.valueOf(71);
     when(eth1DepositStorageChannel.replayDepositEvents())
-        .thenReturn(SafeFuture.completedFuture(new ReplayDepositsResult(lastReplayedBlock, false)));
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new ReplayDepositsResult(lastReplayedBlock, lastReplayedDepositIndex, false)));
     withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP + 1000);
     when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
 
