@@ -160,6 +160,7 @@ public class RocksDbInstance implements RocksDbAccessor {
       for (Transaction openTransaction : openTransactions) {
         openTransaction.closeViaDatabase();
       }
+      db.syncWal();
       for (final AutoCloseable resource : resources) {
         resource.close();
       }

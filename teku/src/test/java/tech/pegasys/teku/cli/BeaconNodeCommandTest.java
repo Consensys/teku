@@ -92,6 +92,19 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  void ignoreVersionAndHelpEnvVars() {
+    beaconNodeCommand =
+        new BeaconNodeCommand(
+            outputWriter,
+            errorWriter,
+            Map.of("TEKU_VERSION", "1.2.3", "TEKU_HELP", "what?"),
+            startAction);
+
+    // No error from invalid --version or --help arg.
+    assertThat(beaconNodeCommand.parse(new String[0])).isZero();
+  }
+
+  @Test
   public void overrideEnvironmentValuesIfKeyIsPresentInCLIOptions() {
     final String[] args = createCliArgs();
     args[5] = "1.2.3.5";

@@ -272,7 +272,7 @@ class AggregationDutyTest {
 
     assertThat(duty.performDuty()).isCompleted();
     verify(validatorApiChannel, never()).sendAggregateAndProof(any());
-    verify(validatorLogger).aggregationSkipped(SLOT);
+    verify(validatorLogger).aggregationSkipped(SLOT, 2);
     verifyNoMoreInteractions(validatorLogger);
   }
 
