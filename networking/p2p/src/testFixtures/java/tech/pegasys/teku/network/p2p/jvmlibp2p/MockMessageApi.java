@@ -30,6 +30,7 @@ public class MockMessageApi implements MessageApi {
     this.data = data;
     topics = List.of(topic);
   }
+
   public MockMessageApi(final Bytes data, final Topic topic) {
     this(Unpooled.wrappedBuffer(data.toArrayUnsafe()), topic);
   }
