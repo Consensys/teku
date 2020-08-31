@@ -13,9 +13,12 @@
 
 package tech.pegasys.teku.pow;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.COMPLETE;
 
@@ -253,6 +256,26 @@ class Eth1DepositManagerTest {
         .verify(depositProcessingController)
         .startSubscription(lastReplayedBlock.add(BigInteger.ONE));
     inOrder.verifyNoMoreInteractions();
+  }
+
+  @Test
+  void shouldRetryWhenEth1ChainIsLessThanEth1FollowDistance() {
+    // Head block number is less than ETH1_FOLLOW_DISTANCE
+    final BigInteger eth1BlockNumber = BigInteger.valueOf(60);
+    final Block latestBlock = block(eth1BlockNumber, 100000);
+    when(eth1Provider.getLatestEth1Block()).thenReturn(SafeFuture.completedFuture(latestBlock));
+
+    Constants.ETH1_FOLLOW_DISTANCE = UInt64.valueOf(100);
+    when(eth1DepositStorageChannel.replayDepositEvents()).thenReturn(NOTHING_REPLAYED);
+
+    manager.start();
+
+    inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
+    // Min genesis not reached so process block by block after the last replayed block
+    verify(eth1Provider).getLatestEth1Block();
+    verify(eth1Provider, never()).getGuaranteedEth1Block((UInt64) any());
+
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
   }
 
   private void withMinGenesisBlock(

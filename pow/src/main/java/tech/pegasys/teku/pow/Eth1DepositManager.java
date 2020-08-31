@@ -146,8 +146,16 @@ public class Eth1DepositManager {
     return eth1Provider
         .getLatestEth1Block()
         .thenApply(EthBlock.Block::getNumber)
-        .thenApply(number -> number.subtract(Constants.ETH1_FOLLOW_DISTANCE.bigIntegerValue()))
         .thenApply(UInt64::valueOf)
+        .thenApply(
+            number -> {
+              if (number.isLessThan(Constants.ETH1_FOLLOW_DISTANCE)) {
+                throw new IllegalStateException(
+                    "Eth1 chain is shorter than minimum follow distance.");
+              } else {
+                return number.minus(Constants.ETH1_FOLLOW_DISTANCE);
+              }
+            })
         .thenCompose(eth1Provider::getGuaranteedEth1Block)
         .exceptionallyCompose(
             (err) -> {
