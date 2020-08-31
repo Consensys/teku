@@ -58,12 +58,12 @@ public class ValidatingEth1EventsPublisherTest {
   @Test
   public void onDepositsFromBlock_outOfOrder() {
     final DepositsFromBlockEvent event1 = dataStructureUtil.randomDepositsFromBlockEvent(1, 0, 10);
-    final DepositsFromBlockEvent event3 = dataStructureUtil.randomDepositsFromBlockEvent(3, 11, 15);
+    final DepositsFromBlockEvent event2 = dataStructureUtil.randomDepositsFromBlockEvent(2, 10, 11);
 
-    publisher.onDepositsFromBlock(event3);
+    publisher.onDepositsFromBlock(event2);
     assertThatThrownBy(() -> publisher.onDepositsFromBlock(event1))
         .isInstanceOf(InvalidDepositEventsException.class)
-        .hasMessageContaining("Expected next deposit at index 15");
+        .hasMessageContaining("Expected next deposit at index 11");
   }
 
   @Test

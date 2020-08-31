@@ -16,6 +16,8 @@ package tech.pegasys.teku.pow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.COMPLETE;
 
@@ -86,6 +88,7 @@ class Eth1DepositManagerTest {
 
     manager.start();
 
+    verify(eth1EventsChannel, never()).setLastestPublishedDeposit(any());
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
     // Process blocks up to the current chain head
     inOrder
@@ -112,6 +115,7 @@ class Eth1DepositManagerTest {
 
     manager.start();
 
+    verify(eth1EventsChannel).setLastestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
     // Process blocks up to the current chain head
     inOrder
@@ -140,6 +144,7 @@ class Eth1DepositManagerTest {
 
     manager.start();
 
+    verify(eth1EventsChannel).setLastestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
     // Find min genesis block
     inOrder.verify(minimumGenesisTimeBlockFinder).findMinGenesisTimeBlockInHistory(headBlockNumber);
@@ -215,6 +220,7 @@ class Eth1DepositManagerTest {
 
     manager.start();
 
+    verify(eth1EventsChannel).setLastestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
     // Just start processing blocks from after the last replayed block.
     inOrder
@@ -238,6 +244,7 @@ class Eth1DepositManagerTest {
 
     manager.start();
 
+    verify(eth1EventsChannel).setLastestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
     // Just start processing blocks from after the last replayed block.
     inOrder
@@ -261,6 +268,7 @@ class Eth1DepositManagerTest {
 
     manager.start();
 
+    verify(eth1EventsChannel).setLastestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
     // Min genesis not reached so process block by block after the last replayed block
     inOrder.verify(depositProcessingController).switchToBlockByBlockMode();
