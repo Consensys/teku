@@ -20,6 +20,7 @@ import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.core.results.SuccessfulBlockImportResult;
 import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -82,7 +83,11 @@ public class BlockImporter {
 
               final Optional<BlockProcessingRecord> record = result.getBlockProcessingRecord();
               eventBus.post(new ImportedBlockEvent(block));
-              notifyBlockOperationSubscribers(block);
+
+              if (((SuccessfulBlockImportResult) result).isBlockOnCanonicalChain()) {
+                notifyBlockOperationSubscribers(block);
+              }
+
               record.ifPresent(eventBus::post);
 
               return result;

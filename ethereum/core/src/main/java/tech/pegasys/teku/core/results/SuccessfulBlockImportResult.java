@@ -34,6 +34,10 @@ public class SuccessfulBlockImportResult implements BlockImportResult {
     this.blockOnCanonicalChain = blockOnCanonicalChain;
   }
 
+  public boolean isBlockOnCanonicalChain() {
+    return blockOnCanonicalChain;
+  }
+
   @Override
   public boolean isSuccessful() {
     return true;
