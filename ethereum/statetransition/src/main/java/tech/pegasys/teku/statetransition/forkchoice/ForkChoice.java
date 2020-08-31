@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.lookup.CapturingIndexedAttestationProvider;
 import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.core.results.SuccessfulBlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -146,7 +147,10 @@ public class ForkChoice {
                       forkChoiceStrategy.onAttestation(transaction, indexedAttestation));
           return transaction
               .commit()
-              .thenRun(() -> updateForkChoiceForImportedBlock(block, forkChoiceStrategy, result))
+              .thenRun(
+                  () ->
+                      updateForkChoiceForImportedBlock(
+                          block, forkChoiceStrategy, (SuccessfulBlockImportResult) result))
               .thenApply(__ -> result);
         });
   }
@@ -154,7 +158,7 @@ public class ForkChoice {
   private void updateForkChoiceForImportedBlock(
       final SignedBeaconBlock block,
       final ForkChoiceStrategy forkChoiceStrategy,
-      final BlockImportResult result) {
+      final SuccessfulBlockImportResult result) {
     result
         .getBlockProcessingRecord()
         .ifPresent(
@@ -171,6 +175,7 @@ public class ForkChoice {
                   .map(currentHead -> currentHead.getRoot().equals(block.getParent_root()))
                   .orElse(false)) {
                 recentChainData.updateHead(block.getRoot(), block.getSlot());
+                result.setBlockOnCanonicalChain(true);
               }
             });
   }
