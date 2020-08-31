@@ -26,9 +26,12 @@ public class MockMessageApi implements MessageApi {
   private final byte[] from = new byte[] {0x1, 0x2};
   private final List<Topic> topics;
 
-  public MockMessageApi(final Bytes data, final Topic topic) {
-    this.data = Unpooled.wrappedBuffer(data.toArrayUnsafe());
+  public MockMessageApi(final ByteBuf data, final Topic topic) {
+    this.data = data;
     topics = List.of(topic);
+  }
+  public MockMessageApi(final Bytes data, final Topic topic) {
+    this(Unpooled.wrappedBuffer(data.toArrayUnsafe()), topic);
   }
 
   @Override
