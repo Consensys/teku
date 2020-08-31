@@ -46,7 +46,8 @@ class SlashingProtectedSignerTest {
   @Test
   void signBlock_shouldSignWhenSlashingProtectionAllowsIt() {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(6);
-    when(slashingProtector.maySignBlock(publicKey, forkInfo, block.getSlot()))
+    when(slashingProtector.maySignBlock(
+            publicKey, forkInfo.getGenesisValidatorsRoot(), block.getSlot()))
         .thenReturn(SafeFuture.completedFuture(true));
     when(delegate.signBlock(block, forkInfo)).thenReturn(signatureFuture);
 
@@ -56,7 +57,8 @@ class SlashingProtectedSignerTest {
   @Test
   void signBlock_shouldNotSignWhenSlashingProtectionRejects() {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(6);
-    when(slashingProtector.maySignBlock(publicKey, forkInfo, block.getSlot()))
+    when(slashingProtector.maySignBlock(
+            publicKey, forkInfo.getGenesisValidatorsRoot(), block.getSlot()))
         .thenReturn(SafeFuture.completedFuture(false));
     when(delegate.signBlock(block, forkInfo)).thenReturn(signatureFuture);
 
@@ -69,7 +71,7 @@ class SlashingProtectedSignerTest {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     when(slashingProtector.maySignAttestation(
             publicKey,
-            forkInfo,
+            forkInfo.getGenesisValidatorsRoot(),
             attestationData.getSource().getEpoch(),
             attestationData.getTarget().getEpoch()))
         .thenReturn(SafeFuture.completedFuture(true));
@@ -84,7 +86,7 @@ class SlashingProtectedSignerTest {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     when(slashingProtector.maySignAttestation(
             publicKey,
-            forkInfo,
+            forkInfo.getGenesisValidatorsRoot(),
             attestationData.getSource().getEpoch(),
             attestationData.getTarget().getEpoch()))
         .thenReturn(SafeFuture.completedFuture(false));

@@ -113,11 +113,11 @@ public class ValidatorSigningRecord {
   public SlashingProtectionRecord toSlashingProtectionRecord(final Bytes32 validatorsRoot) {
     final UInt64 sourceEpoch =
         attestationSourceEpoch == null || attestationSourceEpoch.equals(UInt64.MAX_VALUE)
-            ? null
+            ? NEVER_SIGNED
             : attestationSourceEpoch;
     final UInt64 targetEpoch =
         attestationTargetEpoch == null || attestationTargetEpoch.equals(UInt64.MAX_VALUE)
-            ? null
+            ? NEVER_SIGNED
             : attestationTargetEpoch;
     return new SlashingProtectionRecord(blockSlot, sourceEpoch, targetEpoch, validatorsRoot);
   }
@@ -144,18 +144,6 @@ public class ValidatorSigningRecord {
 
   private boolean isSafeTargetEpoch(final UInt64 targetEpoch) {
     return attestationTargetEpoch == null || attestationTargetEpoch.compareTo(targetEpoch) < 0;
-  }
-
-  public UInt64 getBlockSlot() {
-    return blockSlot;
-  }
-
-  public UInt64 getAttestationSourceEpoch() {
-    return attestationSourceEpoch;
-  }
-
-  public UInt64 getAttestationTargetEpoch() {
-    return attestationTargetEpoch;
   }
 
   @Override

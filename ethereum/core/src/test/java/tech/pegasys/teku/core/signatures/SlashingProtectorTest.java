@@ -138,7 +138,7 @@ class SlashingProtectorTest {
 
     assertThat(
             slashingProtectionStorage.maySignAttestation(
-                validator, forkInfo, sourceEpoch, targetEpoch))
+                validator, forkInfo.getGenesisValidatorsRoot(), sourceEpoch, targetEpoch))
         .isCompletedWithValue(true);
 
     final ValidatorSigningRecord updatedRecord =
@@ -163,7 +163,7 @@ class SlashingProtectorTest {
 
     assertThat(
             slashingProtectionStorage.maySignAttestation(
-                validator, forkInfo, sourceEpoch, targetEpoch))
+                validator, forkInfo.getGenesisValidatorsRoot(), sourceEpoch, targetEpoch))
         .isCompletedWithValue(false);
     verify(dataWriter, never()).syncedWrite(any(), any());
   }
@@ -173,7 +173,9 @@ class SlashingProtectorTest {
     when(dataWriter.read(signingRecordPath))
         .thenReturn(lastSignedBlockSlot.map(this::blockTestSigningRecordBytes));
 
-    assertThat(slashingProtectionStorage.maySignBlock(validator, forkInfo, newBlockSlot))
+    assertThat(
+            slashingProtectionStorage.maySignBlock(
+                validator, forkInfo.getGenesisValidatorsRoot(), newBlockSlot))
         .isCompletedWithValue(true);
 
     final ValidatorSigningRecord updatedRecord =
@@ -203,7 +205,9 @@ class SlashingProtectorTest {
     when(dataWriter.read(signingRecordPath))
         .thenReturn(lastSignedBlockSlot.map(this::blockTestSigningRecordBytes));
 
-    assertThat(slashingProtectionStorage.maySignBlock(validator, forkInfo, newBlockSlot))
+    assertThat(
+            slashingProtectionStorage.maySignBlock(
+                validator, forkInfo.getGenesisValidatorsRoot(), newBlockSlot))
         .isCompletedWithValue(false);
 
     verify(dataWriter, never()).syncedWrite(any(), any());

@@ -57,18 +57,18 @@ public class SlashingProtectionImporter {
           Arrays.asList(
               jsonMapper.treeToValue(jsonNode.get("data"), MinimalSigningHistory[].class));
     } else {
-      summariseCompleteInterchangeFormat(
-          Arrays.asList(
-              jsonMapper.treeToValue(jsonNode.get("data"), CompleteSigningHistory[].class)));
+      data =
+          summariseCompleteInterchangeFormat(
+              Arrays.asList(
+                  jsonMapper.treeToValue(jsonNode.get("data"), CompleteSigningHistory[].class)));
     }
   }
 
-  private void summariseCompleteInterchangeFormat(
+  private List<MinimalSigningHistory> summariseCompleteInterchangeFormat(
       final List<CompleteSigningHistory> completeSigningData) {
-    data =
-        completeSigningData.stream()
-            .map(this::minimalSigningHistoryConverter)
-            .collect(Collectors.toList());
+    return completeSigningData.stream()
+        .map(this::minimalSigningHistoryConverter)
+        .collect(Collectors.toList());
   }
 
   private MinimalSigningHistory minimalSigningHistoryConverter(

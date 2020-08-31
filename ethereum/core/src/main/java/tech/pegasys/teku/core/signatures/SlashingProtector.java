@@ -25,7 +25,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.record.ValidatorSigningRecord;
 import tech.pegasys.teku.data.slashinginterchange.SlashingProtectionRecord;
 import tech.pegasys.teku.data.slashinginterchange.YamlProvider;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -43,18 +42,17 @@ public class SlashingProtector {
   }
 
   public synchronized SafeFuture<Boolean> maySignBlock(
-      final BLSPublicKey validator, final ForkInfo forkInfo, final UInt64 slot) {
+      final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot, final UInt64 slot) {
     return SafeFuture.of(
         () -> {
           final ValidatorSigningRecord signingRecord = loadSigningRecord(validator);
-          return handleResult(
-              validator, forkInfo.getGenesisValidatorsRoot(), signingRecord.maySignBlock(slot));
+          return handleResult(validator, genesisValidatorsRoot, signingRecord.maySignBlock(slot));
         });
   }
 
   public synchronized SafeFuture<Boolean> maySignAttestation(
       final BLSPublicKey validator,
-      final ForkInfo forkInfo,
+      final Bytes32 genesisValidatorsRoot,
       final UInt64 sourceEpoch,
       final UInt64 targetEpoch) {
     return SafeFuture.of(
@@ -62,7 +60,7 @@ public class SlashingProtector {
           final ValidatorSigningRecord signingRecord = loadSigningRecord(validator);
           return handleResult(
               validator,
-              forkInfo.getGenesisValidatorsRoot(),
+              genesisValidatorsRoot,
               signingRecord.maySignAttestation(sourceEpoch, targetEpoch));
         });
   }
