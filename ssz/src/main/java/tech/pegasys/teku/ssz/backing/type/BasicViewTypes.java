@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing.type;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes32;
@@ -73,8 +74,28 @@ public class BasicViewTypes {
       new BasicViewType<>(64) {
         @Override
         public UInt64View createFromBackingNode(TreeNode node, int internalIndex) {
-          return UInt64View.fromLong(
-              node.hashTreeRoot().slice(internalIndex * 8, 8).toLong(ByteOrder.LITTLE_ENDIAN));
+          Bytes32 leafNodeBytes = node.hashTreeRoot();
+          try {
+            Bytes elementBytes = leafNodeBytes.slice(internalIndex * 8, 8);
+            return UInt64View.fromLong(elementBytes.toLong(ByteOrder.LITTLE_ENDIAN));
+          } catch (Exception e) {
+            // additional info to track down the bug https://github.com/PegaSysEng/teku/issues/2579
+            String info =
+                "Refer to https://github.com/PegaSysEng/teku/issues/2579 if see this exception. ";
+            info += "internalIndex = " + internalIndex;
+            info += ", leafNodeBytes: " + leafNodeBytes.getClass().getSimpleName();
+            try {
+              info += ", leafNodeBytes = " + leafNodeBytes.copy();
+            } catch (Exception ex) {
+              info += "(" + ex + ")";
+            }
+            try {
+              info += ", leafNodeBytes[] = " + Arrays.toString(leafNodeBytes.toArray());
+            } catch (Exception ex) {
+              info += "(" + ex + ")";
+            }
+            throw new RuntimeException(info, e);
+          }
         }
 
         @Override
