@@ -222,7 +222,7 @@ public class DepositProviderTest {
       shouldThrowMissingDepositsExceptionWhenAllDepositsRequiredForStateNotAvailable_skippedDeposits() {
     Constants.MAX_DEPOSITS = 5;
     mockDepositsFromEth1Block(0, 7);
-    // Deposits 7,8 is missing
+    // Deposits 7,8 are missing
     mockDepositsFromEth1Block(9, 10);
     mockStateEth1DepositIndex(5);
     mockEth1DataDepositCount(10);
