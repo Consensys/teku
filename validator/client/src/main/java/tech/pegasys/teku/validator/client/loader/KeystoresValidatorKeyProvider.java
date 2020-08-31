@@ -19,10 +19,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
-import com.google.common.io.Files;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
@@ -98,11 +99,11 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
   private String loadPassword(final Path passwordFile) {
     final String password;
     try {
-      password = Files.asCharSource(passwordFile.toFile(), UTF_8).readFirstLine();
+      password = Files.readString(passwordFile, UTF_8);
       if (isEmpty(password)) {
         throw new IllegalArgumentException("Keystore password cannot be empty: " + passwordFile);
       }
-    } catch (final FileNotFoundException e) {
+    } catch (final FileNotFoundException | NoSuchFileException e) {
       throw new IllegalArgumentException("Keystore password file not found: " + passwordFile, e);
     } catch (final IOException e) {
       final String errorMessage =

@@ -142,6 +142,6 @@ dependencyManagement {
 
     dependency 'tech.pegasys.discovery:discovery:0.3.8-dev-313949b1'
 
-    dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.1'
+    dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.5'
   }
 }
