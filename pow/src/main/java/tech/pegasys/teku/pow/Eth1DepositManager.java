@@ -24,7 +24,6 @@ import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.util.config.Constants;
@@ -35,7 +34,7 @@ public class Eth1DepositManager {
 
   private final Eth1Provider eth1Provider;
   private final AsyncRunner asyncRunner;
-  private final Eth1EventsChannel eth1EventsChannel;
+  private final ValidatingEth1EventsPublisher eth1EventsPublisher;
   private final Eth1DepositStorageChannel eth1DepositStorageChannel;
   private final DepositProcessingController depositProcessingController;
   private final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder;
@@ -43,13 +42,13 @@ public class Eth1DepositManager {
   public Eth1DepositManager(
       final Eth1Provider eth1Provider,
       final AsyncRunner asyncRunner,
-      final Eth1EventsChannel eth1EventsChannel,
+      final ValidatingEth1EventsPublisher eth1EventsPublisher,
       final Eth1DepositStorageChannel eth1DepositStorageChannel,
       final DepositProcessingController depositProcessingController,
       final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder) {
     this.eth1Provider = eth1Provider;
     this.asyncRunner = asyncRunner;
-    this.eth1EventsChannel = eth1EventsChannel;
+    this.eth1EventsPublisher = eth1EventsPublisher;
     this.eth1DepositStorageChannel = eth1DepositStorageChannel;
     this.depositProcessingController = depositProcessingController;
     this.minimumGenesisTimeBlockFinder = minimumGenesisTimeBlockFinder;
@@ -59,8 +58,14 @@ public class Eth1DepositManager {
     eth1DepositStorageChannel
         .replayDepositEvents()
         .thenCompose(
-            replayDepositsResult ->
-                getHead().thenCompose(headBlock -> processStart(headBlock, replayDepositsResult)))
+            replayDepositsResult -> {
+              replayDepositsResult
+                  .getLastProcessedDepositIndex()
+                  .map(UInt64::valueOf)
+                  .ifPresent(eth1EventsPublisher::setLastestPublishedDeposit);
+              return getHead()
+                  .thenCompose(headBlock -> processStart(headBlock, replayDepositsResult));
+            })
         .finish(
             () -> LOG.info("Eth1DepositsManager successfully ran startup sequence."),
             (err) -> LOG.fatal("Eth1DepositsManager unable to run startup sequence.", err));
@@ -126,7 +131,7 @@ public class Eth1DepositManager {
         .thenCompose(block -> sendDepositsUpToMinGenesis(block, replayDepositsResult))
         .thenAccept(
             minGenesisTimeBlock -> {
-              notifyMinGenesisTimeBlockReached(eth1EventsChannel, minGenesisTimeBlock);
+              notifyMinGenesisTimeBlockReached(eth1EventsPublisher, minGenesisTimeBlock);
               // Start the subscription from the block after min genesis as we've already processed
               // the min genesis block
               depositProcessingController.startSubscription(

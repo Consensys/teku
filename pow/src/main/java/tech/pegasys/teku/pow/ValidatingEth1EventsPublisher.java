@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.pow;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
@@ -24,6 +26,14 @@ public class ValidatingEth1EventsPublisher extends DelegatingEth1EventsChannel {
 
   public ValidatingEth1EventsPublisher(final Eth1EventsChannel delegate) {
     super(delegate);
+  }
+
+  public synchronized void setLastestPublishedDeposit(final UInt64 latestPublishedDeposit) {
+    checkNotNull(latestPublishedDeposit);
+    if (!lastPublishedDeposit.isEmpty()) {
+      throw new IllegalStateException("Latest published deposit is already set");
+    }
+    this.lastPublishedDeposit = Optional.of(latestPublishedDeposit);
   }
 
   @Override

@@ -106,7 +106,7 @@ public class DepositStorageTest {
     assertThat(future.get().getLastProcessedBlockNumber())
         .isEqualTo(block_101.getBlockNumber().bigIntegerValue());
     assertThat(future.get().getLastProcessedDepositIndex())
-        .isEqualTo(block_101.getLastDepositIndex().bigIntegerValue());
+        .hasValue(block_101.getLastDepositIndex().bigIntegerValue());
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 
@@ -142,7 +142,7 @@ public class DepositStorageTest {
 
     assertThat(eventsChannel.getOrderedList()).isEmpty();
     assertThat(future.get().getLastProcessedBlockNumber()).isEqualTo(BigInteger.valueOf(-1));
-    assertThat(future.get().getLastProcessedDepositIndex()).isEqualTo(BigInteger.valueOf(-1));
+    assertThat(future.get().getLastProcessedDepositIndex()).isEmpty();
     assertThat(future.get().getFirstUnprocessedBlockNumber()).isEqualTo(BigInteger.ZERO);
     assertThat(future.get().isPastMinGenesisBlock()).isFalse();
   }
@@ -163,7 +163,7 @@ public class DepositStorageTest {
     assertThat(future.get().getLastProcessedBlockNumber())
         .isEqualTo(block_100.getBlockNumber().bigIntegerValue());
     assertThat(future.get().getLastProcessedDepositIndex())
-        .isEqualTo(block_100.getLastDepositIndex().bigIntegerValue());
+        .hasValue(block_100.getLastDepositIndex().bigIntegerValue());
     assertThat(future.get().isPastMinGenesisBlock()).isFalse();
 
     depositStorage.onDepositsFromBlock(block_100); // Should ignore
@@ -213,7 +213,7 @@ public class DepositStorageTest {
     assertThat(future.get().getLastProcessedBlockNumber())
         .isEqualTo(block_101.getBlockNumber().bigIntegerValue());
     assertThat(future.get().getLastProcessedDepositIndex())
-        .isEqualTo(block_101.getLastDepositIndex().bigIntegerValue());
+        .hasValue(block_101.getLastDepositIndex().bigIntegerValue());
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 
@@ -234,7 +234,7 @@ public class DepositStorageTest {
     assertThat(future.get().getLastProcessedBlockNumber())
         .isEqualTo(block_101.getBlockNumber().bigIntegerValue());
     assertThat(future.get().getLastProcessedDepositIndex())
-        .isEqualTo(block_101.getLastDepositIndex().bigIntegerValue());
+        .hasValue(block_101.getLastDepositIndex().bigIntegerValue());
     assertThat(future.get().isPastMinGenesisBlock()).isFalse();
   }
 
@@ -293,7 +293,7 @@ public class DepositStorageTest {
     assertThat(future.get().getLastProcessedBlockNumber())
         .isEqualTo(genesis_100.getBlockNumber().bigIntegerValue());
     assertThat(future.get().getLastProcessedDepositIndex())
-        .isEqualTo(block_100.getLastDepositIndex().bigIntegerValue());
+        .hasValue(block_100.getLastDepositIndex().bigIntegerValue());
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 
@@ -313,7 +313,7 @@ public class DepositStorageTest {
 
     assertThat(future.get().getLastProcessedBlockNumber())
         .isEqualTo(genesis_100.getBlockNumber().bigIntegerValue());
-    assertThat(future.get().getLastProcessedDepositIndex()).isEqualTo(BigInteger.valueOf(-1));
+    assertThat(future.get().getLastProcessedDepositIndex()).isEmpty();
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 
@@ -335,7 +335,7 @@ public class DepositStorageTest {
     assertThat(future.get().getLastProcessedBlockNumber())
         .isEqualTo(genesis_100.getBlockNumber().bigIntegerValue());
     assertThat(future.get().getLastProcessedDepositIndex())
-        .isEqualTo(block_99.getLastDepositIndex().bigIntegerValue());
+        .hasValue(block_99.getLastDepositIndex().bigIntegerValue());
     assertThat(future.get().isPastMinGenesisBlock()).isTrue();
   }
 

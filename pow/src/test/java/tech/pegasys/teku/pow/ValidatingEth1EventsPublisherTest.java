@@ -19,6 +19,7 @@ import static org.mockito.Mockito.verify;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
@@ -63,5 +64,66 @@ public class ValidatingEth1EventsPublisherTest {
     assertThatThrownBy(() -> publisher.onDepositsFromBlock(event1))
         .isInstanceOf(InvalidDepositEventsException.class)
         .hasMessageContaining("Expected next deposit at index 15");
+  }
+
+  @Test
+  public void onDepositsFromBlock_noLatestIndexSet() {
+    final DepositsFromBlockEvent event2 = dataStructureUtil.randomDepositsFromBlockEvent(2, 10, 11);
+    final DepositsFromBlockEvent event3 = dataStructureUtil.randomDepositsFromBlockEvent(3, 11, 15);
+
+    publisher.onDepositsFromBlock(event2);
+    verify(delegate).onDepositsFromBlock(event2);
+    publisher.onDepositsFromBlock(event3);
+    verify(delegate).onDepositsFromBlock(event3);
+  }
+
+  @Test
+  public void onDepositsFromBlock_latestIndexSetConsistently() {
+    final DepositsFromBlockEvent event2 = dataStructureUtil.randomDepositsFromBlockEvent(2, 10, 11);
+    final DepositsFromBlockEvent event3 = dataStructureUtil.randomDepositsFromBlockEvent(3, 11, 15);
+
+    publisher.setLastestPublishedDeposit(UInt64.valueOf(9));
+    publisher.onDepositsFromBlock(event2);
+    verify(delegate).onDepositsFromBlock(event2);
+    publisher.onDepositsFromBlock(event3);
+    verify(delegate).onDepositsFromBlock(event3);
+  }
+
+  @Test
+  public void onDepositsFromBlock_latestIndexSet_missingEvent() {
+    final DepositsFromBlockEvent event2 = dataStructureUtil.randomDepositsFromBlockEvent(2, 10, 11);
+
+    publisher.setLastestPublishedDeposit(UInt64.valueOf(8));
+    assertThatThrownBy(() -> publisher.onDepositsFromBlock(event2))
+        .isInstanceOf(InvalidDepositEventsException.class)
+        .hasMessageContaining("Expected next deposit at index 9");
+  }
+
+  @Test
+  public void onDepositsFromBlock_latestIndexSet_duplicateEvent() {
+    final DepositsFromBlockEvent event2 = dataStructureUtil.randomDepositsFromBlockEvent(2, 10, 11);
+
+    publisher.setLastestPublishedDeposit(event2.getLastDepositIndex());
+    assertThatThrownBy(() -> publisher.onDepositsFromBlock(event2))
+        .isInstanceOf(InvalidDepositEventsException.class)
+        .hasMessageContaining("Expected next deposit at index 11");
+  }
+
+  @Test
+  public void setLastestPublishedDeposit_afterEventProcessed() {
+    final DepositsFromBlockEvent event1 = dataStructureUtil.randomDepositsFromBlockEvent(1, 0, 10);
+
+    publisher.onDepositsFromBlock(event1);
+    assertThatThrownBy(() -> publisher.setLastestPublishedDeposit(event1.getLastDepositIndex()))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("Latest published deposit is already set");
+  }
+
+  @Test
+  public void setLastestPublishedDeposit_setTwice() {
+    publisher.setLastestPublishedDeposit(UInt64.ZERO);
+    assertThatThrownBy(() -> publisher.setLastestPublishedDeposit(UInt64.ONE))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("Latest published deposit is already set");
   }
 }

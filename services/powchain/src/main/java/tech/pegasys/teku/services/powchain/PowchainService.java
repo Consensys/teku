@@ -68,7 +68,7 @@ public class PowchainService extends Service {
         DepositContractAccessor.create(
             eth1Provider, web3j, config.getConfig().getEth1DepositContractAddress().toHexString());
 
-    final Eth1EventsChannel eth1EventsPublisher =
+    final ValidatingEth1EventsPublisher eth1EventsPublisher =
         new ValidatingEth1EventsPublisher(
             config.getEventChannels().getPublisher(Eth1EventsChannel.class));
     final Eth1DepositStorageChannel eth1DepositStorageChannel =

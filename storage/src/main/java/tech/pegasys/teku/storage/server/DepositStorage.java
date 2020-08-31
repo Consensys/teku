@@ -132,9 +132,8 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
         lastDepositBlockNumber = genesis.get().getBlockNumber().bigIntegerValue();
         isGenesisDone = true;
       }
-      final BigInteger lastIndex =
-          lastDepositIndex.map(UInt64::bigIntegerValue).orElse(NEGATIVE_ONE);
-      return new ReplayDepositsResult(lastDepositBlockNumber, lastIndex, isGenesisDone);
+      final Optional<BigInteger> depositIndex = lastDepositIndex.map(UInt64::bigIntegerValue);
+      return ReplayDepositsResult.create(lastDepositBlockNumber, depositIndex, isGenesisDone);
     }
   }
 }

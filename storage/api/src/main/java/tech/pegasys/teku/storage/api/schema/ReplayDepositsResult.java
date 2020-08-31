@@ -14,19 +14,20 @@
 package tech.pegasys.teku.storage.api.schema;
 
 import java.math.BigInteger;
+import java.util.Optional;
 
 public class ReplayDepositsResult {
   private static final BigInteger NEGATIVE_ONE = BigInteger.valueOf(-1);
   private static ReplayDepositsResult EMPTY =
-      new ReplayDepositsResult(NEGATIVE_ONE, NEGATIVE_ONE, false);
+      new ReplayDepositsResult(NEGATIVE_ONE, Optional.empty(), false);
 
   private final BigInteger lastProcessedBlockNumber;
-  private final BigInteger lastProcessedDepositIndex;
+  private final Optional<BigInteger> lastProcessedDepositIndex;
   private final boolean pastMinGenesisBlock;
 
-  public ReplayDepositsResult(
+  private ReplayDepositsResult(
       final BigInteger lastProcessedBlockNumber,
-      final BigInteger lastProcessedDepositIndex,
+      final Optional<BigInteger> lastProcessedDepositIndex,
       final boolean pastMinGenesisBlock) {
     this.lastProcessedBlockNumber = lastProcessedBlockNumber;
     this.lastProcessedDepositIndex = lastProcessedDepositIndex;
@@ -37,11 +38,27 @@ public class ReplayDepositsResult {
     return EMPTY;
   }
 
+  public static ReplayDepositsResult create(
+      final BigInteger lastProcessedBlockNumber,
+      final BigInteger lastProcessedDepositIndex,
+      final boolean pastMinGenesisBlock) {
+    return new ReplayDepositsResult(
+        lastProcessedBlockNumber, Optional.of(lastProcessedDepositIndex), pastMinGenesisBlock);
+  }
+
+  public static ReplayDepositsResult create(
+      final BigInteger lastProcessedBlockNumber,
+      final Optional<BigInteger> lastProcessedDepositIndex,
+      final boolean pastMinGenesisBlock) {
+    return new ReplayDepositsResult(
+        lastProcessedBlockNumber, lastProcessedDepositIndex, pastMinGenesisBlock);
+  }
+
   public BigInteger getLastProcessedBlockNumber() {
     return lastProcessedBlockNumber;
   }
 
-  public BigInteger getLastProcessedDepositIndex() {
+  public Optional<BigInteger> getLastProcessedDepositIndex() {
     return lastProcessedDepositIndex;
   }
 
