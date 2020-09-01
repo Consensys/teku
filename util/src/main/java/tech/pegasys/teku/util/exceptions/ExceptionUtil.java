@@ -14,19 +14,16 @@
 package tech.pegasys.teku.util.exceptions;
 
 import java.util.Optional;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 public class ExceptionUtil {
 
   @SuppressWarnings("unchecked")
   public static <T extends Throwable> Optional<T> getCause(
       final Throwable err, Class<T> targetType) {
-    Throwable current = err;
-    while (current != null) {
-      if (targetType.isInstance(current)) {
-        return Optional.of((T) current);
-      }
-      current = current.getCause();
-    }
-    return Optional.empty();
+    return ExceptionUtils.getThrowableList(err).stream()
+        .filter(targetType::isInstance)
+        .map(e -> (T) e)
+        .findFirst();
   }
 }
