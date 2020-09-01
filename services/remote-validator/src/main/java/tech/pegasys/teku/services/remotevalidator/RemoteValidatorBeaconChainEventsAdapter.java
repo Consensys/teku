@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.services.remotevalidator;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.eventbus.Subscribe;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -24,8 +26,6 @@ import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.validator.remote.BeaconChainEvent;
 import tech.pegasys.teku.validator.remote.BeaconChainReorgEvent;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 class RemoteValidatorBeaconChainEventsAdapter implements SlotEventsChannel, ReorgEventChannel {
 
@@ -78,7 +78,10 @@ class RemoteValidatorBeaconChainEventsAdapter implements SlotEventsChannel, Reor
 
   @Override
   public void reorgOccurred(
-          final Bytes32 bestBlockRoot, final UInt64 bestSlot, final Bytes32 oldBestBlockRoot, final UInt64 commonAncestorSlot) {
+      final Bytes32 bestBlockRoot,
+      final UInt64 bestSlot,
+      final Bytes32 oldBestBlockRoot,
+      final UInt64 commonAncestorSlot) {
     final BeaconChainReorgEvent beaconChainEvent =
         new BeaconChainReorgEvent(BeaconChainEvent.REORG_OCCURRED, bestSlot, commonAncestorSlot);
     listener.onEvent(beaconChainEvent);
