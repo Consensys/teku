@@ -18,8 +18,9 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.signatures.record.ValidatorSigningRecord;
+import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -37,21 +38,27 @@ public class SlashingProtector {
   }
 
   public synchronized SafeFuture<Boolean> maySignBlock(
-      final BLSPublicKey validator, final UInt64 slot) {
+      final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot, final UInt64 slot) {
     return SafeFuture.of(
         () -> {
-          final ValidatorSigningRecord signingRecord = loadSigningRecord(validator);
-          return handleResult(validator, signingRecord.maySignBlock(slot));
+          final ValidatorSigningRecord signingRecord =
+              loadSigningRecord(validator, genesisValidatorsRoot);
+          return handleResult(validator, signingRecord.maySignBlock(genesisValidatorsRoot, slot));
         });
   }
 
   public synchronized SafeFuture<Boolean> maySignAttestation(
-      final BLSPublicKey validator, final UInt64 sourceEpoch, final UInt64 targetEpoch) {
+      final BLSPublicKey validator,
+      final Bytes32 genesisValidatorsRoot,
+      final UInt64 sourceEpoch,
+      final UInt64 targetEpoch) {
     return SafeFuture.of(
         () -> {
-          final ValidatorSigningRecord signingRecord = loadSigningRecord(validator);
+          final ValidatorSigningRecord signingRecord =
+              loadSigningRecord(validator, genesisValidatorsRoot);
           return handleResult(
-              validator, signingRecord.maySignAttestation(sourceEpoch, targetEpoch));
+              validator,
+              signingRecord.maySignAttestation(genesisValidatorsRoot, sourceEpoch, targetEpoch));
         });
   }
 
@@ -65,8 +72,8 @@ public class SlashingProtector {
     return true;
   }
 
-  private ValidatorSigningRecord loadSigningRecord(final BLSPublicKey validator)
-      throws IOException {
+  private ValidatorSigningRecord loadSigningRecord(
+      final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot) throws IOException {
     ValidatorSigningRecord record = signingRecords.get(validator);
     if (record != null) {
       return record;
@@ -75,7 +82,7 @@ public class SlashingProtector {
         dataAccessor
             .read(validatorRecordPath(validator))
             .map(ValidatorSigningRecord::fromBytes)
-            .orElseGet(ValidatorSigningRecord::new);
+            .orElseGet(() -> new ValidatorSigningRecord(genesisValidatorsRoot));
     signingRecords.put(validator, record);
     return record;
   }

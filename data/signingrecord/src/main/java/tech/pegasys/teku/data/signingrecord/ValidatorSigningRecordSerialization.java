@@ -11,60 +11,50 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.signatures.record;
+package tech.pegasys.teku.data.signingrecord;
 
-import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.NumericNode;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import java.io.ByteArrayOutputStream;
+import com.fasterxml.jackson.databind.node.TextNode;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.data.yaml.YamlProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-class ValidatorSigningRecordSerialization {
+public class ValidatorSigningRecordSerialization {
 
-  private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
+  private static final String GENESIS_VALIDATORS_ROOT_FIELD_NAME = "genesisValidatorsRoot";
   private static final String BLOCK_SLOT_FIELD_NAME = "lastSignedBlockSlot";
   private static final String SOURCE_EPOCH_FIELD_NAME = "lastSignedAttestationSourceEpoch";
   private static final String TARGET_EPOCH_FIELD_NAME = "lastSignedAttestationTargetEpoch";
 
-  static {
-    MAPPER.registerModule(
-        new SimpleModule()
-            .addSerializer(ValidatorSigningRecord.class, new ValidatorSigningRecordSerializer())
-            .addDeserializer(
-                ValidatorSigningRecord.class, new ValidatorSigningRecordDeserializer()));
-  }
+  public static final SimpleModule SIGNING_RECORD_MODULE =
+      new SimpleModule()
+          .addSerializer(ValidatorSigningRecord.class, new ValidatorSigningRecordSerializer())
+          .addDeserializer(ValidatorSigningRecord.class, new ValidatorSigningRecordDeserializer());
+
+  private static final YamlProvider YAML_PROVIDER = new YamlProvider(SIGNING_RECORD_MODULE);
 
   static ValidatorSigningRecord readRecord(final Bytes data) {
     try {
-      return MAPPER.readerFor(ValidatorSigningRecord.class).readValue(data.toArrayUnsafe());
+      return YAML_PROVIDER.read(data, ValidatorSigningRecord.class);
     } catch (final IOException e) {
       throw new UncheckedIOException(e);
     }
   }
 
   static Bytes writeRecord(final ValidatorSigningRecord record) {
-    try (final ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-      MAPPER.writerFor(ValidatorSigningRecord.class).writeValue(out, record);
-      return Bytes.wrap(out.toByteArray());
-    } catch (JsonGenerationException | JsonMappingException e) {
-      throw new IllegalStateException("Failed to serialize ValidatorSigningRecord", e);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
+    return YAML_PROVIDER.write(record);
   }
 
   private static class ValidatorSigningRecordSerializer
@@ -77,6 +67,10 @@ class ValidatorSigningRecordSerialization {
         final SerializerProvider serializers)
         throws IOException {
       gen.writeStartObject();
+      if (value.getGenesisValidatorsRoot() != null) {
+        gen.writeStringField(
+            GENESIS_VALIDATORS_ROOT_FIELD_NAME, value.getGenesisValidatorsRoot().toHexString());
+      }
       writeUInt64(gen, BLOCK_SLOT_FIELD_NAME, value.getBlockSlot());
       writeUInt64(gen, SOURCE_EPOCH_FIELD_NAME, value.getAttestationSourceEpoch());
       writeUInt64(gen, TARGET_EPOCH_FIELD_NAME, value.getAttestationTargetEpoch());
@@ -85,7 +79,7 @@ class ValidatorSigningRecordSerialization {
 
     private void writeUInt64(final JsonGenerator gen, final String fieldName, final UInt64 value)
         throws IOException {
-      if (value.equals(UInt64.MAX_VALUE)) {
+      if (ValidatorSigningRecord.isNeverSigned(value)) {
         gen.writeNullField(fieldName);
       } else {
         gen.writeNumberField(fieldName, value.bigIntegerValue());
@@ -99,18 +93,31 @@ class ValidatorSigningRecordSerialization {
     public ValidatorSigningRecord deserialize(final JsonParser p, final DeserializationContext ctxt)
         throws IOException {
       final TreeNode node = p.getCodec().readTree(p);
+      final Bytes32 genesisValidatorsRoot = getBytes32(node, GENESIS_VALIDATORS_ROOT_FIELD_NAME);
       final UInt64 blockSlot = getUInt64(node, BLOCK_SLOT_FIELD_NAME);
       final UInt64 attestationSourceEpoch = getUInt64(node, SOURCE_EPOCH_FIELD_NAME);
       final UInt64 attestationTargetEpoch = getUInt64(node, TARGET_EPOCH_FIELD_NAME);
-      return new ValidatorSigningRecord(blockSlot, attestationSourceEpoch, attestationTargetEpoch);
+      return new ValidatorSigningRecord(
+          genesisValidatorsRoot, blockSlot, attestationSourceEpoch, attestationTargetEpoch);
+    }
+
+    private Bytes32 getBytes32(final TreeNode node, final String fieldName) {
+      final TreeNode valueNode = node.get(fieldName);
+      if (valueNode == null) {
+        return null;
+      }
+      return valueNode instanceof NullNode
+          ? null
+          : Bytes32.fromHexString(((TextNode) valueNode).textValue());
     }
 
     private UInt64 getUInt64(final TreeNode node, final String fieldName) {
       final TreeNode valueNode = node.get(fieldName);
       if (valueNode instanceof NullNode) {
-        return UInt64.MAX_VALUE;
+        return ValidatorSigningRecord.NEVER_SIGNED;
       }
-      return UInt64.valueOf(((NumericNode) valueNode).bigIntegerValue());
+      final UInt64 value = UInt64.valueOf(((NumericNode) valueNode).bigIntegerValue());
+      return value.equals(UInt64.MAX_VALUE) ? ValidatorSigningRecord.NEVER_SIGNED : value;
     }
   }
 }

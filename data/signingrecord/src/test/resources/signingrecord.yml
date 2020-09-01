@@ -1,0 +1,5 @@
+---
+genesisValidatorsRoot: "0x0000000000000000000000000000000000000000000000000000000000001234"
+lastSignedBlockSlot: 1
+lastSignedAttestationSourceEpoch: 2
+lastSignedAttestationTargetEpoch: 3
