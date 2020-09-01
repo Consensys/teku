@@ -52,29 +52,27 @@ public class ValidatingEth1EventsPublisherTest {
     publisher.onDepositsFromBlock(event1);
     assertThatThrownBy(() -> publisher.onDepositsFromBlock(event3))
         .isInstanceOf(InvalidDepositEventsException.class)
-        .hasMessageContaining("Expected next deposit at index 10");
+        .hasMessageContaining("Expected next deposit at index 10, but got 11");
   }
 
   @Test
-  public void onDepositsFromBlock_outOfOrder() {
+  public void onDepositsFromBlock_noLatestIndexSet_depositsFromZero() {
     final DepositsFromBlockEvent event1 = dataStructureUtil.randomDepositsFromBlockEvent(1, 0, 10);
     final DepositsFromBlockEvent event2 = dataStructureUtil.randomDepositsFromBlockEvent(2, 10, 11);
 
+    publisher.onDepositsFromBlock(event1);
+    verify(delegate).onDepositsFromBlock(event1);
     publisher.onDepositsFromBlock(event2);
-    assertThatThrownBy(() -> publisher.onDepositsFromBlock(event1))
-        .isInstanceOf(InvalidDepositEventsException.class)
-        .hasMessageContaining("Expected next deposit at index 11");
+    verify(delegate).onDepositsFromBlock(event2);
   }
 
   @Test
-  public void onDepositsFromBlock_noLatestIndexSet() {
+  public void onDepositsFromBlock_noLatestIndexSet_depositsAfterZero() {
     final DepositsFromBlockEvent event2 = dataStructureUtil.randomDepositsFromBlockEvent(2, 10, 11);
-    final DepositsFromBlockEvent event3 = dataStructureUtil.randomDepositsFromBlockEvent(3, 11, 15);
 
-    publisher.onDepositsFromBlock(event2);
-    verify(delegate).onDepositsFromBlock(event2);
-    publisher.onDepositsFromBlock(event3);
-    verify(delegate).onDepositsFromBlock(event3);
+    assertThatThrownBy(() -> publisher.onDepositsFromBlock(event2))
+        .isInstanceOf(InvalidDepositEventsException.class)
+        .hasMessageContaining("Expected next deposit at index 0, but got 10");
   }
 
   @Test
@@ -96,7 +94,7 @@ public class ValidatingEth1EventsPublisherTest {
     publisher.setLastestPublishedDeposit(UInt64.valueOf(8));
     assertThatThrownBy(() -> publisher.onDepositsFromBlock(event2))
         .isInstanceOf(InvalidDepositEventsException.class)
-        .hasMessageContaining("Expected next deposit at index 9");
+        .hasMessageContaining("Expected next deposit at index 9, but got 10");
   }
 
   @Test
@@ -106,7 +104,7 @@ public class ValidatingEth1EventsPublisherTest {
     publisher.setLastestPublishedDeposit(event2.getLastDepositIndex());
     assertThatThrownBy(() -> publisher.onDepositsFromBlock(event2))
         .isInstanceOf(InvalidDepositEventsException.class)
-        .hasMessageContaining("Expected next deposit at index 11");
+        .hasMessageContaining("Expected next deposit at index 11, but got 10");
   }
 
   @Test

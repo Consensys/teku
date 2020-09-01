@@ -45,14 +45,11 @@ public class ValidatingEth1EventsPublisher extends DelegatingEth1EventsChannel {
   }
 
   private void assertDepositEventIsValid(final DepositsFromBlockEvent event) {
-    final Optional<UInt64> expectedFirstDepositIndex = lastPublishedDeposit.map(UInt64::increment);
-    final boolean depositIndexIsValid =
-        expectedFirstDepositIndex
-            .map(expected -> expected.equals(event.getFirstDepositIndex()))
-            .orElse(true);
-
-    if (!depositIndexIsValid) {
-      throw InvalidDepositEventsException.expectedDepositAtIndex(expectedFirstDepositIndex.get());
+    final UInt64 expectedFirstDepositIndex =
+        lastPublishedDeposit.map(UInt64::increment).orElse(UInt64.ZERO);
+    if (!expectedFirstDepositIndex.equals(event.getFirstDepositIndex())) {
+      throw InvalidDepositEventsException.expectedDepositAtIndex(
+          expectedFirstDepositIndex, event.getFirstDepositIndex());
     }
   }
 }

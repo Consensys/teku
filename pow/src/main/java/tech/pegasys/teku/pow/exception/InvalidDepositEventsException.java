@@ -21,7 +21,9 @@ public class InvalidDepositEventsException extends IllegalArgumentException {
     super(s);
   }
 
-  public static InvalidDepositEventsException expectedDepositAtIndex(UInt64 expectedIndex) {
-    return new InvalidDepositEventsException("Expected next deposit at index " + expectedIndex);
+  public static InvalidDepositEventsException expectedDepositAtIndex(
+      final UInt64 expectedIndex, final UInt64 actualIndex) {
+    return new InvalidDepositEventsException(
+        "Expected next deposit at index " + expectedIndex + ", but got " + actualIndex);
   }
 }
