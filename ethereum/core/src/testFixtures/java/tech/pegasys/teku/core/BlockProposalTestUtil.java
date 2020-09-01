@@ -13,10 +13,6 @@
 
 package tech.pegasys.teku.core;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
-
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
@@ -39,6 +35,11 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+
+import java.util.Optional;
+
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 
 public class BlockProposalTestUtil {
 
@@ -96,6 +97,7 @@ public class BlockProposalTestUtil {
       final BeaconState previousState,
       final Bytes32 parentBlockSigningRoot,
       final Optional<SSZList<Attestation>> attestations,
+      final Optional<SSZList<ProposerSlashing>> proposerSlashings,
       final Optional<SSZList<Deposit>> deposits,
       final Optional<SSZList<SignedVoluntaryExit>> exits,
       final Optional<Eth1Data> eth1Data)
@@ -108,7 +110,7 @@ public class BlockProposalTestUtil {
         parentBlockSigningRoot,
         eth1Data.orElse(get_eth1_data_stub(previousState, newEpoch)),
         attestations.orElse(BeaconBlockBodyLists.createAttestations()),
-        BeaconBlockBodyLists.createProposerSlashings(),
+        proposerSlashings.orElse(BeaconBlockBodyLists.createProposerSlashings()),
         deposits.orElse(BeaconBlockBodyLists.createDeposits()),
         exits.orElse(BeaconBlockBodyLists.createVoluntaryExits()));
   }

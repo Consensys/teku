@@ -13,25 +13,15 @@
 
 package tech.pegasys.teku.statetransition;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.internal.verification.VerificationModeFactory.times;
-
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -41,6 +31,10 @@ import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 public class OperationsReOrgManagerTest {
 
@@ -77,76 +71,84 @@ public class OperationsReOrgManagerTest {
     ChainBuilder newChainBuilder = chainBuilder.fork();
     ChainUpdater newChainUpdater = new ChainUpdater(recentChainData, newChainBuilder);
 
-    // Create one fork with no attestations
-    SignedBlockAndState initialCanonicalChainBlock = chainBuilder.generateBlockAtSlot(20);
-    chainUpdater.saveBlock(initialCanonicalChainBlock);
+    // Create initial fork
+    ChainBuilder.BlockOptions fork1block1options = ChainBuilder.BlockOptions.create();
+    final Attestation fork1block1attestation = chainBuilder.streamValidAttestationsWithTargetBlock(commonAncestor)
+            .findFirst().get();
+    fork1block1options.addAttestation(fork1block1attestation);
+    SignedBlockAndState fork1block1 = chainBuilder.generateBlockAtSlot(11, fork1block1options);
+    chainUpdater.saveBlock(fork1block1);
+
+    ChainBuilder.BlockOptions fork1block2options = ChainBuilder.BlockOptions.create();
+    final Attestation fork1block2attestation = chainBuilder.streamValidAttestationsWithTargetBlock(commonAncestor)
+            .findFirst().get();
+    fork1block1options.addAttestation(fork1block2attestation);
+    SignedBlockAndState fork1block2 = chainBuilder.generateBlockAtSlot(12, fork1block2options);
+    chainUpdater.saveBlock(fork1block2);
+
+    ChainBuilder.BlockOptions fork1block3options = ChainBuilder.BlockOptions.create();
+    final Attestation fork1block3attestation = chainBuilder.streamValidAttestationsWithTargetBlock(commonAncestor)
+            .findFirst().get();
+    fork1block1options.addAttestation(fork1block3attestation);
+    SignedBlockAndState fork1block3 = chainBuilder.generateBlockAtSlot(13, fork1block3options);
+    chainUpdater.saveBlock(fork1block3);
     forkChoice.processHead();
 
-    ChainBuilder.BlockOptions options = ChainBuilder.BlockOptions.create();
-    final Attestation attestation1 =
-        newChainBuilder
-            .streamValidAttestationsWithTargetBlock(commonAncestor)
-            .findFirst()
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Failed to create attestation for block "
-                            + commonAncestor.getBlock().getRoot()
-                            + " chain head: "
-                            + chainBuilder.getLatestBlockAndState().getRoot()
-                            + " validators: "
-                            + chainBuilder.getValidatorKeys().stream()
-                                .map(BLSKeyPair::getPublicKey)
-                                .map(BLSPublicKey::toString)
-                                .collect(Collectors.joining(", "))));
-    options.addAttestation(attestation1);
-    SignedBlockAndState forkChainFirstBlock =
-        newChainBuilder.generateBlockAtSlot(UInt64.valueOf(15), options);
-    newChainUpdater.saveBlock(forkChainFirstBlock);
+    // Create second fork
+    ChainBuilder.BlockOptions fork2block1options = ChainBuilder.BlockOptions.create();
+    final Attestation fork2block1attestation = newChainBuilder.streamValidAttestationsWithTargetBlock(commonAncestor)
+            .findFirst().get();
+    fork1block1options.addAttestation(fork2block1attestation);
+    SignedBlockAndState fork2block1 = newChainBuilder.generateBlockAtSlot(11, fork2block1options);
+    newChainUpdater.saveBlock(fork2block1);
 
-    final Attestation attestation =
-        newChainBuilder
-            .streamValidAttestationsWithTargetBlock(forkChainFirstBlock)
-            .findFirst()
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Failed to create attestation for block "
-                            + forkChainFirstBlock.getBlock().getRoot()
-                            + " chain head: "
-                            + chainBuilder.getLatestBlockAndState().getRoot()
-                            + " validators: "
-                            + chainBuilder.getValidatorKeys().stream()
-                                .map(BLSKeyPair::getPublicKey)
-                                .map(BLSPublicKey::toString)
-                                .collect(Collectors.joining(", "))));
-    forkChoice.onAttestation(ValidateableAttestation.fromAttestation(attestation));
-    newChainUpdater.saveBlock(forkChainFirstBlock);
+    ChainBuilder.BlockOptions fork2block2options = ChainBuilder.BlockOptions.create();
+    final Attestation fork2block2attestation = newChainBuilder.streamValidAttestationsWithTargetBlock(commonAncestor)
+            .findFirst().get();
+    fork1block1options.addAttestation(fork2block2attestation);
+    SignedBlockAndState fork2block2 = newChainBuilder.generateBlockAtSlot(12, fork2block2options);
+    newChainUpdater.saveBlock(fork2block2);
+
+    ChainBuilder.BlockOptions fork2block3options = ChainBuilder.BlockOptions.create();
+    final Attestation fork2block3attestation = newChainBuilder.streamValidAttestationsWithTargetBlock(commonAncestor)
+            .findFirst().get();
+    fork1block1options.addAttestation(fork2block3attestation);
+    SignedBlockAndState fork2block3 = newChainBuilder.generateBlockAtSlot(13, fork2block3options);
+    newChainUpdater.saveBlock(fork2block3);
+
+    ChainBuilder.BlockOptions fork2block4options = ChainBuilder.BlockOptions.create();
+    final Attestation fork2block4attestation = newChainBuilder.streamValidAttestationsWithTargetBlock(commonAncestor)
+            .findFirst().get();
+    fork1block1options.addAttestation(fork2block4attestation);
+    SignedBlockAndState fork2block4 = chainBuilder.generateBlockAtSlot(14, fork2block4options);
+    newChainUpdater.saveBlock(fork2block4);
     forkChoice.processHead();
 
-    // for some reason the reorg event common ancestor slot is 14 instead of 10. seems wrong.
-    // probably due the test infrastructure not being up to date with the new efficient
-    // .findCommonAncestor slot changes
     assertThat(reorgEventChannel.getReorgEvents())
         .contains(
             new TrackingReorgEventChannel.ReorgEvent(
-                forkChainFirstBlock.getRoot(),
-                forkChainFirstBlock.getSlot(),
-                commonAncestor.getRoot(),
-                UInt64.valueOf(10)));
-    //  operationsReOrgManager.reorgOccurred(forkChainFirstBlock.getRoot(),
-    // forkChainFirstBlock.getSlot(), commonAncestor.getRoot(), UInt64.valueOf(10));
+                fork2block4.getRoot(),
+                fork2block4.getSlot(),
+                fork1block3.getRoot(),
+                commonAncestor.getSlot()));
 
-    BeaconBlockBody firstBlockBody = forkChainFirstBlock.getBlock().getMessage().getBody();
+      operationsReOrgManager.reorgOccurred(
+              fork2block4.getRoot(),
+              fork2block4.getSlot(),
+              fork1block3.getRoot(),
+              commonAncestor.getSlot());
 
-    //  verify(proposerSlashingOperationPool).addAll(firstBlockBody.getProposer_slashings());
-    //  verify(attesterSlashingOperationPool).addAll(firstBlockBody.getAttester_slashings());
-    //  verify(exitOperationPool).addAll(firstBlockBody.getVoluntary_exits());
-    firstBlockBody
-        .getAttestations()
-        .forEach(
-            a ->
-                verify(attestationManager, times(100))
-                    .onAttestation(ValidateableAttestation.fromAttestation(a)));
+    BeaconBlockBody firstBlockBody = fork2block4.getBlock().getMessage().getBody();
+
+    verify(proposerSlashingOperationPool).addAll(firstBlockBody.getProposer_slashings());
+    verify(attesterSlashingOperationPool).addAll(firstBlockBody.getAttester_slashings());
+    verify(exitOperationPool).addAll(firstBlockBody.getVoluntary_exits());
+
+//    firstBlockBody
+//        .getAttestations()
+//        .forEach(
+//            a ->
+//                verify(attestationManager)
+//                    .onAttestation(ValidateableAttestation.fromAttestation(a)));
   }
 }

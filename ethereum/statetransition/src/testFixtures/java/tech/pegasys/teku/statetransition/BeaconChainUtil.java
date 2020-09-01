@@ -13,12 +13,6 @@
 
 package tech.pegasys.teku.statetransition;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.teku.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
-
-import java.util.List;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
@@ -45,6 +39,13 @@ import tech.pegasys.teku.statetransition.util.StartupUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
+
+import java.util.List;
+import java.util.Optional;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 
 public class BeaconChainUtil {
 
@@ -254,7 +255,7 @@ public class BeaconChainUtil {
 
     final MessageSignerService signer = getSigner(proposerIndex);
     return blockCreator.createBlock(
-        signer, slot, preState, bestBlockRoot, attestations, deposits, exits, eth1Data);
+        signer, slot, preState, bestBlockRoot, attestations, Optional.empty(), deposits, exits, eth1Data);
   }
 
   public void finalizeChainAtEpoch(final UInt64 epoch) throws Exception {
