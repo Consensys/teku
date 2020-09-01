@@ -64,7 +64,7 @@ public class BlstSecretKey implements SecretKey {
   }
 
   @Override
-  public Signature sign(final Bytes message) {
+  public Signature sign(Bytes message) {
     if (isZero()) {
       return BlstSignature.INFINITY;
     }
@@ -72,7 +72,7 @@ public class BlstSecretKey implements SecretKey {
   }
 
   @Override
-  public Signature sign(final Bytes message, final Bytes dst) {
+  public Signature sign(Bytes message, Bytes dst) {
     if (isZero()) {
       return BlstSignature.INFINITY;
     }

@@ -74,7 +74,7 @@ public class MikuliSecretKey implements SecretKey {
   }
 
   @Override
-  public Signature sign(final Bytes message, final Bytes dst) {
+  public Signature sign(Bytes message, Bytes dst) {
     return MikuliBLS12381.sign(this, message, dst);
   }
 
