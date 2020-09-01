@@ -61,7 +61,7 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     final TekuNode tekuNode = createTekuNode(config -> config.withDepositsFrom(eth1Node));
     tekuNode.start();
 
-    createTekuDepositSender().sendValidatorDeposits(eth1Node, 64);
+    createTekuDepositSender().sendValidatorDeposits(eth1Node, 4);
     tekuNode.waitForGenesis();
   }
 }
