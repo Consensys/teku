@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -36,18 +35,14 @@ public class PeerChainValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   private final CombinedChainDataClient chainDataClient;
-  private final Set<Checkpoint> validFinalizedCheckpointCache;
   private final Counter validationStartedCounter;
   private final Counter chainValidCounter;
   private final Counter chainInvalidCounter;
   private final Counter validationErrorCounter;
 
-  public PeerChainValidator(
-      final MetricsSystem metricsSystem,
-      final CombinedChainDataClient chainDataClient,
-      final Set<Checkpoint> validFinalizedCheckpointCache) {
+  private PeerChainValidator(
+      final MetricsSystem metricsSystem, final CombinedChainDataClient chainDataClient) {
     this.chainDataClient = chainDataClient;
-    this.validFinalizedCheckpointCache = validFinalizedCheckpointCache;
 
     final LabelledMetric<Counter> validationCounter =
         metricsSystem.createLabelledCounter(
@@ -59,6 +54,11 @@ public class PeerChainValidator {
     chainValidCounter = validationCounter.labels("valid");
     chainInvalidCounter = validationCounter.labels("invalid");
     validationErrorCounter = validationCounter.labels("error");
+  }
+
+  public static PeerChainValidator create(
+      final MetricsSystem metricsSystem, final CombinedChainDataClient chainDataClient) {
+    return new PeerChainValidator(metricsSystem, chainDataClient);
   }
 
   public SafeFuture<Boolean> validate(final Eth2Peer peer, final PeerStatus newStatus) {
@@ -75,7 +75,6 @@ public class PeerChainValidator {
               } else {
                 LOG.trace("Validated peer's chain: {}", peer.getId());
                 chainValidCounter.inc();
-                validFinalizedCheckpointCache.add(newStatus.getFinalizedCheckpoint());
               }
               return isValid;
             })
@@ -106,10 +105,6 @@ public class PeerChainValidator {
     }
 
     // Check finalized checkpoint compatibility
-    if (validFinalizedCheckpointCache.contains(status.getFinalizedCheckpoint())) {
-      // Previously confirmed this is on our chain.
-      return SafeFuture.completedFuture(true);
-    }
     final Checkpoint finalizedCheckpoint =
         chainDataClient.getBestState().orElseThrow().getFinalized_checkpoint();
     final UInt64 finalizedEpoch = finalizedCheckpoint.getEpoch();
@@ -196,7 +191,6 @@ public class PeerChainValidator {
                 // producing blocks (eg the genesis block is still the one in effect at epoch 2)
                 return SafeFuture.completedFuture(true);
               }
-              LOG.info("Request {} from {}", blockSlot, peer.getId());
               return peer.requestBlockBySlot(blockSlot)
                   .thenApply(
                       block -> validateBlockRootsMatch(peer, block, finalizedCheckpoint.getRoot()));

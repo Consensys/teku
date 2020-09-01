@@ -22,9 +22,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,7 +83,6 @@ public class PeerChainValidatorTest {
   private final Checkpoint laterCheckpoint =
       new Checkpoint(laterEpoch, laterBlock.getMessage().hash_tree_root());
 
-  private Set<Checkpoint> validFinalizedCheckpointCache = new HashSet<>();
   private PeerStatus remoteStatus;
   private PeerChainValidator peerChainValidator;
 
@@ -116,19 +113,6 @@ public class PeerChainValidatorTest {
 
     final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
     assertPeerChainVerified(result);
-    assertThat(validFinalizedCheckpointCache).contains(remoteStatus.getFinalizedCheckpoint());
-  }
-
-  @Test
-  public void chainsAreCompatible_finalizedCheckpointIsPreviouslyVerified() {
-    // Setup mocks
-    forksMatch();
-    remoteChainIsAheadOnSameChain();
-    validFinalizedCheckpointCache.add(remoteStatus.getFinalizedCheckpoint());
-
-    final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
-    assertPeerChainVerified(result);
-    verify(peer, never()).requestBlockBySlot(any());
   }
 
   // Prysm nodes will not send the genesis block, so make sure we handle this case
@@ -346,6 +330,7 @@ public class PeerChainValidatorTest {
   }
 
   private void setupRemoteStatusAndValidator(final Checkpoint remoteFinalizedCheckpoint) {
+
     final Bytes32 headRoot = Bytes32.fromHexString("0xeeee");
     // Set a head slot some distance beyond the finalized epoch
     final UInt64 headSlot =
@@ -361,8 +346,6 @@ public class PeerChainValidatorTest {
     when(peer.getStatus()).thenReturn(status);
 
     remoteStatus = status;
-    peerChainValidator =
-        new PeerChainValidator(
-            new NoOpMetricsSystem(), combinedChainData, validFinalizedCheckpointCache);
+    peerChainValidator = PeerChainValidator.create(new NoOpMetricsSystem(), combinedChainData);
   }
 }
