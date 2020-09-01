@@ -210,6 +210,22 @@ public class MikuliBLS12381 implements BLS12381 {
   }
 
   /**
+   * The CoreVerify algorithm checks that a signature is valid for the octet string message under
+   * the public key publicKey and given DST.
+   *
+   * @param publicKey The public key, not null
+   * @param message The message data to verify, not null
+   * @param signature The aggregate signature, not null
+   * @param dst the domain separation tag (DST)
+   * @return True if the verification is successful, false otherwise
+   */
+  public static boolean coreVerify(
+      MikuliPublicKey publicKey, Bytes message, MikuliSignature signature, Bytes dst) {
+    G2Point hashInGroup2 = new G2Point(hashToG2(message, dst));
+    return signature.verify(publicKey, hashInGroup2);
+  }
+
+  /**
    * Verifies an aggregate signature against a list of distinct messages using the list of public
    * keys.
    *

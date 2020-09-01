@@ -87,6 +87,11 @@ public class BlstBLS12381 implements BLS12381 {
   }
 
   public static boolean verify(BlstPublicKey publicKey, Bytes message, BlstSignature signature) {
+    return verify(publicKey, message, signature, ETH2_DST);
+  }
+
+  public static boolean verify(
+      BlstPublicKey publicKey, Bytes message, BlstSignature signature, Bytes dst) {
     if (publicKey.isInfinity() || signature.isInfinity()) {
       return publicKey.isInfinity() && signature.isInfinity();
     }
@@ -96,7 +101,7 @@ public class BlstBLS12381 implements BLS12381 {
             signature.ec2Point,
             1,
             message.toArrayUnsafe(),
-            ETH2_DST.toArrayUnsafe(),
+            dst.toArrayUnsafe(),
             new byte[0]);
     return res == BLST_ERROR.BLST_SUCCESS;
   }

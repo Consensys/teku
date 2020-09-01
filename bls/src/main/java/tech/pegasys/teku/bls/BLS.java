@@ -64,20 +64,6 @@ public class BLS {
     }
   }
 
-  /**
-   * Generates a BLSSignature from a private key, message and a custom DST.
-   *
-   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02#section-3.2.1
-   *
-   * @param secretKey The secret key, not null
-   * @param message The message to sign, not null
-   * @param dst domain separation tag (DST), not null
-   * @return The Signature, not null
-   */
-  public static BLSSignature sign(BLSSecretKey secretKey, Bytes message, Bytes dst) {
-    return new BLSSignature(secretKey.getSecretKey().sign(message, dst));
-  }
-
   /*
    * The following are the methods used directly in the Ethereum 2.0 specifications. These strictly adhere to the standard.
    */
@@ -375,6 +361,40 @@ public class BLS {
       return true;
     }
     return getBlsImpl().completeBatchVerify(preparedSignatures);
+  }
+
+  /*
+   * The following methods implement BLS sign and verify with arbitrary domain separation tag (DST).
+   */
+
+  /**
+   * Generates a BLSSignature from a private key, message and a custom DST.
+   *
+   * @param secretKey The secret key, not null
+   * @param message The message to sign, not null
+   * @param dst domain separation tag (DST), not null
+   * @return The Signature, not null
+   */
+  public static BLSSignature sign(BLSSecretKey secretKey, Bytes message, Bytes dst) {
+    return new BLSSignature(secretKey.getSecretKey().sign(message, dst));
+  }
+
+  /**
+   * Verifies the given BLS signature against the message bytes using the public key.
+   *
+   * @param publicKey The public key, not null
+   * @param message The message data to verify, not null
+   * @param signature The signature, not null
+   * @param dst the domain separation tag (DST), not null
+   * @return True if the verification is successful, false otherwise.
+   */
+  public static boolean verify(
+      BLSPublicKey publicKey, Bytes message, BLSSignature signature, Bytes dst) {
+    if (BLSConstants.VERIFICATION_DISABLED) {
+      LOG.warn("Skipping bls verification.");
+      return true;
+    }
+    return signature.getSignature().verify(publicKey.getPublicKey(), message, dst);
   }
 
   static BLS12381 getBlsImpl() {
