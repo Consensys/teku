@@ -14,6 +14,7 @@
 package tech.pegasys.teku.data.slashinginterchange;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.data.slashinginterchange.Metadata.INTERCHANGE_VERSION;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -23,7 +24,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class MetadataTest {
@@ -39,13 +39,13 @@ public class MetadataTest {
 
   @Test
   public void shouldSerializeMinimalFormat() throws JsonProcessingException {
-    final Metadata metadata = new Metadata(InterchangeFormat.minimal, UInt64.valueOf(2), root);
+    final Metadata metadata = new Metadata(InterchangeFormat.minimal, INTERCHANGE_VERSION, root);
     assertThat(jsonProvider.objectToPrettyJSON(metadata)).isEqualTo(jsonData);
   }
 
   @Test
   public void shouldSerializeCompleteFormat() throws JsonProcessingException {
-    final Metadata metadata = new Metadata(InterchangeFormat.complete, UInt64.valueOf(2), root);
+    final Metadata metadata = new Metadata(InterchangeFormat.complete, INTERCHANGE_VERSION, root);
     assertThat(jsonProvider.objectToPrettyJSON(metadata))
         .isEqualTo(jsonData.replace("minimal", "complete"));
   }
@@ -53,7 +53,7 @@ public class MetadataTest {
   @Test
   public void shouldDeserialize() throws JsonProcessingException {
     final Metadata metadata = jsonProvider.jsonToObject(jsonData, Metadata.class);
-    assertThat(metadata.interchangeFormatVersion).isEqualTo(UInt64.valueOf(2));
+    assertThat(metadata.interchangeFormatVersion).isEqualTo(INTERCHANGE_VERSION);
     assertThat(metadata.interchangeFormat).isEqualTo(InterchangeFormat.minimal);
     assertThat(metadata.genesisValidatorsRoot).isEqualTo(root);
   }

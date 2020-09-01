@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.data;
 
+import static tech.pegasys.teku.data.slashinginterchange.Metadata.INTERCHANGE_VERSION;
 import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import java.io.File;
@@ -32,7 +33,6 @@ import tech.pegasys.teku.data.slashinginterchange.InterchangeFormat;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.data.slashinginterchange.MinimalSigningHistory;
 import tech.pegasys.teku.data.slashinginterchange.MinimalSlashingProtectionInterchangeFormat;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class SlashingProtectionExporter {
@@ -81,7 +81,7 @@ public class SlashingProtectionExporter {
         Path.of(toFileName),
         jsonProvider.objectToPrettyJSON(
             new MinimalSlashingProtectionInterchangeFormat(
-                new Metadata(InterchangeFormat.minimal, UInt64.valueOf(2L), genesisValidatorsRoot),
+                new Metadata(InterchangeFormat.minimal, INTERCHANGE_VERSION, genesisValidatorsRoot),
                 minimalSigningHistoryList)));
     SUB_COMMAND_LOG.display(
         "Wrote "

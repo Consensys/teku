@@ -20,6 +20,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Metadata {
+
+  public static final UInt64 INTERCHANGE_VERSION = UInt64.valueOf(3);
+
   @JsonProperty("interchange_format")
   public final InterchangeFormat interchangeFormat;
 

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.data.slashinginterchange;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.data.slashinginterchange.Metadata.INTERCHANGE_VERSION;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,7 +47,7 @@ public class CompleteSigningHistoryTest {
     JsonNode metadataJson = jsonNode.get("metadata");
     Metadata metadata = mapper.treeToValue(metadataJson, Metadata.class);
     assertThat(metadata)
-        .isEqualTo(new Metadata(InterchangeFormat.complete, UInt64.valueOf(2), GENESIS_ROOT));
+        .isEqualTo(new Metadata(InterchangeFormat.complete, INTERCHANGE_VERSION, GENESIS_ROOT));
 
     List<CompleteSigningHistory> completeSigningHistories =
         Arrays.asList(

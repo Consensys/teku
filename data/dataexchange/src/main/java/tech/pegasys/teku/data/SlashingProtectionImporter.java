@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.data;
 
+import static tech.pegasys.teku.data.slashinginterchange.Metadata.INTERCHANGE_VERSION;
 import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -49,9 +50,13 @@ public class SlashingProtectionImporter {
     final ObjectMapper jsonMapper = jsonProvider.getObjectMapper();
     JsonNode jsonNode = jsonMapper.readTree(inputFile);
     metadata = jsonMapper.treeToValue(jsonNode.get("metadata"), Metadata.class);
-    if (!metadata.interchangeFormatVersion.equals(UInt64.valueOf(2L))) {
+    if (!metadata.interchangeFormatVersion.equals(INTERCHANGE_VERSION)) {
       SUB_COMMAND_LOG.error(
-          "Import file " + inputFile.toString() + " is not format version 2, cannot continue.");
+          "Import file "
+              + inputFile.toString()
+              + " is not format version "
+              + INTERCHANGE_VERSION.toString()
+              + ", cannot continue.");
       System.exit(1);
     }
     if (metadata.interchangeFormat.equals(InterchangeFormat.minimal)) {
