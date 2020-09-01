@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
-import static tech.pegasys.teku.bls.impl.blst.HashToCurve.ETH2_DST;
-
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
@@ -68,7 +66,7 @@ public class BlstBLS12381 implements BLS12381 {
   }
 
   public static BlstSignature sign(BlstSecretKey secretKey, Bytes message) {
-    return sign(secretKey, message, ETH2_DST);
+    return sign(secretKey, message, HashToCurve.ETH2_DST);
   }
 
   public static BlstSignature sign(BlstSecretKey secretKey, Bytes message, Bytes dst) {
@@ -87,7 +85,7 @@ public class BlstBLS12381 implements BLS12381 {
   }
 
   public static boolean verify(BlstPublicKey publicKey, Bytes message, BlstSignature signature) {
-    return verify(publicKey, message, signature, ETH2_DST);
+    return verify(publicKey, message, signature, HashToCurve.ETH2_DST);
   }
 
   public static boolean verify(
