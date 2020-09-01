@@ -13,9 +13,12 @@
 
 package tech.pegasys.teku.data.signingrecord;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
+import com.google.common.io.Resources;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -28,6 +31,40 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ValidatorSigningRecordTest {
   private static final Bytes32 GENESIS_VALIDATORS_ROOT = Bytes32.fromHexString("0x1234");
+
+  @Test
+  void shouldReadSigningRecordWithoutGenesisRoot() throws IOException {
+    final String yamlData =
+        Resources.toString(Resources.getResource("signingrecord-withoutgenesis.yml"), UTF_8);
+    Bytes yamlByteData = Bytes.wrap(yamlData.getBytes(UTF_8));
+
+    ValidatorSigningRecord record = ValidatorSigningRecord.fromBytes(yamlByteData);
+    assertThat(record)
+        .isEqualTo(
+            new ValidatorSigningRecord(
+                null, UInt64.valueOf(11), UInt64.valueOf(12), UInt64.valueOf(13)));
+  }
+
+  @Test
+  void shouldReadSigningRecordWithGenesisRoot() throws IOException {
+    final String yamlData = Resources.toString(Resources.getResource("signingrecord.yml"), UTF_8);
+    Bytes yamlByteData = Bytes.wrap(yamlData.getBytes(UTF_8));
+    ValidatorSigningRecord record = ValidatorSigningRecord.fromBytes(yamlByteData);
+    assertThat(record)
+        .isEqualTo(
+            new ValidatorSigningRecord(
+                GENESIS_VALIDATORS_ROOT, UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
+  }
+
+  @Test
+  void shouldSerializeToBytes() throws IOException {
+    final String yamlData = Resources.toString(Resources.getResource("signingrecord.yml"), UTF_8);
+    final Bytes yamlByteData = Bytes.of(yamlData.getBytes(UTF_8));
+    ValidatorSigningRecord record =
+        new ValidatorSigningRecord(
+            GENESIS_VALIDATORS_ROOT, UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3));
+    assertThat(record.toBytes()).isEqualTo(yamlByteData);
+  }
 
   @Test
   void shouldRoundTripDefaultValuesToBytes() {
