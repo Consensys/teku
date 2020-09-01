@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.crypto.KEY_TYPE;
@@ -458,7 +459,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             eventBus);
   }
 
-  private Bytes getP2pPrivateKeyBytes() {
+  @VisibleForTesting
+  Bytes getP2pPrivateKeyBytes() {
     final String p2pConfigKeyFile = config.getP2pPrivateKeyFile();
     final Path p2pKeyFile;
     if (p2pConfigKeyFile != null) {
