@@ -16,7 +16,7 @@ package tech.pegasys.teku.infrastructure.async;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TrackingDefaultUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
+public class TrackingUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
   private final List<Throwable> uncaughtExceptions = new ArrayList<>();
 
   @Override

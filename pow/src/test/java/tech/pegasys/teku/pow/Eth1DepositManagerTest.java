@@ -30,7 +30,7 @@ import org.mockito.InOrder;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.infrastructure.async.TrackingDefaultUncaughtExceptionHandler;
+import tech.pegasys.teku.infrastructure.async.TrackingUncaughtExceptionHandler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
@@ -54,8 +54,8 @@ class Eth1DepositManagerTest {
       mock(DepositProcessingController.class);
   private final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder =
       mock(MinimumGenesisTimeBlockFinder.class);
-  private final TrackingDefaultUncaughtExceptionHandler exceptionHandler =
-      new TrackingDefaultUncaughtExceptionHandler();
+  private final TrackingUncaughtExceptionHandler exceptionHandler =
+      new TrackingUncaughtExceptionHandler();
 
   private final InOrder inOrder =
       inOrder(
