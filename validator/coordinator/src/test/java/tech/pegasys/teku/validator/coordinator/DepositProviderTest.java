@@ -203,8 +203,7 @@ public class DepositProviderTest {
   }
 
   @Test
-  void
-      shouldThrowMissingDepositsExceptionWhenAllDepositsRequiredForStateNotAvailable_skippedDeposit() {
+  void shouldThrowWhenAllDepositsRequiredForStateNotAvailable_skippedDeposit() {
     Constants.MAX_DEPOSITS = 5;
     mockDepositsFromEth1Block(0, 7);
     // Deposit 7 is missing
@@ -218,8 +217,7 @@ public class DepositProviderTest {
   }
 
   @Test
-  void
-      shouldThrowMissingDepositsExceptionWhenAllDepositsRequiredForStateNotAvailable_skippedDeposits() {
+  void shouldThrowWhenAllDepositsRequiredForStateNotAvailable_skippedDeposits() {
     Constants.MAX_DEPOSITS = 5;
     mockDepositsFromEth1Block(0, 7);
     // Deposits 7,8 are missing
