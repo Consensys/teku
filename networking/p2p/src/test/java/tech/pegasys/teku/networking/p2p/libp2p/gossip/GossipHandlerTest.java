@@ -77,6 +77,15 @@ public class GossipHandlerTest {
   }
 
   @Test
+  public void apply_bufferCapacityExceedsMaxSize() {
+    ByteBuf data = Unpooled.buffer(GOSSIP_MAX_SIZE + 1).writeBytes(new byte[GOSSIP_MAX_SIZE]);
+    final MockMessageApi message = new MockMessageApi(data, topic);
+    final SafeFuture<ValidationResult> result = gossipHandler.apply(message);
+
+    assertThat(result).isCompletedWithValue(ValidationResult.Valid);
+  }
+
+  @Test
   @SuppressWarnings("FutureReturnValueIgnored")
   public void apply_duplicate() {
     final Bytes data = Bytes.fromHexString("0x01");

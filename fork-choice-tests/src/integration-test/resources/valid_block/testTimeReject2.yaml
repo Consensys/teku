@@ -1,0 +1,24 @@
+meta:
+  bls_setting: 0
+genesis: state_0.ssz
+steps:
+- checks:
+    head: '0xf5a574a2f93aee8095fe9b41579c9935700315030d22888004effa742f1da85a'
+- slot: 1
+- checks:
+    head: '0xf5a574a2f93aee8095fe9b41579c9935700315030d22888004effa742f1da85a'
+- slot: 2
+- checks:
+    head: '0xf5a574a2f93aee8095fe9b41579c9935700315030d22888004effa742f1da85a'
+- block: block_54.ssz
+- checks:
+    head: '0xf5a574a2f93aee8095fe9b41579c9935700315030d22888004effa742f1da85a'
+    block_not_in_store: '0xc16bd232cb0b9220d84d75457d83fe31af6f1171013819301aeaa613a4d4c6e0'
+- slot: 3
+- checks:
+    head: '0xf5a574a2f93aee8095fe9b41579c9935700315030d22888004effa742f1da85a'
+    block_not_in_store: '0xc16bd232cb0b9220d84d75457d83fe31af6f1171013819301aeaa613a4d4c6e0'
+- slot: 4
+- checks:
+    head: '0xc16bd232cb0b9220d84d75457d83fe31af6f1171013819301aeaa613a4d4c6e0'
+    block_in_store: '0xc16bd232cb0b9220d84d75457d83fe31af6f1171013819301aeaa613a4d4c6e0'

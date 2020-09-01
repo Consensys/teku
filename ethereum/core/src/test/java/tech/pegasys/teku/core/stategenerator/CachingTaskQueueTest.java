@@ -14,6 +14,7 @@
 package tech.pegasys.teku.core.stategenerator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import java.util.List;
 import java.util.Map;
@@ -34,7 +35,7 @@ class CachingTaskQueueTest {
 
   private final CachingTaskQueue<Integer, String> taskQueue =
       new CachingTaskQueue<>(
-          metricsSystem, METRICS_PREFIX, () -> MAX_CONCURRENT_TASKS, MAX_CACHE_SIZE);
+          SYNC_RUNNER, metricsSystem, METRICS_PREFIX, () -> MAX_CONCURRENT_TASKS, MAX_CACHE_SIZE);
 
   @BeforeEach
   void setUp() {
@@ -144,6 +145,38 @@ class CachingTaskQueueTest {
   }
 
   @Test
+  void shouldNotPerformDuplicateTasksWhenTasksAreRebased() {
+    final StubTask taskA = new StubTask(1);
+    final StubTask taskB = new StubTask(5, 1);
+    final StubTask taskC = new StubTask(5, 1);
+
+    final SafeFuture<Optional<String>> resultA = taskQueue.perform(taskA);
+    final SafeFuture<Optional<String>> resultB = taskQueue.perform(taskB);
+    final SafeFuture<Optional<String>> resultC = taskQueue.perform(taskC);
+
+    assertPendingTaskCount(2); // B & C were de-duplicated
+
+    taskA.assertPerformedWithoutRebase();
+    // Task B will be scheduled for rebase when A completes
+    // Task C should just use the pending future from B and never execute
+    taskC.assertNotRebased();
+    taskC.assertNotPerformed();
+
+    taskA.completeTask();
+    taskB.assertPerformedFrom(taskA.getExpectedValue().orElseThrow());
+    taskC.assertNotRebased();
+    taskC.assertNotPerformed();
+
+    taskB.completeTask();
+
+    assertThat(resultA).isCompletedWithValue(taskA.getExpectedValue());
+    assertThat(resultB).isCompletedWithValue(taskB.getExpectedValue());
+    assertThat(resultC).isCompletedWithValue(taskC.getExpectedValue());
+    taskC.assertNotRebased();
+    taskC.assertNotPerformed();
+  }
+
+  @Test
   void getIfAvailable_shouldReturnValueWhenPresent() {
     final StubTask task = new StubTask(1);
     final SafeFuture<Optional<String>> result = taskQueue.perform(task);
@@ -239,6 +272,14 @@ class CachingTaskQueueTest {
         metricsSystem
             .getCounter(TekuMetricCategory.STORAGE, METRICS_PREFIX + "_tasks_total")
             .getValue("rebase");
+    assertThat(value).isEqualTo(expectedCount);
+  }
+
+  private void assertPendingTaskCount(final int expectedCount) {
+    final double value =
+        metricsSystem
+            .getGauge(TekuMetricCategory.STORAGE, METRICS_PREFIX + "_tasks_requested")
+            .getValue();
     assertThat(value).isEqualTo(expectedCount);
   }
 

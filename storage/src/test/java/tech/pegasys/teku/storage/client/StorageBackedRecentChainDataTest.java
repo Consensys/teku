@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import com.google.common.eventbus.EventBus;
 import java.io.IOException;
@@ -89,6 +90,7 @@ public class StorageBackedRecentChainDataTest {
     // Post a store response to complete initialization
     final StoreBuilder genesisStoreBuilder =
         StoreBuilder.forkChoiceStoreBuilder(
+            SYNC_RUNNER,
             new StubMetricsSystem(),
             BlockProvider.NOOP,
             StateAndBlockProvider.NOOP,
@@ -137,6 +139,7 @@ public class StorageBackedRecentChainDataTest {
     // Now set the genesis state
     final UpdatableStore genesisStore =
         StoreBuilder.forkChoiceStoreBuilder(
+                SYNC_RUNNER,
                 new StubMetricsSystem(),
                 BlockProvider.NOOP,
                 StateAndBlockProvider.NOOP,
@@ -183,6 +186,7 @@ public class StorageBackedRecentChainDataTest {
     // Now set the genesis state
     final StoreBuilder genesisStoreBuilder =
         StoreBuilder.forkChoiceStoreBuilder(
+            SYNC_RUNNER,
             new StubMetricsSystem(),
             BlockProvider.NOOP,
             StateAndBlockProvider.NOOP,

@@ -14,28 +14,23 @@
 package tech.pegasys.teku.test.acceptance;
 
 import java.util.function.Consumer;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
-import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
 
 public class SyncAcceptanceTest extends AcceptanceTestBase {
 
   @Test
-  @Disabled("This test currently takes too long to run.")
+  //  @Disabled("This test currently takes too long to run.")
   public void shouldSyncToNodeWithGreaterFinalizedEpoch() throws Exception {
-    final int validatorCount = 2;
-    final GenesisStateConfig genesisStateConfig = GenesisStateConfig.create(validatorCount);
-
-    final TekuNode primaryNode =
-        createTekuNode(configurePrimaryNode(genesisStateConfig, validatorCount));
-    final TekuNode lateJoiningNode =
-        createTekuNode(configureLateJoiningNode(genesisStateConfig, primaryNode));
+    final TekuNode primaryNode = createTekuNode(Config::withRealNetwork);
 
     primaryNode.start();
-    primaryNode.waitForGenesis();
+    UInt64 genesisTime = primaryNode.getGenesisTime();
+    final TekuNode lateJoiningNode =
+        createTekuNode(configureLateJoiningNode(primaryNode, genesisTime.intValue()));
     primaryNode.waitForNewFinalization();
 
     lateJoiningNode.start();
@@ -43,18 +38,10 @@ public class SyncAcceptanceTest extends AcceptanceTestBase {
     lateJoiningNode.waitUntilInSyncWith(primaryNode);
   }
 
-  private Consumer<Config> configurePrimaryNode(
-      final GenesisStateConfig genesisConfig, final int validatorCount) {
-    return c ->
-        c.withGenesisConfig(genesisConfig)
-            .withRealNetwork()
-            .withInteropValidators(0, validatorCount);
-  }
-
   private Consumer<Config> configureLateJoiningNode(
-      final GenesisStateConfig genesisConfig, final TekuNode primaryNode) {
+      final TekuNode primaryNode, final int genesisTime) {
     return c ->
-        c.withGenesisConfig(genesisConfig)
+        c.withGenesisTime(genesisTime)
             .withRealNetwork()
             .withPeers(primaryNode)
             .withInteropValidators(0, 0);

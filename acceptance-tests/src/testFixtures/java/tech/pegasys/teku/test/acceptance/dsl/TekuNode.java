@@ -40,7 +40,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
@@ -214,7 +213,7 @@ public class TekuNode extends Node {
 
     return Optional.of(
         jsonProvider.jsonToObject(
-            httpClient.get(getRestApiUrl(), "/beacon/head"), BeaconChainHead.class));
+            httpClient.get(getRestApiUrl(), "/beacon/chainhead"), BeaconChainHead.class));
   }
 
   /**
@@ -283,7 +282,6 @@ public class TekuNode extends Node {
     private final PrivKey privateKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
     private final PeerId peerId = PeerId.fromPubKey(privateKey.publicKey());
     private static final String VALIDATORS_FILE_PATH = "/validators.yml";
-    private static final String P2P_PRIVATE_KEY_FILE_PATH = "/p2p-private-key.key";
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 
     private Map<String, Object> configMap = new HashMap<>();
@@ -292,7 +290,7 @@ public class TekuNode extends Node {
     private Optional<GenesisStateConfig> genesisStateConfig = Optional.empty();
 
     public Config() {
-      configMap.put("network", "minimal");
+      configMap.put("network", "swift");
       configMap.put("p2p-enabled", false);
       configMap.put("p2p-discovery-enabled", false);
       configMap.put("p2p-port", P2P_PORT);
@@ -328,6 +326,11 @@ public class TekuNode extends Node {
     public Config withInteropValidators(final int startIndex, final int validatorCount) {
       configMap.put("Xinterop-owned-validator-start-index", startIndex);
       configMap.put("Xinterop-owned-validator-count", validatorCount);
+      return this;
+    }
+
+    public Config withGenesisTime(int time) {
+      configMap.put("Xinterop-genesis-time", time);
       return this;
     }
 
@@ -377,14 +380,6 @@ public class TekuNode extends Node {
         validatorsFile.deleteOnExit();
         Files.writeString(validatorsFile.toPath(), validatorKeys.get());
         configFiles.put(validatorsFile, VALIDATORS_FILE_PATH);
-      }
-
-      if ((boolean) configMap.get("p2p-enabled")) {
-        final File p2pPrivateKeyFile = Files.createTempFile("p2p-private-key", ".key").toFile();
-        p2pPrivateKeyFile.deleteOnExit();
-        Files.writeString(p2pPrivateKeyFile.toPath(), Bytes.wrap(privateKey.bytes()).toHexString());
-        configFiles.put(p2pPrivateKeyFile, P2P_PRIVATE_KEY_FILE_PATH);
-        configMap.put("p2p-private-key-file", P2P_PRIVATE_KEY_FILE_PATH);
       }
 
       final File configFile = File.createTempFile("config", ".yaml");

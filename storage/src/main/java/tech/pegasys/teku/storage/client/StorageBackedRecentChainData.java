@@ -46,6 +46,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
   private final StoreConfig storeConfig;
 
   public StorageBackedRecentChainData(
+      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
       final StorageQueryChannel storageQueryChannel,
@@ -55,6 +56,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final ReorgEventChannel reorgEventChannel,
       final EventBus eventBus) {
     super(
+        asyncRunner,
         metricsSystem,
         storeConfig,
         storageQueryChannel::getHotBlocksByRoot,
@@ -83,6 +85,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final EventBus eventBus) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
+            asyncRunner,
             metricsSystem,
             storeConfig,
             storageQueryChannel,
@@ -97,6 +100,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
 
   @VisibleForTesting
   public static RecentChainData createImmediately(
+      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
       final StorageQueryChannel storageQueryChannel,
@@ -107,6 +111,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final EventBus eventBus) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
+            asyncRunner,
             metricsSystem,
             storeConfig,
             storageQueryChannel,
@@ -140,6 +145,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
           }
           return maybeStoreBuilder
               .get()
+              .asyncRunner(asyncRunner)
               .blockProvider(blockProvider)
               .stateProvider(stateProvider)
               .storeConfig(storeConfig)

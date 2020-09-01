@@ -358,6 +358,40 @@ class UInt64Test {
   }
 
   @Test
+  public void maxLong_firstValueIsLarger() {
+    final UInt64 a = UInt64.valueOf(2);
+    final long b = 1;
+
+    final UInt64 result = a.max(b);
+    assertThat(result).isEqualTo(a);
+  }
+
+  @Test
+  public void maxLong_secondValueIsLarger() {
+    final UInt64 a = UInt64.valueOf(1);
+    final long b = 2;
+
+    final UInt64 result = a.max(b);
+    assertThat(result).isEqualTo(UInt64.valueOf(b));
+  }
+
+  @Test
+  public void maxLong_valuesAreEqual() {
+    final UInt64 a = UInt64.valueOf(10);
+    final long b = 10;
+
+    final UInt64 result = a.max(b);
+    assertThat(result).isSameAs(a); // Should avoid creating a new instance
+    assertThat(result).isEqualTo(UInt64.valueOf(b));
+  }
+
+  @Test
+  void maxLong_shouldThrowWhenValueIsNegative() {
+    assertThatThrownBy(() -> UInt64.valueOf(1).max(-1))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
   public void min_firstValueIsLarger() {
     final UInt64 a = UInt64.valueOf(2);
     final UInt64 b = UInt64.valueOf(1);
@@ -383,6 +417,40 @@ class UInt64Test {
     final UInt64 result = a.min(b);
     assertThat(result).isEqualTo(a);
     assertThat(result).isEqualTo(b);
+  }
+
+  @Test
+  public void minLong_firstValueIsLarger() {
+    final UInt64 a = UInt64.valueOf(2);
+    final long b = 1;
+
+    final UInt64 result = a.min(b);
+    assertThat(result).isEqualTo(UInt64.valueOf(b));
+  }
+
+  @Test
+  public void minLong_secondValueIsLarger() {
+    final UInt64 a = UInt64.valueOf(1);
+    final long b = 2;
+
+    final UInt64 result = a.min(b);
+    assertThat(result).isEqualTo(a);
+  }
+
+  @Test
+  public void minLong_valuesAreEqual() {
+    final UInt64 a = UInt64.valueOf(10);
+    final long b = 10;
+
+    final UInt64 result = a.min(b);
+    assertThat(result).isSameAs(a); // Should avoid creating a new instance
+    assertThat(result).isEqualTo(UInt64.valueOf(b));
+  }
+
+  @Test
+  void minLong_shouldThrowWhenValueIsNegative() {
+    assertThatThrownBy(() -> UInt64.valueOf(1).min(-1))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   static List<Arguments> timesOverflowCases() {

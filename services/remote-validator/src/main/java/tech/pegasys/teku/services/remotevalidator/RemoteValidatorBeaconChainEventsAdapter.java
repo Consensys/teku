@@ -24,6 +24,8 @@ import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestation
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+import tech.pegasys.teku.validator.remote.BeaconChainEvent;
+import tech.pegasys.teku.validator.remote.BeaconChainReorgEvent;
 
 class RemoteValidatorBeaconChainEventsAdapter implements SlotEventsChannel, ReorgEventChannel {
 
@@ -75,9 +77,10 @@ class RemoteValidatorBeaconChainEventsAdapter implements SlotEventsChannel, Reor
   }
 
   @Override
-  public void reorgOccurred(final Bytes32 bestBlockRoot, final UInt64 bestSlot) {
-    final BeaconChainEvent beaconChainEvent =
-        new BeaconChainEvent(BeaconChainEvent.REORG_OCCURRED, bestSlot);
+  public void reorgOccurred(
+      final Bytes32 bestBlockRoot, final UInt64 bestSlot, final UInt64 commonAncestorSlot) {
+    final BeaconChainReorgEvent beaconChainEvent =
+        new BeaconChainReorgEvent(BeaconChainEvent.REORG_OCCURRED, bestSlot, commonAncestorSlot);
     listener.onEvent(beaconChainEvent);
   }
 }

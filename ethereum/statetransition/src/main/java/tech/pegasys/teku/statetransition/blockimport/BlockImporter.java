@@ -27,6 +27,7 @@ import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.logging.LogFormatter;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -58,11 +59,10 @@ public class BlockImporter {
 
   @CheckReturnValue
   public SafeFuture<BlockImportResult> importBlock(SignedBeaconBlock block) {
-    LOG.trace("Import block at slot {}: {}", block.getMessage().getSlot(), block);
     if (recentChainData.containsBlock(block.getMessage().hash_tree_root())) {
       LOG.trace(
           "Importing known block {}.  Return successful result without re-processing.",
-          block.getMessage().hash_tree_root());
+          () -> formatBlock(block));
       return SafeFuture.completedFuture(BlockImportResult.knownBlock(block));
     }
 
@@ -74,11 +74,11 @@ public class BlockImporter {
               if (!result.isSuccessful()) {
                 LOG.trace(
                     "Failed to import block for reason {}: {}",
-                    result.getFailureReason(),
-                    block.getMessage());
+                    result::getFailureReason,
+                    () -> formatBlock(block));
                 return result;
               }
-              LOG.trace("Successfully imported block {}", block.getMessage().hash_tree_root());
+              LOG.trace("Successfully imported block {}", () -> formatBlock(block));
 
               final Optional<BlockProcessingRecord> record = result.getBlockProcessingRecord();
               eventBus.post(new ImportedBlockEvent(block));
@@ -89,7 +89,7 @@ public class BlockImporter {
             })
         .exceptionally(
             (e) -> {
-              LOG.error("Internal error while importing block: " + block.getMessage(), e);
+              LOG.error("Internal error while importing block: {}", formatBlock(block), e);
               return BlockImportResult.internalError(e);
             });
   }
@@ -97,19 +97,20 @@ public class BlockImporter {
   @Subscribe
   @SuppressWarnings("unused")
   private void onBlockProposed(final ProposedBlockEvent blockProposedEvent) {
-    LOG.trace("Preparing to import proposed block: {}", blockProposedEvent.getBlock());
+    LOG.trace("Preparing to import proposed block: {}", formatBlock(blockProposedEvent.getBlock()));
     importBlock(blockProposedEvent.getBlock())
         .thenAccept(
             (result) -> {
               if (result.isSuccessful()) {
                 LOG.trace(
-                    "Successfully imported proposed block: {}", blockProposedEvent.getBlock());
+                    "Successfully imported proposed block: {}",
+                    formatBlock(blockProposedEvent.getBlock()));
               } else {
                 LOG.error(
-                    "Failed to import proposed block for reason + "
+                    "Failed to import proposed block for reason "
                         + result.getFailureReason()
                         + ": "
-                        + blockProposedEvent,
+                        + formatBlock(blockProposedEvent.getBlock()),
                     result.getFailureCause().orElse(null));
               }
             })
@@ -149,5 +150,9 @@ public class BlockImporter {
   public void subscribeToVerifiedBlockVoluntaryExits(
       VerifiedBlockOperationsListener<SignedVoluntaryExit> verifiedBlockVoluntaryExitsListener) {
     voluntaryExitSubscribers.subscribe(verifiedBlockVoluntaryExitsListener);
+  }
+
+  private String formatBlock(final SignedBeaconBlock block) {
+    return LogFormatter.formatBlock(block.getSlot(), block.getRoot());
   }
 }

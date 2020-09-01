@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage.storageSystem;
 
+import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
+
 import com.google.common.eventbus.EventBus;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.metrics.StubMetricsSystem;
@@ -85,6 +87,7 @@ public class StorageSystem implements AutoCloseable {
     final TrackingReorgEventChannel reorgEventChannel = new TrackingReorgEventChannel();
     final RecentChainData recentChainData =
         StorageBackedRecentChainData.createImmediately(
+            SYNC_RUNNER,
             metricsSystem,
             storeConfig,
             chainStorageServer,
