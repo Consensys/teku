@@ -17,26 +17,26 @@ import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.PublicKeyException;
+import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.data.slashinginterchange.InterchangeFormat;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.data.slashinginterchange.MinimalSigningHistory;
 import tech.pegasys.teku.data.slashinginterchange.MinimalSlashingProtectionInterchangeFormat;
-import tech.pegasys.teku.data.slashinginterchange.SlashingProtectionRecord;
-import tech.pegasys.teku.data.slashinginterchange.YamlProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class SlashingProtectionExporter {
   private final JsonProvider jsonProvider = new JsonProvider();
-  private final YamlProvider yamlProvider = new YamlProvider();
   private final List<MinimalSigningHistory> minimalSigningHistoryList = new ArrayList<>();
   private Bytes32 genesisValidatorsRoot = null;
 
@@ -48,13 +48,14 @@ public class SlashingProtectionExporter {
   }
 
   private void readSlashProtectionFile(final File file) {
-    try {
-      SlashingProtectionRecord slashingProtectionRecord =
-          yamlProvider.fileToObject(file, SlashingProtectionRecord.class);
-      if (genesisValidatorsRoot == null && slashingProtectionRecord.genesisValidatorsRoot != null) {
-        this.genesisValidatorsRoot = slashingProtectionRecord.genesisValidatorsRoot;
-      } else if (slashingProtectionRecord.genesisValidatorsRoot != null
-          && !genesisValidatorsRoot.equals(slashingProtectionRecord.genesisValidatorsRoot)) {
+    try (InputStream input = Files.newInputStream(file.toPath())) {
+      ValidatorSigningRecord validatorSigningRecord =
+          ValidatorSigningRecord.fromBytes(Bytes.of(input.readAllBytes()));
+      if (genesisValidatorsRoot == null
+          && validatorSigningRecord.getGenesisValidatorsRoot() != null) {
+        this.genesisValidatorsRoot = validatorSigningRecord.getGenesisValidatorsRoot();
+      } else if (validatorSigningRecord.getGenesisValidatorsRoot() != null
+          && !genesisValidatorsRoot.equals(validatorSigningRecord.getGenesisValidatorsRoot())) {
         SUB_COMMAND_LOG.error(
             "the genesisValidatorsRoot of "
                 + file.getName()
@@ -63,10 +64,11 @@ public class SlashingProtectionExporter {
         System.exit(1);
       }
       final String pubkey = file.getName().substring(0, file.getName().length() - ".yml".length());
+      SUB_COMMAND_LOG.display("Exporting " + pubkey);
       minimalSigningHistoryList.add(
-          new MinimalSigningHistory(BLSPubKey.fromHexString(pubkey), slashingProtectionRecord));
+          new MinimalSigningHistory(BLSPubKey.fromHexString(pubkey), validatorSigningRecord));
     } catch (IOException e) {
-      SUB_COMMAND_LOG.error("Failed to read from file " + file.toString());
+      SUB_COMMAND_LOG.error("Failed to read from file " + file.toString(), e);
       System.exit(1);
     } catch (PublicKeyException e) {
       SUB_COMMAND_LOG.error("Public key in file " + file.getName() + " does not appear valid.");
@@ -81,5 +83,10 @@ public class SlashingProtectionExporter {
             new MinimalSlashingProtectionInterchangeFormat(
                 new Metadata(InterchangeFormat.minimal, UInt64.valueOf(2L), genesisValidatorsRoot),
                 minimalSigningHistoryList)));
+    SUB_COMMAND_LOG.display(
+        "Wrote "
+            + minimalSigningHistoryList.size()
+            + " validator slashing protection records to "
+            + toFileName);
   }
 }

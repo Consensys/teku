@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BLSPubKey;
+import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class MinimalSigningHistory {
@@ -49,13 +50,11 @@ public class MinimalSigningHistory {
   }
 
   public MinimalSigningHistory(
-      final BLSPubKey blsPubKey, final SlashingProtectionRecord slashingProtectionRecord) {
+      final BLSPubKey blsPubKey, final ValidatorSigningRecord validatorSigningRecord) {
     this.pubkey = blsPubKey;
-    this.lastSignedBlockSlot = slashingProtectionRecord.lastSignedBlockSlot;
-    this.lastSignedAttestationSourceEpoch =
-        slashingProtectionRecord.lastSignedAttestationSourceEpoch;
-    this.lastSignedAttestationTargetEpoch =
-        slashingProtectionRecord.lastSignedAttestationTargetEpoch;
+    this.lastSignedBlockSlot = validatorSigningRecord.getBlockSlot();
+    this.lastSignedAttestationSourceEpoch = validatorSigningRecord.getAttestationSourceEpoch();
+    this.lastSignedAttestationTargetEpoch = validatorSigningRecord.getAttestationTargetEpoch();
   }
 
   @Override
@@ -78,24 +77,24 @@ public class MinimalSigningHistory {
         lastSignedAttestationTargetEpoch);
   }
 
-  public Object toSlashingProtectionRecordMerging(
-      final Optional<SlashingProtectionRecord> maybeRecord, final Bytes32 genesisValidatorsRoot) {
+  public ValidatorSigningRecord toValidatorSigningRecord(
+      final Optional<ValidatorSigningRecord> maybeRecord, final Bytes32 genesisValidatorsRoot) {
     if (maybeRecord.isPresent()) {
-      SlashingProtectionRecord record = maybeRecord.get();
-      return new SlashingProtectionRecord(
-          record.lastSignedBlockSlot.max(lastSignedBlockSlot),
-          nvlMax(record.lastSignedAttestationSourceEpoch, lastSignedAttestationSourceEpoch),
-          nvlMax(record.lastSignedAttestationTargetEpoch, lastSignedAttestationTargetEpoch),
-          genesisValidatorsRoot);
+      final ValidatorSigningRecord record = maybeRecord.get();
+      return new ValidatorSigningRecord(
+          genesisValidatorsRoot,
+          record.getBlockSlot().max(lastSignedBlockSlot),
+          nullSafeMax(record.getAttestationSourceEpoch(), lastSignedAttestationSourceEpoch),
+          nullSafeMax(record.getAttestationTargetEpoch(), lastSignedAttestationTargetEpoch));
     }
-    return new SlashingProtectionRecord(
+    return new ValidatorSigningRecord(
+        genesisValidatorsRoot,
         lastSignedBlockSlot,
         lastSignedAttestationSourceEpoch,
-        lastSignedAttestationTargetEpoch,
-        genesisValidatorsRoot);
+        lastSignedAttestationTargetEpoch);
   }
 
-  private UInt64 nvlMax(final UInt64 a, final UInt64 b) {
+  private UInt64 nullSafeMax(final UInt64 a, final UInt64 b) {
     if (a == null) {
       return b;
     } else if (b == null) {

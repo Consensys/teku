@@ -34,6 +34,8 @@ public class CompleteSigningHistoryTest {
   private final BLSPubKey blsPubKey =
       BLSPubKey.fromHexString(
           "0xb845089a1457f811bfc000588fbb4e713669be8ce060ea6be3c6ece09afc3794106c91ca73acda5e5457122d58723bed");
+  private final Bytes32 GENESIS_ROOT =
+      Bytes32.fromHexString("0x0000000000000000000000000000000000000000000000000000000000123456");
 
   @Test
   public void shouldReadMetadataFromCompleteJson() throws IOException {
@@ -43,7 +45,8 @@ public class CompleteSigningHistoryTest {
     JsonNode jsonNode = mapper.readTree(minimalJson);
     JsonNode metadataJson = jsonNode.get("metadata");
     Metadata metadata = mapper.treeToValue(metadataJson, Metadata.class);
-    assertThat(metadata.interchangeFormat).isEqualTo(InterchangeFormat.complete);
+    assertThat(metadata)
+        .isEqualTo(new Metadata(InterchangeFormat.complete, UInt64.valueOf(2), GENESIS_ROOT));
 
     List<CompleteSigningHistory> completeSigningHistories =
         Arrays.asList(
@@ -57,12 +60,12 @@ public class CompleteSigningHistoryTest {
                     new SignedBlock(
                         UInt64.valueOf(81952),
                         Bytes32.fromHexString(
-                            "0x4ff6f743a43f3b4f95350831aeaf0a122a1a392922c45d804280284a69eb850b"))),
+                            "0x0000000000000000000000000000000000000000000000000000000000001234"))),
                 List.of(
                     new SignedAttestation(
                         UInt64.valueOf(2290),
                         UInt64.valueOf(3007),
                         Bytes32.fromHexString(
-                            "0x587d6a4f59a58fe24f406e0502413e77fe1babddee641fda30034ed37ecc884d")))));
+                            "0x0000000000000000000000000000000000000000000000000000000000000123")))));
   }
 }

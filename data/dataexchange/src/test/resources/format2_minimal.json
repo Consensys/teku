@@ -1,8 +1,8 @@
 {
   "metadata": {
     "interchange_format": "minimal",
-    "interchange_format_version": "1",
-    "genesis_validators_root": "0x04700007fabc8282644aed6d1c7c9e21d38a03a0c4ba193f3afe428824b3a673"
+    "interchange_format_version": "2",
+    "genesis_validators_root": "0x0000000000000000000000000000000000000000000000000000000000123456"
   },
   "data": [
     {

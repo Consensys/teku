@@ -11,22 +11,28 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.data.slashinginterchange;
+package tech.pegasys.teku.data.yaml;
 
+import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import java.io.File;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -36,9 +42,10 @@ import tech.pegasys.teku.provider.BytesSerializer;
 public class YamlProvider {
   private final ObjectMapper objectMapper;
 
-  public YamlProvider() {
+  public YamlProvider(final Module... modules) {
     this.objectMapper = new ObjectMapper(new YAMLFactory());
     addTekuMappers();
+    Stream.of(modules).forEach(objectMapper::registerModule);
   }
 
   private void addTekuMappers() {
@@ -50,24 +57,27 @@ public class YamlProvider {
     objectMapper.registerModule(module).writer(new DefaultPrettyPrinter());
   }
 
-  public <T> String objectToYaml(T object) throws JsonProcessingException {
-    return objectMapper.writeValueAsString(object);
+  public <T> T read(InputStream data, Class<T> clazz) throws IOException {
+    return objectMapper.readValue(data, clazz);
   }
 
-  public <T> T yamlToObject(String json, Class<T> clazz) throws JsonProcessingException {
-    return objectMapper.readValue(json, clazz);
+  public <T> T read(Bytes data, Class<T> clazz) throws IOException {
+    return objectMapper.readValue(data.toArrayUnsafe(), clazz);
   }
 
-  public <T> T fileToObject(File file, Class<T> clazz) throws IOException {
-    return objectMapper.readValue(file, clazz);
+  public <T> void write(final OutputStream out, T object) throws IOException {
+    objectMapper.writerWithDefaultPrettyPrinter().writeValue(out, object);
   }
 
-  public <T> void writeToFile(File file, T object) throws IOException {
-    objectMapper.writerWithDefaultPrettyPrinter().writeValue(file, object);
-  }
-
-  public ObjectMapper getObjectMapper() {
-    return objectMapper;
+  public <T> Bytes write(T object) {
+    try (final ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+      objectMapper.writerWithDefaultPrettyPrinter().writeValue(out, object);
+      return Bytes.wrap(out.toByteArray());
+    } catch (JsonGenerationException | JsonMappingException e) {
+      throw new IllegalStateException("Failed to serialize object", e);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   public static class UInt64Deserializer extends JsonDeserializer<UInt64> {

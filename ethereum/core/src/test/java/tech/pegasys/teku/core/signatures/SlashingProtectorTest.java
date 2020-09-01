@@ -25,18 +25,17 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.signatures.record.ValidatorSigningRecord;
-import tech.pegasys.teku.data.slashinginterchange.YamlProvider;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class SlashingProtectorTest {
-
+  private static final Bytes32 GENESIS_VALIDATORS_ROOT = Bytes32.fromHexString("0x561234");
   private static final UInt64 ATTESTATION_TEST_BLOCK_SLOT = UInt64.valueOf(3);
   private static final UInt64 BLOCK_TEST_SOURCE_EPOCH = UInt64.valueOf(12);
   private static final UInt64 BLOCK_TEST_TARGET_EPOCH = UInt64.valueOf(15);
@@ -51,8 +50,6 @@ class SlashingProtectorTest {
 
   private final SlashingProtector slashingProtectionStorage =
       new SlashingProtector(dataWriter, baseDir);
-  private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
-  private final YamlProvider yamlProvider = new YamlProvider();
 
   @ParameterizedTest(name = "maySignBlock({0})")
   @MethodSource("blockCases")
@@ -97,7 +94,10 @@ class SlashingProtectorTest {
     final Optional<ValidatorSigningRecord> existingRecord =
         Optional.of(
             new ValidatorSigningRecord(
-                ATTESTATION_TEST_BLOCK_SLOT, UInt64.valueOf(4), UInt64.valueOf(6)));
+                GENESIS_VALIDATORS_ROOT,
+                ATTESTATION_TEST_BLOCK_SLOT,
+                UInt64.valueOf(4),
+                UInt64.valueOf(6)));
     return List.of(
         // No record
         Arguments.of(
@@ -138,19 +138,16 @@ class SlashingProtectorTest {
 
     assertThat(
             slashingProtectionStorage.maySignAttestation(
-                validator, forkInfo.getGenesisValidatorsRoot(), sourceEpoch, targetEpoch))
+                validator, GENESIS_VALIDATORS_ROOT, sourceEpoch, targetEpoch))
         .isCompletedWithValue(true);
 
     final ValidatorSigningRecord updatedRecord =
         new ValidatorSigningRecord(
+            GENESIS_VALIDATORS_ROOT,
             lastSignedAttestation.isPresent() ? ATTESTATION_TEST_BLOCK_SLOT : UInt64.ZERO,
             sourceEpoch,
             targetEpoch);
-    verify(dataWriter)
-        .syncedWrite(
-            signingRecordPath,
-            yamlProvider.objectToYaml(
-                updatedRecord.toSlashingProtectionRecord(forkInfo.getGenesisValidatorsRoot())));
+    verify(dataWriter).syncedWrite(signingRecordPath, updatedRecord.toBytes());
   }
 
   private void assertAttestationSigningDisallowed(
@@ -163,7 +160,7 @@ class SlashingProtectorTest {
 
     assertThat(
             slashingProtectionStorage.maySignAttestation(
-                validator, forkInfo.getGenesisValidatorsRoot(), sourceEpoch, targetEpoch))
+                validator, GENESIS_VALIDATORS_ROOT, sourceEpoch, targetEpoch))
         .isCompletedWithValue(false);
     verify(dataWriter, never()).syncedWrite(any(), any());
   }
@@ -171,43 +168,39 @@ class SlashingProtectorTest {
   private void assertBlockSigningAllowed(
       final Optional<UInt64> lastSignedBlockSlot, final UInt64 newBlockSlot) throws Exception {
     when(dataWriter.read(signingRecordPath))
-        .thenReturn(lastSignedBlockSlot.map(this::blockTestSigningRecordBytes));
+        .thenReturn(lastSignedBlockSlot.map(this::blockTestSigningRecord));
 
     assertThat(
             slashingProtectionStorage.maySignBlock(
-                validator, forkInfo.getGenesisValidatorsRoot(), newBlockSlot))
+                validator, GENESIS_VALIDATORS_ROOT, newBlockSlot))
         .isCompletedWithValue(true);
 
-    final ValidatorSigningRecord updatedRecord =
+    final Bytes updatedRecord =
         lastSignedBlockSlot.isPresent()
             ? blockTestSigningRecord(newBlockSlot)
             : new ValidatorSigningRecord(
-                newBlockSlot,
-                ValidatorSigningRecord.NEVER_SIGNED,
-                ValidatorSigningRecord.NEVER_SIGNED);
-    verify(dataWriter)
-        .syncedWrite(
-            signingRecordPath,
-            yamlProvider.objectToYaml(
-                updatedRecord.toSlashingProtectionRecord(forkInfo.getGenesisValidatorsRoot())));
+                    GENESIS_VALIDATORS_ROOT,
+                    newBlockSlot,
+                    ValidatorSigningRecord.NEVER_SIGNED,
+                    ValidatorSigningRecord.NEVER_SIGNED)
+                .toBytes();
+    verify(dataWriter).syncedWrite(signingRecordPath, updatedRecord);
   }
 
-  private ValidatorSigningRecord blockTestSigningRecord(final UInt64 blockSlot) {
-    return new ValidatorSigningRecord(blockSlot, BLOCK_TEST_SOURCE_EPOCH, BLOCK_TEST_TARGET_EPOCH);
-  }
-
-  private Bytes blockTestSigningRecordBytes(final UInt64 blockSlot) {
-    return blockTestSigningRecord(blockSlot).toBytes();
+  private Bytes blockTestSigningRecord(final UInt64 blockSlot) {
+    return new ValidatorSigningRecord(
+            GENESIS_VALIDATORS_ROOT, blockSlot, BLOCK_TEST_SOURCE_EPOCH, BLOCK_TEST_TARGET_EPOCH)
+        .toBytes();
   }
 
   private void assertBlockSigningDisallowed(
       final Optional<UInt64> lastSignedBlockSlot, final UInt64 newBlockSlot) throws Exception {
     when(dataWriter.read(signingRecordPath))
-        .thenReturn(lastSignedBlockSlot.map(this::blockTestSigningRecordBytes));
+        .thenReturn(lastSignedBlockSlot.map(this::blockTestSigningRecord));
 
     assertThat(
             slashingProtectionStorage.maySignBlock(
-                validator, forkInfo.getGenesisValidatorsRoot(), newBlockSlot))
+                validator, GENESIS_VALIDATORS_ROOT, newBlockSlot))
         .isCompletedWithValue(false);
 
     verify(dataWriter, never()).syncedWrite(any(), any());

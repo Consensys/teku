@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -33,6 +34,8 @@ public class MinimalSigningHistoryTest {
   private final BLSPubKey blsPubKey =
       BLSPubKey.fromHexString(
           "0xb845089a1457f811bfc000588fbb4e713669be8ce060ea6be3c6ece09afc3794106c91ca73acda5e5457122d58723bed");
+  private final Bytes32 GENESIS_ROOT =
+      Bytes32.fromHexString("0x0000000000000000000000000000000000000000000000000000000000123456");
 
   @Test
   public void shouldReadMetadataFromMinimalJson() throws IOException {
@@ -42,7 +45,8 @@ public class MinimalSigningHistoryTest {
     JsonNode jsonNode = mapper.readTree(minimalJson);
     JsonNode metadataJson = jsonNode.get("metadata");
     Metadata metadata = mapper.treeToValue(metadataJson, Metadata.class);
-    assertThat(metadata.interchangeFormat).isEqualTo(InterchangeFormat.minimal);
+    assertThat(metadata)
+        .isEqualTo(new Metadata(InterchangeFormat.minimal, UInt64.valueOf(2), GENESIS_ROOT));
 
     List<MinimalSigningHistory> minimalSigningHistoryList =
         Arrays.asList(

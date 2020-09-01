@@ -19,26 +19,28 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.data.slashinginterchange.CompleteSigningHistory;
 import tech.pegasys.teku.data.slashinginterchange.InterchangeFormat;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.data.slashinginterchange.MinimalSigningHistory;
 import tech.pegasys.teku.data.slashinginterchange.SignedAttestation;
 import tech.pegasys.teku.data.slashinginterchange.SignedBlock;
-import tech.pegasys.teku.data.slashinginterchange.SlashingProtectionRecord;
-import tech.pegasys.teku.data.slashinginterchange.YamlProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class SlashingProtectionImporter {
   private final JsonProvider jsonProvider = new JsonProvider();
-  private final YamlProvider yamlProvider = new YamlProvider();
   private Path slashingProtectionPath;
   private List<MinimalSigningHistory> data = new ArrayList<>();
   private Metadata metadata;
@@ -85,18 +87,19 @@ public class SlashingProtectionImporter {
         completeSigningHistory.signedAttestations.stream()
             .map(SignedAttestation::getTargetEpoch)
             .max(UInt64::compareTo);
-    SlashingProtectionRecord record =
-        new SlashingProtectionRecord(
+    final ValidatorSigningRecord record =
+        new ValidatorSigningRecord(
+            metadata.genesisValidatorsRoot,
             lastSlot.orElse(UInt64.ZERO),
-            sourceEpoch.orElse(null),
-            targetEpoch.orElse(null),
-            metadata.genesisValidatorsRoot);
+            sourceEpoch.orElse(ValidatorSigningRecord.NEVER_SIGNED),
+            targetEpoch.orElse(ValidatorSigningRecord.NEVER_SIGNED));
     return new MinimalSigningHistory(completeSigningHistory.pubkey, record);
   }
 
   public void updateLocalRecords(final Path slashingProtectionPath) {
     this.slashingProtectionPath = slashingProtectionPath;
     data.forEach(this::updateLocalRecord);
+    SUB_COMMAND_LOG.display("Updated " + data.size() + " validator slashing protection records");
   }
 
   private void updateLocalRecord(final MinimalSigningHistory minimalSigningHistory) {
@@ -104,19 +107,18 @@ public class SlashingProtectionImporter {
 
     SUB_COMMAND_LOG.display("Importing " + validatorString);
     Path outputFile = slashingProtectionPath.resolve(validatorString.concat(".yml"));
-    Optional<SlashingProtectionRecord> existingRecord = Optional.empty();
+    Optional<ValidatorSigningRecord> existingRecord = Optional.empty();
     if (outputFile.toFile().exists()) {
-      try {
+      try (InputStream input = Files.newInputStream(outputFile)) {
         existingRecord =
-            Optional.ofNullable(
-                yamlProvider.fileToObject(outputFile.toFile(), SlashingProtectionRecord.class));
+            Optional.ofNullable(ValidatorSigningRecord.fromBytes(Bytes.of(input.readAllBytes())));
       } catch (IOException e) {
         SUB_COMMAND_LOG.error("Failed to read existing file: " + outputFile.toString());
         System.exit(1);
       }
     }
     if (existingRecord.isPresent()
-        && metadata.genesisValidatorsRoot.compareTo(existingRecord.get().genesisValidatorsRoot)
+        && metadata.genesisValidatorsRoot.compareTo(existingRecord.get().getGenesisValidatorsRoot())
             != 0) {
       SUB_COMMAND_LOG.error(
           "Validator "
@@ -125,11 +127,12 @@ public class SlashingProtectionImporter {
       System.exit(1);
     }
 
-    try {
-      yamlProvider.writeToFile(
-          outputFile.toFile(),
-          minimalSigningHistory.toSlashingProtectionRecordMerging(
-              existingRecord, metadata.genesisValidatorsRoot));
+    try (OutputStream out = Files.newOutputStream(outputFile)) {
+      out.write(
+          minimalSigningHistory
+              .toValidatorSigningRecord(existingRecord, metadata.genesisValidatorsRoot)
+              .toBytes()
+              .toArray());
     } catch (IOException e) {
       SUB_COMMAND_LOG.error(
           "Validator " + minimalSigningHistory.pubkey.toHexString() + " was not updated.");
