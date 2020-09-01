@@ -473,15 +473,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
           final PrivKey privKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
           final Bytes privKeyBytes = Bytes.wrap(KeyKt.marshalPrivateKey(privKey));
           Files.writeString(p2pKeyFile, privKeyBytes.toHexString(), StandardOpenOption.CREATE_NEW);
-          LOG.info(
-              "Generated new p2p private key. It was stored and will be reused on next run if no private key option is supplied: "
-                  + p2pKeyFile);
+          STATUS_LOG.usingGeneratedP2pPrivateKey(p2pKeyFile.toString(), true);
         } catch (IOException e) {
           throw new RuntimeException(
               "Couldn't write generated p2p private key file: " + p2pKeyFile, e);
         }
       } else {
-        LOG.info("Loading generated p2p private key from file: " + p2pKeyFile);
+        STATUS_LOG.usingGeneratedP2pPrivateKey(p2pKeyFile.toString(), false);
       }
     }
 
