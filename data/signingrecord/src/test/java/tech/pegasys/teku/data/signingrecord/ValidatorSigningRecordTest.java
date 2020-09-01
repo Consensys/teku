@@ -35,7 +35,7 @@ class ValidatorSigningRecordTest {
   @Test
   void shouldReadSigningRecordWithoutGenesisRoot() throws IOException {
     final String yamlData =
-        Resources.toString(Resources.getResource("signingrecord-withoutgenesis.yml"), UTF_8);
+        Resources.toString(Resources.getResource("signingrecord-withoutGenesis.yml"), UTF_8);
     Bytes yamlByteData = Bytes.wrap(yamlData.getBytes(UTF_8));
 
     ValidatorSigningRecord record = ValidatorSigningRecord.fromBytes(yamlByteData);
@@ -43,6 +43,16 @@ class ValidatorSigningRecordTest {
         .isEqualTo(
             new ValidatorSigningRecord(
                 null, UInt64.valueOf(11), UInt64.valueOf(12), UInt64.valueOf(13)));
+  }
+
+  @Test
+  void shouldReadSigningRecordWitOldNeverSignedValue() throws IOException {
+    final String yamlData =
+        Resources.toString(Resources.getResource("signingrecord-oldNeverSigned.yml"), UTF_8);
+    Bytes yamlByteData = Bytes.wrap(yamlData.getBytes(UTF_8));
+
+    ValidatorSigningRecord record = ValidatorSigningRecord.fromBytes(yamlByteData);
+    assertThat(record).isEqualTo(new ValidatorSigningRecord(null, UInt64.valueOf(11), null, null));
   }
 
   @Test
