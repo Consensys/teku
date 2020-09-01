@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
+import tech.pegasys.teku.service.serviceutils.FatalServiceFailureException;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.util.config.Constants;
@@ -61,9 +62,12 @@ public class Eth1DepositManager {
         .thenCompose(
             replayDepositsResult ->
                 getHead().thenCompose(headBlock -> processStart(headBlock, replayDepositsResult)))
-        .finish(
-            () -> LOG.info("Eth1DepositsManager successfully ran startup sequence."),
-            (err) -> LOG.fatal("Eth1DepositsManager unable to run startup sequence.", err));
+        .thenAccept(__ -> LOG.info("Eth1DepositsManager successfully ran startup sequence."))
+        .exceptionally(
+            (err) -> {
+              throw new FatalServiceFailureException(getClass(), err);
+            })
+        .reportExceptions();
   }
 
   public void stop() {
