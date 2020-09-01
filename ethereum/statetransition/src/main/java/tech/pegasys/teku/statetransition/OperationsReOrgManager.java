@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
@@ -57,7 +58,6 @@ public class OperationsReOrgManager implements ReorgEventChannel {
   }
 
   @Override
-  @SuppressWarnings("FutureReturnValueIgnored")
   public void reorgOccurred(
       Bytes32 bestBlockRoot, UInt64 bestSlot, Bytes32 oldBestBlockRoot, UInt64 commonAncestorSlot) {
     NavigableMap<UInt64, Bytes32> notCanonicalBlockRoots =
@@ -72,10 +72,25 @@ public class OperationsReOrgManager implements ReorgEventChannel {
                       maybeBlock.ifPresentOrElse(
                           block -> {
                             BeaconBlockBody blockBody = block.getBody();
-                            blockBody.getProposer_slashings().forEach(proposerSlashingPool::add);
-                            blockBody.getAttester_slashings().forEach(attesterSlashingPool::add);
-                            blockBody.getVoluntary_exits().forEach(exitPool::add);
-                            blockBody.getAttestations().forEach(attestationManager::onAttestation);
+                            proposerSlashingPool.addAll(blockBody.getProposer_slashings());
+                            attesterSlashingPool.addAll(blockBody.getAttester_slashings());
+                            exitPool.addAll(blockBody.getVoluntary_exits());
+
+                            // Attestations need to get re-processed through AttestationManager
+                            // because we don't have access to the state with which they were
+                            // verified anymore
+                            // and we need to make sure later on that they're being included on the
+                            // correct fork.
+                            blockBody.getAttestations().forEach(attestation -> {
+                              attestationManager.onAttestation(ValidateableAttestation.fromAttestation(attestation))
+                                      .finish(
+                                              result ->
+                                                      result.ifInvalid(
+                                                              reason ->
+                                                                      LOG.debug("Rejected re-queued attestation from block: {} due to: {}",
+                                                                              root, reason)),
+                                              err -> LOG.error("Failed to process re-queued attestation from block: {} due to: {}", root, err)))
+                            });
                           },
                           () ->
                               LOG.warn(
