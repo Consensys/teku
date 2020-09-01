@@ -13,16 +13,20 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import java.util.Set;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.util.collections.LimitedSet;
 import tech.pegasys.teku.util.time.TimeProvider;
 
 public class Eth2PeerFactory {
 
+  private final Set<Checkpoint> validFinalizedCheckpointsCache = LimitedSet.create(100);
   private final StatusMessageFactory statusMessageFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
   private final MetricsSystem metricsSystem;
@@ -54,7 +58,7 @@ public class Eth2PeerFactory {
         rpcMethods,
         statusMessageFactory,
         metadataMessagesFactory,
-        PeerChainValidator.create(metricsSystem, chainDataClient),
+        new PeerChainValidator(metricsSystem, chainDataClient, validFinalizedCheckpointsCache),
         timeProvider,
         peerRateLimit,
         peerRequestLimit);

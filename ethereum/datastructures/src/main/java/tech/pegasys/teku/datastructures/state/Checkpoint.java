@@ -17,6 +17,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 
 import com.google.common.base.MoreObjects;
 import java.util.List;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -77,6 +78,27 @@ public class Checkpoint extends AbstractImmutableContainer
           writer.writeUInt64(getEpoch().longValue());
           writer.writeFixedBytes(getRoot());
         });
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
+    final Checkpoint that = (Checkpoint) o;
+    return Objects.equals(getEpoch(), that.getEpoch()) &&
+        Objects.equals(getRoot(), that.getRoot());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), getEpoch(), getRoot());
   }
 
   @Override
