@@ -143,19 +143,9 @@ public class Eth1DepositManager {
   }
 
   private SafeFuture<EthBlock.Block> getHead() {
-    return eth1Provider
-        .getLatestEth1Block()
-        .thenApply(EthBlock.Block::getNumber)
-        .thenApply(UInt64::valueOf)
-        .thenApply(
-            number -> {
-              if (number.isLessThan(Constants.ETH1_FOLLOW_DISTANCE)) {
-                throw new IllegalStateException(
-                    "Eth1 chain is shorter than minimum follow distance.");
-              } else {
-                return number.minus(Constants.ETH1_FOLLOW_DISTANCE);
-              }
-            })
+    return getLatestEth1BlockNumber()
+        .thenCompose(this::waitForEth1ChainToReachFollowDistanceIfNecessary)
+        .thenApply(number -> number.minus(Constants.ETH1_FOLLOW_DISTANCE))
         .thenCompose(eth1Provider::getGuaranteedEth1Block)
         .exceptionallyCompose(
             (err) -> {
@@ -169,5 +159,24 @@ public class Eth1DepositManager {
                   .getDelayedFuture(Constants.ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT, TimeUnit.SECONDS)
                   .thenCompose((__) -> getHead());
             });
+  }
+
+  private SafeFuture<UInt64> getLatestEth1BlockNumber() {
+    return eth1Provider
+        .getLatestEth1Block()
+        .thenApply(EthBlock.Block::getNumber)
+        .thenApply(UInt64::valueOf);
+  }
+
+  private SafeFuture<UInt64> waitForEth1ChainToReachFollowDistanceIfNecessary(UInt64 number) {
+    if (number.isLessThan(Constants.ETH1_FOLLOW_DISTANCE)) {
+      return asyncRunner
+          .getDelayedFuture(
+              Constants.ETH1_LOCAL_CHAIN_BEHIND_FOLLOW_DISTANCE_WAIT, TimeUnit.SECONDS)
+          .thenCompose(__ -> getLatestEth1BlockNumber())
+          .thenCompose(this::waitForEth1ChainToReachFollowDistanceIfNecessary);
+    } else {
+      return SafeFuture.completedFuture(number);
+    }
   }
 }
