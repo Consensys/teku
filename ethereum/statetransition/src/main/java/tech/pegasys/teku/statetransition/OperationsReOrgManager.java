@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition;
 
+import java.util.NavigableMap;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -28,9 +30,6 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
-
-import java.util.NavigableMap;
-import java.util.Optional;
 
 public class OperationsReOrgManager implements ReorgEventChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -78,19 +77,29 @@ public class OperationsReOrgManager implements ReorgEventChannel {
 
                             // Attestations need to get re-processed through AttestationManager
                             // because we don't have access to the state with which they were
-                            // verified anymore
-                            // and we need to make sure later on that they're being included on the
-                            // correct fork.
-                            blockBody.getAttestations().forEach(attestation -> {
-                              attestationManager.onAttestation(ValidateableAttestation.fromAttestation(attestation))
-                                      .finish(
+                            // verified anymore and we need to make sure later on
+                            // that they're being included on the correct fork.
+                            blockBody
+                                .getAttestations()
+                                .forEach(
+                                    attestation -> {
+                                      attestationManager
+                                          .onAttestation(
+                                              ValidateableAttestation.fromAttestation(attestation))
+                                          .finish(
                                               result ->
-                                                      result.ifInvalid(
-                                                              reason ->
-                                                                      LOG.debug("Rejected re-queued attestation from block: {} due to: {}",
-                                                                              root, reason)),
-                                              err -> LOG.error("Failed to process re-queued attestation from block: {} due to: {}", root, err)))
-                            });
+                                                  result.ifInvalid(
+                                                      reason ->
+                                                          LOG.debug(
+                                                              "Rejected re-queued attestation from block: {} due to: {}",
+                                                              root,
+                                                              reason)),
+                                              err ->
+                                                  LOG.error(
+                                                      "Failed to process re-queued attestation from block: {} due to: {}",
+                                                      root,
+                                                      err));
+                                    });
                           },
                           () ->
                               LOG.warn(

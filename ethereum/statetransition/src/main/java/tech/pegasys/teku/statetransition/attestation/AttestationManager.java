@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -31,8 +32,6 @@ import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.util.events.Subscribers;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
-
-import java.util.List;
 
 public class AttestationManager extends Service implements SlotEventsChannel {
 
