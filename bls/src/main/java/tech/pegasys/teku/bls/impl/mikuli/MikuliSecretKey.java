@@ -73,6 +73,11 @@ public class MikuliSecretKey implements SecretKey {
     return MikuliBLS12381.sign(this, message);
   }
 
+  @Override
+  public Signature sign(final Bytes message, final Bytes dst) {
+    return MikuliBLS12381.sign(this, message, dst);
+  }
+
   public Scalar getScalarValue() {
     return scalarValue;
   }

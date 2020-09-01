@@ -64,6 +64,20 @@ public class BLS {
     }
   }
 
+  /**
+   * Generates a BLSSignature from a private key, message and a custom DST.
+   *
+   * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02#section-3.2.1
+   *
+   * @param secretKey The secret key, not null
+   * @param message The message to sign, not null
+   * @param dst domain separation tag (DST), not null
+   * @return The Signature, not null
+   */
+  public static BLSSignature sign(BLSSecretKey secretKey, Bytes message, Bytes dst) {
+    return new BLSSignature(secretKey.getSecretKey().sign(message, dst));
+  }
+
   /*
    * The following are the methods used directly in the Ethereum 2.0 specifications. These strictly adhere to the standard.
    */

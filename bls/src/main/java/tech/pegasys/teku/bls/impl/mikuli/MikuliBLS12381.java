@@ -117,6 +117,19 @@ public class MikuliBLS12381 implements BLS12381 {
   }
 
   /**
+   * Generates a Signature from a private key, message and DST.
+   *
+   * @param secretKey The secret key, not null
+   * @param message The message to sign, not null
+   * @param dst Domain Seperation Tag (DST), not null
+   * @return The Signature, not null
+   */
+  public static MikuliSignature sign(MikuliSecretKey secretKey, Bytes message, Bytes dst) {
+    G2Point hashInGroup2 = new G2Point(hashToG2(message, dst));
+    return new MikuliSignature(secretKey.sign(hashInGroup2));
+  }
+
+  /**
    * Verifies the given BLS signature against the message bytes using the public key.
    *
    * @param publicKey The public key, not null
