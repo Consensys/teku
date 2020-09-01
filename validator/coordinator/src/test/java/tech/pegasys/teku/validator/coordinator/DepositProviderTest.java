@@ -203,6 +203,34 @@ public class DepositProviderTest {
         .hasMessageContaining("9 to 10");
   }
 
+  @Test
+  void shouldThrowWhenAllDepositsRequiredForStateNotAvailable_skippedDeposit() {
+    Constants.MAX_DEPOSITS = 5;
+    mockDepositsFromEth1Block(0, 7);
+    // Deposit 7 is missing
+    mockDepositsFromEth1Block(8, 10);
+    mockStateEth1DepositIndex(5);
+    mockEth1DataDepositCount(10);
+
+    assertThatThrownBy(() -> depositProvider.getDeposits(state, randomEth1Data))
+        .isInstanceOf(MissingDepositsException.class)
+        .hasMessageContaining("7 to 8");
+  }
+
+  @Test
+  void shouldThrowWhenAllDepositsRequiredForStateNotAvailable_skippedDeposits() {
+    Constants.MAX_DEPOSITS = 5;
+    mockDepositsFromEth1Block(0, 7);
+    // Deposits 7,8 are missing
+    mockDepositsFromEth1Block(9, 10);
+    mockStateEth1DepositIndex(5);
+    mockEth1DataDepositCount(10);
+
+    assertThatThrownBy(() -> depositProvider.getDeposits(state, randomEth1Data))
+        .isInstanceOf(MissingDepositsException.class)
+        .hasMessageContaining("7 to 9");
+  }
+
   private void checkThatDepositProofIsValid(SSZList<Deposit> deposits) {
     deposits.forEach(
         deposit ->
