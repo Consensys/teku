@@ -25,7 +25,7 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
 
-    createTekuDepositSender().sendValidatorDeposits(eth1Node, 64);
+    createTekuDepositSender().sendValidatorDeposits(eth1Node, 4);
 
     final TekuNode firstTeku = createTekuNode(config -> config.withDepositsFrom(eth1Node));
     firstTeku.start();
