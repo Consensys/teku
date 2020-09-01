@@ -18,6 +18,8 @@ import java.math.BigInteger;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
@@ -28,7 +30,7 @@ import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
 
 public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChannel {
-
+  private static final Logger LOG = LogManager.getLogger();
   private static final BigInteger NEGATIVE_ONE = BigInteger.valueOf(-1L);
 
   private final Database database;
@@ -107,6 +109,8 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
     }
 
     public void depositEvent(final DepositsFromBlockEvent event) {
+      LOG.trace(
+          "Process deposits {} - {}", event.getFirstDepositIndex(), event.getLastDepositIndex());
       if (genesis.isPresent()
           && !isGenesisDone
           && genesis.get().getBlockNumber().compareTo(event.getBlockNumber()) < 0) {
@@ -129,6 +133,7 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
     }
 
     public ReplayDepositsResult depositsComplete() {
+      LOG.trace("Finish replaying deposit storage");
       if (genesis.isPresent() && !isGenesisDone) {
         this.eth1EventsChannel.onMinGenesisTimeBlock(genesis.get());
         lastDepositBlockNumber = genesis.get().getBlockNumber().bigIntegerValue();
