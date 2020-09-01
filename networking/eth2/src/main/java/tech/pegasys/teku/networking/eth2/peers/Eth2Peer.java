@@ -51,7 +51,6 @@ import tech.pegasys.teku.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
-import tech.pegasys.teku.util.time.TimeProvider;
 
 public class Eth2Peer extends DelegatingPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -75,16 +74,15 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
       final PeerChainValidator peerChainValidator,
-      final TimeProvider timeProvider,
-      final int peerRateLimit,
-      final int peerRequestLimit) {
+      final RateTracker blockRequestTracker,
+      final RateTracker requestTracker) {
     super(peer);
     this.rpcMethods = rpcMethods;
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
     this.peerChainValidator = peerChainValidator;
-    this.blockRequestTracker = new RateTracker(peerRateLimit, 60, timeProvider);
-    this.requestTracker = new RateTracker(peerRequestLimit, 60, timeProvider);
+    this.blockRequestTracker = blockRequestTracker;
+    this.requestTracker = requestTracker;
   }
 
   public void updateStatus(final PeerStatus status) {
