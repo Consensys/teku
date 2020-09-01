@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.signatures;
+package tech.pegasys.teku.data.signingrecord;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -19,18 +19,19 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.core.signatures.record.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ValidatorSigningRecordTest {
+  private static final Bytes32 GENESIS_VALIDATORS_ROOT = Bytes32.fromHexString("0x1234");
 
   @Test
   void shouldRoundTripDefaultValuesToBytes() {
-    final ValidatorSigningRecord record = new ValidatorSigningRecord();
+    final ValidatorSigningRecord record = new ValidatorSigningRecord(GENESIS_VALIDATORS_ROOT);
     final Bytes bytes = record.toBytes();
     final ValidatorSigningRecord result = ValidatorSigningRecord.fromBytes(bytes);
     assertThat(result).isEqualToComparingFieldByField(record);
@@ -39,7 +40,8 @@ class ValidatorSigningRecordTest {
   @Test
   void shouldRoundTripToBytes() {
     final ValidatorSigningRecord record =
-        new ValidatorSigningRecord(UInt64.valueOf(10), UInt64.valueOf(20), UInt64.valueOf(30));
+        new ValidatorSigningRecord(
+            GENESIS_VALIDATORS_ROOT, UInt64.valueOf(10), UInt64.valueOf(20), UInt64.valueOf(30));
     final Bytes bytes = record.toBytes();
     final ValidatorSigningRecord result = ValidatorSigningRecord.fromBytes(bytes);
     assertThat(result).isEqualToComparingFieldByField(record);
@@ -52,19 +54,21 @@ class ValidatorSigningRecordTest {
       final ValidatorSigningRecord input,
       final UInt64 slot,
       final Optional<ValidatorSigningRecord> expectedResult) {
-    assertThat(input.maySignBlock(slot)).isEqualTo(expectedResult);
+    assertThat(input.maySignBlock(GENESIS_VALIDATORS_ROOT, slot)).isEqualTo(expectedResult);
   }
 
   static List<Arguments> blockCases() {
     final ValidatorSigningRecord startingRecord =
-        new ValidatorSigningRecord(UInt64.valueOf(3), UInt64.valueOf(6), UInt64.valueOf(7));
+        new ValidatorSigningRecord(
+            GENESIS_VALIDATORS_ROOT, UInt64.valueOf(3), UInt64.valueOf(6), UInt64.valueOf(7));
     return List.of(
         Arguments.of(
             "noExistingRecord",
-            new ValidatorSigningRecord(),
+            new ValidatorSigningRecord(GENESIS_VALIDATORS_ROOT),
             ONE,
             Optional.of(
                 new ValidatorSigningRecord(
+                    GENESIS_VALIDATORS_ROOT,
                     ONE,
                     ValidatorSigningRecord.NEVER_SIGNED,
                     ValidatorSigningRecord.NEVER_SIGNED))),
@@ -81,16 +85,23 @@ class ValidatorSigningRecordTest {
       final UInt64 sourceEpoch,
       final UInt64 targetEpoch,
       final Optional<ValidatorSigningRecord> expectedResult) {
-    assertThat(input.maySignAttestation(sourceEpoch, targetEpoch)).isEqualTo(expectedResult);
+    assertThat(input.maySignAttestation(GENESIS_VALIDATORS_ROOT, sourceEpoch, targetEpoch))
+        .isEqualTo(expectedResult);
   }
 
   static List<Arguments> attestationCases() {
     final ValidatorSigningRecord startingRecord =
-        new ValidatorSigningRecord(ONE, UInt64.valueOf(4), UInt64.valueOf(6));
+        new ValidatorSigningRecord(
+            GENESIS_VALIDATORS_ROOT, ONE, UInt64.valueOf(4), UInt64.valueOf(6));
     return List.of(
         // No record
         attestationArguments(
-            "NEVER_SIGNED", "NEVER_SIGNED", new ValidatorSigningRecord(), 1, 2, allowed(0, 1, 2)),
+            "NEVER_SIGNED",
+            "NEVER_SIGNED",
+            new ValidatorSigningRecord(GENESIS_VALIDATORS_ROOT),
+            1,
+            2,
+            allowed(0, 1, 2)),
         attestationArguments("=", "=", startingRecord, 4, 6, disallowed()),
         attestationArguments("=", "<", startingRecord, 4, 5, disallowed()),
         attestationArguments("=", ">", startingRecord, 4, 7, allowed(1, 4, 7)),
@@ -110,7 +121,10 @@ class ValidatorSigningRecordTest {
       final int blockSlot, final int sourceEpoch, final int targetEpoch) {
     return Optional.of(
         new ValidatorSigningRecord(
-            UInt64.valueOf(blockSlot), UInt64.valueOf(sourceEpoch), UInt64.valueOf(targetEpoch)));
+            GENESIS_VALIDATORS_ROOT,
+            UInt64.valueOf(blockSlot),
+            UInt64.valueOf(sourceEpoch),
+            UInt64.valueOf(targetEpoch)));
   }
 
   private static Arguments attestationArguments(
