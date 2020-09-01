@@ -36,20 +36,20 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 
 public class DiscV5Service extends Service implements DiscoveryService {
 
-  private final DiscoverySystem discoverySystem;
-
-  private DiscV5Service(final DiscoverySystem discoverySystem) {
-    this.discoverySystem = discoverySystem;
+  public static DiscoveryService create(NetworkConfig p2pConfig) {
+    return new DiscV5Service(p2pConfig);
   }
 
-  public static DiscoveryService create(NetworkConfig p2pConfig) {
+  private final DiscoverySystem discoverySystem;
+
+  private DiscV5Service(NetworkConfig p2pConfig) {
     final Bytes privateKey = Bytes.wrap(p2pConfig.getPrivateKey().raw());
     final String listenAddress = p2pConfig.getNetworkInterface();
     final int listenPort = p2pConfig.getListenPort();
     final String advertisedAddress = p2pConfig.getAdvertisedIp();
     final int advertisedPort = p2pConfig.getAdvertisedPort();
     final List<String> bootnodes = p2pConfig.getBootnodes();
-    final DiscoverySystem discoveryManager =
+    discoverySystem =
         new DiscoverySystemBuilder()
             .listen(listenAddress, listenPort)
             .privateKey(privateKey)
@@ -58,9 +58,14 @@ public class DiscV5Service extends Service implements DiscoveryService {
                 new NodeRecordBuilder()
                     .privateKey(privateKey)
                     .address(advertisedAddress, advertisedPort)
+                    .seq(123)
                     .build())
+            .localNodeRecordListener(this::localNodeRecordUpdated)
             .build();
-    return new DiscV5Service(discoveryManager);
+  }
+
+  private void localNodeRecordUpdated(NodeRecord oldRecord, NodeRecord newRecord) {
+
   }
 
   @Override
