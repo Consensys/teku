@@ -62,25 +62,25 @@ public class PeerChainValidator {
   }
 
   public SafeFuture<Boolean> validate(final Eth2Peer peer, final PeerStatus newStatus) {
-    LOG.trace("Validate chain of peer: {}", peer);
+    LOG.trace("Validate chain of peer: {}", peer.getId());
     validationStartedCounter.inc();
     return checkRemoteChain(peer, newStatus)
         .thenApply(
             isValid -> {
               if (!isValid) {
                 // We are not on the same chain
-                LOG.trace("Disconnecting peer on different chain: {}", peer);
+                LOG.trace("Disconnecting peer on different chain: {}", peer.getId());
                 chainInvalidCounter.inc();
                 peer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK);
               } else {
-                LOG.trace("Validated peer's chain: {}", peer);
+                LOG.trace("Validated peer's chain: {}", peer.getId());
                 chainValidCounter.inc();
               }
               return isValid;
             })
         .exceptionally(
             err -> {
-              LOG.debug("Unable to validate peer's chain, disconnecting: " + peer, err);
+              LOG.debug("Unable to validate peer's chain, disconnecting {}", peer.getId(), err);
               validationErrorCounter.inc();
               peer.disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK);
               return false;
@@ -95,7 +95,7 @@ public class PeerChainValidator {
           "Peer's fork ({}) differs from our fork ({}): {}",
           status.getForkDigest(),
           expectedForkDigest,
-          peer);
+          peer.getId());
       return SafeFuture.completedFuture(false);
     }
     final UInt64 remoteFinalizedEpoch = status.getFinalizedEpoch();
@@ -116,7 +116,7 @@ public class PeerChainValidator {
           "Peer is advertising invalid finalized epoch {} which is at or ahead of our current epoch {}: {}",
           remoteFinalizedEpoch,
           currentEpoch,
-          peer);
+          peer.getId());
       return SafeFuture.completedFuture(false);
     }
 
@@ -214,12 +214,12 @@ public class PeerChainValidator {
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final boolean rootsMatch = Objects.equals(blockRoot, root);
     if (rootsMatch) {
-      LOG.trace("Verified finalized blocks match for peer: {}", peer);
+      LOG.trace("Verified finalized blocks match for peer: {}", peer.getId());
     } else {
       LOG.warn(
           "Detected peer with inconsistent finalized block at slot {} for peer {}.  Block roots {} and {} do not match",
           block.getSlot(),
-          peer,
+          peer.getId(),
           blockRoot,
           root);
     }
