@@ -64,7 +64,7 @@ public class SlashingProtectionExporter {
           && !genesisValidatorsRoot.equals(validatorSigningRecord.getGenesisValidatorsRoot())) {
         log.exit(
             1,
-            "the genesisValidatorsRoot of "
+            "The genesisValidatorsRoot of "
                 + file.getName()
                 + " does not match the expected "
                 + genesisValidatorsRoot.toHexString().toLowerCase());
