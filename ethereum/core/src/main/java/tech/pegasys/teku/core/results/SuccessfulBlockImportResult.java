@@ -14,9 +14,10 @@
 package tech.pegasys.teku.core.results;
 
 import com.google.common.base.MoreObjects;
-import java.util.Optional;
 import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+
+import java.util.Optional;
 
 public class SuccessfulBlockImportResult implements BlockImportResult {
 
@@ -34,6 +35,7 @@ public class SuccessfulBlockImportResult implements BlockImportResult {
     this.blockOnCanonicalChain = blockOnCanonicalChain;
   }
 
+  @Override
   public boolean isBlockOnCanonicalChain() {
     return blockOnCanonicalChain;
   }

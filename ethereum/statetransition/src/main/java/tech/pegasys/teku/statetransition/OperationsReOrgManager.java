@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.statetransition;
 
-import java.util.NavigableMap;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -30,6 +28,9 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
+
+import java.util.NavigableMap;
+import java.util.Optional;
 
 public class OperationsReOrgManager implements ReorgEventChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -102,7 +103,7 @@ public class OperationsReOrgManager implements ReorgEventChannel {
                                     });
                           },
                           () ->
-                              LOG.warn(
+                              LOG.debug(
                                   "Failed to re-queue operations for now non-canonical block: {}",
                                   root)))
               .finish(
@@ -131,7 +132,7 @@ public class OperationsReOrgManager implements ReorgEventChannel {
                             attestationPool.removeAll(blockBody.getAttestations());
                           },
                           () ->
-                              LOG.warn(
+                              LOG.debug(
                                   "Failed to remove operations from pools for now canonical block: {}",
                                   root)))
               .finish(
