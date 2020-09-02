@@ -158,14 +158,11 @@ public class DepositFetcher {
   private DepositsFromBlockEvent createDepositFromBlockEvent(
       final EthBlock.Block block,
       final List<DepositContract.DepositEventEventResponse> groupedDepositEventResponse) {
-    return new DepositsFromBlockEvent(
+    return DepositsFromBlockEvent.create(
         UInt64.valueOf(block.getNumber()),
         Bytes32.fromHexString(block.getHash()),
         UInt64.valueOf(block.getTimestamp()),
-        groupedDepositEventResponse.stream()
-            .map(Deposit::new)
-            .sorted(Comparator.comparing(Deposit::getMerkle_tree_index))
-            .collect(toList()));
+        groupedDepositEventResponse.stream().map(Deposit::new));
   }
 
   private List<SafeFuture<EthBlock.Block>> getListOfEthBlockFutures(

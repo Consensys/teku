@@ -169,11 +169,15 @@ public class SlotProcessor {
     onTickSlotStart = nodeSlot.getValue();
     if (nodeSlot.getValue().equals(compute_start_slot_at_epoch(nodeEpoch))) {
       forkChoice.save();
-      eventLog.epochEvent(
-          nodeEpoch,
-          recentChainData.getStore().getJustifiedCheckpoint().getEpoch(),
-          recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
-          recentChainData.getFinalizedRoot());
+      recentChainData
+          .getFinalizedCheckpoint()
+          .ifPresent(
+              finalizedCheckpoint ->
+                  eventLog.epochEvent(
+                      nodeEpoch,
+                      recentChainData.getStore().getJustifiedCheckpoint().getEpoch(),
+                      finalizedCheckpoint.getEpoch(),
+                      finalizedCheckpoint.getRoot()));
     }
     slotEventsChannelPublisher.onSlot(nodeSlot.getValue());
   }
@@ -185,14 +189,18 @@ public class SlotProcessor {
         .getHeadBlock()
         .ifPresent(
             (head) ->
-                eventLog.slotEvent(
-                    nodeSlot.getValue(),
-                    head.getSlot(),
-                    head.getRoot(),
-                    nodeEpoch,
-                    recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
-                    recentChainData.getFinalizedRoot(),
-                    p2pNetwork.getPeerCount()));
+                recentChainData
+                    .getFinalizedCheckpoint()
+                    .ifPresent(
+                        finalizedCheckpoint ->
+                            eventLog.slotEvent(
+                                nodeSlot.getValue(),
+                                head.getSlot(),
+                                head.getRoot(),
+                                nodeEpoch,
+                                finalizedCheckpoint.getEpoch(),
+                                finalizedCheckpoint.getRoot(),
+                                p2pNetwork.getPeerCount())));
 
     this.eventBus.post(new BroadcastAttestationEvent(nodeSlot.getValue()));
   }

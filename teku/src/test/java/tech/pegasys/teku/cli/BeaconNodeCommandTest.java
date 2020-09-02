@@ -266,7 +266,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   private TekuConfigurationBuilder expectedDefaultConfigurationBuilder() {
     return expectedConfigurationBuilder()
-        .setNetwork(NetworkDefinition.fromCliArg("altona"))
+        .setNetwork(NetworkDefinition.fromCliArg("medalla"))
         .setEth1DepositContractAddress(null)
         .setEth1Endpoint(null)
         .setMetricsCategories(
