@@ -80,7 +80,7 @@ public class ValidatingEth1EventsPublisherTest {
     final DepositsFromBlockEvent event2 = dataStructureUtil.randomDepositsFromBlockEvent(2, 10, 11);
     final DepositsFromBlockEvent event3 = dataStructureUtil.randomDepositsFromBlockEvent(3, 11, 15);
 
-    publisher.setLastestPublishedDeposit(UInt64.valueOf(9));
+    publisher.setLatestPublishedDeposit(UInt64.valueOf(9));
     publisher.onDepositsFromBlock(event2);
     verify(delegate).onDepositsFromBlock(event2);
     publisher.onDepositsFromBlock(event3);
@@ -91,7 +91,7 @@ public class ValidatingEth1EventsPublisherTest {
   public void onDepositsFromBlock_latestIndexSet_missingEvent() {
     final DepositsFromBlockEvent event2 = dataStructureUtil.randomDepositsFromBlockEvent(2, 10, 11);
 
-    publisher.setLastestPublishedDeposit(UInt64.valueOf(8));
+    publisher.setLatestPublishedDeposit(UInt64.valueOf(8));
     assertThatThrownBy(() -> publisher.onDepositsFromBlock(event2))
         .isInstanceOf(InvalidDepositEventsException.class)
         .hasMessageContaining("Expected next deposit at index 9, but got 10");
@@ -101,7 +101,7 @@ public class ValidatingEth1EventsPublisherTest {
   public void onDepositsFromBlock_latestIndexSet_duplicateEvent() {
     final DepositsFromBlockEvent event2 = dataStructureUtil.randomDepositsFromBlockEvent(2, 10, 11);
 
-    publisher.setLastestPublishedDeposit(event2.getLastDepositIndex());
+    publisher.setLatestPublishedDeposit(event2.getLastDepositIndex());
     assertThatThrownBy(() -> publisher.onDepositsFromBlock(event2))
         .isInstanceOf(InvalidDepositEventsException.class)
         .hasMessageContaining("Expected next deposit at index 11, but got 10");
@@ -112,15 +112,15 @@ public class ValidatingEth1EventsPublisherTest {
     final DepositsFromBlockEvent event1 = dataStructureUtil.randomDepositsFromBlockEvent(1, 0, 10);
 
     publisher.onDepositsFromBlock(event1);
-    assertThatThrownBy(() -> publisher.setLastestPublishedDeposit(event1.getLastDepositIndex()))
+    assertThatThrownBy(() -> publisher.setLatestPublishedDeposit(event1.getLastDepositIndex()))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("Latest published deposit is already set");
   }
 
   @Test
   public void setLastestPublishedDeposit_setTwice() {
-    publisher.setLastestPublishedDeposit(UInt64.ZERO);
-    assertThatThrownBy(() -> publisher.setLastestPublishedDeposit(UInt64.ONE))
+    publisher.setLatestPublishedDeposit(UInt64.ZERO);
+    assertThatThrownBy(() -> publisher.setLatestPublishedDeposit(UInt64.ONE))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("Latest published deposit is already set");
   }

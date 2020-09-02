@@ -88,7 +88,7 @@ class Eth1DepositManagerTest {
 
     manager.start();
 
-    verify(eth1EventsChannel, never()).setLastestPublishedDeposit(any());
+    verify(eth1EventsChannel, never()).setLatestPublishedDeposit(any());
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
     // Process blocks up to the current chain head
     inOrder
@@ -115,7 +115,7 @@ class Eth1DepositManagerTest {
 
     manager.start();
 
-    verify(eth1EventsChannel).setLastestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
+    verify(eth1EventsChannel).setLatestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
     // Process blocks up to the current chain head
     inOrder
@@ -144,7 +144,7 @@ class Eth1DepositManagerTest {
 
     manager.start();
 
-    verify(eth1EventsChannel).setLastestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
+    verify(eth1EventsChannel).setLatestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
     // Find min genesis block
     inOrder.verify(minimumGenesisTimeBlockFinder).findMinGenesisTimeBlockInHistory(headBlockNumber);
@@ -220,7 +220,7 @@ class Eth1DepositManagerTest {
 
     manager.start();
 
-    verify(eth1EventsChannel).setLastestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
+    verify(eth1EventsChannel).setLatestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
     // Just start processing blocks from after the last replayed block.
     inOrder
@@ -244,7 +244,7 @@ class Eth1DepositManagerTest {
 
     manager.start();
 
-    verify(eth1EventsChannel).setLastestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
+    verify(eth1EventsChannel).setLatestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
     // Just start processing blocks from after the last replayed block.
     inOrder
@@ -268,7 +268,7 @@ class Eth1DepositManagerTest {
 
     manager.start();
 
-    verify(eth1EventsChannel).setLastestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
+    verify(eth1EventsChannel).setLatestPublishedDeposit(UInt64.valueOf(lastReplayedDepositIndex));
     inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
     // Min genesis not reached so process block by block after the last replayed block
     inOrder.verify(depositProcessingController).switchToBlockByBlockMode();

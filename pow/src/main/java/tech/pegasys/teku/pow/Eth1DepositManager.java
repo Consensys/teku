@@ -62,7 +62,7 @@ public class Eth1DepositManager {
               replayDepositsResult
                   .getLastProcessedDepositIndex()
                   .map(UInt64::valueOf)
-                  .ifPresent(eth1EventsPublisher::setLastestPublishedDeposit);
+                  .ifPresent(eth1EventsPublisher::setLatestPublishedDeposit);
               return getHead()
                   .thenCompose(headBlock -> processStart(headBlock, replayDepositsResult));
             })

@@ -31,7 +31,7 @@ public class ValidatingEth1EventsPublisher extends DelegatingEth1EventsChannel {
     super(delegate);
   }
 
-  public synchronized void setLastestPublishedDeposit(final UInt64 latestPublishedDeposit) {
+  public synchronized void setLatestPublishedDeposit(final UInt64 latestPublishedDeposit) {
     checkNotNull(latestPublishedDeposit);
     if (!lastPublishedDeposit.isEmpty()) {
       throw new IllegalStateException("Latest published deposit is already set");
