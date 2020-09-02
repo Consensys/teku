@@ -138,7 +138,7 @@ public class SlashingProtectionImporter {
     String validatorString = minimalSigningHistory.pubkey.toHexString().substring(2).toLowerCase();
 
     log.display("Importing " + validatorString);
-    Path outputFile = slashingProtectionPath.resolve(validatorString.concat(".yml"));
+    Path outputFile = slashingProtectionPath.resolve(validatorString + ".yml");
     Optional<ValidatorSigningRecord> existingRecord = Optional.empty();
     if (outputFile.toFile().exists()) {
       try (InputStream input = Files.newInputStream(outputFile)) {
