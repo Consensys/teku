@@ -140,7 +140,7 @@ dependencyManagement {
     dependency "org.testcontainers:testcontainers:1.14.3"
     dependency "org.testcontainers:junit-jupiter:1.14.3"
 
-    dependency 'tech.pegasys.discovery:discovery:0.3.9-dev-313949b1'
+    dependency 'tech.pegasys.discovery:discovery:0.3.9-dev-262d1c10'
 
     dependency 'tech.pegasys.signers.internal:bls-keystore:1.0.1'
   }
