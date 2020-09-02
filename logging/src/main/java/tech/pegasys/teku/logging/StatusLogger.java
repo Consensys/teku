@@ -159,7 +159,7 @@ public class StatusLogger {
   public void usingGeneratedP2pPrivateKey(final String keyFile, final boolean justGenerated) {
     if (justGenerated) {
       log.info(
-          "Generated new p2p private key. It was stored and will be reused on next run if no private key option is supplied: "
+          "Generated new p2p private key and storing in: "
               + keyFile);
     } else {
       log.info("Loading generated p2p private key from file: " + keyFile);
