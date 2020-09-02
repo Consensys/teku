@@ -39,7 +39,8 @@ import tech.pegasys.teku.storage.store.KeyValueStore;
 public class DiscV5Service extends Service implements DiscoveryService {
   private static final String SEQ_NO_STORE_KEY = "local-enr-seqno";
 
-  public static DiscoveryService create(NetworkConfig p2pConfig, KeyValueStore<String, Bytes> kvStore) {
+  public static DiscoveryService create(
+      NetworkConfig p2pConfig, KeyValueStore<String, Bytes> kvStore) {
     return new DiscV5Service(p2pConfig, kvStore);
   }
 
