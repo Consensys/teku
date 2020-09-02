@@ -15,7 +15,7 @@ package tech.pegasys.teku.pow.exception;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class InvalidDepositEventsException extends IllegalArgumentException {
+public class InvalidDepositEventsException extends RuntimeException {
 
   public InvalidDepositEventsException(final String s) {
     super(s);
