@@ -176,6 +176,11 @@ public class BlstSignature implements Signature {
     return BlstBLS12381.verify((BlstPublicKey) publicKey, message, this);
   }
 
+  @Override
+  public boolean verify(PublicKey publicKey, Bytes message, Bytes dst) {
+    return BlstBLS12381.verify((BlstPublicKey) publicKey, message, this, dst);
+  }
+
   @SuppressWarnings("ReferenceEquality")
   boolean isInfinity() {
     return this == INFINITY;

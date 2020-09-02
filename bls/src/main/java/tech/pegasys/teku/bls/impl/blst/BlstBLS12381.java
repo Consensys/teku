@@ -66,7 +66,11 @@ public class BlstBLS12381 implements BLS12381 {
   }
 
   public static BlstSignature sign(BlstSecretKey secretKey, Bytes message) {
-    p2 hash = HashToCurve.hashToG2(message);
+    return sign(secretKey, message, HashToCurve.ETH2_DST);
+  }
+
+  public static BlstSignature sign(BlstSecretKey secretKey, Bytes message, Bytes dst) {
+    p2 hash = HashToCurve.hashToG2(message, dst);
     p2 p2Signature = new p2();
     try {
       blst.sign_pk_in_g1(p2Signature, hash, secretKey.getScalarVal());
@@ -81,6 +85,11 @@ public class BlstBLS12381 implements BLS12381 {
   }
 
   public static boolean verify(BlstPublicKey publicKey, Bytes message, BlstSignature signature) {
+    return verify(publicKey, message, signature, HashToCurve.ETH2_DST);
+  }
+
+  public static boolean verify(
+      BlstPublicKey publicKey, Bytes message, BlstSignature signature, Bytes dst) {
     if (publicKey.isInfinity() || signature.isInfinity()) {
       return publicKey.isInfinity() && signature.isInfinity();
     }
@@ -90,7 +99,7 @@ public class BlstBLS12381 implements BLS12381 {
             signature.ec2Point,
             1,
             message.toArrayUnsafe(),
-            HashToCurve.ETH2_DST.toArrayUnsafe(),
+            dst.toArrayUnsafe(),
             new byte[0]);
     return res == BLST_ERROR.BLST_SUCCESS;
   }

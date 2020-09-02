@@ -21,7 +21,6 @@ import static org.mockito.Mockito.mock;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.function.Function;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -62,12 +61,14 @@ class KeystorePasswordOptionsTest {
   @Test
   void passwordCanBeReadFromFileWithMultipleLines(@TempDir final Path tempDir) throws IOException {
     final Path passwordFile = tempDir.resolve("password.txt");
-    Files.writeString(passwordFile, PASSWORD + lineSeparator());
-    Files.writeString(passwordFile, "secondline", StandardOpenOption.APPEND);
+    final String fileContent = PASSWORD + lineSeparator() + "secondline";
+    Files.writeString(passwordFile, fileContent);
 
     final String actualPassword =
         KeystorePasswordOptions.readFromFile(commandLine, passwordFile.toFile());
-    assertThat(actualPassword).isEqualTo(PASSWORD);
+    // Normalisation of the password including stripping lines is done by the signers library
+    // Teku should pass through the file content as-is.
+    assertThat(actualPassword).isEqualTo(fileContent);
   }
 
   @Test
