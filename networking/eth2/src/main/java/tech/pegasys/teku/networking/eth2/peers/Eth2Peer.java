@@ -20,7 +20,6 @@ import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -52,7 +51,6 @@ import tech.pegasys.teku.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
-import tech.pegasys.teku.util.time.TimeProvider;
 
 public class Eth2Peer extends DelegatingPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -60,11 +58,11 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   private final BeaconChainMethods rpcMethods;
   private final StatusMessageFactory statusMessageFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
+  private final PeerChainValidator peerChainValidator;
   private volatile Optional<PeerStatus> remoteStatus = Optional.empty();
   private volatile Optional<UInt64> remoteMetadataSeqNumber = Optional.empty();
   private volatile Optional<Bitvector> remoteAttSubnets = Optional.empty();
   private final SafeFuture<PeerStatus> initialStatus = new SafeFuture<>();
-  private final AtomicBoolean chainValidated = new AtomicBoolean(false);
   private final AtomicInteger outstandingRequests = new AtomicInteger(0);
   private final AtomicInteger outstandingPings = new AtomicInteger();
   private final RateTracker blockRequestTracker;
@@ -75,20 +73,32 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
       final BeaconChainMethods rpcMethods,
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
-      final TimeProvider timeProvider,
-      final int peerRateLimit,
-      final int peerRequestLimit) {
+      final PeerChainValidator peerChainValidator,
+      final RateTracker blockRequestTracker,
+      final RateTracker requestTracker) {
     super(peer);
     this.rpcMethods = rpcMethods;
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
-    this.blockRequestTracker = new RateTracker(peerRateLimit, 60, timeProvider);
-    this.requestTracker = new RateTracker(peerRequestLimit, 60, timeProvider);
+    this.peerChainValidator = peerChainValidator;
+    this.blockRequestTracker = blockRequestTracker;
+    this.requestTracker = requestTracker;
   }
 
   public void updateStatus(final PeerStatus status) {
-    remoteStatus = Optional.of(status);
-    initialStatus.complete(status);
+    peerChainValidator
+        .validate(this, status)
+        .finish(
+            valid -> {
+              if (valid) {
+                remoteStatus = Optional.of(status);
+                initialStatus.complete(status);
+              } // Otherwise will have already been disconnected.
+            },
+            error -> {
+              LOG.error("Failed to validate updated peer status", error);
+              disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK);
+            });
   }
 
   public void updateMetadataSeqNumber(final UInt64 seqNumber) {
@@ -130,14 +140,6 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
 
   public boolean hasStatus() {
     return remoteStatus.isPresent();
-  }
-
-  boolean isChainValidated() {
-    return chainValidated.get();
-  }
-
-  void markChainValidated() {
-    chainValidated.set(true);
   }
 
   public SafeFuture<PeerStatus> sendStatus() {
