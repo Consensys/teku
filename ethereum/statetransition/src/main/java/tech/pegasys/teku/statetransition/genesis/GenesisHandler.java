@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -69,6 +70,7 @@ public class GenesisHandler implements Eth1EventsChannel {
 
   private void processNewData(
       Bytes32 blockHash, UInt64 timestamp, List<DepositWithIndex> deposits) {
+    validateDeposits(deposits);
     final int previousValidatorRequirementPercent =
         roundPercent(genesisGenerator.getActiveValidatorCount());
     genesisGenerator.updateCandidateState(blockHash, timestamp, deposits);
@@ -80,6 +82,19 @@ public class GenesisHandler implements Eth1EventsChannel {
     } else if (roundPercent(newActiveValidatorCount) > previousValidatorRequirementPercent) {
       STATUS_LOG.genesisValidatorsActivated(
           newActiveValidatorCount, Constants.MIN_GENESIS_ACTIVE_VALIDATOR_COUNT);
+    }
+  }
+
+  private void validateDeposits(final List<DepositWithIndex> deposits) {
+    if (deposits.isEmpty()) {
+      return;
+    }
+
+    final UInt64 expectedIndex = UInt64.valueOf(genesisGenerator.getDepositCount());
+    final DepositWithIndex firstDeposit = deposits.get(0);
+    if (!firstDeposit.getIndex().equals(expectedIndex)) {
+      throw InvalidDepositEventsException.expectedDepositAtIndex(
+          expectedIndex, firstDeposit.getIndex());
     }
   }
 

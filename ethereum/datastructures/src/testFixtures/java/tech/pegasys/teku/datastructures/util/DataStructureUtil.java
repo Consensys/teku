@@ -449,16 +449,19 @@ public final class DataStructureUtil {
   }
 
   public DepositsFromBlockEvent randomDepositsFromBlockEvent(
-      final long blockIndex, long depositCount) {
-    return randomDepositsFromBlockEvent(UInt64.valueOf(blockIndex), depositCount);
+      final long blockIndex, long depositIndexStartInclusive, long depositIndexEndExclusive) {
+    return randomDepositsFromBlockEvent(
+        UInt64.valueOf(blockIndex), depositIndexStartInclusive, depositIndexEndExclusive);
   }
 
-  public DepositsFromBlockEvent randomDepositsFromBlockEvent(UInt64 blockIndex, long depositCount) {
+  public DepositsFromBlockEvent randomDepositsFromBlockEvent(
+      UInt64 blockIndex, long depositIndexStartInclusive, long depositIndexEndExclusive) {
     List<tech.pegasys.teku.pow.event.Deposit> deposits = new ArrayList<>();
-    for (long i = 0; i < depositCount; i++) {
+    for (long i = depositIndexStartInclusive; i < depositIndexEndExclusive; i++) {
       deposits.add(randomDepositEvent(UInt64.valueOf(i)));
     }
-    return new DepositsFromBlockEvent(blockIndex, randomBytes32(), randomUInt64(), deposits);
+    return DepositsFromBlockEvent.create(
+        blockIndex, randomBytes32(), randomUInt64(), deposits.stream());
   }
 
   public MinGenesisTimeBlockEvent randomMinGenesisTimeBlockEvent(final long blockIndex) {
@@ -476,6 +479,10 @@ public final class DataStructureUtil {
     return new Deposit(
         SSZVector.createMutable(Constants.DEPOSIT_CONTRACT_TREE_DEPTH + 1, randomBytes32()),
         randomDepositData());
+  }
+
+  public tech.pegasys.teku.pow.event.Deposit randomDepositEvent(long index) {
+    return randomDepositEvent(UInt64.valueOf(index));
   }
 
   public tech.pegasys.teku.pow.event.Deposit randomDepositEvent(UInt64 index) {
