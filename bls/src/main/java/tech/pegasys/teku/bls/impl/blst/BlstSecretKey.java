@@ -72,6 +72,14 @@ public class BlstSecretKey implements SecretKey {
   }
 
   @Override
+  public Signature sign(Bytes message, Bytes dst) {
+    if (isZero()) {
+      return BlstSignature.INFINITY;
+    }
+    return BlstBLS12381.sign(this, message, dst);
+  }
+
+  @Override
   public void destroy() {
     blst.scalar_from_bendian(getScalarVal(), Bytes32.ZERO.toArrayUnsafe());
     destroyed = true;
