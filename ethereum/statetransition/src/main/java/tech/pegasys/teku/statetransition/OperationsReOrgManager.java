@@ -61,7 +61,7 @@ public class OperationsReOrgManager implements ReorgEventChannel {
   public void reorgOccurred(
       Bytes32 bestBlockRoot, UInt64 bestSlot, Bytes32 oldBestBlockRoot, UInt64 commonAncestorSlot) {
     NavigableMap<UInt64, Bytes32> notCanonicalBlockRoots =
-        recentChainData.getAncestorRootsForRoot(commonAncestorSlot, oldBestBlockRoot);
+        recentChainData.getEveryRootOnChainTillSlot(commonAncestorSlot, oldBestBlockRoot);
     notCanonicalBlockRoots.forEach(
         (__, root) -> {
           SafeFuture<Optional<BeaconBlock>> maybeBlockFuture =
@@ -115,7 +115,7 @@ public class OperationsReOrgManager implements ReorgEventChannel {
         });
 
     NavigableMap<UInt64, Bytes32> nowCanonicalBlockRoots =
-        recentChainData.getAncestorRootsForRoot(commonAncestorSlot, bestBlockRoot);
+        recentChainData.getEveryRootOnChainTillSlot(commonAncestorSlot, bestBlockRoot);
     nowCanonicalBlockRoots.forEach(
         (__, root) -> {
           SafeFuture<Optional<BeaconBlock>> maybeBlockFuture =
