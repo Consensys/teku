@@ -65,14 +65,15 @@ public class SlashingProtectionImporter {
                 + " does not appear to have metadata information, and cannot be loaded.");
         return; // Testing mocks log.exit
       }
-      if (!metadata.interchangeFormatVersion.equals(INTERCHANGE_VERSION)) {
+      if (!INTERCHANGE_VERSION.equals(metadata.interchangeFormatVersion)) {
         log.exit(
             1,
             "Import file "
                 + inputFile.toString()
-                + " is not format version "
-                + INTERCHANGE_VERSION.toString()
-                + ", cannot continue.");
+                + " has unsupported format version "
+                + metadata.interchangeFormatVersion
+                + ". Required version is "
+                + INTERCHANGE_VERSION);
         return; // Testing mocks log.exit
       }
 
@@ -132,7 +133,7 @@ public class SlashingProtectionImporter {
   }
 
   private void updateLocalRecord(final MinimalSigningHistory minimalSigningHistory) {
-    String validatorString = minimalSigningHistory.pubkey.toHexString().substring(2).toLowerCase();
+    String validatorString = minimalSigningHistory.pubkey.toUnprefixedHexString().toLowerCase();
 
     log.display("Importing " + validatorString);
     Path outputFile = slashingProtectionPath.resolve(validatorString + ".yml");
