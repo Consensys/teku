@@ -28,12 +28,12 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.PublicKeyException;
-import tech.pegasys.teku.data.files.SyncDataAccessor;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.data.slashinginterchange.InterchangeFormat;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.data.slashinginterchange.MinimalSigningHistory;
 import tech.pegasys.teku.data.slashinginterchange.MinimalSlashingProtectionInterchangeFormat;
+import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.logging.SubCommandLogger;
 import tech.pegasys.teku.provider.JsonProvider;
 

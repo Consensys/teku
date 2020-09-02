@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.services;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -38,8 +37,7 @@ public class ServiceController extends Service {
     if (config.getConfig().isRemoteValidatorApiEnabled()) {
       services.add(new RemoteValidatorService(config));
     } else {
-      final Path slashingProtectionPath = config.getConfig().getValidatorsSlashingProtectionPath();
-      services.add(ValidatorClientService.create(config, slashingProtectionPath));
+      services.add(ValidatorClientService.create(config));
     }
     services.add(new TimerService(config));
     if (!config.getConfig().isInteropEnabled() && config.getConfig().isEth1Enabled()) {
