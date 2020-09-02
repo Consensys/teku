@@ -93,7 +93,7 @@ public class SlashingProtectionImporter {
       String cause = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
       log.exit(1, "Failed to load data from " + inputFile.getName() + ". " + cause);
     } catch (JsonParseException e) {
-      String cause = e.getCause() != null ? e.getCause().getMessage() : Strings.EMPTY;
+      String cause = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
       log.exit(1, "Json does not appear valid in file " + inputFile.getName() + ". " + cause);
     }
   }
