@@ -98,13 +98,13 @@ public final class TekuDefaultExceptionHandler
       LOG.debug("Shutting down", exception);
     } else if (isExpectedNettyError(exception)) {
       LOG.debug("Channel unexpectedly closed", exception);
-    } else if (isSpecFailure(exception)) {
-      statusLog.specificationFailure(subscriberDescription, exception);
     } else if (Throwables.getRootCause(exception) instanceof RejectedExecutionException) {
       LOG.error(
           "Unexpected rejected execution due to full task queue in {}", subscriberDescription);
     } else if (Throwables.getRootCause(exception) instanceof InvalidDepositEventsException) {
       statusLog.eth1DepositEventsFailure(exception);
+    } else if (isSpecFailure(exception)) {
+      statusLog.specificationFailure(subscriberDescription, exception);
     } else {
       statusLog.unexpectedFailure(subscriberDescription, exception);
     }
