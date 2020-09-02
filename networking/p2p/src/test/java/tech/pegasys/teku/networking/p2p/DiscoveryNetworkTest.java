@@ -56,6 +56,7 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.storage.store.MemKeyValueStore;
 
 class DiscoveryNetworkTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -157,6 +158,7 @@ class DiscoveryNetworkTest {
         DiscoveryNetwork.create(
             new NoOpMetricsSystem(),
             DelayedExecutorAsyncRunner.create(),
+            new MemKeyValueStore<>(),
             p2pNetwork,
             new SimplePeerSelectionStrategy(networkConfig.getTargetPeerRange()),
             networkConfig);

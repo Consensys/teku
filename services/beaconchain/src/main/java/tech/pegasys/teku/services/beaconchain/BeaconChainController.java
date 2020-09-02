@@ -26,6 +26,7 @@ import io.libp2p.core.crypto.PrivKey;
 import java.io.IOException;
 import java.net.BindException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Optional;
@@ -81,6 +82,8 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
+import tech.pegasys.teku.storage.store.FileKeyValueStore;
+import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.sync.BlockManager;
@@ -414,6 +417,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
       p2pConfig.validateListenPortAvailable();
       final Eth2Config eth2Config = new Eth2Config(config.isP2pSnappyEnabled());
+      final KeyValueStore<String, Bytes> keyValueStore =
+          new FileKeyValueStore(Path.of(config.getDataPath()));
 
       this.p2pNetwork =
           Eth2NetworkBuilder.create()
@@ -443,6 +448,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .metricsSystem(metricsSystem)
               .timeProvider(timeProvider)
               .asyncRunner(networkAsyncRunner)
+              .keyValueStore(keyValueStore)
               .peerRateLimit(config.getPeerRateLimit())
               .peerRequestLimit(config.getPeerRequestLimit())
               .build();

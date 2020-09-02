@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt64;
 import org.ethereum.beacon.discovery.DiscoverySystem;
 import org.ethereum.beacon.discovery.DiscoverySystemBuilder;
 import org.ethereum.beacon.discovery.schema.EnrField;
@@ -33,22 +34,26 @@ import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrUtil;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.storage.store.KeyValueStore;
 
 public class DiscV5Service extends Service implements DiscoveryService {
+  private static final String SEQ_NO_STORE_KEY = "local-enr-seqno";
 
-  public static DiscoveryService create(NetworkConfig p2pConfig) {
-    return new DiscV5Service(p2pConfig);
+  public static DiscoveryService create(NetworkConfig p2pConfig, KeyValueStore<String, Bytes> kvStore) {
+    return new DiscV5Service(p2pConfig, kvStore);
   }
 
   private final DiscoverySystem discoverySystem;
+  private final KeyValueStore<String, Bytes> kvStore;
 
-  private DiscV5Service(NetworkConfig p2pConfig) {
+  private DiscV5Service(NetworkConfig p2pConfig, KeyValueStore<String, Bytes> kvStore) {
     final Bytes privateKey = Bytes.wrap(p2pConfig.getPrivateKey().raw());
     final String listenAddress = p2pConfig.getNetworkInterface();
     final int listenPort = p2pConfig.getListenPort();
     final String advertisedAddress = p2pConfig.getAdvertisedIp();
     final int advertisedPort = p2pConfig.getAdvertisedPort();
     final List<String> bootnodes = p2pConfig.getBootnodes();
+    final UInt64 seqNo = kvStore.get(SEQ_NO_STORE_KEY).map(UInt64::fromBytes).orElse(UInt64.ZERO);
     discoverySystem =
         new DiscoverySystemBuilder()
             .listen(listenAddress, listenPort)
@@ -58,14 +63,15 @@ public class DiscV5Service extends Service implements DiscoveryService {
                 new NodeRecordBuilder()
                     .privateKey(privateKey)
                     .address(advertisedAddress, advertisedPort)
-                    .seq(123)
+                    .seq(seqNo)
                     .build())
             .localNodeRecordListener(this::localNodeRecordUpdated)
             .build();
+    this.kvStore = kvStore;
   }
 
   private void localNodeRecordUpdated(NodeRecord oldRecord, NodeRecord newRecord) {
-
+    kvStore.put(SEQ_NO_STORE_KEY, newRecord.getSeq().toBytes());
   }
 
   @Override
