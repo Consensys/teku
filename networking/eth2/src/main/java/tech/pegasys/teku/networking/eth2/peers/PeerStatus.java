@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
@@ -24,8 +22,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class PeerStatus {
-  private static final PeerStatus PREGENESIS_STATUS = createPreGenesisStatus();
-
   private final Bytes4 forkDigest;
   private final Checkpoint finalizedCheckpoint;
   private final Bytes32 headRoot;
@@ -38,15 +34,6 @@ public class PeerStatus {
         message.getFinalizedEpoch(),
         message.getHeadRoot().copy(),
         message.getHeadSlot());
-  }
-
-  public static PeerStatus createPreGenesisStatus() {
-    return fromStatusMessage(StatusMessage.createPreGenesisStatus());
-  }
-
-  public static boolean isPreGenesisStatus(final PeerStatus status) {
-    checkNotNull(status);
-    return Objects.equals(status, PREGENESIS_STATUS);
   }
 
   PeerStatus(
