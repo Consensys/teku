@@ -3,6 +3,7 @@
 # Copy of the minimal preset but
 # SECONDS_PER_SLOT is 1 instead of 6 and
 # SLOTS_PER_EPOCH is 4 instead of 8
+# MIN_GENESIS_ACTIVE_VALIDATOR_COUNT is 4 instead of 64
 
 
 # Misc
@@ -21,7 +22,7 @@ CHURN_LIMIT_QUOTIENT: 65536
 # [customized] Faster, but unsecure.
 SHUFFLE_ROUND_COUNT: 10
 # [customized]
-MIN_GENESIS_ACTIVE_VALIDATOR_COUNT: 64
+MIN_GENESIS_ACTIVE_VALIDATOR_COUNT: 4
 # Jan 3, 2020
 MIN_GENESIS_TIME: 1578009600
 # 4

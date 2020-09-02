@@ -54,7 +54,7 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
 
   @Override
   public SafeFuture<ValidationResult> apply(final MessageApi message) {
-    final int messageSize = message.getData().capacity();
+    final int messageSize = message.getData().readableBytes();
     if (messageSize > GOSSIP_MAX_SIZE) {
       LOG.trace(
           "Rejecting gossip message of length {} which exceeds maximum size of {}",

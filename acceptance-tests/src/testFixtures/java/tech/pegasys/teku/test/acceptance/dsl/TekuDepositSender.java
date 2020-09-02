@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import static java.lang.Boolean.FALSE;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,22 +24,24 @@ import tech.pegasys.teku.infrastructure.async.Waiter;
 
 public class TekuDepositSender extends Node {
   private static final Logger LOG = LogManager.getLogger();
-  private static final String ENCRYPTED_KEYSTORE_ENABLED = FALSE.toString();
 
   public TekuDepositSender(final Network network) {
     super(network, TekuNode.TEKU_DOCKER_IMAGE, LOG);
   }
 
-  public String sendValidatorDeposits(final BesuNode eth1Node, final int numberOfValidators) {
+  public void sendValidatorDeposits(final BesuNode eth1Node, final int numberOfValidators) {
+    container.setEnv(List.of("KEYSTORE_PASSWORD=p4ssword"));
     container.setCommand(
         "validator",
         "generate-and-register",
         "--network",
-        "minimal",
+        "swift",
         "--verbose-output-enabled",
-        "false",
-        "--encrypted-keystore-enabled",
-        ENCRYPTED_KEYSTORE_ENABLED,
+        "true",
+        "--encrypted-keystore-validator-password-env",
+        "KEYSTORE_PASSWORD",
+        "--encrypted-keystore-withdrawal-password-env",
+        "KEYSTORE_PASSWORD",
         "--eth1-deposit-contract-address",
         eth1Node.getDepositContractAddress(),
         "--number-of-validators",
@@ -48,12 +50,9 @@ public class TekuDepositSender extends Node {
         eth1Node.getRichBenefactorKey(),
         "--eth1-endpoint",
         eth1Node.getInternalJsonRpcUrl());
-    final StringBuilder validatorKeys = new StringBuilder();
-    container.withLogConsumer(outputFrame -> validatorKeys.append(outputFrame.getUtf8String()));
     container.start();
     // Deposit sender waits for up to 2 minutes for all transactions to process
     Waiter.waitFor(() -> assertThat(container.isRunning()).isFalse(), 2, TimeUnit.MINUTES);
     container.stop();
-    return validatorKeys.toString();
   }
 }
