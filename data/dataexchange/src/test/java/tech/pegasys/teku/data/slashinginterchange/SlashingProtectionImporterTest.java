@@ -46,7 +46,7 @@ public class SlashingProtectionImporterTest {
   public void shouldFailWithVersionCheckFailure() throws URISyntaxException, IOException {
     final String errorString = loadAndGetErrorText("oldMetadata.json");
     assertThat(errorString)
-        .contains("is not format version " + Metadata.INTERCHANGE_VERSION.toString());
+        .contains("Required version is " + Metadata.INTERCHANGE_VERSION.toString());
   }
 
   @Test
