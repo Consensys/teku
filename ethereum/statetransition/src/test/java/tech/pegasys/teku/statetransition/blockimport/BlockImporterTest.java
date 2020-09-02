@@ -77,6 +77,7 @@ public class BlockImporterTest {
   @AfterAll
   public static void dispose() {
     BeaconStateUtil.BLS_VERIFY_DEPOSIT = true;
+    Constants.setConstants("minimal");
   }
 
   @BeforeEach
