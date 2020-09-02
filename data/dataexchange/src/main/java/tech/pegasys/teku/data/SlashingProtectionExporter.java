@@ -54,9 +54,9 @@ public class SlashingProtectionExporter {
   }
 
   private void readSlashProtectionFile(final File file) {
-    try (InputStream input = Files.newInputStream(file.toPath())) {
+    try {
       ValidatorSigningRecord validatorSigningRecord =
-          ValidatorSigningRecord.fromBytes(Bytes.of(input.readAllBytes()));
+          ValidatorSigningRecord.fromBytes(Bytes.of(Files.readAllBytes(file.toPath)));
       if (genesisValidatorsRoot == null
           && validatorSigningRecord.getGenesisValidatorsRoot() != null) {
         this.genesisValidatorsRoot = validatorSigningRecord.getGenesisValidatorsRoot();
