@@ -46,6 +46,14 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
   }
 
   @Test
+  public void shouldFinalize() throws Exception {
+    final TekuNode node1 = createTekuNode();
+    node1.start();
+    node1.waitForNewFinalization();
+    node1.stop();
+  }
+
+  @Test
   public void shouldStartChainFromDepositContract() throws Exception {
     final BesuNode eth1Node = createBesuNode();
     eth1Node.start();
@@ -53,7 +61,7 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     final TekuNode tekuNode = createTekuNode(config -> config.withDepositsFrom(eth1Node));
     tekuNode.start();
 
-    createTekuDepositSender().sendValidatorDeposits(eth1Node, 64);
+    createTekuDepositSender().sendValidatorDeposits(eth1Node, 4);
     tekuNode.waitForGenesis();
   }
 }

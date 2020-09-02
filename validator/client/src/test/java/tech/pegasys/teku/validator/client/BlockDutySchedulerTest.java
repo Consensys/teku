@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -136,5 +137,37 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
 
     epoch0Duties.complete(Optional.of(emptyList()));
     verify(scheduledDuties).produceBlock(ZERO);
+  }
+
+  @Test
+  public void shouldRefetchDutiesAfterReorg() {
+    final UInt64 currentEpoch = UInt64.valueOf(5);
+    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+    final UInt64 commonAncestorEpoch = currentEpoch.minus(1);
+    final UInt64 commonAncestorSlot = compute_start_slot_at_epoch(commonAncestorEpoch);
+    when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
+    dutyScheduler.onSlot(currentSlot);
+
+    verify(validatorApiChannel).getDuties(currentEpoch, VALIDATOR_KEYS);
+
+    dutyScheduler.onChainReorg(currentSlot, commonAncestorSlot);
+
+    verify(validatorApiChannel, times(2)).getDuties(currentEpoch, VALIDATOR_KEYS);
+    verifyNoMoreInteractions(validatorApiChannel);
+  }
+
+  @Test
+  public void shouldNotRefetchDutiesWhenCommonAncestorInCurrentEpoch() {
+    final UInt64 currentEpoch = UInt64.valueOf(5);
+    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+    final UInt64 commonAncestorSlot = compute_start_slot_at_epoch(currentEpoch);
+    when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
+    dutyScheduler.onSlot(currentSlot);
+
+    verify(validatorApiChannel).getDuties(currentEpoch, VALIDATOR_KEYS);
+
+    dutyScheduler.onChainReorg(currentSlot, commonAncestorSlot);
+
+    verifyNoMoreInteractions(validatorApiChannel);
   }
 }

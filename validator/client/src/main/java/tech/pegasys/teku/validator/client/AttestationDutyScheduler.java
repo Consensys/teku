@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
@@ -27,7 +25,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
       final MetricsSystem metricsSystem,
       final DutyLoader epochDutiesScheduler,
       final StableSubnetSubscriber stableSubnetSubscriber) {
-    super(epochDutiesScheduler);
+    super(epochDutiesScheduler, 1);
 
     this.stableSubnetSubscriber = stableSubnetSubscriber;
     metricsSystem.createIntegerGauge(
@@ -41,12 +39,6 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
   public void onSlot(final UInt64 slot) {
     super.onSlot(slot);
     stableSubnetSubscriber.onSlot(slot);
-  }
-
-  @Override
-  protected void recalculateDuties(final UInt64 epochNumber) {
-    super.recalculateDuties(epochNumber);
-    super.recalculateDuties(epochNumber.plus(ONE));
   }
 
   @Override

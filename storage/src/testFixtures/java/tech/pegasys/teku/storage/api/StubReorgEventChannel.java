@@ -19,5 +19,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class StubReorgEventChannel implements ReorgEventChannel {
 
   @Override
-  public void reorgOccurred(final Bytes32 bestBlockRoot, final UInt64 bestSlot) {}
+  public void reorgOccurred(
+      final Bytes32 bestBlockRoot, final UInt64 bestSlot, final UInt64 commonAncestorSlot) {}
 }
