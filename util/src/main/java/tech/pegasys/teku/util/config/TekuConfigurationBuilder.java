@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.util.config;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -90,6 +91,7 @@ public class TekuConfigurationBuilder {
   private int remoteValidatorApiMaxSubscribers;
   private boolean remoteValidatorApiEnabled;
   private Bytes32 graffiti;
+  private Path validatorsSlashingProtectionPath;
 
   public TekuConfigurationBuilder setConstants(final String constants) {
     this.constants = constants;
@@ -358,6 +360,7 @@ public class TekuConfigurationBuilder {
 
   public TekuConfigurationBuilder setDataPath(final String dataPath) {
     this.dataPath = dataPath;
+    this.setValidatorsSlashingProtectionPath(Path.of(dataPath, "validators", "slashingprotection"));
     return this;
   }
 
@@ -440,6 +443,12 @@ public class TekuConfigurationBuilder {
 
   public TekuConfigurationBuilder setNetwork(final NetworkDefinition network) {
     this.network = network;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setValidatorsSlashingProtectionPath(
+      final Path validatorsSlashingProtectionPath) {
+    this.validatorsSlashingProtectionPath = validatorsSlashingProtectionPath;
     return this;
   }
 
@@ -531,7 +540,8 @@ public class TekuConfigurationBuilder {
         remoteValidatorApiPort,
         remoteValidatorApiMaxSubscribers,
         remoteValidatorApiEnabled,
-        graffiti);
+        graffiti,
+        validatorsSlashingProtectionPath);
   }
 
   private <T> T getOrDefault(final T explicitValue, final Supplier<T> predefinedNetworkValue) {

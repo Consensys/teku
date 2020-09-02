@@ -11,25 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.cli.options;
+package tech.pegasys.teku.data.slashinginterchange;
 
-import picocli.CommandLine.Option;
-import tech.pegasys.teku.util.cli.VersionProvider;
-
-public class DataOptions {
-
-  @Option(
-      names = {"--data-path"},
-      paramLabel = "<FILENAME>",
-      description = "Path to output data files",
-      arity = "1")
-  private String dataPath = defaultDataPath();
-
-  public String getDataPath() {
-    return dataPath;
-  }
-
-  private static String defaultDataPath() {
-    return VersionProvider.defaultStoragePath() + System.getProperty("file.separator") + "data";
-  }
+public enum InterchangeFormat {
+  complete,
+  minimal
 }

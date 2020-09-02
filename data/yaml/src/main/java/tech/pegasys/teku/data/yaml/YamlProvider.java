@@ -16,7 +16,6 @@ package tech.pegasys.teku.data.yaml;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -58,14 +57,6 @@ public class YamlProvider {
     objectMapper.registerModule(module).writer(new DefaultPrettyPrinter());
   }
 
-  public <T> String objectToYaml(T object) throws JsonProcessingException {
-    return objectMapper.writeValueAsString(object);
-  }
-
-  public <T> T yamlToObject(String json, Class<T> clazz) throws JsonProcessingException {
-    return objectMapper.readValue(json, clazz);
-  }
-
   public <T> T read(InputStream data, Class<T> clazz) throws IOException {
     return objectMapper.readValue(data, clazz);
   }
@@ -83,14 +74,10 @@ public class YamlProvider {
       objectMapper.writerWithDefaultPrettyPrinter().writeValue(out, object);
       return Bytes.wrap(out.toByteArray());
     } catch (JsonGenerationException | JsonMappingException e) {
-      throw new IllegalStateException("Failed to serialize ValidatorSigningRecord", e);
+      throw new IllegalStateException("Failed to serialize object", e);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
-  }
-
-  public ObjectMapper getObjectMapper() {
-    return objectMapper;
   }
 
   public static class UInt64Deserializer extends JsonDeserializer<UInt64> {
