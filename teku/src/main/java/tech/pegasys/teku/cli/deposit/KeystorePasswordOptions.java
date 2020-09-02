@@ -15,11 +15,11 @@ package tech.pegasys.teku.cli.deposit;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import com.google.common.io.Files;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.function.Function;
 import picocli.CommandLine;
 import picocli.CommandLine.ParameterException;
@@ -31,8 +31,7 @@ public interface KeystorePasswordOptions {
 
   static String readFromFile(final CommandLine commandLine, final File passwordFile) {
     try {
-      final String password =
-          Files.asCharSource(passwordFile, StandardCharsets.UTF_8).readFirstLine();
+      final String password = Files.readString(passwordFile.toPath(), StandardCharsets.UTF_8);
       if (isBlank(password)) {
         throw new ParameterException(
             commandLine, "Error: Empty password from file: " + passwordFile);
