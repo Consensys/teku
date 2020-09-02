@@ -66,7 +66,7 @@ public class BLSPubKey {
     try {
       return new BLSPubKey(BLSPublicKey.fromBytesCompressedValidate(Bytes48.fromHexString(value)));
     } catch (IllegalArgumentException e) {
-      throw new PublicKeyException("Public key is invalid.", e);
+      throw new PublicKeyException("Public key " + value + " is invalid: " + e.getMessage(), e);
     }
   }
 

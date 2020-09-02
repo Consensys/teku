@@ -1,0 +1,15 @@
+{
+  "metadata": {
+    "interchange_format": "minimal",
+    "interchange_format_version": "3",
+    "genesis_validators_root": "0x0000000000000000000000000000000000000000000000000000000000123456"
+  },
+  "data": [
+    {
+      "pubkey": "0xb845089a1457f811bfc000588fbb4e713669be8ce060ea6be3c6ece09afc3794106c91ca73acda5e5457122d58723bed",
+      "last_signed_block_slot": "89765",
+      "last_signed_attestation_source_epoch": "2990",
+      "last_signed_attestation_target_epoch": "3007"
+    }
+  ]
+}

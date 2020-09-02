@@ -64,6 +64,10 @@ public class JsonProvider {
     return objectMapper.writeValueAsString(object);
   }
 
+  public <T> String objectToPrettyJSON(T object) throws JsonProcessingException {
+    return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
+  }
+
   public <T> T jsonToObject(String json, Class<T> clazz) throws JsonProcessingException {
     return objectMapper.readValue(json, clazz);
   }
