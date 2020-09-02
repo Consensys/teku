@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.signatures;
+package tech.pegasys.teku.data.files;
 
 import java.io.File;
 import java.io.IOException;

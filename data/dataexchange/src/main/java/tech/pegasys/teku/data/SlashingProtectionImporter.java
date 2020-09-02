@@ -21,16 +21,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.data.files.SyncDataAccessor;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.data.slashinginterchange.CompleteSigningHistory;
 import tech.pegasys.teku.data.slashinginterchange.InterchangeFormat;
@@ -48,6 +45,7 @@ public class SlashingProtectionImporter {
   private List<MinimalSigningHistory> data = new ArrayList<>();
   private Metadata metadata;
   private final SubCommandLogger log;
+  private final SyncDataAccessor syncDataAccessor = new SyncDataAccessor();
 
   public SlashingProtectionImporter(final SubCommandLogger log) {
     this.log = log;
@@ -141,8 +139,7 @@ public class SlashingProtectionImporter {
     Optional<ValidatorSigningRecord> existingRecord = Optional.empty();
     if (outputFile.toFile().exists()) {
       try {
-        existingRecord =
-            Optional.ofNullable(ValidatorSigningRecord.fromBytes(Bytes.of(Files.readAllBytes(outputFile)));
+        existingRecord = syncDataAccessor.read(outputFile).map(ValidatorSigningRecord::fromBytes);
       } catch (IOException e) {
         log.exit(1, "Failed to read existing file: " + outputFile.toString());
       }
@@ -157,12 +154,12 @@ public class SlashingProtectionImporter {
               + " has a different validators signing root to the data being imported");
     }
 
-    try (OutputStream out = Files.newOutputStream(outputFile)) {
-      out.write(
+    try {
+      syncDataAccessor.syncedWrite(
+          outputFile,
           minimalSigningHistory
               .toValidatorSigningRecord(existingRecord, metadata.genesisValidatorsRoot)
-              .toBytes()
-              .toArray());
+              .toBytes());
     } catch (IOException e) {
       log.exit(1, "Validator " + minimalSigningHistory.pubkey.toHexString() + " was not updated.");
     }

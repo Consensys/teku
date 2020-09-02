@@ -15,17 +15,20 @@ package tech.pegasys.teku.data;
 
 import static tech.pegasys.teku.data.slashinginterchange.Metadata.INTERCHANGE_VERSION;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.PublicKeyException;
+import tech.pegasys.teku.data.files.SyncDataAccessor;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.data.slashinginterchange.InterchangeFormat;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
@@ -38,7 +41,7 @@ public class SlashingProtectionExporter {
   private final JsonProvider jsonProvider = new JsonProvider();
   private final List<MinimalSigningHistory> minimalSigningHistoryList = new ArrayList<>();
   private Bytes32 genesisValidatorsRoot = null;
-
+  private final SyncDataAccessor syncDataAccessor = new SyncDataAccessor();
   private final SubCommandLogger log;
 
   public SlashingProtectionExporter(final SubCommandLogger log) {
@@ -54,8 +57,13 @@ public class SlashingProtectionExporter {
 
   private void readSlashProtectionFile(final File file) {
     try {
-      ValidatorSigningRecord validatorSigningRecord =
-          ValidatorSigningRecord.fromBytes(Bytes.of(Files.readAllBytes(file.toPath())));
+      Optional<ValidatorSigningRecord> maybeRecord =
+          syncDataAccessor.read(file.toPath()).map(ValidatorSigningRecord::fromBytes);
+      if (maybeRecord.isEmpty()) {
+        log.exit(1, "Failed to read from file " + file.getName());
+      }
+      ValidatorSigningRecord validatorSigningRecord = maybeRecord.get();
+
       if (genesisValidatorsRoot == null
           && validatorSigningRecord.getGenesisValidatorsRoot() != null) {
         this.genesisValidatorsRoot = validatorSigningRecord.getGenesisValidatorsRoot();
@@ -80,16 +88,20 @@ public class SlashingProtectionExporter {
   }
 
   public void saveToFile(final String toFileName) throws IOException {
-    Files.writeString(
-        Path.of(toFileName),
-        jsonProvider.objectToPrettyJSON(
-            new MinimalSlashingProtectionInterchangeFormat(
-                new Metadata(InterchangeFormat.minimal, INTERCHANGE_VERSION, genesisValidatorsRoot),
-                minimalSigningHistoryList)));
+    syncDataAccessor.syncedWrite(Path.of(toFileName), getJsonByteData());
     log.display(
         "Wrote "
             + minimalSigningHistoryList.size()
             + " validator slashing protection records to "
             + toFileName);
+  }
+
+  private Bytes getJsonByteData() throws JsonProcessingException {
+    final String prettyJson =
+        jsonProvider.objectToPrettyJSON(
+            new MinimalSlashingProtectionInterchangeFormat(
+                new Metadata(InterchangeFormat.minimal, INTERCHANGE_VERSION, genesisValidatorsRoot),
+                minimalSigningHistoryList));
+    return Bytes.of(prettyJson.getBytes(StandardCharsets.UTF_8));
   }
 }
