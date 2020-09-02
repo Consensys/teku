@@ -4,6 +4,7 @@ dependencies {
   implementation project(':ssz')
   implementation project(':util')
   implementation project(':events')
+  implementation project(':services:serviceutils')
   implementation project(':storage:api')
   implementation project(':logging')
 
@@ -15,6 +16,7 @@ dependencies {
 
   testImplementation testFixtures(project(':util'))
   testImplementation testFixtures(project(':infrastructure:async'))
+  testImplementation testFixtures(project(':ethereum:datastructures'))
 
   testFixturesImplementation project(':util')
 }

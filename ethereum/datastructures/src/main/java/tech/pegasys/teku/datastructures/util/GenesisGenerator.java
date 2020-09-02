@@ -140,6 +140,10 @@ public class GenesisGenerator {
     return state.commitChanges();
   }
 
+  public long getDepositCount() {
+    return depositDataList.size();
+  }
+
   private void finalizeState() {
     calculateRandaoMixes();
     calculateDepositRoot();

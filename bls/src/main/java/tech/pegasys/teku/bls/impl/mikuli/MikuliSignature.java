@@ -156,6 +156,11 @@ public class MikuliSignature implements Signature {
         publicKeys.stream().map(MikuliPublicKey::fromPublicKey).collect(toList()), message, this);
   }
 
+  @Override
+  public boolean verify(PublicKey publicKey, Bytes message, Bytes dst) {
+    return MikuliBLS12381.coreVerify(MikuliPublicKey.fromPublicKey(publicKey), message, this, dst);
+  }
+
   private G2Point parseSignatureBytes(Bytes signatureBytes) {
     if (signatureBytes.size() == COMPRESSED_SIG_SIZE) {
       return G2Point.fromBytesCompressed(signatureBytes);
