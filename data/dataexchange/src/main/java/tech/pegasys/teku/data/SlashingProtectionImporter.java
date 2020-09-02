@@ -133,7 +133,8 @@ public class SlashingProtectionImporter {
   }
 
   private void updateLocalRecord(final MinimalSigningHistory minimalSigningHistory) {
-    String validatorString = minimalSigningHistory.pubkey.toUnprefixedHexString().toLowerCase();
+    String validatorString =
+        minimalSigningHistory.pubkey.toBytes().toUnprefixedHexString().toLowerCase();
 
     log.display("Importing " + validatorString);
     Path outputFile = slashingProtectionPath.resolve(validatorString + ".yml");
