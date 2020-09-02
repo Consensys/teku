@@ -20,6 +20,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.ParentCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
+import tech.pegasys.teku.cli.options.DataOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
@@ -54,6 +55,9 @@ public class ValidatorClientCommand implements Callable<Integer> {
 
   @Mixin(name = "Network")
   private NetworkOptions networkOptions;
+
+  @Mixin(name = "Data")
+  private DataOptions dataOptions;
 
   @Mixin(name = "Interop")
   private InteropOptions interopOptions;
@@ -118,6 +122,10 @@ public class ValidatorClientCommand implements Callable<Integer> {
         .setMetricsInterface(metricsOptions.getMetricsInterface())
         .setMetricsCategories(metricsOptions.getMetricsCategories())
         .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist())
+        .setDataPath(dataOptions.getDataPath())
+        .setDataStorageMode(dataOptions.getDataStorageMode())
+        .setDataStorageFrequency(dataOptions.getDataStorageFrequency())
+        .setDataStorageCreateDbVersion(dataOptions.getCreateDbVersion())
         .setValidatorClient(true)
         .setBeaconNodeApiEndpoint(validatorClientOptions.getBeaconNodeApiEndpoint())
         .setBeaconNodeEventsWsEndpoint(validatorClientOptions.getBeaconNodeEventsWsEndpoint())
