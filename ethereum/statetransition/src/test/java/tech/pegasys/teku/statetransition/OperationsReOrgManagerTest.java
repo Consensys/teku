@@ -13,30 +13,38 @@
 
 package tech.pegasys.teku.statetransition;
 
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.core.StateTransition;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
-import tech.pegasys.teku.statetransition.forkchoice.SingleThreadedForkChoiceExecutor;
-import tech.pegasys.teku.storage.api.TrackingReorgEventChannel;
-import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
-import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NavigableMap;
+import java.util.Optional;
+import java.util.TreeMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class OperationsReOrgManagerTest {
+
+  private DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   private OperationPool<ProposerSlashing> proposerSlashingOperationPool = mock(OperationPool.class);
   private OperationPool<AttesterSlashing> attesterSlashingOperationPool = mock(OperationPool.class);
@@ -44,111 +52,85 @@ public class OperationsReOrgManagerTest {
   private AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private AttestationManager attestationManager = mock(AttestationManager.class);
 
+  private RecentChainData recentChainData = mock(RecentChainData.class);
+
+  private OperationsReOrgManager operationsReOrgManager =
+          new OperationsReOrgManager(
+                  proposerSlashingOperationPool,
+                  attesterSlashingOperationPool,
+                  exitOperationPool,
+                  attestationPool,
+                  attestationManager,
+                  recentChainData);
+
   @Test
-  void test() throws Exception {
-    StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
-    RecentChainData recentChainData = storageSystem.recentChainData();
-    TrackingReorgEventChannel reorgEventChannel = storageSystem.reorgEventChannel();
+  void shouldRequeueAndRemoveOperations() throws Exception {
+    BeaconBlock fork1Block1 = dataStructureUtil.randomBeaconBlock(10);
+    BeaconBlock fork1Block2 = dataStructureUtil.randomBeaconBlock(11);
 
-    OperationsReOrgManager operationsReOrgManager =
-        new OperationsReOrgManager(
-            proposerSlashingOperationPool,
-            attesterSlashingOperationPool,
-            exitOperationPool,
-            attestationPool,
-            attestationManager,
-            recentChainData);
+    BeaconBlock fork2Block1 = dataStructureUtil.randomBeaconBlock(12);
+    BeaconBlock fork2Block2= dataStructureUtil.randomBeaconBlock(13);
 
-    ForkChoice forkChoice =
-        new ForkChoice(
-            SingleThreadedForkChoiceExecutor.create(), recentChainData, new StateTransition());
+    UInt64 commonAncestorSlot = UInt64.valueOf(9);
 
-    ChainUpdater chainUpdater = storageSystem.chainUpdater();
-    ChainBuilder chainBuilder = storageSystem.chainBuilder();
+    NavigableMap<UInt64, Bytes32> nowNotCanonicalBlockRoots = new TreeMap<>();
+    nowNotCanonicalBlockRoots.put(UInt64.valueOf(10), fork1Block1.hash_tree_root());
+    nowNotCanonicalBlockRoots.put(UInt64.valueOf(11), fork1Block2.hash_tree_root());
+    when(recentChainData.getEveryRootOnChainTillSlot(commonAncestorSlot, fork1Block2.hash_tree_root()))
+            .thenReturn(nowNotCanonicalBlockRoots);
 
-    chainUpdater.initializeGenesis();
-    SignedBlockAndState commonAncestor = chainUpdater.advanceChain(10);
-    ChainBuilder newChainBuilder = chainBuilder.fork();
-    ChainUpdater newChainUpdater = new ChainUpdater(recentChainData, newChainBuilder);
+    NavigableMap<UInt64, Bytes32> nowCanonicalBlockRoots = new TreeMap<>();
+    nowCanonicalBlockRoots.put(UInt64.valueOf(12), fork2Block1.hash_tree_root());
+    nowCanonicalBlockRoots.put(UInt64.valueOf(13), fork2Block2.hash_tree_root());
+    when(recentChainData.getEveryRootOnChainTillSlot(commonAncestorSlot, fork2Block2.hash_tree_root()))
+            .thenReturn(nowCanonicalBlockRoots);
 
-    // Create initial fork
-    ChainBuilder.BlockOptions fork1block1options = ChainBuilder.BlockOptions.create();
-    final Attestation fork1block1attestation = chainBuilder.streamValidAttestationsWithTargetBlock(commonAncestor)
-            .findFirst().get();
-    fork1block1options.addAttestation(fork1block1attestation);
-    SignedBlockAndState fork1block1 = chainBuilder.generateBlockAtSlot(11, fork1block1options);
-    chainUpdater.saveBlock(fork1block1);
+    when(recentChainData.retrieveBlockByRoot(fork1Block1.hash_tree_root()))
+            .thenReturn(SafeFuture.completedFuture(Optional.of(fork1Block1)));
+    when(recentChainData.retrieveBlockByRoot(fork1Block2.hash_tree_root()))
+            .thenReturn(SafeFuture.completedFuture(Optional.of(fork1Block2)));
 
-    ChainBuilder.BlockOptions fork1block2options = ChainBuilder.BlockOptions.create();
-    final Attestation fork1block2attestation = chainBuilder.streamValidAttestationsWithTargetBlock(commonAncestor)
-            .findFirst().get();
-    fork1block1options.addAttestation(fork1block2attestation);
-    SignedBlockAndState fork1block2 = chainBuilder.generateBlockAtSlot(12, fork1block2options);
-    chainUpdater.saveBlock(fork1block2);
+    when(recentChainData.retrieveBlockByRoot(fork2Block1.hash_tree_root()))
+            .thenReturn(SafeFuture.completedFuture(Optional.of(fork2Block1)));
+    when(recentChainData.retrieveBlockByRoot(fork2Block2.hash_tree_root()))
+            .thenReturn(SafeFuture.completedFuture(Optional.of(fork2Block2)));
 
-    ChainBuilder.BlockOptions fork1block3options = ChainBuilder.BlockOptions.create();
-    final Attestation fork1block3attestation = chainBuilder.streamValidAttestationsWithTargetBlock(commonAncestor)
-            .findFirst().get();
-    fork1block1options.addAttestation(fork1block3attestation);
-    SignedBlockAndState fork1block3 = chainBuilder.generateBlockAtSlot(13, fork1block3options);
-    chainUpdater.saveBlock(fork1block3);
-    forkChoice.processHead();
+    when(attestationManager.onAttestation(any(Attestation.class))).thenReturn(SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL));
 
-    // Create second fork
-    ChainBuilder.BlockOptions fork2block1options = ChainBuilder.BlockOptions.create();
-    final Attestation fork2block1attestation = newChainBuilder.streamValidAttestationsWithTargetBlock(commonAncestor)
-            .findFirst().get();
-    fork1block1options.addAttestation(fork2block1attestation);
-    SignedBlockAndState fork2block1 = newChainBuilder.generateBlockAtSlot(11, fork2block1options);
-    newChainUpdater.saveBlock(fork2block1);
+    operationsReOrgManager.reorgOccurred(
+            fork2Block2.hash_tree_root(),
+            UInt64.valueOf(13),
+            fork1Block2.hash_tree_root(),
+            commonAncestorSlot);
 
-    ChainBuilder.BlockOptions fork2block2options = ChainBuilder.BlockOptions.create();
-    final Attestation fork2block2attestation = newChainBuilder.streamValidAttestationsWithTargetBlock(commonAncestor)
-            .findFirst().get();
-    fork1block1options.addAttestation(fork2block2attestation);
-    SignedBlockAndState fork2block2 = newChainBuilder.generateBlockAtSlot(12, fork2block2options);
-    newChainUpdater.saveBlock(fork2block2);
+    verify(recentChainData)
+            .getEveryRootOnChainTillSlot(commonAncestorSlot, fork1Block2.hash_tree_root());
 
-    ChainBuilder.BlockOptions fork2block3options = ChainBuilder.BlockOptions.create();
-    final Attestation fork2block3attestation = newChainBuilder.streamValidAttestationsWithTargetBlock(commonAncestor)
-            .findFirst().get();
-    fork1block1options.addAttestation(fork2block3attestation);
-    SignedBlockAndState fork2block3 = newChainBuilder.generateBlockAtSlot(13, fork2block3options);
-    newChainUpdater.saveBlock(fork2block3);
+    verify(proposerSlashingOperationPool).addAll(fork1Block1.getBody().getProposer_slashings());
+    verify(attesterSlashingOperationPool).addAll(fork1Block1.getBody().getAttester_slashings());
+    verify(exitOperationPool).addAll(fork1Block1.getBody().getVoluntary_exits());
 
-    ChainBuilder.BlockOptions fork2block4options = ChainBuilder.BlockOptions.create();
-    final Attestation fork2block4attestation = newChainBuilder.streamValidAttestationsWithTargetBlock(commonAncestor)
-            .findFirst().get();
-    fork1block1options.addAttestation(fork2block4attestation);
-    SignedBlockAndState fork2block4 = chainBuilder.generateBlockAtSlot(14, fork2block4options);
-    newChainUpdater.saveBlock(fork2block4);
-    forkChoice.processHead();
+    verify(proposerSlashingOperationPool).addAll(fork1Block2.getBody().getProposer_slashings());
+    verify(attesterSlashingOperationPool).addAll(fork1Block2.getBody().getAttester_slashings());
+    verify(exitOperationPool).addAll(fork1Block2.getBody().getVoluntary_exits());
 
-    assertThat(reorgEventChannel.getReorgEvents())
-        .contains(
-            new TrackingReorgEventChannel.ReorgEvent(
-                fork2block4.getRoot(),
-                fork2block4.getSlot(),
-                fork1block3.getRoot(),
-                commonAncestor.getSlot()));
+    ArgumentCaptor<Attestation> argument = ArgumentCaptor.forClass(Attestation.class);
+    verify(attestationManager, atLeastOnce()).onAttestation(argument.capture());
 
-      operationsReOrgManager.reorgOccurred(
-              fork2block4.getRoot(),
-              fork2block4.getSlot(),
-              fork1block3.getRoot(),
-              commonAncestor.getSlot());
+    List<Attestation> attestationList = new ArrayList<>();
+    attestationList.addAll(fork1Block1.getBody().getAttestations().asList());
+    attestationList.addAll(fork1Block2.getBody().getAttestations().asList());
 
-    BeaconBlockBody firstBlockBody = fork2block4.getBlock().getMessage().getBody();
+    assertThat(argument.getAllValues()).containsExactlyInAnyOrderElementsOf(attestationList);
 
-    verify(proposerSlashingOperationPool).addAll(firstBlockBody.getProposer_slashings());
-    verify(attesterSlashingOperationPool).addAll(firstBlockBody.getAttester_slashings());
-    verify(exitOperationPool).addAll(firstBlockBody.getVoluntary_exits());
+    verify(proposerSlashingOperationPool).removeAll(fork2Block1.getBody().getProposer_slashings());
+    verify(attesterSlashingOperationPool).removeAll(fork2Block1.getBody().getAttester_slashings());
+    verify(exitOperationPool).removeAll(fork2Block1.getBody().getVoluntary_exits());
+    verify(attestationPool).removeAll(fork2Block1.getBody().getAttestations());
 
-//    firstBlockBody
-//        .getAttestations()
-//        .forEach(
-//            a ->
-//                verify(attestationManager)
-//                    .onAttestation(ValidateableAttestation.fromAttestation(a)));
+    verify(proposerSlashingOperationPool).removeAll(fork2Block2.getBody().getProposer_slashings());
+    verify(attesterSlashingOperationPool).removeAll(fork2Block2.getBody().getAttester_slashings());
+    verify(exitOperationPool).removeAll(fork2Block2.getBody().getVoluntary_exits());
+    verify(attestationPool).removeAll(fork2Block2.getBody().getAttestations());
   }
 }

@@ -16,7 +16,6 @@ package tech.pegasys.teku.statetransition;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
@@ -85,8 +84,7 @@ public class OperationsReOrgManager implements ReorgEventChannel {
                                 .forEach(
                                     attestation -> {
                                       attestationManager
-                                          .onAttestation(
-                                              ValidateableAttestation.fromAttestation(attestation))
+                                          .onAttestation(attestation)
                                           .finish(
                                               result ->
                                                   result.ifInvalid(
