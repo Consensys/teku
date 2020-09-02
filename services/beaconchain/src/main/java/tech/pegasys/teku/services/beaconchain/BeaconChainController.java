@@ -13,22 +13,11 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
-import static tech.pegasys.teku.core.ForkChoiceUtil.on_tick;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
-
 import com.google.common.base.Throwables;
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
-import java.io.IOException;
-import java.net.BindException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.time.Duration;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -64,6 +53,7 @@ import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.statetransition.OperationPool;
+import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
@@ -104,6 +94,18 @@ import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
 
+import java.io.IOException;
+import java.net.BindException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.util.Optional;
+
+import static tech.pegasys.teku.core.ForkChoiceUtil.on_tick;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
+
 public class BeaconChainController extends Service implements TimeTickChannel {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -133,6 +135,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile OperationPool<AttesterSlashing> attesterSlashingPool;
   private volatile OperationPool<ProposerSlashing> proposerSlashingPool;
   private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
+  private volatile OperationsReOrgManager operationsReOrgManager;
 
   private SyncStateTracker syncStateTracker;
   private UInt64 genesisTimeTracker = ZERO;
@@ -253,6 +256,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initSyncStateTracker();
     initValidatorApiHandler();
     initRestAPI();
+    initOperationsReOrgManager();
   }
 
   private void initAttesterSlashingPool() {
@@ -532,6 +536,19 @@ public class BeaconChainController extends Service implements TimeTickChannel {
           .subscribe(SlotEventsChannel.class, blockManager)
           .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
     }
+  }
+
+  private void initOperationsReOrgManager() {
+    LOG.debug("BeaconChainController.initOperationsReOrgManager()");
+    operationsReOrgManager = new OperationsReOrgManager(
+            proposerSlashingPool,
+            attesterSlashingPool,
+            voluntaryExitPool,
+            attestationPool,
+            attestationManager,
+            recentChainData
+    );
+    eventChannels.subscribe(ReorgEventChannel.class, operationsReOrgManager);
   }
 
   private void setupInitialState() {
