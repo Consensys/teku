@@ -27,14 +27,17 @@ import java.math.BigInteger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.async.TrackingUncaughtExceptionHandler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.service.serviceutils.FatalServiceFailureException;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.util.config.Constants;
@@ -54,6 +57,8 @@ class Eth1DepositManagerTest {
       mock(DepositProcessingController.class);
   private final MinimumGenesisTimeBlockFinder minimumGenesisTimeBlockFinder =
       mock(MinimumGenesisTimeBlockFinder.class);
+  private final TrackingUncaughtExceptionHandler exceptionHandler =
+      new TrackingUncaughtExceptionHandler();
 
   private final InOrder inOrder =
       inOrder(
@@ -74,6 +79,11 @@ class Eth1DepositManagerTest {
   @BeforeAll
   static void setConstants() {
     Constants.MIN_GENESIS_TIME = UInt64.valueOf(10_000).plus(Constants.GENESIS_DELAY);
+  }
+
+  @BeforeEach
+  public void setup() {
+    Thread.setDefaultUncaughtExceptionHandler(exceptionHandler);
   }
 
   @AfterAll
@@ -100,6 +110,60 @@ class Eth1DepositManagerTest {
     inOrder.verify(depositProcessingController).switchToBlockByBlockMode();
     inOrder.verify(depositProcessingController).startSubscription(BigInteger.valueOf(101));
     inOrder.verifyNoMoreInteractions();
+    assertNoUncaughtExceptions();
+  }
+
+  @Test
+  void shouldRetryIfEth1NodeIsNotReady() {
+    final int retryCount = 10;
+
+    final BigInteger headBlockNumber = BigInteger.valueOf(100);
+    when(eth1DepositStorageChannel.replayDepositEvents()).thenReturn(NOTHING_REPLAYED);
+    when(eth1Provider.getLatestEth1Block())
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("Connection refused")));
+    when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
+
+    manager.start();
+
+    // Set up initial request to eth1 node to fail
+    // We should retry until it succeeds
+    for (int i = 0; i < retryCount; i++) {
+      assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+      asyncRunner.executeQueuedActions();
+    }
+    // Set up next getHead request to succeed
+    withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP - 1);
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+    asyncRunner.executeQueuedActions();
+
+    inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
+    // Process blocks up to the current chain head
+    inOrder
+        .verify(depositProcessingController)
+        .fetchDepositsInRange(BigInteger.ZERO, headBlockNumber);
+
+    // Then start the subscription from the block after head
+    inOrder.verify(depositProcessingController).switchToBlockByBlockMode();
+    inOrder.verify(depositProcessingController).startSubscription(BigInteger.valueOf(101));
+    inOrder.verifyNoMoreInteractions();
+    assertNoUncaughtExceptions();
+  }
+
+  @Test
+  void shouldFailIfStorageReplayFails() {
+    final BigInteger headBlockNumber = BigInteger.valueOf(100);
+    when(eth1DepositStorageChannel.replayDepositEvents())
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("Fail")));
+    withFollowDistanceHead(headBlockNumber, MIN_GENESIS_BLOCK_TIMESTAMP - 1);
+    when(depositProcessingController.fetchDepositsInRange(any(), any())).thenReturn(COMPLETE);
+
+    manager.start();
+
+    inOrder.verify(eth1DepositStorageChannel).replayDepositEvents();
+    inOrder.verifyNoMoreInteractions();
+    assertThat(exceptionHandler.getUncaughtExceptions()).hasSize(1);
+    assertThat(exceptionHandler.getUncaughtExceptions().get(0))
+        .hasCauseInstanceOf(FatalServiceFailureException.class);
   }
 
   @Test
@@ -123,6 +187,7 @@ class Eth1DepositManagerTest {
     inOrder.verify(depositProcessingController).switchToBlockByBlockMode();
     inOrder.verify(depositProcessingController).startSubscription(BigInteger.valueOf(101));
     inOrder.verifyNoMoreInteractions();
+    assertNoUncaughtExceptions();
   }
 
   @Test
@@ -161,6 +226,7 @@ class Eth1DepositManagerTest {
         .verify(depositProcessingController)
         .startSubscription(minGenesisBlockNumber.add(BigInteger.ONE));
     inOrder.verifyNoMoreInteractions();
+    assertNoUncaughtExceptions();
   }
 
   @Test
@@ -197,6 +263,7 @@ class Eth1DepositManagerTest {
         .verify(depositProcessingController)
         .startSubscription(minGenesisBlockNumber.add(BigInteger.ONE));
     inOrder.verifyNoMoreInteractions();
+    assertNoUncaughtExceptions();
   }
 
   @Test
@@ -216,6 +283,7 @@ class Eth1DepositManagerTest {
         .verify(depositProcessingController)
         .startSubscription(lastReplayedBlock.add(BigInteger.ONE));
     inOrder.verifyNoMoreInteractions();
+    assertNoUncaughtExceptions();
   }
 
   @Test
@@ -236,6 +304,7 @@ class Eth1DepositManagerTest {
         .verify(depositProcessingController)
         .startSubscription(lastReplayedBlock.add(BigInteger.ONE));
     inOrder.verifyNoMoreInteractions();
+    assertNoUncaughtExceptions();
   }
 
   @Test
@@ -257,6 +326,7 @@ class Eth1DepositManagerTest {
         .verify(depositProcessingController)
         .startSubscription(lastReplayedBlock.add(BigInteger.ONE));
     inOrder.verifyNoMoreInteractions();
+    assertNoUncaughtExceptions();
   }
 
   @Test
@@ -310,5 +380,9 @@ class Eth1DepositManagerTest {
     when(block.getTimestamp()).thenReturn(BigInteger.valueOf(timestamp));
     when(block.getHash()).thenReturn(Bytes32.ZERO.toHexString());
     return block;
+  }
+
+  private void assertNoUncaughtExceptions() {
+    assertThat(exceptionHandler.getUncaughtExceptions()).isEmpty();
   }
 }
