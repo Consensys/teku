@@ -54,7 +54,8 @@ public class ExportCommand implements Runnable {
         DataOptions.getValidatorsSlashingProtectionPath(dataOptions.getDataPath());
     verifySlashingProtectionPathExists(slashProtectionPath);
 
-    SlashingProtectionExporter slashingProtectionExporter = new SlashingProtectionExporter();
+    SlashingProtectionExporter slashingProtectionExporter =
+        new SlashingProtectionExporter(SUB_COMMAND_LOG);
 
     SUB_COMMAND_LOG.display("Reading slashing protection data from: " + slashProtectionPath);
     slashingProtectionExporter.initialise(slashProtectionPath);
@@ -63,18 +64,17 @@ public class ExportCommand implements Runnable {
       SUB_COMMAND_LOG.display("Writing slashing protection data to: " + toFileName);
       slashingProtectionExporter.saveToFile(toFileName);
     } catch (IOException e) {
-      SUB_COMMAND_LOG.error("Failed to export slashing protection data.", e);
-      System.exit(1);
+      SUB_COMMAND_LOG.exit(1, "Failed to export slashing protection data.", e);
     }
   }
 
   private void verifySlashingProtectionPathExists(final Path slashProtectionPath) {
     if (!slashProtectionPath.toFile().exists() || !slashProtectionPath.toFile().isDirectory()) {
-      SUB_COMMAND_LOG.error(
+      SUB_COMMAND_LOG.exit(
+          1,
           "Unable to locate the path containing slashing protection data. Expected "
               + slashProtectionPath.toString()
               + " to be a directory containing slashing protection yml files.");
-      System.exit(1);
     }
   }
 }

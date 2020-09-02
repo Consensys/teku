@@ -14,8 +14,9 @@
 package tech.pegasys.teku.data;
 
 import static tech.pegasys.teku.data.slashinginterchange.Metadata.INTERCHANGE_VERSION;
-import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
@@ -29,6 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.util.Strings;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.data.slashinginterchange.CompleteSigningHistory;
@@ -38,6 +40,7 @@ import tech.pegasys.teku.data.slashinginterchange.MinimalSigningHistory;
 import tech.pegasys.teku.data.slashinginterchange.SignedAttestation;
 import tech.pegasys.teku.data.slashinginterchange.SignedBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.logging.SubCommandLogger;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class SlashingProtectionImporter {
@@ -45,29 +48,53 @@ public class SlashingProtectionImporter {
   private Path slashingProtectionPath;
   private List<MinimalSigningHistory> data = new ArrayList<>();
   private Metadata metadata;
+  private final SubCommandLogger log;
+
+  public SlashingProtectionImporter(final SubCommandLogger log) {
+    this.log = log;
+  }
 
   public void initialise(final File inputFile) throws IOException {
     final ObjectMapper jsonMapper = jsonProvider.getObjectMapper();
-    JsonNode jsonNode = jsonMapper.readTree(inputFile);
-    metadata = jsonMapper.treeToValue(jsonNode.get("metadata"), Metadata.class);
-    if (!metadata.interchangeFormatVersion.equals(INTERCHANGE_VERSION)) {
-      SUB_COMMAND_LOG.error(
-          "Import file "
-              + inputFile.toString()
-              + " is not format version "
-              + INTERCHANGE_VERSION.toString()
-              + ", cannot continue.");
-      System.exit(1);
-    }
-    if (metadata.interchangeFormat.equals(InterchangeFormat.minimal)) {
-      data =
-          Arrays.asList(
-              jsonMapper.treeToValue(jsonNode.get("data"), MinimalSigningHistory[].class));
-    } else {
-      data =
-          summariseCompleteInterchangeFormat(
-              Arrays.asList(
-                  jsonMapper.treeToValue(jsonNode.get("data"), CompleteSigningHistory[].class)));
+    try {
+      final JsonNode jsonNode = jsonMapper.readTree(inputFile);
+
+      metadata = jsonMapper.treeToValue(jsonNode.get("metadata"), Metadata.class);
+      if (metadata == null) {
+        log.exit(
+            1,
+            "Import file "
+                + inputFile.toString()
+                + " does not appear to have metadata information, and cannot be loaded.");
+        return; // Testing mocks log.exit
+      }
+      if (!metadata.interchangeFormatVersion.equals(INTERCHANGE_VERSION)) {
+        log.exit(
+            1,
+            "Import file "
+                + inputFile.toString()
+                + " is not format version "
+                + INTERCHANGE_VERSION.toString()
+                + ", cannot continue.");
+        return; // Testing mocks log.exit
+      }
+
+      if (metadata.interchangeFormat.equals(InterchangeFormat.minimal)) {
+        data =
+            Arrays.asList(
+                jsonMapper.treeToValue(jsonNode.get("data"), MinimalSigningHistory[].class));
+      } else {
+        data =
+            summariseCompleteInterchangeFormat(
+                Arrays.asList(
+                    jsonMapper.treeToValue(jsonNode.get("data"), CompleteSigningHistory[].class)));
+      }
+    } catch (JsonMappingException e) {
+      String cause = e.getCause() != null ? e.getCause().getMessage() : Strings.EMPTY;
+      log.exit(1, "Failed to load data from " + inputFile.getName() + ". " + cause);
+    } catch (JsonParseException e) {
+      String cause = e.getCause() != null ? e.getCause().getMessage() : Strings.EMPTY;
+      log.exit(1, "Json does not appear valid in file " + inputFile.getName() + ". " + cause);
     }
   }
 
@@ -104,13 +131,13 @@ public class SlashingProtectionImporter {
   public void updateLocalRecords(final Path slashingProtectionPath) {
     this.slashingProtectionPath = slashingProtectionPath;
     data.forEach(this::updateLocalRecord);
-    SUB_COMMAND_LOG.display("Updated " + data.size() + " validator slashing protection records");
+    log.display("Updated " + data.size() + " validator slashing protection records");
   }
 
   private void updateLocalRecord(final MinimalSigningHistory minimalSigningHistory) {
     String validatorString = minimalSigningHistory.pubkey.toHexString().substring(2).toLowerCase();
 
-    SUB_COMMAND_LOG.display("Importing " + validatorString);
+    log.display("Importing " + validatorString);
     Path outputFile = slashingProtectionPath.resolve(validatorString.concat(".yml"));
     Optional<ValidatorSigningRecord> existingRecord = Optional.empty();
     if (outputFile.toFile().exists()) {
@@ -118,18 +145,17 @@ public class SlashingProtectionImporter {
         existingRecord =
             Optional.ofNullable(ValidatorSigningRecord.fromBytes(Bytes.of(input.readAllBytes())));
       } catch (IOException e) {
-        SUB_COMMAND_LOG.error("Failed to read existing file: " + outputFile.toString());
-        System.exit(1);
+        log.exit(1, "Failed to read existing file: " + outputFile.toString());
       }
     }
     if (existingRecord.isPresent()
         && metadata.genesisValidatorsRoot.compareTo(existingRecord.get().getGenesisValidatorsRoot())
             != 0) {
-      SUB_COMMAND_LOG.error(
+      log.exit(
+          1,
           "Validator "
               + minimalSigningHistory.pubkey.toHexString()
               + " has a different validators signing root to the data being imported");
-      System.exit(1);
     }
 
     try (OutputStream out = Files.newOutputStream(outputFile)) {
@@ -139,9 +165,7 @@ public class SlashingProtectionImporter {
               .toBytes()
               .toArray());
     } catch (IOException e) {
-      SUB_COMMAND_LOG.error(
-          "Validator " + minimalSigningHistory.pubkey.toHexString() + " was not updated.");
-      System.exit(1);
+      log.exit(1, "Validator " + minimalSigningHistory.pubkey.toHexString() + " was not updated.");
     }
   }
 }

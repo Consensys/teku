@@ -59,7 +59,7 @@ public class ImportCommand implements Runnable {
     verifyImportFileExists(importFile);
     prepareOutputPath(slashProtectionPath.toFile());
 
-    SlashingProtectionImporter importer = new SlashingProtectionImporter();
+    SlashingProtectionImporter importer = new SlashingProtectionImporter(SUB_COMMAND_LOG);
 
     try {
       SUB_COMMAND_LOG.display("Reading slashing protection data from: " + importFile.toString());
@@ -75,21 +75,18 @@ public class ImportCommand implements Runnable {
 
   private void verifyImportFileExists(final File importFile) {
     if (!importFile.exists() || !importFile.isFile() || !importFile.canRead()) {
-      SUB_COMMAND_LOG.error("Cannot open " + importFile.toString() + " for reading.");
-      System.exit(1);
+      SUB_COMMAND_LOG.exit(1, "Cannot open " + importFile.toString() + " for reading.");
     }
   }
 
   private void prepareOutputPath(final File outputPath) {
     if (!outputPath.exists() && !outputPath.mkdirs()) {
-      SUB_COMMAND_LOG.error(
-          "Failed to create path to store slashing protection data " + outputPath.toString());
-      System.exit(1);
+      SUB_COMMAND_LOG.exit(
+          1, "Failed to create path to store slashing protection data " + outputPath.toString());
     }
     if (!outputPath.isDirectory() || !outputPath.canWrite()) {
-      SUB_COMMAND_LOG.error(
-          "Path " + outputPath.toString() + " is not a directory or can't be written to.");
-      System.exit(1);
+      SUB_COMMAND_LOG.exit(
+          1, "Path " + outputPath.toString() + " is not a directory or can't be written to.");
     }
   }
 }
