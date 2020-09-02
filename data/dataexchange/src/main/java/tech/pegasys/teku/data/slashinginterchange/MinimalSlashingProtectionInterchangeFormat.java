@@ -11,25 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.cli.options;
+package tech.pegasys.teku.data.slashinginterchange;
 
-import picocli.CommandLine.Option;
-import tech.pegasys.teku.util.cli.VersionProvider;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import java.util.List;
 
-public class DataOptions {
+public class MinimalSlashingProtectionInterchangeFormat {
+  public final Metadata metadata;
+  public final List<MinimalSigningHistory> data;
 
-  @Option(
-      names = {"--data-path"},
-      paramLabel = "<FILENAME>",
-      description = "Path to output data files",
-      arity = "1")
-  private String dataPath = defaultDataPath();
-
-  public String getDataPath() {
-    return dataPath;
-  }
-
-  private static String defaultDataPath() {
-    return VersionProvider.defaultStoragePath() + System.getProperty("file.separator") + "data";
+  @JsonCreator
+  public MinimalSlashingProtectionInterchangeFormat(
+      final Metadata metadata, final List<MinimalSigningHistory> data) {
+    this.metadata = metadata;
+    this.data = data;
   }
 }
