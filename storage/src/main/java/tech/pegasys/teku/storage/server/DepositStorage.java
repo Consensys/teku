@@ -18,16 +18,21 @@ import java.math.BigInteger;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
+import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.schema.ReplayDepositsResult;
 
 public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChannel {
-
+  private static final Logger LOG = LogManager.getLogger();
   private static final BigInteger NEGATIVE_ONE = BigInteger.valueOf(-1L);
+
   private final Database database;
   private final Eth1EventsChannel eth1EventsChannel;
   private volatile Optional<BigInteger> lastReplayedBlock = Optional.empty();
@@ -59,7 +64,7 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
   private ReplayDepositsResult replayDeposits() {
     if (!eth1DepositsFromStorageEnabled) {
       lastReplayedBlock = Optional.of(NEGATIVE_ONE);
-      return new ReplayDepositsResult(NEGATIVE_ONE, false);
+      return ReplayDepositsResult.empty();
     }
 
     final DepositSequencer depositSequencer =
@@ -93,35 +98,49 @@ public class DepositStorage implements Eth1DepositStorageChannel, Eth1EventsChan
   private static class DepositSequencer {
     private final Eth1EventsChannel eth1EventsChannel;
     private final Optional<MinGenesisTimeBlockEvent> genesis;
-    private boolean isGenesisDone;
-    private BigInteger lastDeposit;
+    private boolean isGenesisDone = false;
+    private BigInteger lastDepositBlockNumber = NEGATIVE_ONE;
+    private Optional<UInt64> lastDepositIndex = Optional.empty();
 
     public DepositSequencer(
         final Eth1EventsChannel eventChannel, final Optional<MinGenesisTimeBlockEvent> genesis) {
       this.eth1EventsChannel = eventChannel;
       this.genesis = genesis;
-      this.isGenesisDone = false;
-      this.lastDeposit = NEGATIVE_ONE;
     }
 
     public void depositEvent(final DepositsFromBlockEvent event) {
+      LOG.trace(
+          "Process deposits {} - {}", event.getFirstDepositIndex(), event.getLastDepositIndex());
       if (genesis.isPresent()
           && !isGenesisDone
           && genesis.get().getBlockNumber().compareTo(event.getBlockNumber()) < 0) {
         this.eth1EventsChannel.onMinGenesisTimeBlock(genesis.get());
         isGenesisDone = true;
       }
+      validateDepositEvent(event);
       eth1EventsChannel.onDepositsFromBlock(event);
-      lastDeposit = event.getBlockNumber().bigIntegerValue();
+      lastDepositIndex = Optional.of(event.getLastDepositIndex());
+      lastDepositBlockNumber = event.getBlockNumber().bigIntegerValue();
+    }
+
+    private void validateDepositEvent(final DepositsFromBlockEvent event) {
+      final UInt64 expectedDepositIndex =
+          lastDepositIndex.map(UInt64::increment).orElse(UInt64.ZERO);
+      if (!event.getFirstDepositIndex().equals(expectedDepositIndex)) {
+        throw InvalidDepositEventsException.expectedDepositAtIndex(
+            expectedDepositIndex, event.getFirstDepositIndex());
+      }
     }
 
     public ReplayDepositsResult depositsComplete() {
+      LOG.trace("Finish replaying deposit storage");
       if (genesis.isPresent() && !isGenesisDone) {
         this.eth1EventsChannel.onMinGenesisTimeBlock(genesis.get());
-        lastDeposit = genesis.get().getBlockNumber().bigIntegerValue();
+        lastDepositBlockNumber = genesis.get().getBlockNumber().bigIntegerValue();
         isGenesisDone = true;
       }
-      return new ReplayDepositsResult(lastDeposit, isGenesisDone);
+      final Optional<BigInteger> depositIndex = lastDepositIndex.map(UInt64::bigIntegerValue);
+      return ReplayDepositsResult.create(lastDepositBlockNumber, depositIndex, isGenesisDone);
     }
   }
 }

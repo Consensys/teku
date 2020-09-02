@@ -50,7 +50,6 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.events.AnchorPoint;
@@ -437,21 +436,6 @@ public abstract class AbstractDatabaseTest {
     final Optional<MinGenesisTimeBlockEvent> fetch = database.getMinGenesisTimeBlock();
     assertThat(fetch.isPresent()).isTrue();
     assertThat(fetch.get()).isEqualToComparingFieldByField(event);
-  }
-
-  @Test
-  public void shouldRecordAndRetrieveDepositEvents() {
-    final DataStructureUtil util = new DataStructureUtil();
-    final UInt64 firstBlock = util.randomUInt64();
-    final DepositsFromBlockEvent event1 = util.randomDepositsFromBlockEvent(firstBlock, 10L);
-    final DepositsFromBlockEvent event2 =
-        util.randomDepositsFromBlockEvent(firstBlock.plus(ONE), 1L);
-
-    database.addDepositsFromBlockEvent(event1);
-    database.addDepositsFromBlockEvent(event2);
-    try (Stream<DepositsFromBlockEvent> events = database.streamDepositsFromBlocks()) {
-      assertThat(events.collect(toList())).containsExactly(event1, event2);
-    }
   }
 
   @Test
