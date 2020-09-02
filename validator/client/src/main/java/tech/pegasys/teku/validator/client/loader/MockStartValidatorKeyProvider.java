@@ -18,7 +18,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
+import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
 class MockStartValidatorKeyProvider implements ValidatorKeyProvider {

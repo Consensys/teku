@@ -25,6 +25,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.datastructures.interop.MockStartDepositGenerator;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 
 class MockStartDepositGeneratorTest {
