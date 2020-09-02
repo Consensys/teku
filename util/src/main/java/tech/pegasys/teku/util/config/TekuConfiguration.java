@@ -124,7 +124,7 @@ public class TekuConfiguration implements MetricsConfig {
   private final int remoteValidatorApiMaxSubscribers;
 
   // Validator Client
-  private final boolean validatorNodeOnly;
+  private final boolean isValidatorClient;
   private final String beaconNodeApiEndpoint;
   private final String beaconNodeEventsWsEndpoint;
 
@@ -199,7 +199,7 @@ public class TekuConfiguration implements MetricsConfig {
       final int remoteValidatorApiMaxSubscribers,
       final boolean remoteValidatorApiEnabled,
       final Bytes32 graffiti,
-      final boolean validatorNodeOnly,
+      final boolean isValidatorClient,
       final String beaconNodeApiEndpoint,
       final String beaconNodeEventsWsEndpoint) {
     this.constants = constants;
@@ -268,7 +268,7 @@ public class TekuConfiguration implements MetricsConfig {
     this.remoteValidatorApiEnabled = remoteValidatorApiEnabled;
     this.remoteValidatorApiMaxSubscribers = remoteValidatorApiMaxSubscribers;
     this.graffiti = graffiti;
-    this.validatorNodeOnly = validatorNodeOnly;
+    this.isValidatorClient = isValidatorClient;
     this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
     this.beaconNodeEventsWsEndpoint = beaconNodeEventsWsEndpoint;
   }
@@ -567,8 +567,8 @@ public class TekuConfiguration implements MetricsConfig {
     return graffiti;
   }
 
-  public boolean isValidatorNodeOnly() {
-    return validatorNodeOnly;
+  public boolean isValidatorClient() {
+    return isValidatorClient;
   }
 
   public String getBeaconNodeApiEndpoint() {

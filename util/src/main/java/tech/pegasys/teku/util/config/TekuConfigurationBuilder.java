@@ -90,7 +90,7 @@ public class TekuConfigurationBuilder {
   private int remoteValidatorApiMaxSubscribers;
   private boolean remoteValidatorApiEnabled;
   private Bytes32 graffiti;
-  private boolean validatorNodeOnly;
+  private boolean isValidatorClient;
   private String beaconNodeApiEndpoint;
   private String beaconNodeEventsWsEndpoint;
 
@@ -446,8 +446,8 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
-  public TekuConfigurationBuilder setValidatorNodeOnly(final boolean isValidatorOnly) {
-    this.validatorNodeOnly = isValidatorOnly;
+  public TekuConfigurationBuilder setValidatorClient(final boolean isValidatorOnly) {
+    this.isValidatorClient = isValidatorOnly;
     return this;
   }
 
@@ -553,7 +553,7 @@ public class TekuConfigurationBuilder {
         remoteValidatorApiMaxSubscribers,
         remoteValidatorApiEnabled,
         graffiti,
-        validatorNodeOnly,
+        isValidatorClient,
         beaconNodeApiEndpoint,
         beaconNodeEventsWsEndpoint);
   }

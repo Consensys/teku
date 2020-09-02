@@ -52,7 +52,7 @@ public class ValidatorClientService extends Service {
     this.attestationTimingChannel = attestationTimingChannel;
     this.blockProductionTimingChannel = blockProductionTimingChannel;
 
-    if (serviceConfig.getConfig().isValidatorNodeOnly()) {
+    if (serviceConfig.getConfig().isValidatorClient()) {
       beaconChainEventAdapter = new WebSocketBeaconChainEventAdapter(serviceConfig);
     } else {
       beaconChainEventAdapter = new EventChannelBeaconChainEventAdapter(serviceConfig);
@@ -72,7 +72,7 @@ public class ValidatorClientService extends Service {
         validatorLoader.initializeValidators(config.getConfig());
 
     final ValidatorApiChannel validatorApiChannel;
-    if (config.getConfig().isValidatorNodeOnly()) {
+    if (config.getConfig().isValidatorClient()) {
       validatorApiChannel =
           new MetricRecordingValidatorApiChannel(
               metricsSystem, new RemoteValidatorApiHandler(config, asyncRunner));

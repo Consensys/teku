@@ -42,13 +42,14 @@ import tech.pegasys.teku.cli.options.OutputOptions;
 import tech.pegasys.teku.cli.options.P2POptions;
 import tech.pegasys.teku.cli.options.RemoteValidatorApiOptions;
 import tech.pegasys.teku.cli.options.StoreOptions;
-import tech.pegasys.teku.cli.options.ValidatorNodeOptions;
+import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.cli.subcommand.DepositCommand;
 import tech.pegasys.teku.cli.subcommand.GenesisCommand;
 import tech.pegasys.teku.cli.subcommand.PeerCommand;
 import tech.pegasys.teku.cli.subcommand.TransitionCommand;
 import tech.pegasys.teku.cli.subcommand.UnstableOptionsCommand;
+import tech.pegasys.teku.cli.subcommand.ValidatorClientCommand;
 import tech.pegasys.teku.cli.subcommand.debug.DebugToolsCommand;
 import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
@@ -73,7 +74,8 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
       DepositCommand.class,
       GenesisCommand.class,
       DebugToolsCommand.class,
-      UnstableOptionsCommand.class
+      UnstableOptionsCommand.class,
+      ValidatorClientCommand.class
     },
     showDefaultValues = true,
     abbreviateSynopsis = true,
@@ -160,8 +162,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Mixin(name = "Remote Validator API")
   private RemoteValidatorApiOptions remoteValidatorApiOptions;
 
-  @Mixin(name = "Validator Node")
-  private ValidatorNodeOptions validatorNodeOptions;
+  @Mixin(name = "Validator Client")
+  private ValidatorClientOptions validatorClientOptions;
 
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
@@ -281,7 +283,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return 1;
   }
 
-  private void reportUnexpectedError(final Throwable t) {
+  public void reportUnexpectedError(final Throwable t) {
     System.err.println("Teku failed to start.");
     t.printStackTrace();
 
@@ -289,12 +291,12 @@ public class BeaconNodeCommand implements Callable<Integer> {
     printUsage(errorWriter);
   }
 
-  private void reportUserError(final Throwable ex) {
+  public void reportUserError(final Throwable ex) {
     errorWriter.println(ex.getMessage());
     printUsage(errorWriter);
   }
 
-  private void setLogLevels() {
+  public void setLogLevels() {
     if (logLevel != null) {
       // set log level per CLI flags
       LoggingConfigurator.setAllLevels(logLevel);
@@ -305,7 +307,11 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return this.logLevel;
   }
 
-  private TekuConfiguration tekuConfiguration() {
+  public Consumer<TekuConfiguration> getStartAction() {
+    return startAction;
+  }
+
+  protected TekuConfiguration tekuConfiguration() {
     return TekuConfiguration.builder()
         .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
         .setStartupTargetPeerCount(networkOptions.getStartupTargetPeerCount())
@@ -374,9 +380,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setRemoteValidatorApiPort(remoteValidatorApiOptions.getApiPort())
         .setRemoteValidatorApiMaxSubscribers(remoteValidatorApiOptions.getMaxSubscribers())
         .setRemoteValidatorApiEnabled(remoteValidatorApiOptions.isApiEnabled())
-        .setValidatorNodeOnly(validatorNodeOptions.isValidatorNodeOnly())
-        .setBeaconNodeApiEndpoint(validatorNodeOptions.getBeaconNodeApiEndpoint())
-        .setBeaconNodeEventsWsEndpoint(validatorNodeOptions.getBeaconNodeEventsWsEndpoint())
+        .setValidatorClient(false)
+        .setBeaconNodeApiEndpoint(validatorClientOptions.getBeaconNodeApiEndpoint())
+        .setBeaconNodeEventsWsEndpoint(validatorClientOptions.getBeaconNodeEventsWsEndpoint())
         .build();
   }
 }

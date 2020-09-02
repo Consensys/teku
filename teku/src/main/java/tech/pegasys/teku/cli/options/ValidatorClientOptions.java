@@ -15,16 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine.Option;
 
-public class ValidatorNodeOptions {
-
-  @Option(
-      names = {"--Xvalidator-node-only"},
-      paramLabel = "<BOOLEAN>",
-      description = "Run this node as a Validator Client only",
-      fallbackValue = "true",
-      arity = "0..1",
-      hidden = true)
-  private boolean validatorNodeOnly = false;
+public class ValidatorClientOptions {
 
   @Option(
       names = {"--Xbeacon-node-api-endpoint"},
@@ -41,10 +32,6 @@ public class ValidatorNodeOptions {
       arity = "1",
       hidden = true)
   private String beaconNodeEventsWsEndpoint = "ws://127.0.0.1:9999";
-
-  public boolean isValidatorNodeOnly() {
-    return validatorNodeOnly;
-  }
 
   public String getBeaconNodeApiEndpoint() {
     return beaconNodeApiEndpoint;
