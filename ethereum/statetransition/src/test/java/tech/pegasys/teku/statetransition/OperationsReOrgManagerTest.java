@@ -41,6 +41,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
+@SuppressWarnings("unchecked")
 public class OperationsReOrgManagerTest {
 
   private DataStructureUtil dataStructureUtil = new DataStructureUtil();

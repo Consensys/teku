@@ -65,7 +65,6 @@ public class ChainBuilder {
 
   private final List<BLSKeyPair> validatorKeys;
   private final AttestationGenerator attestationGenerator;
-  private final VoluntaryExitGenerator voluntaryExitGenerator;
   private final NavigableMap<UInt64, SignedBlockAndState> blocks = new TreeMap<>();
   private final Map<Bytes32, SignedBlockAndState> blocksByHash = new HashMap<>();
 
@@ -76,7 +75,6 @@ public class ChainBuilder {
     this.validatorKeys = validatorKeys;
 
     attestationGenerator = new AttestationGenerator(validatorKeys);
-    voluntaryExitGenerator = new VoluntaryExitGenerator(validatorKeys);
     blocks.putAll(existingBlocks);
     existingBlocks.values().forEach(b -> blocksByHash.put(b.getRoot(), b));
   }
