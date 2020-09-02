@@ -13,7 +13,16 @@
 
 package tech.pegasys.teku.storage.client;
 
+import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.logging.LogFormatter.formatBlock;
+
 import com.google.common.eventbus.EventBus;
+import java.util.NavigableMap;
+import java.util.Optional;
+import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -47,16 +56,6 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreUpdateHandler;
-
-import java.util.NavigableMap;
-import java.util.Optional;
-import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
-
-import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.logging.LogFormatter.formatBlock;
 
 /** This class is the ChainStorage client-side logic */
 public abstract class RecentChainData implements StoreUpdateHandler {
@@ -189,7 +188,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public NavigableMap<UInt64, Bytes32> getEveryRootOnChainTillSlot(
       final UInt64 startSlot, Bytes32 root) {
-    return ForkChoiceUtil.getEveryRootOnChainTillSlot(forkChoiceStrategy.orElseThrow(), root, startSlot);
+    return ForkChoiceUtil.getEveryRootOnChainTillSlot(
+        forkChoiceStrategy.orElseThrow(), root, startSlot);
   }
 
   public Optional<ForkChoiceStrategy> getForkChoiceStrategy() {

@@ -13,7 +13,23 @@
 
 package tech.pegasys.teku.core;
 
+import static org.assertj.core.util.Preconditions.checkState;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
+
 import com.google.common.collect.Maps;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.TreeMap;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -41,23 +57,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.util.config.Constants;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.TreeMap;
-import java.util.stream.LongStream;
-import java.util.stream.Stream;
-
-import static org.assertj.core.util.Preconditions.checkState;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 /** A utility for building small, valid chains of blocks with states for testing */
 public class ChainBuilder {
@@ -365,15 +364,15 @@ public class ChainBuilder {
     try {
       nextBlockAndState =
           blockProposalTestUtil.createBlock(
-                  signer,
-                  slot,
-                  preState,
-                  parentRoot,
-                  Optional.of(options.getAttestations()),
-                  Optional.of(options.getProposerSlashings()),
-                  Optional.empty(),
-                  Optional.of(options.getVoluntaryExits()),
-                  options.getEth1Data());
+              signer,
+              slot,
+              preState,
+              parentRoot,
+              Optional.of(options.getAttestations()),
+              Optional.of(options.getProposerSlashings()),
+              Optional.empty(),
+              Optional.of(options.getVoluntaryExits()),
+              options.getEth1Data());
       trackBlock(nextBlockAndState);
       return nextBlockAndState;
     } catch (StateTransitionException e) {
@@ -395,8 +394,10 @@ public class ChainBuilder {
 
   public static final class BlockOptions {
     private SSZMutableList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
-    private SSZMutableList<ProposerSlashing> proposerSlashings = BeaconBlockBodyLists.createProposerSlashings();
-    private SSZMutableList<SignedVoluntaryExit> voluntaryExits = BeaconBlockBodyLists.createVoluntaryExits();
+    private SSZMutableList<ProposerSlashing> proposerSlashings =
+        BeaconBlockBodyLists.createProposerSlashings();
+    private SSZMutableList<SignedVoluntaryExit> voluntaryExits =
+        BeaconBlockBodyLists.createVoluntaryExits();
     private Optional<Eth1Data> eth1Data = Optional.empty();
 
     private BlockOptions() {}

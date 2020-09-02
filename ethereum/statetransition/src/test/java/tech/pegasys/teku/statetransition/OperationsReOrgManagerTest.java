@@ -13,6 +13,18 @@
 
 package tech.pegasys.teku.statetransition;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NavigableMap;
+import java.util.Optional;
+import java.util.TreeMap;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -29,19 +41,6 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NavigableMap;
-import java.util.Optional;
-import java.util.TreeMap;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 public class OperationsReOrgManagerTest {
 
   private DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -55,13 +54,13 @@ public class OperationsReOrgManagerTest {
   private RecentChainData recentChainData = mock(RecentChainData.class);
 
   private OperationsReOrgManager operationsReOrgManager =
-          new OperationsReOrgManager(
-                  proposerSlashingOperationPool,
-                  attesterSlashingOperationPool,
-                  exitOperationPool,
-                  attestationPool,
-                  attestationManager,
-                  recentChainData);
+      new OperationsReOrgManager(
+          proposerSlashingOperationPool,
+          attesterSlashingOperationPool,
+          exitOperationPool,
+          attestationPool,
+          attestationManager,
+          recentChainData);
 
   @Test
   void shouldRequeueAndRemoveOperations() throws Exception {
@@ -69,42 +68,45 @@ public class OperationsReOrgManagerTest {
     BeaconBlock fork1Block2 = dataStructureUtil.randomBeaconBlock(11);
 
     BeaconBlock fork2Block1 = dataStructureUtil.randomBeaconBlock(12);
-    BeaconBlock fork2Block2= dataStructureUtil.randomBeaconBlock(13);
+    BeaconBlock fork2Block2 = dataStructureUtil.randomBeaconBlock(13);
 
     UInt64 commonAncestorSlot = UInt64.valueOf(9);
 
     NavigableMap<UInt64, Bytes32> nowNotCanonicalBlockRoots = new TreeMap<>();
     nowNotCanonicalBlockRoots.put(UInt64.valueOf(10), fork1Block1.hash_tree_root());
     nowNotCanonicalBlockRoots.put(UInt64.valueOf(11), fork1Block2.hash_tree_root());
-    when(recentChainData.getEveryRootOnChainTillSlot(commonAncestorSlot, fork1Block2.hash_tree_root()))
-            .thenReturn(nowNotCanonicalBlockRoots);
+    when(recentChainData.getEveryRootOnChainTillSlot(
+            commonAncestorSlot, fork1Block2.hash_tree_root()))
+        .thenReturn(nowNotCanonicalBlockRoots);
 
     NavigableMap<UInt64, Bytes32> nowCanonicalBlockRoots = new TreeMap<>();
     nowCanonicalBlockRoots.put(UInt64.valueOf(12), fork2Block1.hash_tree_root());
     nowCanonicalBlockRoots.put(UInt64.valueOf(13), fork2Block2.hash_tree_root());
-    when(recentChainData.getEveryRootOnChainTillSlot(commonAncestorSlot, fork2Block2.hash_tree_root()))
-            .thenReturn(nowCanonicalBlockRoots);
+    when(recentChainData.getEveryRootOnChainTillSlot(
+            commonAncestorSlot, fork2Block2.hash_tree_root()))
+        .thenReturn(nowCanonicalBlockRoots);
 
     when(recentChainData.retrieveBlockByRoot(fork1Block1.hash_tree_root()))
-            .thenReturn(SafeFuture.completedFuture(Optional.of(fork1Block1)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(fork1Block1)));
     when(recentChainData.retrieveBlockByRoot(fork1Block2.hash_tree_root()))
-            .thenReturn(SafeFuture.completedFuture(Optional.of(fork1Block2)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(fork1Block2)));
 
     when(recentChainData.retrieveBlockByRoot(fork2Block1.hash_tree_root()))
-            .thenReturn(SafeFuture.completedFuture(Optional.of(fork2Block1)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(fork2Block1)));
     when(recentChainData.retrieveBlockByRoot(fork2Block2.hash_tree_root()))
-            .thenReturn(SafeFuture.completedFuture(Optional.of(fork2Block2)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(fork2Block2)));
 
-    when(attestationManager.onAttestation(any(Attestation.class))).thenReturn(SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL));
+    when(attestationManager.onAttestation(any(Attestation.class)))
+        .thenReturn(SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL));
 
     operationsReOrgManager.reorgOccurred(
-            fork2Block2.hash_tree_root(),
-            UInt64.valueOf(13),
-            fork1Block2.hash_tree_root(),
-            commonAncestorSlot);
+        fork2Block2.hash_tree_root(),
+        UInt64.valueOf(13),
+        fork1Block2.hash_tree_root(),
+        commonAncestorSlot);
 
     verify(recentChainData)
-            .getEveryRootOnChainTillSlot(commonAncestorSlot, fork1Block2.hash_tree_root());
+        .getEveryRootOnChainTillSlot(commonAncestorSlot, fork1Block2.hash_tree_root());
 
     verify(proposerSlashingOperationPool).addAll(fork1Block1.getBody().getProposer_slashings());
     verify(attesterSlashingOperationPool).addAll(fork1Block1.getBody().getAttester_slashings());

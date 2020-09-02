@@ -13,7 +13,25 @@
 
 package tech.pegasys.teku.storage.client;
 
+import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.storage.store.MockStoreHelper.mockChainData;
+import static tech.pegasys.teku.storage.store.MockStoreHelper.mockGenesis;
+
 import com.google.common.eventbus.EventBus;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,25 +56,6 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.EventSink;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.StateStorageMode;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.toList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.storage.store.MockStoreHelper.mockChainData;
-import static tech.pegasys.teku.storage.store.MockStoreHelper.mockGenesis;
 
 class RecentChainDataTest {
   private final StorageSystem storageSystem =
@@ -217,7 +216,11 @@ class RecentChainDataTest {
     final List<ReorgEvent> reorgEvents = storageSystem.reorgEventChannel().getReorgEvents();
     assertThat(reorgEvents)
         .containsExactly(
-            new ReorgEvent(slot2Block.getRoot(), slot2Block.getSlot(), slot1Block.getRoot(), slot1Block.getSlot()));
+            new ReorgEvent(
+                slot2Block.getRoot(),
+                slot2Block.getSlot(),
+                slot1Block.getRoot(),
+                slot1Block.getSlot()));
     assertThat(getReorgCountMetric(storageSystem)).isEqualTo(1);
   }
 
@@ -259,7 +262,10 @@ class RecentChainDataTest {
     assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents())
         .containsExactly(
             new ReorgEvent(
-                latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot(), latestBlockAndState.getRoot(), ONE));
+                latestForkBlockAndState.getRoot(),
+                latestForkBlockAndState.getSlot(),
+                latestBlockAndState.getRoot(),
+                ONE));
   }
 
   @Test
@@ -303,7 +309,10 @@ class RecentChainDataTest {
     assertThat(preGenesisStorageSystem.reorgEventChannel().getReorgEvents())
         .containsExactly(
             new ReorgEvent(
-                latestForkBlockAndState.getRoot(), latestForkBlockAndState.getSlot(), latestBlockAndState.getRoot(), ONE));
+                latestForkBlockAndState.getRoot(),
+                latestForkBlockAndState.getSlot(),
+                latestBlockAndState.getRoot(),
+                ONE));
   }
 
   @Test
@@ -341,7 +350,8 @@ class RecentChainDataTest {
 
   @Test
   public void getLatestFinalizedBlockSlot_genesis() {
-    assertThat(recentChainData.getStore().getLatestFinalizedBlockSlot()).isEqualTo(genesis.getSlot());
+    assertThat(recentChainData.getStore().getLatestFinalizedBlockSlot())
+        .isEqualTo(genesis.getSlot());
   }
 
   @Test
@@ -360,7 +370,8 @@ class RecentChainDataTest {
     // Update checkpoint and check finalized slot accessors
     tx.setFinalizedCheckpoint(new Checkpoint(epoch, finalizedBlock.getRoot()));
     assertThat(tx.getLatestFinalizedBlockSlot()).isEqualTo(finalizedBlockSlot);
-    assertThat(recentChainData.getStore().getLatestFinalizedBlockSlot()).isEqualTo(genesis.getSlot());
+    assertThat(recentChainData.getStore().getLatestFinalizedBlockSlot())
+        .isEqualTo(genesis.getSlot());
     // Commit tx
     tx.commit().reportExceptions();
 
@@ -431,7 +442,8 @@ class RecentChainDataTest {
   public void getBlockRootBySlot_forBestBlock() throws Exception {
     final SignedBlockAndState bestBlock = advanceBestBlock(recentChainData);
 
-    assertThat(recentChainData.getBlockRootBySlot(bestBlock.getSlot())).contains(bestBlock.getRoot());
+    assertThat(recentChainData.getBlockRootBySlot(bestBlock.getSlot()))
+        .contains(bestBlock.getRoot());
   }
 
   @Test
@@ -575,28 +587,36 @@ class RecentChainDataTest {
     chainBuilder.generateBlockAtSlot(1);
 
     final List<BlockOptions> blockOptions =
-            chainBuilder
-                    .streamValidAttestationsForBlockAtSlot(ONE)
-                    .map(attestation -> BlockOptions.create().addAttestation(attestation))
-                    .limit(2)
-                    .collect(toList());
+        chainBuilder
+            .streamValidAttestationsForBlockAtSlot(ONE)
+            .map(attestation -> BlockOptions.create().addAttestation(attestation))
+            .limit(2)
+            .collect(toList());
     final ChainBuilder forkBuilder = chainBuilder.fork();
     final SignedBlockAndState firstBlockAndState =
-            chainBuilder.generateBlockAtSlot(UInt64.valueOf(2), blockOptions.get(0));
+        chainBuilder.generateBlockAtSlot(UInt64.valueOf(2), blockOptions.get(0));
     final SignedBlockAndState latestBlockAndState =
-            chainBuilder.generateBlockAtSlot(UInt64.valueOf(3));
+        chainBuilder.generateBlockAtSlot(UInt64.valueOf(3));
 
     final SignedBlockAndState firstForkBlockAndState =
-            forkBuilder.generateBlockAtSlot(UInt64.valueOf(2), blockOptions.get(1));
+        forkBuilder.generateBlockAtSlot(UInt64.valueOf(2), blockOptions.get(1));
     final SignedBlockAndState latestForkBlockAndState =
-            forkBuilder.generateBlockAtSlot(UInt64.valueOf(3), blockOptions.get(1));
+        forkBuilder.generateBlockAtSlot(UInt64.valueOf(3), blockOptions.get(1));
     importBlocksAndStates(preGenesisStorageClient, chainBuilder, forkBuilder);
 
-    assertThat(preGenesisStorageClient.getEveryRootOnChainTillSlot(UInt64.valueOf(1), latestBlockAndState.getRoot()))
-            .containsOnly(Map.entry(UInt64.valueOf(2), firstBlockAndState.getRoot()), Map.entry(UInt64.valueOf(3), latestBlockAndState.getRoot()));
+    assertThat(
+            preGenesisStorageClient.getEveryRootOnChainTillSlot(
+                UInt64.valueOf(1), latestBlockAndState.getRoot()))
+        .containsOnly(
+            Map.entry(UInt64.valueOf(2), firstBlockAndState.getRoot()),
+            Map.entry(UInt64.valueOf(3), latestBlockAndState.getRoot()));
 
-    assertThat(preGenesisStorageClient.getEveryRootOnChainTillSlot(UInt64.valueOf(1), latestForkBlockAndState.getRoot()))
-            .containsOnly(Map.entry(UInt64.valueOf(2), firstForkBlockAndState.getRoot()), Map.entry(UInt64.valueOf(3), latestForkBlockAndState.getRoot()));
+    assertThat(
+            preGenesisStorageClient.getEveryRootOnChainTillSlot(
+                UInt64.valueOf(1), latestForkBlockAndState.getRoot()))
+        .containsOnly(
+            Map.entry(UInt64.valueOf(2), firstForkBlockAndState.getRoot()),
+            Map.entry(UInt64.valueOf(3), latestForkBlockAndState.getRoot()));
   }
 
   /**

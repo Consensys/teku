@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.core;
 
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
+
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
 import org.apache.tuweni.ssz.SSZ;
@@ -35,11 +39,6 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-
-import java.util.Optional;
-
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
 
 public class BlockProposalTestUtil {
 
