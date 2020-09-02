@@ -21,6 +21,7 @@ import tech.pegasys.teku.cli.options.DataOptions;
 import tech.pegasys.teku.data.SlashingProtectionExporter;
 import tech.pegasys.teku.logging.SubCommandLogger;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 
 @CommandLine.Command(
     name = "export",
@@ -50,8 +51,7 @@ public class ExportCommand implements Runnable {
   @Override
   public void run() {
 
-    final Path slashProtectionPath =
-        DataOptions.getValidatorsSlashingProtectionPath(dataOptions.getDataPath());
+    final Path slashProtectionPath = tekuConfiguration().getValidatorsSlashingProtectionPath();
     verifySlashingProtectionPathExists(slashProtectionPath);
 
     SlashingProtectionExporter slashingProtectionExporter =
@@ -76,5 +76,9 @@ public class ExportCommand implements Runnable {
               + slashProtectionPath.toString()
               + " to be a directory containing slashing protection yml files.");
     }
+  }
+
+  private TekuConfiguration tekuConfiguration() {
+    return TekuConfiguration.builder().setDataPath(dataOptions.getDataPath()).build();
   }
 }

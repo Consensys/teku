@@ -30,7 +30,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.util.Strings;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.data.slashinginterchange.CompleteSigningHistory;

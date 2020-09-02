@@ -24,6 +24,7 @@ import tech.pegasys.teku.cli.options.DataOptions;
 import tech.pegasys.teku.data.SlashingProtectionImporter;
 import tech.pegasys.teku.logging.SubCommandLogger;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 
 @CommandLine.Command(
     name = "import",
@@ -53,8 +54,7 @@ public class ImportCommand implements Runnable {
 
   @Override
   public void run() {
-    final Path slashProtectionPath =
-        DataOptions.getValidatorsSlashingProtectionPath(dataOptions.getDataPath());
+    final Path slashProtectionPath = tekuConfiguration().getValidatorsSlashingProtectionPath();
     File importFile = new File(fromFileName);
     verifyImportFileExists(importFile);
     prepareOutputPath(slashProtectionPath.toFile());
@@ -88,5 +88,9 @@ public class ImportCommand implements Runnable {
       SUB_COMMAND_LOG.exit(
           1, "Path " + outputPath.toString() + " is not a directory or can't be written to.");
     }
+  }
+
+  private TekuConfiguration tekuConfiguration() {
+    return TekuConfiguration.builder().setDataPath(dataOptions.getDataPath()).build();
   }
 }

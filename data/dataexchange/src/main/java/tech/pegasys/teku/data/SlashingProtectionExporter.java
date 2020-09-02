@@ -17,7 +17,6 @@ import static tech.pegasys.teku.data.slashinginterchange.Metadata.INTERCHANGE_VE
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -56,7 +55,7 @@ public class SlashingProtectionExporter {
   private void readSlashProtectionFile(final File file) {
     try {
       ValidatorSigningRecord validatorSigningRecord =
-          ValidatorSigningRecord.fromBytes(Bytes.of(Files.readAllBytes(file.toPath)));
+          ValidatorSigningRecord.fromBytes(Bytes.of(Files.readAllBytes(file.toPath())));
       if (genesisValidatorsRoot == null
           && validatorSigningRecord.getGenesisValidatorsRoot() != null) {
         this.genesisValidatorsRoot = validatorSigningRecord.getGenesisValidatorsRoot();
@@ -67,7 +66,7 @@ public class SlashingProtectionExporter {
             "The genesisValidatorsRoot of "
                 + file.getName()
                 + " does not match the expected "
-                + genesisValidatorsRoot.toHexString().toLowerCase());
+                + genesisValidatorsRoot.toHexString());
       }
       final String pubkey = file.getName().substring(0, file.getName().length() - ".yml".length());
       log.display("Exporting " + pubkey);

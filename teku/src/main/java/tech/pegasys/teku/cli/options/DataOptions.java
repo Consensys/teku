@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.cli.options;
 
-import java.nio.file.Path;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.util.cli.VersionProvider;
 
@@ -32,9 +31,5 @@ public class DataOptions {
 
   private static String defaultDataPath() {
     return VersionProvider.defaultStoragePath() + System.getProperty("file.separator") + "data";
-  }
-
-  public static Path getValidatorsSlashingProtectionPath(final String dataPath) {
-    return Path.of(dataPath, "validators", "slashprotection");
   }
 }
