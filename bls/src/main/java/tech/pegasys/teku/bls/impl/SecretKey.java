@@ -37,6 +37,15 @@ public interface SecretKey {
    */
   Signature sign(Bytes message);
 
+  /**
+   * Generates a Signature from this private key and message using a custom DST.
+   *
+   * @param message The message to sign, not null
+   * @param dst Domain seperation tag/cipher suite to use
+   * @return The Signature, not null
+   */
+  Signature sign(Bytes message, Bytes dst);
+
   /** Overwrites the key with zeros so that it is no longer in memory */
   void destroy();
 
