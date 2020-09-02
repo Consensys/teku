@@ -13,12 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
-import static tech.pegasys.teku.core.ForkChoiceUtil.get_current_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -32,34 +28,21 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.storage.api.StorageQueryChannel;
-import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.config.Constants;
 
 public class PeerChainValidator {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final RecentChainData storageClient;
-  private final StorageQueryChannel historicalChainData;
-  private final Eth2Peer peer;
-  private final AtomicBoolean hasRun = new AtomicBoolean(false);
-  private final PeerStatus status;
+  private final CombinedChainDataClient chainDataClient;
   private final Counter validationStartedCounter;
   private final Counter chainValidCounter;
   private final Counter chainInvalidCounter;
   private final Counter validationErrorCounter;
-  private SafeFuture<Boolean> result;
 
   private PeerChainValidator(
-      final MetricsSystem metricsSystem,
-      final RecentChainData storageClient,
-      final StorageQueryChannel historicalChainData,
-      final Eth2Peer peer,
-      final PeerStatus status) {
-    this.storageClient = storageClient;
-    this.historicalChainData = historicalChainData;
-    this.peer = peer;
-    this.status = status;
+      final MetricsSystem metricsSystem, final CombinedChainDataClient chainDataClient) {
+    this.chainDataClient = chainDataClient;
 
     final LabelledMetric<Counter> validationCounter =
         metricsSystem.createLabelledCounter(
@@ -74,68 +57,45 @@ public class PeerChainValidator {
   }
 
   public static PeerChainValidator create(
-      final MetricsSystem metricsSystem,
-      final RecentChainData storageClient,
-      final StorageQueryChannel historicalChainData,
-      final Eth2Peer peer,
-      final PeerStatus status) {
-    return new PeerChainValidator(metricsSystem, storageClient, historicalChainData, peer, status);
+      final MetricsSystem metricsSystem, final CombinedChainDataClient chainDataClient) {
+    return new PeerChainValidator(metricsSystem, chainDataClient);
   }
 
-  public SafeFuture<Boolean> run() {
-    if (hasRun.compareAndSet(false, true)) {
-      result = executeCheck();
-    }
-    return result;
-  }
-
-  private SafeFuture<Boolean> executeCheck() {
-    LOG.trace("Validate chain of peer: {}", peer);
+  public SafeFuture<Boolean> validate(final Eth2Peer peer, final PeerStatus newStatus) {
+    LOG.trace("Validate chain of peer: {}", peer.getId());
     validationStartedCounter.inc();
-    return checkRemoteChain()
+    return checkRemoteChain(peer, newStatus)
         .thenApply(
             isValid -> {
               if (!isValid) {
                 // We are not on the same chain
-                LOG.trace("Disconnecting peer on different chain: {}", peer);
+                LOG.trace("Disconnecting peer on different chain: {}", peer.getId());
                 chainInvalidCounter.inc();
                 peer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK);
               } else {
-                LOG.trace("Validated peer's chain: {}", peer);
+                LOG.trace("Validated peer's chain: {}", peer.getId());
                 chainValidCounter.inc();
-                peer.markChainValidated();
               }
               return isValid;
             })
         .exceptionally(
             err -> {
-              LOG.debug("Unable to validate peer's chain, disconnecting: " + peer, err);
+              LOG.debug("Unable to validate peer's chain, disconnecting {}", peer.getId(), err);
               validationErrorCounter.inc();
               peer.disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK);
               return false;
             });
   }
 
-  private SafeFuture<Boolean> checkRemoteChain() {
-    // Shortcut checks if our node or our peer has not reached genesis
-    if (storageClient.isPreGenesis()) {
-      // If we haven't reached genesis, accept our peer at this point
-      LOG.trace("Validating peer pre-genesis, skip finalized block checks for peer {}", peer);
-      return SafeFuture.completedFuture(true);
-    } else if (PeerStatus.isPreGenesisStatus(status)) {
-      // Our peer hasn't reached genesis, accept them for now
-      LOG.trace("Peer has not reached genesis, skip finalized block checks for peer {}", peer);
-      return SafeFuture.completedFuture(true);
-    }
-
+  private SafeFuture<Boolean> checkRemoteChain(final Eth2Peer peer, final PeerStatus status) {
     // Check fork compatibility
-    Bytes4 expectedForkDigest = storageClient.getHeadForkInfo().orElseThrow().getForkDigest();
+    Bytes4 expectedForkDigest = chainDataClient.getHeadForkInfo().orElseThrow().getForkDigest();
     if (!Objects.equals(expectedForkDigest, status.getForkDigest())) {
       LOG.trace(
           "Peer's fork ({}) differs from our fork ({}): {}",
           status.getForkDigest(),
           expectedForkDigest,
-          peer);
+          peer.getId());
       return SafeFuture.completedFuture(false);
     }
     final UInt64 remoteFinalizedEpoch = status.getFinalizedEpoch();
@@ -146,9 +106,9 @@ public class PeerChainValidator {
 
     // Check finalized checkpoint compatibility
     final Checkpoint finalizedCheckpoint =
-        storageClient.getBestState().orElseThrow().getFinalized_checkpoint();
+        chainDataClient.getBestState().orElseThrow().getFinalized_checkpoint();
     final UInt64 finalizedEpoch = finalizedCheckpoint.getEpoch();
-    final UInt64 currentEpoch = getCurrentEpoch();
+    final UInt64 currentEpoch = chainDataClient.getCurrentEpoch();
 
     // Make sure remote finalized epoch is reasonable
     if (remoteEpochIsInvalid(currentEpoch, remoteFinalizedEpoch)) {
@@ -156,7 +116,7 @@ public class PeerChainValidator {
           "Peer is advertising invalid finalized epoch {} which is at or ahead of our current epoch {}: {}",
           remoteFinalizedEpoch,
           currentEpoch,
-          peer);
+          peer.getId());
       return SafeFuture.completedFuture(false);
     }
 
@@ -166,7 +126,7 @@ public class PeerChainValidator {
           "Finalized epoch for peer {} matches our own finalized epoch {}, verify blocks roots match",
           peer.getId(),
           finalizedEpoch);
-      return verifyFinalizedCheckpointsAreTheSame(finalizedCheckpoint);
+      return verifyFinalizedCheckpointsAreTheSame(finalizedCheckpoint, status);
     } else if (finalizedEpoch.compareTo(remoteFinalizedEpoch) > 0) {
       // We're ahead of our peer, check that we agree with our peer's finalized epoch
       LOG.trace(
@@ -174,7 +134,7 @@ public class PeerChainValidator {
           finalizedEpoch,
           peer.getId(),
           remoteFinalizedEpoch);
-      return verifyPeersFinalizedCheckpointIsCanonical();
+      return verifyPeersFinalizedCheckpointIsCanonical(peer, status);
     } else {
       // Our peer is ahead of us, check that they agree on our finalized epoch
       LOG.trace(
@@ -182,13 +142,8 @@ public class PeerChainValidator {
           finalizedEpoch,
           peer.getId(),
           remoteFinalizedEpoch);
-      return verifyPeerAgreesWithOurFinalizedCheckpoint(finalizedCheckpoint);
+      return verifyPeerAgreesWithOurFinalizedCheckpoint(peer, finalizedCheckpoint);
     }
-  }
-
-  private UInt64 getCurrentEpoch() {
-    final UInt64 currentSlot = get_current_slot(storageClient.getStore());
-    return compute_epoch_at_slot(currentSlot);
   }
 
   private boolean remoteEpochIsInvalid(
@@ -200,31 +155,33 @@ public class PeerChainValidator {
             && !remoteFinalizedEpoch.equals(UInt64.valueOf(Constants.GENESIS_EPOCH)));
   }
 
-  private SafeFuture<Boolean> verifyFinalizedCheckpointsAreTheSame(Checkpoint finalizedCheckpoint) {
+  private SafeFuture<Boolean> verifyFinalizedCheckpointsAreTheSame(
+      Checkpoint finalizedCheckpoint, final PeerStatus status) {
     final boolean chainsAreConsistent =
         Objects.equals(finalizedCheckpoint.getRoot(), status.getFinalizedRoot());
     return SafeFuture.completedFuture(chainsAreConsistent);
   }
 
-  private SafeFuture<Boolean> verifyPeersFinalizedCheckpointIsCanonical() {
+  private SafeFuture<Boolean> verifyPeersFinalizedCheckpointIsCanonical(
+      final Eth2Peer peer, final PeerStatus status) {
     final Checkpoint remoteFinalizedCheckpoint = status.getFinalizedCheckpoint();
     final UInt64 remoteFinalizedSlot = remoteFinalizedCheckpoint.getEpochStartSlot();
-    return historicalChainData
-        .getLatestFinalizedBlockAtSlot(remoteFinalizedSlot)
+    return chainDataClient
+        .getBlockInEffectAtSlot(remoteFinalizedSlot)
         .thenApply(maybeBlock -> toBlock(remoteFinalizedSlot, maybeBlock))
-        .thenApply((block) -> validateBlockRootsMatch(block, status.getFinalizedRoot()));
+        .thenApply((block) -> validateBlockRootsMatch(peer, block, status.getFinalizedRoot()));
   }
 
   private SafeFuture<Boolean> verifyPeerAgreesWithOurFinalizedCheckpoint(
-      Checkpoint finalizedCheckpoint) {
+      final Eth2Peer peer, Checkpoint finalizedCheckpoint) {
     final UInt64 finalizedEpochSlot = finalizedCheckpoint.getEpochStartSlot();
     if (finalizedEpochSlot.equals(UInt64.valueOf(Constants.GENESIS_SLOT))) {
       // Assume that our genesis blocks match because we've already verified the fork
       // digest.
       return SafeFuture.completedFuture(true);
     }
-    return historicalChainData
-        .getLatestFinalizedBlockAtSlot(finalizedEpochSlot)
+    return chainDataClient
+        .getBlockInEffectAtSlot(finalizedEpochSlot)
         .thenApply(maybeBlock -> blockToSlot(finalizedEpochSlot, maybeBlock))
         .thenCompose(
             blockSlot -> {
@@ -236,7 +193,7 @@ public class PeerChainValidator {
               }
               return peer.requestBlockBySlot(blockSlot)
                   .thenApply(
-                      block -> validateBlockRootsMatch(block, finalizedCheckpoint.getRoot()));
+                      block -> validateBlockRootsMatch(peer, block, finalizedCheckpoint.getRoot()));
             });
   }
 
@@ -252,16 +209,17 @@ public class PeerChainValidator {
             () -> new IllegalStateException("Missing historical block for slot " + lookupSlot));
   }
 
-  private boolean validateBlockRootsMatch(final SignedBeaconBlock block, final Bytes32 root) {
+  private boolean validateBlockRootsMatch(
+      final Eth2Peer peer, final SignedBeaconBlock block, final Bytes32 root) {
     final Bytes32 blockRoot = block.getMessage().hash_tree_root();
     final boolean rootsMatch = Objects.equals(blockRoot, root);
     if (rootsMatch) {
-      LOG.trace("Verified finalized blocks match for peer: {}", peer);
+      LOG.trace("Verified finalized blocks match for peer: {}", peer.getId());
     } else {
       LOG.warn(
           "Detected peer with inconsistent finalized block at slot {} for peer {}.  Block roots {} and {} do not match",
           block.getSlot(),
-          peer,
+          peer.getId(),
           blockRoot,
           root);
     }

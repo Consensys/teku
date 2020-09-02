@@ -108,7 +108,7 @@ public final class DataStructureUtil {
     return new Eth1Address(randomBytes32().slice(0, 20));
   }
 
-  private Bytes4 randomBytes4() {
+  public Bytes4 randomBytes4() {
     return new Bytes4(randomBytes32().slice(0, 4));
   }
 
