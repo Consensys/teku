@@ -53,7 +53,8 @@ public class DiscV5Service extends Service implements DiscoveryService {
     final String advertisedAddress = p2pConfig.getAdvertisedIp();
     final int advertisedPort = p2pConfig.getAdvertisedPort();
     final List<String> bootnodes = p2pConfig.getBootnodes();
-    final UInt64 seqNo = kvStore.get(SEQ_NO_STORE_KEY).map(UInt64::fromBytes).orElse(UInt64.ZERO);
+    final UInt64 seqNo =
+        kvStore.get(SEQ_NO_STORE_KEY).map(UInt64::fromBytes).orElse(UInt64.ZERO).add(1);
     discoverySystem =
         new DiscoverySystemBuilder()
             .listen(listenAddress, listenPort)
