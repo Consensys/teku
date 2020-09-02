@@ -20,6 +20,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.util.function.Function;
 import picocli.CommandLine;
 import picocli.CommandLine.ParameterException;
@@ -37,7 +38,7 @@ public interface KeystorePasswordOptions {
             commandLine, "Error: Empty password from file: " + passwordFile);
       }
       return password;
-    } catch (final FileNotFoundException e) {
+    } catch (final FileNotFoundException | NoSuchFileException e) {
       throw new ParameterException(commandLine, "Error: File not found: " + passwordFile);
     } catch (final IOException e) {
       throw new ParameterException(
