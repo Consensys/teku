@@ -141,9 +141,9 @@ public class SlashingProtectionImporter {
     Path outputFile = slashingProtectionPath.resolve(validatorString + ".yml");
     Optional<ValidatorSigningRecord> existingRecord = Optional.empty();
     if (outputFile.toFile().exists()) {
-      try (InputStream input = Files.newInputStream(outputFile)) {
+      try {
         existingRecord =
-            Optional.ofNullable(ValidatorSigningRecord.fromBytes(Bytes.of(input.readAllBytes())));
+            Optional.ofNullable(ValidatorSigningRecord.fromBytes(Bytes.of(Files.readAllBytes(outputFile)));
       } catch (IOException e) {
         log.exit(1, "Failed to read existing file: " + outputFile.toString());
       }
