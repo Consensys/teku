@@ -11,34 +11,31 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.beacon;
+package tech.pegasys.teku.beaconrestapi.v1.node;
+
+import static javax.servlet.http.HttpServletResponse.SC_OK;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
-import java.util.List;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.response.v1.node.VersionResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
-import tech.pegasys.teku.util.config.TekuConfiguration;
 
-public class RestApiHostAllowlistIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
+public class GetVersionIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
   @Test
-  public void shouldReturnForbiddenIfHostNotAuthorized() throws Exception {
-    final TekuConfiguration config =
-        TekuConfiguration.builder()
-            .setRestApiPort(0)
-            .setRestApiEnabled(true)
-            .setRestApiDocsEnabled(false)
-            .setRestApiHostAllowlist(List.of("not.authorized.host"))
-            .build();
-    startPreGenesisRestAPIWithConfig(config);
-
-    final Response response = getLatest();
-    assertForbidden(response);
+  public void shouldGetVersionFromRunningServer() throws IOException {
+    startRestAPIAtGenesis();
+    final Response response = get();
+    assertThat(response.code()).isEqualTo(SC_OK);
+    final VersionResponse versionResponse =
+        jsonProvider.jsonToObject(response.body().string(), VersionResponse.class);
+    assertThat(versionResponse.data.version).startsWith("teku/");
   }
 
-  private Response getLatest() throws IOException {
+  private Response get() throws IOException {
     return getResponse(GetVersion.ROUTE);
   }
 }

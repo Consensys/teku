@@ -37,7 +37,7 @@ public class GetVersion implements Handler {
     this.jsonProvider = jsonProvider;
   }
 
-  public static final String ROUTE = "/v1/node/version";
+  public static final String ROUTE = "/eth/v1/node/version";
 
   @OpenApi(
       path = ROUTE,
