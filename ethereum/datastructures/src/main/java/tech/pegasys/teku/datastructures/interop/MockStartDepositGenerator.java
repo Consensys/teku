@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.datastructures.util;
+package tech.pegasys.teku.datastructures.interop;
 
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
@@ -19,6 +19,7 @@ import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import java.util.List;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.datastructures.operations.DepositData;
+import tech.pegasys.teku.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class MockStartDepositGenerator {

@@ -33,13 +33,13 @@ import tech.pegasys.teku.logging.LoggingConfigurator;
 import tech.pegasys.teku.metrics.MetricsEndpoint;
 import tech.pegasys.teku.service.serviceutils.AsyncRunnerFactory;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.services.ServiceController;
+import tech.pegasys.teku.services.BeaconNodeServiceController;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.util.time.SystemTimeProvider;
 
-public class BeaconNode {
+public class BeaconNode implements Node {
 
   private final Vertx vertx = Vertx.vertx();
   private final ExecutorService threadPool =
@@ -47,7 +47,7 @@ public class BeaconNode {
           new ThreadFactoryBuilder().setDaemon(true).setNameFormat("events-%d").build());
 
   private final AsyncRunnerFactory asyncRunnerFactory;
-  private final ServiceController serviceController;
+  private final BeaconNodeServiceController serviceController;
   private final EventChannels eventChannels;
   private final MetricsEndpoint metricsEndpoint;
 
@@ -89,15 +89,17 @@ public class BeaconNode {
       eventBus.register(sszTransitionRecorder);
     }
 
-    this.serviceController = new ServiceController(serviceConfig);
+    this.serviceController = new BeaconNodeServiceController(serviceConfig);
     STATUS_LOG.dataPathSet(serviceConfig.getConfig().getDataPath());
   }
 
+  @Override
   public void start() {
     metricsEndpoint.start().join();
     serviceController.start().join();
   }
 
+  @Override
   public void stop() {
     // Stop processing new events
     eventChannels.stop();
