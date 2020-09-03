@@ -38,11 +38,13 @@ public class GetVersion implements Handler {
   private final JsonProvider jsonProvider;
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get client version.",
       tags = {TAG_NODE},
-      description = "Returns the client version.",
+      description =
+          "Returns the client version. Replaced by standard api endpoint `/eth/v1/node/version`.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = String.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)

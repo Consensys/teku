@@ -33,6 +33,7 @@ dependencies {
     integrationTestImplementation testFixtures(project(':ethereum:datastructures'))
     integrationTestImplementation testFixtures(project(':ethereum:core'))
 
+    integrationTestImplementation project(':networking:p2p')
     integrationTestImplementation 'com.squareup.okhttp3:okhttp'
     integrationTestImplementation 'org.jsoup:jsoup'
     integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
