@@ -19,11 +19,9 @@ import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.vertx.core.Vertx;
-import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.data.recorder.SSZTransitionRecorder;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
@@ -33,13 +31,13 @@ import tech.pegasys.teku.logging.LoggingConfigurator;
 import tech.pegasys.teku.metrics.MetricsEndpoint;
 import tech.pegasys.teku.service.serviceutils.AsyncRunnerFactory;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.services.BeaconNodeServiceController;
+import tech.pegasys.teku.services.ValidatorNodeServiceController;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.util.time.SystemTimeProvider;
 
-public class BeaconNode implements Node {
+public class ValidatorNode implements Node {
 
   private final Vertx vertx = Vertx.vertx();
   private final ExecutorService threadPool =
@@ -47,11 +45,11 @@ public class BeaconNode implements Node {
           new ThreadFactoryBuilder().setDaemon(true).setNameFormat("events-%d").build());
 
   private final AsyncRunnerFactory asyncRunnerFactory;
-  private final BeaconNodeServiceController serviceController;
+  private final ValidatorNodeServiceController serviceController;
   private final EventChannels eventChannels;
   private final MetricsEndpoint metricsEndpoint;
 
-  public BeaconNode(final TekuConfiguration config) {
+  public ValidatorNode(final TekuConfiguration config) {
 
     LoggingConfigurator.update(
         new LoggingConfiguration(
@@ -82,14 +80,7 @@ public class BeaconNode implements Node {
     serviceConfig.getConfig().validateConfig();
     Constants.setConstants(config.getConstants());
 
-    final String transitionRecordDir = config.getTransitionRecordDirectory();
-    if (transitionRecordDir != null) {
-      SSZTransitionRecorder sszTransitionRecorder =
-          new SSZTransitionRecorder(Path.of(transitionRecordDir));
-      eventBus.register(sszTransitionRecorder);
-    }
-
-    this.serviceController = new BeaconNodeServiceController(serviceConfig);
+    this.serviceController = new ValidatorNodeServiceController(serviceConfig);
     STATUS_LOG.dataPathSet(serviceConfig.getConfig().getDataPath());
   }
 
