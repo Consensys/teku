@@ -13,10 +13,9 @@
 
 package tech.pegasys.teku.core.results;
 
+import java.util.Optional;
 import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-
-import java.util.Optional;
 
 public interface BlockImportResult {
   BlockImportResult FAILED_BLOCK_IS_FROM_FUTURE =
@@ -78,6 +77,7 @@ public interface BlockImportResult {
   }
 
   default void markAsCanonical() {
-    throw new UnsupportedOperationException("Only successful block imports can be marked as canonical");
+    throw new UnsupportedOperationException(
+        "Only successful block imports can be marked as canonical");
   }
 }
