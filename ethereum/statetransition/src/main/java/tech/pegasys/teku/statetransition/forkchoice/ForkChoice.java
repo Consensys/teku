@@ -13,18 +13,12 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
-import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
-
-import java.util.List;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.lookup.CapturingIndexedAttestationProvider;
 import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.core.results.SuccessfulBlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -37,6 +31,12 @@ import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceExecutor.ForkChoiceTask;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
+
+import java.util.List;
+import java.util.Optional;
+
+import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
+import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
 
 public class ForkChoice {
   private static final Logger LOG = LogManager.getLogger();
@@ -149,8 +149,7 @@ public class ForkChoice {
               .commit()
               .thenRun(
                   () ->
-                      updateForkChoiceForImportedBlock(
-                          block, forkChoiceStrategy, (SuccessfulBlockImportResult) result))
+                      updateForkChoiceForImportedBlock(block, forkChoiceStrategy, result))
               .thenApply(__ -> result);
         });
   }
@@ -158,7 +157,7 @@ public class ForkChoice {
   private void updateForkChoiceForImportedBlock(
       final SignedBeaconBlock block,
       final ForkChoiceStrategy forkChoiceStrategy,
-      final SuccessfulBlockImportResult result) {
+      final BlockImportResult result) {
     result
         .getBlockProcessingRecord()
         .ifPresent(
@@ -175,7 +174,7 @@ public class ForkChoice {
                   .map(currentHead -> currentHead.getRoot().equals(block.getParent_root()))
                   .orElse(false)) {
                 recentChainData.updateHead(block.getRoot(), block.getSlot());
-                result.setBlockOnCanonicalChain(true);
+                result.markAsCanonical();
               }
             });
   }

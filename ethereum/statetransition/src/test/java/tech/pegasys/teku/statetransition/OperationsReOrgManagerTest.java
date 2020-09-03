@@ -13,23 +13,11 @@
 
 package tech.pegasys.teku.statetransition;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NavigableMap;
-import java.util.Optional;
-import java.util.TreeMap;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
@@ -40,6 +28,21 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.storage.client.RecentChainData;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NavigableMap;
+import java.util.Optional;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @SuppressWarnings("unchecked")
 public class OperationsReOrgManagerTest {
@@ -64,7 +67,7 @@ public class OperationsReOrgManagerTest {
           recentChainData);
 
   @Test
-  void shouldRequeueAndRemoveOperations() throws Exception {
+  void shouldRequeueAndRemoveOperations() {
     BeaconBlock fork1Block1 = dataStructureUtil.randomBeaconBlock(10);
     BeaconBlock fork1Block2 = dataStructureUtil.randomBeaconBlock(11);
 
@@ -76,14 +79,14 @@ public class OperationsReOrgManagerTest {
     NavigableMap<UInt64, Bytes32> nowNotCanonicalBlockRoots = new TreeMap<>();
     nowNotCanonicalBlockRoots.put(UInt64.valueOf(10), fork1Block1.hash_tree_root());
     nowNotCanonicalBlockRoots.put(UInt64.valueOf(11), fork1Block2.hash_tree_root());
-    when(recentChainData.getEveryRootOnChainTillSlot(
+    when(recentChainData.getAncestorsOnFork(
             commonAncestorSlot, fork1Block2.hash_tree_root()))
         .thenReturn(nowNotCanonicalBlockRoots);
 
     NavigableMap<UInt64, Bytes32> nowCanonicalBlockRoots = new TreeMap<>();
     nowCanonicalBlockRoots.put(UInt64.valueOf(12), fork2Block1.hash_tree_root());
     nowCanonicalBlockRoots.put(UInt64.valueOf(13), fork2Block2.hash_tree_root());
-    when(recentChainData.getEveryRootOnChainTillSlot(
+    when(recentChainData.getAncestorsOnFork(
             commonAncestorSlot, fork2Block2.hash_tree_root()))
         .thenReturn(nowCanonicalBlockRoots);
 
@@ -97,7 +100,7 @@ public class OperationsReOrgManagerTest {
     when(recentChainData.retrieveBlockByRoot(fork2Block2.hash_tree_root()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(fork2Block2)));
 
-    when(attestationManager.onAttestation(any(Attestation.class)))
+    when(attestationManager.onAttestation(any()))
         .thenReturn(SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL));
 
     operationsReOrgManager.reorgOccurred(
@@ -107,7 +110,7 @@ public class OperationsReOrgManagerTest {
         commonAncestorSlot);
 
     verify(recentChainData)
-        .getEveryRootOnChainTillSlot(commonAncestorSlot, fork1Block2.hash_tree_root());
+        .getAncestorsOnFork(commonAncestorSlot, fork1Block2.hash_tree_root());
 
     verify(proposerSlashingOperationPool).addAll(fork1Block1.getBody().getProposer_slashings());
     verify(attesterSlashingOperationPool).addAll(fork1Block1.getBody().getAttester_slashings());
@@ -117,13 +120,12 @@ public class OperationsReOrgManagerTest {
     verify(attesterSlashingOperationPool).addAll(fork1Block2.getBody().getAttester_slashings());
     verify(exitOperationPool).addAll(fork1Block2.getBody().getVoluntary_exits());
 
-    ArgumentCaptor<Attestation> argument = ArgumentCaptor.forClass(Attestation.class);
+    ArgumentCaptor<ValidateableAttestation> argument = ArgumentCaptor.forClass(ValidateableAttestation.class);
     verify(attestationManager, atLeastOnce()).onAttestation(argument.capture());
 
-    List<Attestation> attestationList = new ArrayList<>();
-    attestationList.addAll(fork1Block1.getBody().getAttestations().asList());
-    attestationList.addAll(fork1Block2.getBody().getAttestations().asList());
-
+    List<ValidateableAttestation> attestationList = new ArrayList<>();
+    attestationList.addAll(fork1Block1.getBody().getAttestations().stream().map(ValidateableAttestation::fromAttestation).collect(Collectors.toList()));
+    attestationList.addAll(fork1Block2.getBody().getAttestations().stream().map(ValidateableAttestation::fromAttestation).collect(Collectors.toList()));
     assertThat(argument.getAllValues()).containsExactlyInAnyOrderElementsOf(attestationList);
 
     verify(proposerSlashingOperationPool).removeAll(fork2Block1.getBody().getProposer_slashings());
@@ -135,5 +137,58 @@ public class OperationsReOrgManagerTest {
     verify(attesterSlashingOperationPool).removeAll(fork2Block2.getBody().getAttester_slashings());
     verify(exitOperationPool).removeAll(fork2Block2.getBody().getVoluntary_exits());
     verify(attestationPool).removeAll(fork2Block2.getBody().getAttestations());
+  }
+
+  @Test
+  void shouldOnlyRemoveOperations() {
+    BeaconBlock block1 = dataStructureUtil.randomBeaconBlock(10);
+    BeaconBlock block2 = dataStructureUtil.randomBeaconBlock(11);
+
+    UInt64 commonAncestorSlot = UInt64.valueOf(9);
+
+    NavigableMap<UInt64, Bytes32> nowCanonicalBlockRoots = new TreeMap<>();
+    nowCanonicalBlockRoots.put(UInt64.valueOf(12), block1.hash_tree_root());
+    nowCanonicalBlockRoots.put(UInt64.valueOf(13), block2.hash_tree_root());
+    when(recentChainData.getAncestorsOnFork(
+            commonAncestorSlot, block2.hash_tree_root()))
+            .thenReturn(nowCanonicalBlockRoots);
+
+    // reOrged old chain
+    when(recentChainData.getAncestorsOnFork(
+            commonAncestorSlot, Bytes32.ZERO))
+            .thenReturn(new TreeMap<>());
+
+    when(recentChainData.retrieveBlockByRoot(block1.hash_tree_root()))
+            .thenReturn(SafeFuture.completedFuture(Optional.of(block1)));
+    when(recentChainData.retrieveBlockByRoot(block2.hash_tree_root()))
+            .thenReturn(SafeFuture.completedFuture(Optional.of(block2)));
+
+    when(attestationManager.onAttestation(any()))
+            .thenReturn(SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL));
+
+    operationsReOrgManager.reorgOccurred(
+            block2.hash_tree_root(),
+            UInt64.valueOf(13),
+            Bytes32.ZERO,
+            commonAncestorSlot);
+
+    verify(recentChainData)
+            .getAncestorsOnFork(commonAncestorSlot, block2.hash_tree_root());
+
+    verify(exitOperationPool, never()).addAll(any());
+    verify(proposerSlashingOperationPool, never()).addAll(any());
+    verify(attesterSlashingOperationPool, never()).addAll(any());
+    verify(attestationManager, never()).onAttestation(any());
+
+
+    verify(proposerSlashingOperationPool).removeAll(block2.getBody().getProposer_slashings());
+    verify(attesterSlashingOperationPool).removeAll(block2.getBody().getAttester_slashings());
+    verify(exitOperationPool).removeAll(block2.getBody().getVoluntary_exits());
+    verify(attestationPool).removeAll(block2.getBody().getAttestations());
+
+    verify(proposerSlashingOperationPool).removeAll(block1.getBody().getProposer_slashings());
+    verify(attesterSlashingOperationPool).removeAll(block1.getBody().getAttester_slashings());
+    verify(exitOperationPool).removeAll(block1.getBody().getVoluntary_exits());
+    verify(attestationPool).removeAll(block1.getBody().getAttestations());
   }
 }
