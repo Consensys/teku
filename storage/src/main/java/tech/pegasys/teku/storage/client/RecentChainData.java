@@ -188,7 +188,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public NavigableMap<UInt64, Bytes32> getEveryRootOnChainTillSlot(
       final UInt64 startSlot, Bytes32 root) {
-    return ForkChoiceUtil.getEveryRootOnChainTillSlot(
+    return ForkChoiceUtil.getAncestorsOnFork(
         forkChoiceStrategy.orElseThrow(), root, startSlot);
   }
 
