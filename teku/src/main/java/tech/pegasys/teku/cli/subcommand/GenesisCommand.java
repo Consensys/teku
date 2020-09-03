@@ -24,9 +24,9 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.datastructures.interop.InteropStartupUtil;
+import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
-import tech.pegasys.teku.statetransition.util.StartupUtil;
 import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 
 @Command(
@@ -68,7 +68,7 @@ public class GenesisCommand {
       final List<BLSKeyPair> validatorKeys =
           new MockStartValidatorKeyPairFactory().generateKeyPairs(0, params.validatorCount);
       final BeaconState genesisState =
-          StartupUtil.createMockedStartInitialBeaconState(genesisTime, validatorKeys);
+          InteropStartupUtil.createMockedStartInitialBeaconState(genesisTime, validatorKeys);
 
       if (outputToFile) {
         SUB_COMMAND_LOG.storingGenesis(params.outputFile, false);
