@@ -32,16 +32,16 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.interop.InteropStartupUtil;
+import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
-import tech.pegasys.teku.statetransition.util.StartupUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
@@ -109,7 +109,9 @@ public class BeaconChainUtil {
       final RecentChainData recentChainData,
       final List<BLSKeyPair> validatorKeys,
       final boolean signDeposits) {
-    StartupUtil.setupInitialState(recentChainData, 0, null, validatorKeys, signDeposits);
+    final BeaconState initState =
+        InteropStartupUtil.createMockedStartInitialBeaconState(0, validatorKeys, signDeposits);
+    recentChainData.initializeFromGenesis(initState).reportExceptions();
   }
 
   public void initializeStorage() {

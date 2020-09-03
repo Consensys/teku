@@ -394,17 +394,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return forkChoiceStrategy.flatMap(strategy -> get_ancestor(strategy, headBlockRoot, slot));
   }
 
-  // TODO (#2398): These methods should not return zero if null. We should handle this better
   public UInt64 getFinalizedEpoch() {
-    return store == null ? UInt64.ZERO : store.getFinalizedCheckpoint().getEpoch();
+    return getFinalizedCheckpoint().map(Checkpoint::getEpoch).orElse(UInt64.ZERO);
   }
 
-  public UInt64 getBestJustifiedEpoch() {
-    return store == null ? UInt64.ZERO : store.getBestJustifiedCheckpoint().getEpoch();
-  }
-
-  public Bytes32 getFinalizedRoot() {
-    return store == null ? null : store.getFinalizedCheckpoint().getRoot();
+  public Optional<Checkpoint> getFinalizedCheckpoint() {
+    return store == null ? Optional.empty() : Optional.of(store.getFinalizedCheckpoint());
   }
 
   @Override

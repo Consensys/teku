@@ -178,6 +178,8 @@ class ForkChoiceTest {
                             + genesis.getRoot()
                             + " chain head: "
                             + chainBuilder.getLatestBlockAndState().getRoot()
+                            + " fork block: "
+                            + forkBlock.getRoot()
                             + " validators: "
                             + chainBuilder.getValidatorKeys().stream()
                                 .map(BLSKeyPair::getPublicKey)

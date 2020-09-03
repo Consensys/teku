@@ -105,6 +105,15 @@ public final class UInt64 implements Comparable<UInt64> {
   }
 
   /**
+   * Increment this value by one and return the result.
+   *
+   * @return The result of incrementing this value by 1.
+   */
+  public UInt64 increment() {
+    return plus(1);
+  }
+
+  /**
    * Return the result of adding this value and the specified one.
    *
    * @param other the unsigned value to add.

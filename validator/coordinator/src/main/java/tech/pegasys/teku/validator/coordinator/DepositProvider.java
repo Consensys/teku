@@ -22,6 +22,7 @@ import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -141,7 +142,8 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
     final UInt64 maxPossibleResultingDepositIndex =
         depositNavigableMap.isEmpty() ? eth1DepositIndex : depositNavigableMap.lastKey().plus(ONE);
     if (maxPossibleResultingDepositIndex.compareTo(eth1DepositCount) < 0) {
-      throw new MissingDepositsException(maxPossibleResultingDepositIndex, eth1DepositCount);
+      throw MissingDepositsException.missingRange(
+          maxPossibleResultingDepositIndex.plus(UInt64.ONE), eth1DepositCount);
     }
   }
 
@@ -157,15 +159,22 @@ public class DepositProvider implements Eth1EventsChannel, FinalizedCheckpointCh
    */
   private List<Deposit> getDepositsWithProof(
       UInt64 fromDepositIndex, UInt64 toDepositIndex, UInt64 eth1DepositCount) {
+    final AtomicReference<UInt64> expectedDepositIndex = new AtomicReference<>(fromDepositIndex);
     return depositNavigableMap.subMap(fromDepositIndex, true, toDepositIndex, false).values()
         .stream()
         .map(
-            deposit ->
-                new DepositWithIndex(
-                    depositMerkleTree.getProofWithViewBoundary(
-                        deposit.getIndex().intValue(), eth1DepositCount.intValue()),
-                    deposit.getData(),
-                    deposit.getIndex()))
+            deposit -> {
+              if (!deposit.getIndex().equals(expectedDepositIndex.get())) {
+                throw MissingDepositsException.missingRange(
+                    expectedDepositIndex.get(), deposit.getIndex());
+              }
+              expectedDepositIndex.set(deposit.getIndex().plus(ONE));
+              return new DepositWithIndex(
+                  depositMerkleTree.getProofWithViewBoundary(
+                      deposit.getIndex().intValue(), eth1DepositCount.intValue()),
+                  deposit.getData(),
+                  deposit.getIndex());
+            })
         .collect(Collectors.toList());
   }
 }

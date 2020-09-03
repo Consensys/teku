@@ -15,7 +15,7 @@ package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
 import static java.util.stream.Collectors.toList;
 
-import java.util.List;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -35,9 +35,10 @@ public class DepositsFromBlockEventSerializer implements RocksDbSerializer<Depos
           final UInt64 blockNumber = UInt64.fromLongBits(reader.readUInt64());
           final Bytes32 blockHash = Bytes32.wrap(reader.readFixedBytes(Bytes32.SIZE));
           final UInt64 blockTimestamp = UInt64.fromLongBits(reader.readUInt64());
-          final List<Deposit> deposits =
-              reader.readBytesList().stream().map(this::decodeDeposit).collect(toList());
-          return new DepositsFromBlockEvent(blockNumber, blockHash, blockTimestamp, deposits);
+          final Stream<Deposit> depositsStream =
+              reader.readBytesList().stream().map(this::decodeDeposit);
+          return DepositsFromBlockEvent.create(
+              blockNumber, blockHash, blockTimestamp, depositsStream);
         });
   }
 

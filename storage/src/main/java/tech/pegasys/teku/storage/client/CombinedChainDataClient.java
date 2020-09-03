@@ -39,6 +39,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
+import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -295,7 +296,7 @@ public class CombinedChainDataClient {
     }
   }
 
-  public Optional<BeaconState> getHeadStateFromStore() {
+  public Optional<BeaconState> getBestState() {
     return recentChainData.getBestState();
   }
 
@@ -338,6 +339,10 @@ public class CombinedChainDataClient {
   /** @return The epoch in which the chain head block was proposed */
   public UInt64 getHeadEpoch() {
     return compute_epoch_at_slot(getHeadSlot());
+  }
+
+  public Optional<ForkInfo> getHeadForkInfo() {
+    return recentChainData.getHeadForkInfo();
   }
 
   /** @return The current slot according to clock time */

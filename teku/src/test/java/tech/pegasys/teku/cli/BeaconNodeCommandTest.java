@@ -266,7 +266,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   private TekuConfigurationBuilder expectedDefaultConfigurationBuilder() {
     return expectedConfigurationBuilder()
-        .setNetwork(NetworkDefinition.fromCliArg("altona"))
+        .setNetwork(NetworkDefinition.fromCliArg("medalla"))
         .setEth1DepositContractAddress(null)
         .setEth1Endpoint(null)
         .setMetricsCategories(
@@ -345,7 +345,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setRemoteValidatorApiInterface("127.0.0.1")
         .setRemoteValidatorApiMaxSubscribers(1000)
         .setRemoteValidatorApiPort(9999)
-        .setRemoteValidatorApiEnabled(false);
+        .setRemoteValidatorApiEnabled(false)
+        .setBeaconNodeApiEndpoint("http://127.0.0.1:5051")
+        .setBeaconNodeEventsWsEndpoint("ws://127.0.0.1:9999");
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {

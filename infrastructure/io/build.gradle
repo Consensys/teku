@@ -1,0 +1,3 @@
+dependencies {
+    implementation 'org.apache.tuweni:tuweni-bytes'
+}

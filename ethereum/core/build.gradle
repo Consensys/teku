@@ -1,7 +1,9 @@
 dependencies {
   implementation project(':bls')
   implementation project(':data')
+  implementation project(':infrastructure:io')
   implementation project(':data:metrics')
+  implementation project(':data:signingrecord')
   implementation project(':ethereum:datastructures')
   implementation project(':infrastructure:async')
   implementation project(':protoarray')

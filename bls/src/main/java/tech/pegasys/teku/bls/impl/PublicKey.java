@@ -38,6 +38,18 @@ public interface PublicKey {
   }
 
   /**
+   * Verifies the given BLS signature against the message bytes and DST using this public key.
+   *
+   * @param message The message data to verify, not null
+   * @param signature The signature, not null
+   * @param dst The domain separation tag, not null
+   * @return True if the verification is successful, false otherwise.
+   */
+  default boolean verifySignature(Signature signature, Bytes message, Bytes dst) {
+    return signature.verify(this, message, dst);
+  }
+
+  /**
    * The implementation may be lazy in regards to deserialization of the public key bytes. That
    * method forces immediate deserialization and validation
    *

@@ -52,7 +52,7 @@ public class SlashingProtectedSigner implements Signer {
   @Override
   public SafeFuture<BLSSignature> signBlock(final BeaconBlock block, final ForkInfo forkInfo) {
     return slashingProtector
-        .maySignBlock(validatorPublicKey, block.getSlot())
+        .maySignBlock(validatorPublicKey, forkInfo.getGenesisValidatorsRoot(), block.getSlot())
         .thenAccept(verifySigningAllowed(slashableBlockMessage(block)))
         .thenCompose(__ -> delegate.signBlock(block, forkInfo));
   }
@@ -63,6 +63,7 @@ public class SlashingProtectedSigner implements Signer {
     return slashingProtector
         .maySignAttestation(
             validatorPublicKey,
+            forkInfo.getGenesisValidatorsRoot(),
             attestationData.getSource().getEpoch(),
             attestationData.getTarget().getEpoch())
         .thenAccept(verifySigningAllowed(slashableAttestationMessage(attestationData)))
