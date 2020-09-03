@@ -560,6 +560,18 @@ public final class DataStructureUtil {
         Constants.FAR_FUTURE_EPOCH);
   }
 
+  public Validator randomValidator(final UInt64 activationEpoch) {
+    return Validator.create(
+        randomPublicKey(),
+        randomBytes32(),
+        UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE),
+        false,
+        activationEpoch,
+        activationEpoch,
+        Constants.FAR_FUTURE_EPOCH,
+        Constants.FAR_FUTURE_EPOCH);
+  }
+
   public Fork randomFork() {
     return new Fork(randomBytes4(), randomBytes4(), randomUInt64());
   }
