@@ -593,12 +593,13 @@ class RecentChainDataTest {
             .limit(2)
             .collect(toList());
     final ChainBuilder forkBuilder = chainBuilder.fork();
+
     final SignedBlockAndState firstBlockAndState =
         chainBuilder.generateBlockAtSlot(UInt64.valueOf(2), blockOptions.get(0));
     final SignedBlockAndState latestBlockAndState =
         chainBuilder.generateBlockAtSlot(UInt64.valueOf(3));
 
-    final SignedBlockAndState firstForkBlockAndState =
+    final SignedBlockAndState forkFirstBlockAndState =
         forkBuilder.generateBlockAtSlot(UInt64.valueOf(2), blockOptions.get(1));
     final SignedBlockAndState latestForkBlockAndState =
         forkBuilder.generateBlockAtSlot(UInt64.valueOf(3), blockOptions.get(1));
@@ -614,7 +615,9 @@ class RecentChainDataTest {
     assertThat(
             preGenesisStorageClient.getAncestorsOnFork(
                 UInt64.valueOf(1), latestForkBlockAndState.getRoot()))
-        .containsOnly(Map.entry(UInt64.valueOf(3), latestForkBlockAndState.getRoot()));
+        .containsOnly(
+            Map.entry(UInt64.valueOf(2), forkFirstBlockAndState.getRoot()),
+            Map.entry(UInt64.valueOf(3), latestForkBlockAndState.getRoot()));
   }
 
   @Test

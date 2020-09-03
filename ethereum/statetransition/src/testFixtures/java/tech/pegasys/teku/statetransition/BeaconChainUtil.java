@@ -256,15 +256,7 @@ public class BeaconChainUtil {
 
     final MessageSignerService signer = getSigner(proposerIndex);
     return blockCreator.createBlock(
-        signer,
-        slot,
-        preState,
-        bestBlockRoot,
-        attestations,
-        Optional.empty(),
-        deposits,
-        exits,
-        eth1Data);
+        signer, slot, preState, bestBlockRoot, attestations, deposits, exits, eth1Data);
   }
 
   public void finalizeChainAtEpoch(final UInt64 epoch) throws Exception {
