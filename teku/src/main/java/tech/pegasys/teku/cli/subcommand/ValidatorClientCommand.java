@@ -70,8 +70,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
 
-  @ParentCommand
-  private BeaconNodeCommand parentCommand;
+  @ParentCommand private BeaconNodeCommand parentCommand;
 
   @Override
   public Integer call() {

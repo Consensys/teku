@@ -13,11 +13,6 @@
 
 package tech.pegasys.teku.services;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainService;
 import tech.pegasys.teku.services.chainstorage.StorageService;
@@ -26,9 +21,7 @@ import tech.pegasys.teku.services.remotevalidator.RemoteValidatorService;
 import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 
-public class BeaconNodeServiceController extends Service {
-
-  private final List<Service> services = new ArrayList<>();
+public class BeaconNodeServiceController extends ServiceController {
 
   public BeaconNodeServiceController(final ServiceConfig config) {
     // Note services will be started in the order they are added here.
@@ -43,21 +36,5 @@ public class BeaconNodeServiceController extends Service {
     if (!config.getConfig().isInteropEnabled() && config.getConfig().isEth1Enabled()) {
       services.add(new PowchainService(config));
     }
-  }
-
-  @Override
-  protected SafeFuture<?> doStart() {
-    final Iterator<Service> iterator = services.iterator();
-    SafeFuture<?> startupFuture = iterator.next().start();
-    while (iterator.hasNext()) {
-      final Service nextService = iterator.next();
-      startupFuture = startupFuture.thenCompose(__ -> nextService.start());
-    }
-    return startupFuture;
-  }
-
-  @Override
-  protected SafeFuture<?> doStop() {
-    return SafeFuture.allOf(services.stream().map(Service::stop).toArray(SafeFuture[]::new));
   }
 }
