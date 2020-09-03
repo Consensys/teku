@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigInteger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
@@ -53,6 +54,11 @@ public class DepositProcessingControllerTest {
           depositFetcher,
           eth1BlockFetcher,
           headTracker);
+
+  @AfterEach
+  void tearDown() {
+    Constants.setConstants("minimal");
+  }
 
   @Test
   void doesAnotherRequestWhenTheLatestCanonicalBlockGetsUpdatedDuringCurrentRequest() {

@@ -13,9 +13,28 @@
 
 package tech.pegasys.teku.logging;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class SubCommandLogger {
 
   public static final SubCommandLogger SUB_COMMAND_LOG = new SubCommandLogger();
+
+  public void exit(int exitCode, final String message) {
+    if (!StringUtils.isEmpty(message)) {
+      if (exitCode == 0) {
+        display(message);
+      } else {
+        error(message);
+      }
+    }
+
+    System.exit(exitCode);
+  }
+
+  public void exit(final int exitCode, final String message, final Exception exception) {
+    error(message, exception);
+    System.exit(exitCode);
+  }
 
   public void error(final String message) {
     System.err.println(message);

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.util.config;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -90,6 +91,7 @@ public class TekuConfigurationBuilder {
   private int remoteValidatorApiMaxSubscribers;
   private boolean remoteValidatorApiEnabled;
   private Bytes32 graffiti;
+  private Path validatorsSlashingProtectionPath;
   private boolean isValidatorClient;
   private String beaconNodeApiEndpoint;
   private String beaconNodeEventsWsEndpoint;
@@ -361,6 +363,7 @@ public class TekuConfigurationBuilder {
 
   public TekuConfigurationBuilder setDataPath(final String dataPath) {
     this.dataPath = dataPath;
+    this.setValidatorsSlashingProtectionPath(Path.of(dataPath, "validators", "slashingprotection"));
     return this;
   }
 
@@ -446,6 +449,12 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
+  public TekuConfigurationBuilder setValidatorsSlashingProtectionPath(
+      final Path validatorsSlashingProtectionPath) {
+    this.validatorsSlashingProtectionPath = validatorsSlashingProtectionPath;
+    return this;
+  }
+
   public TekuConfigurationBuilder setValidatorClient(final boolean isValidatorOnly) {
     this.isValidatorClient = isValidatorOnly;
     return this;
@@ -482,8 +491,6 @@ public class TekuConfigurationBuilder {
       throw new InvalidConfigurationException(
           "eth1-deposit-contract-address is required if eth1-endpoint is specified.");
     }
-
-    // TODO validate config for validator node only
 
     p2pSnappyEnabled = Optional.ofNullable(p2pSnappyEnabled).orElse(DEFAULT_P2P_SNAPPY_ENABLED);
     return new TekuConfiguration(
@@ -553,6 +560,7 @@ public class TekuConfigurationBuilder {
         remoteValidatorApiMaxSubscribers,
         remoteValidatorApiEnabled,
         graffiti,
+        validatorsSlashingProtectionPath,
         isValidatorClient,
         beaconNodeApiEndpoint,
         beaconNodeEventsWsEndpoint);

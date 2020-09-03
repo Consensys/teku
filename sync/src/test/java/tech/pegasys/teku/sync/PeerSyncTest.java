@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.util.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -222,7 +223,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   @Test
   void sync_longSyncWithTwoRequests() {
     final UInt64 secondRequestSize = UInt64.ONE;
-    UInt64 peerHeadSlot = Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(secondRequestSize);
+    UInt64 peerHeadSlot = MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(secondRequestSize);
 
     withPeerHeadSlot(peerHeadSlot);
 
@@ -239,7 +240,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     verify(peer)
         .requestBlocksByRange(
             eq(startSlot),
-            eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
+            eq(MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
             eq(UInt64.ONE),
             responseListenerArgumentCaptor.capture());
 
@@ -314,7 +315,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   @Test
   void sync_handleEmptyResponse() {
     final UInt64 secondRequestSize = UInt64.valueOf(5);
-    UInt64 peerHeadSlot = Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(secondRequestSize);
+    UInt64 peerHeadSlot = MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(secondRequestSize);
 
     withPeerHeadSlot(peerHeadSlot);
 
@@ -333,7 +334,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     verify(peer)
         .requestBlocksByRange(
             eq(startSlot),
-            eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
+            eq(MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
             eq(UInt64.ONE),
             responseListenerArgumentCaptor.capture());
 
@@ -346,7 +347,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     assertThat(syncStatusStartingSlot).isEqualTo(startSlot);
 
     asyncRunner.executeQueuedActions();
-    final UInt64 nextSlotStart = startSlot.plus(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
+    final UInt64 nextSlotStart = startSlot.plus(MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
     verify(peer)
         .requestBlocksByRange(
             eq(nextSlotStart),
@@ -397,7 +398,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   @Test
   void sync_failSyncIfPeerThrottlesTooAggressively() {
     final UInt64 startSlot = UInt64.ONE;
-    UInt64 minPeerSlot = Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(startSlot);
+    UInt64 minPeerSlot = MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(startSlot);
     withPeerFinalizedEpoch(compute_epoch_at_slot(minPeerSlot));
 
     final List<SafeFuture<Void>> requestFutures = new ArrayList<>();
@@ -415,7 +416,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     verify(peer)
         .requestBlocksByRange(
             eq(startSlot),
-            eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
+            eq(MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
             eq(UInt64.ONE),
             responseListenerArgumentCaptor.capture());
 
@@ -456,7 +457,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     verify(peer)
         .requestBlocksByRange(
             eq(startSlot),
-            eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
+            eq(MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
             eq(UInt64.ONE),
             responseListenerArgumentCaptor.capture());
 
@@ -491,7 +492,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     verify(peer)
         .requestBlocksByRange(
             eq(startSlot),
-            eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
+            eq(MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
             eq(UInt64.ONE),
             responseListenerArgumentCaptor.capture());
 
@@ -505,7 +506,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     verify(peer)
         .requestBlocksByRange(
             eq(UInt64.valueOf(lastReceivedBlockSlot + 1)),
-            eq(Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
+            eq(MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
             eq(UInt64.ONE),
             any());
     verify(peer, never()).disconnectCleanly(any());

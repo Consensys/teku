@@ -32,7 +32,6 @@ import tech.pegasys.teku.metrics.MetricsConfig;
 
 /** Configuration of an instance of Teku. */
 public class TekuConfiguration implements MetricsConfig {
-
   // Network
   private final String constants;
   private final String initialState;
@@ -72,6 +71,7 @@ public class TekuConfiguration implements MetricsConfig {
   private final String validatorExternalSignerUrl;
   private final int validatorExternalSignerTimeout;
   private final Bytes32 graffiti;
+  private final Path validatorsSlashingProtectionPath;
 
   // Deposit
   private final Eth1Address eth1DepositContractAddress;
@@ -199,6 +199,7 @@ public class TekuConfiguration implements MetricsConfig {
       final int remoteValidatorApiMaxSubscribers,
       final boolean remoteValidatorApiEnabled,
       final Bytes32 graffiti,
+      final Path validatorsSlashingProtectionPath,
       final boolean isValidatorClient,
       final String beaconNodeApiEndpoint,
       final String beaconNodeEventsWsEndpoint) {
@@ -268,6 +269,7 @@ public class TekuConfiguration implements MetricsConfig {
     this.remoteValidatorApiEnabled = remoteValidatorApiEnabled;
     this.remoteValidatorApiMaxSubscribers = remoteValidatorApiMaxSubscribers;
     this.graffiti = graffiti;
+    this.validatorsSlashingProtectionPath = validatorsSlashingProtectionPath;
     this.isValidatorClient = isValidatorClient;
     this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
     this.beaconNodeEventsWsEndpoint = beaconNodeEventsWsEndpoint;
@@ -627,5 +629,9 @@ public class TekuConfiguration implements MetricsConfig {
               validatorKeystoreFiles.size(), validatorKeystorePasswordFiles.size());
       throw new InvalidConfigurationException(errorMessage);
     }
+  }
+
+  public Path getValidatorsSlashingProtectionPath() {
+    return validatorsSlashingProtectionPath;
   }
 }
