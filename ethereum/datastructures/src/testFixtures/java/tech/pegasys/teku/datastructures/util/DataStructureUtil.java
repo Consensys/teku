@@ -126,14 +126,6 @@ public final class DataStructureUtil {
     return randomSSZList(classInfo, maxSize / 10, maxSize, valueGenerator);
   }
 
-  public <T> SSZList<T> randomSSZList(
-      Class<? extends T> classInfo,
-      long maxSize,
-      Supplier<T> valueGenerator,
-      long listSizeDivider) {
-    return randomSSZList(classInfo, maxSize / listSizeDivider, maxSize, valueGenerator);
-  }
-
   public <T> SSZList<T> randomFullSSZList(
       Class<? extends T> classInfo, long maxSize, Supplier<T> valueGenerator) {
     return randomSSZList(classInfo, maxSize, maxSize, valueGenerator);
@@ -389,10 +381,7 @@ public final class DataStructureUtil {
         randomSSZList(
             ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS, this::randomProposerSlashing),
         randomSSZList(
-            AttesterSlashing.class,
-            Constants.MAX_ATTESTER_SLASHINGS,
-            this::randomAttesterSlashing,
-            1),
+            AttesterSlashing.class, Constants.MAX_ATTESTER_SLASHINGS, this::randomAttesterSlashing),
         randomSSZList(Attestation.class, Constants.MAX_ATTESTATIONS, this::randomAttestation),
         randomSSZList(Deposit.class, Constants.MAX_DEPOSITS, this::randomDepositWithoutIndex),
         randomSSZList(

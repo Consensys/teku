@@ -96,7 +96,6 @@ public class BlockProposalTestUtil {
       final BeaconState previousState,
       final Bytes32 parentBlockSigningRoot,
       final Optional<SSZList<Attestation>> attestations,
-      final Optional<SSZList<ProposerSlashing>> proposerSlashings,
       final Optional<SSZList<Deposit>> deposits,
       final Optional<SSZList<SignedVoluntaryExit>> exits,
       final Optional<Eth1Data> eth1Data)
@@ -109,7 +108,7 @@ public class BlockProposalTestUtil {
         parentBlockSigningRoot,
         eth1Data.orElse(get_eth1_data_stub(previousState, newEpoch)),
         attestations.orElse(BeaconBlockBodyLists.createAttestations()),
-        proposerSlashings.orElse(BeaconBlockBodyLists.createProposerSlashings()),
+        BeaconBlockBodyLists.createProposerSlashings(),
         deposits.orElse(BeaconBlockBodyLists.createDeposits()),
         exits.orElse(BeaconBlockBodyLists.createVoluntaryExits()));
   }

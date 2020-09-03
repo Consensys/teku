@@ -44,8 +44,6 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.DepositData;
-import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DepositGenerator;
@@ -276,10 +274,6 @@ public class ChainBuilder {
     return generateBlockAtSlot(UInt64.valueOf(slot));
   }
 
-  public SignedBlockAndState generateBlockAtSlot(final long slot, final BlockOptions options) {
-    return generateBlockAtSlot(UInt64.valueOf(slot));
-  }
-
   public SignedBlockAndState generateBlockAtSlot(final UInt64 slot) {
     return generateBlockAtSlot(slot, BlockOptions.create());
   }
@@ -367,9 +361,8 @@ public class ChainBuilder {
               preState,
               parentRoot,
               Optional.of(options.getAttestations()),
-              Optional.of(options.getProposerSlashings()),
               Optional.empty(),
-              Optional.of(options.getVoluntaryExits()),
+              Optional.empty(),
               options.getEth1Data());
       trackBlock(nextBlockAndState);
       return nextBlockAndState;
@@ -392,10 +385,6 @@ public class ChainBuilder {
 
   public static final class BlockOptions {
     private SSZMutableList<Attestation> attestations = BeaconBlockBodyLists.createAttestations();
-    private SSZMutableList<ProposerSlashing> proposerSlashings =
-        BeaconBlockBodyLists.createProposerSlashings();
-    private SSZMutableList<SignedVoluntaryExit> voluntaryExits =
-        BeaconBlockBodyLists.createVoluntaryExits();
     private Optional<Eth1Data> eth1Data = Optional.empty();
 
     private BlockOptions() {}
@@ -409,27 +398,9 @@ public class ChainBuilder {
       return this;
     }
 
-    public BlockOptions addProposerSlashings(final ProposerSlashing proposerSlashing) {
-      proposerSlashings.add(proposerSlashing);
-      return this;
-    }
-
-    public BlockOptions addVoluntaryExits(final SignedVoluntaryExit exit) {
-      voluntaryExits.add(exit);
-      return this;
-    }
-
     public BlockOptions setEth1Data(final Eth1Data eth1Data) {
       this.eth1Data = Optional.ofNullable(eth1Data);
       return this;
-    }
-
-    private SSZMutableList<ProposerSlashing> getProposerSlashings() {
-      return proposerSlashings;
-    }
-
-    private SSZMutableList<SignedVoluntaryExit> getVoluntaryExits() {
-      return voluntaryExits;
     }
 
     private SSZList<Attestation> getAttestations() {

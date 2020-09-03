@@ -614,9 +614,7 @@ class RecentChainDataTest {
     assertThat(
             preGenesisStorageClient.getAncestorsOnFork(
                 UInt64.valueOf(1), latestForkBlockAndState.getRoot()))
-        .containsOnly(
-            Map.entry(UInt64.valueOf(2), firstForkBlockAndState.getRoot()),
-            Map.entry(UInt64.valueOf(3), latestForkBlockAndState.getRoot()));
+        .containsOnly(Map.entry(UInt64.valueOf(3), latestForkBlockAndState.getRoot()));
   }
 
   @Test
