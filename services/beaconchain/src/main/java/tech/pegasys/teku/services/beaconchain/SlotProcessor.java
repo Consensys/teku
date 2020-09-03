@@ -88,6 +88,7 @@ public class SlotProcessor {
   }
 
   public void setCurrentSlot(final UInt64 slot) {
+    slotEventsChannelPublisher.onSlot(slot);
     nodeSlot.setValue(slot);
   }
 
