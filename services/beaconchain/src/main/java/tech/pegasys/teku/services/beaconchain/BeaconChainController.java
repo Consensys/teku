@@ -15,6 +15,7 @@ package tech.pegasys.teku.services.beaconchain;
 
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_tick;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
@@ -43,9 +44,12 @@ import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitio
 import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.util.StartupUtil;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -73,7 +77,6 @@ import tech.pegasys.teku.statetransition.forkchoice.SingleThreadedForkChoiceExec
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
-import tech.pegasys.teku.statetransition.util.StartupUtil;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -113,7 +116,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
   private final EventBus eventBus;
-  private final boolean setupInitialState;
   private final SlotEventsChannel slotEventsChannelPublisher;
   private final AsyncRunner networkAsyncRunner;
 
@@ -147,7 +149,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.config = serviceConfig.getConfig();
     this.metricsSystem = serviceConfig.getMetricsSystem();
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
-    this.setupInitialState = config.isInteropEnabled() || config.getInitialState() != null;
   }
 
   @Override
@@ -215,8 +216,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               // Setup chain storage
               this.recentChainData = client;
               if (recentChainData.isPreGenesis()) {
-                if (setupInitialState) {
+                // Set up genesis
+                if (config.getInitialState() != null) {
                   setupInitialState();
+                } else if (config.isInteropEnabled()) {
+                  setupInteropState();
                 } else if (config.isEth1Enabled()) {
                   STATUS_LOG.loadingGenesisFromEth1Chain();
                 } else {
@@ -360,7 +364,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void initGenesisHandler() {
-    if (setupInitialState) {
+    if (config.isInteropEnabled() || config.getInitialState() != null) {
+      // We're manually setting genesis, so don't spin up the genesis handler
       return;
     }
     LOG.debug("BeaconChainController.initPreGenesisDepositHandler()");
@@ -533,12 +538,36 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     }
   }
 
+  private void setupInteropState() {
+    STATUS_LOG.generatingMockStartGenesis(
+        config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
+    final BeaconState interopState =
+        InteropStartupUtil.createMockedStartInitialBeaconState(
+            config.getInteropGenesisTime(), config.getInteropNumberOfValidators());
+    initializeGenesis(interopState);
+  }
+
   private void setupInitialState() {
-    StartupUtil.setupInitialState(
-        recentChainData,
-        config.getInteropGenesisTime(),
-        config.getInitialState(),
-        config.getInteropNumberOfValidators());
+    try {
+      STATUS_LOG.loadingGenesisFile(config.getInitialState());
+      final BeaconState initialState = StartupUtil.loadBeaconState(config.getInitialState());
+      initializeGenesis(initialState);
+    } catch (final IOException e) {
+      throw new IllegalStateException("Failed to load initial state", e);
+    }
+  }
+
+  private void initializeGenesis(final BeaconState genesisState) {
+    recentChainData
+        .initializeFromGenesis(genesisState)
+        .thenAccept(
+            __ -> {
+              EVENT_LOG.genesisEvent(
+                  genesisState.hashTreeRoot(),
+                  recentChainData.getBestBlockRoot().orElseThrow(),
+                  genesisState.getGenesis_time());
+            })
+        .reportExceptions();
   }
 
   private void onStoreInitialized() {

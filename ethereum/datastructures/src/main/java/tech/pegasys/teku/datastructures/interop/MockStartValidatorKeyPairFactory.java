@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.datastructures.util;
+package tech.pegasys.teku.datastructures.interop;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.util.message.BouncyCastleMessageDigestFactory;
 
 public class MockStartValidatorKeyPairFactory {
