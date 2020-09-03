@@ -35,6 +35,7 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
 
 @Command(
     name = "validator-client",
+    aliases = "vc",
     description = "Run a Validator Client that connects to a remote Beacon Node",
     showDefaultValues = true,
     abbreviateSynopsis = true,
@@ -44,7 +45,8 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",
     footerHeading = "%n",
-    footer = "Teku is licensed under the Apache License 2.0")
+    footer = "Teku is licensed under the Apache License 2.0",
+    hidden = true)
 public class ValidatorClientCommand implements Callable<Integer> {
 
   @Mixin(name = "Validator")
@@ -68,7 +70,8 @@ public class ValidatorClientCommand implements Callable<Integer> {
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
 
-  @ParentCommand private BeaconNodeCommand parentCommand;
+  @ParentCommand
+  private BeaconNodeCommand parentCommand;
 
   @Override
   public Integer call() {
@@ -123,9 +126,6 @@ public class ValidatorClientCommand implements Callable<Integer> {
         .setMetricsCategories(metricsOptions.getMetricsCategories())
         .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist())
         .setDataPath(dataOptions.getDataPath())
-        .setDataStorageMode(dataOptions.getDataStorageMode())
-        .setDataStorageFrequency(dataOptions.getDataStorageFrequency())
-        .setDataStorageCreateDbVersion(dataOptions.getCreateDbVersion())
         .setValidatorClient(true)
         .setBeaconNodeApiEndpoint(validatorClientOptions.getBeaconNodeApiEndpoint())
         .setBeaconNodeEventsWsEndpoint(validatorClientOptions.getBeaconNodeEventsWsEndpoint())
