@@ -123,6 +123,11 @@ public class TekuConfiguration implements MetricsConfig {
   private final boolean remoteValidatorApiEnabled;
   private final int remoteValidatorApiMaxSubscribers;
 
+  // Validator Client
+  private final boolean isValidatorClient;
+  private final String beaconNodeApiEndpoint;
+  private final String beaconNodeEventsWsEndpoint;
+
   public static TekuConfigurationBuilder builder() {
     return new TekuConfigurationBuilder();
   }
@@ -194,7 +199,10 @@ public class TekuConfiguration implements MetricsConfig {
       final int remoteValidatorApiMaxSubscribers,
       final boolean remoteValidatorApiEnabled,
       final Bytes32 graffiti,
-      final Path validatorsSlashingProtectionPath) {
+      final Path validatorsSlashingProtectionPath,
+      final boolean isValidatorClient,
+      final String beaconNodeApiEndpoint,
+      final String beaconNodeEventsWsEndpoint) {
     this.constants = constants;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
@@ -262,6 +270,9 @@ public class TekuConfiguration implements MetricsConfig {
     this.remoteValidatorApiMaxSubscribers = remoteValidatorApiMaxSubscribers;
     this.graffiti = graffiti;
     this.validatorsSlashingProtectionPath = validatorsSlashingProtectionPath;
+    this.isValidatorClient = isValidatorClient;
+    this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
+    this.beaconNodeEventsWsEndpoint = beaconNodeEventsWsEndpoint;
   }
 
   public String getConstants() {
@@ -556,6 +567,18 @@ public class TekuConfiguration implements MetricsConfig {
 
   public Bytes32 getGraffiti() {
     return graffiti;
+  }
+
+  public boolean isValidatorClient() {
+    return isValidatorClient;
+  }
+
+  public String getBeaconNodeApiEndpoint() {
+    return beaconNodeApiEndpoint;
+  }
+
+  public String getBeaconNodeEventsWsEndpoint() {
+    return beaconNodeEventsWsEndpoint;
   }
 
   public List<Pair<Path, Path>> getValidatorKeystorePasswordFilePairs() {
