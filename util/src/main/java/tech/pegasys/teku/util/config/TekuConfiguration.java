@@ -71,6 +71,7 @@ public class TekuConfiguration implements MetricsConfig {
   private final String validatorExternalSignerUrl;
   private final int validatorExternalSignerTimeout;
   private final Bytes32 graffiti;
+  private final Path validatorsSlashingProtectionPath;
 
   // Deposit
   private final Eth1Address eth1DepositContractAddress;
@@ -192,7 +193,8 @@ public class TekuConfiguration implements MetricsConfig {
       final int remoteValidatorApiPort,
       final int remoteValidatorApiMaxSubscribers,
       final boolean remoteValidatorApiEnabled,
-      final Bytes32 graffiti) {
+      final Bytes32 graffiti,
+      final Path validatorsSlashingProtectionPath) {
     this.constants = constants;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
@@ -259,6 +261,7 @@ public class TekuConfiguration implements MetricsConfig {
     this.remoteValidatorApiEnabled = remoteValidatorApiEnabled;
     this.remoteValidatorApiMaxSubscribers = remoteValidatorApiMaxSubscribers;
     this.graffiti = graffiti;
+    this.validatorsSlashingProtectionPath = validatorsSlashingProtectionPath;
   }
 
   public String getConstants() {
@@ -603,5 +606,9 @@ public class TekuConfiguration implements MetricsConfig {
               validatorKeystoreFiles.size(), validatorKeystorePasswordFiles.size());
       throw new InvalidConfigurationException(errorMessage);
     }
+  }
+
+  public Path getValidatorsSlashingProtectionPath() {
+    return validatorsSlashingProtectionPath;
   }
 }

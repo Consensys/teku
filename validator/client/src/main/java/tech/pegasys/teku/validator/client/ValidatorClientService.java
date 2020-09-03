@@ -19,10 +19,10 @@ import java.util.Random;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
-import tech.pegasys.teku.core.signatures.SyncDataAccessor;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -63,10 +63,9 @@ public class ValidatorClientService extends Service {
     final EventChannels eventChannels = config.getEventChannels();
     final MetricsSystem metricsSystem = config.getMetricsSystem();
     final AsyncRunner asyncRunner = config.createAsyncRunner("validator");
+    final Path slashingProtectionPath = config.getConfig().getValidatorsSlashingProtectionPath();
     final SlashingProtector slashingProtector =
-        new SlashingProtector(
-            new SyncDataAccessor(),
-            Path.of(config.getConfig().getDataPath(), "validators", "slashprotection"));
+        new SlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
     final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector, asyncRunner);
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(config.getConfig());
