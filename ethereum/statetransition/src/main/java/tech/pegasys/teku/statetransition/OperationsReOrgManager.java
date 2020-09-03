@@ -13,13 +13,12 @@
 
 package tech.pegasys.teku.statetransition;
 
-import java.util.NavigableMap;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
+import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
@@ -29,6 +28,11 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.NavigableMap;
+import java.util.Optional;
 
 public class OperationsReOrgManager implements ReorgEventChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -58,86 +62,97 @@ public class OperationsReOrgManager implements ReorgEventChannel {
   @Override
   public void reorgOccurred(
       Bytes32 bestBlockRoot, UInt64 bestSlot, Bytes32 oldBestBlockRoot, UInt64 commonAncestorSlot) {
+
     NavigableMap<UInt64, Bytes32> notCanonicalBlockRoots =
         recentChainData.getEveryRootOnChainTillSlot(commonAncestorSlot, oldBestBlockRoot);
-    notCanonicalBlockRoots.forEach(
-        (__, root) -> {
-          SafeFuture<Optional<BeaconBlock>> maybeBlockFuture =
-              recentChainData.retrieveBlockByRoot(root);
-          maybeBlockFuture
-              .thenAccept(
-                  maybeBlock ->
-                      maybeBlock.ifPresentOrElse(
-                          block -> {
-                            BeaconBlockBody blockBody = block.getBody();
-                            proposerSlashingPool.addAll(blockBody.getProposer_slashings());
-                            attesterSlashingPool.addAll(blockBody.getAttester_slashings());
-                            exitPool.addAll(blockBody.getVoluntary_exits());
-
-                            // Attestations need to get re-processed through AttestationManager
-                            // because we don't have access to the state with which they were
-                            // verified anymore and we need to make sure later on
-                            // that they're being included on the correct fork.
-                            blockBody
-                                .getAttestations()
-                                .forEach(
-                                    attestation -> {
-                                      attestationManager
-                                          .onAttestation(attestation)
-                                          .finish(
-                                              result ->
-                                                  result.ifInvalid(
-                                                      reason ->
-                                                          LOG.debug(
-                                                              "Rejected re-queued attestation from block: {} due to: {}",
-                                                              root,
-                                                              reason)),
-                                              err ->
-                                                  LOG.error(
-                                                      "Failed to process re-queued attestation from block: {} due to: {}",
-                                                      root,
-                                                      err));
-                                    });
-                          },
-                          () ->
-                              LOG.debug(
-                                  "Failed to re-queue operations for now non-canonical block: {}",
-                                  root)))
-              .finish(
-                  err ->
-                      LOG.warn(
-                          "Failed to re-queue operations for now non-canonical block: {} due to future error: {}",
-                          root,
-                          err.getMessage()));
-        });
-
     NavigableMap<UInt64, Bytes32> nowCanonicalBlockRoots =
-        recentChainData.getEveryRootOnChainTillSlot(commonAncestorSlot, bestBlockRoot);
-    nowCanonicalBlockRoots.forEach(
-        (__, root) -> {
-          SafeFuture<Optional<BeaconBlock>> maybeBlockFuture =
-              recentChainData.retrieveBlockByRoot(root);
-          maybeBlockFuture
-              .thenAccept(
-                  maybeBlock ->
-                      maybeBlock.ifPresentOrElse(
-                          block -> {
-                            BeaconBlockBody blockBody = block.getBody();
-                            proposerSlashingPool.removeAll(blockBody.getProposer_slashings());
-                            attesterSlashingPool.removeAll(blockBody.getAttester_slashings());
-                            exitPool.removeAll(blockBody.getVoluntary_exits());
-                            attestationPool.removeAll(blockBody.getAttestations());
-                          },
-                          () ->
-                              LOG.debug(
-                                  "Failed to remove operations from pools for now canonical block: {}",
-                                  root)))
-              .finish(
-                  err ->
-                      LOG.warn(
-                          "Failed to remove operations from pools for now canonical block: {} due to future error: {}",
-                          root,
-                          err.getMessage()));
-        });
+            recentChainData.getEveryRootOnChainTillSlot(commonAncestorSlot, bestBlockRoot);
+
+    processNonCanonicalBlockOperations(notCanonicalBlockRoots.values());
+    processCanonicalBlockOperations(nowCanonicalBlockRoots.values());
+  }
+
+  private void processNonCanonicalBlockOperations(Collection<Bytes32> nonCanonicalBlockRoots) {
+    nonCanonicalBlockRoots.forEach(
+            root -> {
+              SafeFuture<Optional<BeaconBlock>> maybeBlockFuture =
+                      recentChainData.retrieveBlockByRoot(root);
+              maybeBlockFuture
+                      .thenAccept(
+                              maybeBlock ->
+                                      maybeBlock.ifPresentOrElse(
+                                              block -> {
+                                                BeaconBlockBody blockBody = block.getBody();
+                                                proposerSlashingPool.addAll(blockBody.getProposer_slashings());
+                                                attesterSlashingPool.addAll(blockBody.getAttester_slashings());
+                                                exitPool.addAll(blockBody.getVoluntary_exits());
+
+                                                proccesNonCanonicalAttestationsForBlock(blockBody.getAttestations().asList(), root);
+                                              },
+                                              () ->
+                                                      LOG.debug(
+                                                              "Failed to re-queue operations for now non-canonical block: {}",
+                                                              root)))
+                      .finish(
+                              err ->
+                                      LOG.warn(
+                                              "Failed to re-queue operations for now non-canonical block: {} due to future error: {}",
+                                              root,
+                                              err.getMessage()));
+            });
+  }
+
+  private void proccesNonCanonicalAttestationsForBlock(List<Attestation> attestations, Bytes32 blockRoot) {
+    // Attestations need to get re-processed through AttestationManager
+    // because we don't have access to the state with which they were
+    // verified anymore and we need to make sure later on
+    // that they're being included on the correct fork.
+    attestations
+            .forEach(
+                    attestation -> {
+                      attestationManager
+                              .onAttestation(attestation)
+                              .finish(result ->
+                                              result.ifInvalid(
+                                                      reason ->
+                                                              LOG.debug(
+                                                                      "Rejected re-queued attestation from block: {} due to: {}",
+                                                                      blockRoot,
+                                                                      reason)),
+                                      err ->
+                                              LOG.error(
+                                                      "Failed to process re-queued attestation from block: {} due to: {}",
+                                                      blockRoot,
+                                                      err));
+                    });
+  }
+
+  private void processCanonicalBlockOperations(Collection<Bytes32> canonicalBlockRoots) {
+    canonicalBlockRoots.forEach(
+            root -> {
+              SafeFuture<Optional<BeaconBlock>> maybeBlockFuture =
+                      recentChainData.retrieveBlockByRoot(root);
+              maybeBlockFuture
+                      .thenAccept(
+                              maybeBlock ->
+                                      maybeBlock.ifPresentOrElse(
+                                              block -> {
+                                                BeaconBlockBody blockBody = block.getBody();
+                                                proposerSlashingPool.removeAll(blockBody.getProposer_slashings());
+                                                attesterSlashingPool.removeAll(blockBody.getAttester_slashings());
+                                                exitPool.removeAll(blockBody.getVoluntary_exits());
+                                                attestationPool.removeAll(blockBody.getAttestations());
+                                              },
+                                              () ->
+                                                      LOG.debug(
+                                                              "Failed to remove operations from pools for now canonical block: {}",
+                                                              root)))
+                      .finish(
+                              err ->
+                                      LOG.warn(
+                                              "Failed to remove operations from pools for now canonical block: {} due to future error: {}",
+                                              root,
+                                              err.getMessage()));
+            });
   }
 }
