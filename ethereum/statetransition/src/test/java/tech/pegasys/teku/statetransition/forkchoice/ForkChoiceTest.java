@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.ArgumentMatchers.any;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.List;
@@ -81,7 +82,7 @@ class ForkChoiceTest {
     final List<ReorgEvent> reorgEvents = storageSystem.reorgEventChannel().getReorgEvents();
     assertThat(reorgEvents).hasSize(1);
     assertThat(reorgEvents.get(0).getBestSlot()).isEqualTo(ONE);
-    assertThat(reorgEvents.get(0).getBestBlockRoot()).isEqualTo(slot1Block.getRoot());
+    assertThat(reorgEvents.get(0).getNewBestBlockRoot()).isEqualTo(slot1Block.getRoot());
   }
 
   @Test
@@ -113,6 +114,7 @@ class ForkChoiceTest {
             new ReorgEvent(
                 blockAndState.getRoot(),
                 blockAndState.getSlot(),
+                any(),
                 blockAndState.getSlot().minus(1)));
   }
 

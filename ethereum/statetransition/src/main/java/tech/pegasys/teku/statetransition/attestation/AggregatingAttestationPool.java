@@ -97,6 +97,10 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     dataHashesToRemove.clear();
   }
 
+  public void removeAll(SSZList<Attestation> attestations) {
+    attestations.forEach(this::remove);
+  }
+
   public synchronized void remove(final Attestation attestation) {
     final AttestationData attestationData = attestation.getData();
     final Bytes32 dataRoot = attestationData.hash_tree_root();

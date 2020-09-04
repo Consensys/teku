@@ -16,6 +16,8 @@ package tech.pegasys.teku.api.schema;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -38,6 +40,16 @@ public class IndexedAttestation {
         indexedAttestation.getAttesting_indices().stream().collect(Collectors.toList());
     this.data = new AttestationData(indexedAttestation.getData());
     this.signature = new BLSSignature(indexedAttestation.getSignature());
+  }
+
+  @JsonCreator
+  public IndexedAttestation(
+      @JsonProperty("attesting_indices") final List<UInt64> attesting_indices,
+      @JsonProperty("data") final AttestationData data,
+      @JsonProperty("signature") final BLSSignature signature) {
+    this.attesting_indices = attesting_indices;
+    this.data = data;
+    this.signature = signature;
   }
 
   public tech.pegasys.teku.datastructures.operations.IndexedAttestation
