@@ -161,4 +161,12 @@ public class StatusLogger {
   public void eth1AtHead() {
     log.info("Eth1 tracker successfully caught up to chain head");
   }
+
+  public void usingGeneratedP2pPrivateKey(final String keyFile, final boolean justGenerated) {
+    if (justGenerated) {
+      log.info("Generated new p2p private key and storing in: " + keyFile);
+    } else {
+      log.info("Loading generated p2p private key from file: " + keyFile);
+    }
+  }
 }
