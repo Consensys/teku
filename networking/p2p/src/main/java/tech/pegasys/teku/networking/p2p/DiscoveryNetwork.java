@@ -48,6 +48,7 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.storage.store.KeyValueStore;
 
 public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   public static final String ATTESTATION_SUBNET_ENR_FIELD = "attnets";
@@ -83,10 +84,11 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   public static <P extends Peer> DiscoveryNetwork<P> create(
       final MetricsSystem metricsSystem,
       final AsyncRunner asyncRunner,
+      final KeyValueStore<String, Bytes> kvStore,
       final P2PNetwork<P> p2pNetwork,
       final PeerSelectionStrategy peerSelectionStrategy,
       final NetworkConfig p2pConfig) {
-    final DiscoveryService discoveryService = createDiscoveryService(p2pConfig);
+    final DiscoveryService discoveryService = createDiscoveryService(p2pConfig, kvStore);
     final ConnectionManager connectionManager =
         new ConnectionManager(
             metricsSystem,
@@ -100,10 +102,11 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     return new DiscoveryNetwork<>(p2pNetwork, discoveryService, connectionManager);
   }
 
-  private static DiscoveryService createDiscoveryService(final NetworkConfig p2pConfig) {
+  private static DiscoveryService createDiscoveryService(
+      final NetworkConfig p2pConfig, final KeyValueStore<String, Bytes> kvStore) {
     final DiscoveryService discoveryService;
     if (p2pConfig.isDiscoveryEnabled()) {
-      discoveryService = DiscV5Service.create(p2pConfig);
+      discoveryService = DiscV5Service.create(p2pConfig, kvStore);
     } else {
       discoveryService = new NoOpDiscoveryService();
     }
