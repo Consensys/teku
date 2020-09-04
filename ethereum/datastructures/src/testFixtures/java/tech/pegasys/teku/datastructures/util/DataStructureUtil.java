@@ -13,6 +13,19 @@
 
 package tech.pegasys.teku.datastructures.util;
 
+import static java.lang.Math.toIntExact;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_domain;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.teku.util.config.Constants.DOMAIN_DEPOSIT;
+import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
+
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.List;
+import java.util.Random;
+import java.util.function.Supplier;
+import java.util.stream.LongStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
@@ -60,20 +73,6 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.Eth1Address;
-
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
-import java.util.Random;
-import java.util.function.Supplier;
-import java.util.stream.LongStream;
-
-import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_domain;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_DEPOSIT;
-import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 public final class DataStructureUtil {
 
