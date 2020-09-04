@@ -13,19 +13,6 @@
 
 package tech.pegasys.teku.datastructures.util;
 
-import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_domain;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_DEPOSIT;
-import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
-
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.List;
-import java.util.Random;
-import java.util.function.Supplier;
-import java.util.stream.LongStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
@@ -73,6 +60,20 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZMutableVector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.Eth1Address;
+
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.List;
+import java.util.Random;
+import java.util.function.Supplier;
+import java.util.stream.LongStream;
+
+import static java.lang.Math.toIntExact;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_domain;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.teku.util.config.Constants.DOMAIN_DEPOSIT;
+import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_ETH1_VOTING_PERIOD;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 public final class DataStructureUtil {
 
@@ -384,18 +385,18 @@ public final class DataStructureUtil {
         randomEth1Data(),
         Bytes32.ZERO,
         randomSSZList(
-            ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS, this::randomProposerSlashing),
+            ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS, this::randomProposerSlashing, 1),
         randomSSZList(
             AttesterSlashing.class,
             Constants.MAX_ATTESTER_SLASHINGS,
             this::randomAttesterSlashing,
             1),
-        randomSSZList(Attestation.class, Constants.MAX_ATTESTATIONS, this::randomAttestation, 1),
-        randomSSZList(Deposit.class, Constants.MAX_DEPOSITS, this::randomDepositWithoutIndex),
+        randomSSZList(Attestation.class, Constants.MAX_ATTESTATIONS, this::randomAttestation, 3),
+        randomSSZList(Deposit.class, Constants.MAX_DEPOSITS, this::randomDepositWithoutIndex, 1),
         randomSSZList(
             SignedVoluntaryExit.class,
             Constants.MAX_VOLUNTARY_EXITS,
-            this::randomSignedVoluntaryExit));
+            this::randomSignedVoluntaryExit, 1));
   }
 
   public BeaconBlockBody randomFullBeaconBlockBody() {
