@@ -13,22 +13,6 @@
 
 package tech.pegasys.teku.core;
 
-import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.util.config.Constants.GENESIS_EPOCH;
-import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
-import static tech.pegasys.teku.util.config.Constants.SAFE_SLOTS_TO_UPDATE_JUSTIFIED;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
-
-import java.time.Instant;
-import java.util.NavigableMap;
-import java.util.Optional;
-import java.util.TreeMap;
-import java.util.function.Consumer;
-import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -48,6 +32,23 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
+
+import javax.annotation.CheckReturnValue;
+import java.time.Instant;
+import java.util.NavigableMap;
+import java.util.Optional;
+import java.util.TreeMap;
+import java.util.function.Consumer;
+
+import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
+import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
+import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.util.config.Constants.GENESIS_EPOCH;
+import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
+import static tech.pegasys.teku.util.config.Constants.SAFE_SLOTS_TO_UPDATE_JUSTIFIED;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 public class ForkChoiceUtil {
 
@@ -131,7 +132,7 @@ public class ForkChoiceUtil {
     final NavigableMap<UInt64, Bytes32> roots = new TreeMap<>();
     Bytes32 parentRoot = root;
     Optional<UInt64> parentSlot = forkChoiceStrategy.blockSlot(parentRoot);
-    while (parentSlot.isPresent() && parentSlot.get().compareTo(startSlot) > 0) {
+    while (parentSlot.isPresent() && parentSlot.get().isGreaterThan(startSlot)) {
       maybeAddRoot(startSlot, UInt64.ONE, roots, UInt64.MAX_VALUE, parentRoot, parentSlot);
       parentRoot = forkChoiceStrategy.blockParentRoot(parentRoot).orElseThrow();
       parentSlot = forkChoiceStrategy.blockSlot(parentRoot);
