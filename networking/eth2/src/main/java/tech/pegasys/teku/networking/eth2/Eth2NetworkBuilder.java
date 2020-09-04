@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
@@ -46,6 +47,7 @@ import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.time.TimeProvider;
 
@@ -71,6 +73,7 @@ public class Eth2NetworkBuilder {
   private List<PeerHandler> peerHandlers = new ArrayList<>();
   private TimeProvider timeProvider;
   private AsyncRunner asyncRunner;
+  private KeyValueStore<String, Bytes> keyValueStore;
   private Duration eth2RpcPingInterval = DEFAULT_ETH2_RPC_PING_INTERVAL;
   private int eth2RpcOutstandingPingThreshold = DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
   private Duration eth2StatusUpdateInterval = DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
@@ -141,6 +144,7 @@ public class Eth2NetworkBuilder {
     return DiscoveryNetwork.create(
         metricsSystem,
         asyncRunner,
+        keyValueStore,
         p2pNetwork,
         new Eth2PeerSelectionStrategy(
             config.getTargetPeerRange(),
@@ -158,6 +162,7 @@ public class Eth2NetworkBuilder {
     assertNotNull("eventBus", eventBus);
     assertNotNull("metricsSystem", metricsSystem);
     assertNotNull("chainStorageClient", recentChainData);
+    assertNotNull("keyValueStore", keyValueStore);
     assertNotNull("timeProvider", timeProvider);
     assertNotNull("gossipedAttestationConsumer", gossipedAttestationConsumer);
     assertNotNull("gossipedAttesterSlashingConsumer", gossipedAttesterSlashingConsumer);
@@ -206,6 +211,12 @@ public class Eth2NetworkBuilder {
   public Eth2NetworkBuilder recentChainData(final RecentChainData recentChainData) {
     checkNotNull(recentChainData);
     this.recentChainData = recentChainData;
+    return this;
+  }
+
+  public Eth2NetworkBuilder keyValueStore(final KeyValueStore<String, Bytes> kvStore) {
+    checkNotNull(kvStore);
+    this.keyValueStore = kvStore;
     return this;
   }
 

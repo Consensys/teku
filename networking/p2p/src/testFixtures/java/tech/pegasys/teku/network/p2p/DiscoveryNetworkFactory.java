@@ -35,6 +35,7 @@ import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.storage.store.MemKeyValueStore;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.time.StubTimeProvider;
 
@@ -99,6 +100,7 @@ public class DiscoveryNetworkFactory {
             DiscoveryNetwork.create(
                 metricsSystem,
                 DelayedExecutorAsyncRunner.create(),
+                new MemKeyValueStore<>(),
                 new LibP2PNetwork(
                     DelayedExecutorAsyncRunner.create(),
                     config,
