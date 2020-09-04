@@ -47,7 +47,7 @@ public class FileKeyValueStoreTest {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "rawtypes"})
   void testConcurrent() {
     FileKeyValueStore store = new FileKeyValueStore(kvDir);
 
