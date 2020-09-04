@@ -22,9 +22,9 @@ import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.util.file.SyncDataAccessor;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
@@ -52,7 +52,7 @@ public class ValidatorClientService extends Service {
     this.attestationTimingChannel = attestationTimingChannel;
     this.blockProductionTimingChannel = blockProductionTimingChannel;
 
-    if (serviceConfig.getConfig().isRemoteValidatorApiEnabled()) {
+    if (serviceConfig.getConfig().isValidatorClient()) {
       beaconChainEventAdapter = new WebSocketBeaconChainEventAdapter(serviceConfig);
     } else {
       beaconChainEventAdapter = new EventChannelBeaconChainEventAdapter(serviceConfig);
@@ -63,16 +63,15 @@ public class ValidatorClientService extends Service {
     final EventChannels eventChannels = config.getEventChannels();
     final MetricsSystem metricsSystem = config.getMetricsSystem();
     final AsyncRunner asyncRunner = config.createAsyncRunner("validator");
+    final Path slashingProtectionPath = config.getConfig().getValidatorsSlashingProtectionPath();
     final SlashingProtector slashingProtector =
-        new SlashingProtector(
-            new SyncDataAccessor(),
-            Path.of(config.getConfig().getDataPath(), "validators", "slashprotection"));
+        new SlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
     final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector, asyncRunner);
     final Map<BLSPublicKey, Validator> validators =
         validatorLoader.initializeValidators(config.getConfig());
 
     final ValidatorApiChannel validatorApiChannel;
-    if (config.getConfig().isRemoteValidatorApiEnabled()) {
+    if (config.getConfig().isValidatorClient()) {
       validatorApiChannel =
           new MetricRecordingValidatorApiChannel(
               metricsSystem, new RemoteValidatorApiHandler(config, asyncRunner));

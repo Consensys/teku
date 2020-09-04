@@ -109,7 +109,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<ForkInfo>> getForkInfo() {
     return SafeFuture.completedFuture(
-        combinedChainDataClient.getHeadStateFromStore().map(BeaconState::getForkInfo));
+        combinedChainDataClient.getBestState().map(BeaconState::getForkInfo));
   }
 
   @Override
@@ -280,7 +280,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private int getValidatorIndex(final Attestation attestation) {
     return get_attesting_indices(
-            combinedChainDataClient.getHeadStateFromStore().orElseThrow(),
+            combinedChainDataClient.getBestState().orElseThrow(),
             attestation.getData(),
             attestation.getAggregation_bits())
         .get(0);

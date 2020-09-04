@@ -16,6 +16,7 @@ package tech.pegasys.teku.pow;
 import static tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder.calculateCandidateGenesisTimestamp;
 import static tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder.notifyMinGenesisTimeBlockReached;
 
+import com.google.common.base.Throwables;
 import java.math.BigInteger;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -24,6 +25,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
+import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
 import tech.pegasys.teku.util.config.Constants;
 
 public class DepositProcessingController {
@@ -171,6 +173,10 @@ public class DepositProcessingController {
   private synchronized void onSubscriptionDepositRequestFailed(
       Throwable err, BigInteger fromBlock, BigInteger toBlock) {
     active = false;
+
+    if (Throwables.getRootCause(err) instanceof InvalidDepositEventsException) {
+      throw new RuntimeException(err);
+    }
 
     LOG.warn(
         "Failed to fetch deposit events for block numbers in the range ({}, {}). Retrying.",

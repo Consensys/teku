@@ -57,7 +57,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private final ConcurrentHashMap<NodeId, Eth2Peer> connectedPeerMap = new ConcurrentHashMap<>();
 
   private final BeaconChainMethods rpcMethods;
-  private final PeerValidatorFactory peerValidatorFactory;
 
   private final Duration eth2RpcPingInterval;
   private final int eth2RpcOutstandingPingThreshold;
@@ -70,7 +69,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final RecentChainData storageClient,
       final MetricsSystem metricsSystem,
       final Eth2PeerFactory eth2PeerFactory,
-      final PeerValidatorFactory peerValidatorFactory,
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
       final RpcEncoding rpcEncoding,
@@ -79,7 +77,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final Duration eth2StatusUpdateInterval) {
     this.asyncRunner = asyncRunner;
     this.eth2PeerFactory = eth2PeerFactory;
-    this.peerValidatorFactory = peerValidatorFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
     this.rpcMethods =
         BeaconChainMethods.create(
@@ -110,25 +107,24 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final int peerRateLimit,
       final int peerRequestLimit) {
 
-    final PeerValidatorFactory peerValidatorFactory =
-        (peer, status) ->
-            PeerChainValidator.create(
-                metricsSystem, recentChainData, historicalChainData, peer, status);
     final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(recentChainData);
     final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
     attestationSubnetService.subscribeToUpdates(metadataMessagesFactory);
+    final CombinedChainDataClient combinedChainDataClient =
+        new CombinedChainDataClient(recentChainData, historicalChainData);
     return new Eth2PeerManager(
         asyncRunner,
-        new CombinedChainDataClient(recentChainData, historicalChainData),
+        combinedChainDataClient,
         recentChainData,
         metricsSystem,
         new Eth2PeerFactory(
+            metricsSystem,
+            combinedChainDataClient,
             statusMessageFactory,
             metadataMessagesFactory,
             timeProvider,
             peerRateLimit,
             peerRequestLimit),
-        peerValidatorFactory,
         statusMessageFactory,
         metadataMessagesFactory,
         rpcEncoding,
@@ -204,18 +200,10 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     }
 
     eth2Peer.subscribeInitialStatus(
-        (status) ->
-            peerValidatorFactory
-                .create(eth2Peer, status)
-                .run()
-                .finish(
-                    peerIsValid -> {
-                      if (peerIsValid) {
-                        connectSubscribers.forEach(c -> c.onConnected(eth2Peer));
-                        setUpPeriodicTasksForPeer(eth2Peer);
-                      }
-                    },
-                    error -> LOG.debug("Error while validating peer", error)));
+        (status) -> {
+          connectSubscribers.forEach(c -> c.onConnected(eth2Peer));
+          setUpPeriodicTasksForPeer(eth2Peer);
+        });
   }
 
   private void ensureStatusReceived(final Eth2Peer peer) {
@@ -297,10 +285,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   }
 
   private boolean peerIsReady(Eth2Peer peer) {
-    return peer.isChainValidated();
-  }
-
-  interface PeerValidatorFactory {
-    PeerChainValidator create(final Eth2Peer peer, final PeerStatus status);
+    return peer.hasStatus();
   }
 }

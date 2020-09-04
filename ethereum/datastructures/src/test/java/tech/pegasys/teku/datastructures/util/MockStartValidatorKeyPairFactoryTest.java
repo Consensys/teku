@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory;
 
 class MockStartValidatorKeyPairFactoryTest {
   private static final String[] EXPECTED_PRIVATE_KEYS = {

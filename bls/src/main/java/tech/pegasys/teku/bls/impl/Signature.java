@@ -68,6 +68,16 @@ public interface Signature {
     return verify(Collections.singletonList(publicKey), message);
   }
 
+  /**
+   * Verify that this signature is correct for the given public key, message and DST.
+   *
+   * @param publicKey The public key, not null
+   * @param message the message data to verify, not null
+   * @param dst domain separation tag (DST), not null
+   * @return True if the verification is successful, false otherwise
+   */
+  boolean verify(PublicKey publicKey, Bytes message, Bytes dst);
+
   /** Implementation must override */
   @Override
   int hashCode();

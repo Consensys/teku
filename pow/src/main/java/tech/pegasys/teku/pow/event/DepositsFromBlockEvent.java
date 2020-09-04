@@ -13,12 +13,17 @@
 
 package tech.pegasys.teku.pow.event;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.stream.Collectors.toList;
+
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Preconditions;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
 
 public class DepositsFromBlockEvent {
   private final UInt64 blockNumber;
@@ -26,16 +31,46 @@ public class DepositsFromBlockEvent {
   private final List<Deposit> deposits;
   private final UInt64 blockTimestamp;
 
-  public DepositsFromBlockEvent(
+  protected DepositsFromBlockEvent(
       final UInt64 blockNumber,
       final Bytes32 blockHash,
       final UInt64 blockTimestamp,
       final List<Deposit> deposits) {
+    assertDepositsValid(deposits);
     this.blockTimestamp = blockTimestamp;
-    Preconditions.checkArgument(!deposits.isEmpty(), "Attempting to notify no events in a block");
     this.blockNumber = blockNumber;
     this.blockHash = blockHash;
     this.deposits = deposits;
+  }
+
+  protected void assertDepositsValid(final List<Deposit> deposits) {
+    checkArgument(!deposits.isEmpty(), "Attempting to notify no events in a block");
+    if (deposits.size() <= 1) {
+      return;
+    }
+
+    UInt64 previousIndex = deposits.get(0).getMerkle_tree_index();
+    for (int i = 1; i < deposits.size(); i++) {
+      UInt64 currentIndex = deposits.get(i).getMerkle_tree_index();
+      if (!previousIndex.plus(1).equals(currentIndex)) {
+        final String error =
+            String.format(
+                "Deposits must be ordered and contiguous. Deposit at index %s does not follow prior deposit at index %s",
+                currentIndex, previousIndex);
+        throw new InvalidDepositEventsException(error);
+      }
+      previousIndex = currentIndex;
+    }
+  }
+
+  public static DepositsFromBlockEvent create(
+      final UInt64 blockNumber,
+      final Bytes32 blockHash,
+      final UInt64 blockTimestamp,
+      final Stream<Deposit> deposits) {
+    final List<Deposit> sortedDeposits =
+        deposits.sorted(Comparator.comparing(Deposit::getMerkle_tree_index)).collect(toList());
+    return new DepositsFromBlockEvent(blockNumber, blockHash, blockTimestamp, sortedDeposits);
   }
 
   public UInt64 getFirstDepositIndex() {

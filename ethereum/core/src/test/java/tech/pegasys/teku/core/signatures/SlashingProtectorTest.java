@@ -32,8 +32,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.file.SyncDataAccessor;
 
 class SlashingProtectorTest {
   private static final Bytes32 GENESIS_VALIDATORS_ROOT = Bytes32.fromHexString("0x561234");
