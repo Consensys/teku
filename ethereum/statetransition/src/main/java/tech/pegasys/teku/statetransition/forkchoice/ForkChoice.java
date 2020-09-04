@@ -171,6 +171,7 @@ public class ForkChoice {
                   .map(currentHead -> currentHead.getRoot().equals(block.getParent_root()))
                   .orElse(false)) {
                 recentChainData.updateHead(block.getRoot(), block.getSlot());
+                result.markAsCanonical();
               }
             });
   }
