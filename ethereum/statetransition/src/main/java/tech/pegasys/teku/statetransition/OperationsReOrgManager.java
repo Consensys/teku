@@ -13,10 +13,6 @@
 
 package tech.pegasys.teku.statetransition;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.NavigableMap;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -33,6 +29,11 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.NavigableMap;
+import java.util.Optional;
 
 public class OperationsReOrgManager implements ReorgEventChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -87,7 +88,7 @@ public class OperationsReOrgManager implements ReorgEventChannel {
                             attesterSlashingPool.addAll(blockBody.getAttester_slashings());
                             exitPool.addAll(blockBody.getVoluntary_exits());
 
-                            processNonCanonicalAttestationsForBlock(
+                            processNonCanonicalBlockAttestations(
                                 blockBody.getAttestations().asList(), root);
                           },
                           () ->
@@ -103,7 +104,7 @@ public class OperationsReOrgManager implements ReorgEventChannel {
         });
   }
 
-  private void processNonCanonicalAttestationsForBlock(
+  private void processNonCanonicalBlockAttestations(
       List<Attestation> attestations, Bytes32 blockRoot) {
     // Attestations need to get re-processed through AttestationManager
     // because we don't have access to the state with which they were
