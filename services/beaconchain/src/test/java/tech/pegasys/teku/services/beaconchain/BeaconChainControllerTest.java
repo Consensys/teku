@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.storage.store.MemKeyValueStore;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
@@ -50,21 +51,21 @@ public class BeaconChainControllerTest {
     BeaconChainController controller =
         new BeaconChainController(mockServiceConfig(tekuConfiguration));
 
+    MemKeyValueStore<String, Bytes> store = new MemKeyValueStore<>();
+
     // check that new key is generated
-    Bytes generatedPK = controller.getP2pPrivateKeyBytes();
+    Bytes generatedPK = controller.getP2pPrivateKeyBytes(store);
     assertThat(generatedPK).isNotNull();
     assertThat(generatedPK.size()).isGreaterThanOrEqualTo(32);
 
     // check the same key loaded next time
-    Bytes loadedPK = controller.getP2pPrivateKeyBytes();
+    Bytes loadedPK = controller.getP2pPrivateKeyBytes(store);
     assertThat(loadedPK).isEqualTo(generatedPK);
 
-    for (File file : dataDir.listFiles()) {
-      file.delete();
-    }
+    store = new MemKeyValueStore<>();
 
     // check that another key is generated after old key is deleted
-    Bytes generatedAnotherPK = controller.getP2pPrivateKeyBytes();
+    Bytes generatedAnotherPK = controller.getP2pPrivateKeyBytes(store);
     assertThat(generatedAnotherPK).isNotNull();
     assertThat(generatedAnotherPK.size()).isGreaterThanOrEqualTo(32);
     assertThat(generatedAnotherPK).isNotEqualTo(generatedPK);
@@ -80,7 +81,7 @@ public class BeaconChainControllerTest {
             .build();
     BeaconChainController controller1 =
         new BeaconChainController(mockServiceConfig(tekuConfiguration1));
-    Bytes customPK = controller1.getP2pPrivateKeyBytes();
+    Bytes customPK = controller1.getP2pPrivateKeyBytes(store);
     assertThat(customPK).isEqualTo(generatedPK);
   }
 }

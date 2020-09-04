@@ -30,7 +30,6 @@ import java.net.BindException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -116,6 +115,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private static final String KEY_VALUE_STORE_SUBDIRECTORY = "kvstore";
+  private static final String GENERATED_NODE_KEY_KEY = "generated-node-key";
 
   private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
@@ -397,7 +397,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     if (!config.isP2pEnabled()) {
       this.p2pNetwork = new NoOpEth2Network();
     } else {
-      final PrivKey pk = KeyKt.unmarshalPrivateKey(getP2pPrivateKeyBytes().toArrayUnsafe());
+      final KeyValueStore<String, Bytes> keyValueStore =
+          new FileKeyValueStore(Path.of(config.getDataPath(), KEY_VALUE_STORE_SUBDIRECTORY));
+      final PrivKey pk =
+          KeyKt.unmarshalPrivateKey(getP2pPrivateKeyBytes(keyValueStore).toArrayUnsafe());
       final NetworkConfig p2pConfig =
           new NetworkConfig(
               pk,
@@ -422,8 +425,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
       p2pConfig.validateListenPortAvailable();
       final Eth2Config eth2Config = new Eth2Config(config.isP2pSnappyEnabled());
-      final KeyValueStore<String, Bytes> keyValueStore =
-          new FileKeyValueStore(Path.of(config.getDataPath(), KEY_VALUE_STORE_SUBDIRECTORY));
 
       this.p2pNetwork =
           Eth2NetworkBuilder.create()
@@ -472,36 +473,29 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   @VisibleForTesting
-  Bytes getP2pPrivateKeyBytes() {
-    final String p2pConfigKeyFile = config.getP2pPrivateKeyFile();
-    final Path p2pKeyFile;
-    if (p2pConfigKeyFile != null) {
-      p2pKeyFile = Paths.get(p2pConfigKeyFile);
-      if (!p2pKeyFile.toFile().canRead()) {
-        throw new RuntimeException("p2p private key file not found - " + p2pConfigKeyFile);
+  Bytes getP2pPrivateKeyBytes(KeyValueStore<String, Bytes> keyValueStore) {
+    final Bytes privateKey;
+    final String p2pPrivateKeyFile = config.getP2pPrivateKeyFile();
+    if (p2pPrivateKeyFile != null) {
+      try {
+        privateKey = Bytes.fromHexString(Files.readString(Paths.get(p2pPrivateKeyFile)));
+      } catch (IOException e) {
+        throw new RuntimeException("p2p private key file not found - " + p2pPrivateKeyFile);
       }
     } else {
-      p2pKeyFile = Paths.get(config.getDataPath(), "generated-node-key.txt");
-      if (!p2pKeyFile.toFile().exists()) {
-        try {
-          final PrivKey privKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
-          final Bytes privKeyBytes = Bytes.wrap(KeyKt.marshalPrivateKey(privKey));
-          Files.writeString(p2pKeyFile, privKeyBytes.toHexString(), StandardOpenOption.CREATE_NEW);
-          STATUS_LOG.usingGeneratedP2pPrivateKey(p2pKeyFile.toString(), true);
-        } catch (IOException e) {
-          throw new RuntimeException(
-              "Couldn't write generated p2p private key file: " + p2pKeyFile, e);
-        }
+      final Optional<Bytes> generatedKeyBytes = keyValueStore.get(GENERATED_NODE_KEY_KEY);
+      if (generatedKeyBytes.isEmpty()) {
+        final PrivKey privKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
+        privateKey = Bytes.wrap(KeyKt.marshalPrivateKey(privKey));
+        keyValueStore.put(GENERATED_NODE_KEY_KEY, privateKey);
+        STATUS_LOG.usingGeneratedP2pPrivateKey(GENERATED_NODE_KEY_KEY, true);
       } else {
-        STATUS_LOG.usingGeneratedP2pPrivateKey(p2pKeyFile.toString(), false);
+        privateKey = generatedKeyBytes.get();
+        STATUS_LOG.usingGeneratedP2pPrivateKey(GENERATED_NODE_KEY_KEY, false);
       }
     }
 
-    try {
-      return Bytes.fromHexString(Files.readString(p2pKeyFile));
-    } catch (IOException e) {
-      throw new RuntimeException("Couldn't read p2p private key file: " + p2pKeyFile, e);
-    }
+    return privateKey;
   }
 
   public void initAttestationPool() {
