@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.util.file.SyncDataAccessor;
+import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 
 /**
  * The key-value store implementation with String keys and Bytes values which stores each entry in a
