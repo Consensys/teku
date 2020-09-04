@@ -33,17 +33,19 @@ public class FileKeyValueStore implements KeyValueStore<String, Bytes> {
   }
 
   @Override
-  public void put(@NotNull String key, Bytes value) {
+  public void put(@NotNull String key, @NotNull Bytes value) {
     Path file = dataDir.resolve(key + ".dat");
     try {
-      if (value == null) {
-        file.toFile().delete();
-      } else {
-        new SyncDataAccessor().syncedWrite(file, value);
-      }
+      new SyncDataAccessor().syncedWrite(file, value);
     } catch (IOException e) {
       throw new RuntimeException("Error writing file: " + file, e);
     }
+  }
+
+  @Override
+  public void remove(@NotNull String key) {
+    Path file = dataDir.resolve(key + ".dat");
+    file.toFile().delete();
   }
 
   @Override
