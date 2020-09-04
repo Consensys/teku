@@ -13,16 +13,8 @@
 
 package tech.pegasys.teku.datastructures.operations;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.Sets;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.function.Supplier;
 import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -33,6 +25,14 @@ import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.util.hashtree.HashTreeUtil;
 import tech.pegasys.teku.util.hashtree.Merkleizable;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.function.Supplier;
+
 public class AttesterSlashing implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
   // The number of SimpleSerialize basic types in this SSZ Container/POJO.
@@ -42,7 +42,6 @@ public class AttesterSlashing implements Merkleizable, SimpleOffsetSerializable,
   private final IndexedAttestation attestation_2;
 
   @Label("sos-ignore")
-  @JsonIgnore
   private final Supplier<Set<UInt64>> intersectingIndices;
 
   public AttesterSlashing(IndexedAttestation attestation_1, IndexedAttestation attestation_2) {
