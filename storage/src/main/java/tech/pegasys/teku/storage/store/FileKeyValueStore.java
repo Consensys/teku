@@ -16,6 +16,8 @@ package tech.pegasys.teku.storage.store;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.util.file.SyncDataAccessor;
@@ -23,20 +25,31 @@ import tech.pegasys.teku.util.file.SyncDataAccessor;
 /**
  * The key-value store implementation with String keys and Bytes values which stores each entry in a
  * separate file named {@code <key>.dat} in the specified directory
+ *
+ * This implementation is thread-safe
  */
 public class FileKeyValueStore implements KeyValueStore<String, Bytes> {
 
   private final Path dataDir;
+  private final ConcurrentMap<String, Object> keyMutexes = new ConcurrentHashMap<>();
 
   public FileKeyValueStore(Path dataDir) {
     this.dataDir = dataDir;
+  }
+
+  private Object keyMutex(String key) {
+    // there supposed to be a very limited number of keys so
+    // we don't clean up the map for the sake of simplicity
+    return keyMutexes.computeIfAbsent(key, __ -> new Object());
   }
 
   @Override
   public void put(@NotNull String key, @NotNull Bytes value) {
     Path file = dataDir.resolve(key + ".dat");
     try {
-      new SyncDataAccessor().syncedWrite(file, value);
+      synchronized (keyMutex(key)) {
+        new SyncDataAccessor().syncedWrite(file, value);
+      }
     } catch (IOException e) {
       throw new RuntimeException("Error writing file: " + file, e);
     }
@@ -45,16 +58,20 @@ public class FileKeyValueStore implements KeyValueStore<String, Bytes> {
   @Override
   public void remove(@NotNull String key) {
     Path file = dataDir.resolve(key + ".dat");
-    file.toFile().delete();
+    synchronized (keyMutex(key)) {
+      file.toFile().delete();
+    }
   }
 
   @Override
   public Optional<Bytes> get(@NotNull String key) {
     Path file = dataDir.resolve(key + ".dat");
     try {
-      return new SyncDataAccessor().read(file);
+      synchronized (keyMutex(key)) {
+        return new SyncDataAccessor().read(file);
+      }
     } catch (Exception e) {
-      throw new RuntimeException("Error writing file: " + file, e);
+      throw new RuntimeException("Error reading file: " + file, e);
     }
   }
 }
