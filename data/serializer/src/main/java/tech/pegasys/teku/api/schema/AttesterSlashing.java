@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.api.schema;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class AttesterSlashing {
   public final IndexedAttestation attestation_1;
   public final IndexedAttestation attestation_2;
@@ -21,6 +24,14 @@ public class AttesterSlashing {
       tech.pegasys.teku.datastructures.operations.AttesterSlashing attesterSlashing) {
     this.attestation_1 = new IndexedAttestation(attesterSlashing.getAttestation_1());
     this.attestation_2 = new IndexedAttestation(attesterSlashing.getAttestation_2());
+  }
+
+  @JsonCreator
+  public AttesterSlashing(
+          @JsonProperty("attestation_1") final IndexedAttestation attestation_1,
+          @JsonProperty("attestation_2") final IndexedAttestation attestation_2) {
+    this.attestation_1 = attestation_1;
+    this.attestation_2 = attestation_2;
   }
 
   public tech.pegasys.teku.datastructures.operations.AttesterSlashing asInternalAttesterSlashing() {
