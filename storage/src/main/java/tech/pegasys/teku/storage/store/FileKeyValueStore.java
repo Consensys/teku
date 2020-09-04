@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
  */
 public class FileKeyValueStore implements KeyValueStore<String, Bytes> {
 
+  private final SyncDataAccessor syncDataAccessor = new SyncDataAccessor();
   private final Path dataDir;
   private final ConcurrentMap<String, Object> keyMutexes = new ConcurrentHashMap<>();
 
@@ -48,7 +49,7 @@ public class FileKeyValueStore implements KeyValueStore<String, Bytes> {
     Path file = dataDir.resolve(key + ".dat");
     try {
       synchronized (keyMutex(key)) {
-        new SyncDataAccessor().syncedWrite(file, value);
+        syncDataAccessor.syncedWrite(file, value);
       }
     } catch (IOException e) {
       throw new RuntimeException("Error writing file: " + file, e);
@@ -68,7 +69,7 @@ public class FileKeyValueStore implements KeyValueStore<String, Bytes> {
     Path file = dataDir.resolve(key + ".dat");
     try {
       synchronized (keyMutex(key)) {
-        return new SyncDataAccessor().read(file);
+        return syncDataAccessor.read(file);
       }
     } catch (Exception e) {
       throw new RuntimeException("Error reading file: " + file, e);
