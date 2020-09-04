@@ -385,7 +385,10 @@ public final class DataStructureUtil {
         randomEth1Data(),
         Bytes32.ZERO,
         randomSSZList(
-            ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS, this::randomProposerSlashing, 1),
+            ProposerSlashing.class,
+            Constants.MAX_PROPOSER_SLASHINGS,
+            this::randomProposerSlashing,
+            1),
         randomSSZList(
             AttesterSlashing.class,
             Constants.MAX_ATTESTER_SLASHINGS,
@@ -396,7 +399,8 @@ public final class DataStructureUtil {
         randomSSZList(
             SignedVoluntaryExit.class,
             Constants.MAX_VOLUNTARY_EXITS,
-            this::randomSignedVoluntaryExit, 1));
+            this::randomSignedVoluntaryExit,
+            1));
   }
 
   public BeaconBlockBody randomFullBeaconBlockBody() {
