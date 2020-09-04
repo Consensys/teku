@@ -110,6 +110,8 @@ import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
 public class BeaconChainController extends Service implements TimeTickChannel {
   private static final Logger LOG = LogManager.getLogger();
 
+  private static final String KEY_VALUE_STORE_SUBDIRECTORY = "kvstore";
+
   private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
   private final TekuConfiguration config;
@@ -418,7 +420,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       p2pConfig.validateListenPortAvailable();
       final Eth2Config eth2Config = new Eth2Config(config.isP2pSnappyEnabled());
       final KeyValueStore<String, Bytes> keyValueStore =
-          new FileKeyValueStore(Path.of(config.getDataPath()));
+          new FileKeyValueStore(Path.of(config.getDataPath(), KEY_VALUE_STORE_SUBDIRECTORY));
 
       this.p2pNetwork =
           Eth2NetworkBuilder.create()
