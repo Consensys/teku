@@ -13,11 +13,6 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -30,6 +25,11 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class SignerTest {
 
@@ -57,7 +57,7 @@ class SignerTest {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(10);
     final BLSSignature signature = dataStructureUtil.randomSignature();
     final Bytes expectedSigningRoot =
-        Bytes.fromHexString("0xf6c68e87f3dbbe3d05de8eae204396ddea7fe13ffad0008f06748c9aa23fcc05");
+        Bytes.fromHexString("0x5f2a21d778dcfade3e28f68b4c1a938cfcd2f7eae0e7249df996e40ba1bad761");
     when(signerService.signBlock(expectedSigningRoot))
         .thenReturn(SafeFuture.completedFuture(signature));
 
