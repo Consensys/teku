@@ -28,8 +28,8 @@ public class AttesterSlashing {
 
   @JsonCreator
   public AttesterSlashing(
-          @JsonProperty("attestation_1") final IndexedAttestation attestation_1,
-          @JsonProperty("attestation_2") final IndexedAttestation attestation_2) {
+      @JsonProperty("attestation_1") final IndexedAttestation attestation_1,
+      @JsonProperty("attestation_2") final IndexedAttestation attestation_2) {
     this.attestation_1 = attestation_1;
     this.attestation_2 = attestation_2;
   }

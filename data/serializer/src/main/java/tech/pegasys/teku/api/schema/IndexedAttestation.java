@@ -13,18 +13,17 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
+import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
-import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public class IndexedAttestation {
   @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
@@ -45,9 +44,9 @@ public class IndexedAttestation {
 
   @JsonCreator
   public IndexedAttestation(
-          @JsonProperty("attesting_indices") final List<UInt64> attesting_indices,
-          @JsonProperty("data") final AttestationData data,
-          @JsonProperty("signature") final BLSSignature signature) {
+      @JsonProperty("attesting_indices") final List<UInt64> attesting_indices,
+      @JsonProperty("data") final AttestationData data,
+      @JsonProperty("signature") final BLSSignature signature) {
     this.attesting_indices = attesting_indices;
     this.data = data;
     this.signature = signature;
