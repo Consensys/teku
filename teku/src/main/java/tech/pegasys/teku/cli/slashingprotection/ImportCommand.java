@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.cli.slashingprotection;
 
-import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;

@@ -36,6 +36,7 @@ dependencies {
   testFixturesCompileOnly 'org.jetbrains.kotlin:kotlin-stdlib'
 
   testFixturesImplementation project(':ethereum:datastructures')
+  testFixturesImplementation project(':storage')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation testFixtures(project(':util'))
 
