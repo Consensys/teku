@@ -17,6 +17,7 @@ import static java.nio.file.Files.createTempFile;
 import static java.nio.file.Files.writeString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.validator.client.loader.KeystoresValidatorKeyProvider.lockKeystoreFile;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -135,5 +136,13 @@ class KeystoresValidatorKeyProviderTest {
     Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> keystoresValidatorKeyProvider.loadValidatorKeys(config))
         .withMessage("KeyStore file not found: " + scryptKeystore);
+  }
+
+  @Test
+  void shouldLockKeystoreFileAndFailWhenTryingCreateLockForLockedFile() throws Exception {
+    final Path keystoreFile = Path.of(Resources.getResource("scryptTestVector.json").toURI());
+    Assertions.assertThatCode(() -> lockKeystoreFile(keystoreFile)).doesNotThrowAnyException();
+    Assertions.assertThatThrownBy(() -> lockKeystoreFile(keystoreFile))
+        .isExactlyInstanceOf(KeystoreAlreadyInUseException.class);
   }
 }

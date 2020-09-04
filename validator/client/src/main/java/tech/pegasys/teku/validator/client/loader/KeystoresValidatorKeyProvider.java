@@ -16,12 +16,15 @@ package tech.pegasys.teku.validator.client.loader;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -86,6 +89,7 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
 
   private Bytes32 loadBLSPrivateKey(final Path keystoreFile, final String password) {
     try {
+      lockKeystoreFile(keystoreFile);
       final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(keystoreFile);
       if (!KeyStore.validatePassword(password, keyStoreData)) {
         throw new IllegalArgumentException("Invalid keystore password: " + keystoreFile);
@@ -93,6 +97,21 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
       return Bytes32.wrap(KeyStore.decrypt(password, keyStoreData));
     } catch (final KeyStoreValidationException e) {
       throw new IllegalArgumentException(e.getMessage(), e);
+    }
+  }
+
+  @VisibleForTesting
+  static void lockKeystoreFile(Path keystoreFile) {
+    try {
+      final Path keystoreLockFile =
+          Files.write(Path.of(keystoreFile.toString() + ".lock"), new byte[0], CREATE_NEW);
+      keystoreLockFile.toFile().deleteOnExit();
+    } catch (FileAlreadyExistsException e) {
+      throw new KeystoreAlreadyInUseException(
+          "Keystore file " + keystoreFile + "is already in use.");
+    } catch (IOException e) {
+      throw new RuntimeException(
+          "Unexpected error at KeystoreValidatorKeyProvider when locking keystore file.");
     }
   }
 
