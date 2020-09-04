@@ -26,7 +26,7 @@ import tech.pegasys.teku.util.file.SyncDataAccessor;
  * The key-value store implementation with String keys and Bytes values which stores each entry in a
  * separate file named {@code <key>.dat} in the specified directory
  *
- * This implementation is thread-safe
+ * <p>This implementation is thread-safe
  */
 public class FileKeyValueStore implements KeyValueStore<String, Bytes> {
 
