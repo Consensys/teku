@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.events;
+package tech.pegasys.teku.infrastructure.subscribers;
 
 import java.util.Iterator;
 import java.util.List;
@@ -19,7 +19,6 @@ import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * A value holder class which notifies subscribers on value updates
@@ -107,7 +106,7 @@ public class ObservableValue<C> {
    *
    * @param c the non-null value
    */
-  public void set(@NotNull C c) {
+  public void set(C c) {
     Iterator<Subscription<C>> iterator;
     synchronized (this) {
       curValue = c;

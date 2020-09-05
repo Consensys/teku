@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.events;
+package tech.pegasys.teku.infrastructure.subscribers;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

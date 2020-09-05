@@ -8,6 +8,7 @@ dependencies {
 
   implementation project(':bls')
   implementation project(':infrastructure:async')
+  implementation project(':infrastructure:subscribers')
   implementation project(':ssz')
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'

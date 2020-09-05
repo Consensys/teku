@@ -67,8 +67,8 @@ public class EventChannels {
    *
    * <p>Any methods which return a future, will complete that future via {@code responseRunner}. As
    * a result, any handlers chained to the returned future via methods like {@link
-   * tech.pegasys.teku.util.async.SafeFuture#thenApply(Function)} will be executed on one of {@code
-   * responseRunner}'s threads.
+   * tech.pegasys.teku.infrastructure.async.SafeFuture#thenApply(Function)} will be executed on one
+   * of {@code responseRunner}'s threads.
    *
    * @param channelInterface the interface defining the channel
    * @param responseRunner the {@link AsyncRunner} to use when completing any returned futures

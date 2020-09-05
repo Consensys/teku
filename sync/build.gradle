@@ -8,6 +8,7 @@ dependencies {
     implementation project(':networking:p2p')
     implementation project(':networking:eth2')
     implementation project(':infrastructure:logging')
+    implementation project(':infrastructure:subscribers')
     implementation project(':services:serviceutils')
     implementation project(':ssz')
     implementation project(':storage')

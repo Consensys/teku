@@ -27,12 +27,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.sync.FetchBlockTask.FetchBlockResult;
-import tech.pegasys.teku.util.events.Subscribers;
 
 public class FetchRecentBlocksService extends Service {
   private static final Logger LOG = LogManager.getLogger();

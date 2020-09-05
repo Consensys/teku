@@ -6,6 +6,7 @@ dependencies {
   implementation project(':ethereum:datastructures')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:logging')
+  implementation project(':infrastructure:subscribers')
   implementation project(':pow')
   implementation project(':protoarray')
   implementation project(':services:serviceutils')

@@ -8,6 +8,7 @@ dependencies {
   implementation project(':ethereum:statetransition')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:logging')
+  implementation project(':infrastructure:subscribers')
   implementation project(':ssz')
   implementation project(':storage')
   implementation project(':storage:api')
@@ -48,6 +49,7 @@ dependencies {
   testFixturesImplementation testFixtures(project(':util'))
   testFixturesImplementation testFixtures(project(':infrastructure:events'))
   testFixturesImplementation testFixtures(project(':storage'))
+  testFixturesImplementation project(':infrastructure:subscribers')
   testFixturesImplementation project(':services:serviceutils')
 
   testFixturesImplementation 'io.libp2p:jvm-libp2p-minimal'
