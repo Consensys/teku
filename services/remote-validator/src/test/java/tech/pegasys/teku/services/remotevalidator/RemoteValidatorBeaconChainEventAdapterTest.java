@@ -137,7 +137,7 @@ class RemoteValidatorBeaconChainEventAdapterTest {
     final BeaconChainReorgEvent expectedAdaptedEvent =
         new BeaconChainReorgEvent(BeaconChainEvent.REORG_OCCURRED, slot, commonAncestorSlot);
 
-    eventsAdapter.reorgOccurred(Bytes32.ZERO, slot, commonAncestorSlot);
+    eventsAdapter.reorgOccurred(Bytes32.ZERO, slot, Bytes32.ZERO, commonAncestorSlot);
     verify(listener).onEvent(beaconChainEventArgCaptor.capture());
 
     assertThat(beaconChainEventArgCaptor.getValue()).isEqualTo(expectedAdaptedEvent);

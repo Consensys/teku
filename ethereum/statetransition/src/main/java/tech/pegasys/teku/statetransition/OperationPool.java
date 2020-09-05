@@ -65,6 +65,10 @@ public class OperationPool<T> {
     operations.add(item);
   }
 
+  public void addAll(SSZList<T> items) {
+    operations.addAll(items.asList());
+  }
+
   public void removeAll(SSZList<T> items) {
     operations.removeAll(items.asList());
   }

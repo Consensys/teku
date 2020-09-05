@@ -176,7 +176,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store;
   }
 
-  public NavigableMap<UInt64, Bytes32> getAncestorRoots(
+  public NavigableMap<UInt64, Bytes32> getAncestorRootsOnHeadChain(
       final UInt64 startSlot, final UInt64 step, final UInt64 count) {
     return chainHead
         .map(
@@ -184,6 +184,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
                 ForkChoiceUtil.getAncestors(
                     forkChoiceStrategy.orElseThrow(), head.getRoot(), startSlot, step, count))
         .orElseGet(TreeMap::new);
+  }
+
+  public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(final UInt64 startSlot, Bytes32 root) {
+    return ForkChoiceUtil.getAncestorsOnFork(forkChoiceStrategy.orElseThrow(), root, startSlot);
   }
 
   public Optional<ForkChoiceStrategy> getForkChoiceStrategy() {
@@ -245,7 +249,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
         reorgCounter.inc();
         reorgEventChannel.reorgOccurred(
-            newChainHead.getRoot(), newChainHead.getSlot(), commonAncestorSlot);
+            newChainHead.getRoot(),
+            newChainHead.getSlot(),
+            previousChainHead.getRoot(),
+            commonAncestorSlot);
       }
     }
 

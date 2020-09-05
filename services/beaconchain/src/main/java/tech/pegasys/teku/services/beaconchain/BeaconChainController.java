@@ -70,6 +70,7 @@ import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.statetransition.OperationPool;
+import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
@@ -142,6 +143,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile OperationPool<AttesterSlashing> attesterSlashingPool;
   private volatile OperationPool<ProposerSlashing> proposerSlashingPool;
   private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
+  private volatile OperationsReOrgManager operationsReOrgManager;
 
   private SyncStateTracker syncStateTracker;
   private UInt64 genesisTimeTracker = ZERO;
@@ -264,6 +266,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initSyncStateTracker();
     initValidatorApiHandler();
     initRestAPI();
+    initOperationsReOrgManager();
   }
 
   private void initAttesterSlashingPool() {
@@ -502,6 +505,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initAttestationPool()");
     attestationPool = new AggregatingAttestationPool(new AttestationDataStateTransitionValidator());
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
+    blockImporter.subscribeToVerifiedBlockAttestations(attestationPool::removeAll);
   }
 
   public void initRestAPI() {
@@ -553,6 +557,19 @@ public class BeaconChainController extends Service implements TimeTickChannel {
           .subscribe(SlotEventsChannel.class, blockManager)
           .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
     }
+  }
+
+  private void initOperationsReOrgManager() {
+    LOG.debug("BeaconChainController.initOperationsReOrgManager()");
+    operationsReOrgManager =
+        new OperationsReOrgManager(
+            proposerSlashingPool,
+            attesterSlashingPool,
+            voluntaryExitPool,
+            attestationPool,
+            attestationManager,
+            recentChainData);
+    eventChannels.subscribe(ReorgEventChannel.class, operationsReOrgManager);
   }
 
   private void setupInteropState() {

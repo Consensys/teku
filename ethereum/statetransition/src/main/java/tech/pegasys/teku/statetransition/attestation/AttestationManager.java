@@ -112,7 +112,6 @@ public class AttestationManager extends Service implements SlotEventsChannel {
                               "Failed to process pending attestation dependent on " + blockRoot,
                               err));
             });
-    block.getMessage().getBody().getAttestations().forEach(aggregatingAttestationPool::remove);
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(

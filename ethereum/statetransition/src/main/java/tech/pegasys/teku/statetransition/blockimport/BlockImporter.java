@@ -82,7 +82,13 @@ public class BlockImporter {
 
               final Optional<BlockProcessingRecord> record = result.getBlockProcessingRecord();
               eventBus.post(new ImportedBlockEvent(block));
-              notifyBlockOperationSubscribers(block);
+
+              // Notify operation pools to remove operations only
+              // if the block is on our canonical chain
+              if (result.isBlockOnCanonicalChain()) {
+                notifyBlockOperationSubscribers(block);
+              }
+
               record.ifPresent(eventBus::post);
 
               return result;
