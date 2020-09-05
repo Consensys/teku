@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.cli.deposit;
 
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.util.bytes.KeyFormatter.shortPublicKey;
 
 import java.io.IOException;

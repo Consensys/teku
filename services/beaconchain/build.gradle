@@ -9,7 +9,7 @@ dependencies {
   implementation project(':infrastructure:async')
   implementation project(':networking:p2p')
   implementation project(':networking:eth2')
-  implementation project(':logging')
+  implementation project(':infrastructure:logging')
   implementation project(':pow')
   implementation project(':protoarray')
   implementation project(':services:serviceutils')

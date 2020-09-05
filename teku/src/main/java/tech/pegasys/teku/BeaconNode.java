@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku;
 
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.eventbus.AsyncEventBus;
 import com.google.common.eventbus.EventBus;
@@ -28,8 +28,8 @@ import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.logging.LoggingConfiguration;
-import tech.pegasys.teku.logging.LoggingConfigurator;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfiguration;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.metrics.MetricsEndpoint;
 import tech.pegasys.teku.service.serviceutils.AsyncRunnerFactory;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;

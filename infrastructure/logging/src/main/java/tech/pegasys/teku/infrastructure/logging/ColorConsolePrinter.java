@@ -11,9 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.logging;
-
-import static tech.pegasys.teku.logging.LoggingConfigurator.isColorEnabled;
+package tech.pegasys.teku.infrastructure.logging;
 
 public class ColorConsolePrinter {
 
@@ -31,7 +29,7 @@ public class ColorConsolePrinter {
   }
 
   public static String print(final String message, final Color color) {
-    return isColorEnabled() ? colorCode(color) + message + resetCode : message;
+    return LoggingConfigurator.isColorEnabled() ? colorCode(color) + message + resetCode : message;
   }
 
   private static String colorCode(final Color color) {

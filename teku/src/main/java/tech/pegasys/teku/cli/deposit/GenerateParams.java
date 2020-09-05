@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.cli.deposit;
 
-import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
+import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import java.util.function.Function;
 import picocli.CommandLine.ArgGroup;

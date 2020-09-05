@@ -34,7 +34,7 @@ import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.data.slashinginterchange.MinimalSigningHistory;
 import tech.pegasys.teku.data.slashinginterchange.MinimalSlashingProtectionInterchangeFormat;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
-import tech.pegasys.teku.logging.SubCommandLogger;
+import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class SlashingProtectionExporter {

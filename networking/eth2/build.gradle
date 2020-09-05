@@ -7,7 +7,7 @@ dependencies {
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
   implementation project(':infrastructure:async')
-  implementation project(':logging')
+  implementation project(':infrastructure:logging')
   implementation project(':ssz')
   implementation project(':storage')
   implementation project(':storage:api')

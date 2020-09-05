@@ -11,10 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.logging;
+package tech.pegasys.teku.infrastructure.logging;
 
 import static java.util.stream.Collectors.joining;
-import static tech.pegasys.teku.logging.LoggingConfigurator.STATUS_LOGGER_NAME;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -25,7 +24,8 @@ import org.apache.logging.log4j.Logger;
 
 public class StatusLogger {
 
-  public static final StatusLogger STATUS_LOG = new StatusLogger(STATUS_LOGGER_NAME);
+  public static final StatusLogger STATUS_LOG =
+      new StatusLogger(LoggingConfigurator.STATUS_LOGGER_NAME);
 
   private final Logger log;
 

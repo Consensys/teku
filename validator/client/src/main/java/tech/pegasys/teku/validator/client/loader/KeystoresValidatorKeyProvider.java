@@ -40,7 +40,7 @@ import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
-import tech.pegasys.teku.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {

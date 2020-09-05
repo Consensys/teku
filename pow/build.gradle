@@ -6,7 +6,7 @@ dependencies {
   implementation project(':events')
   implementation project(':services:serviceutils')
   implementation project(':storage:api')
-  implementation project(':logging')
+  implementation project(':infrastructure:logging')
 
   api 'org.web3j:core'
   

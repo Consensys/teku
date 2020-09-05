@@ -11,7 +11,7 @@ dependencies {
   implementation project(':ethereum:datastructures')
   implementation project(':networking:eth2')
   implementation project(':util')
-  implementation project(':logging')
+  implementation project(':infrastructure:logging')
   implementation project(':pow')
   implementation project(':ssz')
   implementation project(':sync')

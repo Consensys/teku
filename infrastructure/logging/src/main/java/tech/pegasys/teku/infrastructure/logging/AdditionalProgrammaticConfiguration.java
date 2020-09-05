@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.logging;
+package tech.pegasys.teku.infrastructure.logging;
 
 import java.io.IOException;
 import org.apache.logging.log4j.core.LoggerContext;

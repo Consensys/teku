@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.statetransition.genesis;
 
-import static tech.pegasys.teku.logging.EventLogger.EVENT_LOG;
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.util.List;
 import java.util.stream.Collectors;

@@ -11,10 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.logging;
-
-import static tech.pegasys.teku.logging.ColorConsolePrinter.print;
-import static tech.pegasys.teku.logging.LoggingConfigurator.VALIDATOR_LOGGER_NAME;
+package tech.pegasys.teku.infrastructure.logging;
 
 import com.google.common.base.Strings;
 import java.util.Optional;
@@ -23,11 +20,12 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.Color;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.logging.ColorConsolePrinter.Color;
 
 public class ValidatorLogger {
-  public static final ValidatorLogger VALIDATOR_LOGGER = new ValidatorLogger(VALIDATOR_LOGGER_NAME);
+  public static final ValidatorLogger VALIDATOR_LOGGER =
+      new ValidatorLogger(LoggingConfigurator.VALIDATOR_LOGGER_NAME);
   public static final int LONGEST_TYPE_LENGTH = "attestation".length();
   private static final String PREFIX = "Validator   *** ";
 
@@ -49,7 +47,7 @@ public class ValidatorLogger {
   public void dutySkippedWhileSyncing(
       final String producedType, final UInt64 slot, final int skippedCount) {
     log.warn(
-        print(
+        ColorConsolePrinter.print(
             String.format(
                 "%sSkipped producing %s while node is syncing  Count: %s, Slot: %s",
                 PREFIX, producedType, skippedCount, slot),
@@ -58,7 +56,7 @@ public class ValidatorLogger {
 
   public void dutyFailed(final String producedType, final UInt64 slot, final Throwable error) {
     log.error(
-        print(
+        ColorConsolePrinter.print(
             String.format("%sFailed to produce %s  Slot: %s", PREFIX, producedType, slot),
             Color.RED),
         error);
@@ -67,7 +65,7 @@ public class ValidatorLogger {
   private void logDuty(
       final String type, final UInt64 slot, final int count, final Set<Bytes32> roots) {
     log.info(
-        print(
+        ColorConsolePrinter.print(
             String.format(
                 "%sPublished %s  Count: %s, Slot: %s, Root: %s",
                 PREFIX, type, count, slot, formatBlockRoots(roots)),
@@ -80,7 +78,7 @@ public class ValidatorLogger {
 
   public void aggregationSkipped(final UInt64 slot, final int committeeIndex) {
     log.warn(
-        print(
+        ColorConsolePrinter.print(
             PREFIX
                 + "Skipped aggregation for committee "
                 + committeeIndex
@@ -98,7 +96,7 @@ public class ValidatorLogger {
     final String actualDescription =
         actualValidatorIndex.map(idx -> " and actual validator index: " + idx).orElse("");
     log.error(
-        print(
+        ColorConsolePrinter.print(
             PREFIX
                 + "Produced invalid attestation for slot "
                 + slot
@@ -112,6 +110,7 @@ public class ValidatorLogger {
 
   public void producedInvalidAggregate(final UInt64 slot, final String reason) {
     log.error(
-        print(PREFIX + "Produced invalid aggregate for slot " + slot + ": " + reason, Color.RED));
+        ColorConsolePrinter.print(
+            PREFIX + "Produced invalid aggregate for slot " + slot + ": " + reason, Color.RED));
   }
 }

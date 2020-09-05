@@ -11,11 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.logging;
+package tech.pegasys.teku.infrastructure.logging;
 
-import static tech.pegasys.teku.logging.ColorConsolePrinter.print;
-import static tech.pegasys.teku.logging.LogFormatter.formatHashRoot;
-import static tech.pegasys.teku.logging.LoggingConfigurator.EVENT_LOGGER_NAME;
+import static tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.print;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -23,12 +21,13 @@ import java.time.format.DateTimeFormatter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.Color;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.logging.ColorConsolePrinter.Color;
 
 public class EventLogger {
 
-  public static final EventLogger EVENT_LOG = new EventLogger(EVENT_LOGGER_NAME);
+  public static final EventLogger EVENT_LOG =
+      new EventLogger(LoggingConfigurator.EVENT_LOGGER_NAME);
 
   private final Logger log;
 
@@ -64,7 +63,7 @@ public class EventLogger {
             currentEpoch.toString(),
             justifiedCheckpoint.toString(),
             finalizedCheckpoint.toString(),
-            formatHashRoot(finalizedRoot));
+            LogFormatter.formatHashRoot(finalizedRoot));
     info(epochEventLog, Color.GREEN);
   }
 
@@ -94,7 +93,7 @@ public class EventLogger {
       final int numPeers) {
     String blockRoot = "   ... empty";
     if (nodeSlot.equals(headSlot)) {
-      blockRoot = formatHashRoot(bestBlockRoot);
+      blockRoot = LogFormatter.formatHashRoot(bestBlockRoot);
     }
     final String slotEventLog =
         String.format(
@@ -103,7 +102,7 @@ public class EventLogger {
             blockRoot,
             nodeEpoch.toString(),
             finalizedCheckpoint.toString(),
-            formatHashRoot(finalizedRoot),
+            LogFormatter.formatHashRoot(finalizedRoot),
             numPeers);
     info(slotEventLog, Color.WHITE);
   }
