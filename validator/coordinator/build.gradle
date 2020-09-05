@@ -15,7 +15,7 @@ dependencies {
   implementation project(':pow')
   implementation project(':ssz')
   implementation project(':sync')
-  implementation project(':events')
+  implementation project(':infrastructure:events')
 
   implementation 'org.apache.tuweni:tuweni-kv'
   implementation 'org.apache.tuweni:tuweni-bytes'

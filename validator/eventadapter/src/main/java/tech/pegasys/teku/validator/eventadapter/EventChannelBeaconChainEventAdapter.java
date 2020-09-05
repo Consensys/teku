@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.eventadapter;
 import com.google.common.eventbus.Subscribe;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
@@ -27,7 +28,7 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 /**
  * Converts events from the {@link com.google.common.eventbus.EventBus} to the new validator client
- * {@link tech.pegasys.teku.events.EventChannels}.
+ * {@link EventChannels}.
  */
 public class EventChannelBeaconChainEventAdapter
     implements SlotEventsChannel, ReorgEventChannel, BeaconChainEventAdapter {

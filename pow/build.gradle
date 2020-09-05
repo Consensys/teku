@@ -3,7 +3,7 @@ dependencies {
   implementation project(':infrastructure:async')
   implementation project(':ssz')
   implementation project(':util')
-  implementation project(':events')
+  implementation project(':infrastructure:events')
   implementation project(':services:serviceutils')
   implementation project(':storage:api')
   implementation project(':infrastructure:logging')

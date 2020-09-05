@@ -1,7 +1,7 @@
 dependencies {
   implementation project(':bls')
   implementation project(':data')
-  implementation project(':events')
+  implementation project(':infrastructure:events')
   implementation project(':ethereum:datastructures')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:logging')

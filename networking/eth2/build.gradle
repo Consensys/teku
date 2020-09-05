@@ -39,14 +39,14 @@ dependencies {
   integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
   integrationTestImplementation testFixtures(project(':networking:eth2'))
   integrationTestImplementation testFixtures(project(':util'))
-  integrationTestImplementation testFixtures(project(':events'))
+  integrationTestImplementation testFixtures(project(':infrastructure:events'))
 
   testFixturesImplementation testFixtures(project(':ethereum:datastructures'))
   testFixturesImplementation testFixtures(project(':ethereum:statetransition'))
   testFixturesImplementation testFixtures(project(':networking:p2p'))
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation testFixtures(project(':util'))
-  testFixturesImplementation testFixtures(project(':events'))
+  testFixturesImplementation testFixtures(project(':infrastructure:events'))
   testFixturesImplementation testFixtures(project(':storage'))
   testFixturesImplementation project(':services:serviceutils')
 

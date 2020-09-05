@@ -1,5 +1,5 @@
 dependencies {
-  implementation project(':events')
+  implementation project(':infrastructure:events')
   implementation project(':data:beaconrestapi')
   implementation project(':data:metrics')
   implementation project(':data:provider')
