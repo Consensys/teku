@@ -28,7 +28,6 @@ import java.util.stream.Stream;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
 
 class EventChannel<T> {
 

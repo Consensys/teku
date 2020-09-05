@@ -5,6 +5,7 @@ plugins {
 dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
   api project(':data:metrics')
+  api project(':infrastructure:events')
 
   implementation project(':bls')
   implementation project(':infrastructure:async')

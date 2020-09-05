@@ -20,7 +20,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
 
 class EventChannelsTest {
   private final EventChannels channels =
