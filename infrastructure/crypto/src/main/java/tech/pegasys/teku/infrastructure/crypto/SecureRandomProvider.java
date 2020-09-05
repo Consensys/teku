@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.crypto;
+package tech.pegasys.teku.infrastructure.crypto;
 
 import java.security.SecureRandom;
 

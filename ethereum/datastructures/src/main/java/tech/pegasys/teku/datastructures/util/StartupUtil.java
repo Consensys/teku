@@ -17,7 +17,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.util.resource.ResourceLoader;
+import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 
 public class StartupUtil {
   public static BeaconState loadBeaconState(final String source) throws IOException {

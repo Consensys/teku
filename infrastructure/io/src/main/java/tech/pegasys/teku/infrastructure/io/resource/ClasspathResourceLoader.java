@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.resource;
+package tech.pegasys.teku.infrastructure.io.resource;
 
 import java.io.InputStream;
 import java.util.Collection;

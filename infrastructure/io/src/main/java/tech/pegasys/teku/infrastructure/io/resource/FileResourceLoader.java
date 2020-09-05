@@ -11,8 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.iostreams;
+package tech.pegasys.teku.infrastructure.io.resource;
 
-public class IOStreamConstants {
-  public static final int END_OF_STREAM = -1;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
+
+public class FileResourceLoader implements ResourceLoader {
+
+  @Override
+  public Optional<InputStream> load(final String source) throws IOException {
+    final Path path = Path.of(source);
+    if (!path.toFile().exists()) {
+      return Optional.empty();
+    }
+    return Optional.of(Files.newInputStream(path));
+  }
 }
