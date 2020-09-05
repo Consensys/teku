@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine.Option;
-import tech.pegasys.teku.util.cli.GraffitiConverter;
+import tech.pegasys.teku.cli.converter.GraffitiConverter;
 
 public class ValidatorOptions {
   @Option(

@@ -11,9 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.cli;
+package tech.pegasys.teku.cli.converter;
 
 import picocli.CommandLine;
+import tech.pegasys.teku.util.cli.VersionProvider;
 
 public class PicoCliVersionProvider implements CommandLine.IVersionProvider {
 
