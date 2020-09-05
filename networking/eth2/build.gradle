@@ -2,7 +2,7 @@ dependencies {
   api project(':networking:p2p')
   implementation project(':bls')
   implementation project(':data')
-  implementation project(':data:metrics')
+  implementation project(':infrastructure:metrics')
   implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
@@ -24,7 +24,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'org.xerial.snappy:snappy-java'
 
-  testImplementation testFixtures(project(':data:metrics'))
+  testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':ethereum:statetransition'))

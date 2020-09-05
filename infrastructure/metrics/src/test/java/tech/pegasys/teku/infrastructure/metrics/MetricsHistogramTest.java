@@ -11,14 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.metrics;
+package tech.pegasys.teku.infrastructure.metrics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
-import static tech.pegasys.teku.metrics.MetricsHistogram.LABEL_1;
-import static tech.pegasys.teku.metrics.MetricsHistogram.LABEL_50;
-import static tech.pegasys.teku.metrics.MetricsHistogram.LABEL_95;
-import static tech.pegasys.teku.metrics.MetricsHistogram.LABEL_99;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,10 +49,10 @@ class MetricsHistogramTest {
             .collect(Collectors.toMap(Observation::getLabels, Observation::getValue));
     assertThat(values)
         .containsOnly(
-            entry(key(LABEL_50), 50d),
-            entry(key(LABEL_95), 95d),
-            entry(key(LABEL_99), 99d),
-            entry(key(LABEL_1), 100d));
+            entry(key(MetricsHistogram.LABEL_50), 50d),
+            entry(key(MetricsHistogram.LABEL_95), 95d),
+            entry(key(MetricsHistogram.LABEL_99), 99d),
+            entry(key(MetricsHistogram.LABEL_1), 100d));
   }
 
   @Test
@@ -74,10 +70,10 @@ class MetricsHistogramTest {
             .collect(Collectors.toMap(Observation::getLabels, Observation::getValue));
     assertThat(values)
         .containsOnly(
-            entry(key(LABEL_50), 50d),
-            entry(key(LABEL_95), 80d),
-            entry(key(LABEL_99), 80d),
-            entry(key(LABEL_1), 80d));
+            entry(key(MetricsHistogram.LABEL_50), 50d),
+            entry(key(MetricsHistogram.LABEL_95), 80d),
+            entry(key(MetricsHistogram.LABEL_99), 80d),
+            entry(key(MetricsHistogram.LABEL_1), 80d));
   }
 
   private static List<String> key(final List<String> labelValues) {

@@ -15,9 +15,9 @@ package tech.pegasys.teku.validator.coordinator;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.metrics.MetricsHistogram;
-import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.time.TimeProvider;

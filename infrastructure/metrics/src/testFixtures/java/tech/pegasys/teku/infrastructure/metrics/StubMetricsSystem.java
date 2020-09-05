@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.metrics;
+package tech.pegasys.teku.infrastructure.metrics;
 
 import java.util.Map;
 import java.util.Optional;

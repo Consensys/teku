@@ -1,6 +1,6 @@
 dependencies {
   implementation project(':bls')
-  implementation project(':data:metrics')
+  implementation project(':infrastructure:metrics')
   implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
   implementation project(':infrastructure:async')
@@ -23,7 +23,7 @@ dependencies {
   implementation 'org.rocksdb:rocksdbjni'
 
   testImplementation testFixtures(project(':bls'))
-  testImplementation testFixtures(project(':data:metrics'))
+  testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':infrastructure:async'))
@@ -38,7 +38,7 @@ dependencies {
   testFixturesApi project(':ethereum:datastructures')
 
   testFixturesImplementation testFixtures(project(':bls'))
-  testFixturesImplementation testFixtures(project(':data:metrics'))
+  testFixturesImplementation testFixtures(project(':infrastructure:metrics'))
   testFixturesImplementation testFixtures(project(':ethereum:core'))
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation testFixtures(project(':pow'))

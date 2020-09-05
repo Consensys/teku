@@ -1,5 +1,5 @@
 dependencies {
-  implementation project(':data:metrics')
+  implementation project(':infrastructure:metrics')
   implementation project(':data:provider')
   implementation project(':data:serializer')
   implementation project(':ethereum:statetransition')

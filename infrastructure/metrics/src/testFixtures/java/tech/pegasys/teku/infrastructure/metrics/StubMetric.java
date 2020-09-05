@@ -11,25 +11,30 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.metrics;
+package tech.pegasys.teku.infrastructure.metrics;
 
-import java.util.function.DoubleSupplier;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
-public class StubGauge extends StubMetric {
+abstract class StubMetric {
+  private final MetricCategory category;
+  private final String name;
+  private final String help;
 
-  private final DoubleSupplier supplier;
-
-  protected StubGauge(
-      final MetricCategory category,
-      final String name,
-      final String help,
-      final DoubleSupplier supplier) {
-    super(category, name, help);
-    this.supplier = supplier;
+  protected StubMetric(final MetricCategory category, final String name, final String help) {
+    this.category = category;
+    this.name = name;
+    this.help = help;
   }
 
-  public double getValue() {
-    return supplier.getAsDouble();
+  public MetricCategory getCategory() {
+    return category;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public String getHelp() {
+    return help;
   }
 }

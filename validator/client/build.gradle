@@ -2,7 +2,7 @@ dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
   implementation project(':bls')
   implementation project(':infrastructure:io')
-  implementation project(':data:metrics')
+  implementation project(':infrastructure:metrics')
   implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
   implementation project(':infrastructure:events')
@@ -23,7 +23,7 @@ dependencies {
 
   integrationTestImplementation 'org.mock-server:mockserver-junit-jupiter'
 
-  testImplementation testFixtures(project(':data:metrics'))
+  testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':util'))

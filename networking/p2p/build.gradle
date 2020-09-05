@@ -1,6 +1,6 @@
 dependencies {
   implementation project(':data')
-  implementation project(':data:metrics')
+  implementation project(':infrastructure:metrics')
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
   implementation project(':infrastructure:async')
@@ -24,7 +24,7 @@ dependencies {
 
   testImplementation testFixtures(project(':ethereum:statetransition'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
-  testImplementation testFixtures(project(':data:metrics'))
+  testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':util'))
 

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.metrics;
+package tech.pegasys.teku.infrastructure.metrics;
 
 import io.prometheus.client.Collector;
 import java.util.Collections;

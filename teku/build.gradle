@@ -1,7 +1,7 @@
 dependencies {
   implementation project(':bls')
   implementation project(':data')
-  implementation project(':data:metrics')
+  implementation project(':infrastructure:metrics')
   implementation project(':data:recorder')
   implementation project(':data:dataexchange')
   implementation project(':ethereum:core')

@@ -24,8 +24,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.stategenerator.CachingTaskQueue.CacheableTask;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.metrics.StubMetricsSystem;
-import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 class CachingTaskQueueTest {
   private static final int MAX_CONCURRENT_TASKS = 2;

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.events;
 
-import static tech.pegasys.teku.metrics.TekuMetricCategory.EVENTBUS;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EVENTBUS;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

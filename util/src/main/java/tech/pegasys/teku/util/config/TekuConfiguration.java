@@ -29,7 +29,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
-import tech.pegasys.teku.metrics.MetricsConfig;
+import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 
 /** Configuration of an instance of Teku. */
 public class TekuConfiguration implements MetricsConfig {
