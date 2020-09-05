@@ -9,6 +9,7 @@ dependencies {
 
   implementation project(':bls')
   implementation project(':infrastructure:async')
+  implementation project(':infrastructure:logging')
   implementation project(':infrastructure:subscribers')
   implementation project(':ssz')
 

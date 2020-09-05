@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.config;
+package tech.pegasys.teku.infrastructure.logging;
 
 public enum LoggingDestination {
   BOTH("both"),

@@ -28,6 +28,7 @@ import org.apache.logging.log4j.status.StatusLogger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.metrics.MetricsConfig;
 
 /** Configuration of an instance of Teku. */

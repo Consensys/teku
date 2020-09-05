@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.logging;
 
-import tech.pegasys.teku.util.config.LoggingDestination;
-
 public class LoggingConfiguration {
 
   private final boolean colorEnabled;
