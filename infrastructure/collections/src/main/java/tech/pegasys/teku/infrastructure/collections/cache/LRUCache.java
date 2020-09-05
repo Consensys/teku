@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.cache;
+package tech.pegasys.teku.infrastructure.collections.cache;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import tech.pegasys.teku.util.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 
 /**
  * Cache made around LRU-map with fixed size, removing eldest entries (by added) when the space is

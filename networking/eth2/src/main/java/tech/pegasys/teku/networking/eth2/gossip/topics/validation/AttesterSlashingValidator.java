@@ -26,9 +26,9 @@ import tech.pegasys.teku.core.operationvalidators.AttesterSlashingStateTransitio
 import tech.pegasys.teku.core.operationvalidators.OperationInvalidReason;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.collections.LimitedSet;
 
 public class AttesterSlashingValidator {
   private static final Logger LOG = LogManager.getLogger();

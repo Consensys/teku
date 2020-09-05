@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.collections;
+package tech.pegasys.teku.infrastructure.collections;
 
 import java.util.Collections;
 import java.util.Set;
