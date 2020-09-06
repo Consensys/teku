@@ -23,8 +23,15 @@ import org.xerial.snappy.Snappy;
  */
 public class SnappyBlockCompressor {
 
-  public Bytes uncompress(final Bytes compressedData) throws DecodingException {
+  public Bytes uncompress(final Bytes compressedData, final long maxLength)
+      throws DecodingException {
+
     try {
+      final int actualLength = Snappy.uncompressedLength(compressedData.toArrayUnsafe());
+      if (actualLength > maxLength) {
+        throw new DecodingException(
+            String.format("Uncompressed length %d exceeds maximum %d", actualLength, maxLength));
+      }
       return Bytes.wrap(Snappy.uncompress(compressedData.toArrayUnsafe()));
     } catch (IOException e) {
       throw new DecodingException("Failed to uncompress", e);

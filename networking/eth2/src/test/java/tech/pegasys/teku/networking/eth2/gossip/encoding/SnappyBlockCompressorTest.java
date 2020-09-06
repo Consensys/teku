@@ -28,7 +28,7 @@ public class SnappyBlockCompressorTest {
 
     final Bytes compressed = compressor.compress(original);
     assertThat(compressed).isNotEqualTo(original);
-    final Bytes uncompressed = compressor.uncompress(compressed);
+    final Bytes uncompressed = compressor.uncompress(compressed, 1000);
 
     assertThat(uncompressed).isEqualTo(original);
   }
@@ -37,6 +37,16 @@ public class SnappyBlockCompressorTest {
   public void uncompress_randomData() {
     final Bytes data = Bytes.fromHexString("0x0102");
 
-    assertThatThrownBy(() -> compressor.uncompress(data)).isInstanceOf(DecodingException.class);
+    assertThatThrownBy(() -> compressor.uncompress(data, 1000))
+        .isInstanceOf(DecodingException.class);
+  }
+
+  @Test
+  void uncompress_uncompressedLengthLongerThanMaxLength() {
+    final Bytes original = Bytes.fromHexString("0x010203040506");
+
+    final Bytes compressed = compressor.compress(original);
+    assertThatThrownBy(() -> compressor.uncompress(compressed, 4))
+        .isInstanceOf(DecodingException.class);
   }
 }

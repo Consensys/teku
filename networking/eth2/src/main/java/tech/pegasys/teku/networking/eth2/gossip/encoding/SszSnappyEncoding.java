@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 
 class SszSnappyEncoding implements GossipEncoding {
   private static final String NAME = "ssz_snappy";
@@ -38,7 +39,9 @@ class SszSnappyEncoding implements GossipEncoding {
 
   @Override
   public <T> T decode(Bytes data, Class<T> valueType) throws DecodingException {
-    final Bytes uncompressed = snappyCompressor.uncompress(data);
+    final Bytes uncompressed =
+        snappyCompressor.uncompress(
+            data, SimpleOffsetSerializer.getLengthBounds(valueType).getMax());
     return sszEncoding.decode(uncompressed, valueType);
   }
 }
