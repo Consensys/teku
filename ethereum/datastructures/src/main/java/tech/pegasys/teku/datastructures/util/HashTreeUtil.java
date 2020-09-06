@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.hashtree;
+package tech.pegasys.teku.datastructures.util;
 
 import static java.lang.Long.max;
 import static java.nio.ByteOrder.LITTLE_ENDIAN;

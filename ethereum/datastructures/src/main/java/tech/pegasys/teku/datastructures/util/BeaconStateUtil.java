@@ -79,8 +79,6 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.hashtree.HashTreeUtil;
-import tech.pegasys.teku.util.hashtree.Merkleizable;
 
 public class BeaconStateUtil {
 

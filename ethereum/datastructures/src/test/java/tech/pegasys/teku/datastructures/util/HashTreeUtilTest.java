@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.hashtree;
+package tech.pegasys.teku.datastructures.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static tech.pegasys.teku.util.hashtree.HashTreeUtil.is_power_of_two;
+import static tech.pegasys.teku.datastructures.util.HashTreeUtil.is_power_of_two;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -89,7 +89,7 @@ class HashTreeUtilTest {
 
   @Test
   void testMerge() {
-    List<Bytes32> result = new ArrayList<Bytes32>(2);
+    List<Bytes32> result = new ArrayList<>(2);
     result.add(null);
     result.add(null);
     HashTreeUtil.merge(
