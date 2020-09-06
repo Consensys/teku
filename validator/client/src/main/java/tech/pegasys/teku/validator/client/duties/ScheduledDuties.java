@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
-import static tech.pegasys.teku.logging.ValidatorLogger.VALIDATOR_LOGGER;
+import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import java.util.NavigableMap;
 import java.util.Optional;

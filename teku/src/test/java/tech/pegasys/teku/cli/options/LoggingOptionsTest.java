@@ -14,11 +14,11 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.util.config.LoggingDestination.DEFAULT_BOTH;
+import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.util.config.LoggingDestination;
+import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {

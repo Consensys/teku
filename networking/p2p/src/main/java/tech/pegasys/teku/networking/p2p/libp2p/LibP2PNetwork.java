@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.p2p.libp2p;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.reportExceptions;
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Host;

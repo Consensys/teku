@@ -14,8 +14,8 @@
 package tech.pegasys.teku.storage.api;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
 
 public interface ReorgEventChannel extends VoidReturningChannelInterface {
 

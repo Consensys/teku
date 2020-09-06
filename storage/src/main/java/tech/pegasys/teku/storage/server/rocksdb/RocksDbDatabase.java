@@ -15,8 +15,8 @@ package tech.pegasys.teku.storage.server.rocksdb;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.teku.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
-import static tech.pegasys.teku.metrics.TekuMetricCategory.STORAGE_HOT_DB;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.errorprone.annotations.MustBeClosed;
