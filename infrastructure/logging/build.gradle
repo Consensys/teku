@@ -1,0 +1,5 @@
+dependencies {
+    api 'org.apache.tuweni:tuweni-bytes'
+
+    implementation 'org.apache.logging.log4j:log4j-core'
+}

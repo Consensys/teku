@@ -1,8 +1,8 @@
 dependencies {
-  implementation project(':data:metrics')
-  implementation project(':events')
+  implementation project(':infrastructure:metrics')
+  implementation project(':infrastructure:events')
   implementation project(':infrastructure:async')
-  implementation project(':logging')
+  implementation project(':infrastructure:logging')
   implementation project(':util')
 
   implementation 'io.vertx:vertx-core'

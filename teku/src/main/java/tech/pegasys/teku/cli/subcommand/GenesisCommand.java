@@ -14,7 +14,7 @@
 package tech.pegasys.teku.cli.subcommand;
 
 import static tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer.serialize;
-import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
+import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import java.io.FileOutputStream;
 import java.io.IOException;

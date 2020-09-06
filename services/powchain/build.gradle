@@ -1,10 +1,10 @@
 dependencies {
   implementation project(':bls')
   implementation project(':data')
-  implementation project(':events')
+  implementation project(':infrastructure:events')
   implementation project(':ethereum:datastructures')
   implementation project(':infrastructure:async')
-  implementation project(':logging')
+  implementation project(':infrastructure:logging')
   implementation project(':pow')
   implementation project(':storage:api')
   implementation project(':services:serviceutils')

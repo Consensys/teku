@@ -15,8 +15,8 @@ package tech.pegasys.teku.service.serviceutils;
 
 import com.google.common.eventbus.EventBus;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.util.time.TimeProvider;
 

@@ -1,10 +1,11 @@
 dependencies {
   implementation project(':data')
-  implementation project(':data:metrics')
+  implementation project(':infrastructure:metrics')
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
   implementation project(':infrastructure:async')
-  implementation project(':logging')
+  implementation project(':infrastructure:logging')
+  implementation project(':infrastructure:subscribers')
   implementation project(':pow')
   implementation project(':services:serviceutils')
   implementation project(':storage')
@@ -23,7 +24,7 @@ dependencies {
 
   testImplementation testFixtures(project(':ethereum:statetransition'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
-  testImplementation testFixtures(project(':data:metrics'))
+  testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':util'))
 
@@ -38,6 +39,7 @@ dependencies {
   testFixturesImplementation project(':ethereum:datastructures')
   testFixturesImplementation project(':storage')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
+  testFixturesImplementation project(':infrastructure:subscribers')
   testFixturesImplementation testFixtures(project(':util'))
 
   testFixturesImplementation 'org.hyperledger.besu:plugin-api'

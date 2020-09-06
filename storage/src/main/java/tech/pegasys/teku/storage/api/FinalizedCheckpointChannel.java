@@ -14,7 +14,7 @@
 package tech.pegasys.teku.storage.api;
 
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
+import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 
 public interface FinalizedCheckpointChannel extends VoidReturningChannelInterface {
   void onNewFinalizedCheckpoint(final Checkpoint checkpoint);
