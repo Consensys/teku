@@ -176,7 +176,13 @@ public class CachingTaskQueue<K, V> {
     asyncRunner
         .runAsync(task::performTask)
         .thenPeek(result -> result.ifPresent(value -> cache(task.getKey(), value)))
-        .whenComplete((result, error) -> completePendingTask(task, result, error))
+        .handle(
+            (result, error) -> {
+              completePendingTask(task, result, error);
+              // Errors are propagated to the result, so convert to a completed future here
+              // Otherwise it will be reported as an unhandled exception.
+              return null;
+            })
         .alwaysRun(
             () -> {
               activeTasks.decrementAndGet();
