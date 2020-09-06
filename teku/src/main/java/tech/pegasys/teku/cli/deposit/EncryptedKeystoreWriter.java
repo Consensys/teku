@@ -74,9 +74,9 @@ public class EncryptedKeystoreWriter implements KeysWriter {
         generateKeystoreData(withdrawalKey, withdrawalKeyPassword);
 
     final String validatorFileName =
-        validatorKey.getPublicKey().toShortString() + "_validator.json";
+        validatorKey.getPublicKey().toAbbreviatedString() + "_validator.json";
     final String withdrawalFileName =
-        validatorKey.getPublicKey().toShortString() + "_withdrawal.json";
+        validatorKey.getPublicKey().toAbbreviatedString() + "_withdrawal.json";
 
     saveKeyStore(outputPath.resolve(validatorFileName), validatorKeyStoreData);
     commandOutput.accept(

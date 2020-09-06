@@ -59,7 +59,7 @@ public class ValidatorLoader {
     STATUS_LOG.validatorsInitialised(
         validators.values().stream()
             .map(Validator::getPublicKey)
-            .map(BLSPublicKey::toShortString)
+            .map(BLSPublicKey::toAbbreviatedString)
             .collect(Collectors.toList()));
     return validators;
   }

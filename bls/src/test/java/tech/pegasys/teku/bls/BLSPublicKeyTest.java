@@ -213,11 +213,11 @@ abstract class BLSPublicKeyTest {
   }
 
   @Test
-  public void toShortString_shouldShowFirstSevenBytesOfPublicKey() {
+  public void toAbbreviatedString_shouldShowFirstSevenBytesOfPublicKey() {
     Bytes keyBytes =
         Bytes.fromHexString(
             "0xab10fc693d038b73d67279127501a05f0072cbb7147c68650ef6ac4e0a413e5cabd1f35c8711e1f7d9d885bbc3b8eddc");
     BLSPublicKey blsPublicKey = BLSPublicKey.fromSSZBytes(keyBytes);
-    assertThat(blsPublicKey.toShortString()).isEqualTo("ab10fc6");
+    assertThat(blsPublicKey.toAbbreviatedString()).isEqualTo("ab10fc6");
   }
 }
