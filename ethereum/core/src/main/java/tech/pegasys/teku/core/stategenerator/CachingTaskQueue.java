@@ -181,7 +181,7 @@ public class CachingTaskQueue<K, V> {
               completePendingTask(task, result, error);
               // Errors are propagated to the result, so convert to a completed future here
               // Otherwise it will be reported as an unhandled exception.
-              return SafeFuture.COMPLETE;
+              return null;
             })
         .alwaysRun(
             () -> {
