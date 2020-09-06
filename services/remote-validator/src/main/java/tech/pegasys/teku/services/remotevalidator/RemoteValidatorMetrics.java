@@ -14,8 +14,8 @@
 package tech.pegasys.teku.services.remotevalidator;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.metrics.SettableGauge;
-import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 class RemoteValidatorMetrics {
 

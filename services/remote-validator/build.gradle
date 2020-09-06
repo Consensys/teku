@@ -1,10 +1,10 @@
 dependencies {
-  implementation project(':data:metrics')
+  implementation project(':infrastructure:metrics')
   implementation project(':data:provider')
   implementation project(':data:serializer')
   implementation project(':ethereum:statetransition')
   implementation project(':ethereum:datastructures')
-  implementation project(':events')
+  implementation project(':infrastructure:events')
   implementation project(':infrastructure:async')
   implementation project(':services:serviceutils')
   implementation project(':storage:api')

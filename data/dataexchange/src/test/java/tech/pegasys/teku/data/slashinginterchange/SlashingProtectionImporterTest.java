@@ -25,7 +25,7 @@ import java.net.URISyntaxException;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.data.SlashingProtectionImporter;
-import tech.pegasys.teku.logging.SubCommandLogger;
+import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 
 public class SlashingProtectionImporterTest {
   private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);

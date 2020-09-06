@@ -25,7 +25,7 @@ import java.nio.file.Path;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.teku.events.EventChannels;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 import tech.pegasys.teku.util.config.TekuConfiguration;

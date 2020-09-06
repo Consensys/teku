@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.mockito.ArgumentMatchers.any;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.List;
@@ -114,7 +113,7 @@ class ForkChoiceTest {
             new ReorgEvent(
                 blockAndState.getRoot(),
                 blockAndState.getSlot(),
-                any(),
+                genesis.getRoot(),
                 blockAndState.getSlot().minus(1)));
   }
 

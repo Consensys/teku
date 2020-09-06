@@ -14,7 +14,7 @@
 package tech.pegasys.teku.validator.client.loader;
 
 import static java.util.stream.Collectors.toMap;
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.time.Duration;
 import java.util.Collection;

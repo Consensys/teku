@@ -20,7 +20,7 @@ import com.google.common.util.concurrent.AtomicDouble;
 import org.assertj.core.util.introspection.FieldSupport;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.metrics.SettableGauge;
+import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 
 class RemoteValidatorMetricsTest {
 
