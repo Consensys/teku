@@ -211,6 +211,9 @@ public class BeaconRestApi {
   private void addV1NodeHandlers(final DataProvider provider) {
     app.get(GetIdentity.ROUTE, new GetIdentity(provider, jsonProvider));
     app.get(
+        tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing.ROUTE,
+        new tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing(provider, jsonProvider));
+    app.get(
         tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion(jsonProvider));
   }

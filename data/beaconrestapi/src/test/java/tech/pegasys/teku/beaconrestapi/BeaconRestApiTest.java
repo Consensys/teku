@@ -153,6 +153,14 @@ class BeaconRestApiTest {
   }
 
   @Test
+  public void shouldHaveV1SyncingEndpoint() {
+    verify(app)
+        .get(
+            eq(tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing.ROUTE),
+            any(tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing.class));
+  }
+
+  @Test
   public void shouldHaveBeaconStateRootEndpoint() {
     verify(app).get(eq(GetStateRoot.ROUTE), any(GetStateRoot.class));
   }
