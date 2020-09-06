@@ -11,53 +11,56 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.node;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
-import static io.javalin.core.util.Header.CACHE_CONTROL;
 import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_NODE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_NODE;
 
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
-import tech.pegasys.teku.api.schema.SyncingStatus;
+import tech.pegasys.teku.api.response.v1.node.SyncingResponse;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetSyncing implements Handler {
+  public static final String ROUTE = "/eth/v1/node/syncing";
+  private final JsonProvider jsonProvider;
+  private final SyncDataProvider syncProvider;
 
-  private final SyncDataProvider syncDataProvider;
+  public GetSyncing(final DataProvider provider, final JsonProvider jsonProvider) {
+    this.jsonProvider = jsonProvider;
+    this.syncProvider = provider.getSyncDataProvider();
+  }
 
-  public GetSyncing(SyncDataProvider syncDataProvider, JsonProvider jsonProvider) {
-    this.syncDataProvider = syncDataProvider;
+  GetSyncing(final SyncDataProvider syncProvider, final JsonProvider jsonProvider) {
+    this.syncProvider = syncProvider;
     this.jsonProvider = jsonProvider;
   }
 
-  public static final String ROUTE = "/node/syncing";
-  private final JsonProvider jsonProvider;
-
   @OpenApi(
-      deprecated = true,
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get synchronization status.",
-      tags = {TAG_NODE},
+      summary = "Get node syncing status.",
       description =
-          "Returns an object with data about the synchronization status, or false if not synchronizing. "
-              + "Replaced by standard api endpoint `/eth/v1/node/syncing`.",
+          "Requests the beacon node to describe if it's currently syncing or not, "
+              + "and if it is, what block it is up to.",
+      tags = {TAG_V1_NODE},
       responses = {
-        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = SyncingStatus.class)),
+        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = SyncingResponse.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
-  public void handle(Context ctx) throws Exception {
-    ctx.header(CACHE_CONTROL, CACHE_NONE);
-    final SyncingStatus syncingStatus = syncDataProvider.getSyncStatus();
-    ctx.result(jsonProvider.objectToJSON(syncingStatus));
+  public void handle(@NotNull final Context ctx) throws Exception {
+    ctx.header(Header.CACHE_CONTROL, CACHE_NONE);
+    ctx.result(jsonProvider.objectToJSON(new SyncingResponse(syncProvider.getSyncing())));
   }
 }
