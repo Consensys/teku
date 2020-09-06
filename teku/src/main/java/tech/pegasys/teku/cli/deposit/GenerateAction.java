@@ -31,7 +31,7 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.util.crypto.SecureRandomProvider;
+import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
 
 public class GenerateAction {
   private static final String VALIDATOR_PASSWORD_PROMPT = "Validator Keystore";

@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -32,7 +33,6 @@ import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.collections.LimitedSet;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class BlockManager extends Service implements SlotEventsChannel {

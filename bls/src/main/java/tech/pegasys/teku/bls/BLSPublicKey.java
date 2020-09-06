@@ -163,6 +163,10 @@ public final class BLSPublicKey implements SimpleOffsetSerializable {
     return publicKey.get();
   }
 
+  public String toAbbreviatedString() {
+    return toBytesCompressed().toUnprefixedHexString().substring(0, 7);
+  }
+
   @Override
   public String toString() {
     return toBytesCompressed().toString();

@@ -22,14 +22,14 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.datastructures.util.HashTreeUtil;
+import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
+import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.hashtree.HashTreeUtil;
-import tech.pegasys.teku.util.hashtree.HashTreeUtil.SSZTypes;
-import tech.pegasys.teku.util.hashtree.Merkleizable;
 
 public class IndexedAttestation implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 

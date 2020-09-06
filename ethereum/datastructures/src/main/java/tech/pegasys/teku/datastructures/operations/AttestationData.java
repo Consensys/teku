@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -29,7 +30,6 @@ import tech.pegasys.teku.ssz.backing.view.AbstractImmutableContainer;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.util.hashtree.Merkleizable;
 
 public class AttestationData extends AbstractImmutableContainer
     implements SimpleOffsetSerializable, Merkleizable, SSZContainer {

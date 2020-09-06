@@ -20,10 +20,10 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.datastructures.util.HashTreeUtil;
+import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.util.hashtree.HashTreeUtil;
-import tech.pegasys.teku.util.hashtree.Merkleizable;
 
 public class ProposerSlashing implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 

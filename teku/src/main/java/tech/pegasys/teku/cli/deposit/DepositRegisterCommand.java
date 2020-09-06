@@ -37,8 +37,8 @@ import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.WithdrawalPublicKeyOptions;
-import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 
 @Command(
     name = "register",
