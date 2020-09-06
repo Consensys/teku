@@ -23,8 +23,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.logging.EventLogger;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
@@ -88,6 +88,7 @@ public class SlotProcessor {
   }
 
   public void setCurrentSlot(final UInt64 slot) {
+    slotEventsChannelPublisher.onSlot(slot);
     nodeSlot.setValue(slot);
   }
 

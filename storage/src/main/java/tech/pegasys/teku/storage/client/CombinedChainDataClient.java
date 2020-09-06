@@ -362,7 +362,7 @@ public class CombinedChainDataClient {
 
   public NavigableMap<UInt64, Bytes32> getAncestorRoots(
       final UInt64 startSlot, final UInt64 step, final UInt64 count) {
-    return recentChainData.getAncestorRoots(startSlot, step, count);
+    return recentChainData.getAncestorRootsOnHeadChain(startSlot, step, count);
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {

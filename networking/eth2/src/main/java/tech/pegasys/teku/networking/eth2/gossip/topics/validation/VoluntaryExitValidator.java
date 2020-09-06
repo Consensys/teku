@@ -28,9 +28,9 @@ import tech.pegasys.teku.core.operationvalidators.OperationInvalidReason;
 import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.collections.LimitedSet;
 
 public class VoluntaryExitValidator {
   private static final Logger LOG = LogManager.getLogger();

@@ -17,10 +17,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import org.apache.logging.log4j.util.Strings;
 import picocli.CommandLine;
+import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.DataOptions;
 import tech.pegasys.teku.data.SlashingProtectionExporter;
-import tech.pegasys.teku.logging.SubCommandLogger;
-import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
+import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
 @CommandLine.Command(

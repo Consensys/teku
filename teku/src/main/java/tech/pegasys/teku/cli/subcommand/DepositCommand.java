@@ -15,10 +15,10 @@ package tech.pegasys.teku.cli.subcommand;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.deposit.DepositGenerateAndRegisterCommand;
 import tech.pegasys.teku.cli.deposit.DepositGenerateCommand;
 import tech.pegasys.teku.cli.deposit.DepositRegisterCommand;
-import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 
 @Command(
     name = "validator",

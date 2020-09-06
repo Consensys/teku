@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2;
 
-import tech.pegasys.teku.util.events.ObservableValue;
-import tech.pegasys.teku.util.events.ValueObserver;
+import tech.pegasys.teku.infrastructure.subscribers.ObservableValue;
+import tech.pegasys.teku.infrastructure.subscribers.ValueObserver;
 
 /**
  * Service tracks long term attestation subnet subscriptions and notifies subscribers on their

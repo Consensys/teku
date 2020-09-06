@@ -81,7 +81,7 @@ class ForkChoiceTest {
     final List<ReorgEvent> reorgEvents = storageSystem.reorgEventChannel().getReorgEvents();
     assertThat(reorgEvents).hasSize(1);
     assertThat(reorgEvents.get(0).getBestSlot()).isEqualTo(ONE);
-    assertThat(reorgEvents.get(0).getBestBlockRoot()).isEqualTo(slot1Block.getRoot());
+    assertThat(reorgEvents.get(0).getNewBestBlockRoot()).isEqualTo(slot1Block.getRoot());
   }
 
   @Test
@@ -113,6 +113,7 @@ class ForkChoiceTest {
             new ReorgEvent(
                 blockAndState.getRoot(),
                 blockAndState.getSlot(),
+                genesis.getRoot(),
                 blockAndState.getSlot().minus(1)));
   }
 

@@ -19,9 +19,9 @@ import java.util.Random;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
-import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
@@ -52,7 +52,7 @@ public class ValidatorClientService extends Service {
     this.attestationTimingChannel = attestationTimingChannel;
     this.blockProductionTimingChannel = blockProductionTimingChannel;
 
-    if (serviceConfig.getConfig().isRemoteValidatorApiEnabled()) {
+    if (serviceConfig.getConfig().isValidatorClient()) {
       beaconChainEventAdapter = new WebSocketBeaconChainEventAdapter(serviceConfig);
     } else {
       beaconChainEventAdapter = new EventChannelBeaconChainEventAdapter(serviceConfig);
@@ -71,7 +71,7 @@ public class ValidatorClientService extends Service {
         validatorLoader.initializeValidators(config.getConfig());
 
     final ValidatorApiChannel validatorApiChannel;
-    if (config.getConfig().isRemoteValidatorApiEnabled()) {
+    if (config.getConfig().isValidatorClient()) {
       validatorApiChannel =
           new MetricRecordingValidatorApiChannel(
               metricsSystem, new RemoteValidatorApiHandler(config, asyncRunner));

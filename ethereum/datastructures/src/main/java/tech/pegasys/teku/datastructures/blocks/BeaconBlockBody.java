@@ -27,13 +27,13 @@ import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.Deposit;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.datastructures.util.HashTreeUtil;
+import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
+import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.util.hashtree.HashTreeUtil;
-import tech.pegasys.teku.util.hashtree.HashTreeUtil.SSZTypes;
-import tech.pegasys.teku.util.hashtree.Merkleizable;
 
 /** A Beacon block body */
 public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer, Merkleizable {

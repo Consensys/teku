@@ -1,19 +1,21 @@
 dependencies {
     implementation project(':data')
-    implementation project(':data:metrics')
     implementation project(':ethereum:core')
     implementation project(':ethereum:datastructures')
     implementation project(':ethereum:statetransition')
     implementation project(':infrastructure:async')
     implementation project(':networking:p2p')
     implementation project(':networking:eth2')
-    implementation project(':logging')
+    implementation project(':infrastructure:collections')
+    implementation project(':infrastructure:logging')
+    implementation project(':infrastructure:metrics')
+    implementation project(':infrastructure:subscribers')
     implementation project(':services:serviceutils')
     implementation project(':ssz')
     implementation project(':storage')
     implementation project(':storage:api')
     implementation project(':util')
-    implementation project(':events')
+    implementation project(':infrastructure:events')
 
     implementation 'org.apache.tuweni:tuweni-bytes'
 
@@ -41,7 +43,7 @@ dependencies {
     testFixturesImplementation testFixtures(project(':infrastructure:unsigned'))
     testFixturesImplementation testFixtures(project('::networking:eth2'))
     testFixturesImplementation testFixtures(project('::networking:p2p'))
-    testFixturesImplementation testFixtures(project('::events'))
+    testFixturesImplementation testFixtures(project('::infrastructure:events'))
 
     testFixturesImplementation 'org.hyperledger.besu:plugin-api'
     testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'

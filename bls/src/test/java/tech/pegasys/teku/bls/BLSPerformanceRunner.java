@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.logging.LoggingConfigurator;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 
 // This test is disabled by default so that it doesn't slow down other tests
 @Disabled

@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
 public class TekuConfigurationBuilder {
 
@@ -92,6 +93,9 @@ public class TekuConfigurationBuilder {
   private boolean remoteValidatorApiEnabled;
   private Bytes32 graffiti;
   private Path validatorsSlashingProtectionPath;
+  private boolean isValidatorClient;
+  private String beaconNodeApiEndpoint;
+  private String beaconNodeEventsWsEndpoint;
 
   public TekuConfigurationBuilder setConstants(final String constants) {
     this.constants = constants;
@@ -452,6 +456,22 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
+  public TekuConfigurationBuilder setValidatorClient(final boolean isValidatorOnly) {
+    this.isValidatorClient = isValidatorOnly;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setBeaconNodeApiEndpoint(final String beaconNodeApiEndpoint) {
+    this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setBeaconNodeEventsWsEndpoint(
+      final String beaconNodeEventsWsEndpoint) {
+    this.beaconNodeEventsWsEndpoint = beaconNodeEventsWsEndpoint;
+    return this;
+  }
+
   public TekuConfiguration build() {
     if (network != null) {
       constants = getOrDefault(constants, network::getConstants);
@@ -541,7 +561,10 @@ public class TekuConfigurationBuilder {
         remoteValidatorApiMaxSubscribers,
         remoteValidatorApiEnabled,
         graffiti,
-        validatorsSlashingProtectionPath);
+        validatorsSlashingProtectionPath,
+        isValidatorClient,
+        beaconNodeApiEndpoint,
+        beaconNodeEventsWsEndpoint);
   }
 
   private <T> T getOrDefault(final T explicitValue, final Supplier<T> predefinedNetworkValue) {

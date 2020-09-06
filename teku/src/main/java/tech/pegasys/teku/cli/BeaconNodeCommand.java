@@ -30,7 +30,9 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Unmatched;
+import tech.pegasys.teku.cli.converter.LogTypeConverter;
 import tech.pegasys.teku.cli.converter.MetricCategoryConverter;
+import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconRestApiOptions;
 import tech.pegasys.teku.cli.options.DataOptions;
 import tech.pegasys.teku.cli.options.DataStorageOptions;
@@ -43,6 +45,7 @@ import tech.pegasys.teku.cli.options.OutputOptions;
 import tech.pegasys.teku.cli.options.P2POptions;
 import tech.pegasys.teku.cli.options.RemoteValidatorApiOptions;
 import tech.pegasys.teku.cli.options.StoreOptions;
+import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.cli.subcommand.DepositCommand;
 import tech.pegasys.teku.cli.subcommand.GenesisCommand;
@@ -50,15 +53,14 @@ import tech.pegasys.teku.cli.subcommand.PeerCommand;
 import tech.pegasys.teku.cli.subcommand.SlashingProtectionCommand;
 import tech.pegasys.teku.cli.subcommand.TransitionCommand;
 import tech.pegasys.teku.cli.subcommand.UnstableOptionsCommand;
+import tech.pegasys.teku.cli.subcommand.ValidatorClientCommand;
 import tech.pegasys.teku.cli.subcommand.debug.DebugToolsCommand;
 import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
 import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
-import tech.pegasys.teku.logging.LoggingConfigurator;
-import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
-import tech.pegasys.teku.util.cli.LogTypeConverter;
-import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.NetworkDefinition;
@@ -75,7 +77,8 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
       GenesisCommand.class,
       SlashingProtectionCommand.class,
       DebugToolsCommand.class,
-      UnstableOptionsCommand.class
+      UnstableOptionsCommand.class,
+      ValidatorClientCommand.class
     },
     showDefaultValues = true,
     abbreviateSynopsis = true,
@@ -99,6 +102,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   // allows two pass approach to obtain optional config file
   private static class ConfigFileCommand {
+
     @Option(
         names = {"-c", CONFIG_FILE_OPTION_NAME},
         arity = "1")
@@ -161,8 +165,11 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Mixin(name = "REST API")
   private BeaconRestApiOptions beaconRestApiOptions;
 
-  @Mixin(name = "REMOTE VALIDATOR API")
+  @Mixin(name = "Remote Validator API")
   private RemoteValidatorApiOptions remoteValidatorApiOptions;
+
+  @Mixin(name = "Validator Client")
+  private ValidatorClientOptions validatorClientOptions;
 
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
@@ -282,7 +289,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return 1;
   }
 
-  private void reportUnexpectedError(final Throwable t) {
+  public void reportUnexpectedError(final Throwable t) {
     System.err.println("Teku failed to start.");
     t.printStackTrace();
 
@@ -290,12 +297,12 @@ public class BeaconNodeCommand implements Callable<Integer> {
     printUsage(errorWriter);
   }
 
-  private void reportUserError(final Throwable ex) {
+  public void reportUserError(final Throwable ex) {
     errorWriter.println(ex.getMessage());
     printUsage(errorWriter);
   }
 
-  private void setLogLevels() {
+  public void setLogLevels() {
     if (logLevel != null) {
       // set log level per CLI flags
       LoggingConfigurator.setAllLevels(logLevel);
@@ -306,7 +313,11 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return this.logLevel;
   }
 
-  private TekuConfiguration tekuConfiguration() {
+  public Consumer<TekuConfiguration> getStartAction() {
+    return startAction;
+  }
+
+  protected TekuConfiguration tekuConfiguration() {
     return TekuConfiguration.builder()
         .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
         .setStartupTargetPeerCount(networkOptions.getStartupTargetPeerCount())
@@ -375,6 +386,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setRemoteValidatorApiPort(remoteValidatorApiOptions.getApiPort())
         .setRemoteValidatorApiMaxSubscribers(remoteValidatorApiOptions.getMaxSubscribers())
         .setRemoteValidatorApiEnabled(remoteValidatorApiOptions.isApiEnabled())
+        .setValidatorClient(false)
+        .setBeaconNodeApiEndpoint(validatorClientOptions.getBeaconNodeApiEndpoint())
+        .setBeaconNodeEventsWsEndpoint(validatorClientOptions.getBeaconNodeEventsWsEndpoint())
         .build();
   }
 }

@@ -12,7 +12,7 @@ Welcome to the Teku repository!  The following is a set of guidelines for contri
 [How to contribute](#how-to-contribute)
   * [Your first code contribution](#your-first-code-contribution)
   * [Reporting bugs](#reporting-bugs)
-  
+
 [Style Guides](#style-guides)
   * [Java Style Guide](#java-code-style-guide)
   * [Coding Conventions](#coding-conventions)
@@ -20,11 +20,11 @@ Welcome to the Teku repository!  The following is a set of guidelines for contri
 
 ## Code of Conduct
 
-This project and everyone participating in it is governed by the [Teku Code of Conduct](CODE-OF-CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [private@pegasys.tech].
+This project and everyone participating in it is governed by the [Teku Code of Conduct](CODE-OF-CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to [private-quorum@consensys.net].
 
 ## I just have a quick question
 
-You'll find us on [Discord] and that's the fastest way to get an answer. 
+You'll find us on [Discord] and that's the fastest way to get an answer.
 
 ## How To Contribute
 
@@ -88,7 +88,7 @@ Explain the problem and include additional details to help maintainers reproduce
 Provide more context by answering these questions:
 
 * **Did the problem start happening recently** (e.g. after updating to a new version of the software) or was this always a problem?
-* If the problem started happening recently, **can you reproduce the problem in an older version of the software?** What's the most recent version in which the problem doesn't happen? 
+* If the problem started happening recently, **can you reproduce the problem in an older version of the software?** What's the most recent version in which the problem doesn't happen?
 * **Can you reliably reproduce the issue?** If not, provide details about how often the problem happens and under which conditions it normally happens.
 
 Include details about your configuration and environment:
@@ -105,7 +105,7 @@ Include details about your configuration and environment:
 
 ## Java Code Style Guide
 
-We use Google's Java coding conventions for the project. To reformat code, run: 
+We use Google's Java coding conventions for the project. To reformat code, run:
 
 ```
 ./gradlew spotlessApply
@@ -122,6 +122,6 @@ We have a set of [coding conventions](https://wiki.hyperledger.org/display/BESU/
 * Provide a summary on the first line with more details on additional lines as needed
 * Reference issues and pull requests liberally
 
-[private@pegasys.tech]: mailto:private@pegasys.tech
+[private-quorum@consensys.net]: mailto:private-quorum@consensys.net
 [Discord]: https://discord.gg/7hPv2T6
 [CLA.md]: /CLA.md

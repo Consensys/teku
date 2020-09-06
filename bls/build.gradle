@@ -10,7 +10,7 @@ dependencies {
   implementation 'tech.pegasys:jblst'
 
 
-  testImplementation project(':logging')
+  testImplementation project(':infrastructure:logging')
   testImplementation('com.googlecode.json-simple:json-simple') {
       exclude group: 'junit', module: 'junit'
   }

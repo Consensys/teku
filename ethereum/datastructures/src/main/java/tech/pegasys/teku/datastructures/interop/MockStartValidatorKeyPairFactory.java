@@ -24,7 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
-import tech.pegasys.teku.util.message.BouncyCastleMessageDigestFactory;
+import tech.pegasys.teku.infrastructure.crypto.BouncyCastleMessageDigestFactory;
 
 public class MockStartValidatorKeyPairFactory {
   private static final BigInteger CURVE_ORDER =
