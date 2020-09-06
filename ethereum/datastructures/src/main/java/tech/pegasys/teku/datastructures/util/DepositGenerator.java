@@ -28,8 +28,8 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.operations.DepositMessage;
+import tech.pegasys.teku.infrastructure.crypto.BouncyCastleMessageDigestFactory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.message.BouncyCastleMessageDigestFactory;
 
 public class DepositGenerator {
 
