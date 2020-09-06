@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
 
+import com.google.common.base.Throwables;
 import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -27,6 +28,7 @@ import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
@@ -191,7 +193,16 @@ public class ForkChoice {
                       return result.isSuccessful()
                           ? transaction.commit().thenApply(__ -> result)
                           : SafeFuture.completedFuture(result);
-                    }));
+                    }))
+        .exceptionallyCompose(
+            error -> {
+              final Throwable rootCause = Throwables.getRootCause(error);
+              if (rootCause instanceof InvalidCheckpointException) {
+                return SafeFuture.completedFuture(
+                    AttestationProcessingResult.invalid(rootCause.getMessage()));
+              }
+              return SafeFuture.failedFuture(error);
+            });
   }
 
   public void save() {

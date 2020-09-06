@@ -15,7 +15,9 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.core.StateTransition;
@@ -36,7 +39,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -205,6 +208,33 @@ class ForkChoiceTest {
     assertDoesNotThrow(() -> forkChoice.processHead(updatedAttestationSlot));
   }
 
+  @Test
+  void onAttestation_shouldBeInvalidWhenInvalidCheckpointThrown() {
+    final SignedBlockAndState targetBlock = chainBuilder.generateBlockAtSlot(5);
+    importBlock(chainBuilder, targetBlock);
+
+    // Attestation where the target checkpoint has a slot prior to the block it references
+    final Checkpoint targetCheckpoint = new Checkpoint(ZERO, targetBlock.getRoot());
+    final Attestation attestation =
+        new Attestation(
+            new Bitlist(5, 5),
+            new AttestationData(
+                targetBlock.getSlot(),
+                compute_epoch_at_slot(targetBlock.getSlot()),
+                targetBlock.getRoot(),
+                targetBlock.getState().getCurrent_justified_checkpoint(),
+                targetCheckpoint),
+            BLSSignature.empty());
+    final SafeFuture<AttestationProcessingResult> result =
+        forkChoice.onAttestation(ValidateableAttestation.fromAttestation(attestation));
+    assertThat(result)
+        .isCompletedWithValue(
+            AttestationProcessingResult.invalid(
+                String.format(
+                    "Checkpoint state (%s) must be at or prior to checkpoint slot boundary (%s)",
+                    targetBlock.getSlot(), targetCheckpoint.getEpochStartSlot())));
+  }
+
   private UInt64 applyAttestationFromValidator(
       final UInt64 validatorIndex, final SignedBlockAndState targetBlock) {
     // Note this attestation is wildly invalid but we're going to shove it straight into fork choice
@@ -220,8 +250,7 @@ class ForkChoiceTest {
                     targetBlock.getRoot(),
                     recentChainData.getStore().getJustifiedCheckpoint(),
                     new Checkpoint(
-                        BeaconStateUtil.compute_epoch_at_slot(updatedAttestationSlot),
-                        targetBlock.getRoot())),
+                        compute_epoch_at_slot(updatedAttestationSlot), targetBlock.getRoot())),
                 dataStructureUtil.randomSignature()));
     updatedVote.setIndexedAttestation(
         new IndexedAttestation(
