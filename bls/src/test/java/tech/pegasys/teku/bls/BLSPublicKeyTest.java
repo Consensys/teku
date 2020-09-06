@@ -211,4 +211,13 @@ abstract class BLSPublicKeyTest {
                 "0xa6e82f6da4520f85c5d27d8f329eccfa05944fd1096b20734c894966d12a9e2a9a9744529d7212d33883113a0cadb909"));
     assertThat(aggrPk).isEqualTo(aggrPkGolden);
   }
+
+  @Test
+  public void toShortString_shouldShowFirstSevenBytesOfPublicKey() {
+    Bytes keyBytes =
+        Bytes.fromHexString(
+            "0xab10fc693d038b73d67279127501a05f0072cbb7147c68650ef6ac4e0a413e5cabd1f35c8711e1f7d9d885bbc3b8eddc");
+    BLSPublicKey blsPublicKey = BLSPublicKey.fromSSZBytes(keyBytes);
+    assertThat(blsPublicKey.toShortString()).isEqualTo("ab10fc6");
+  }
 }

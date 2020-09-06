@@ -34,7 +34,6 @@ import tech.pegasys.teku.core.signatures.SlashingProtectedSigner;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.core.signatures.UnprotectedSigner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.util.bytes.KeyFormatter;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.signer.ExternalMessageSignerService;
@@ -60,7 +59,7 @@ public class ValidatorLoader {
     STATUS_LOG.validatorsInitialised(
         validators.values().stream()
             .map(Validator::getPublicKey)
-            .map(KeyFormatter::shortPublicKey)
+            .map(BLSPublicKey::toShortString)
             .collect(Collectors.toList()));
     return validators;
   }

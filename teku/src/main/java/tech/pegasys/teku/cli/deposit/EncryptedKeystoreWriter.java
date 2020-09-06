@@ -14,7 +14,6 @@
 package tech.pegasys.teku.cli.deposit;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-import static tech.pegasys.teku.util.bytes.KeyFormatter.shortPublicKey;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -75,9 +74,9 @@ public class EncryptedKeystoreWriter implements KeysWriter {
         generateKeystoreData(withdrawalKey, withdrawalKeyPassword);
 
     final String validatorFileName =
-        shortPublicKey(validatorKey.getPublicKey()) + "_validator.json";
+        validatorKey.getPublicKey().toShortString() + "_validator.json";
     final String withdrawalFileName =
-        shortPublicKey(validatorKey.getPublicKey()) + "_withdrawal.json";
+        validatorKey.getPublicKey().toShortString() + "_withdrawal.json";
 
     saveKeyStore(outputPath.resolve(validatorFileName), validatorKeyStoreData);
     commandOutput.accept(
