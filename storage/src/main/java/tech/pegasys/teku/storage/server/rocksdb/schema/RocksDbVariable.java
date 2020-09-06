@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.schema;
 
-import static tech.pegasys.teku.util.bytes.ByteUtil.toByteExact;
+import static tech.pegasys.teku.infrastructure.unsigned.ByteUtil.toByteExact;
 
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer;

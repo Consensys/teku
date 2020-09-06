@@ -1,10 +1,11 @@
 dependencies {
   implementation project(':data')
-  implementation project(':infrastructure:metrics')
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
   implementation project(':infrastructure:async')
+  implementation project(':infrastructure:collections')
   implementation project(':infrastructure:logging')
+  implementation project(':infrastructure:metrics')
   implementation project(':infrastructure:subscribers')
   implementation project(':pow')
   implementation project(':services:serviceutils')

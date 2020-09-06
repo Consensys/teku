@@ -72,15 +72,13 @@ import tech.pegasys.teku.datastructures.state.ForkData;
 import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.datastructures.state.SigningData;
 import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
-import tech.pegasys.teku.util.cache.Cache;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.hashtree.HashTreeUtil;
-import tech.pegasys.teku.util.hashtree.Merkleizable;
 
 public class BeaconStateUtil {
 
