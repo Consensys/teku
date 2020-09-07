@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync.util;
+package tech.pegasys.teku.sync.noop;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 

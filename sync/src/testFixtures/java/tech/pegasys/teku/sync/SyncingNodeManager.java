@@ -40,6 +40,10 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.sync.gossip.BlockManager;
+import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
+import tech.pegasys.teku.sync.singlepeer.SinglePeerSyncService;
+import tech.pegasys.teku.sync.singlepeer.SyncManager;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class SyncingNodeManager {
@@ -106,7 +110,7 @@ public class SyncingNodeManager {
     SyncManager syncManager =
         SyncManager.create(
             asyncRunner, eth2Network, recentChainData, blockImporter, new NoOpMetricsSystem());
-    SyncService syncService = new DefaultSyncService(blockManager, syncManager, recentChainData);
+    SyncService syncService = new SinglePeerSyncService(blockManager, syncManager, recentChainData);
 
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)

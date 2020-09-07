@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.sync.singlepeer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

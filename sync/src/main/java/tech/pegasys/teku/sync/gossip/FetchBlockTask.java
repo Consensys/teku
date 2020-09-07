@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.sync.gossip;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -29,7 +29,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.sync.FetchBlockTask.FetchBlockResult.Status;
+import tech.pegasys.teku.sync.gossip.FetchBlockTask.FetchBlockResult.Status;
 
 class FetchBlockTask {
   private static final Logger LOG = LogManager.getLogger();

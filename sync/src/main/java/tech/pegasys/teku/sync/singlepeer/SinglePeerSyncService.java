@@ -11,19 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.sync.singlepeer;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.sync.SyncingStatus;
+import tech.pegasys.teku.sync.gossip.BlockManager;
 
-public class DefaultSyncService extends Service implements SyncService {
+public class SinglePeerSyncService extends Service implements SyncService {
 
   private final SyncManager syncManager;
   private final BlockManager blockManager;
   private final RecentChainData storageClient;
 
-  public DefaultSyncService(
+  public SinglePeerSyncService(
       final BlockManager blockManager,
       final SyncManager syncManager,
       final RecentChainData storageClient) {
