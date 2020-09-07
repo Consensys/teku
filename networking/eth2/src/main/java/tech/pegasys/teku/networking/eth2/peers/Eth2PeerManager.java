@@ -99,7 +99,12 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                     connectedPeerMap
                         .values()
                         .forEach(
-                            peer -> peer.sendGoodbye(GoodbyeMessage.REASON_CLIENT_SHUT_DOWN))));
+                            peer ->
+                                peer.sendGoodbye(GoodbyeMessage.REASON_CLIENT_SHUT_DOWN)
+                                    .finish(
+                                        err ->
+                                            LOG.debug(
+                                                "Unable to send goodbye to peer {}", peer, err)))));
   }
 
   public static Eth2PeerManager create(
