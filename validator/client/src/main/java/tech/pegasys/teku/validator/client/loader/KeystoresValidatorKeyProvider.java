@@ -13,11 +13,16 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.signers.bls.keystore.KeyStore;
+import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
+import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
+import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
+import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.util.config.TekuConfiguration;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -32,16 +37,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.signers.bls.keystore.KeyStore;
-import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
-import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
-import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
-import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.bls.BLSSecretKey;
-import tech.pegasys.teku.infrastructure.logging.StatusLogger;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
 
@@ -57,12 +59,20 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
     final ExecutorService executorService =
         Executors.newFixedThreadPool(Math.min(4, Runtime.getRuntime().availableProcessors()));
     try {
+      final AtomicInteger numberOfLoadedKeys = new AtomicInteger(0);
       final List<Future<Bytes32>> futures =
           keystorePasswordFilePairs.stream()
               .map(
                   pair ->
                       executorService.submit(
-                          () -> loadBLSPrivateKey(pair.getLeft(), loadPassword(pair.getRight()))))
+                          () -> {
+                            Bytes32 privateKey = loadBLSPrivateKey(pair.getLeft(), loadPassword(pair.getRight()));
+                            int loadedValidatorCount = numberOfLoadedKeys.incrementAndGet();
+                            if (loadedValidatorCount % 10 == 0) {
+                              StatusLogger.STATUS_LOG.atLoadedValidatorNumber(loadedValidatorCount);
+                            }
+                            return privateKey;
+                          }))
               .collect(toList());
 
       Set<Bytes32> result = new HashSet<>();
