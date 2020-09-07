@@ -34,7 +34,7 @@ import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.ParentCommand;
 import picocli.CommandLine.Spec;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
-import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
+import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 @Command(

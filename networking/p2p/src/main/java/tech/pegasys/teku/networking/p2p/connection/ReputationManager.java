@@ -20,13 +20,13 @@ import java.util.EnumSet;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.infrastructure.collections.cache.Cache;
+import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.util.cache.Cache;
-import tech.pegasys.teku.util.cache.LRUCache;
 import tech.pegasys.teku.util.time.TimeProvider;
 
 public class ReputationManager {

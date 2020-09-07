@@ -95,7 +95,9 @@ public class CheckpointStateTask implements CacheableTask<Checkpoint, BeaconStat
   private BeaconState regenerateFromState(final BeaconState state) {
     if (state.getSlot().isGreaterThan(checkpoint.getEpochStartSlot())) {
       throw new InvalidCheckpointException(
-          "Checkpoint state must be at or prior to checkpoint slot boundary");
+          String.format(
+              "Checkpoint state (%s) must be at or prior to checkpoint slot boundary (%s)",
+              state.getSlot(), checkpoint.getEpochStartSlot()));
     }
     try {
       if (state.getSlot().equals(checkpoint.getEpochStartSlot())) {
