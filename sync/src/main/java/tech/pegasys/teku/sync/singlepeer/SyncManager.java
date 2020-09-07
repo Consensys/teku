@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.sync.singlepeer;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
@@ -41,6 +41,8 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService.SyncSubscriber;
+import tech.pegasys.teku.sync.SyncStatus;
+import tech.pegasys.teku.sync.SyncingStatus;
 
 public class SyncManager extends Service {
   private static final Duration SHORT_DELAY = Duration.ofSeconds(5);

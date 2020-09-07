@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.sync.singlepeer;
 
 enum PeerSyncResult {
   SUCCESSFUL_SYNC,

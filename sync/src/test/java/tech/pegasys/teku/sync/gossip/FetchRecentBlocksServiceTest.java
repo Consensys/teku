@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.sync.gossip;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,9 +33,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.util.PendingPool;
-import tech.pegasys.teku.sync.FetchBlockTask.FetchBlockResult;
-import tech.pegasys.teku.sync.FetchBlockTask.FetchBlockResult.Status;
-import tech.pegasys.teku.sync.FetchRecentBlocksService.FetchBlockTaskFactory;
+import tech.pegasys.teku.sync.gossip.FetchBlockTask.FetchBlockResult;
+import tech.pegasys.teku.sync.gossip.FetchBlockTask.FetchBlockResult.Status;
+import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService.FetchBlockTaskFactory;
 
 public class FetchRecentBlocksServiceTest {
 
