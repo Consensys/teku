@@ -18,39 +18,39 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 
 /**
  * Tracks the set of potential target chains to sync. Designed to be usable for either finalized and
  * non-finalized chains.
  */
-public class TargetChains<P extends Peer> {
+public class TargetChains {
 
-  private static final Comparator<TargetChain<?>> CHAIN_COMPARATOR =
-      Comparator.<TargetChain<?>>comparingInt(TargetChain::getPeerCount)
+  private static final Comparator<TargetChain> CHAIN_COMPARATOR =
+      Comparator.comparingInt(TargetChain::getPeerCount)
           .thenComparing(chain -> chain.getChainHead().getSlot())
           .reversed();
 
-  private final Map<SlotAndBlockRoot, TargetChain<P>> chains = new HashMap<>();
-  private final Map<P, SlotAndBlockRoot> lastPeerTarget = new HashMap<>();
+  private final Map<SlotAndBlockRoot, TargetChain> chains = new HashMap<>();
+  private final Map<SyncSource, SlotAndBlockRoot> lastPeerTarget = new HashMap<>();
 
-  public void onPeerStatusUpdated(final P peer, final SlotAndBlockRoot chainHead) {
+  public void onPeerStatusUpdated(final SyncSource peer, final SlotAndBlockRoot chainHead) {
     removePeerFromLastChain(peer);
     chains.computeIfAbsent(chainHead, TargetChain::new).addPeer(peer);
     lastPeerTarget.put(peer, chainHead);
   }
 
-  public void onPeerDisconnected(final P peer) {
+  public void onPeerDisconnected(final SyncSource peer) {
     removePeerFromLastChain(peer);
     lastPeerTarget.remove(peer);
   }
 
-  public Stream<TargetChain<P>> streamChains() {
+  public Stream<TargetChain> streamChains() {
     return chains.values().stream().sorted(CHAIN_COMPARATOR);
   }
 
-  private void removePeerFromLastChain(final P peer) {
-    final TargetChain<P> previousChain = chains.get(lastPeerTarget.get(peer));
+  private void removePeerFromLastChain(final SyncSource peer) {
+    final TargetChain previousChain = chains.get(lastPeerTarget.get(peer));
     if (previousChain != null) {
       previousChain.removePeer(peer);
       if (previousChain.getPeerCount() == 0) {

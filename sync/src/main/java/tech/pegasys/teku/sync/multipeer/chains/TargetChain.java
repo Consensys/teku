@@ -20,21 +20,21 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 
-public class TargetChain<P extends Peer> {
+public class TargetChain {
   private final SlotAndBlockRoot chainHead;
-  private final Set<P> peers = new HashSet<>();
+  private final Set<SyncSource> peers = new HashSet<>();
 
   public TargetChain(final SlotAndBlockRoot chainHead) {
     this.chainHead = chainHead;
   }
 
-  void addPeer(final P peer) {
+  void addPeer(final SyncSource peer) {
     peers.add(peer);
   }
 
-  void removePeer(final P peer) {
+  void removePeer(final SyncSource peer) {
     peers.remove(peer);
   }
 
@@ -42,7 +42,7 @@ public class TargetChain<P extends Peer> {
     return peers.size();
   }
 
-  public Collection<P> getPeers() {
+  public Collection<SyncSource> getPeers() {
     return Collections.unmodifiableSet(peers);
   }
 
@@ -58,7 +58,7 @@ public class TargetChain<P extends Peer> {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final TargetChain<?> that = (TargetChain<?>) o;
+    final TargetChain that = (TargetChain) o;
     return Objects.equals(getChainHead(), that.getChainHead())
         && Objects.equals(getPeers(), that.getPeers());
   }

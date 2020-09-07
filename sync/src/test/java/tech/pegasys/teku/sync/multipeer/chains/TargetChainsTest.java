@@ -14,20 +14,20 @@
 package tech.pegasys.teku.sync.multipeer.chains;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.network.p2p.peer.StubPeer;
-import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 
 class TargetChainsTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final TargetChains<Peer> targetChains = new TargetChains<>();
-  private final StubPeer peer1 = new StubPeer(1);
-  private final StubPeer peer2 = new StubPeer(2);
+  private final TargetChains targetChains = new TargetChains();
+  private final SyncSource peer1 = mock(SyncSource.class);
+  private final SyncSource peer2 = mock(SyncSource.class);
 
   @Test
   void onPeerStatus_shouldAddNewChainToTrack() {
@@ -103,8 +103,8 @@ class TargetChainsTest {
 
   @Test
   void shouldOrderChainsByPeerCountThenSlot() {
-    final StubPeer peer3 = new StubPeer(3);
-    final StubPeer peer4 = new StubPeer(4);
+    final SyncSource peer3 = mock(SyncSource.class);
+    final SyncSource peer4 = mock(SyncSource.class);
     final SlotAndBlockRoot chainHead1 =
         new SlotAndBlockRoot(UInt64.valueOf(100), dataStructureUtil.randomBytes32());
     final SlotAndBlockRoot chainHead2 =
@@ -124,13 +124,12 @@ class TargetChainsTest {
             chainWith(chainHead2, peer3));
   }
 
-  @SafeVarargs
-  private void assertTargetChains(final TargetChain<Peer>... expected) {
+  private void assertTargetChains(final TargetChain... expected) {
     assertThat(targetChains.streamChains()).containsExactlyInAnyOrder(expected);
   }
 
-  private TargetChain<Peer> chainWith(final SlotAndBlockRoot chainHead, final Peer... peers) {
-    final TargetChain<Peer> chain = new TargetChain<>(chainHead);
+  private TargetChain chainWith(final SlotAndBlockRoot chainHead, final SyncSource... peers) {
+    final TargetChain chain = new TargetChain(chainHead);
     Stream.of(peers).forEach(chain::addPeer);
     return chain;
   }

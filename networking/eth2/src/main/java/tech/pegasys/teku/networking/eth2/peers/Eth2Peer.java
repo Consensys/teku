@@ -52,7 +52,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 
-public class Eth2Peer extends DelegatingPeer implements Peer {
+public class Eth2Peer extends DelegatingPeer implements Peer, SyncSource {
   private static final Logger LOG = LogManager.getLogger();
 
   private final BeaconChainMethods rpcMethods;
@@ -186,6 +186,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     return requestSingleItem(blockByRoot, new BeaconBlocksByRootRequestMessage(List.of(blockRoot)));
   }
 
+  @Override
   public SafeFuture<Void> requestBlocksByRange(
       final UInt64 startSlot,
       final UInt64 count,
