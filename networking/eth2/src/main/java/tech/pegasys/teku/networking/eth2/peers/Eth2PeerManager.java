@@ -14,15 +14,11 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.time.Duration;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
@@ -44,6 +40,12 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.time.TimeProvider;
+
+import java.time.Duration;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();
@@ -91,6 +93,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     this.eth2RpcPingInterval = eth2RpcPingInterval;
     this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
     this.eth2StatusUpdateInterval = eth2StatusUpdateInterval;
+    Runtime.getRuntime()
+            .addShutdownHook(new Thread(() -> connectedPeerMap.values().forEach(peer -> peer.sendGoodbye(GoodbyeMessage.REASON_CLIENT_SHUT_DOWN))));
   }
 
   public static Eth2PeerManager create(
