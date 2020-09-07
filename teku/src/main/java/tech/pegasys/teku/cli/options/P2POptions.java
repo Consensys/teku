@@ -150,11 +150,19 @@ public class P2POptions {
   }
 
   public int getP2pLowerBound() {
-    return p2pLowerBound;
+    if (p2pLowerBound > p2pUpperBound) {
+      return p2pUpperBound;
+    } else {
+      return p2pLowerBound;
+    }
   }
 
   public int getP2pUpperBound() {
-    return p2pUpperBound;
+    if (p2pUpperBound < p2pLowerBound) {
+      return p2pLowerBound;
+    } else {
+      return p2pUpperBound;
+    }
   }
 
   public int getP2pTargetSubnetSubscriberCount() {
