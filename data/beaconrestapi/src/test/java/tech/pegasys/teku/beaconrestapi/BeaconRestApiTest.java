@@ -44,7 +44,6 @@ import tech.pegasys.teku.beaconrestapi.handlers.node.GetFork;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAggregate;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAggregateAndProof;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostBlock;
@@ -137,27 +136,6 @@ class BeaconRestApiTest {
   @Test
   public void shouldHaveBeaconValidatorsEndpoint() {
     verify(app).get(eq(GetValidators.ROUTE), any(GetValidators.class));
-  }
-
-  @Test
-  public void shouldHaveV1VersionEndpoint() {
-    verify(app)
-        .get(
-            eq(tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion.ROUTE),
-            any(tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion.class));
-  }
-
-  @Test
-  public void shouldHaveV1IdentityEndpoint() {
-    verify(app).get(eq(GetIdentity.ROUTE), any(GetIdentity.class));
-  }
-
-  @Test
-  public void shouldHaveV1SyncingEndpoint() {
-    verify(app)
-        .get(
-            eq(tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing.ROUTE),
-            any(tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing.class));
   }
 
   @Test
