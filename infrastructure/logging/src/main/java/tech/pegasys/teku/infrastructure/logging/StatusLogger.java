@@ -13,15 +13,14 @@
 
 package tech.pegasys.teku.infrastructure.logging;
 
+import static java.util.stream.Collectors.joining;
+
+import java.nio.file.Path;
+import java.util.List;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.nio.file.Path;
-import java.util.List;
-
-import static java.util.stream.Collectors.joining;
 
 public class StatusLogger {
 
@@ -90,7 +89,7 @@ public class StatusLogger {
   }
 
   public void atLoadedValidatorNumber(final int loadedValidatorCount) {
-    log.info("Loaded validator number {}.", loadedValidatorCount);
+    log.info("Loaded validator number {} ...", loadedValidatorCount);
   }
 
   public void validatorsInitialised(final List<String> validators) {
