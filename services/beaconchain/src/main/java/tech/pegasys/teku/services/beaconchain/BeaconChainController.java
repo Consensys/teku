@@ -91,13 +91,13 @@ import tech.pegasys.teku.storage.store.FileKeyValueStore;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
-import tech.pegasys.teku.sync.BlockManager;
-import tech.pegasys.teku.sync.DefaultSyncService;
-import tech.pegasys.teku.sync.FetchRecentBlocksService;
-import tech.pegasys.teku.sync.SyncManager;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncStateTracker;
-import tech.pegasys.teku.sync.util.NoopSyncService;
+import tech.pegasys.teku.sync.gossip.BlockManager;
+import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
+import tech.pegasys.teku.sync.noop.NoopSyncService;
+import tech.pegasys.teku.sync.singlepeer.SinglePeerSyncService;
+import tech.pegasys.teku.sync.singlepeer.SyncManager;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.TekuConfiguration;
@@ -552,7 +552,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       SyncManager syncManager =
           SyncManager.create(
               asyncRunner, p2pNetwork, recentChainData, blockImporter, metricsSystem);
-      syncService = new DefaultSyncService(blockManager, syncManager, recentChainData);
+      syncService = new SinglePeerSyncService(blockManager, syncManager, recentChainData);
       eventChannels
           .subscribe(SlotEventsChannel.class, blockManager)
           .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
