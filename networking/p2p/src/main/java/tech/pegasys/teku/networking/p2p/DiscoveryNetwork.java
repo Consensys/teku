@@ -121,19 +121,15 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   @Override
-  public void stop() {
-    connectionManager
+  public SafeFuture<?> stop() {
+    return connectionManager
         .stop()
         .exceptionally(
             error -> {
               LOG.error("Failed to stop connection manager", error);
               return null;
             })
-        .always(
-            () -> {
-              p2pNetwork.stop();
-              discoveryService.stop().reportExceptions();
-            });
+        .thenCompose((__) -> SafeFuture.allOf(p2pNetwork.stop(), discoveryService.stop()));
   }
 
   public void addStaticPeer(final String peerAddress) {

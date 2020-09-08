@@ -28,6 +28,7 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.RootCauseExceptionHandler;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.networking.eth2.AttestationSubnetService;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
@@ -92,19 +93,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     this.eth2RpcPingInterval = eth2RpcPingInterval;
     this.eth2RpcOutstandingPingThreshold = eth2RpcOutstandingPingThreshold;
     this.eth2StatusUpdateInterval = eth2StatusUpdateInterval;
-    Runtime.getRuntime()
-        .addShutdownHook(
-            new Thread(
-                () ->
-                    connectedPeerMap
-                        .values()
-                        .forEach(
-                            peer ->
-                                peer.sendGoodbye(GoodbyeMessage.REASON_CLIENT_SHUT_DOWN)
-                                    .finish(
-                                        err ->
-                                            LOG.debug(
-                                                "Unable to send goodbye to peer {}", peer, err)))));
   }
 
   public static Eth2PeerManager create(
@@ -300,5 +288,20 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
 
   private boolean peerIsReady(Eth2Peer peer) {
     return peer.hasStatus();
+  }
+
+  public SafeFuture<?> sendGoodbyeToPeers() {
+    return SafeFuture.allOf(
+        connectedPeerMap.values().stream()
+            .map(
+                peer ->
+                    peer.sendGoodbye(GoodbyeMessage.REASON_CLIENT_SHUT_DOWN)
+                        .thenRun(() -> peer.disconnectCleanly(DisconnectReason.SHUTTING_DOWN))
+                        .exceptionally(
+                            err -> {
+                              LOG.debug("Error while sending goodbye to peers", err);
+                              return null;
+                            }))
+            .toArray(SafeFuture[]::new));
   }
 }

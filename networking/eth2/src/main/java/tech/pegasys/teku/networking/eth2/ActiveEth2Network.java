@@ -234,9 +234,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   }
 
   @Override
-  public synchronized void stop() {
+  public synchronized SafeFuture<?> stop() {
     if (!state.compareAndSet(State.RUNNING, State.STOPPED)) {
-      return;
+      return SafeFuture.COMPLETE;
     }
     blockGossipManager.shutdown();
     attestationGossipManager.shutdown();
@@ -245,7 +245,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     proposerSlashingGossipManager.shutdown();
     attesterSlashingGossipManager.shutdown();
     attestationSubnetService.unsubscribe(discoveryNetworkAttestationSubnetsSubscription);
-    super.stop();
+    return peerManager.sendGoodbyeToPeers().thenCompose(__ -> super.stop());
   }
 
   @Override

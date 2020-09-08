@@ -98,5 +98,5 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
   SafeFuture<?> start();
 
   /** Stops the P2P network layer. */
-  void stop();
+  SafeFuture<?> stop();
 }

@@ -105,11 +105,13 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
 
   /** Stops the P2P network layer. */
   @Override
-  public void stop() {}
+  public SafeFuture<?> stop() {
+    return SafeFuture.COMPLETE;
+  }
 
   @Override
   public SafeFuture<?> start() {
-    return SafeFuture.completedFuture(null);
+    return SafeFuture.COMPLETE;
   }
 
   @Override

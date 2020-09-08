@@ -102,7 +102,7 @@ class DiscoveryNetworkTest {
     doReturn(new SafeFuture<Void>()).when(discoveryService).stop();
     doReturn(connectionStop).when(connectionManager).stop();
 
-    discoveryNetwork.stop();
+    discoveryNetwork.stop().join();
 
     verify(connectionManager).stop();
     verify(discoveryService).updateCustomENRField(any(), any());
@@ -121,7 +121,7 @@ class DiscoveryNetworkTest {
     doReturn(new SafeFuture<Void>()).when(discoveryService).stop();
     doReturn(connectionStop).when(connectionManager).stop();
 
-    discoveryNetwork.stop();
+    discoveryNetwork.stop().join();
 
     verify(connectionManager).stop();
     verify(discoveryService).updateCustomENRField(any(), any());

@@ -46,6 +46,7 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -92,7 +93,7 @@ public class Eth2NetworkFactory {
   }
 
   public void stopAll() {
-    networks.forEach(P2PNetwork::stop);
+    SafeFuture.allOf(networks.stream().map(P2PNetwork::stop).toArray(SafeFuture[]::new)).join();
   }
 
   public class Eth2P2PNetworkBuilder {
@@ -142,7 +143,7 @@ public class Eth2NetworkFactory {
                 "Port conflict detected, retrying with a new port. Original message: {}",
                 e.getMessage());
             attempt++;
-            network.stop();
+            network.stop().join();
           } else {
             throw e;
           }

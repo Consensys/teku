@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.p2p.libp2p;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
-import static tech.pegasys.teku.infrastructure.async.SafeFuture.reportExceptions;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import identify.pb.IdentifyOuterClass;
@@ -277,12 +276,12 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public void stop() {
+  public SafeFuture<?> stop() {
     if (!state.compareAndSet(State.RUNNING, State.STOPPED)) {
-      return;
+      return SafeFuture.COMPLETE;
     }
     LOG.debug("JvmLibP2PNetwork.stop()");
-    reportExceptions(host.stop());
+    return SafeFuture.of(host.stop());
   }
 
   @Override
