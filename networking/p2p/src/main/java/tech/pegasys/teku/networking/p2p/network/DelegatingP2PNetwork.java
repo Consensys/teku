@@ -45,7 +45,7 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
 
   @Override
   public NodeId parseNodeId(final String nodeId) {
-    return new LibP2PNodeId(PeerId.fromBase58(nodeId));
+    return network.parseNodeId(nodeId);
   }
 
   @Override
