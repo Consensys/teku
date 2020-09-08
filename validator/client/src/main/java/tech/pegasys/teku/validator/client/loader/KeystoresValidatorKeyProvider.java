@@ -52,7 +52,8 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
         config.getValidatorKeystorePasswordFilePairs();
     checkNotNull(keystorePasswordFilePairs, "validator keystore and password pairs cannot be null");
 
-    StatusLogger.STATUS_LOG.loadingValidators(keystorePasswordFilePairs.size());
+    final int totalValidatorCount = keystorePasswordFilePairs.size();
+    StatusLogger.STATUS_LOG.loadingValidators(totalValidatorCount);
     // return distinct loaded key pairs
 
     final ExecutorService executorService =
@@ -69,7 +70,8 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
                                 loadBLSPrivateKey(pair.getLeft(), loadPassword(pair.getRight()));
                             int loadedValidatorCount = numberOfLoadedKeys.incrementAndGet();
                             if (loadedValidatorCount % 10 == 0) {
-                              StatusLogger.STATUS_LOG.atLoadedValidatorNumber(loadedValidatorCount);
+                              StatusLogger.STATUS_LOG.atLoadedValidatorNumber(
+                                  loadedValidatorCount, totalValidatorCount);
                             }
                             return privateKey;
                           }))

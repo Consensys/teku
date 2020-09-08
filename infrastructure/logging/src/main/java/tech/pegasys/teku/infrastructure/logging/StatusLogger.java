@@ -88,8 +88,9 @@ public class StatusLogger {
     log.info("Loading {} validator keys...", validatorCount);
   }
 
-  public void atLoadedValidatorNumber(final int loadedValidatorCount) {
-    log.info("Loaded validator number {} ...", loadedValidatorCount);
+  public void atLoadedValidatorNumber(
+      final int loadedValidatorCount, final int totalValidatorCount) {
+    log.info("Loaded validator key {} of {}.", loadedValidatorCount, totalValidatorCount);
   }
 
   public void validatorsInitialised(final List<String> validators) {
