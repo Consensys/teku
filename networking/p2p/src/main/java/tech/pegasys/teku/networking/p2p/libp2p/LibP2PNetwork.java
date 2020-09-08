@@ -267,6 +267,11 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
+  public NodeId parseNodeId(final String nodeId) {
+    return new LibP2PNodeId(PeerId.fromBase58(nodeId));
+  }
+
+  @Override
   public int getPeerCount() {
     return peerManager.getPeerCount();
   }

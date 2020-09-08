@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.api;
 
-import io.libp2p.core.PeerId;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -22,7 +21,6 @@ import tech.pegasys.teku.api.response.v1.node.State;
 import tech.pegasys.teku.api.schema.Metadata;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 
@@ -100,7 +98,7 @@ public class NetworkDataProvider {
   }
 
   public Optional<tech.pegasys.teku.api.response.v1.node.Peer> getPeerById(final String peerId) {
-    final NodeId nodeId = new LibP2PNodeId(PeerId.fromBase58(peerId));
+    final NodeId nodeId = network.parseNodeId(peerId);
     return network.getPeer(nodeId).map(this::toPeer);
   }
 

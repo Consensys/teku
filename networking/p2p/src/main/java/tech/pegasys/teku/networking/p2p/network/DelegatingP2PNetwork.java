@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.network;
 
+import io.libp2p.core.PeerId;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
@@ -21,6 +22,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 
@@ -39,6 +41,11 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   @Override
   public PeerAddress createPeerAddress(final DiscoveryPeer discoveryPeer) {
     return network.createPeerAddress(discoveryPeer);
+  }
+
+  @Override
+  public NodeId parseNodeId(final String nodeId) {
+    return new LibP2PNodeId(PeerId.fromBase58(nodeId));
   }
 
   @Override

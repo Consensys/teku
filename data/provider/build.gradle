@@ -17,7 +17,6 @@ dependencies {
 
     implementation 'com.google.code.gson:gson'
     implementation 'org.apache.tuweni:tuweni-units'
-    implementation 'io.libp2p:jvm-libp2p-minimal'
 
     testImplementation testFixtures(project(':ethereum:core'))
     testImplementation testFixtures(project(':ethereum:datastructures'))
