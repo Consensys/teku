@@ -14,7 +14,6 @@
 package tech.pegasys.teku.sync.multipeer.eventthread;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * An EventThread implementation that immediately executes commands given to it. Useful for tests
@@ -36,7 +35,7 @@ public class InlineEventThread implements EventThread {
   public void stop() {}
 
   @Override
-  public void execute(@NotNull final Runnable command) {
+  public void execute(final Runnable command) {
     // While we always stay on the event thread, we want to track that access actually went through
     // this class so mark the current thread as the event thread in a re-entrant safe way to make
     // checkOnEventThread work
