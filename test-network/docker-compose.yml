@@ -54,7 +54,6 @@ services:
       - '--Xinterop-enabled'
       - '--p2p-private-key-file=/etc/teku/p2p-key.txt'
       - '--p2p-static-peers=/dns4/teku2/tcp/9000/p2p/16Uiu2HAm7WCLoc7KqP5jKQuQM3CNfR9tiamadxmEmNYUviXKoYmm,/dns4/teku3/tcp/9000/p2p/16Uiu2HAm3NZUwzzNHfnnB8ADfnuP5MTDuqjRb3nTRBxPTQ4g7Wjj,/dns4/teku4/tcp/9000/p2p/16Uiu2HAmPF4kvruyovDo7Pg8ZSAYefGdQvTiqQUWC1oUGFfUGm32'
-      - '--logging=TRACE'
       - '--Xlog-wire-cipher-enabled'
       - '--Xlog-wire-mux-enabled'
       - '--Xlog-wire-gossip-enabled'

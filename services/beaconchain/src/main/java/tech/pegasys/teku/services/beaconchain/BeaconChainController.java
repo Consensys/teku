@@ -45,7 +45,6 @@ import tech.pegasys.teku.core.operationvalidators.AttesterSlashingStateTransitio
 import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
@@ -91,13 +90,10 @@ import tech.pegasys.teku.storage.store.FileKeyValueStore;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
-import tech.pegasys.teku.sync.BlockManager;
-import tech.pegasys.teku.sync.DefaultSyncService;
-import tech.pegasys.teku.sync.FetchRecentBlocksService;
-import tech.pegasys.teku.sync.SyncManager;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncStateTracker;
-import tech.pegasys.teku.sync.util.NoopSyncService;
+import tech.pegasys.teku.sync.noop.NoopSyncService;
+import tech.pegasys.teku.sync.singlepeer.SinglePeerSyncServiceFactory;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.TekuConfiguration;
@@ -536,26 +532,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     if (!config.isP2pEnabled()) {
       syncService = new NoopSyncService();
     } else {
-      final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
-      final FutureItems<SignedBeaconBlock> futureBlocks =
-          new FutureItems<>(SignedBeaconBlock::getSlot);
-      final FetchRecentBlocksService recentBlockFetcher =
-          FetchRecentBlocksService.create(asyncRunner, p2pNetwork, pendingBlocks);
-      BlockManager blockManager =
-          BlockManager.create(
+      syncService =
+          SinglePeerSyncServiceFactory.create(
+              metricsSystem,
+              asyncRunner,
+              eventChannels,
               eventBus,
-              pendingBlocks,
-              futureBlocks,
-              recentBlockFetcher,
+              p2pNetwork,
               recentChainData,
               blockImporter);
-      SyncManager syncManager =
-          SyncManager.create(
-              asyncRunner, p2pNetwork, recentChainData, blockImporter, metricsSystem);
-      syncService = new DefaultSyncService(blockManager, syncManager, recentChainData);
-      eventChannels
-          .subscribe(SlotEventsChannel.class, blockManager)
-          .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
     }
   }
 

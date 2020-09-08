@@ -13,10 +13,27 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import org.apache.tuweni.bytes.Bytes;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ProtobufEncoder;
+
 public class SszSnappyGossipEncodingTest extends AbstractGossipEncodingTest {
 
   @Override
   protected GossipEncoding createEncoding() {
     return GossipEncoding.SSZ_SNAPPY;
+  }
+
+  @Test
+  public void decode_rejectMessageWithHugeUncompressedLengthPriorToDecompression() {
+    Bytes hugeLength = ProtobufEncoder.encodeVarInt(Integer.MAX_VALUE);
+    final Bytes data =
+        Bytes.concatenate(hugeLength, Bytes.fromHexString("000000000000000000000000"));
+
+    assertThatThrownBy(() -> encoding.decode(data, SignedBeaconBlock.class))
+        .isInstanceOf(DecodingException.class);
   }
 }
