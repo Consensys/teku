@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.client.signer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
@@ -23,14 +22,18 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.MessageSignerService;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.provider.JsonProvider;
 
 public class ExternalMessageSignerService implements MessageSignerService {
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final String EXTERNAL_SIGNER_ENDPOINT = "/api/v1/eth2/sign/";
+  private final JsonProvider jsonProvider = new JsonProvider();
   private final URL signingServiceUrl;
   private final BLSPublicKey blsPublicKey;
   private final Duration timeout;
@@ -44,33 +47,35 @@ public class ExternalMessageSignerService implements MessageSignerService {
   }
 
   @Override
-  public SafeFuture<BLSSignature> signBlock(final Bytes signingRoot) {
-    return sign(signingRoot);
+  public SafeFuture<BLSSignature> signBlock(
+      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
+    return sign(signingRoot, additionalProperties);
   }
 
   @Override
-  public SafeFuture<BLSSignature> signAttestation(final Bytes signingRoot) {
-    return sign(signingRoot);
+  public SafeFuture<BLSSignature> signAttestation(
+      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
+    return sign(signingRoot, additionalProperties);
   }
 
   @Override
   public SafeFuture<BLSSignature> signAggregationSlot(final Bytes signingRoot) {
-    return sign(signingRoot);
+    return sign(signingRoot, Collections.emptyMap());
   }
 
   @Override
   public SafeFuture<BLSSignature> signAggregateAndProof(final Bytes signingRoot) {
-    return sign(signingRoot);
+    return sign(signingRoot, Collections.emptyMap());
   }
 
   @Override
   public SafeFuture<BLSSignature> signRandaoReveal(final Bytes signingRoot) {
-    return sign(signingRoot);
+    return sign(signingRoot, Collections.emptyMap());
   }
 
   @Override
   public SafeFuture<BLSSignature> signVoluntaryExit(final Bytes signingRoot) {
-    return sign(signingRoot);
+    return sign(signingRoot, Collections.emptyMap());
   }
 
   @Override
@@ -78,12 +83,13 @@ public class ExternalMessageSignerService implements MessageSignerService {
     return false;
   }
 
-  private SafeFuture<BLSSignature> sign(final Bytes signingRoot) {
+  private SafeFuture<BLSSignature> sign(
+      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
     final String publicKey = blsPublicKey.toBytesCompressed().toString();
     return SafeFuture.ofComposed(
         () -> {
-          final String requestBody = createSigningRequestBody(signingRoot);
-          final URI uri = signingServiceUrl.toURI().resolve("/signer/sign/" + publicKey);
+          final String requestBody = createSigningRequestBody(signingRoot, additionalProperties);
+          final URI uri = signingServiceUrl.toURI().resolve(EXTERNAL_SIGNER_ENDPOINT + publicKey);
           final HttpRequest request =
               HttpRequest.newBuilder()
                   .uri(uri)
@@ -97,10 +103,14 @@ public class ExternalMessageSignerService implements MessageSignerService {
         });
   }
 
-  private String createSigningRequestBody(final Bytes signingRoot) {
-    final SigningRequestBody signingRequest = new SigningRequestBody(signingRoot.toHexString());
+  private String createSigningRequestBody(
+      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
+    final SigningRequestBody signingRequest = new SigningRequestBody();
+    signingRequest.setSigningRoot(signingRoot);
+    additionalProperties.forEach(signingRequest::setAdditionalProperty);
+
     try {
-      return MAPPER.writeValueAsString(signingRequest);
+      return jsonProvider.objectToJSON(signingRequest);
     } catch (final JsonProcessingException e) {
       throw new ExternalSignerException("Unable to create external signing request", e);
     }

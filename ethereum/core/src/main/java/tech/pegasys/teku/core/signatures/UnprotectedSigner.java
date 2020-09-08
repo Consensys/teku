@@ -19,6 +19,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_SELECTION_PROOF;
 
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -59,7 +60,12 @@ public class UnprotectedSigner implements Signer {
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
     final Bytes signing_root = compute_signing_root(block, domain);
-    return signerService.signBlock(signing_root);
+    return signerService.signBlock(
+        signing_root,
+        Map.of(
+            "type", "block",
+            "genesisValidatorRoot", forkInfo.getGenesisValidatorsRoot(),
+            "slot", block.getSlot()));
   }
 
   @Override
@@ -72,7 +78,13 @@ public class UnprotectedSigner implements Signer {
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
     final Bytes signingRoot = compute_signing_root(attestationData, domain);
-    return signerService.signAttestation(signingRoot);
+    return signerService.signAttestation(
+        signingRoot,
+        Map.of(
+            "type", "attestation",
+            "genesisValidatorRoot", forkInfo.getGenesisValidatorsRoot(),
+            "sourceEpoch", attestationData.getSource().getEpoch(),
+            "targetEpoch", attestationData.getTarget().getEpoch()));
   }
 
   @Override

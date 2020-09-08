@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -58,12 +59,12 @@ class SignerTest {
     final BLSSignature signature = dataStructureUtil.randomSignature();
     final Bytes expectedSigningRoot =
         Bytes.fromHexString("0x148d8f775f34648c73c4033ea79e2420d7b143280f4fb09eff9fa98868568974");
-    when(signerService.signBlock(expectedSigningRoot))
+    when(signerService.signBlock(expectedSigningRoot, emptyMap()))
         .thenReturn(SafeFuture.completedFuture(signature));
 
     final SafeFuture<BLSSignature> result = signer.signBlock(block, fork);
 
-    verify(signerService).signBlock(expectedSigningRoot);
+    verify(signerService).signBlock(expectedSigningRoot, emptyMap());
     assertThat(result).isCompletedWithValue(signature);
   }
 
@@ -73,12 +74,12 @@ class SignerTest {
     final BLSSignature signature = dataStructureUtil.randomSignature();
     final Bytes expectedSigningRoot =
         Bytes.fromHexString("0x418f2ed4e878074a64b23102a90582d32099f3e74787a04a13ec0cecc86c070a");
-    when(signerService.signAttestation(expectedSigningRoot))
+    when(signerService.signAttestation(expectedSigningRoot, emptyMap()))
         .thenReturn(SafeFuture.completedFuture(signature));
 
     final SafeFuture<BLSSignature> result = signer.signAttestationData(attestationData, fork);
 
-    verify(signerService).signAttestation(expectedSigningRoot);
+    verify(signerService).signAttestation(expectedSigningRoot, emptyMap());
     assertThat(result).isCompletedWithValue(signature);
   }
 }

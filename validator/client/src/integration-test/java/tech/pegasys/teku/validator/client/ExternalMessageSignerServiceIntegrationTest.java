@@ -20,9 +20,12 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import static org.mockserver.model.JsonBody.json;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
@@ -38,6 +41,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.client.signer.ExternalMessageSignerService;
 import tech.pegasys.teku.validator.client.signer.ExternalSignerException;
 import tech.pegasys.teku.validator.client.signer.SigningRequestBody;
@@ -55,6 +59,7 @@ public class ExternalMessageSignerServiceIntegrationTest {
   private BLSSignature expectedSignature;
   private ExternalMessageSignerService externalMessageSignerService;
   private BLSKeyPair keyPair;
+  private JsonProvider jsonProvider = new JsonProvider();
 
   @BeforeEach
   void setup(final ClientAndServer client) throws MalformedURLException {
@@ -75,20 +80,22 @@ public class ExternalMessageSignerServiceIntegrationTest {
   }
 
   @Test
-  void failsSigningWhenSigningServiceReturnsFailureResponse() {
+  void failsSigningWhenSigningServiceReturnsFailureResponse() throws Exception {
     final ExternalMessageSignerService externalMessageSignerService =
         new ExternalMessageSignerService(
             signingServiceUri,
             BLSPublicKey.fromSSZBytes(Bytes.fromHexString(UNKNOWN_PUBLIC_KEY)),
             TIMEOUT);
 
-    assertThatThrownBy(() -> externalMessageSignerService.signBlock(SIGNING_ROOT).join())
+    assertThatThrownBy(
+            () ->
+                externalMessageSignerService.signBlock(SIGNING_ROOT, Collections.emptyMap()).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(
             "External signer failed to sign and returned invalid response status code: 404");
 
-    final SigningRequestBody signingRequestBody =
-        new SigningRequestBody(SIGNING_ROOT.toHexString());
+    final SigningRequestBody signingRequestBody = new SigningRequestBody();
+    signingRequestBody.setSigningRoot(SIGNING_ROOT);
 
     verifySignRequest(UNKNOWN_PUBLIC_KEY, signingRequestBody);
   }
@@ -99,7 +106,9 @@ public class ExternalMessageSignerServiceIntegrationTest {
     final Delay delay = new Delay(MILLISECONDS, TIMEOUT.plusMillis(ensureTimeout).toMillis());
     client.when(request()).respond(response().withDelay(delay));
 
-    assertThatThrownBy(() -> externalMessageSignerService.signBlock(SIGNING_ROOT).join())
+    assertThatThrownBy(
+            () ->
+                externalMessageSignerService.signBlock(SIGNING_ROOT, Collections.emptyMap()).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(
             "External signer failed to sign due to java.net.http.HttpTimeoutException: request timed out");
@@ -109,41 +118,49 @@ public class ExternalMessageSignerServiceIntegrationTest {
   void failsSigningWhenSigningServiceReturnsInvalidSignatureResponse() {
     client.when(request()).respond(response().withBody("INVALID_RESPONSE"));
 
-    assertThatThrownBy(() -> externalMessageSignerService.signBlock(SIGNING_ROOT).join())
+    assertThatThrownBy(
+            () ->
+                externalMessageSignerService.signBlock(SIGNING_ROOT, Collections.emptyMap()).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(
             "External signer returned an invalid signature: Illegal character 'I' found at index 0 in hex binary representation");
   }
 
   @Test
-  void signsBlockWhenSigningServiceReturnsSuccessfulResponse() {
-    client.when(request()).respond(response().withBody(expectedSignature.toString()));
-
-    final BLSSignature signature = externalMessageSignerService.signBlock(SIGNING_ROOT).join();
-    assertThat(signature).isEqualTo(expectedSignature);
-
-    final String publicKey = keyPair.getPublicKey().toString();
-    final SigningRequestBody signingRequestBody =
-        new SigningRequestBody(SIGNING_ROOT.toHexString());
-    verifySignRequest(publicKey, signingRequestBody);
-  }
-
-  @Test
-  void signsAttestationWhenSigningServiceReturnsSuccessfulResponse() {
+  void signsBlockWhenSigningServiceReturnsSuccessfulResponse() throws Exception {
     client.when(request()).respond(response().withBody(expectedSignature.toString()));
 
     final BLSSignature signature =
-        externalMessageSignerService.signAttestation(SIGNING_ROOT).join();
+        externalMessageSignerService.signBlock(SIGNING_ROOT, Map.of("type", "sign")).join();
     assertThat(signature).isEqualTo(expectedSignature);
 
     final String publicKey = keyPair.getPublicKey().toString();
-    final SigningRequestBody signingRequestBody =
-        new SigningRequestBody(SIGNING_ROOT.toHexString());
+    final SigningRequestBody signingRequestBody = new SigningRequestBody();
+    signingRequestBody.setSigningRoot(SIGNING_ROOT);
+    signingRequestBody.setAdditionalProperty("type", "sign");
     verifySignRequest(publicKey, signingRequestBody);
   }
 
   @Test
-  void signsRandaoRevealWhenSigningServiceReturnsSuccessfulResponse() {
+  void signsAttestationWhenSigningServiceReturnsSuccessfulResponse() throws Exception {
+    client.when(request()).respond(response().withBody(expectedSignature.toString()));
+
+    final BLSSignature signature =
+        externalMessageSignerService
+            .signAttestation(SIGNING_ROOT, Map.of("type", "attestation"))
+            .join();
+    assertThat(signature).isEqualTo(expectedSignature);
+
+    final String publicKey = keyPair.getPublicKey().toString();
+    final SigningRequestBody signingRequestBody = new SigningRequestBody();
+    signingRequestBody.setSigningRoot(SIGNING_ROOT);
+    signingRequestBody.setAdditionalProperty("type", "attestation");
+
+    verifySignRequest(publicKey, signingRequestBody);
+  }
+
+  @Test
+  void signsRandaoRevealWhenSigningServiceReturnsSuccessfulResponse() throws Exception {
     client.when(request()).respond(response().withBody(expectedSignature.toString()));
 
     final BLSSignature signature =
@@ -151,13 +168,14 @@ public class ExternalMessageSignerServiceIntegrationTest {
     assertThat(signature).isEqualTo(expectedSignature);
 
     final String publicKey = keyPair.getPublicKey().toString();
-    final SigningRequestBody signingRequestBody =
-        new SigningRequestBody(SIGNING_ROOT.toHexString());
+    final SigningRequestBody signingRequestBody = new SigningRequestBody();
+    signingRequestBody.setSigningRoot(SIGNING_ROOT);
+
     verifySignRequest(publicKey, signingRequestBody);
   }
 
   @Test
-  void signsAggregationSlotWhenSigningServiceReturnsSuccessfulResponse() {
+  void signsAggregationSlotWhenSigningServiceReturnsSuccessfulResponse() throws Exception {
     client.when(request()).respond(response().withBody(expectedSignature.toString()));
 
     final BLSSignature signature =
@@ -165,18 +183,19 @@ public class ExternalMessageSignerServiceIntegrationTest {
     assertThat(signature).isEqualTo(expectedSignature);
 
     final String publicKey = keyPair.getPublicKey().toString();
-    final SigningRequestBody signingRequestBody =
-        new SigningRequestBody(SIGNING_ROOT.toHexString());
+    final SigningRequestBody signingRequestBody = new SigningRequestBody();
+    signingRequestBody.setSigningRoot(SIGNING_ROOT);
     verifySignRequest(publicKey, signingRequestBody);
   }
 
   private void verifySignRequest(
-      final String publicKey, final SigningRequestBody signingRequestBody) {
+      final String publicKey, final SigningRequestBody signingRequestBody)
+      throws JsonProcessingException {
     client.verify(
         request()
             .withMethod("POST")
             .withContentType(MediaType.APPLICATION_JSON)
-            .withBody(json(signingRequestBody))
-            .withPath("/signer/sign/" + publicKey));
+            .withBody(json(jsonProvider.objectToJSON(signingRequestBody)))
+            .withPath("/api/v1/eth2/sign/" + publicKey));
   }
 }

@@ -13,28 +13,37 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class SigningRequestBody {
+  private Bytes signingRoot;
+  private final Map<String, Object> additionalProperties = new LinkedHashMap<>();
 
-  private final Bytes data;
+  public SigningRequestBody() {}
 
-  @JsonCreator
-  public SigningRequestBody(@JsonProperty("data") final String data) {
-    this.data = Bytes.fromHexString(data);
+  @JsonAnySetter
+  public void setAdditionalProperty(final String key, final Object value) {
+    additionalProperties.put(key, value);
   }
 
-  public Bytes data() {
-    return data;
+  @JsonAnyGetter
+  public Map<String, Object> getAdditionalProperties() {
+    return Map.copyOf(additionalProperties);
   }
 
-  @JsonGetter("data")
-  public String getdata() {
-    return data.toHexString();
+  @JsonSetter
+  public void setSigningRoot(final Bytes signingRoot) {
+    this.signingRoot = signingRoot;
+  }
+
+  @JsonGetter
+  public Bytes getSigningRoot() {
+    return signingRoot;
   }
 }

@@ -13,15 +13,17 @@
 
 package tech.pegasys.teku.core.signatures;
 
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface MessageSignerService {
 
-  SafeFuture<BLSSignature> signBlock(Bytes signingRoot);
+  SafeFuture<BLSSignature> signBlock(Bytes signingRoot, Map<String, Object> additionalProperties);
 
-  SafeFuture<BLSSignature> signAttestation(Bytes signingRoot);
+  SafeFuture<BLSSignature> signAttestation(
+      Bytes signingRoot, Map<String, Object> additionalProperties);
 
   SafeFuture<BLSSignature> signAggregationSlot(Bytes signingRoot);
 

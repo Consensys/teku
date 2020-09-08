@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.core.signatures;
 
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -30,12 +31,14 @@ public class LocalMessageSignerService implements MessageSignerService {
   }
 
   @Override
-  public SafeFuture<BLSSignature> signBlock(final Bytes signingRoot) {
+  public SafeFuture<BLSSignature> signBlock(
+      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
     return sign(signingRoot);
   }
 
   @Override
-  public SafeFuture<BLSSignature> signAttestation(final Bytes signingRoot) {
+  public SafeFuture<BLSSignature> signAttestation(
+      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
     return sign(signingRoot);
   }
 
