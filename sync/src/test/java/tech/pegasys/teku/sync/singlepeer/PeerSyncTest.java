@@ -13,23 +13,6 @@
 
 package tech.pegasys.teku.sync.singlepeer;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.util.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CancellationException;
-import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +31,24 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeRe
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.util.config.Constants;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.function.Supplier;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.util.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 
 public class PeerSyncTest extends AbstractSyncTest {
 
@@ -72,6 +73,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   public void setUp() {
     when(storageClient.getFinalizedEpoch()).thenReturn(UInt64.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
+    when(peer.disconnectCleanly(any())).thenReturn(SafeFuture.completedFuture(null));
     // By default set up block import to succeed
     final BlockProcessingRecord processingRecord = mock(BlockProcessingRecord.class);
     final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
