@@ -364,7 +364,7 @@ public class TekuConfigurationBuilder {
 
   public TekuConfigurationBuilder setDataPath(final String dataPath) {
     this.dataPath = dataPath;
-    this.setValidatorsSlashingProtectionPath(Path.of(dataPath, "validators", "slashingprotection"));
+    this.setValidatorsSlashingProtectionPath(Path.of(dataPath, "validators", "slashprotection"));
     return this;
   }
 
