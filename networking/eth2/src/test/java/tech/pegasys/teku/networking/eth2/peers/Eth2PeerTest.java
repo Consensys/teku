@@ -14,7 +14,9 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -108,6 +110,28 @@ class Eth2PeerTest {
 
     assertThat(peer.hasStatus()).isFalse();
     verify(delegate).disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK);
+  }
+
+  @Test
+  void updateStatus_shouldReportAllStatusesToSubscribers() {
+    final PeerStatus status1 = randomPeerStatus();
+    final PeerStatus status2 = randomPeerStatus();
+    when(peerChainValidator.validate(any(), any())).thenReturn(SafeFuture.completedFuture(true));
+    final PeerStatusSubscriber initialSubscriber = mock(PeerStatusSubscriber.class);
+    final PeerStatusSubscriber subscriber = mock(PeerStatusSubscriber.class);
+
+    peer.subscribeInitialStatus(initialSubscriber);
+    peer.subscribeStatusUpdates(subscriber);
+
+    peer.updateStatus(status1);
+
+    verify(initialSubscriber).onPeerStatus(status1);
+    verify(subscriber).onPeerStatus(status1);
+
+    peer.updateStatus(status2);
+
+    verify(initialSubscriber, never()).onPeerStatus(status2);
+    verify(subscriber).onPeerStatus(status2);
   }
 
   private PeerStatus randomPeerStatus() {

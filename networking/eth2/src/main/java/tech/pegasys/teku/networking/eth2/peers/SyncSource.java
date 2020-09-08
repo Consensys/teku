@@ -18,6 +18,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 
+/**
+ * Represents an external source of blocks to sync. Typically a peer, but this provides the minimal
+ * interface required by the sync system.
+ */
 public interface SyncSource {
   SafeFuture<Void> requestBlocksByRange(
       final UInt64 startSlot,
