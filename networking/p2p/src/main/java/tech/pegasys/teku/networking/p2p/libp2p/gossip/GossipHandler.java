@@ -82,7 +82,8 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
     }
 
     LOG.trace("Gossiping {}: {} bytes", topic, bytes.size());
-    SafeFuture.of(publisher.publish(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), topic))
+    SafeFuture.of(
+            publisher.publishExt(Unpooled.wrappedBuffer(bytes.toArrayUnsafe()), null, null, topic))
         .finish(
             () -> LOG.trace("Successfully gossiped message on {}", topic),
             err -> LOG.debug("Failed to gossip message on " + topic, err));
