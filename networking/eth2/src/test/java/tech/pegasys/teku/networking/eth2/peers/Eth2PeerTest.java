@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.InitialStatusSubscriber;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.PeerStatusSubscriber;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -54,8 +54,8 @@ class Eth2PeerTest {
 
   @Test
   void updateStatus_shouldNotUpdateUntilValidationPasses() {
-    final InitialStatusSubscriber initialStatusSubscriber = mock(InitialStatusSubscriber.class);
-    peer.subscribeInitialStatus(initialStatusSubscriber);
+    final PeerStatusSubscriber peerStatusSubscriber = mock(PeerStatusSubscriber.class);
+    peer.subscribeInitialStatus(peerStatusSubscriber);
     final SafeFuture<Boolean> validationResult = new SafeFuture<>();
     when(peerChainValidator.validate(peer, randomPeerStatus)).thenReturn(validationResult);
 
@@ -63,12 +63,12 @@ class Eth2PeerTest {
 
     verify(peerChainValidator).validate(peer, randomPeerStatus);
     assertThat(peer.hasStatus()).isFalse();
-    verifyNoInteractions(initialStatusSubscriber);
+    verifyNoInteractions(peerStatusSubscriber);
 
     validationResult.complete(true);
     assertThat(peer.hasStatus()).isTrue();
     assertThat(peer.getStatus()).isEqualTo(randomPeerStatus);
-    verify(initialStatusSubscriber).onInitialStatus(randomPeerStatus);
+    verify(peerStatusSubscriber).onPeerStatus(randomPeerStatus);
   }
 
   @Test

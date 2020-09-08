@@ -15,8 +15,8 @@ package tech.pegasys.teku.sync.multipeer.chains;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static tech.pegasys.teku.sync.multipeer.chains.TargetChainTestUtil.chainWith;
 
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -126,11 +126,5 @@ class TargetChainsTest {
 
   private void assertTargetChains(final TargetChain... expected) {
     assertThat(targetChains.streamChains()).containsExactlyInAnyOrder(expected);
-  }
-
-  private TargetChain chainWith(final SlotAndBlockRoot chainHead, final SyncSource... peers) {
-    final TargetChain chain = new TargetChain(chainHead);
-    Stream.of(peers).forEach(chain::addPeer);
-    return chain;
   }
 }
