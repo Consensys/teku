@@ -31,6 +31,8 @@ import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -45,6 +47,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
@@ -97,12 +100,13 @@ class DiscoveryNetworkTest {
   }
 
   @Test
-  public void shouldStopConnectionManagerBeforeNetworkAndDiscovery() {
+  public void shouldStopConnectionManagerBeforeNetworkAndDiscovery()
+      throws InterruptedException, ExecutionException, TimeoutException {
     final SafeFuture<Void> connectionStop = new SafeFuture<>();
     doReturn(new SafeFuture<Void>()).when(discoveryService).stop();
     doReturn(connectionStop).when(connectionManager).stop();
 
-    discoveryNetwork.stop().join();
+    Waiter.waitFor(discoveryNetwork.stop());
 
     verify(connectionManager).stop();
     verify(discoveryService).updateCustomENRField(any(), any());
@@ -116,12 +120,13 @@ class DiscoveryNetworkTest {
   }
 
   @Test
-  public void shouldStopNetworkAndDiscoveryWhenConnectionManagerStopFails() {
+  public void shouldStopNetworkAndDiscoveryWhenConnectionManagerStopFails()
+      throws InterruptedException, ExecutionException, TimeoutException {
     final SafeFuture<Void> connectionStop = new SafeFuture<>();
     doReturn(new SafeFuture<Void>()).when(discoveryService).stop();
     doReturn(connectionStop).when(connectionManager).stop();
 
-    discoveryNetwork.stop().join();
+    Waiter.waitFor(discoveryNetwork.stop());
 
     verify(connectionManager).stop();
     verify(discoveryService).updateCustomENRField(any(), any());

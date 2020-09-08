@@ -145,7 +145,7 @@ public class Eth2NetworkFactory {
                 "Port conflict detected, retrying with a new port. Original message: {}",
                 e.getMessage());
             attempt++;
-            network.stop().join();
+            Waiter.waitFor(network.stop());
           } else {
             throw e;
           }
