@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.sync.gossip;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
@@ -32,7 +32,8 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.util.PendingPool;
-import tech.pegasys.teku.sync.FetchBlockTask.FetchBlockResult;
+import tech.pegasys.teku.sync.gossip.FetchBlockTask.FetchBlockResult;
+import tech.pegasys.teku.sync.singlepeer.RetryDelayFunction;
 
 public class FetchRecentBlocksService extends Service {
   private static final Logger LOG = LogManager.getLogger();
