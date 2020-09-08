@@ -110,8 +110,9 @@ public class ValidatorLoader {
         keyProviders.add(new YamlValidatorKeyProvider());
       }
 
+      KeystoreLocker keystoreLocker = new KeystoreLocker();
       if (config.getValidatorKeystorePasswordFilePairs() != null) {
-        keyProviders.add(new KeystoresValidatorKeyProvider());
+        keyProviders.add(new KeystoresValidatorKeyProvider(keystoreLocker));
       }
     }
     return keyProviders.stream()

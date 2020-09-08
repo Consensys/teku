@@ -13,7 +13,25 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import com.google.common.annotations.VisibleForTesting;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.signers.bls.keystore.KeyStore;
@@ -25,29 +43,12 @@ import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.logging.StatusLogger;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.nio.file.StandardOpenOption.CREATE_NEW;
-import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
-
 public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
+  private final KeystoreLocker keystoreLocker;
+
+  public KeystoresValidatorKeyProvider(KeystoreLocker keystoreLocker) {
+    this.keystoreLocker = keystoreLocker;
+  }
 
   @Override
   public List<BLSKeyPair> loadValidatorKeys(final TekuConfiguration config) {
@@ -90,7 +91,7 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
 
   private Bytes32 loadBLSPrivateKey(final Path keystoreFile, final String password) {
     try {
-      lockKeystoreFile(keystoreFile);
+      keystoreLocker.lockKeystoreFile(keystoreFile);
       final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(keystoreFile);
       if (!KeyStore.validatePassword(password, keyStoreData)) {
         throw new IllegalArgumentException("Invalid keystore password: " + keystoreFile);
@@ -98,21 +99,6 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
       return Bytes32.wrap(KeyStore.decrypt(password, keyStoreData));
     } catch (final KeyStoreValidationException e) {
       throw new IllegalArgumentException(e.getMessage(), e);
-    }
-  }
-
-  @VisibleForTesting
-  static void lockKeystoreFile(Path keystoreFile) {
-    try {
-      final Path keystoreLockFile =
-          Files.write(Path.of(keystoreFile.toString() + ".lock"), new byte[0], CREATE_NEW);
-      keystoreLockFile.toFile().deleteOnExit();
-    } catch (FileAlreadyExistsException e) {
-      throw new KeystoreAlreadyInUseException(
-          "Keystore file " + keystoreFile + " is already in use.");
-    } catch (IOException e) {
-      throw new RuntimeException(
-          "Unexpected error at KeystoreValidatorKeyProvider when locking keystore file.");
     }
   }
 
