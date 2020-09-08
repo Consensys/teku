@@ -14,7 +14,6 @@
 package tech.pegasys.teku.datastructures.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.util.config.Constants.BYTES_PER_LENGTH_OFFSET;
 
 import java.lang.reflect.Constructor;
@@ -224,8 +223,8 @@ public class SimpleOffsetSerializer {
     }
   }
 
-  public static <T> LengthBounds getLengthBounds(final Class<T> type) {
-    return checkNotNull(classLengthBounds.get(type), "Length bounds unknown for type %s", type);
+  public static <T> Optional<LengthBounds> getLengthBounds(final Class<T> type) {
+    return Optional.ofNullable(classLengthBounds.get(type));
   }
 
   private static void assertAllDataRead(SSZReader reader) {
