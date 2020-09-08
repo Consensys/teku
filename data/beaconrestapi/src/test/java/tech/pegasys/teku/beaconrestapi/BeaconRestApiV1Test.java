@@ -27,6 +27,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -84,5 +86,15 @@ public class BeaconRestApiV1Test {
   @Test
   public void shouldHaveSyncingEndpoint() {
     verify(app).get(eq(GetSyncing.ROUTE), any(GetSyncing.class));
+  }
+
+  @Test
+  public void shouldHavePeersEndpoint() {
+    verify(app).get(eq(GetPeers.ROUTE), any(GetPeers.class));
+  }
+
+  @Test
+  public void shouldHavePeerByIdEndpoint() {
+    verify(app).get(eq(GetPeerById.ROUTE), any(GetPeerById.class));
   }
 }

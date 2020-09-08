@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.mock;
 
+import io.libp2p.core.PeerId;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -71,6 +72,12 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   @Override
   public Stream<P> streamPeers() {
     return Stream.empty();
+  }
+
+  @Override
+  public NodeId parseNodeId(final String nodeId) {
+    PeerId peerId = PeerId.fromBase58(nodeId);
+    return new MockNodeId(Bytes.wrap(peerId.getBytes()));
   }
 
   @Override

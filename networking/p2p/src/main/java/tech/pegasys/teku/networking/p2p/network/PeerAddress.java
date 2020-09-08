@@ -24,6 +24,10 @@ public class PeerAddress {
     this.id = id;
   }
 
+  public String toExternalForm() {
+    return toString();
+  }
+
   public NodeId getId() {
     return id;
   }
