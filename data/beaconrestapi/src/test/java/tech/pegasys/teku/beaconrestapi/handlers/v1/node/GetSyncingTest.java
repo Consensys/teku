@@ -48,7 +48,7 @@ public class GetSyncingTest {
     assertThat(val).isNotNull();
     SyncingResponse response = jsonProvider.jsonToObject(val, SyncingResponse.class);
     assertThat(response.data.headSlot).isEqualTo(UInt64.valueOf(7));
-    assertThat(response.data.syncingDistance).isEqualTo(UInt64.valueOf(3));
+    assertThat(response.data.syncDistance).isEqualTo(UInt64.valueOf(3));
   }
 
   @Test
@@ -62,7 +62,7 @@ public class GetSyncingTest {
     assertThat(val).isNotNull();
     SyncingResponse response = jsonProvider.jsonToObject(val, SyncingResponse.class);
     assertThat(response.data.headSlot).isEqualTo(UInt64.valueOf(10));
-    assertThat(response.data.syncingDistance).isEqualTo(UInt64.valueOf(0));
+    assertThat(response.data.syncDistance).isEqualTo(UInt64.valueOf(0));
   }
 
   private tech.pegasys.teku.sync.SyncingStatus getSyncStatus(
