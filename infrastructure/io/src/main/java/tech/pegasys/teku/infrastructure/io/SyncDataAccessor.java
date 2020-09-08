@@ -60,7 +60,7 @@ public class SyncDataAccessor {
       }
     }
     Files.write(
-        path,
+        absolutePath,
         data.toArrayUnsafe(),
         StandardOpenOption.SYNC,
         StandardOpenOption.CREATE,
