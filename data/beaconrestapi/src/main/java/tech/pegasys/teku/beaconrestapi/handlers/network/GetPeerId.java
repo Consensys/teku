@@ -41,11 +41,14 @@ public class GetPeerId implements Handler {
   }
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get the node PeerId.",
       tags = {TAG_NETWORK},
-      description = "Returns the beacon node's base58-encoded PeerId.",
+      description =
+          "Returns the beacon node's base58-encoded PeerId."
+              + " Replaced by standard api endpoint `/eth/v1/node/identity`.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = String.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
