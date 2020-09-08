@@ -34,6 +34,7 @@ public class Peer {
   @JsonProperty("enr")
   @Schema(
       type = "string",
+      nullable = true,
       description =
           "Ethereum node record. Not currently populated. "
               + "[Read more](https://eips.ethereum.org/EIPS/eip-778)",
