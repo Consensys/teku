@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 import java.io.IOException;
 import org.apache.tuweni.bytes.Bytes;
 import org.xerial.snappy.Snappy;
+import tech.pegasys.teku.datastructures.util.LengthBounds;
 
 /**
  * Implements snappy compression using the "block" format. See:
@@ -23,8 +24,17 @@ import org.xerial.snappy.Snappy;
  */
 public class SnappyBlockCompressor {
 
-  public Bytes uncompress(final Bytes compressedData) throws DecodingException {
+  public Bytes uncompress(final Bytes compressedData, final LengthBounds lengthBounds)
+      throws DecodingException {
+
     try {
+      final int actualLength = Snappy.uncompressedLength(compressedData.toArrayUnsafe());
+      if (!lengthBounds.isWithinBounds(actualLength)) {
+        throw new DecodingException(
+            String.format(
+                "Uncompressed length %d is not within expected bounds %d to %d",
+                actualLength, lengthBounds.getMin(), lengthBounds.getMax()));
+      }
       return Bytes.wrap(Snappy.uncompress(compressedData.toArrayUnsafe()));
     } catch (IOException e) {
       throw new DecodingException("Failed to uncompress", e);
