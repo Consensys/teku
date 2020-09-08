@@ -52,8 +52,9 @@ public class SyncDataAccessor {
    * @exception IOException if an IO error occurs while writing
    */
   public void syncedWrite(final Path path, final Bytes data) throws IOException {
-    if (path.getParent() != null) {
-      final File parentDirectory = path.getParent().toFile();
+    final Path absolutePath = path.toAbsolutePath();
+    if (absolutePath.getParent() != null) {
+      final File parentDirectory = absolutePath.getParent().toFile();
       if (!parentDirectory.mkdirs() && !parentDirectory.isDirectory()) {
         throw new IOException("Unable to create directory " + parentDirectory);
       }
