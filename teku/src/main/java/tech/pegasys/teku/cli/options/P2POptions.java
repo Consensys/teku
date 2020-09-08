@@ -13,14 +13,13 @@
 
 package tech.pegasys.teku.cli.options;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import picocli.CommandLine.Option;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import picocli.CommandLine.Option;
 
 public class P2POptions {
 
@@ -156,7 +155,9 @@ public class P2POptions {
 
   public int getP2pLowerBound() {
     if (p2pLowerBound > p2pUpperBound) {
-      LOG.warn("Adjusting target number of peers lower bound to equal upper bound, which is {}", p2pUpperBound);
+      LOG.warn(
+          "Adjusting target number of peers lower bound to equal upper bound, which is {}",
+          p2pUpperBound);
       return p2pUpperBound;
     } else {
       return p2pLowerBound;
@@ -165,7 +166,9 @@ public class P2POptions {
 
   public int getP2pUpperBound() {
     if (p2pUpperBound < p2pLowerBound) {
-      LOG.warn("Adjusting target number of peers upper bound to equal lower bound, which is {}", p2pLowerBound);
+      LOG.warn(
+          "Adjusting target number of peers upper bound to equal lower bound, which is {}",
+          p2pLowerBound);
       return p2pLowerBound;
     } else {
       return p2pUpperBound;
