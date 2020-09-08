@@ -32,6 +32,7 @@ import java.util.OptionalInt;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -92,8 +93,9 @@ public class Eth2NetworkFactory {
     return new Eth2P2PNetworkBuilder();
   }
 
-  public void stopAll() {
-    SafeFuture.allOf(networks.stream().map(P2PNetwork::stop).toArray(SafeFuture[]::new)).join();
+  public void stopAll() throws InterruptedException, ExecutionException, TimeoutException {
+    Waiter.waitFor(
+        SafeFuture.allOf(networks.stream().map(P2PNetwork::stop).toArray(SafeFuture[]::new)));
   }
 
   public class Eth2P2PNetworkBuilder {

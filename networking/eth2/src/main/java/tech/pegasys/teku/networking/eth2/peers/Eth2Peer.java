@@ -97,7 +97,8 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
             },
             error -> {
               LOG.error("Failed to validate updated peer status", error);
-              disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK);
+              disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK)
+                  .finish(err -> LOG.debug("Error while disconnecting from peer {}", this, err));
             });
   }
 
@@ -209,7 +210,8 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
       LOG.debug("Peer {} disconnected due to block rate limits", getId());
       callback.completeWithErrorResponse(
           new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
-      disconnectCleanly(DisconnectReason.RATE_LIMITING);
+      disconnectCleanly(DisconnectReason.RATE_LIMITING)
+          .finish(err -> LOG.debug("Unable to disconnect from peer {}", this, err));
       return false;
     }
     return true;
@@ -218,7 +220,8 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   public boolean wantToMakeRequest() {
     if (requestTracker.wantToRequestObjects(1L) == 0L) {
       LOG.debug("Peer {} disconnected due to request rate limits", getId());
-      disconnectCleanly(DisconnectReason.RATE_LIMITING);
+      disconnectCleanly(DisconnectReason.RATE_LIMITING)
+          .finish(err -> LOG.debug("Unable to disconnect from peer {}", this, err));
       return false;
     }
     return true;

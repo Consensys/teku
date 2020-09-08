@@ -45,7 +45,8 @@ public class BeaconBlocksByRootMessageHandler
       SafeFuture<Void> future = SafeFuture.COMPLETE;
       if (!peer.wantToMakeRequest()
           || !peer.wantToReceiveObjects(callback, message.getBlockRoots().size())) {
-        peer.disconnectCleanly(DisconnectReason.RATE_LIMITING);
+        peer.disconnectCleanly(DisconnectReason.RATE_LIMITING)
+            .finish(err -> LOG.debug("Unable to disconnect from peer {}", peer, err));
         return;
       }
 

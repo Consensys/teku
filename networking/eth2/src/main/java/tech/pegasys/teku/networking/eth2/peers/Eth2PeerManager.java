@@ -23,7 +23,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
@@ -215,7 +214,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
               if (!peer.hasStatus()) {
                 LOG.trace(
                     "Disconnecting peer {} because initial status was not received", peer.getId());
-                peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT);
+                peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT)
+                    .finish(err -> LOG.debug("Unable to disconnect from peer {}", peer, err));
               }
             },
             Constants.RESP_TIMEOUT,
@@ -234,7 +234,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   void sendPeriodicPing(Eth2Peer peer) {
     if (peer.getOutstandingPings() >= eth2RpcOutstandingPingThreshold) {
       LOG.debug("Disconnecting the peer {} due to PING timeout.", peer.getId());
-      peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE);
+      peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE)
+          .finish(err -> LOG.debug("Unable to disconnect from peer {}", peer, err));
     } else {
       peer.sendPing()
           .finish(
@@ -295,8 +296,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
         connectedPeerMap.values().stream()
             .map(
                 peer ->
-                    peer.sendGoodbye(GoodbyeMessage.REASON_CLIENT_SHUT_DOWN)
-                        .thenRun(() -> peer.disconnectCleanly(DisconnectReason.SHUTTING_DOWN))
+                    peer.disconnectCleanly(DisconnectReason.SHUTTING_DOWN)
                         .exceptionally(
                             err -> {
                               LOG.debug("Error while sending goodbye to peers", err);
