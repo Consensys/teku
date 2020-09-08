@@ -59,13 +59,12 @@ public class TargetChain {
       return false;
     }
     final TargetChain that = (TargetChain) o;
-    return Objects.equals(getChainHead(), that.getChainHead())
-        && Objects.equals(getPeers(), that.getPeers());
+    return Objects.equals(chainHead, that.chainHead) && Objects.equals(peers, that.peers);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getChainHead(), getPeers());
+    return Objects.hash(chainHead, peers);
   }
 
   @Override
