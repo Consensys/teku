@@ -30,10 +30,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.logging.EventLogger;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
@@ -162,12 +163,13 @@ public class SlotProcessorTest {
     slotProcessor.onTick(beaconState.getGenesis_time());
     verify(slotEventsChannel).onSlot(captor.capture());
     assertThat(captor.getValue()).isEqualTo(ZERO);
+    final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
     verify(eventLogger)
         .epochEvent(
             ZERO,
             recentChainData.getStore().getJustifiedCheckpoint().getEpoch(),
-            recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
-            recentChainData.getFinalizedRoot());
+            finalizedCheckpoint.getEpoch(),
+            finalizedCheckpoint.getRoot());
     assertThat(slotProcessor.getNodeSlot().getValue()).isEqualTo(ZERO);
   }
 
@@ -190,12 +192,13 @@ public class SlotProcessorTest {
     assertThat(captor.getValue()).isEqualTo(slot);
 
     // event logger reports slot 100
+    final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
     verify(eventLogger)
         .epochEvent(
             compute_epoch_at_slot(slot),
             recentChainData.getStore().getJustifiedCheckpoint().getEpoch(),
-            recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
-            recentChainData.getFinalizedRoot());
+            finalizedCheckpoint.getEpoch(),
+            finalizedCheckpoint.getRoot());
 
     // node slots missed event to indicate that slots were missed to catch up
     verify(eventLogger).nodeSlotsMissed(ZERO, slot);
@@ -212,14 +215,15 @@ public class SlotProcessorTest {
     when(p2pNetwork.getPeerCount()).thenReturn(1);
 
     slotProcessor.onTick(beaconState.getGenesis_time().plus(SECONDS_PER_SLOT / 3));
+    final Checkpoint finalizedCheckpoint = recentChainData.getStore().getFinalizedCheckpoint();
     verify(eventLogger)
         .slotEvent(
             ZERO,
             recentChainData.getHeadSlot(),
             recentChainData.getBestBlockRoot().get(),
             ZERO,
-            recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
-            recentChainData.getFinalizedRoot(),
+            finalizedCheckpoint.getEpoch(),
+            finalizedCheckpoint.getRoot(),
             1);
     assertThat(events)
         .containsExactly(new BroadcastAttestationEvent(slotProcessor.getNodeSlot().getValue()));

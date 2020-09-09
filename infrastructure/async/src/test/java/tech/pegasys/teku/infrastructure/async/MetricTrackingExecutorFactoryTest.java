@@ -26,8 +26,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.metrics.StubMetricsSystem;
-import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 class MetricTrackingExecutorFactoryTest {
   private final StubMetricsSystem metricSystem = new StubMetricsSystem();

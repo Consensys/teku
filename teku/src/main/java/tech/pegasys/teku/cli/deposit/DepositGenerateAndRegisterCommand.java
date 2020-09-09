@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.cli.deposit;
 
-import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
+import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -25,9 +25,9 @@ import org.jetbrains.annotations.NotNull;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
+import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.deposit.GenerateAction.ValidatorKeys;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 
 @Command(
     name = "generate-and-register",

@@ -28,8 +28,8 @@ import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.metrics.TekuMetricCategory;
-import tech.pegasys.teku.util.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class CachingTaskQueue<K, V> {
 
@@ -123,6 +123,9 @@ public class CachingTaskQueue<K, V> {
       return currentPendingTask;
     }
 
+    final SafeFuture<Optional<V>> generationResult = new SafeFuture<>();
+    pendingTasks.put(task.getKey(), generationResult);
+
     // Check if there's a better starting point (in cache or in progress)
     final Optional<SafeFuture<Optional<V>>> newBase =
         task.streamIntermediateSteps()
@@ -135,24 +138,26 @@ public class CachingTaskQueue<K, V> {
             .findFirst();
     if (newBase.isPresent()) {
       rebasedTaskCounter.inc();
-      return newBase.get().thenCompose(ancestorResult -> queueTask(task.rebase(ancestorResult)));
+      newBase
+          .get()
+          .thenAccept(ancestorResult -> queueTask(task.rebase(ancestorResult)))
+          .finish(error -> completePendingTask(task, Optional.empty(), error));
+      return generationResult;
     }
 
     // Schedule the task for execution
     newTaskCounter.inc();
-    return queueTask(task);
+    queueTask(task);
+    return generationResult;
   }
 
   public Optional<V> getIfAvailable(final K key) {
     return Optional.ofNullable(cache.get(key));
   }
 
-  private SafeFuture<Optional<V>> queueTask(final CacheableTask<K, V> task) {
-    final SafeFuture<Optional<V>> generationResult = new SafeFuture<>();
-    pendingTasks.put(task.getKey(), generationResult);
+  private void queueTask(final CacheableTask<K, V> task) {
     queuedTasks.add(task);
     tryProcessNext();
-    return generationResult;
   }
 
   private synchronized void tryProcessNext() {
@@ -171,7 +176,13 @@ public class CachingTaskQueue<K, V> {
     asyncRunner
         .runAsync(task::performTask)
         .thenPeek(result -> result.ifPresent(value -> cache(task.getKey(), value)))
-        .whenComplete((result, error) -> completePendingTask(task, result, error))
+        .handle(
+            (result, error) -> {
+              completePendingTask(task, result, error);
+              // Errors are propagated to the result, so convert to a completed future here
+              // Otherwise it will be reported as an unhandled exception.
+              return null;
+            })
         .alwaysRun(
             () -> {
               activeTasks.decrementAndGet();

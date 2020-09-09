@@ -19,10 +19,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
-import com.google.common.io.Files;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
@@ -31,6 +32,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.signers.bls.keystore.KeyStore;
@@ -39,7 +41,7 @@ import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
 import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
-import tech.pegasys.teku.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
@@ -50,18 +52,29 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
         config.getValidatorKeystorePasswordFilePairs();
     checkNotNull(keystorePasswordFilePairs, "validator keystore and password pairs cannot be null");
 
-    StatusLogger.STATUS_LOG.loadingValidators(keystorePasswordFilePairs.size());
+    final int totalValidatorCount = keystorePasswordFilePairs.size();
+    StatusLogger.STATUS_LOG.loadingValidators(totalValidatorCount);
     // return distinct loaded key pairs
 
     final ExecutorService executorService =
         Executors.newFixedThreadPool(Math.min(4, Runtime.getRuntime().availableProcessors()));
     try {
+      final AtomicInteger numberOfLoadedKeys = new AtomicInteger(0);
       final List<Future<Bytes32>> futures =
           keystorePasswordFilePairs.stream()
               .map(
                   pair ->
                       executorService.submit(
-                          () -> loadBLSPrivateKey(pair.getLeft(), loadPassword(pair.getRight()))))
+                          () -> {
+                            Bytes32 privateKey =
+                                loadBLSPrivateKey(pair.getLeft(), loadPassword(pair.getRight()));
+                            int loadedValidatorCount = numberOfLoadedKeys.incrementAndGet();
+                            if (loadedValidatorCount % 10 == 0) {
+                              StatusLogger.STATUS_LOG.atLoadedValidatorNumber(
+                                  loadedValidatorCount, totalValidatorCount);
+                            }
+                            return privateKey;
+                          }))
               .collect(toList());
 
       Set<Bytes32> result = new HashSet<>();
@@ -98,11 +111,11 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
   private String loadPassword(final Path passwordFile) {
     final String password;
     try {
-      password = Files.asCharSource(passwordFile.toFile(), UTF_8).readFirstLine();
+      password = Files.readString(passwordFile, UTF_8);
       if (isEmpty(password)) {
         throw new IllegalArgumentException("Keystore password cannot be empty: " + passwordFile);
       }
-    } catch (final FileNotFoundException e) {
+    } catch (final FileNotFoundException | NoSuchFileException e) {
       throw new IllegalArgumentException("Keystore password file not found: " + passwordFile, e);
     } catch (final IOException e) {
       final String errorMessage =

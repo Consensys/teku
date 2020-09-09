@@ -14,7 +14,7 @@
 package tech.pegasys.teku.storage.client;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;

@@ -40,11 +40,14 @@ public class GetPeers implements Handler {
   }
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get the PeerIds of connected peers.",
       tags = {TAG_NETWORK},
-      description = "Returns the base58-encoded PeerId of each peer connected to the beacon node.",
+      description =
+          "Returns the base58-encoded PeerId of each peer connected to the beacon node."
+              + " Replaced by standard api endpoint `/eth/v1/node/peers`.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,

@@ -39,8 +39,8 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.logging.ValidatorLogger;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -272,7 +272,7 @@ class AggregationDutyTest {
 
     assertThat(duty.performDuty()).isCompleted();
     verify(validatorApiChannel, never()).sendAggregateAndProof(any());
-    verify(validatorLogger).aggregationSkipped(SLOT);
+    verify(validatorLogger).aggregationSkipped(SLOT, 2);
     verifyNoMoreInteractions(validatorLogger);
   }
 

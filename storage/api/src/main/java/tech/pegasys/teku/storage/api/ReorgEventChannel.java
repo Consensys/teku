@@ -14,8 +14,8 @@
 package tech.pegasys.teku.storage.api;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
 
 public interface ReorgEventChannel extends VoidReturningChannelInterface {
 
@@ -30,5 +30,8 @@ public interface ReorgEventChannel extends VoidReturningChannelInterface {
    * @param commonAncestorSlot the last slot that both the old and new chains had a common block
    */
   void reorgOccurred(
-      final Bytes32 bestBlockRoot, final UInt64 bestSlot, final UInt64 commonAncestorSlot);
+      final Bytes32 bestBlockRoot,
+      final UInt64 bestSlot,
+      final Bytes32 oldBestBlockRoot,
+      final UInt64 commonAncestorSlot);
 }

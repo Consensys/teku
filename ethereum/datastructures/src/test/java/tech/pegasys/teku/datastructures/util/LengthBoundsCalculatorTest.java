@@ -73,7 +73,7 @@ public class LengthBoundsCalculatorTest {
   @ParameterizedTest(name = "{0}")
   @MethodSource("generateParameters")
   void shouldCalculateCorrectLengthBounds(final Class<?> type, final LengthBounds expected) {
-    final LengthBounds actual = SimpleOffsetSerializer.getLengthBounds(type);
+    final LengthBounds actual = SimpleOffsetSerializer.getLengthBounds(type).orElseThrow();
     assertThat(actual).isEqualTo(expected);
   }
 

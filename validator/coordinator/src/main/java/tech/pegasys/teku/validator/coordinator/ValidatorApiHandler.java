@@ -21,7 +21,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
-import static tech.pegasys.teku.logging.ValidatorLogger.VALIDATOR_LOGGER;
+import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
@@ -109,7 +109,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<ForkInfo>> getForkInfo() {
     return SafeFuture.completedFuture(
-        combinedChainDataClient.getHeadStateFromStore().map(BeaconState::getForkInfo));
+        combinedChainDataClient.getBestState().map(BeaconState::getForkInfo));
   }
 
   @Override
@@ -280,7 +280,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private int getValidatorIndex(final Attestation attestation) {
     return get_attesting_indices(
-            combinedChainDataClient.getHeadStateFromStore().orElseThrow(),
+            combinedChainDataClient.getBestState().orElseThrow(),
             attestation.getData(),
             attestation.getAggregation_bits())
         .get(0);

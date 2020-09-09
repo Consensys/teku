@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.cli.deposit;
 
-import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
+import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import java.util.function.Function;
 import picocli.CommandLine.ArgGroup;
@@ -41,16 +41,8 @@ public class GenerateParams {
       names = {"--keys-output-path"},
       paramLabel = "<FILE|DIR>",
       description =
-          "Path to output file for unencrypted keys or output directory for encrypted keystore files. If not set, unencrypted keys will be written on standard out and encrypted keystores will be created in current directory")
+          "Path to output directory for encrypted keystore files. If not set keystores will be created in current directory")
   private String outputPath;
-
-  @Option(
-      names = {"--encrypted-keystore-enabled"},
-      defaultValue = "true",
-      paramLabel = "<true|false>",
-      description = "Create encrypted keystores for validator and withdrawal keys. (Default: true)",
-      arity = "1")
-  private boolean encryptKeys = true;
 
   @ArgGroup(heading = "Non-interactive password options for validator keystores:%n")
   private ValidatorPasswordOptions validatorPasswordOptions;
@@ -79,7 +71,6 @@ public class GenerateParams {
     return new GenerateAction(
         validatorCount,
         outputPath,
-        encryptKeys,
         validatorPasswordOptions,
         withdrawalPasswordOptions,
         consoleAdapter,

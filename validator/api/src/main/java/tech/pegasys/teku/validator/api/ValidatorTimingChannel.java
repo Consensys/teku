@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.validator.api;
 
+import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.channels.VoidReturningChannelInterface;
 
 public interface ValidatorTimingChannel extends VoidReturningChannelInterface {
   void onSlot(UInt64 slot);

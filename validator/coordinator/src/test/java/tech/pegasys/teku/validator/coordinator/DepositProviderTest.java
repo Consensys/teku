@@ -25,7 +25,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
@@ -64,6 +66,11 @@ public class DepositProviderTest {
     depositMerkleTree = new OptimizedMerkleTree(Constants.DEPOSIT_CONTRACT_TREE_DEPTH);
     mockStateEth1DataVotes();
     createDepositEvents(40);
+  }
+
+  @AfterEach
+  void tearDown() {
+    Constants.setConstants("minimal");
   }
 
   @Test
@@ -156,11 +163,11 @@ public class DepositProviderTest {
     final tech.pegasys.teku.pow.event.Deposit deposit =
         dataStructureUtil.randomDepositEvent(UInt64.ZERO);
     final DepositsFromBlockEvent event =
-        new DepositsFromBlockEvent(
+        DepositsFromBlockEvent.create(
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomUInt64(),
-            List.of(deposit));
+            Stream.of(deposit));
     depositProvider.onDepositsFromBlock(event);
 
     depositMerkleTree.add(
@@ -200,6 +207,34 @@ public class DepositProviderTest {
     assertThatThrownBy(() -> depositProvider.getDeposits(state, randomEth1Data))
         .isInstanceOf(MissingDepositsException.class)
         .hasMessageContaining("9 to 10");
+  }
+
+  @Test
+  void shouldThrowWhenAllDepositsRequiredForStateNotAvailable_skippedDeposit() {
+    Constants.MAX_DEPOSITS = 5;
+    mockDepositsFromEth1Block(0, 7);
+    // Deposit 7 is missing
+    mockDepositsFromEth1Block(8, 10);
+    mockStateEth1DepositIndex(5);
+    mockEth1DataDepositCount(10);
+
+    assertThatThrownBy(() -> depositProvider.getDeposits(state, randomEth1Data))
+        .isInstanceOf(MissingDepositsException.class)
+        .hasMessageContaining("7 to 8");
+  }
+
+  @Test
+  void shouldThrowWhenAllDepositsRequiredForStateNotAvailable_skippedDeposits() {
+    Constants.MAX_DEPOSITS = 5;
+    mockDepositsFromEth1Block(0, 7);
+    // Deposits 7,8 are missing
+    mockDepositsFromEth1Block(9, 10);
+    mockStateEth1DepositIndex(5);
+    mockEth1DataDepositCount(10);
+
+    assertThatThrownBy(() -> depositProvider.getDeposits(state, randomEth1Data))
+        .isInstanceOf(MissingDepositsException.class)
+        .hasMessageContaining("7 to 9");
   }
 
   private void checkThatDepositProofIsValid(SSZList<Deposit> deposits) {

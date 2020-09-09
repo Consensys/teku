@@ -47,12 +47,12 @@ import tech.pegasys.teku.datastructures.state.HistoricalBatch;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.SigningData;
 import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestDataUtils;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.util.hashtree.Merkleizable;
 
 public class SszTestExecutor<T extends SimpleOffsetSerializable & Merkleizable>
     implements TestExecutor {

@@ -28,9 +28,9 @@ import tech.pegasys.teku.core.operationvalidators.OperationInvalidReason;
 import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.collections.LimitedSet;
 
 public class ProposerSlashingValidator {
   private static final Logger LOG = LogManager.getLogger();

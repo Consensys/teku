@@ -15,7 +15,7 @@ package tech.pegasys.teku.protoarray;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.util.channels.ChannelInterface;
+import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 
 public interface ProtoArrayStorageChannel extends ChannelInterface {
 

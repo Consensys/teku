@@ -40,7 +40,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.hashtree.HashTreeUtil;
 
 public class GenesisGenerator {
 
@@ -138,6 +137,10 @@ public class GenesisGenerator {
   public BeaconState getGenesisState() {
     finalizeState();
     return state.commitChanges();
+  }
+
+  public long getDepositCount() {
+    return depositDataList.size();
   }
 
   private void finalizeState() {

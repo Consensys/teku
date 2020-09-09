@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import picocli.CommandLine.Option;
-import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class MetricsOptions {
 

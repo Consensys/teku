@@ -19,7 +19,7 @@ import static tech.pegasys.teku.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
 import static tech.pegasys.teku.cli.options.LoggingOptions.DEFAULT_LOG_FILE;
 import static tech.pegasys.teku.cli.options.LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN;
 import static tech.pegasys.teku.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
-import static tech.pegasys.teku.util.config.LoggingDestination.DEFAULT_BOTH;
+import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 import static tech.pegasys.teku.util.config.StateStorageMode.PRUNE;
 
 import com.google.common.io.Resources;
@@ -36,10 +36,10 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.util.config.Eth1Address;
-import tech.pegasys.teku.util.config.LoggingDestination;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.util.config.TekuConfigurationBuilder;
@@ -89,6 +89,19 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
 
     assertTekuConfiguration(expectedDefaultConfigurationBuilder().build());
+  }
+
+  @Test
+  void ignoreVersionAndHelpEnvVars() {
+    beaconNodeCommand =
+        new BeaconNodeCommand(
+            outputWriter,
+            errorWriter,
+            Map.of("TEKU_VERSION", "1.2.3", "TEKU_HELP", "what?"),
+            startAction);
+
+    // No error from invalid --version or --help arg.
+    assertThat(beaconNodeCommand.parse(new String[0])).isZero();
   }
 
   @Test
@@ -253,7 +266,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   private TekuConfigurationBuilder expectedDefaultConfigurationBuilder() {
     return expectedConfigurationBuilder()
-        .setNetwork(NetworkDefinition.fromCliArg("altona"))
+        .setNetwork(NetworkDefinition.fromCliArg("medalla"))
         .setEth1DepositContractAddress(null)
         .setEth1Endpoint(null)
         .setMetricsCategories(
@@ -332,7 +345,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setRemoteValidatorApiInterface("127.0.0.1")
         .setRemoteValidatorApiMaxSubscribers(1000)
         .setRemoteValidatorApiPort(9999)
-        .setRemoteValidatorApiEnabled(false);
+        .setRemoteValidatorApiEnabled(false)
+        .setBeaconNodeApiEndpoint("http://127.0.0.1:5051")
+        .setBeaconNodeEventsWsEndpoint("ws://127.0.0.1:9999");
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {

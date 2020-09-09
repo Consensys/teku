@@ -40,12 +40,14 @@ public class GetListenAddresses implements Handler {
   }
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get the addresses the client's libp2p service is listening on.",
       tags = {TAG_NETWORK},
       description =
-          "Returns the list of addresses that the client's libp2p service is listening on.",
+          "Returns the list of addresses that the client's libp2p service is listening on."
+              + " Replaced by standard api endpoint `/eth/v1/node/identity`.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,

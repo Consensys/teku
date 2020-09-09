@@ -42,12 +42,14 @@ public class GetSyncing implements Handler {
   private final JsonProvider jsonProvider;
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get synchronization status.",
       tags = {TAG_NODE},
       description =
-          "Returns an object with data about the synchronization status, or false if not synchronizing.",
+          "Returns an object with data about the synchronization status, or false if not synchronizing. "
+              + "Replaced by standard api endpoint `/eth/v1/node/syncing`.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = SyncingStatus.class)),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)

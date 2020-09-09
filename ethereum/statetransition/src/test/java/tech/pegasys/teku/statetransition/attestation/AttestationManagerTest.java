@@ -45,7 +45,6 @@ import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.FutureItems;
@@ -191,17 +190,6 @@ class AttestationManagerTest {
     assertThat(pendingAttestations.size()).isZero();
     assertThat(futureAttestations.size()).isZero();
     verifyNoInteractions(attestationPool);
-  }
-
-  @Test
-  void shouldRemoveAttestationsFromTheAggregationPoolWhenTheyAreIncludedInABlock() {
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
-    final SSZList<Attestation> attestations = block.getMessage().getBody().getAttestations();
-    assertThat(attestations.size()).isNotZero();
-
-    eventBus.post(new ImportedBlockEvent(block));
-
-    attestations.forEach(attestation -> verify(attestationPool).remove(attestation));
   }
 
   private Attestation attestationFromSlot(final long slot) {

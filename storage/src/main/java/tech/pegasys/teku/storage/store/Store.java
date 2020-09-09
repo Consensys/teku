@@ -49,11 +49,11 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.metrics.SettableGauge;
-import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
-import tech.pegasys.teku.util.collections.LimitedMap;
 
 class Store implements UpdatableStore {
   private static final Logger LOG = LogManager.getLogger();

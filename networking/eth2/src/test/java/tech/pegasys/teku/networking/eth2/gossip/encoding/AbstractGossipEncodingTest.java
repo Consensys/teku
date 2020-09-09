@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
@@ -28,7 +29,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 public abstract class AbstractGossipEncodingTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final GossipEncoding encoding = createEncoding();
+  protected final GossipEncoding encoding = createEncoding();
 
   protected abstract GossipEncoding createEncoding();
 
@@ -108,6 +109,18 @@ public abstract class AbstractGossipEncodingTest {
 
     final Bytes encoded = encoding.encode(block);
     assertThatThrownBy(() -> encoding.decode(encoded, boolean.class))
+        .isInstanceOf(DecodingException.class);
+  }
+
+  @Test
+  public void decode_rejectMessageShorterThanValidLength() {
+    assertThatThrownBy(() -> encoding.decode(Bytes.of(1, 2, 3), SignedBeaconBlock.class))
+        .isInstanceOf(DecodingException.class);
+  }
+
+  @Test
+  public void decode_rejectMessageLongerThanValidLength() {
+    assertThatThrownBy(() -> encoding.decode(Bytes.wrap(new byte[512]), StatusMessage.class))
         .isInstanceOf(DecodingException.class);
   }
 

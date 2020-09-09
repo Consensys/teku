@@ -16,7 +16,7 @@ package tech.pegasys.teku.validator.client.metrics;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class BeaconChainRequestCounter {
 

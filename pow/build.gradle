@@ -3,9 +3,11 @@ dependencies {
   implementation project(':infrastructure:async')
   implementation project(':ssz')
   implementation project(':util')
-  implementation project(':events')
+  implementation project(':infrastructure:events')
+  implementation project(':infrastructure:logging')
+  implementation project(':infrastructure:subscribers')
+  implementation project(':services:serviceutils')
   implementation project(':storage:api')
-  implementation project(':logging')
 
   api 'org.web3j:core'
   
@@ -15,6 +17,7 @@ dependencies {
 
   testImplementation testFixtures(project(':util'))
   testImplementation testFixtures(project(':infrastructure:async'))
+  testImplementation testFixtures(project(':ethereum:datastructures'))
 
   testFixturesImplementation project(':util')
 }

@@ -19,9 +19,9 @@ import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
-import tech.pegasys.teku.util.resource.ResourceLoader;
 
 public class Constants {
 
@@ -132,6 +132,7 @@ public class Constants {
   public static final double TIME_TICKER_REFRESH_RATE = 2; // per sec
   public static final long ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT = 500; // in milli sec
   public static final long ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = 2; // in sec
+  public static final long ETH1_LOCAL_CHAIN_BEHIND_FOLLOW_DISTANCE_WAIT = 3; // in sec
   public static final int MAXIMUM_CONCURRENT_ETH1_REQUESTS = 5;
   public static final int REPUTATION_MANAGER_CAPACITY = 1024;
   public static final long STORAGE_REQUEST_TIMEOUT = 60; // in sec

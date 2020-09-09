@@ -20,12 +20,16 @@ import com.google.common.eventbus.SubscriberExceptionHandler;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.reflect.Method;
 import java.nio.channels.ClosedChannelException;
+import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.events.ChannelExceptionHandler;
-import tech.pegasys.teku.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.events.ChannelExceptionHandler;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.pow.exception.InvalidDepositEventsException;
+import tech.pegasys.teku.service.serviceutils.FatalServiceFailureException;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
+import tech.pegasys.teku.util.exceptions.ExceptionUtil;
 
 public final class TekuDefaultExceptionHandler
     implements SubscriberExceptionHandler, ChannelExceptionHandler, UncaughtExceptionHandler {
@@ -80,18 +84,27 @@ public final class TekuDefaultExceptionHandler
   }
 
   private void handleException(final Throwable exception, final String subscriberDescription) {
-    if (exception instanceof OutOfMemoryError) {
+    final Optional<FatalServiceFailureException> fatalServiceError =
+        ExceptionUtil.getCause(exception, FatalServiceFailureException.class);
+
+    if (fatalServiceError.isPresent()) {
+      final String failedService = fatalServiceError.get().getService().getSimpleName();
+      statusLog.fatalError(failedService, exception);
+      System.exit(2);
+    } else if (exception instanceof OutOfMemoryError) {
       statusLog.fatalError(subscriberDescription, exception);
       System.exit(2);
     } else if (exception instanceof ShuttingDownException) {
       LOG.debug("Shutting down", exception);
     } else if (isExpectedNettyError(exception)) {
       LOG.debug("Channel unexpectedly closed", exception);
-    } else if (isSpecFailure(exception)) {
-      statusLog.specificationFailure(subscriberDescription, exception);
     } else if (Throwables.getRootCause(exception) instanceof RejectedExecutionException) {
       LOG.error(
           "Unexpected rejected execution due to full task queue in {}", subscriberDescription);
+    } else if (Throwables.getRootCause(exception) instanceof InvalidDepositEventsException) {
+      statusLog.eth1DepositEventsFailure(exception);
+    } else if (isSpecFailure(exception)) {
+      statusLog.specificationFailure(subscriberDescription, exception);
     } else {
       statusLog.unexpectedFailure(subscriberDescription, exception);
     }

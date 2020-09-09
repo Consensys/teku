@@ -20,7 +20,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
-import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
+import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -46,7 +46,6 @@ class GenerateActionTest {
   private static final String EXPECTED_ENV_VARIABLE = "TEST_ENV";
   private static final Function<String, String> envSupplier =
       s -> EXPECTED_ENV_VARIABLE.equals(s) ? EXPECTED_PASSWORD : null;
-  private static final boolean ENCRYPTED_KEYSTORE_ENABLED = true;
   private ConsoleAdapter consoleAdapter;
   private CommandSpec commandSpec;
 
@@ -179,7 +178,6 @@ class GenerateActionTest {
         new GenerateAction(
             VALIDATORS_COUNT,
             outputPath.toString(),
-            ENCRYPTED_KEYSTORE_ENABLED,
             validatorPasswordOptions,
             withdrawalPasswordOptions,
             consoleAdapter,
@@ -195,18 +193,7 @@ class GenerateActionTest {
     assertKeyStoreFilesExistAndAreEncryptedWithPassword(outputPath);
 
     // select only withdrawal files
-    FilenameFilter withdrawalFilter =
-        new FilenameFilter() {
-          @Override
-          public boolean accept(File dir, String name) {
-            String lowercaseName = name.toLowerCase();
-            if (lowercaseName.contains("withdrawal")) {
-              return true;
-            } else {
-              return false;
-            }
-          }
-        };
+    FilenameFilter withdrawalFilter = (dir, name) -> name.toLowerCase().contains("withdrawal");
 
     // assert that files exist: 1 withdrawal file per validator
     final File[] withdrawalFiles = outputPath.toFile().listFiles(withdrawalFilter);
@@ -214,18 +201,7 @@ class GenerateActionTest {
     Arrays.stream(withdrawalFiles).forEach(file -> assertThat(file).isFile());
 
     // select only validator files
-    FilenameFilter validatorFilter =
-        new FilenameFilter() {
-          @Override
-          public boolean accept(File dir, String name) {
-            String lowercaseName = name.toLowerCase();
-            if (lowercaseName.contains("validator")) {
-              return true;
-            } else {
-              return false;
-            }
-          }
-        };
+    FilenameFilter validatorFilter = (dir, name) -> name.toLowerCase().contains("validator");
 
     // assert that files exist: 1 validator file per validator
     final File[] validatorFiles = outputPath.toFile().listFiles(validatorFilter);

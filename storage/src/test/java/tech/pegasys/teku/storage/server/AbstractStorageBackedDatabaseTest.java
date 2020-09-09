@@ -17,6 +17,8 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import static tech.pegasys.teku.storage.store.StoreAssertions.assertStoresMatch;
 
 import com.google.common.io.Files;
+import com.google.common.io.MoreFiles;
+import com.google.common.io.RecursiveDeleteOption;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -33,7 +35,6 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.StateStorageMode;
-import tech.pegasys.teku.util.file.FileUtil;
 
 public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabaseTest {
   private final List<File> tmpDirectories = new ArrayList<>();
@@ -54,7 +55,9 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
   public void tearDown() throws Exception {
     super.tearDown();
     // Clean up tmp directories
-    FileUtil.recursivelyDeleteDirectories(tmpDirectories);
+    for (File tmpDirectory : tmpDirectories) {
+      MoreFiles.deleteRecursively(tmpDirectory.toPath(), RecursiveDeleteOption.ALLOW_INSECURE);
+    }
     tmpDirectories.clear();
   }
 

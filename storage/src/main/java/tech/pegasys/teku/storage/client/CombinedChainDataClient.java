@@ -39,6 +39,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
+import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -295,7 +296,7 @@ public class CombinedChainDataClient {
     }
   }
 
-  public Optional<BeaconState> getHeadStateFromStore() {
+  public Optional<BeaconState> getBestState() {
     return recentChainData.getBestState();
   }
 
@@ -340,6 +341,10 @@ public class CombinedChainDataClient {
     return compute_epoch_at_slot(getHeadSlot());
   }
 
+  public Optional<ForkInfo> getHeadForkInfo() {
+    return recentChainData.getHeadForkInfo();
+  }
+
   /** @return The current slot according to clock time */
   public UInt64 getCurrentSlot() {
     return this.recentChainData.getCurrentSlot().orElseGet(this::getHeadSlot);
@@ -357,7 +362,7 @@ public class CombinedChainDataClient {
 
   public NavigableMap<UInt64, Bytes32> getAncestorRoots(
       final UInt64 startSlot, final UInt64 step, final UInt64 count) {
-    return recentChainData.getAncestorRoots(startSlot, step, count);
+    return recentChainData.getAncestorRootsOnHeadChain(startSlot, step, count);
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {

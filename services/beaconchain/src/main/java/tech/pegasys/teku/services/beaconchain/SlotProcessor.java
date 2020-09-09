@@ -23,8 +23,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
+import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.logging.EventLogger;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
@@ -88,6 +88,7 @@ public class SlotProcessor {
   }
 
   public void setCurrentSlot(final UInt64 slot) {
+    slotEventsChannelPublisher.onSlot(slot);
     nodeSlot.setValue(slot);
   }
 
@@ -169,11 +170,15 @@ public class SlotProcessor {
     onTickSlotStart = nodeSlot.getValue();
     if (nodeSlot.getValue().equals(compute_start_slot_at_epoch(nodeEpoch))) {
       forkChoice.save();
-      eventLog.epochEvent(
-          nodeEpoch,
-          recentChainData.getStore().getJustifiedCheckpoint().getEpoch(),
-          recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
-          recentChainData.getFinalizedRoot());
+      recentChainData
+          .getFinalizedCheckpoint()
+          .ifPresent(
+              finalizedCheckpoint ->
+                  eventLog.epochEvent(
+                      nodeEpoch,
+                      recentChainData.getStore().getJustifiedCheckpoint().getEpoch(),
+                      finalizedCheckpoint.getEpoch(),
+                      finalizedCheckpoint.getRoot()));
     }
     slotEventsChannelPublisher.onSlot(nodeSlot.getValue());
   }
@@ -185,14 +190,18 @@ public class SlotProcessor {
         .getHeadBlock()
         .ifPresent(
             (head) ->
-                eventLog.slotEvent(
-                    nodeSlot.getValue(),
-                    head.getSlot(),
-                    head.getRoot(),
-                    nodeEpoch,
-                    recentChainData.getStore().getFinalizedCheckpoint().getEpoch(),
-                    recentChainData.getFinalizedRoot(),
-                    p2pNetwork.getPeerCount()));
+                recentChainData
+                    .getFinalizedCheckpoint()
+                    .ifPresent(
+                        finalizedCheckpoint ->
+                            eventLog.slotEvent(
+                                nodeSlot.getValue(),
+                                head.getSlot(),
+                                head.getRoot(),
+                                nodeEpoch,
+                                finalizedCheckpoint.getEpoch(),
+                                finalizedCheckpoint.getRoot(),
+                                p2pNetwork.getPeerCount())));
 
     this.eventBus.post(new BroadcastAttestationEvent(nodeSlot.getValue()));
   }

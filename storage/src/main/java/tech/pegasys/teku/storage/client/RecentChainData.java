@@ -15,7 +15,7 @@ package tech.pegasys.teku.storage.client;
 
 import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.logging.LogFormatter.formatBlock;
+import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 
 import com.google.common.eventbus.EventBus;
 import java.util.NavigableMap;
@@ -41,8 +41,8 @@ import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
@@ -176,7 +176,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store;
   }
 
-  public NavigableMap<UInt64, Bytes32> getAncestorRoots(
+  public NavigableMap<UInt64, Bytes32> getAncestorRootsOnHeadChain(
       final UInt64 startSlot, final UInt64 step, final UInt64 count) {
     return chainHead
         .map(
@@ -184,6 +184,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
                 ForkChoiceUtil.getAncestors(
                     forkChoiceStrategy.orElseThrow(), head.getRoot(), startSlot, step, count))
         .orElseGet(TreeMap::new);
+  }
+
+  public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(final UInt64 startSlot, Bytes32 root) {
+    return ForkChoiceUtil.getAncestorsOnFork(forkChoiceStrategy.orElseThrow(), root, startSlot);
   }
 
   public Optional<ForkChoiceStrategy> getForkChoiceStrategy() {
@@ -245,7 +249,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
         reorgCounter.inc();
         reorgEventChannel.reorgOccurred(
-            newChainHead.getRoot(), newChainHead.getSlot(), commonAncestorSlot);
+            newChainHead.getRoot(),
+            newChainHead.getSlot(),
+            previousChainHead.getRoot(),
+            commonAncestorSlot);
       }
     }
 
@@ -408,17 +415,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return forkChoiceStrategy.flatMap(strategy -> get_ancestor(strategy, headBlockRoot, slot));
   }
 
-  // TODO (#2398): These methods should not return zero if null. We should handle this better
   public UInt64 getFinalizedEpoch() {
-    return store == null ? UInt64.ZERO : store.getFinalizedCheckpoint().getEpoch();
+    return getFinalizedCheckpoint().map(Checkpoint::getEpoch).orElse(UInt64.ZERO);
   }
 
-  public UInt64 getBestJustifiedEpoch() {
-    return store == null ? UInt64.ZERO : store.getBestJustifiedCheckpoint().getEpoch();
-  }
-
-  public Bytes32 getFinalizedRoot() {
-    return store == null ? null : store.getFinalizedCheckpoint().getRoot();
+  public Optional<Checkpoint> getFinalizedCheckpoint() {
+    return store == null ? Optional.empty() : Optional.of(store.getFinalizedCheckpoint());
   }
 
   @Override

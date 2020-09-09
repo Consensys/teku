@@ -31,10 +31,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.events.Subscribers;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointChannel {

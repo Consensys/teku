@@ -17,7 +17,7 @@ import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER
 
 import com.google.common.eventbus.EventBus;
 import tech.pegasys.teku.core.ChainBuilder;
-import tech.pegasys.teku.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
 import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;

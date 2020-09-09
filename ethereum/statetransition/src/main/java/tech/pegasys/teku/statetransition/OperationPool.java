@@ -21,9 +21,9 @@ import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.teku.util.collections.LimitedSet;
 import tech.pegasys.teku.util.config.Constants;
 
 public class OperationPool<T> {
@@ -63,6 +63,10 @@ public class OperationPool<T> {
 
   public void add(T item) {
     operations.add(item);
+  }
+
+  public void addAll(SSZList<T> items) {
+    operations.addAll(items.asList());
   }
 
   public void removeAll(SSZList<T> items) {

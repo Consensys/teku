@@ -31,14 +31,13 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.ParameterException;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.util.crypto.SecureRandomProvider;
+import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
 
 public class GenerateAction {
   private static final String VALIDATOR_PASSWORD_PROMPT = "Validator Keystore";
   private static final String WITHDRAWAL_PASSWORD_PROMPT = "Withdrawal Keystore";
   private final int validatorCount;
   private final String outputPath;
-  private final boolean encryptKeys;
   private final ValidatorPasswordOptions validatorPasswordOptions;
   private final WithdrawalPasswordOptions withdrawalPasswordOptions;
   private final SecureRandom srng;
@@ -50,7 +49,6 @@ public class GenerateAction {
   public GenerateAction(
       final int validatorCount,
       final String outputPath,
-      final boolean encryptKeys,
       final ValidatorPasswordOptions validatorPasswordOptions,
       final WithdrawalPasswordOptions withdrawalPasswordOptions,
       final ConsoleAdapter consoleAdapter,
@@ -59,7 +57,6 @@ public class GenerateAction {
       final Consumer<String> commandOutput) {
     this.validatorCount = validatorCount;
     this.outputPath = outputPath;
-    this.encryptKeys = encryptKeys;
     this.validatorPasswordOptions = validatorPasswordOptions;
     this.withdrawalPasswordOptions = withdrawalPasswordOptions;
     this.consoleAdapter = consoleAdapter;
@@ -87,27 +84,19 @@ public class GenerateAction {
 
   private KeysWriter getKeysWriter(final SecureRandom secureRandom) {
     final KeysWriter keysWriter;
-    if (encryptKeys) {
-      final String validatorKeystorePassword =
-          readKeystorePassword(validatorPasswordOptions, VALIDATOR_PASSWORD_PROMPT);
-      final String withdrawalKeystorePassword =
-          readKeystorePassword(withdrawalPasswordOptions, WITHDRAWAL_PASSWORD_PROMPT);
+    final String validatorKeystorePassword =
+        readKeystorePassword(validatorPasswordOptions, VALIDATOR_PASSWORD_PROMPT);
+    final String withdrawalKeystorePassword =
+        readKeystorePassword(withdrawalPasswordOptions, WITHDRAWAL_PASSWORD_PROMPT);
 
-      final Path keystoreDir = getKeystoreOutputDir();
-      keysWriter =
-          new EncryptedKeystoreWriter(
-              secureRandom,
-              validatorKeystorePassword,
-              withdrawalKeystorePassword,
-              keystoreDir,
-              commandOutput);
-    } else {
-      keysWriter = new YamlKeysWriter(isBlank(outputPath) ? null : Path.of(outputPath));
-      if (consoleAdapter.isConsoleAvailable() && isBlank(outputPath)) {
-        commandOutput.accept(
-            "NOTE: This is the only time your keys will be displayed. Save these before they are gone!");
-      }
-    }
+    final Path keystoreDir = getKeystoreOutputDir();
+    keysWriter =
+        new EncryptedKeystoreWriter(
+            secureRandom,
+            validatorKeystorePassword,
+            withdrawalKeystorePassword,
+            keystoreDir,
+            commandOutput);
     return keysWriter;
   }
 
