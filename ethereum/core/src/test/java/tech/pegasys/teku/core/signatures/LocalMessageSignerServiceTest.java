@@ -15,7 +15,6 @@ package tech.pegasys.teku.core.signatures;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
@@ -46,23 +45,14 @@ class LocalMessageSignerServiceTest {
   void shouldSignAsynchronously(@SuppressWarnings("unused") final String name, final Method method)
       throws Exception {
 
-    final SafeFuture<BLSSignature> result = invokeMethod(name, method);
+    final SafeFuture<BLSSignature> result =
+        (SafeFuture<BLSSignature>) method.invoke(signerService, MESSAGE, Collections.emptyMap());
 
     assertThat(result).isNotDone();
 
     asyncRunner.executeQueuedActions();
 
     assertThat(result).isCompletedWithValue(EXPECTED_SIGNATURE);
-  }
-
-  @SuppressWarnings("unchecked")
-  private SafeFuture<BLSSignature> invokeMethod(final String name, final Method method)
-      throws IllegalAccessException, InvocationTargetException {
-    if (name.equals("signBlock") || name.equals("signAttestation")) {
-      return (SafeFuture<BLSSignature>)
-          method.invoke(signerService, MESSAGE, Collections.emptyMap());
-    }
-    return (SafeFuture<BLSSignature>) method.invoke(signerService, MESSAGE);
   }
 
   static List<Arguments> signMethods() {
