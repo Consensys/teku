@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.infrastructure.unsigned;
 
-import java.math.BigInteger;
-
 import static com.google.common.base.Preconditions.checkArgument;
+
+import java.math.BigInteger;
 
 /** An unsigned 64-bit integer. All instances are immutable. */
 public final class UInt64 implements Comparable<UInt64> {
@@ -113,7 +113,6 @@ public final class UInt64 implements Comparable<UInt64> {
     return plus(1);
   }
 
-
   /**
    * Decrement this value by one and return the result.
    *
@@ -122,7 +121,6 @@ public final class UInt64 implements Comparable<UInt64> {
   public UInt64 decrement() {
     return minus(1);
   }
-
 
   /**
    * Return the result of adding this value and the specified one.
