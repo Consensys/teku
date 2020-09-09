@@ -42,6 +42,11 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   }
 
   @Override
+  public NodeId parseNodeId(final String nodeId) {
+    return network.parseNodeId(nodeId);
+  }
+
+  @Override
   public boolean isConnected(final PeerAddress peerAddress) {
     return network.isConnected(peerAddress);
   }
