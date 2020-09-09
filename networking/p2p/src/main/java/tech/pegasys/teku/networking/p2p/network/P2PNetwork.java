@@ -73,6 +73,8 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
 
   Stream<T> streamPeers();
 
+  NodeId parseNodeId(final String nodeId);
+
   int getPeerCount();
 
   String getNodeAddress();

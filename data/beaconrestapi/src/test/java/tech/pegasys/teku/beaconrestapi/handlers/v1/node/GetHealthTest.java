@@ -16,68 +16,43 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_PARTIAL_CONTENT;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
 
-import io.javalin.core.util.Header;
-import io.javalin.http.Context;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.ChainDataProvider;
-import tech.pegasys.teku.api.SyncDataProvider;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 
-public class GetHealthTest {
-  private Context context = mock(Context.class);
-  private final SyncService syncService = mock(SyncService.class);
-  private final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);
-  private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
+public class GetHealthTest extends AbstractBeaconHandlerTest {
 
   @Test
   public void shouldReturnSyncingStatusWhenSyncing() throws Exception {
     final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
-
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(true, 1, 10, 10));
 
     handler.handle(context);
-    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
-    verify(context).status(SC_PARTIAL_CONTENT);
+    verifyCacheStatus(CACHE_NONE);
+    verifyStatusCode(SC_PARTIAL_CONTENT);
   }
 
   @Test
   public void shouldReturnOkWhenInSyncAndReady() throws Exception {
     final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
-
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 1, 10, 10));
 
     handler.handle(context);
-    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
-    verify(context).status(SC_OK);
+    verifyCacheStatus(CACHE_NONE);
+    verifyStatusCode(SC_OK);
   }
 
   @Test
   public void shouldReturnUnavailableWhenStoreNotAvailable() throws Exception {
     final GetHealth handler = new GetHealth(syncDataProvider, chainDataProvider);
-
     when(chainDataProvider.isStoreAvailable()).thenReturn(false);
 
     handler.handle(context);
-    verify(context).header(Header.CACHE_CONTROL, CACHE_NONE);
-    verify(context).status(SC_SERVICE_UNAVAILABLE);
-  }
-
-  private tech.pegasys.teku.sync.SyncingStatus getSyncStatus(
-      final boolean isSyncing,
-      final long startSlot,
-      final long currentSlot,
-      final long highestSlot) {
-    return new tech.pegasys.teku.sync.SyncingStatus(
-        isSyncing,
-        new tech.pegasys.teku.sync.SyncStatus(
-            UInt64.valueOf(startSlot), UInt64.valueOf(currentSlot), UInt64.valueOf(highestSlot)));
+    verifyCacheStatus(CACHE_NONE);
+    verifyStatusCode(SC_SERVICE_UNAVAILABLE);
   }
 }

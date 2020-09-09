@@ -37,7 +37,7 @@ public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrat
     final SyncingResponse syncingResponse =
         jsonProvider.jsonToObject(response.body().string(), SyncingResponse.class);
     assertThat(syncingResponse.data.headSlot).isEqualTo(UInt64.valueOf(10));
-    assertThat(syncingResponse.data.syncingDistance).isEqualTo(UInt64.ZERO);
+    assertThat(syncingResponse.data.syncDistance).isEqualTo(UInt64.ZERO);
   }
 
   private Response get() throws IOException {
