@@ -13,14 +13,17 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
-import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.MessageSignerService;
 import tech.pegasys.teku.core.signatures.Signer;
@@ -39,6 +42,10 @@ class SignerTest {
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
 
   private final Signer signer = new UnprotectedSigner(signerService);
+
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<Map<String, Object>> mapArgumentCaptor =
+      ArgumentCaptor.forClass(Map.class);
 
   @Test
   public void shouldCreateRandaoReveal() {
@@ -59,13 +66,20 @@ class SignerTest {
     final BLSSignature signature = dataStructureUtil.randomSignature();
     final Bytes expectedSigningRoot =
         Bytes.fromHexString("0x148d8f775f34648c73c4033ea79e2420d7b143280f4fb09eff9fa98868568974");
-    when(signerService.signBlock(expectedSigningRoot, emptyMap()))
+    final Map<String, Object> expectedAdditionalProperties =
+        Map.of(
+            "genesisValidatorRoot", fork.getGenesisValidatorsRoot(),
+            "type", "block",
+            "slot", block.getSlot());
+
+    when(signerService.signBlock(eq(expectedSigningRoot), anyMap()))
         .thenReturn(SafeFuture.completedFuture(signature));
 
     final SafeFuture<BLSSignature> result = signer.signBlock(block, fork);
 
-    verify(signerService).signBlock(expectedSigningRoot, emptyMap());
+    verify(signerService).signBlock(eq(expectedSigningRoot), mapArgumentCaptor.capture());
     assertThat(result).isCompletedWithValue(signature);
+    assertThat(mapArgumentCaptor.getValue()).containsAllEntriesOf(expectedAdditionalProperties);
   }
 
   @Test
@@ -74,12 +88,19 @@ class SignerTest {
     final BLSSignature signature = dataStructureUtil.randomSignature();
     final Bytes expectedSigningRoot =
         Bytes.fromHexString("0x418f2ed4e878074a64b23102a90582d32099f3e74787a04a13ec0cecc86c070a");
-    when(signerService.signAttestation(expectedSigningRoot, emptyMap()))
+    final Map<String, Object> expectedAdditionalProperties =
+        Map.of(
+            "type", "attestation",
+            "genesisValidatorRoot", fork.getGenesisValidatorsRoot(),
+            "sourceEpoch", attestationData.getSource().getEpoch(),
+            "targetEpoch", attestationData.getTarget().getEpoch());
+    when(signerService.signAttestation(eq(expectedSigningRoot), anyMap()))
         .thenReturn(SafeFuture.completedFuture(signature));
 
     final SafeFuture<BLSSignature> result = signer.signAttestationData(attestationData, fork);
 
-    verify(signerService).signAttestation(expectedSigningRoot, emptyMap());
+    verify(signerService).signAttestation(eq(expectedSigningRoot), mapArgumentCaptor.capture());
     assertThat(result).isCompletedWithValue(signature);
+    assertThat(mapArgumentCaptor.getValue()).containsAllEntriesOf(expectedAdditionalProperties);
   }
 }
