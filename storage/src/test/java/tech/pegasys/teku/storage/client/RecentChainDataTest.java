@@ -91,7 +91,7 @@ class RecentChainDataTest {
   }
 
   @Test
-  public void updateBestBlock_validUpdate() throws Exception {
+  public void updateHead_validUpdate() throws Exception {
     final SignedBlockAndState bestBlock = chainBuilder.generateNextBlock();
     saveBlock(recentChainData, bestBlock);
 
@@ -100,7 +100,7 @@ class RecentChainDataTest {
   }
 
   @Test
-  public void updateBestBlock_blockAndStateAreMissing() throws Exception {
+  public void updateHead_blockAndStateAreMissing() throws Exception {
     final SignedBlockAndState bestBlock = chainBuilder.generateNextBlock();
 
     recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
@@ -128,7 +128,7 @@ class RecentChainDataTest {
     final UInt64 bestSlot = requestedSlot.plus(ONE);
 
     final SignedBlockAndState bestBlock = chainBuilder.generateBlockAtSlot(bestSlot);
-    updateBestBlock(recentChainData, bestBlock);
+    updateHead(recentChainData, bestBlock);
 
     assertThat(recentChainData.retrieveStateInEffectAtSlot(requestedSlot))
         .isCompletedWithValue(Optional.of(genesisState));
@@ -183,7 +183,7 @@ class RecentChainDataTest {
   }
 
   @Test
-  public void updateBestBlock_noReorgEventWhenBestBlockFirstSet() {
+  public void updateHead_noReorgEventWhenBestBlockFirstSet() {
     final SafeFuture<Void> initialized =
         preGenesisStorageClient.initializeFromGenesis(genesisState);
     assertThat(initialized).isCompleted();
@@ -193,7 +193,7 @@ class RecentChainDataTest {
   }
 
   @Test
-  public void updateBestBlock_noReorgEventWhenChainAdvances() throws Exception {
+  public void updateHead_noReorgEventWhenChainAdvances() throws Exception {
     chainBuilder.generateBlocksUpToSlot(2);
     importBlocksAndStates(recentChainData, chainBuilder);
 
@@ -203,7 +203,28 @@ class RecentChainDataTest {
   }
 
   @Test
-  public void updateBestBlock_reorgEventWhenBlockFillsEmptyHeadSlot() throws Exception {
+  public void updateHead_forkChoiceHeadNeverGoesDown() throws Exception {
+    chainBuilder.generateBlocksUpToSlot(3);
+    importBlocksAndStates(recentChainData, chainBuilder);
+
+    final SignedBlockAndState block1 = chainBuilder.getBlockAndStateAtSlot(1);
+    final SignedBlockAndState block2 = chainBuilder.getBlockAndStateAtSlot(2);
+    final SignedBlockAndState block3 = chainBuilder.getBlockAndStateAtSlot(3);
+    // Head updated to block1 followed by empty slots up to slot 11
+    recentChainData.updateHead(block1.getRoot(), UInt64.valueOf(11));
+    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).isEmpty();
+
+    // Head updated to block2 but should preserve empty slots up to slot 11
+    recentChainData.updateHead(block2.getRoot(), block2.getSlot());
+    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).hasSize(1);
+
+    // Block 3 is imported and should still trigger a reorg because its filling an empty slot
+    recentChainData.updateHead(block3.getRoot(), UInt64.valueOf(12));
+    assertThat(storageSystem.reorgEventChannel().getReorgEvents()).hasSize(2);
+  }
+
+  @Test
+  public void updateHead_reorgEventWhenBlockFillsEmptyHeadSlot() throws Exception {
     final SignedBlockAndState slot1Block = chainBuilder.generateBlockAtSlot(1);
     importBlocksAndStates(recentChainData, chainBuilder);
     recentChainData.updateHead(slot1Block.getRoot(), UInt64.valueOf(2));
@@ -225,7 +246,7 @@ class RecentChainDataTest {
   }
 
   @Test
-  public void updateBestBlock_reorgEventWhenChainSwitchesToNewBlockAtSameSlot() throws Exception {
+  public void updateHead_reorgEventWhenChainSwitchesToNewBlockAtSameSlot() throws Exception {
     final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     final SafeFuture<Void> initialized =
@@ -269,7 +290,7 @@ class RecentChainDataTest {
   }
 
   @Test
-  public void updateBestBlock_reorgEventWhenChainSwitchesToNewBlockAtLaterSlot() throws Exception {
+  public void updateHead_reorgEventWhenChainSwitchesToNewBlockAtLaterSlot() throws Exception {
     final ChainBuilder chainBuilder = ChainBuilder.create(BLSKeyGenerator.generateKeyPairs(16));
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     final SafeFuture<Void> initialized =
@@ -316,7 +337,7 @@ class RecentChainDataTest {
   }
 
   @Test
-  public void updateBestBlock_ignoreStaleUpdate() throws Exception {
+  public void updateHead_ignoreStaleUpdate() throws Exception {
     final UpdatableStore store = mock(UpdatableStore.class);
 
     // Set up mock store with genesis data and a small chain
@@ -497,7 +518,7 @@ class RecentChainDataTest {
       nextSlot = nextSlot.plus(skipBlocks);
     }
     // Update best block and finalized state
-    updateBestBlock(recentChainData, bestBlock);
+    updateHead(recentChainData, bestBlock);
     finalizeBlock(recentChainData, finalizedEpoch, finalizedBlock);
 
     // Check slots that should be unavailable
@@ -550,7 +571,7 @@ class RecentChainDataTest {
     for (int i = 0; i < 5; i++) {
       final UInt64 canonicalBlockSlot = chainSplitSlot.plus(i * 2 + 2);
       final UInt64 forkSlot = chainSplitSlot.plus(i * 2 + 1);
-      updateBestBlock(recentChainData, chainBuilder.generateBlockAtSlot(canonicalBlockSlot));
+      updateHead(recentChainData, chainBuilder.generateBlockAtSlot(canonicalBlockSlot));
       saveBlock(recentChainData, fork.generateBlockAtSlot(forkSlot));
     }
 
@@ -730,13 +751,12 @@ class RecentChainDataTest {
 
   private SignedBlockAndState addNewBestBlock(RecentChainData recentChainData) {
     final SignedBlockAndState nextBlock = chainBuilder.generateNextBlock();
-    updateBestBlock(recentChainData, nextBlock);
+    updateHead(recentChainData, nextBlock);
 
     return nextBlock;
   }
 
-  private void updateBestBlock(
-      RecentChainData recentChainData, final SignedBlockAndState bestBlock) {
+  private void updateHead(RecentChainData recentChainData, final SignedBlockAndState bestBlock) {
     saveBlock(recentChainData, bestBlock);
 
     this.recentChainData.updateHead(bestBlock.getRoot(), bestBlock.getSlot());
@@ -744,7 +764,7 @@ class RecentChainDataTest {
 
   private SignedBlockAndState advanceBestBlock(final RecentChainData recentChainData) {
     final SignedBlockAndState nextBlock = advanceChain(recentChainData);
-    updateBestBlock(recentChainData, nextBlock);
+    updateHead(recentChainData, nextBlock);
     return nextBlock;
   }
 
