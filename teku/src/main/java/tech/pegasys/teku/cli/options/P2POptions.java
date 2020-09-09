@@ -25,8 +25,6 @@ import picocli.CommandLine.Option;
 
 public class P2POptions {
 
-  private static final Logger LOG = LogManager.getLogger();
-
   @Option(
       names = {"--p2p-enabled"},
       paramLabel = "<BOOLEAN>",
