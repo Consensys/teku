@@ -8,6 +8,45 @@ we recommend most users use the latest `master` branch of Teku.
 - REST API endpoints will be updated to match emerging standards in a future release.
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments still work but will be removed in a future release.
 
+## 0.12.6
+
+### Additions and Improvements
+- Added support for the slashing protection interchange format via the `teku slashing-protection import` and `teku slashing-protection export` subcommands
+- New REST APIs
+  - `/eth/v1/node/peers` - lists information about the currently connected peers
+  - `/eth/v1/node/peers/:peer_id` - list information about a specific peer
+  - `/eth/v1/node/health` - return the node health status via HTTP status codes. Useful for load balancers
+  - `/eth/v1/node/syncing` - describe the node's current sync status
+  - `/v1/node/version` has been moved to `/eth/v1/node/version` and `/v1/node/identity` to `/eth/v1/node/identity` matching changes in the standard API spec
+- Gossip messages produced by Teku no longer set the `from`, `signature` or `seqNo` fields
+- Enabled Gossipsub flood publishing to reduce propagation times for attestations and blocks produced locally
+- Generated P2P private keys and Discovery v5 sequence numbers are now persisted across restarts
+- Implemented unicode normalization process for validator keystore passwords
+- Progress messages are now logged when loading large number of validator keys at startup
+- The default network is now Medalla instead of Altona
+- Avoid recalculating validator duties for reorgs that are not long enough to change the scheduling
+- Validator duties are now calculated as soon as the genesis state is known instead of waiting for the actual genesis time.
+- Added additional validation for deposit events received from the ETH1 node to flag when the ETH1 node has malfunctioned and missed some deposit log events
+- Exit with a clear message when the ETH1 service is unable to start. Note that this only applies when the existing deposit data is invalid. Teku will continue retrying if the ETH1 node is not currently available.
+- Operations (e.g. attestations, slashings etc) included in blocks are now readded to the pending pool if a reorg causes them to no longer be in the canonical chain
+- Removed support for generating unencrypted keystores
+- Discv5 now caches the hash of the local node to reduce load caused by significant numbers of incoming discovery messages
+- Early access support for running the validator node independently of the beacon node (see #2683 for details). Please note this is not yet a recommended configuration and the CLI options and APIs used are subject to change.
+
+### Bug Fixes
+- Gossip messages with null `from`, `signature` or `seqNo` fields are now rebroadcast with the fields still null instead of replaced by default values
+- Added validation to ensure that the uncompressed length of Gossip messages is within the possible ranges for a valid message for each gossip message type
+- Fixed validation of compressed gossip message length which may incorrectly reject messages
+- Fixed unhandled exception reported when an attestation received over gossip had an invalid checkpoint, specifying a block root from after the specified epoch.
+- Improved validation of remote peer status
+- Fix "AbstractRouter internal error on message control" errors when messages are received from peers before the outbound connection has been fully established
+- Fixed errors logged when the ETH1 chain is shorter than the configured follow distance
+- Explicitly fsync the RocksDB write ahead log files to disk on shutdown
+- Fixed issue where environment variables named `TEKU_VERSION` or `TEKU_HELP` would be incorrectly interpreted as specifying the `--version` and `--help` arguments, preventing Teku from starting
+- Avoid performing duplicate tasks to regenerate states in a particular corner case when the task can be rebased to start from the output of an already scheduled task
+- Improve performance of cacheable task queue used for state regeneration
+- Suppressed `ClosedChannelException` errors in logs
+
 ## 0.12.5
 
 ### Bug Fixes
