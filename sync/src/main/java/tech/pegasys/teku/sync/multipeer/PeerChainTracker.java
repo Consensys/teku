@@ -15,11 +15,11 @@ package tech.pegasys.teku.sync.multipeer;
 
 import com.google.common.annotations.VisibleForTesting;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
-import tech.pegasys.teku.sync.multipeer.eventthread.EventThread;
 
 public class PeerChainTracker {
   private final EventThread eventThread;

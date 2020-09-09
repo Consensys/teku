@@ -11,25 +11,26 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync.multipeer.eventthread;
+package tech.pegasys.teku.infrastructure.async.eventthread;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 
-public class ExecutorEventThread implements EventThread {
+public class AsyncRunnerEventThread implements EventThread {
   private final AtomicBoolean started = new AtomicBoolean(false);
   private final String name;
-  private ExecutorService thread;
+  private final AsyncRunnerFactory asyncRunnerFactory;
+  private AsyncRunner thread;
 
   /** The ID of the event thread. The first task executed by the executor sets this ID. */
   private volatile long eventThreadId = -1;
 
-  public ExecutorEventThread(final String name) {
+  public AsyncRunnerEventThread(final String name, final AsyncRunnerFactory asyncRunnerFactory) {
     this.name = name;
+    this.asyncRunnerFactory = asyncRunnerFactory;
   }
 
   @Override
@@ -46,10 +47,8 @@ public class ExecutorEventThread implements EventThread {
     if (started.get()) {
       return;
     }
-    thread =
-        Executors.newSingleThreadExecutor(
-            new ThreadFactoryBuilder().setNameFormat(name).setDaemon(true).build());
-    thread.execute(() -> eventThreadId = Thread.currentThread().getId());
+    thread = asyncRunnerFactory.create(name, 1);
+    thread.runAsync(() -> eventThreadId = Thread.currentThread().getId()).reportExceptions();
     started.set(true);
   }
 
@@ -58,7 +57,7 @@ public class ExecutorEventThread implements EventThread {
     if (!started.compareAndSet(true, false)) {
       return;
     }
-    thread.shutdownNow();
+    thread.shutdown();
   }
 
   @Override
@@ -72,7 +71,7 @@ public class ExecutorEventThread implements EventThread {
     if (isEventThread()) {
       task.run();
     } else {
-      thread.execute(task);
+      thread.runAsync(task::run).reportExceptions();
     }
   }
 }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync.multipeer.eventthread;
+package tech.pegasys.teku.infrastructure.async.eventthread;
 
 import java.util.concurrent.Executor;
 

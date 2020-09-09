@@ -16,7 +16,10 @@ package tech.pegasys.teku.sync.multipeer;
 import com.google.common.eventbus.EventBus;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
+import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
@@ -30,8 +33,6 @@ import tech.pegasys.teku.sync.SyncStatus;
 import tech.pegasys.teku.sync.SyncingStatus;
 import tech.pegasys.teku.sync.gossip.BlockManager;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
-import tech.pegasys.teku.sync.multipeer.eventthread.EventThread;
-import tech.pegasys.teku.sync.multipeer.eventthread.ExecutorEventThread;
 
 public class MultipeerSyncService extends Service implements SyncService {
 
@@ -52,12 +53,13 @@ public class MultipeerSyncService extends Service implements SyncService {
   }
 
   public static MultipeerSyncService create(
+      final AsyncRunnerFactory asyncRunnerFactory,
       final AsyncRunner asyncRunner,
       final EventBus eventBus,
       final RecentChainData recentChainData,
       final P2PNetwork<Eth2Peer> p2pNetwork,
       final BlockImporter blockImporter) {
-    final EventThread eventThread = new ExecutorEventThread("sync");
+    final EventThread eventThread = new AsyncRunnerEventThread("sync", asyncRunnerFactory);
 
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
     final FutureItems<SignedBeaconBlock> futureBlocks =

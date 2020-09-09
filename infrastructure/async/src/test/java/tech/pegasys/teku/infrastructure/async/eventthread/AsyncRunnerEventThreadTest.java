@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync.multipeer.eventthread;
+package tech.pegasys.teku.infrastructure.async.eventthread;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -19,16 +19,24 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
+import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 
-class ExecutorEventThreadTest {
+class AsyncRunnerEventThreadTest {
+  private final AsyncRunnerFactory asyncRunnerFactory =
+      new AsyncRunnerFactory(new MetricTrackingExecutorFactory(new StubMetricsSystem()));
+
   private final EventThread eventThread =
-      new ExecutorEventThread(ExecutorEventThreadTest.class.getName());
+      new AsyncRunnerEventThread(AsyncRunnerEventThreadTest.class.getName(), asyncRunnerFactory);
 
   @AfterEach
   void tearDown() {
     eventThread.stop();
+    asyncRunnerFactory.getAsyncRunners().forEach(AsyncRunner::shutdown);
   }
 
   @Test

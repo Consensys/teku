@@ -11,13 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.service.serviceutils;
+package tech.pegasys.teku.infrastructure.async;
 
 import java.util.Collection;
 import java.util.concurrent.CopyOnWriteArrayList;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
-import tech.pegasys.teku.infrastructure.async.ScheduledExecutorAsyncRunner;
 
 public class AsyncRunnerFactory {
   private final Collection<AsyncRunner> asyncRunners = new CopyOnWriteArrayList<>();
