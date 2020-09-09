@@ -174,4 +174,16 @@ public class StatusLogger {
       log.info("Loading generated p2p private key from: " + key);
     }
   }
+
+  public void adjustingP2pLowerBoundToUpperBound(final int p2pUpperBound) {
+    log.info(
+        "Adjusting target number of peers lower bound to equal upper bound, which is {}",
+        p2pUpperBound);
+  }
+
+  public void adjustingP2pUpperBoundToLowerBound(final int p2pLowerBound) {
+    log.info(
+        "Adjusting target number of peers upper bound to equal lower bound, which is {}",
+        p2pLowerBound);
+  }
 }
