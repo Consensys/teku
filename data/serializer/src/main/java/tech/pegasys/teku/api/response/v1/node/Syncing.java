@@ -26,19 +26,19 @@ public class Syncing {
   @Schema(type = "string", pattern = PATTERN_UINT64, description = "Beacon node's head slot")
   public final UInt64 headSlot;
 
-  @JsonProperty("syncing_distance")
+  @JsonProperty("sync_distance")
   @Schema(
       type = "string",
       pattern = PATTERN_UINT64,
       description = "How many slots node needs to process to reach head. 0 if synced.")
-  public final UInt64 syncingDistance;
+  public final UInt64 syncDistance;
 
   @JsonCreator
   public Syncing(
       @JsonProperty("head_slot") final UInt64 headSlot,
-      @JsonProperty("syncing_distance") final UInt64 syncingDistance) {
+      @JsonProperty("sync_distance") final UInt64 syncDistance) {
     this.headSlot = headSlot;
-    this.syncingDistance = syncingDistance;
+    this.syncDistance = syncDistance;
   }
 
   @Override
@@ -47,11 +47,11 @@ public class Syncing {
     if (o == null || getClass() != o.getClass()) return false;
     final Syncing syncing = (Syncing) o;
     return Objects.equals(headSlot, syncing.headSlot)
-        && Objects.equals(syncingDistance, syncing.syncingDistance);
+        && Objects.equals(syncDistance, syncing.syncDistance);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(headSlot, syncingDistance);
+    return Objects.hash(headSlot, syncDistance);
   }
 }
