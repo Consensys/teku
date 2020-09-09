@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import java.util.Objects;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -28,9 +30,6 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.config.Constants;
-
-import java.util.Objects;
-import java.util.Optional;
 
 public class PeerChainValidator {
   private static final Logger LOG = LogManager.getLogger();

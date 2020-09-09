@@ -14,6 +14,11 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.time.Duration;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -40,12 +45,6 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.time.TimeProvider;
-
-import java.time.Duration;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();
@@ -216,7 +215,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
                 LOG.trace(
                     "Disconnecting peer {} because initial status was not received", peer.getId());
                 peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT).reportExceptions();
-
               }
             },
             Constants.RESP_TIMEOUT,

@@ -15,6 +15,11 @@ package tech.pegasys.teku.networking.eth2;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -57,12 +62,6 @@ import tech.pegasys.teku.networking.p2p.network.DelegatingP2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.storage.client.RecentChainData;
-
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
 
 public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements Eth2Network {
   private static final Logger LOG = LogManager.getLogger();
@@ -249,10 +248,14 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     proposerSlashingGossipManager.shutdown();
     attesterSlashingGossipManager.shutdown();
     attestationSubnetService.unsubscribe(discoveryNetworkAttestationSubnetsSubscription);
-    return peerManager.sendGoodbyeToPeers().exceptionally(error -> {
-      LOG.debug("Failed to send goodbye to peers on shutdown", error);
-      return null;
-    }).thenCompose(__ -> super.stop());
+    return peerManager
+        .sendGoodbyeToPeers()
+        .exceptionally(
+            error -> {
+              LOG.debug("Failed to send goodbye to peers on shutdown", error);
+              return null;
+            })
+        .thenCompose(__ -> super.stop());
   }
 
   @Override
