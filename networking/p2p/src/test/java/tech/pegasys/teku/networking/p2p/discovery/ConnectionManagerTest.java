@@ -42,7 +42,6 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.network.p2p.peer.StubPeer;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
@@ -87,7 +86,7 @@ class ConnectionManagerTest {
       throws InterruptedException, ExecutionException, TimeoutException {
     final ConnectionManager manager = createManager(PEER1, PEER2);
     when(network.connect(any(PeerAddress.class))).thenReturn(SafeFuture.completedFuture(null));
-    Waiter.waitFor(manager.start());
+    assertThat(manager.start()).isCompleted();
 
     verify(network).connect(PEER1);
     verify(network).connect(PEER2);
@@ -101,7 +100,7 @@ class ConnectionManagerTest {
     final SafeFuture<Peer> connectionFuture1 = new SafeFuture<>();
     final SafeFuture<Peer> connectionFuture2 = new SafeFuture<>();
     when(network.connect(PEER1)).thenReturn(connectionFuture1).thenReturn(connectionFuture2);
-    Waiter.waitFor(manager.start());
+    assertThat(manager.start()).isCompleted();
     verify(network).connect(PEER1);
 
     connectionFuture1.completeExceptionally(new RuntimeException("Nope"));

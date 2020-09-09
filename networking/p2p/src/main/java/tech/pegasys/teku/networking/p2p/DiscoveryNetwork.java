@@ -21,8 +21,6 @@ import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
 
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -53,7 +51,6 @@ import tech.pegasys.teku.storage.store.KeyValueStore;
 public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   public static final String ATTESTATION_SUBNET_ENR_FIELD = "attnets";
   public static final String ETH2_ENR_FIELD = "eth2";
-  private static final Logger LOG = LogManager.getLogger();
 
   private final P2PNetwork<P> p2pNetwork;
   private final DiscoveryService discoveryService;
@@ -122,14 +119,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
   @Override
   public SafeFuture<?> stop() {
-    return connectionManager
-        .stop()
-        .exceptionally(
-            error -> {
-              LOG.error("Failed to stop connection manager", error);
-              return null;
-            })
-        .thenCompose((__) -> SafeFuture.allOf(p2pNetwork.stop(), discoveryService.stop()));
+    return SafeFuture.allOf(connectionManager.stop(), p2pNetwork.stop(), discoveryService.stop());
   }
 
   public void addStaticPeer(final String peerAddress) {
@@ -164,7 +154,36 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   public void setForkInfo(final ForkInfo currentForkInfo, final Optional<Fork> nextForkInfo) {
-    // If no future fork is planned, set next_fork_version = current_fork_version to signal this
+    // If no future fork is planned,   /**
+    //   * Returns a new CompletionStage that, when this stage completes either normally or
+    // exceptionally,
+    //   * is executed with this stage's result and exception as arguments to the supplied function.
+    //   *
+    //   * <p>When this stage is complete, the given function is invoked with the result (or {@code
+    // null}
+    //   * if none) and the exception (or {@code null} if none) returning another `CompletionStage`.
+    // When
+    //   * that stage completes, the `SafeFuture` returned by this method is completed with the same
+    // value
+    //   * or exception.
+    //   *
+    //   * @param fn the function to use to compute another CompletionStage
+    //   * @param <U> the function's return type
+    //   * @return the new SafeFuture
+    //   */
+    //  public <U> SafeFuture<U> handleComposed(
+    //      final BiFunction<? super T, Throwable, CompletionStage<U>> fn) {
+    //    final SafeFuture<U> result = new SafeFuture<>();
+    //    whenComplete(
+    //        (value, error) -> {
+    //          try {
+    //            propagateResult(fn.apply(value, error), result);
+    //          } catch (final Throwable t) {
+    //            result.completeExceptionally(t);
+    //          }
+    //        });
+    //    return result;
+    //  }et next_fork_version = current_fork_version to signal this
     final Bytes4 nextVersion =
         nextForkInfo
             .map(Fork::getCurrent_version)

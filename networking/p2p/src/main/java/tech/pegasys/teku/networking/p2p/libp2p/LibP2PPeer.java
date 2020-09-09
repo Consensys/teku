@@ -93,12 +93,11 @@ public class LibP2PPeer implements Peer {
     disconnectLocallyInitiated = true;
     return disconnectRequestHandler
         .requestDisconnect(reason)
-        .thenRun(
-            () -> // Request sent now close our side
-            disconnectImmediately(Optional.of(reason), true))
-        .exceptionally(
-            error -> {
-              LOG.debug("Failed to disconnect from " + getId() + " cleanly.", error);
+        .handle(
+            (__, error) -> {
+              if (error != null) {
+                LOG.debug("Failed to disconnect from " + getId() + " cleanly.", error);
+              }
               disconnectImmediately(Optional.of(reason), true);
               return null;
             });
