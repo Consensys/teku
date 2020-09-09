@@ -14,13 +14,10 @@
 package tech.pegasys.teku.networking.p2p;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
@@ -31,8 +28,6 @@ import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -47,7 +42,6 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
@@ -97,46 +91,6 @@ class DiscoveryNetworkTest {
 
     connectionManagerStart.complete(null);
     assertThat(started).isCompleted();
-  }
-
-  @Test
-  public void shouldStopConnectionManagerBeforeNetworkAndDiscovery()
-      throws InterruptedException, ExecutionException, TimeoutException {
-    final SafeFuture<Void> connectionStop = new SafeFuture<>();
-    doReturn(new SafeFuture<Void>()).when(discoveryService).stop();
-    doReturn(connectionStop).when(connectionManager).stop();
-
-    Waiter.waitFor(discoveryNetwork.stop());
-
-    verify(connectionManager).stop();
-    verify(discoveryService).updateCustomENRField(any(), any());
-    verify(discoveryService).getEnr();
-    verifyNoMoreInteractions(discoveryService);
-    verifyNoInteractions(p2pNetwork);
-
-    connectionStop.complete(null);
-    verify(p2pNetwork).stop();
-    verify(discoveryService).stop();
-  }
-
-  @Test
-  public void shouldStopNetworkAndDiscoveryWhenConnectionManagerStopFails()
-      throws InterruptedException, ExecutionException, TimeoutException {
-    final SafeFuture<Void> connectionStop = new SafeFuture<>();
-    doReturn(new SafeFuture<Void>()).when(discoveryService).stop();
-    doReturn(connectionStop).when(connectionManager).stop();
-
-    Waiter.waitFor(discoveryNetwork.stop());
-
-    verify(connectionManager).stop();
-    verify(discoveryService).updateCustomENRField(any(), any());
-    verify(discoveryService).getEnr();
-    verifyNoMoreInteractions(discoveryService);
-    verifyNoInteractions(p2pNetwork);
-
-    connectionStop.completeExceptionally(new RuntimeException("Nope"));
-    verify(p2pNetwork).stop();
-    verify(discoveryService).stop();
   }
 
   @Test

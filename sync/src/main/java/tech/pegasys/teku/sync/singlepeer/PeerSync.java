@@ -262,8 +262,7 @@ public class PeerSync {
   }
 
   private void disconnectFromPeer(Eth2Peer peer) {
-    peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT)
-        .finish(err -> LOG.debug("Error while disconnecting from peer {}", peer, err));
+    peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT).reportExceptions();
   }
 
   public UInt64 getStartingSlot() {
