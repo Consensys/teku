@@ -14,11 +14,6 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.time.Duration;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -45,6 +40,12 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.time.TimeProvider;
+
+import java.time.Duration;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();
@@ -214,8 +215,8 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
               if (!peer.hasStatus()) {
                 LOG.trace(
                     "Disconnecting peer {} because initial status was not received", peer.getId());
-                peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT)
-                    .finish(err -> LOG.debug("Unable to disconnect from peer {}", peer, err));
+                peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT).reportExceptions();
+
               }
             },
             Constants.RESP_TIMEOUT,
@@ -234,8 +235,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   void sendPeriodicPing(Eth2Peer peer) {
     if (peer.getOutstandingPings() >= eth2RpcOutstandingPingThreshold) {
       LOG.debug("Disconnecting the peer {} due to PING timeout.", peer.getId());
-      peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE)
-          .finish(err -> LOG.debug("Unable to disconnect from peer {}", peer, err));
+      peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE).reportExceptions();
     } else {
       peer.sendPing()
           .finish(
@@ -294,14 +294,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   public SafeFuture<?> sendGoodbyeToPeers() {
     return SafeFuture.allOf(
         connectedPeerMap.values().stream()
-            .map(
-                peer ->
-                    peer.disconnectCleanly(DisconnectReason.SHUTTING_DOWN)
-                        .exceptionally(
-                            err -> {
-                              LOG.debug("Error while sending goodbye to peers", err);
-                              return null;
-                            }))
+            .map(peer -> peer.disconnectCleanly(DisconnectReason.SHUTTING_DOWN))
             .toArray(SafeFuture[]::new));
   }
 }

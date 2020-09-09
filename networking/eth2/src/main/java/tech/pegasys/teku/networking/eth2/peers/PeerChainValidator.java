@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
-import java.util.Objects;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -30,6 +28,9 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.config.Constants;
+
+import java.util.Objects;
+import java.util.Optional;
 
 public class PeerChainValidator {
   private static final Logger LOG = LogManager.getLogger();
@@ -71,8 +72,7 @@ public class PeerChainValidator {
                 // We are not on the same chain
                 LOG.trace("Disconnecting peer on different chain: {}", peer.getId());
                 chainInvalidCounter.inc();
-                peer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK)
-                    .finish(err -> LOG.debug("Unable to disconnect from peer {}", peer, err));
+                peer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK).reportExceptions();
               } else {
                 LOG.trace("Validated peer's chain: {}", peer.getId());
                 chainValidCounter.inc();
@@ -83,10 +83,7 @@ public class PeerChainValidator {
             err -> {
               LOG.debug("Unable to validate peer's chain, disconnecting {}", peer.getId(), err);
               validationErrorCounter.inc();
-              peer.disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK)
-                  .finish(
-                      disconnectErr ->
-                          LOG.debug("Unable to disconnect from peer {}", peer, disconnectErr));
+              peer.disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK).reportExceptions();
               return false;
             });
   }

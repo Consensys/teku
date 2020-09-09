@@ -250,7 +250,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     attesterSlashingGossipManager.shutdown();
     attestationSubnetService.unsubscribe(discoveryNetworkAttestationSubnetsSubscription);
     return peerManager.sendGoodbyeToPeers().exceptionally(error -> {
-      LOG.debug("Failed to send goodby to peers on shutdown", error);
+      LOG.debug("Failed to send goodbye to peers on shutdown", error);
       return null;
     }).thenCompose(__ -> super.stop());
   }

@@ -13,14 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
-import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
-
 import com.google.common.base.MoreObjects;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -51,6 +44,14 @@ import tech.pegasys.teku.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
+import static tech.pegasys.teku.util.config.Constants.MAX_REQUEST_BLOCKS;
 
 public class Eth2Peer extends DelegatingPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -97,8 +98,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
             },
             error -> {
               LOG.error("Failed to validate updated peer status", error);
-              disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK)
-                  .finish(err -> LOG.debug("Error while disconnecting from peer {}", this, err));
+              disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK).reportExceptions();
             });
   }
 
@@ -210,8 +210,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
       LOG.debug("Peer {} disconnected due to block rate limits", getId());
       callback.completeWithErrorResponse(
           new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
-      disconnectCleanly(DisconnectReason.RATE_LIMITING)
-          .finish(err -> LOG.debug("Unable to disconnect from peer {}", this, err));
+      disconnectCleanly(DisconnectReason.RATE_LIMITING).reportExceptions();
       return false;
     }
     return true;
@@ -220,8 +219,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   public boolean wantToMakeRequest() {
     if (requestTracker.wantToRequestObjects(1L) == 0L) {
       LOG.debug("Peer {} disconnected due to request rate limits", getId());
-      disconnectCleanly(DisconnectReason.RATE_LIMITING)
-          .finish(err -> LOG.debug("Unable to disconnect from peer {}", this, err));
+      disconnectCleanly(DisconnectReason.RATE_LIMITING).reportExceptions();
       return false;
     }
     return true;
