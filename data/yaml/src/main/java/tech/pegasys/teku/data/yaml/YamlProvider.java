@@ -31,6 +31,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -73,6 +74,17 @@ public class YamlProvider {
     try (final ByteArrayOutputStream out = new ByteArrayOutputStream()) {
       objectMapper.writerWithDefaultPrettyPrinter().writeValue(out, object);
       return Bytes.wrap(out.toByteArray());
+    } catch (JsonGenerationException | JsonMappingException e) {
+      throw new IllegalStateException("Failed to serialize object", e);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  public <T> String writeString(T object) {
+    try (final StringWriter out = new StringWriter()) {
+      objectMapper.writerWithDefaultPrettyPrinter().writeValue(out, object);
+      return out.toString();
     } catch (JsonGenerationException | JsonMappingException e) {
       throw new IllegalStateException("Failed to serialize object", e);
     } catch (IOException e) {
