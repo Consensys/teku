@@ -31,7 +31,7 @@ we recommend most users use the latest `master` branch of Teku.
 - Operations (e.g. attestations, slashings etc) included in blocks are now readded to the pending pool if a reorg causes them to no longer be in the canonical chain
 - Removed support for generating unencrypted keystores
 - Discv5 now caches the hash of the local node to reduce load caused by significant numbers of incoming discovery messages
-- Early access support for running the validator node independently of the beacon node (see #2683 for details). Please note this is not yet a recommended configuration and the CLI options and APIs used are subject to change.
+- Early access support for running the validator node independently of the beacon node (see [#2683](https://github.com/PegaSysEng/teku/pull/2683) for details). Please note this is not yet a recommended configuration and the CLI options and APIs used are subject to change.
 
 ### Bug Fixes
 - Gossip messages with null `from`, `signature` or `seqNo` fields are now rebroadcast with the fields still null instead of replaced by default values
