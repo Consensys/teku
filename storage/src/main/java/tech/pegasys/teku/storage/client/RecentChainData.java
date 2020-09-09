@@ -247,9 +247,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         final UInt64 commonAncestorSlot = previousChainHead.findCommonAncestor(newChainHead);
 
         LOG.info(
-            "Chain reorg from {} to {}",
+            "Chain reorg from {} to {}. Common ancestor at slot {}",
             formatBlock(previousChainHead.getForkChoiceSlot(), previousChainHead.getRoot()),
-            formatBlock(newChainHead.getForkChoiceSlot(), newChainHead.getRoot()));
+            formatBlock(newChainHead.getForkChoiceSlot(), newChainHead.getRoot()),
+            commonAncestorSlot);
 
         reorgCounter.inc();
         reorgEventChannel.reorgOccurred(
