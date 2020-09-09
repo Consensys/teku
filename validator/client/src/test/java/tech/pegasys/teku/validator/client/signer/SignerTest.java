@@ -52,12 +52,15 @@ class SignerTest {
     final BLSSignature signature = dataStructureUtil.randomSignature();
     final Bytes expectedSigningRoot =
         Bytes.fromHexString("0xf133dca1e6b9f68ed8388345e1a3f833fcaed6567c44788cae15815c1b2f95d7");
-    when(signerService.signRandaoReveal(expectedSigningRoot))
+    final Map<String, Object> expectedAdditionalProperties =
+        Map.of("genesisValidatorRoot", fork.getGenesisValidatorsRoot(), "type", "randao_reveal");
+    when(signerService.signRandaoReveal(eq(expectedSigningRoot), anyMap()))
         .thenReturn(SafeFuture.completedFuture(signature));
     final SafeFuture<BLSSignature> reveal = signer.createRandaoReveal(UInt64.valueOf(7), fork);
 
-    verify(signerService).signRandaoReveal(expectedSigningRoot);
+    verify(signerService).signRandaoReveal(eq(expectedSigningRoot), mapArgumentCaptor.capture());
     assertThat(reveal).isCompletedWithValue(signature);
+    assertThat(mapArgumentCaptor.getValue()).containsAllEntriesOf(expectedAdditionalProperties);
   }
 
   @Test

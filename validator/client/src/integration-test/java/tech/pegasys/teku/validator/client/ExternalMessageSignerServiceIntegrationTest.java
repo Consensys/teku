@@ -164,12 +164,15 @@ public class ExternalMessageSignerServiceIntegrationTest {
     client.when(request()).respond(response().withBody(expectedSignature.toString()));
 
     final BLSSignature signature =
-        externalMessageSignerService.signRandaoReveal(SIGNING_ROOT).join();
+        externalMessageSignerService
+            .signRandaoReveal(SIGNING_ROOT, Map.of("type", "randao_reveal"))
+            .join();
     assertThat(signature).isEqualTo(expectedSignature);
 
     final String publicKey = keyPair.getPublicKey().toString();
     final SigningRequestBody signingRequestBody = new SigningRequestBody();
     signingRequestBody.setSigningRoot(SIGNING_ROOT);
+    signingRequestBody.setAdditionalProperty("type", "randao_reveal");
 
     verifySignRequest(publicKey, signingRequestBody);
   }
@@ -179,12 +182,15 @@ public class ExternalMessageSignerServiceIntegrationTest {
     client.when(request()).respond(response().withBody(expectedSignature.toString()));
 
     final BLSSignature signature =
-        externalMessageSignerService.signAggregationSlot(SIGNING_ROOT).join();
+        externalMessageSignerService
+            .signAggregationSlot(SIGNING_ROOT, Map.of("type", "aggregation_slot"))
+            .join();
     assertThat(signature).isEqualTo(expectedSignature);
 
     final String publicKey = keyPair.getPublicKey().toString();
     final SigningRequestBody signingRequestBody = new SigningRequestBody();
     signingRequestBody.setSigningRoot(SIGNING_ROOT);
+    signingRequestBody.setAdditionalProperty("type", "aggregation_slot");
     verifySignRequest(publicKey, signingRequestBody);
   }
 

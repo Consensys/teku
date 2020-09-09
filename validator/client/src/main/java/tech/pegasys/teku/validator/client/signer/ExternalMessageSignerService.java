@@ -59,22 +59,26 @@ public class ExternalMessageSignerService implements MessageSignerService {
   }
 
   @Override
-  public SafeFuture<BLSSignature> signAggregationSlot(final Bytes signingRoot) {
-    return sign(signingRoot, Collections.emptyMap());
+  public SafeFuture<BLSSignature> signAggregationSlot(
+      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
+    return sign(signingRoot, additionalProperties);
   }
 
   @Override
-  public SafeFuture<BLSSignature> signAggregateAndProof(final Bytes signingRoot) {
-    return sign(signingRoot, Collections.emptyMap());
+  public SafeFuture<BLSSignature> signAggregateAndProof(
+      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
+    return sign(signingRoot, additionalProperties);
   }
 
   @Override
-  public SafeFuture<BLSSignature> signRandaoReveal(final Bytes signingRoot) {
-    return sign(signingRoot, Collections.emptyMap());
+  public SafeFuture<BLSSignature> signRandaoReveal(
+      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
+    return sign(signingRoot, additionalProperties);
   }
 
   @Override
-  public SafeFuture<BLSSignature> signVoluntaryExit(final Bytes signingRoot) {
+  public SafeFuture<BLSSignature> signVoluntaryExit(
+      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
     return sign(signingRoot, Collections.emptyMap());
   }
 

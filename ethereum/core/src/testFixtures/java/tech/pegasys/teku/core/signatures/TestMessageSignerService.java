@@ -41,22 +41,26 @@ public class TestMessageSignerService implements MessageSignerService {
   }
 
   @Override
-  public SafeFuture<BLSSignature> signAggregationSlot(final Bytes signingRoot) {
+  public SafeFuture<BLSSignature> signAggregationSlot(
+      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
     return sign(signingRoot);
   }
 
   @Override
-  public SafeFuture<BLSSignature> signAggregateAndProof(final Bytes signingRoot) {
+  public SafeFuture<BLSSignature> signAggregateAndProof(
+      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
     return sign(signingRoot);
   }
 
   @Override
-  public SafeFuture<BLSSignature> signRandaoReveal(final Bytes signingRoot) {
+  public SafeFuture<BLSSignature> signRandaoReveal(
+      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
     return sign(signingRoot);
   }
 
   @Override
-  public SafeFuture<BLSSignature> signVoluntaryExit(final Bytes signingRoot) {
+  public SafeFuture<BLSSignature> signVoluntaryExit(
+      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
     return sign(signingRoot);
   }
 

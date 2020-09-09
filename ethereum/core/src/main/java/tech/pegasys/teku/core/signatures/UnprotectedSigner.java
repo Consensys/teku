@@ -48,7 +48,10 @@ public class UnprotectedSigner implements Signer {
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
     Bytes signing_root = compute_signing_root(epoch.longValue(), domain);
-    return signerService.signRandaoReveal(signing_root);
+    return signerService.signRandaoReveal(
+        signing_root,
+        Map.of(
+            "type", "randao_reveal", "genesisValidatorRoot", forkInfo.getGenesisValidatorsRoot()));
   }
 
   @Override
@@ -96,7 +99,15 @@ public class UnprotectedSigner implements Signer {
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
     final Bytes signingRoot = compute_signing_root(slot.longValue(), domain);
-    return signerService.signAggregationSlot(signingRoot);
+    return signerService.signAggregationSlot(
+        signingRoot,
+        Map.of(
+            "type",
+            "aggregation_slot",
+            "genesisValidatorRoot",
+            forkInfo.getGenesisValidatorsRoot(),
+            "slot",
+            slot));
   }
 
   @Override
@@ -109,7 +120,7 @@ public class UnprotectedSigner implements Signer {
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
     final Bytes signingRoot = compute_signing_root(aggregateAndProof, domain);
-    return signerService.signAggregateAndProof(signingRoot);
+    return signerService.signAggregateAndProof(signingRoot, Map.of("type", "aggregate_and_proof"));
   }
 
   @Override
@@ -122,7 +133,7 @@ public class UnprotectedSigner implements Signer {
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
     final Bytes signingRoot = compute_signing_root(voluntaryExit, domain);
-    return signerService.signVoluntaryExit(signingRoot);
+    return signerService.signVoluntaryExit(signingRoot, Map.of("type", "voluntary_exit"));
   }
 
   @Override

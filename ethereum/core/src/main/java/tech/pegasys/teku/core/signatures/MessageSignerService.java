@@ -25,13 +25,17 @@ public interface MessageSignerService {
   SafeFuture<BLSSignature> signAttestation(
       Bytes signingRoot, Map<String, Object> additionalProperties);
 
-  SafeFuture<BLSSignature> signAggregationSlot(Bytes signingRoot);
+  SafeFuture<BLSSignature> signAggregationSlot(
+      Bytes signingRoot, Map<String, Object> additionalProperties);
 
-  SafeFuture<BLSSignature> signAggregateAndProof(Bytes signingRoot);
+  SafeFuture<BLSSignature> signAggregateAndProof(
+      Bytes signingRoot, Map<String, Object> additionalProperties);
 
-  SafeFuture<BLSSignature> signRandaoReveal(Bytes signingRoot);
+  SafeFuture<BLSSignature> signRandaoReveal(
+      Bytes signingRoot, Map<String, Object> additionalProperties);
 
-  SafeFuture<BLSSignature> signVoluntaryExit(Bytes signingRoot);
+  SafeFuture<BLSSignature> signVoluntaryExit(
+      Bytes signingRoot, Map<String, Object> additionalProperties);
 
   boolean isLocal();
 }
