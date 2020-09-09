@@ -208,12 +208,16 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    */
   public void updateHead(Bytes32 root, UInt64 currentSlot) {
     final Optional<ChainHead> originalChainHead = chainHead;
+
+    // Never let the fork choice slot go backwards.
+    final UInt64 newForkChoiceSlot =
+        currentSlot.max(originalChainHead.map(ChainHead::getForkChoiceSlot).orElse(UInt64.ZERO));
     store
         .retrieveBlockAndState(root)
         .thenApply(
             headBlockAndState ->
                 headBlockAndState
-                    .map(head -> ChainHead.create(head, currentSlot))
+                    .map(head -> ChainHead.create(head, newForkChoiceSlot))
                     .orElseThrow(
                         () ->
                             new IllegalStateException(
@@ -243,9 +247,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         final UInt64 commonAncestorSlot = previousChainHead.findCommonAncestor(newChainHead);
 
         LOG.info(
-            "Chain reorg from {} to {}",
+            "Chain reorg from {} to {}. Common ancestor at slot {}",
             formatBlock(previousChainHead.getForkChoiceSlot(), previousChainHead.getRoot()),
-            formatBlock(newChainHead.getForkChoiceSlot(), newChainHead.getRoot()));
+            formatBlock(newChainHead.getForkChoiceSlot(), newChainHead.getRoot()),
+            commonAncestorSlot);
 
         reorgCounter.inc();
         reorgEventChannel.reorgOccurred(
