@@ -80,6 +80,10 @@ public class YamlProvider {
     }
   }
 
+  public ObjectMapper getObjectMapper() {
+    return objectMapper;
+  }
+
   public static class UInt64Deserializer extends JsonDeserializer<UInt64> {
 
     @Override
