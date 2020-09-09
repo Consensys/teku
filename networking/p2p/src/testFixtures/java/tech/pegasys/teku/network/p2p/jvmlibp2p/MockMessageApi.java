@@ -46,8 +46,8 @@ public class MockMessageApi implements MessageApi {
   }
 
   @Override
-  public long getSeqId() {
-    return 1;
+  public Long getSeqId() {
+    return 1L;
   }
 
   @Override
