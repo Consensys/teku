@@ -50,7 +50,7 @@ public class PerformanceTracker implements SlotEventsChannel {
   @Override
   public void onSlot(UInt64 slot) {
     UInt64 currentEpoch = compute_epoch_at_slot(slot);
-    if (!compute_start_slot_at_epoch().equals(slot)) {
+    if (!compute_start_slot_at_epoch(currentEpoch).equals(slot)) {
       return;
     }
 
