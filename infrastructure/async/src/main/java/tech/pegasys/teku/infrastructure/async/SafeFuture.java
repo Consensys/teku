@@ -399,16 +399,16 @@ public class SafeFuture<T> extends CompletableFuture<T> {
    */
   @SuppressWarnings({"FutureReturnValueIgnored"})
   public <U> SafeFuture<U> handleComposed(
-          final BiFunction<? super T, Throwable, CompletionStage<U>> fn) {
+      final BiFunction<? super T, Throwable, CompletionStage<U>> fn) {
     final SafeFuture<U> result = new SafeFuture<>();
     whenComplete(
-            (value, error) -> {
-              try {
-                propagateResult(fn.apply(value, error), result);
-              } catch (final Throwable t) {
-                result.completeExceptionally(t);
-              }
-            });
+        (value, error) -> {
+          try {
+            propagateResult(fn.apply(value, error), result);
+          } catch (final Throwable t) {
+            result.completeExceptionally(t);
+          }
+        });
     return result;
   }
 
