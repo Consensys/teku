@@ -131,12 +131,8 @@ public class ExternalSigner implements Signer {
 
   private String createSigningRequestBody(
       final Bytes signingRoot, final Map<String, Object> metaData) {
-    final SigningRequestBody signingRequest = new SigningRequestBody();
-    signingRequest.setSigningRoot(signingRoot);
-    metaData.forEach(signingRequest::setMetadata);
-
     try {
-      return jsonProvider.objectToJSON(signingRequest);
+      return jsonProvider.objectToJSON(new SigningRequestBody(signingRoot, metaData));
     } catch (final JsonProcessingException e) {
       throw new ExternalSignerException("Unable to create external signing request", e);
     }

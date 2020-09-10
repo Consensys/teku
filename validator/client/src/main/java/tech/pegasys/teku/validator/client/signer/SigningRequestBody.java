@@ -17,7 +17,6 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonSetter;
-import com.google.common.annotations.VisibleForTesting;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
@@ -26,9 +25,11 @@ public class SigningRequestBody {
   private Bytes signingRoot;
   private final Map<String, Object> metadata = new LinkedHashMap<>();
 
-  public SigningRequestBody() {}
+  @SuppressWarnings("unused")
+  public SigningRequestBody() {
+    // keeps jackson happy
+  }
 
-  @VisibleForTesting
   public SigningRequestBody(final Bytes signingRoot, final Map<String, Object> metadata) {
     this.signingRoot = signingRoot;
     this.metadata.putAll(metadata);
