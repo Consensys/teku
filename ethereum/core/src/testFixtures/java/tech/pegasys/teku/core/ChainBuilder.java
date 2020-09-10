@@ -35,8 +35,8 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
-import tech.pegasys.teku.core.signatures.MessageSignerService;
-import tech.pegasys.teku.core.signatures.TestMessageSignerService;
+import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.core.signatures.TestSigner;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
@@ -351,7 +351,7 @@ public class ChainBuilder {
     final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hash_tree_root();
 
     final int proposerIndex = blockProposalTestUtil.getProposerIndexForSlot(preState, slot);
-    final MessageSignerService signer = getSigner(proposerIndex);
+    final Signer signer = getSigner(proposerIndex);
     final SignedBlockAndState nextBlockAndState;
     try {
       nextBlockAndState =
@@ -379,8 +379,8 @@ public class ChainBuilder {
     return Optional.ofNullable(result).map(SignedBlockAndState::getBlock).orElse(null);
   }
 
-  private MessageSignerService getSigner(final int proposerIndex) {
-    return new TestMessageSignerService(validatorKeys.get(proposerIndex));
+  private Signer getSigner(final int proposerIndex) {
+    return new TestSigner(validatorKeys.get(proposerIndex));
   }
 
   public static final class BlockOptions {

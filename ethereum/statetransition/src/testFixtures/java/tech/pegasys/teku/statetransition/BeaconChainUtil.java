@@ -25,8 +25,8 @@ import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.BlockProposalTestUtil;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.core.signatures.MessageSignerService;
-import tech.pegasys.teku.core.signatures.TestMessageSignerService;
+import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.core.signatures.TestSigner;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
@@ -254,7 +254,7 @@ public class BeaconChainUtil {
     final int proposerIndex =
         withValidProposer ? correctProposerIndex : getWrongProposerIndex(correctProposerIndex);
 
-    final MessageSignerService signer = getSigner(proposerIndex);
+    final Signer signer = getSigner(proposerIndex);
     return blockCreator.createBlock(
         signer, slot, preState, bestBlockRoot, attestations, deposits, exits, eth1Data);
   }
@@ -296,7 +296,7 @@ public class BeaconChainUtil {
     return actualProposerIndex == 0 ? 1 : actualProposerIndex - 1;
   }
 
-  public MessageSignerService getSigner(final int proposerIndex) {
-    return new TestMessageSignerService(validatorKeys.get(proposerIndex));
+  public Signer getSigner(final int proposerIndex) {
+    return new TestSigner(validatorKeys.get(proposerIndex));
   }
 }

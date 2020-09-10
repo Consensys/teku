@@ -13,6 +13,14 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
+import static java.util.Collections.emptyMap;
+import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForRandaoReveal;
+import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignAggregateAndProof;
+import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignAggregationSlot;
+import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignAttestationData;
+import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignBlock;
+import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignVoluntaryExit;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.net.URL;
@@ -22,24 +30,29 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.signatures.MessageSignerService;
+import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
+import tech.pegasys.teku.datastructures.operations.AttestationData;
+import tech.pegasys.teku.datastructures.operations.VoluntaryExit;
+import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
-public class ExternalMessageSignerService implements MessageSignerService {
-  private static final String EXTERNAL_SIGNER_ENDPOINT = "/api/v1/eth2/sign/";
+public class ExternalSigner implements Signer {
+  public static final String EXTERNAL_SIGNER_ENDPOINT = "/api/v1/eth2/sign";
   private final JsonProvider jsonProvider = new JsonProvider();
   private final URL signingServiceUrl;
   private final BLSPublicKey blsPublicKey;
   private final Duration timeout;
   private final HttpClient httpClient = HttpClient.newHttpClient();
 
-  public ExternalMessageSignerService(
+  public ExternalSigner(
       final URL signingServiceUrl, final BLSPublicKey blsPublicKey, final Duration timeout) {
     this.signingServiceUrl = signingServiceUrl;
     this.blsPublicKey = blsPublicKey;
@@ -47,39 +60,47 @@ public class ExternalMessageSignerService implements MessageSignerService {
   }
 
   @Override
-  public SafeFuture<BLSSignature> signBlock(
-      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
-    return sign(signingRoot, additionalProperties);
+  public SafeFuture<BLSSignature> createRandaoReveal(final UInt64 epoch, final ForkInfo forkInfo) {
+    return sign(signingRootForRandaoReveal(epoch, forkInfo), emptyMap());
   }
 
   @Override
-  public SafeFuture<BLSSignature> signAttestation(
-      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
-    return sign(signingRoot, additionalProperties);
+  public SafeFuture<BLSSignature> signBlock(final BeaconBlock block, final ForkInfo forkInfo) {
+    return sign(
+        signingRootForSignBlock(block, forkInfo),
+        Map.of(
+            "type", "block",
+            "genesisValidatorRoot", forkInfo.getGenesisValidatorsRoot(),
+            "slot", block.getSlot()));
   }
 
   @Override
-  public SafeFuture<BLSSignature> signAggregationSlot(
-      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
-    return sign(signingRoot, additionalProperties);
+  public SafeFuture<BLSSignature> signAttestationData(
+      final AttestationData attestationData, final ForkInfo forkInfo) {
+    return sign(
+        signingRootForSignAttestationData(attestationData, forkInfo),
+        Map.of(
+            "type", "attestation",
+            "genesisValidatorRoot", forkInfo.getGenesisValidatorsRoot(),
+            "sourceEpoch", attestationData.getSource().getEpoch(),
+            "targetEpoch", attestationData.getTarget().getEpoch()));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signAggregationSlot(final UInt64 slot, final ForkInfo forkInfo) {
+    return sign(signingRootForSignAggregationSlot(slot, forkInfo), emptyMap());
   }
 
   @Override
   public SafeFuture<BLSSignature> signAggregateAndProof(
-      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
-    return sign(signingRoot, additionalProperties);
-  }
-
-  @Override
-  public SafeFuture<BLSSignature> signRandaoReveal(
-      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
-    return sign(signingRoot, additionalProperties);
+      final AggregateAndProof aggregateAndProof, final ForkInfo forkInfo) {
+    return sign(signingRootForSignAggregateAndProof(aggregateAndProof, forkInfo), emptyMap());
   }
 
   @Override
   public SafeFuture<BLSSignature> signVoluntaryExit(
-      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
-    return sign(signingRoot, Collections.emptyMap());
+      final VoluntaryExit voluntaryExit, final ForkInfo forkInfo) {
+    return sign(signingRootForSignVoluntaryExit(voluntaryExit, forkInfo), emptyMap());
   }
 
   @Override
@@ -93,7 +114,8 @@ public class ExternalMessageSignerService implements MessageSignerService {
     return SafeFuture.ofComposed(
         () -> {
           final String requestBody = createSigningRequestBody(signingRoot, additionalProperties);
-          final URI uri = signingServiceUrl.toURI().resolve(EXTERNAL_SIGNER_ENDPOINT + publicKey);
+          final URI uri =
+              signingServiceUrl.toURI().resolve(EXTERNAL_SIGNER_ENDPOINT + "/" + publicKey);
           final HttpRequest request =
               HttpRequest.newBuilder()
                   .uri(uri)
@@ -108,10 +130,10 @@ public class ExternalMessageSignerService implements MessageSignerService {
   }
 
   private String createSigningRequestBody(
-      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
+      final Bytes signingRoot, final Map<String, Object> metaData) {
     final SigningRequestBody signingRequest = new SigningRequestBody();
     signingRequest.setSigningRoot(signingRoot);
-    additionalProperties.forEach(signingRequest::setAdditionalProperty);
+    metaData.forEach(signingRequest::setMetadata);
 
     try {
       return jsonProvider.objectToJSON(signingRequest);

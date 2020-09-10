@@ -34,7 +34,6 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.core.signatures.Signer;
-import tech.pegasys.teku.core.signatures.UnprotectedSigner;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -222,9 +221,7 @@ public class BlockImporterTest {
             block.getMessage().hash_tree_root(),
             block.getMessage().getState_root(),
             block.getMessage().getBody());
-    final Signer signer =
-        new UnprotectedSigner(
-            localChain.getSigner(block.getMessage().getProposer_index().intValue()));
+    final Signer signer = localChain.getSigner(block.getMessage().getProposer_index().intValue());
     final SignedBeaconBlock invalidAncestryBlock =
         new SignedBeaconBlock(
             invalidAncestryUnsignedBlock,

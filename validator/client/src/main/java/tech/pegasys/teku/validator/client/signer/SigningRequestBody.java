@@ -17,24 +17,31 @@ import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonSetter;
+import com.google.common.annotations.VisibleForTesting;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 
 public class SigningRequestBody {
   private Bytes signingRoot;
-  private final Map<String, Object> additionalProperties = new LinkedHashMap<>();
+  private final Map<String, Object> metadata = new LinkedHashMap<>();
 
   public SigningRequestBody() {}
 
+  @VisibleForTesting
+  public SigningRequestBody(final Bytes signingRoot, final Map<String, Object> metadata) {
+    this.signingRoot = signingRoot;
+    this.metadata.putAll(metadata);
+  }
+
   @JsonAnySetter
-  public void setAdditionalProperty(final String key, final Object value) {
-    additionalProperties.put(key, value);
+  public void setMetadata(final String key, final Object value) {
+    metadata.put(key, value);
   }
 
   @JsonAnyGetter
-  public Map<String, Object> getAdditionalProperties() {
-    return Map.copyOf(additionalProperties);
+  public Map<String, Object> getMetadata() {
+    return Map.copyOf(metadata);
   }
 
   @JsonSetter
