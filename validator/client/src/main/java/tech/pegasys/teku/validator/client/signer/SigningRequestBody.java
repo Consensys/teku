@@ -15,17 +15,17 @@ package tech.pegasys.teku.validator.client.signer;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 
 public class SigningRequestBody {
+  @JsonProperty("signingRoot")
   private Bytes signingRoot;
-  private final Map<String, Object> metadata = new LinkedHashMap<>();
 
-  @SuppressWarnings("unused")
+  @JsonAnySetter private final Map<String, Object> metadata = new LinkedHashMap<>();
+
   public SigningRequestBody() {
     // keeps jackson happy
   }
@@ -35,22 +35,15 @@ public class SigningRequestBody {
     this.metadata.putAll(metadata);
   }
 
-  @JsonAnySetter
-  public void setMetadata(final String key, final Object value) {
-    metadata.put(key, value);
-  }
-
   @JsonAnyGetter
   public Map<String, Object> getMetadata() {
-    return Map.copyOf(metadata);
+    return metadata;
   }
 
-  @JsonSetter
   public void setSigningRoot(final Bytes signingRoot) {
     this.signingRoot = signingRoot;
   }
 
-  @JsonGetter
   public Bytes getSigningRoot() {
     return signingRoot;
   }
