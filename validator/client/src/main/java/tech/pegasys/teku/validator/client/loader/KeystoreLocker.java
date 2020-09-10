@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -23,9 +25,8 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
+
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
 
 public class KeystoreLocker {
 
@@ -47,7 +48,7 @@ public class KeystoreLocker {
 
   static boolean deleteIfStaleLockfileExists(Path keystoreFile) {
     Path keystoreLockfile = Path.of(keystoreFile.toString() + ".lock");
-    if (keystoreFile.toFile().exists()) {
+    if (!keystoreLockfile.toFile().exists()) {
       return false;
     }
 
