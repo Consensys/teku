@@ -35,8 +35,8 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
-import tech.pegasys.teku.core.signatures.TestSigner;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
@@ -380,7 +380,7 @@ public class ChainBuilder {
   }
 
   private Signer getSigner(final int proposerIndex) {
-    return new TestSigner(validatorKeys.get(proposerIndex));
+    return new LocalSigner(validatorKeys.get(proposerIndex), null);
   }
 
   public static final class BlockOptions {

@@ -25,8 +25,8 @@ import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.BlockProposalTestUtil;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
-import tech.pegasys.teku.core.signatures.TestSigner;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
@@ -297,6 +297,6 @@ public class BeaconChainUtil {
   }
 
   public Signer getSigner(final int proposerIndex) {
-    return new TestSigner(validatorKeys.get(proposerIndex));
+    return new LocalSigner(validatorKeys.get(proposerIndex), null);
   }
 }

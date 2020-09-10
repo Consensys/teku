@@ -39,7 +39,7 @@ class LocalSignerTest {
   private final LocalSigner signer = new LocalSigner(KEYPAIR, asyncRunner);
 
   @Test
-  public void shouldSignBlock1() {
+  public void shouldSignBlock() {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(10);
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(

@@ -36,6 +36,13 @@ public class LocalSigner implements Signer {
   private final BLSKeyPair keypair;
   private final AsyncRunner asyncRunner;
 
+  /**
+   * Construct Local Signer with given keyPair and Async Runner
+   *
+   * @param keypair An instance of BLSKeyPair
+   * @param asyncRunner An instance of AsyncRunner. In case of null, no AsyncRunner will be used to
+   *     sign.
+   */
   public LocalSigner(final BLSKeyPair keypair, final AsyncRunner asyncRunner) {
     this.keypair = keypair;
     this.asyncRunner = asyncRunner;
@@ -80,7 +87,11 @@ public class LocalSigner implements Signer {
   }
 
   private SafeFuture<BLSSignature> sign(final Bytes signing_root) {
-    return asyncRunner.runAsync(
-        () -> SafeFuture.completedFuture(BLS.sign(keypair.getSecretKey(), signing_root)));
+    if (asyncRunner != null) {
+      return asyncRunner.runAsync(
+          () -> SafeFuture.completedFuture(BLS.sign(keypair.getSecretKey(), signing_root)));
+    }
+
+    return SafeFuture.completedFuture(BLS.sign(keypair.getSecretKey(), signing_root));
   }
 }
