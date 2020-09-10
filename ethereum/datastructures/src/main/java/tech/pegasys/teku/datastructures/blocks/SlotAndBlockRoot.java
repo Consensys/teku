@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.datastructures.blocks;
 
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -45,5 +46,13 @@ public class SlotAndBlockRoot {
   @Override
   public int hashCode() {
     return Objects.hash(slot, blockRoot);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("slot", slot)
+        .add("blockRoot", blockRoot)
+        .toString();
   }
 }

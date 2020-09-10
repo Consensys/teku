@@ -33,7 +33,7 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkBuilder;
-import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.InitialStatusSubscriber;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.PeerStatusSubscriber;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -216,9 +216,9 @@ public class Eth2PeerManagerTest {
   }
 
   private void setInitialPeerStatus(final Peer peer) {
-    final ArgumentCaptor<InitialStatusSubscriber> subscriberArgumentCaptor =
-        ArgumentCaptor.forClass(InitialStatusSubscriber.class);
+    final ArgumentCaptor<PeerStatusSubscriber> subscriberArgumentCaptor =
+        ArgumentCaptor.forClass(PeerStatusSubscriber.class);
     verify(getEth2Peer(peer)).subscribeInitialStatus(subscriberArgumentCaptor.capture());
-    subscriberArgumentCaptor.getValue().onInitialStatus(statusFactory.random());
+    subscriberArgumentCaptor.getValue().onPeerStatus(statusFactory.random());
   }
 }

@@ -41,6 +41,10 @@ public class StubPeer implements Peer {
     this(new MockNodeId());
   }
 
+  public StubPeer(final int id) {
+    this(new MockNodeId(id));
+  }
+
   public StubPeer(final NodeId nodeId) {
     peerAddress = new PeerAddress(nodeId);
   }
