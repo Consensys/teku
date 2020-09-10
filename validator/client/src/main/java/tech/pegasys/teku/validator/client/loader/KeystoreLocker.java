@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -25,8 +23,9 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
-
-import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 public class KeystoreLocker {
 
