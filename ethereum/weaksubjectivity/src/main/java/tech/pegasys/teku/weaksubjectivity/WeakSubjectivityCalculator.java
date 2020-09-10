@@ -27,6 +27,8 @@ import tech.pegasys.teku.util.config.Constants;
  * from: https://notes.ethereum.org/@adiasg/weak-subjectvity-eth2
  */
 public class WeakSubjectivityCalculator {
+  public static float DEFAULT_SAFETY_DECAY = .1f;
+
   static final UInt64 WITHDRAWAL_DELAY =
       UInt64.valueOf(Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY);
 
@@ -38,6 +40,10 @@ public class WeakSubjectivityCalculator {
       final float safetyDecay, final ActiveValidatorCalculator activeValidatorCalculator) {
     this.safetyDecay = safetyDecay;
     this.activeValidatorCalculator = activeValidatorCalculator;
+  }
+
+  public static WeakSubjectivityCalculator create() {
+    return create(DEFAULT_SAFETY_DECAY);
   }
 
   public static WeakSubjectivityCalculator create(float safetyDecay) {
@@ -104,7 +110,7 @@ public class WeakSubjectivityCalculator {
     return calculateSafeEpochs(validatorCount).dividedBy(256).times(256).plus(WITHDRAWAL_DELAY);
   }
 
-  private int getActiveValidators(final BeaconState state) {
+  public int getActiveValidators(final BeaconState state) {
     return activeValidatorCalculator.getActiveValidators(state);
   }
 
