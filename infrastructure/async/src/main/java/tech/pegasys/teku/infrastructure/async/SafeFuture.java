@@ -384,6 +384,34 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return (SafeFuture<U>) super.handle(fn);
   }
 
+  /**
+   * Returns a new CompletionStage that, when this stage completes either normally or exceptionally,
+   * is executed with this stage's result and exception as arguments to the supplied function.
+   *
+   * <p>When this stage is complete, the given function is invoked with the result (or {@code null}
+   * if none) and the exception (or {@code null} if none) returning another `CompletionStage`. When
+   * that stage completes, the `SafeFuture` returned by this method is completed with the same value
+   * or exception.
+   *
+   * @param fn the function to use to compute another CompletionStage
+   * @param <U> the function's return type
+   * @return the new SafeFuture
+   */
+  @SuppressWarnings({"FutureReturnValueIgnored"})
+  public <U> SafeFuture<U> handleComposed(
+          final BiFunction<? super T, Throwable, CompletionStage<U>> fn) {
+    final SafeFuture<U> result = new SafeFuture<>();
+    whenComplete(
+            (value, error) -> {
+              try {
+                propagateResult(fn.apply(value, error), result);
+              } catch (final Throwable t) {
+                result.completeExceptionally(t);
+              }
+            });
+    return result;
+  }
+
   @Override
   public SafeFuture<T> whenComplete(final BiConsumer<? super T, ? super Throwable> action) {
     return (SafeFuture<T>) super.whenComplete(action);

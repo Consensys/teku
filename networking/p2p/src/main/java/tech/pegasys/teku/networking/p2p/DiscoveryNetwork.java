@@ -13,14 +13,8 @@
 
 package tech.pegasys.teku.networking.p2p;
 
-import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
-import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
-
-import java.util.Optional;
-import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -48,7 +42,18 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
+import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
+
 public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
+  private static final Logger LOG = LogManager.getLogger();
+
   public static final String ATTESTATION_SUBNET_ENR_FIELD = "attnets";
   public static final String ETH2_ENR_FIELD = "eth2";
 
@@ -119,7 +124,10 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
   @Override
   public SafeFuture<?> stop() {
-    return SafeFuture.allOf(connectionManager.stop(), p2pNetwork.stop(), discoveryService.stop());
+    return connectionManager.stop().handleComposed((__, err) -> {
+      LOG.warn("Error shutting down connection manager");
+      return SafeFuture.allOf(p2pNetwork.stop(), discoveryService.stop());
+    });
   }
 
   public void addStaticPeer(final String peerAddress) {

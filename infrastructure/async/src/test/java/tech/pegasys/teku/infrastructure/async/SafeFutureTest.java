@@ -13,13 +13,9 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture.Interruptor;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,9 +23,14 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.async.SafeFuture.Interruptor;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 public class SafeFutureTest {
 
@@ -781,6 +782,38 @@ public class SafeFutureTest {
     source.complete("Yay");
     verify(action).run();
     assertThatSafeFuture(result).isCompletedExceptionallyWith(exception);
+  }
+
+  @Test
+  void handleComposed_shouldComposeTheNewFuture() {
+    SafeFuture<String> source = new SafeFuture<>();
+    SafeFuture<String> result = source.handleComposed(
+            (string, err) -> {
+              if (err != null) {
+                throw new IllegalStateException();
+              }
+              return SafeFuture.completedFuture(string);
+            });
+
+    source.complete("yo");
+    assertThat(result).isCompleted();
+    assertThat(result).isCompletedWithValue("yo");
+  }
+
+  @Test
+  void handleComposed_shouldPassTheErrorToTheNextFunction() {
+    SafeFuture<String> source = new SafeFuture<>();
+    SafeFuture<String> result = source.handleComposed(
+            (string, err) -> {
+              if (err != null) {
+                return SafeFuture.completedFuture("yo");
+              }
+              return SafeFuture.completedFuture(string);
+            });
+
+    source.completeExceptionally(new UnsupportedOperationException());
+    assertThat(result).isCompleted();
+    assertThat(result).isCompletedWithValue("yo");
   }
 
   private List<Throwable> collectUncaughtExceptions() {
