@@ -16,7 +16,7 @@ package tech.pegasys.teku.validator.client.signer;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 
@@ -27,7 +27,7 @@ public class SigningRequestBody {
   @JsonProperty("type")
   private SignType type;
 
-  @JsonAnySetter private final Map<String, Object> metadata = new LinkedHashMap<>();
+  @JsonAnySetter private final Map<String, Object> metadata = new HashMap<>();
 
   public SigningRequestBody() {
     // keeps jackson happy
