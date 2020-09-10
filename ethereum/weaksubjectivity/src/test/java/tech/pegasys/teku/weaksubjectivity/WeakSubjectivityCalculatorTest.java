@@ -102,7 +102,7 @@ public class WeakSubjectivityCalculatorTest {
   // Parameters from the table here:
   // https://notes.ethereum.org/@adiasg/weak-subjectvity-eth2#Calculating-the-Weak-Subjectivity-Period-Quick-Version
   public static Stream<Arguments> calculateSafeEpochsParams() {
-    // TODO - why are the results off by one from the table?
+    // TODO(#2779) - why are the results off by one from the table?
     //        return Stream.of(
     //                Arguments.of(1024, .1f, 13),
     //                Arguments.of(4096, .1f, 52),

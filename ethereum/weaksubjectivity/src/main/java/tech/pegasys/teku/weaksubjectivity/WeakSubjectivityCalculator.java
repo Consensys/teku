@@ -74,7 +74,7 @@ public class WeakSubjectivityCalculator {
   }
 
   /**
-   * TODO - verify this calculation and determine whether we need this method From:
+   * TODO(#2779) - verify this calculation and determine whether we need this method From:
    * https://notes.ethereum.org/@adiasg/weak-subjectvity-eth2#Updating-Weak-Subjectivity-Checkpoint-States
    *
    * @param state The latest state?
@@ -93,6 +93,8 @@ public class WeakSubjectivityCalculator {
     return finalizedEpoch.dividedBy(weakSubjectivityMod).times(weakSubjectivityMod);
   }
 
+  // TODO(#2779) - This calculation is still under development, make sure it is updated to the
+  // latest when possible
   final UInt64 calculateSafeEpochs(int validatorCount) {
     final UInt64 safeEpochs;
     if (validatorCount > Constants.MIN_PER_EPOCH_CHURN_LIMIT * Constants.CHURN_LIMIT_QUOTIENT) {
