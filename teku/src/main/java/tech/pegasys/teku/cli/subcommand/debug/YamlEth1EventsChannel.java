@@ -15,9 +15,7 @@ package tech.pegasys.teku.cli.subcommand.debug;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SequenceWriter;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
@@ -27,6 +25,7 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.data.yaml.YamlProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.Deposit;
@@ -41,8 +40,9 @@ class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
   private final SequenceWriter writer;
 
   public YamlEth1EventsChannel(final PrintStream out) throws IOException {
-    final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-    writer = mapper.writerWithDefaultPrettyPrinter().writeValuesAsArray(out);
+    final YamlProvider yamlProvider = new YamlProvider();
+    writer =
+        yamlProvider.getObjectMapper().writerWithDefaultPrettyPrinter().writeValuesAsArray(out);
   }
 
   @Override

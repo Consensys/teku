@@ -40,6 +40,7 @@ import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
@@ -194,6 +195,10 @@ public final class DataStructureUtil {
    */
   public UInt64 randomEpoch() {
     return UInt64.valueOf(new Random(nextSeed()).nextInt(1_000_000_000));
+  }
+
+  public SlotAndBlockRoot randomSlotAndBlockRoot() {
+    return new SlotAndBlockRoot(randomUInt64(), randomBytes32());
   }
 
   public Checkpoint randomCheckpoint() {
