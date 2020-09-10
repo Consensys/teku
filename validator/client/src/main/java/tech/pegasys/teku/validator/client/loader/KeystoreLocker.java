@@ -13,25 +13,25 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import static java.nio.file.StandardOpenOption.CREATE_NEW;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.primitives.Longs;
-import java.io.IOException;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
+
 public class KeystoreLocker {
 
   private static final Logger LOG = LogManager.getLogger();
-  private final byte[] processPID = Longs.toByteArray(ProcessHandle.current().pid());
+  private final byte[] processPID = calculateProcessPid();
 
-  @VisibleForTesting
   public void lockKeystoreFile(Path keystoreFile) {
     deleteIfStaleLockfileExists(keystoreFile);
     try {
@@ -51,7 +51,7 @@ public class KeystoreLocker {
     try {
       byte[] pidInBytes = Files.readAllBytes(keystoreLockfile);
       if (pidInBytes.length != 0) {
-        long pid = Longs.fromByteArray(pidInBytes);
+        long pid = readPid(pidInBytes);
         ProcessHandle.of(pid)
             .ifPresent(
                 p -> {
@@ -67,5 +67,26 @@ public class KeystoreLocker {
         throw new RuntimeException("Unexpected error when trying read keystore lockfile.");
       }
     }
+  }
+
+  private byte[] calculateProcessPid(){
+    byte[] pidBytes;
+    try {
+      final long pid = ProcessHandle.current().pid();
+      final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.nativeOrder());
+      buffer.putLong(pid);
+      pidBytes = buffer.array();
+    } catch (final UnsupportedOperationException e) {
+      LOG.warn("Process ID can not be detected. This will inhibit Teku from " +
+              "deleting stale validator keystore lockfiles in the future");
+      pidBytes = new byte[0];
+    }
+    return pidBytes;
+  }
+
+  private long readPid(final byte[] pidBytes) {
+    final ByteBuffer readBuffer = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.nativeOrder());
+    readBuffer.put(pidBytes);
+    return readBuffer.getLong(0);
   }
 }
