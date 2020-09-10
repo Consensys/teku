@@ -13,6 +13,18 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
+import static java.util.stream.Collectors.toMap;
+import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+
+import java.time.Duration;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.LocalMessageSignerService;
@@ -26,19 +38,6 @@ import tech.pegasys.teku.util.bytes.KeyFormatter;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.signer.ExternalMessageSignerService;
-
-import java.time.Duration;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toMap;
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
 
 public class ValidatorLoader {
 

@@ -13,19 +13,18 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import com.google.common.io.Resources;
-import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import static java.nio.file.StandardOpenOption.CREATE_NEW;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static tech.pegasys.teku.validator.client.loader.KeystoreLocker.deleteIfStaleLockfileExists;
 import static tech.pegasys.teku.validator.client.loader.KeystoreLocker.longPidToNativeByteArray;
+
+import com.google.common.io.Resources;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 public class KeystoreLockerTest {
 
@@ -85,7 +84,8 @@ public class KeystoreLockerTest {
     assertThat(deleteIfStaleLockfileExists(keystoreFile)).isFalse();
   }
 
-  private void createLockfileWithContent(final Path keystoreFile, final byte[] content) throws IOException {
+  private void createLockfileWithContent(final Path keystoreFile, final byte[] content)
+      throws IOException {
     Files.write(Path.of(keystoreFile.toString() + ".lock"), content, CREATE_NEW);
   }
 

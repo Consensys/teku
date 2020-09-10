@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -25,8 +23,9 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
-
-import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 public class KeystoreLocker {
 
@@ -57,7 +56,7 @@ public class KeystoreLocker {
       if (pidInBytes.length == Long.BYTES) {
         long pid = nativeByteArrayToLong(pidInBytes);
         Optional<ProcessHandle> processHandle =
-                ProcessHandle.of(pid).filter(ProcessHandle::isAlive);
+            ProcessHandle.of(pid).filter(ProcessHandle::isAlive);
         if (processHandle.isEmpty()) {
           if (!keystoreLockfile.toFile().delete() && keystoreLockfile.toFile().exists()) {
             LOG.warn("Could not delete stale lockfile.");
@@ -72,15 +71,16 @@ public class KeystoreLocker {
     return false;
   }
 
-  static byte[] longPidToNativeByteArray(final long pid){
+  static byte[] longPidToNativeByteArray(final long pid) {
     byte[] pidBytes;
     try {
       final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.nativeOrder());
       buffer.putLong(pid);
       pidBytes = buffer.array();
     } catch (final UnsupportedOperationException e) {
-      LOG.warn("Process ID can not be detected. This will inhibit Teku from " +
-              "deleting stale validator keystore lockfiles in the future");
+      LOG.warn(
+          "Process ID can not be detected. This will inhibit Teku from "
+              + "deleting stale validator keystore lockfiles in the future");
       pidBytes = new byte[0];
     }
     return pidBytes;
