@@ -43,6 +43,8 @@ class PeerChainTrackerTest {
 
   private final Eth2Peer peer = mock(Eth2Peer.class);
 
+  private final SyncController syncController = mock(SyncController.class);
+
   private final EventThread eventThread = new InlineEventThread();
   private final PeerStatus status =
       new PeerStatus(
@@ -52,7 +54,8 @@ class PeerChainTrackerTest {
           dataStructureUtil.randomBytes32(),
           dataStructureUtil.randomUInt64());
 
-  private final PeerChainTracker tracker = new PeerChainTracker(eventThread, p2pNetwork);
+  private final PeerChainTracker tracker =
+      new PeerChainTracker(eventThread, p2pNetwork, syncController);
 
   @BeforeEach
   void setUp() {

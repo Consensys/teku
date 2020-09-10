@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.async;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -358,6 +359,12 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   @Override
   public SafeFuture<Void> thenAccept(final Consumer<? super T> action) {
     return (SafeFuture<Void>) super.thenAccept(action);
+  }
+
+  @Override
+  public SafeFuture<Void> thenAcceptAsync(
+      final Consumer<? super T> action, final Executor executor) {
+    return (SafeFuture<Void>) super.thenAcceptAsync(action, executor);
   }
 
   @SuppressWarnings("unchecked")
