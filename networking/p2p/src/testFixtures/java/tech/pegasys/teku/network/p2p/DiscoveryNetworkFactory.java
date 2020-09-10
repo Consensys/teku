@@ -15,6 +15,16 @@ package tech.pegasys.teku.network.p2p;
 
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
+import java.net.BindException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.Random;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -32,17 +42,6 @@ import tech.pegasys.teku.storage.store.MemKeyValueStore;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.time.StubTimeProvider;
 
-import java.net.BindException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.Random;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
 public class DiscoveryNetworkFactory {
 
   protected static final Logger LOG = LogManager.getLogger();
@@ -57,7 +56,8 @@ public class DiscoveryNetworkFactory {
   }
 
   public void stopAll() throws InterruptedException, ExecutionException, TimeoutException {
-    Waiter.waitFor(SafeFuture.allOf(networks.stream().map(DiscoveryNetwork::stop).toArray(SafeFuture[]::new)));
+    Waiter.waitFor(
+        SafeFuture.allOf(networks.stream().map(DiscoveryNetwork::stop).toArray(SafeFuture[]::new)));
   }
 
   public class DiscoveryNetworkBuilder {
