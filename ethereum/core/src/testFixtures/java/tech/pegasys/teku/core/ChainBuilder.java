@@ -16,6 +16,7 @@ package tech.pegasys.teku.core;
 import static org.assertj.core.util.Preconditions.checkState;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.collect.Maps;
@@ -380,7 +381,7 @@ public class ChainBuilder {
   }
 
   private Signer getSigner(final int proposerIndex) {
-    return new LocalSigner(validatorKeys.get(proposerIndex), null);
+    return new LocalSigner(validatorKeys.get(proposerIndex), SYNC_RUNNER);
   }
 
   public static final class BlockOptions {

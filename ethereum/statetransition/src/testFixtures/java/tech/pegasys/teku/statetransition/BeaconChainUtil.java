@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 import static tech.pegasys.teku.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 
 import java.util.List;
@@ -297,6 +298,6 @@ public class BeaconChainUtil {
   }
 
   public Signer getSigner(final int proposerIndex) {
-    return new LocalSigner(validatorKeys.get(proposerIndex), null);
+    return new LocalSigner(validatorKeys.get(proposerIndex), SYNC_RUNNER);
   }
 }
