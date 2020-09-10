@@ -35,6 +35,7 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeListenerWrapper;
@@ -52,7 +53,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 
-public class Eth2Peer extends DelegatingPeer implements Peer {
+public class Eth2Peer extends DelegatingPeer implements Peer, SyncSource {
   private static final Logger LOG = LogManager.getLogger();
 
   private final BeaconChainMethods rpcMethods;
@@ -63,6 +64,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
   private volatile Optional<UInt64> remoteMetadataSeqNumber = Optional.empty();
   private volatile Optional<Bitvector> remoteAttSubnets = Optional.empty();
   private final SafeFuture<PeerStatus> initialStatus = new SafeFuture<>();
+  private final Subscribers<PeerStatusSubscriber> statusSubscribers = Subscribers.create(true);
   private final AtomicInteger outstandingRequests = new AtomicInteger(0);
   private final AtomicInteger outstandingPings = new AtomicInteger();
   private final RateTracker blockRequestTracker;
@@ -93,6 +95,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
               if (valid) {
                 remoteStatus = Optional.of(status);
                 initialStatus.complete(status);
+                statusSubscribers.deliver(PeerStatusSubscriber::onPeerStatus, status);
               } // Otherwise will have already been disconnected.
             },
             error -> {
@@ -116,10 +119,13 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     remoteAttSubnets = Optional.of(metadataMessage.getAttnets());
   }
 
-  public void subscribeInitialStatus(final InitialStatusSubscriber subscriber) {
+  public void subscribeInitialStatus(final PeerStatusSubscriber subscriber) {
     initialStatus.finish(
-        subscriber::onInitialStatus,
-        error -> LOG.debug("Failed to retrieve initial status", error));
+        subscriber::onPeerStatus, error -> LOG.debug("Failed to retrieve initial status", error));
+  }
+
+  public void subscribeStatusUpdates(final PeerStatusSubscriber subscriber) {
+    statusSubscribers.subscribe(subscriber);
   }
 
   public PeerStatus getStatus() {
@@ -186,6 +192,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
     return requestSingleItem(blockByRoot, new BeaconBlocksByRootRequestMessage(List.of(blockRoot)));
   }
 
+  @Override
   public SafeFuture<Void> requestBlocksByRange(
       final UInt64 startSlot,
       final UInt64 count,
@@ -299,7 +306,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer {
         .toString();
   }
 
-  public interface InitialStatusSubscriber {
-    void onInitialStatus(final PeerStatus initialStatus);
+  public interface PeerStatusSubscriber {
+    void onPeerStatus(final PeerStatus initialStatus);
   }
 }

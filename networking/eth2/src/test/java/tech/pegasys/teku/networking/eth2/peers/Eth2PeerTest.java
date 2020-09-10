@@ -14,7 +14,9 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -22,7 +24,7 @@ import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.InitialStatusSubscriber;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.PeerStatusSubscriber;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -54,8 +56,8 @@ class Eth2PeerTest {
 
   @Test
   void updateStatus_shouldNotUpdateUntilValidationPasses() {
-    final InitialStatusSubscriber initialStatusSubscriber = mock(InitialStatusSubscriber.class);
-    peer.subscribeInitialStatus(initialStatusSubscriber);
+    final PeerStatusSubscriber peerStatusSubscriber = mock(PeerStatusSubscriber.class);
+    peer.subscribeInitialStatus(peerStatusSubscriber);
     final SafeFuture<Boolean> validationResult = new SafeFuture<>();
     when(peerChainValidator.validate(peer, randomPeerStatus)).thenReturn(validationResult);
 
@@ -63,12 +65,12 @@ class Eth2PeerTest {
 
     verify(peerChainValidator).validate(peer, randomPeerStatus);
     assertThat(peer.hasStatus()).isFalse();
-    verifyNoInteractions(initialStatusSubscriber);
+    verifyNoInteractions(peerStatusSubscriber);
 
     validationResult.complete(true);
     assertThat(peer.hasStatus()).isTrue();
     assertThat(peer.getStatus()).isEqualTo(randomPeerStatus);
-    verify(initialStatusSubscriber).onInitialStatus(randomPeerStatus);
+    verify(peerStatusSubscriber).onPeerStatus(randomPeerStatus);
   }
 
   @Test
@@ -108,6 +110,28 @@ class Eth2PeerTest {
 
     assertThat(peer.hasStatus()).isFalse();
     verify(delegate).disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK);
+  }
+
+  @Test
+  void updateStatus_shouldReportAllStatusesToSubscribers() {
+    final PeerStatus status1 = randomPeerStatus();
+    final PeerStatus status2 = randomPeerStatus();
+    when(peerChainValidator.validate(any(), any())).thenReturn(SafeFuture.completedFuture(true));
+    final PeerStatusSubscriber initialSubscriber = mock(PeerStatusSubscriber.class);
+    final PeerStatusSubscriber subscriber = mock(PeerStatusSubscriber.class);
+
+    peer.subscribeInitialStatus(initialSubscriber);
+    peer.subscribeStatusUpdates(subscriber);
+
+    peer.updateStatus(status1);
+
+    verify(initialSubscriber).onPeerStatus(status1);
+    verify(subscriber).onPeerStatus(status1);
+
+    peer.updateStatus(status2);
+
+    verify(initialSubscriber, never()).onPeerStatus(status2);
+    verify(subscriber).onPeerStatus(status2);
   }
 
   private PeerStatus randomPeerStatus() {
