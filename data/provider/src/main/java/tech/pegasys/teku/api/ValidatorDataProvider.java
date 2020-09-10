@@ -23,8 +23,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
+import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -37,7 +40,13 @@ import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.ValidatorDuties;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.core.CommitteeAssignmentUtil;
 import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
+import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
@@ -214,5 +223,30 @@ public class ValidatorDataProvider {
                 .map(SubnetSubscription::asInternalSubnetSubscription)
                 .collect(Collectors.toSet());
     validatorApiChannel.subscribeToPersistentSubnets(internalSubnetSubscriptions);
+  }
+
+  public SafeFuture<Optional<List<AttesterDuty>>> getAttesterDuties(final UInt64 epoch, final List<Integer> indexes) {
+    if (indexes.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
+    }
+    return SafeFuture.of(
+        () -> validatorApiChannel.getAttestationDuties(epoch, indexes))
+        .thenApply(
+            res ->
+                res.map(duties -> duties.stream().map(this::mapToAttesterDuties).collect(toList())));
+  }
+
+  private AttesterDuty mapToAttesterDuties(final tech.pegasys.teku.validator.api.ValidatorDuties duty) {
+    final BLSPubKey pubKey = new BLSPubKey(duty.getPublicKey().toBytesCompressed());
+    if (duty.getDuties().isEmpty()) {
+      return new AttesterDuty(pubKey, null, null, null, null, null);
+    }
+    final Duties duties = duty.getDuties().get();
+    return new AttesterDuty(pubKey,
+        UInt64.valueOf(duties.getValidatorIndex()),
+        UInt64.valueOf(duties.getAttestationCommitteeIndex()),
+        UInt64.valueOf(duties.getAggregatorModulo()),
+        UInt64.valueOf(duties.getAttestationCommitteePosition()),
+        duties.getAttestationSlot());
   }
 }

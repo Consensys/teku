@@ -53,6 +53,7 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
@@ -131,6 +132,27 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     .map(state -> processSlots(state, slot))
                     .map(state -> getValidatorDutiesFromState(state, epoch, publicKeys)));
   }
+
+  @Override
+  public SafeFuture<Optional<List<ValidatorDuties>>> getAttestationDuties(final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
+    if (validatorIndexes.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.of(emptyList()));
+    }
+    final UInt64 slot = CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
+    LOG.trace("Retrieving attestation duties from epoch {} using state at slot {}", epoch, slot);
+    return combinedChainDataClient
+        .getLatestStateAtSlot(slot)
+        .thenApply(
+            optionalState ->
+                optionalState
+                    .map(state -> processSlots(state, slot))
+                    .map(state -> getValidatorDutiesFromIndexes(state, epoch, validatorIndexes)));
+
+  }
+
 
   private BeaconState processSlots(final BeaconState startingState, final UInt64 targetSlot) {
     if (startingState.getSlot().compareTo(targetSlot) >= 0) {
@@ -323,6 +345,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
     final UInt64 headEpoch = combinedChainDataClient.getHeadEpoch();
     return headEpoch.plus(1).isLessThan(currentEpoch);
+  }
+
+
+  private List<ValidatorDuties> getValidatorDutiesFromIndexes(final BeaconState state, final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+    List<BLSPublicKey> publicKeys = validatorIndexes.stream().map(index -> state.getValidators().get(index)).map(Validator::getPubkey).collect(toList());
+    return getValidatorDutiesFromState(state, epoch, publicKeys);
+
   }
 
   private List<ValidatorDuties> getValidatorDutiesFromState(

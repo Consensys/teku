@@ -54,6 +54,7 @@ public class PostDuties extends AbstractHandler implements Handler {
   }
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.POST,
       summary = "Get the validator duties for the specified epoch.",
