@@ -24,14 +24,19 @@ public class SigningRequestBody {
   @JsonProperty("signingRoot")
   private Bytes signingRoot;
 
+  @JsonProperty("type")
+  private SignType type;
+
   @JsonAnySetter private final Map<String, Object> metadata = new LinkedHashMap<>();
 
   public SigningRequestBody() {
     // keeps jackson happy
   }
 
-  public SigningRequestBody(final Bytes signingRoot, final Map<String, Object> metadata) {
+  public SigningRequestBody(
+      final Bytes signingRoot, final SignType type, final Map<String, Object> metadata) {
     this.signingRoot = signingRoot;
+    this.type = type;
     this.metadata.putAll(metadata);
   }
 
@@ -46,5 +51,13 @@ public class SigningRequestBody {
 
   public Bytes getSigningRoot() {
     return signingRoot;
+  }
+
+  public SignType getType() {
+    return type;
+  }
+
+  public void setType(final SignType type) {
+    this.type = type;
   }
 }

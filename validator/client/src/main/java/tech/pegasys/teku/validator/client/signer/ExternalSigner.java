@@ -61,17 +61,16 @@ public class ExternalSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> createRandaoReveal(final UInt64 epoch, final ForkInfo forkInfo) {
-    return sign(signingRootForRandaoReveal(epoch, forkInfo), emptyMap());
+    return sign(signingRootForRandaoReveal(epoch, forkInfo), SignType.RANDAO_REVEAL, emptyMap());
   }
 
   @Override
   public SafeFuture<BLSSignature> signBlock(final BeaconBlock block, final ForkInfo forkInfo) {
     return sign(
         signingRootForSignBlock(block, forkInfo),
+        SignType.BLOCK,
         Map.of(
-            "type", "block",
-            "genesisValidatorRoot", forkInfo.getGenesisValidatorsRoot(),
-            "slot", block.getSlot()));
+            "genesisValidatorRoot", forkInfo.getGenesisValidatorsRoot(), "slot", block.getSlot()));
   }
 
   @Override
@@ -79,8 +78,8 @@ public class ExternalSigner implements Signer {
       final AttestationData attestationData, final ForkInfo forkInfo) {
     return sign(
         signingRootForSignAttestationData(attestationData, forkInfo),
+        SignType.ATTESTATION,
         Map.of(
-            "type", "attestation",
             "genesisValidatorRoot", forkInfo.getGenesisValidatorsRoot(),
             "sourceEpoch", attestationData.getSource().getEpoch(),
             "targetEpoch", attestationData.getTarget().getEpoch()));
@@ -88,19 +87,26 @@ public class ExternalSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signAggregationSlot(final UInt64 slot, final ForkInfo forkInfo) {
-    return sign(signingRootForSignAggregationSlot(slot, forkInfo), emptyMap());
+    return sign(
+        signingRootForSignAggregationSlot(slot, forkInfo), SignType.AGGREGATION_SLOT, emptyMap());
   }
 
   @Override
   public SafeFuture<BLSSignature> signAggregateAndProof(
       final AggregateAndProof aggregateAndProof, final ForkInfo forkInfo) {
-    return sign(signingRootForSignAggregateAndProof(aggregateAndProof, forkInfo), emptyMap());
+    return sign(
+        signingRootForSignAggregateAndProof(aggregateAndProof, forkInfo),
+        SignType.AGGREGATE_AND_PROOF,
+        emptyMap());
   }
 
   @Override
   public SafeFuture<BLSSignature> signVoluntaryExit(
       final VoluntaryExit voluntaryExit, final ForkInfo forkInfo) {
-    return sign(signingRootForSignVoluntaryExit(voluntaryExit, forkInfo), emptyMap());
+    return sign(
+        signingRootForSignVoluntaryExit(voluntaryExit, forkInfo),
+        SignType.VOLUNTARY_EXIT,
+        emptyMap());
   }
 
   @Override
@@ -109,11 +115,11 @@ public class ExternalSigner implements Signer {
   }
 
   private SafeFuture<BLSSignature> sign(
-      final Bytes signingRoot, final Map<String, Object> additionalProperties) {
+      final Bytes signingRoot, final SignType type, final Map<String, Object> metadata) {
     final String publicKey = blsPublicKey.toBytesCompressed().toString();
     return SafeFuture.ofComposed(
         () -> {
-          final String requestBody = createSigningRequestBody(signingRoot, additionalProperties);
+          final String requestBody = createSigningRequestBody(signingRoot, type, metadata);
           final URI uri =
               signingServiceUrl.toURI().resolve(EXTERNAL_SIGNER_ENDPOINT + "/" + publicKey);
           final HttpRequest request =
@@ -130,9 +136,9 @@ public class ExternalSigner implements Signer {
   }
 
   private String createSigningRequestBody(
-      final Bytes signingRoot, final Map<String, Object> metaData) {
+      final Bytes signingRoot, final SignType type, final Map<String, Object> metadata) {
     try {
-      return jsonProvider.objectToJSON(new SigningRequestBody(signingRoot, metaData));
+      return jsonProvider.objectToJSON(new SigningRequestBody(signingRoot, type, metadata));
     } catch (final JsonProcessingException e) {
       throw new ExternalSignerException("Unable to create external signing request", e);
     }

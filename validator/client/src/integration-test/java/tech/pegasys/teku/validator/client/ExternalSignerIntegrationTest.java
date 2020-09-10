@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -30,7 +31,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
-import java.util.Collections;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.AfterEach;
@@ -53,6 +53,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.client.signer.ExternalSigner;
 import tech.pegasys.teku.validator.client.signer.ExternalSignerException;
+import tech.pegasys.teku.validator.client.signer.SignType;
 import tech.pegasys.teku.validator.client.signer.SigningRequestBody;
 
 @ExtendWith(MockServerExtension.class)
@@ -128,8 +129,8 @@ public class ExternalSignerIntegrationTest {
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
             signingRootForSignBlock(block, fork),
+            SignType.BLOCK,
             Map.of(
-                "type", "block",
                 "genesisValidatorRoot", fork.getGenesisValidatorsRoot(),
                 "slot", block.getSlot()));
 
@@ -151,8 +152,8 @@ public class ExternalSignerIntegrationTest {
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
             signingRootForSignAttestationData(attestationData, fork),
+            SignType.ATTESTATION,
             Map.of(
-                "type", "attestation",
                 "genesisValidatorRoot", fork.getGenesisValidatorsRoot(),
                 "sourceEpoch", attestationData.getSource().getEpoch(),
                 "targetEpoch", attestationData.getTarget().getEpoch()));
@@ -173,7 +174,9 @@ public class ExternalSignerIntegrationTest {
 
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
-            signingRootForRandaoReveal(UInt64.valueOf(7), fork), Collections.emptyMap());
+            signingRootForRandaoReveal(UInt64.valueOf(7), fork),
+            SignType.RANDAO_REVEAL,
+            emptyMap());
     verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
   }
 
@@ -192,7 +195,9 @@ public class ExternalSignerIntegrationTest {
 
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
-            signingRootForSignAggregationSlot(UInt64.valueOf(7), fork), Collections.emptyMap());
+            signingRootForSignAggregationSlot(UInt64.valueOf(7), fork),
+            SignType.AGGREGATION_SLOT,
+            emptyMap());
     verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
   }
 
@@ -212,7 +217,9 @@ public class ExternalSignerIntegrationTest {
 
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
-            signingRootForSignAggregateAndProof(aggregateAndProof, fork), Collections.emptyMap());
+            signingRootForSignAggregateAndProof(aggregateAndProof, fork),
+            SignType.AGGREGATE_AND_PROOF,
+            emptyMap());
     verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
   }
 
@@ -229,7 +236,9 @@ public class ExternalSignerIntegrationTest {
 
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
-            signingRootForSignVoluntaryExit(voluntaryExit, fork), Collections.emptyMap());
+            signingRootForSignVoluntaryExit(voluntaryExit, fork),
+            SignType.VOLUNTARY_EXIT,
+            emptyMap());
     verifySignRequest(KEYPAIR.getPublicKey().toString(), signingRequestBody);
   }
 
