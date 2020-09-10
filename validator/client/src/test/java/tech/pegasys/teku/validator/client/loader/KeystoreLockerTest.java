@@ -14,10 +14,18 @@
 package tech.pegasys.teku.validator.client.loader;
 
 import com.google.common.io.Resources;
-import java.nio.file.Path;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static tech.pegasys.teku.validator.client.loader.KeystoreLocker.deleteIfStaleLockfileExists;
+import static tech.pegasys.teku.validator.client.loader.KeystoreLocker.longPidToNativeByteArray;
 
 public class KeystoreLockerTest {
 
@@ -26,9 +34,62 @@ public class KeystoreLockerTest {
   @Test
   void shouldLockKeystoreFileAndFailWhenTryingCreateLockForLockedFile() throws Exception {
     final Path keystoreFile = Path.of(Resources.getResource("scryptTestVector.json").toURI());
+    deletePastLockfile(keystoreFile);
+
     Assertions.assertThatCode(() -> keystoreLocker.lockKeystoreFile(keystoreFile))
         .doesNotThrowAnyException();
     Assertions.assertThatThrownBy(() -> keystoreLocker.lockKeystoreFile(keystoreFile))
         .isExactlyInstanceOf(InvalidConfigurationException.class);
+  }
+
+  @Test
+  void doNotDeleteLockfileIfTheProcessIsAlive() throws Exception {
+    final Path keystoreFile = Path.of(Resources.getResource("lockfileTest1.json").toURI());
+    deletePastLockfile(keystoreFile);
+
+    Process process = new ProcessBuilder("/bin/sleep", "5").start();
+    long pid = process.pid();
+    assertThat(process.isAlive()).isTrue();
+    createLockfileWithContent(keystoreFile, longPidToNativeByteArray(pid));
+    assertThat(deleteIfStaleLockfileExists(keystoreFile)).isFalse();
+  }
+
+  @Test
+  void deleteLockfileIfTheProcessIsNotAlive() throws Exception {
+    final Path keystoreFile = Path.of(Resources.getResource("lockfileTest2.json").toURI());
+    deletePastLockfile(keystoreFile);
+
+    Process process = new ProcessBuilder("/bin/sleep", "1").start();
+    Thread.sleep(2000);
+    long pid = process.pid();
+    assertThat(process.isAlive()).isFalse();
+    createLockfileWithContent(keystoreFile, longPidToNativeByteArray(pid));
+    assertThat(deleteIfStaleLockfileExists(keystoreFile)).isTrue();
+  }
+
+  @Test
+  void doNotDeleteIfLockfileIsEmpty() throws Exception {
+    final Path keystoreFile = Path.of(Resources.getResource("lockfileTest3.json").toURI());
+    deletePastLockfile(keystoreFile);
+
+    createLockfileWithContent(keystoreFile, new byte[0]);
+    assertThat(deleteIfStaleLockfileExists(keystoreFile)).isFalse();
+  }
+
+  @Test
+  void doNotDeleteIfLockfileContainsSomethingThatIsNotLong() throws Exception {
+    final Path keystoreFile = Path.of(Resources.getResource("lockfileTest3.json").toURI());
+    deletePastLockfile(keystoreFile);
+
+    createLockfileWithContent(keystoreFile, new byte[Long.BYTES + 1]);
+    assertThat(deleteIfStaleLockfileExists(keystoreFile)).isFalse();
+  }
+
+  private void createLockfileWithContent(final Path keystoreFile, final byte[] content) throws IOException {
+    Files.write(Path.of(keystoreFile.toString() + ".lock"), content, CREATE_NEW);
+  }
+
+  private void deletePastLockfile(final Path keystoreFile) throws IOException {
+    Files.deleteIfExists(Path.of(keystoreFile.toString() + ".lock"));
   }
 }
