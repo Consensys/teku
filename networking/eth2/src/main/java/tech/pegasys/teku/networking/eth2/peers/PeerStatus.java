@@ -36,7 +36,7 @@ public class PeerStatus {
         message.getHeadSlot());
   }
 
-  PeerStatus(
+  public PeerStatus(
       final Bytes4 forkDigest,
       final Bytes32 finalizedRoot,
       final UInt64 finalizedEpoch,
