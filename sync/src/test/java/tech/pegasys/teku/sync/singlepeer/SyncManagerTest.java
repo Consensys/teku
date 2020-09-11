@@ -39,7 +39,7 @@ import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService.SyncSubscriber;
-import tech.pegasys.teku.sync.SyncStatus;
+import tech.pegasys.teku.sync.SyncingStatus;
 import tech.pegasys.teku.util.config.Constants;
 
 public class SyncManagerTest {
@@ -334,10 +334,10 @@ public class SyncManagerTest {
     UInt64 headSlot = UInt64.valueOf(17);
     localHeadSlot.set(headSlot);
 
-    SyncStatus syncStatus = syncManager.getSyncStatus().getSyncStatus();
-    assertThat(syncStatus.getCurrentSlot()).isEqualTo(headSlot);
-    assertThat(syncStatus.getStartingSlot()).isEqualTo(startingSlot);
-    assertThat(syncStatus.getHighestSlot()).isEqualTo(PEER_HEAD_SLOT);
+    SyncingStatus syncingStatus = syncManager.getSyncStatus();
+    assertThat(syncingStatus.getCurrentSlot()).isEqualTo(headSlot);
+    assertThat(syncingStatus.getStartingSlot()).isEqualTo(Optional.of(startingSlot));
+    assertThat(syncingStatus.getHighestSlot()).isEqualTo(Optional.of(PEER_HEAD_SLOT));
 
     assertThat(syncManager.isSyncQueued()).isFalse();
 
@@ -353,9 +353,12 @@ public class SyncManagerTest {
     assertThat(syncManager.isSyncQueued()).isFalse();
     verifyNoInteractions(peerSync);
 
-    // verify that getSyncStatus completes even when no peers
-    assertThat(syncManager.getSyncStatus().getSyncStatus()).isNull();
     assertThat(syncManager.isSyncQueued()).isFalse();
+    SyncingStatus syncingStatus = syncManager.getSyncStatus();
+    assertThat(syncingStatus.isSyncing()).isFalse();
+    assertThat(syncingStatus.getCurrentSlot()).isNotNull();
+    assertThat(syncingStatus.getHighestSlot()).isEmpty();
+    assertThat(syncingStatus.getStartingSlot()).isEmpty();
   }
 
   @Test
