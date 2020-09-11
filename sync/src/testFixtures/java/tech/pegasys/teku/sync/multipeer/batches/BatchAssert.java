@@ -101,4 +101,16 @@ public class BatchAssert extends AbstractAssert<BatchAssert, StubBatch> {
   public void hasFirstSlot(final UInt64 expected) {
     assertThat(actual.getFirstSlot()).describedAs("firstSlot").isEqualTo(expected);
   }
+
+  public void hasLastSlot(final long expected) {
+    hasLastSlot(UInt64.valueOf(expected));
+  }
+
+  public void hasLastSlot(final UInt64 expected) {
+    assertThat(actual.getLastSlot()).describedAs("lastSlot").isEqualTo(expected);
+  }
+
+  public void isAwaitingBlocks() {
+    assertThat(actual.isAwaitingBlocks()).describedAs("awaiting blocks").isTrue();
+  }
 }

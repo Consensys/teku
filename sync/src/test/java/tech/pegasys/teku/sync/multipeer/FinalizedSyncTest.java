@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.sync.multipeer.BatchImporter.BatchImportResult.IMPORTED_ALL_BLOCKS;
 import static tech.pegasys.teku.sync.multipeer.BatchImporter.BatchImportResult.IMPORT_FAILED;
@@ -54,8 +55,6 @@ import tech.pegasys.teku.util.config.StateStorageMode;
 class FinalizedSyncTest {
   private final UInt64 BATCH_SIZE = UInt64.valueOf(25);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final TargetChain targetChain =
-      chainWith(new SlotAndBlockRoot(UInt64.valueOf(1000), dataStructureUtil.randomBytes32()));
   private final InlineEventThread eventThread = new InlineEventThread();
 
   private final StorageSystem storageSystem =
@@ -67,6 +66,9 @@ class FinalizedSyncTest {
   private final BatchFactory batchFactory = mock(BatchFactory.class);
   private final Map<StubBatch, Batch> wrappedBatches = new HashMap<>();
   private final List<StubBatch> batches = new ArrayList<>();
+
+  private TargetChain targetChain =
+      chainWith(new SlotAndBlockRoot(UInt64.valueOf(1000), dataStructureUtil.randomBytes32()));
 
   private final FinalizedSync sync =
       new FinalizedSync(eventThread, recentChainData, batchImporter, batchFactory, BATCH_SIZE);
@@ -85,8 +87,7 @@ class FinalizedSyncTest {
               final UInt64 startSlot = invocation.getArgument(1);
               final UInt64 count = invocation.getArgument(2);
               final StubBatch batch = new StubBatch(targetChain, startSlot, count);
-              assertThat(targetChain).isEqualTo(targetChain);
-              assertThat(count).isEqualTo(BATCH_SIZE);
+              assertThat(targetChain).isEqualTo(this.targetChain);
               // Enforce that all access by production code to the batch is on the event thread
               // Test code can just use it directly.
               final EventThreadOnlyBatch wrappedBatch =
@@ -103,11 +104,13 @@ class FinalizedSyncTest {
 
     assertThat(batches).hasSize(5);
     // Should start from the slot after our finalized epoch
-    assertThat(batches.get(0).getFirstSlot()).isEqualTo(ONE);
-    assertThat(batches.get(1).getFirstSlot()).isEqualTo(BATCH_SIZE.plus(1));
-    assertThat(batches.get(2).getFirstSlot()).isEqualTo(BATCH_SIZE.times(2).plus(1));
-    assertThat(batches.get(3).getFirstSlot()).isEqualTo(BATCH_SIZE.times(3).plus(1));
-    assertThat(batches.get(4).getFirstSlot()).isEqualTo(BATCH_SIZE.times(4).plus(1));
+    assertThatBatch(batches.get(0)).hasFirstSlot(ONE);
+    assertThatBatch(batches.get(1)).hasFirstSlot(BATCH_SIZE.plus(1));
+    assertThatBatch(batches.get(2)).hasFirstSlot(BATCH_SIZE.times(2).plus(1));
+    assertThatBatch(batches.get(3)).hasFirstSlot(BATCH_SIZE.times(3).plus(1));
+    assertThatBatch(batches.get(4)).hasFirstSlot(BATCH_SIZE.times(4).plus(1));
+    batches.forEach(
+        batch -> assertThatBatch(batch).hasLastSlot(batch.getFirstSlot().plus(BATCH_SIZE)));
   }
 
   @Test
@@ -143,20 +146,45 @@ class FinalizedSyncTest {
   }
 
   @Test
-  @Disabled
-  void shouldResumeSyncFromSomewhereAfterRestart() {
-    // TODO: Start from something other than genesis
+  void shouldResumeSyncFromFinalizedEpochAfterRestart() {
+    // TODO: Should restore the ability to find the common ancestor and sync from there
+    storageSystem.chainUpdater().finalizeEpoch(ONE);
+    sync.syncToChain(targetChain);
+
+    assertThatBatch(batches.get(0)).hasFirstSlot(compute_start_slot_at_epoch(ONE).plus(1));
   }
 
   @Test
-  @Disabled
-  void shouldNotReimportBlocksFromFinalizedEpoch() {
-    // Do we need to start from the beginning or end of the finalized epoch?
+  void shouldNotRequestBlocksPastTargetChainHead() {
+    final UInt64 headSlot = BATCH_SIZE.times(3).minus(5);
+    targetChain = chainWith(new SlotAndBlockRoot(headSlot, dataStructureUtil.randomBytes32()));
+    sync.syncToChain(targetChain);
+
+    assertThat(batches).hasSize(3);
+    assertThatBatch(batches.get(2)).hasLastSlot(headSlot);
   }
 
   @Test
-  @Disabled
-  void shouldNotRequestBlocksPastTargetChainHead() {}
+  void shouldConfirmAndImportBatchWhenItEndsWithTargetChainHeadBlock() {
+    final UInt64 headSlot = BATCH_SIZE.times(2).minus(5);
+    final SignedBeaconBlock block3 = chainBuilder.generateBlockAtSlot(3).getBlock();
+    final SignedBeaconBlock headBlock = chainBuilder.generateBlockAtSlot(headSlot).getBlock();
+    targetChain = chainWith(new SlotAndBlockRoot(headSlot, headBlock.getRoot()));
+    sync.syncToChain(targetChain);
+
+    assertThat(batches).hasSize(2);
+    final StubBatch batch1 = batches.get(0);
+    final StubBatch batch2 = batches.get(1);
+
+    batch1.receiveBlocks(block3);
+    batch2.receiveBlocks(headBlock);
+
+    // Both batches should be imported
+    assertBatchesImported(batch1, batch2);
+
+    batch1.getImportResult().complete(IMPORTED_ALL_BLOCKS);
+    batch2.getImportResult().complete(IMPORTED_ALL_BLOCKS);
+  }
 
   @Test
   void shouldRejectFirstBatchIfItDoesNotBuildOnKnownBlock() {
@@ -236,29 +264,84 @@ class FinalizedSyncTest {
   }
 
   @Test
-  void shouldMarkBatchAsContestedWhenNextBatchDoesNotLineUp() {
-    final SignedBeaconBlock block1 = chainBuilder.generateBlockAtSlot(1).getBlock();
+  void shouldNotMarkBatchAsContestedWhenNextBatchIsEmpty() {
     sync.syncToChain(targetChain);
 
     final StubBatch batch0 = batches.get(0);
     final StubBatch batch1 = batches.get(1);
 
+    final SignedBeaconBlock batch0Block =
+        chainBuilder.generateBlockAtSlot(batch0.getLastSlot()).getBlock();
+
+    batch0.receiveBlocks(batch0Block);
+    batch1.receiveBlocks();
+
+    // Can't confirm either batch yet because the next block is still unknown but also not contested
+    assertThatBatch(batch0).isNotContested();
+    assertThatBatch(batch0).isNotConfirmed();
+    assertThatBatch(batch1).isNotContested();
+    assertThatBatch(batch1).isNotConfirmed();
+  }
+
+  @Test
+  void shouldMarkBatchAsContestedWhenNextBatchDoesNotLineUp() {
+    sync.syncToChain(targetChain);
+
+    final StubBatch batch0 = batches.get(0);
+    final StubBatch batch1 = batches.get(1);
+
+    final SignedBeaconBlock batch0Block =
+        chainBuilder.generateBlockAtSlot(batch0.getLastSlot()).getBlock();
+    final SignedBeaconBlock batch1Block =
+        chainBuilder.generateBlockAtSlot(batch1.getLastSlot()).getBlock();
+
     // Receive blocks that don't line up
-    batch0.receiveBlocksAndMarkComplete(block1);
+    batch0.receiveBlocksAndMarkComplete(batch0Block);
     batch1.receiveBlocks(dataStructureUtil.randomSignedBeaconBlock(BATCH_SIZE.plus(1)));
 
     assertNoBatchesImported();
     assertThatBatch(batch0).isContested();
     assertThatBatch(batch1).isContested();
+
+    // Both batches now requeset the same range from a different peer
+    batch0.receiveBlocks(batch0Block); // Batch 0 is unchanged
+    batch1.receiveBlocks(batch1Block); // Batch 1 now gives us valid data
+
+    assertThatBatch(batch0).isConfirmed();
   }
 
   @Test
-  @Disabled
-  void shouldMarkBatchAsInvalidWhenNextBatchDoesNotLineUpAndAlreadyContested() {}
+  void shouldLimitTheNumberOfBatchesRequestedAtAnyOneTime() {
+    sync.syncToChain(targetChain);
 
-  @Test
-  @Disabled
-  void shouldLimitTheNumberOfBatchesRequestedAtAnyOneTime() {}
+    final StubBatch batch0 = batches.get(0);
+    final StubBatch batch1 = batches.get(1);
+    final StubBatch batch2 = batches.get(2);
+
+    final SignedBeaconBlock batch0Block1 = chainBuilder.generateBlockAtSlot(1).getBlock();
+    final SignedBeaconBlock batch0Block2 = chainBuilder.generateBlockAtSlot(3).getBlock();
+    final SignedBeaconBlock batch1Block1 =
+        chainBuilder.generateBlockAtSlot(batch1.getLastSlot()).getBlock();
+
+    // 5 requests made initially
+    assertThat(batches).hasSize(5);
+
+    batch0.receiveBlocks(batch0Block1); // Batch 0 receives a partial response
+    assertThatBatch(batch0).isAwaitingBlocks(); // Another request is scheduled
+    assertThat(batches).hasSize(5); // But no new batch is started
+    batches.forEach(batch -> assertThatBatch(batch).isNotContested());
+
+    batch1.receiveBlocks(batch1Block1); // Batch 1 receives a complete response
+    assertThat(batches).hasSize(6); // So now we start requesting a new batch
+    batches.forEach(batch -> assertThatBatch(batch).isNotContested());
+
+    batch2.receiveBlocks(); // Batch 2 receives an empty response
+    batches.forEach(batch -> assertThatBatch(batch).isNotContested());
+    assertThat(batches).hasSize(7); // So another batch can start because batch 2 is now complete
+
+    batch0.receiveBlocks(batch0Block2); // Batch 0 gets another block which we know is the last
+    assertThat(batches).hasSize(8); // That frees up another slot to request blocks
+  }
 
   @Test
   void shouldMarkAllBatchesInChainAsInvalidWhenBlockFailsToImport() {

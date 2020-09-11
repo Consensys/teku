@@ -42,6 +42,7 @@ public class FinalizedSync {
   private final BatchFactory batchFactory;
   private final UInt64 batchSize;
 
+  // TODO: Replace this with a BatchChain class
   private final NavigableSet<Batch> activeBatches =
       new TreeSet<>(Comparator.comparing(Batch::getFirstSlot));
 
@@ -105,11 +106,24 @@ public class FinalizedSync {
         activeBatches.tailSet(batch, false).stream()
             .filter(followingBatch -> !followingBatch.isEmpty())
             .findFirst();
-    firstNonEmptyFollowingBatch.ifPresent(
-        followingBatch -> checkBatchesFormChain(batch, followingBatch));
+    firstNonEmptyFollowingBatch.ifPresentOrElse(
+        followingBatch -> checkBatchesFormChain(batch, followingBatch),
+        () -> {
+          if (batchEndsChain(batch)) {
+            batch.markComplete();
+            batch.markLastBlockConfirmed();
+          }
+        });
 
     startingPendingImports();
     fillRetrievingQueue();
+  }
+
+  private Boolean batchEndsChain(final Batch batch) {
+    return batch
+        .getLastBlock()
+        .map(lastBlock -> lastBlock.getRoot().equals(targetChain.getChainHead().getBlockRoot()))
+        .orElse(false);
   }
 
   private void checkBatchMatchesStartingPoint(
@@ -140,7 +154,7 @@ public class FinalizedSync {
     if (batchesFormChain(firstBatch, secondBatch)) {
       markBatchesAsFormingChain(
           firstBatch, secondBatch, activeBatches.subSet(firstBatch, false, secondBatch, false));
-    } else if (firstBatch.isComplete()) {
+    } else if (firstBatch.isComplete() && !secondBatch.isEmpty()) {
       markBatchesAsContested(activeBatches.subSet(firstBatch, true, secondBatch, true));
     }
     // Otherwise there must be a block in firstBatch we haven't received yet
@@ -177,7 +191,6 @@ public class FinalizedSync {
   }
 
   private void markBatchesAsContested(final NavigableSet<Batch> contestedBatches) {
-    // TODO: If any are already contested, mark them invalid and leave others?
     contestedBatches.forEach(Batch::markAsContested);
   }
 
@@ -232,16 +245,23 @@ public class FinalizedSync {
 
     // First check if there are batches that should request more blocks
     activeBatches.stream()
-        .filter(batch -> !batch.isComplete() && !batch.isAwaitingBlocks())
+        .filter(batch -> (!batch.isComplete() || batch.isContested()) && !batch.isAwaitingBlocks())
         .forEach(this::requestMoreBlocks);
 
     // Add more pending batches if there is room
     UInt64 nextBatchStart = getNextSlotToRequest();
-    for (long i = incompleteBatchCount; i < MAX_PENDING_BATCHES; i++) {
-      final Batch batch = batchFactory.createBatch(targetChain, nextBatchStart, batchSize);
+    final UInt64 targetSlot = targetChain.getChainHead().getSlot();
+    for (long i = incompleteBatchCount;
+        i < MAX_PENDING_BATCHES && nextBatchStart.isLessThanOrEqualTo(targetSlot);
+        i++) {
+      final UInt64 count = targetSlot.minus(nextBatchStart).min(batchSize);
+      final Batch batch = batchFactory.createBatch(targetChain, nextBatchStart, count);
       activeBatches.add(batch);
       requestMoreBlocks(batch);
       nextBatchStart = nextBatchStart.plus(batchSize);
+      if (nextBatchStart.isGreaterThan(targetSlot)) {
+        break;
+      }
     }
   }
 
