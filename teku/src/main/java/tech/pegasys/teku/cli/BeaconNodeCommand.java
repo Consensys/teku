@@ -337,6 +337,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setTargetSubnetSubscriberCount(p2POptions.getP2pTargetSubnetSubscriberCount())
         .setP2pStaticPeers(p2POptions.getP2pStaticPeers())
         .setP2pSnappyEnabled(p2POptions.isP2pSnappyEnabled())
+        .setMultiPeerSyncEnabled(p2POptions.isMultiPeerSyncEnabled())
         .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
         .setInteropOwnedValidatorStartIndex(interopOptions.getInteropOwnerValidatorStartIndex())
         .setInteropOwnedValidatorCount(interopOptions.getInteropOwnerValidatorCount())
