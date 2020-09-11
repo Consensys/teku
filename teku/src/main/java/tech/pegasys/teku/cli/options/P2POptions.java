@@ -119,6 +119,14 @@ public class P2POptions {
       arity = "1")
   private Boolean p2pSnappyEnabled = null;
 
+  @Option(
+      names = {"--Xp2p-multipeer-sync-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enables experimental multipeer sync",
+      hidden = true,
+      arity = "1")
+  private boolean multiPeerSyncEnabled = false;
+
   public boolean isP2pEnabled() {
     return p2pEnabled;
   }
@@ -179,5 +187,9 @@ public class P2POptions {
 
   public Boolean isP2pSnappyEnabled() {
     return p2pSnappyEnabled;
+  }
+
+  public boolean isMultiPeerSyncEnabled() {
+    return multiPeerSyncEnabled;
   }
 }
