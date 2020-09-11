@@ -39,7 +39,6 @@ public abstract class AbstractBeaconHandlerTest {
 
   protected final SyncService syncService = mock(SyncService.class);
   protected final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);
-
   private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);
 
   protected final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
@@ -65,7 +64,8 @@ public abstract class AbstractBeaconHandlerTest {
       final long highestSlot) {
     return new tech.pegasys.teku.sync.SyncingStatus(
         isSyncing,
-        new tech.pegasys.teku.sync.SyncStatus(
-            UInt64.valueOf(startSlot), UInt64.valueOf(currentSlot), UInt64.valueOf(highestSlot)));
+        UInt64.valueOf(currentSlot),
+        UInt64.valueOf(startSlot),
+        UInt64.valueOf(highestSlot));
   }
 }

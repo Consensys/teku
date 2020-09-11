@@ -35,8 +35,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
-import tech.pegasys.teku.core.signatures.LocalMessageSignerService;
-import tech.pegasys.teku.core.signatures.UnprotectedSigner;
+import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -338,7 +337,7 @@ public class AttestationGenerator {
           AttestationUtil.getAggregationBits(committeSize, indexIntoCommittee);
 
       BLSSignature signature =
-          new UnprotectedSigner(new LocalMessageSignerService(attesterKeyPair, SYNC_RUNNER))
+          new LocalSigner(attesterKeyPair, SYNC_RUNNER)
               .signAttestationData(attestationData, state.getForkInfo())
               .join();
       return new Attestation(aggregationBitfield, attestationData, signature);

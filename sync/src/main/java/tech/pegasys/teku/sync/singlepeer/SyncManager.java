@@ -41,7 +41,6 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService.SyncSubscriber;
-import tech.pegasys.teku.sync.SyncStatus;
 import tech.pegasys.teku.sync.SyncingStatus;
 
 public class SyncManager extends Service {
@@ -174,12 +173,11 @@ public class SyncManager extends Service {
       Optional<Eth2Peer> bestPeer = findBestSyncPeer();
       if (bestPeer.isPresent()) {
         UInt64 highestSlot = bestPeer.get().getStatus().getHeadSlot();
-        final SyncStatus syncStatus =
-            new SyncStatus(peerSync.getStartingSlot(), storageClient.getHeadSlot(), highestSlot);
-        return new SyncingStatus(true, syncStatus);
+        return new SyncingStatus(
+            true, storageClient.getHeadSlot(), peerSync.getStartingSlot(), highestSlot);
       }
     }
-    return new SyncingStatus(false, null);
+    return new SyncingStatus(false, storageClient.getHeadSlot());
   }
 
   private SafeFuture<Void> executeSync() {
