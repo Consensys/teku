@@ -109,11 +109,6 @@ public class StubBatch implements Batch {
   }
 
   @Override
-  public boolean isImporting() {
-    return false;
-  }
-
-  @Override
   public boolean isContested() {
     return contested;
   }

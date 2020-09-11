@@ -34,8 +34,6 @@ public interface Batch {
 
   boolean isFirstBlockConfirmed();
 
-  boolean isImporting();
-
   boolean isContested();
 
   boolean isEmpty();
@@ -51,8 +49,4 @@ public interface Batch {
   void markAsInvalid();
 
   void requestMoreBlocks(Runnable callback);
-
-  interface BlockSubscriber {
-    void onBlocksReceived(Batch batch);
-  }
 }

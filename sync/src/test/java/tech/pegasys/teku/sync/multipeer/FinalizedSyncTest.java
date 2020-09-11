@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -127,7 +126,7 @@ class FinalizedSyncTest {
     // Batch1 should now be complete and import
     assertThatBatch(batch1).isComplete();
     assertThatBatch(batch1).isConfirmed();
-    assertBatchesImported(batch1);
+    assertBatchImported(batch1);
   }
 
   @Test
@@ -180,9 +179,11 @@ class FinalizedSyncTest {
     batch2.receiveBlocks(headBlock);
 
     // Both batches should be imported
-    assertBatchesImported(batch1, batch2);
+    assertBatchImported(batch1);
 
     batch1.getImportResult().complete(IMPORTED_ALL_BLOCKS);
+
+    assertBatchImported(batch2);
     batch2.getImportResult().complete(IMPORTED_ALL_BLOCKS);
   }
 
@@ -260,7 +261,11 @@ class FinalizedSyncTest {
     assertThatBatch(batch1).isConfirmed();
     assertThatBatch(batch2).isConfirmed();
     assertThatBatch(batch3).isNotConfirmed();
-    assertBatchesImported(batch0, batch1, batch2);
+    assertBatchImported(batch0);
+    batch0.getImportResult().complete(IMPORTED_ALL_BLOCKS);
+    assertBatchImported(batch1);
+    batch1.getImportResult().complete(IMPORTED_ALL_BLOCKS);
+    assertBatchImported(batch2);
   }
 
   @Test
@@ -384,7 +389,7 @@ class FinalizedSyncTest {
     batch0.receiveBlocks(chainBuilder.generateBlockAtSlot(1).getBlock());
     batch1.receiveBlocks(chainBuilder.generateBlockAtSlot(batch1.getFirstSlot()).getBlock());
 
-    assertBatchesImported(batch0);
+    assertBatchImported(batch0);
 
     batch0.getImportResult().complete(IMPORTED_ALL_BLOCKS);
 
@@ -405,6 +410,26 @@ class FinalizedSyncTest {
   @Test
   @Disabled
   void shouldRestartSyncFromFinalizedCheckpointWhenBatchFromNewChainDoesNotLineUp() {}
+
+  @Test
+  void shouldImportNextConfirmedBatchWhenFirstBatchImportCompletes() {
+    sync.syncToChain(targetChain);
+
+    final StubBatch batch0 = batches.get(0);
+    final StubBatch batch1 = batches.get(1);
+    final StubBatch batch2 = batches.get(2);
+    batch0.receiveBlocks(chainBuilder.generateBlockAtSlot(1).getBlock());
+    batch1.receiveBlocks(chainBuilder.generateBlockAtSlot(batch1.getFirstSlot()).getBlock());
+    batch2.receiveBlocks(chainBuilder.generateBlockAtSlot(batch2.getFirstSlot()).getBlock());
+
+    assertThatBatch(batch0).isConfirmed();
+    assertThatBatch(batch1).isConfirmed();
+    assertBatchImported(batch0);
+
+    // Batch 1 doesn't start importing until batch 0 completes
+    batch0.getImportResult().complete(IMPORTED_ALL_BLOCKS);
+    assertBatchImported(batch1);
+  }
 
   @Test
   void shouldProgressWhenThereAreManyEmptyBatchesInARow() {
@@ -436,7 +461,7 @@ class FinalizedSyncTest {
 
     // So all the batches get imported, but because there's no point importing empty batches
     // only laterBatch is passed to the BatchImporter
-    assertBatchesImported(laterBatch);
+    assertBatchImported(laterBatch);
 
     // And when it completes it and all the earlier empty batches are dropped
     laterBatch.getImportResult().complete(IMPORTED_ALL_BLOCKS);
@@ -453,9 +478,8 @@ class FinalizedSyncTest {
     eventThread.execute(() -> assertThat(sync.isActiveBatch(wrappedBatches.get(batch))).isTrue());
   }
 
-  private void assertBatchesImported(final StubBatch... batches) {
-    Stream.of(batches)
-        .forEach(batch -> verify(batchImporter).importBatch(wrappedBatches.get(batch)));
+  private void assertBatchImported(final StubBatch batch) {
+    verify(batchImporter).importBatch(wrappedBatches.get(batch));
     verifyNoMoreInteractions(batchImporter);
   }
 

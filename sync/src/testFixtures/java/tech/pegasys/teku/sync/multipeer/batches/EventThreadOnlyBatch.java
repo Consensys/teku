@@ -77,12 +77,6 @@ public class EventThreadOnlyBatch implements Batch {
   }
 
   @Override
-  public boolean isImporting() {
-    eventThread.checkOnEventThread();
-    return delegate.isImporting();
-  }
-
-  @Override
   public boolean isContested() {
     eventThread.checkOnEventThread();
     return delegate.isContested();

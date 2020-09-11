@@ -46,6 +46,8 @@ public class FinalizedSync {
   private final NavigableSet<Batch> activeBatches =
       new TreeSet<>(Comparator.comparing(Batch::getFirstSlot));
 
+  private Optional<Batch> importingBatch = Optional.empty();
+
   private UInt64 commonAncestorSlot;
 
   private TargetChain targetChain;
@@ -115,7 +117,7 @@ public class FinalizedSync {
           }
         });
 
-    startingPendingImports();
+    startNextImport();
     fillRetrievingQueue();
   }
 
@@ -160,17 +162,23 @@ public class FinalizedSync {
     // Otherwise there must be a block in firstBatch we haven't received yet
   }
 
-  private void startingPendingImports() {
-    // TODO: Should only have one batch importing at a time.
-    // TODO: Should actually mark the batch as importing.
-    for (final Batch batch : activeBatches) {
-      if (batch.isImporting() || batch.isEmpty()) {
+  private void startNextImport() {
+    if (importingBatch.isPresent()) {
+      return;
+    }
+    for (Batch batch : activeBatches) {
+      if (batch.isEmpty()) {
         continue;
       }
       if (!batch.isConfirmed()) {
         break;
       }
-      importBatch(batch);
+      importingBatch = Optional.of(batch);
+      batchImporter
+          .importBatch(batch)
+          .thenAcceptAsync(result -> onImportComplete(result, batch), eventThread)
+          .reportExceptions();
+      break;
     }
   }
 
@@ -194,18 +202,12 @@ public class FinalizedSync {
     contestedBatches.forEach(Batch::markAsContested);
   }
 
-  private void importBatch(final Batch batch) {
-    batchImporter
-        .importBatch(batch)
-        .thenAcceptAsync(result -> onImportComplete(result, batch), eventThread)
-        .reportExceptions();
-  }
-
   private void onImportComplete(final BatchImportResult result, final Batch importedBatch) {
     eventThread.checkOnEventThread();
     if (!isActiveBatch(importedBatch)) {
       return;
     }
+    importingBatch = Optional.empty();
     if (result.isFailure()) {
       // Mark all batches that form a chain with this one as invalid
       for (Batch batch : activeBatches.tailSet(importedBatch, true)) {
@@ -219,6 +221,7 @@ public class FinalizedSync {
       activeBatches.headSet(importedBatch, true).clear();
       commonAncestorSlot = importedBatch.getLastSlot();
     }
+    startNextImport();
     fillRetrievingQueue();
   }
 
