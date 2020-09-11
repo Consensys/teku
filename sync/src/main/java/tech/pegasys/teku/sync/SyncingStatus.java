@@ -14,29 +14,67 @@
 package tech.pegasys.teku.sync;
 
 import com.google.common.base.MoreObjects;
+import java.util.Optional;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SyncingStatus {
   private final boolean syncing;
-  private final SyncStatus syncStatus;
+  private final UInt64 currentSlot;
+  private final Optional<UInt64> startingSlot;
+  private final Optional<UInt64> highestSlot;
 
-  public SyncingStatus(final boolean syncing, final SyncStatus syncStatus) {
+  public SyncingStatus(
+      final boolean syncing,
+      final UInt64 currentSlot,
+      final Optional<UInt64> startingSlot,
+      final Optional<UInt64> highestSlot) {
     this.syncing = syncing;
-    this.syncStatus = syncStatus;
+    this.currentSlot = currentSlot;
+    this.startingSlot = startingSlot;
+    this.highestSlot = highestSlot;
+  }
+
+  public SyncingStatus(
+      final boolean syncing,
+      final UInt64 currentSlot,
+      final UInt64 startingSlot,
+      final UInt64 highestSlot) {
+    this.syncing = syncing;
+    this.currentSlot = currentSlot;
+    this.startingSlot = Optional.ofNullable(startingSlot);
+    this.highestSlot = Optional.ofNullable(highestSlot);
+  }
+
+  public SyncingStatus(final boolean syncing, final UInt64 currentSlot) {
+    this.syncing = syncing;
+    this.currentSlot = currentSlot;
+    this.startingSlot = Optional.empty();
+    this.highestSlot = Optional.empty();
+  }
+
+  public UInt64 getCurrentSlot() {
+    return this.currentSlot;
+  }
+
+  public Optional<UInt64> getStartingSlot() {
+    return startingSlot;
+  }
+
+  public Optional<UInt64> getHighestSlot() {
+    return highestSlot;
   }
 
   public boolean isSyncing() {
     return syncing;
   }
 
-  public SyncStatus getSyncStatus() {
-    return syncStatus;
-  }
-
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("syncing", syncing)
-        .add("syncStatus", syncStatus)
+        .add("currentSlot", currentSlot)
+        .add("startingSlot", startingSlot)
+        .add("highestSlot", highestSlot)
         .toString();
   }
 }

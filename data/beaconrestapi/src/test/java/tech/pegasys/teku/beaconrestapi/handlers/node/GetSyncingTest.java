@@ -20,6 +20,7 @@ import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.schema.SyncStatus;
@@ -43,7 +44,7 @@ public class GetSyncingTest {
     final UInt64 highestSlot = UInt64.valueOf(10);
     final tech.pegasys.teku.sync.SyncingStatus syncingStatus =
         new tech.pegasys.teku.sync.SyncingStatus(
-            isSyncing, new tech.pegasys.teku.sync.SyncStatus(startSlot, currentSlot, highestSlot));
+            isSyncing, currentSlot, Optional.of(startSlot), Optional.of(highestSlot));
     final GetSyncing handler = new GetSyncing(syncDataProvider, jsonProvider);
     final SyncingStatus expectedResponse =
         new SyncingStatus(true, new SyncStatus(startSlot, currentSlot, highestSlot));
