@@ -90,6 +90,10 @@ public class BatchChain implements Iterable<Batch> {
     batchesBeforeInclusive(batch).clear();
   }
 
+  public void removeAll() {
+    batches.clear();
+  }
+
   public Optional<Batch> last() {
     return batches.isEmpty() ? Optional.empty() : Optional.of(batches.last());
   }

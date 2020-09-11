@@ -16,6 +16,7 @@ package tech.pegasys.teku.sync.multipeer.batches;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 
 public interface Batch {
   UInt64 getFirstSlot();
@@ -49,4 +50,6 @@ public interface Batch {
   void markAsInvalid();
 
   void requestMoreBlocks(Runnable callback);
+
+  TargetChain getTargetChain();
 }

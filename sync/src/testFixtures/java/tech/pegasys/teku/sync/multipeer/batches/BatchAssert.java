@@ -94,6 +94,11 @@ public class BatchAssert extends AbstractAssert<BatchAssert, StubBatch> {
     isEmpty();
   }
 
+  public void isNotContestedOrInvalid() {
+    isNotContested();
+    isNotInvalid();
+  }
+
   public void hasFirstSlot(final long expected) {
     hasFirstSlot(UInt64.valueOf(expected));
   }

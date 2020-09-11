@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.sync.multipeer;
 
+import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -75,8 +76,12 @@ public class FinalizedSync {
   private void switchSyncTarget(final TargetChain targetChain) {
     eventThread.checkOnEventThread();
     this.targetChain = targetChain;
-    this.commonAncestorSlot = compute_start_slot_at_epoch(recentChainData.getFinalizedEpoch());
+    this.commonAncestorSlot = getCommonAncestorSlot();
     fillRetrievingQueue();
+  }
+
+  private UInt64 getCommonAncestorSlot() {
+    return compute_start_slot_at_epoch(recentChainData.getFinalizedEpoch());
   }
 
   private void onBatchReceivedBlocks(final Batch batch) {
@@ -102,15 +107,37 @@ public class FinalizedSync {
         .nextNonEmptyBatch(batch)
         .ifPresentOrElse(
             followingBatch -> checkBatchesFormChain(batch, followingBatch),
-            () -> {
-              if (batchEndsChain(batch)) {
-                batch.markComplete();
-                batch.markLastBlockConfirmed();
-              }
-            });
+            () -> checkAgainstTargetHead(batch));
 
     startNextImport();
     fillRetrievingQueue();
+  }
+
+  private void checkAgainstTargetHead(final Batch batch) {
+    if (batchEndsChain(batch)) {
+      batch.markComplete();
+      batch.markLastBlockConfirmed();
+    } else if (batch.isComplete()
+        && batch.getLastSlot().equals(targetChain.getChainHead().getSlot())) {
+      // We reached the target slot, but not the root that was claimed
+      if (batch.isEmpty()) {
+        // We didn't get any blocks - maybe we should have, or maybe a previous batch was wrong
+        // Contest all batches back to the last non-empty batch
+        final NavigableSet<Batch> batchesFromLastBlock =
+            activeBatches
+                .previousNonEmptyBatch(batch)
+                .map(activeBatches::batchesAfterInclusive)
+                .orElseGet(() -> activeBatches.batchesBeforeInclusive(batch));
+        // If any are incomplete, we might yet get the blocks we need
+        // Otherwise at least one of them is wrong so contest them all
+        if (batchesFromLastBlock.stream().allMatch(Batch::isComplete)) {
+          markBatchesAsContested(batchesFromLastBlock);
+        }
+      } else {
+        // We got blocks but they didn't lead to the target so must be invalid
+        batch.markAsInvalid();
+      }
+    }
   }
 
   private Boolean batchEndsChain(final Batch batch) {
@@ -148,7 +175,13 @@ public class FinalizedSync {
       markBatchesAsFormingChain(
           firstBatch, secondBatch, activeBatches.batchesBetweenExclusive(firstBatch, secondBatch));
     } else if (firstBatch.isComplete() && !secondBatch.isEmpty()) {
-      markBatchesAsContested(activeBatches.batchesBetweenInclusive(firstBatch, secondBatch));
+      if (firstBatch.getTargetChain().equals(secondBatch.getTargetChain())) {
+        markBatchesAsContested(activeBatches.batchesBetweenInclusive(firstBatch, secondBatch));
+      } else {
+        // We switched chains but they didn't actually match up. Go back to the finalized epoch
+        activeBatches.removeAll();
+        commonAncestorSlot = getCommonAncestorSlot();
+      }
     }
     // Otherwise there must be a block in firstBatch we haven't received yet
   }
@@ -194,6 +227,9 @@ public class FinalizedSync {
     if (!isActiveBatch(importedBatch)) {
       return;
     }
+    checkState(
+        importingBatch.isPresent() && importingBatch.get().equals(importedBatch),
+        "Received import complete for batch that shouldn't have been importing");
     importingBatch = Optional.empty();
     if (result.isFailure()) {
       // Mark all batches that form a chain with this one as invalid

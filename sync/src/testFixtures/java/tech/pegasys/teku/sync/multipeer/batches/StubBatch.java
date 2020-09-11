@@ -147,6 +147,11 @@ public class StubBatch implements Batch {
   }
 
   @Override
+  public TargetChain getTargetChain() {
+    return targetChain;
+  }
+
+  @Override
   public void markAsInvalid() {
     invalid = true;
   }
