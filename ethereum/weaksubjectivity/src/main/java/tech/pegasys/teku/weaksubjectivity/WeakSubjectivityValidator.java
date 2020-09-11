@@ -68,12 +68,23 @@ public class WeakSubjectivityValidator {
     }
   }
 
+  /**
+   * A catch-all handler for managing problems encountered while executing other validations
+   *
+   * @param message An error message
+   */
   public void handleValidationFailure(final String message) {
     for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
       policy.onFailedToPerformValidation(message);
     }
   }
 
+  /**
+   * A catch-all handler for managing problems encountered while executing other validations
+   *
+   * @param message An error message
+   * @param error The error encountered
+   */
   public void handleValidationFailure(final String message, Throwable error) {
     for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
       policy.onFailedToPerformValidation(message, error);

@@ -74,20 +74,15 @@ public class WeakSubjectivityCalculator {
   }
 
   /**
-   * TODO(#2779) - verify this calculation and determine whether we need this method From:
+   * TODO(#2779) - determine whether we need this method From:
    * https://notes.ethereum.org/@adiasg/weak-subjectvity-eth2#Updating-Weak-Subjectivity-Checkpoint-States
    *
-   * @param state The latest state?
-   * @return The epoch at which we should pull a WS checkpoint for distribution?
+   * @param headState The latest head state
+   * @return The epoch at which we should pull a WS checkpoint for distribution
    */
-  public final UInt64 getLatestWeakSubjectivityCheckpointEpoch(final BeaconState state) {
-    final int validatorCount = getActiveValidators(state);
-    final UInt64 finalizedEpoch = state.getFinalized_checkpoint().getEpoch();
-    return getLatestWeakSubjectivityCheckpointEpoch(validatorCount, finalizedEpoch);
-  }
-
-  final UInt64 getLatestWeakSubjectivityCheckpointEpoch(
-      final int validatorCount, final UInt64 finalizedEpoch) {
+  public final UInt64 getLatestWeakSubjectivityCheckpointEpoch(final BeaconState headState) {
+    final int validatorCount = getActiveValidators(headState);
+    final UInt64 finalizedEpoch = headState.getFinalized_checkpoint().getEpoch();
     final UInt64 weakSubjectivityMod = getWeakSubjectivityMod(validatorCount);
 
     return finalizedEpoch.dividedBy(weakSubjectivityMod).times(weakSubjectivityMod);

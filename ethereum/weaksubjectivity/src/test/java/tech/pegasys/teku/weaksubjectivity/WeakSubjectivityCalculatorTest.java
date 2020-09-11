@@ -124,6 +124,7 @@ public class WeakSubjectivityCalculatorTest {
         Arguments.of(16384, 1f / 3, 682),
         Arguments.of(65536, 1f / 3, 2730));
   }
+
   // Parameters from the table here:
   // https://notes.ethereum.org/@adiasg/weak-subjectvity-eth2#Updating-Weak-Subjectivity-Checkpoint-States
   public static Stream<Arguments> getWeakSubjectivityModParams() {
