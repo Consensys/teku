@@ -601,15 +601,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       UInt64 deltaTime = currentTime.minus(genesisTime);
       currentSlot = deltaTime.dividedBy(SECONDS_PER_SLOT);
       // Validate that we're running within the weak subjectivity period
-      recentChainData
-          .getStore()
-          .retrieveFinalizedCheckpointAndState()
-          .thenAccept(
-              finalizedCheckpointState -> {
-                final UInt64 slot = currentSlot.max(recentChainData.getCurrentSlot().orElse(ZERO));
-                weakSubjectivityValidator.validateLatestFinalizedCheckpoint(
-                    finalizedCheckpointState, slot);
-              });
+      validateLatestCheckpointIsWithinWeakSubjectivityPeriod(currentSlot);
     } else {
       currentSlot = ZERO;
       UInt64 timeUntilGenesis = genesisTime.minus(currentTime);
@@ -617,6 +609,23 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       STATUS_LOG.timeUntilGenesis(timeUntilGenesis.longValue(), p2pNetwork.getPeerCount());
     }
     slotProcessor.setCurrentSlot(currentSlot);
+  }
+
+  private void validateLatestCheckpointIsWithinWeakSubjectivityPeriod(final UInt64 currentSlot) {
+    SafeFuture.of(() -> recentChainData.getStore().retrieveFinalizedCheckpointAndState())
+        .thenAccept(
+            finalizedCheckpointState -> {
+              final UInt64 slot = currentSlot.max(recentChainData.getCurrentSlot().orElse(ZERO));
+              weakSubjectivityValidator.validateLatestFinalizedCheckpoint(
+                  finalizedCheckpointState, slot);
+            })
+        .exceptionally(
+            err -> {
+              weakSubjectivityValidator.handleValidationFailure(
+                  "Encountered an error while trying to validate latest finalized checkpoint", err);
+              throw new RuntimeException(err);
+            })
+        .reportExceptions();
   }
 
   @Override

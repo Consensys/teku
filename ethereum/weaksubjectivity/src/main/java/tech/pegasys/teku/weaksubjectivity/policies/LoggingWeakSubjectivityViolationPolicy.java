@@ -44,4 +44,14 @@ public class LoggingWeakSubjectivityViolationPolicy implements WeakSubjectivityV
         latestFinalizedCheckpoint.getEpoch(),
         activeValidatorCount);
   }
+
+  @Override
+  public void onFailedToPerformValidation(final String message) {
+    LOG.log(level, "Failed to perform weak subjectivity validation: {}", message);
+  }
+
+  @Override
+  public void onFailedToPerformValidation(final String message, final Throwable error) {
+    LOG.log(level, "Failed to perform weak subjectivity validation: " + message, error);
+  }
 }

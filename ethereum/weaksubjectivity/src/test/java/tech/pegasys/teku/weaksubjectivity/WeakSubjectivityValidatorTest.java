@@ -64,6 +64,8 @@ public class WeakSubjectivityValidatorTest {
         .verify(policies.get(1))
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
             checkpointState, validatorCount, currentSlot);
+
+    orderedPolicyMocks.verifyNoMoreInteractions();
   }
 
   @Test
@@ -77,5 +79,30 @@ public class WeakSubjectivityValidatorTest {
           .verify(policy, never())
           .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(any(), anyInt(), any());
     }
+
+    orderedPolicyMocks.verifyNoMoreInteractions();
+  }
+
+  @Test
+  public void handleValidationFailure() {
+    final String message = "Oops";
+    validator.handleValidationFailure(message);
+
+    orderedPolicyMocks.verify(policies.get(0)).onFailedToPerformValidation(message);
+    orderedPolicyMocks.verify(policies.get(1)).onFailedToPerformValidation(message);
+
+    orderedPolicyMocks.verifyNoMoreInteractions();
+  }
+
+  @Test
+  public void handleValidationFailure_withThrowable() {
+    final String message = "Oops";
+    final Throwable error = new RuntimeException("fail");
+    validator.handleValidationFailure(message, error);
+
+    orderedPolicyMocks.verify(policies.get(0)).onFailedToPerformValidation(message, error);
+    orderedPolicyMocks.verify(policies.get(1)).onFailedToPerformValidation(message, error);
+
+    orderedPolicyMocks.verifyNoMoreInteractions();
   }
 }

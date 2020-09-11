@@ -22,4 +22,8 @@ public interface WeakSubjectivityViolationPolicy {
       final CheckpointState latestFinalizedCheckpoint,
       final int activeValidatorCount,
       final UInt64 currentSlot);
+
+  void onFailedToPerformValidation(final String message);
+
+  void onFailedToPerformValidation(final String message, Throwable error);
 }

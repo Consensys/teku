@@ -24,6 +24,16 @@ public class StrictWeakSubjectivityViolationPolicy implements WeakSubjectivityVi
     exitClient();
   }
 
+  @Override
+  public void onFailedToPerformValidation(final String message) {
+    exitClient();
+  }
+
+  @Override
+  public void onFailedToPerformValidation(final String message, final Throwable error) {
+    exitClient();
+  }
+
   private void exitClient() {
     System.exit(2);
   }

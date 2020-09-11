@@ -61,10 +61,22 @@ public class WeakSubjectivityValidator {
     if (!calculator.isWithinWeakSubjectivityPeriod(latestFinalizedCheckpoint, currentSlot)) {
       final int activeValidators =
           calculator.getActiveValidators(latestFinalizedCheckpoint.getState());
-      for (WeakSubjectivityViolationPolicy violationPolicy : violationPolicies) {
-        violationPolicy.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
+      for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
+        policy.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
             latestFinalizedCheckpoint, activeValidators, currentSlot);
       }
+    }
+  }
+
+  public void handleValidationFailure(final String message) {
+    for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
+      policy.onFailedToPerformValidation(message);
+    }
+  }
+
+  public void handleValidationFailure(final String message, Throwable error) {
+    for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
+      policy.onFailedToPerformValidation(message, error);
     }
   }
 }
