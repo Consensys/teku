@@ -17,10 +17,8 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.NavigableSet;
 import java.util.Optional;
-import java.util.TreeSet;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -29,6 +27,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.multipeer.BatchImporter.BatchImportResult;
 import tech.pegasys.teku.sync.multipeer.batches.Batch;
+import tech.pegasys.teku.sync.multipeer.batches.BatchChain;
 import tech.pegasys.teku.sync.multipeer.batches.BatchFactory;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 
@@ -42,9 +41,7 @@ public class FinalizedSync {
   private final BatchFactory batchFactory;
   private final UInt64 batchSize;
 
-  // TODO: Replace this with a BatchChain class
-  private final NavigableSet<Batch> activeBatches =
-      new TreeSet<>(Comparator.comparing(Batch::getFirstSlot));
+  private final BatchChain activeBatches = new BatchChain();
 
   private Optional<Batch> importingBatch = Optional.empty();
 
@@ -89,33 +86,28 @@ public class FinalizedSync {
       return;
     }
 
-    final NavigableSet<Batch> previousBatches = activeBatches.headSet(batch, false);
-    final Optional<Batch> firstNonEmptyPreviousBatch =
-        previousBatches.descendingSet().stream()
-            .filter(previousBatch -> !previousBatch.isEmpty())
-            .findFirst();
-    firstNonEmptyPreviousBatch.ifPresentOrElse(
-        previousBatch -> checkBatchesFormChain(previousBatch, batch),
-        () -> {
-          // There are no previous blocks awaiting import, check if the batch builds on our chain
-          batch
-              .getFirstBlock()
-              .ifPresent(
-                  firstBlock -> checkBatchMatchesStartingPoint(batch, previousBatches, firstBlock));
-        });
+    activeBatches
+        .previousNonEmptyBatch(batch)
+        .ifPresentOrElse(
+            previousBatch -> checkBatchesFormChain(previousBatch, batch),
+            () -> {
+              // There are no previous blocks awaiting import, check if the batch builds on our
+              // chain
+              batch
+                  .getFirstBlock()
+                  .ifPresent(firstBlock -> checkBatchMatchesStartingPoint(batch, firstBlock));
+            });
 
-    final Optional<Batch> firstNonEmptyFollowingBatch =
-        activeBatches.tailSet(batch, false).stream()
-            .filter(followingBatch -> !followingBatch.isEmpty())
-            .findFirst();
-    firstNonEmptyFollowingBatch.ifPresentOrElse(
-        followingBatch -> checkBatchesFormChain(batch, followingBatch),
-        () -> {
-          if (batchEndsChain(batch)) {
-            batch.markComplete();
-            batch.markLastBlockConfirmed();
-          }
-        });
+    activeBatches
+        .nextNonEmptyBatch(batch)
+        .ifPresentOrElse(
+            followingBatch -> checkBatchesFormChain(batch, followingBatch),
+            () -> {
+              if (batchEndsChain(batch)) {
+                batch.markComplete();
+                batch.markLastBlockConfirmed();
+              }
+            });
 
     startNextImport();
     fillRetrievingQueue();
@@ -129,9 +121,8 @@ public class FinalizedSync {
   }
 
   private void checkBatchMatchesStartingPoint(
-      final Batch batch,
-      final NavigableSet<Batch> previousBatches,
-      final SignedBeaconBlock firstBlock) {
+      final Batch batch, final SignedBeaconBlock firstBlock) {
+    final NavigableSet<Batch> previousBatches = activeBatches.batchesBeforeExclusive(batch);
     if (isChildOfStartingPoint(firstBlock)) {
       // We found where this chain connects to ours so all prior empty batches are
       // complete and our first block is valid.
@@ -142,7 +133,7 @@ public class FinalizedSync {
       batch.markAsInvalid();
     } else if (previousBatches.stream().allMatch(Batch::isComplete)) {
       // All the previous batches claim to be empty but we don't match up.
-      markBatchesAsContested(activeBatches.headSet(batch, true));
+      markBatchesAsContested(activeBatches.batchesBeforeInclusive(batch));
     }
   }
 
@@ -155,9 +146,9 @@ public class FinalizedSync {
   private void checkBatchesFormChain(final Batch firstBatch, final Batch secondBatch) {
     if (batchesFormChain(firstBatch, secondBatch)) {
       markBatchesAsFormingChain(
-          firstBatch, secondBatch, activeBatches.subSet(firstBatch, false, secondBatch, false));
+          firstBatch, secondBatch, activeBatches.batchesBetweenExclusive(firstBatch, secondBatch));
     } else if (firstBatch.isComplete() && !secondBatch.isEmpty()) {
-      markBatchesAsContested(activeBatches.subSet(firstBatch, true, secondBatch, true));
+      markBatchesAsContested(activeBatches.batchesBetweenInclusive(firstBatch, secondBatch));
     }
     // Otherwise there must be a block in firstBatch we haven't received yet
   }
@@ -166,20 +157,16 @@ public class FinalizedSync {
     if (importingBatch.isPresent()) {
       return;
     }
-    for (Batch batch : activeBatches) {
-      if (batch.isEmpty()) {
-        continue;
-      }
-      if (!batch.isConfirmed()) {
-        break;
-      }
-      importingBatch = Optional.of(batch);
-      batchImporter
-          .importBatch(batch)
-          .thenAcceptAsync(result -> onImportComplete(result, batch), eventThread)
-          .reportExceptions();
-      break;
-    }
+    activeBatches
+        .firstImportableBatch()
+        .ifPresent(
+            batch -> {
+              importingBatch = Optional.of(batch);
+              batchImporter
+                  .importBatch(batch)
+                  .thenAcceptAsync(result -> onImportComplete(result, batch), eventThread)
+                  .reportExceptions();
+            });
   }
 
   private void markBatchesAsFormingChain(
@@ -210,7 +197,7 @@ public class FinalizedSync {
     importingBatch = Optional.empty();
     if (result.isFailure()) {
       // Mark all batches that form a chain with this one as invalid
-      for (Batch batch : activeBatches.tailSet(importedBatch, true)) {
+      for (Batch batch : activeBatches.batchesAfterInclusive(importedBatch)) {
         if (!batch.isFirstBlockConfirmed()) {
           break;
         }
@@ -218,7 +205,7 @@ public class FinalizedSync {
       }
     } else {
       // Everything prior to this batch must already exist on our chain so we can drop them all
-      activeBatches.headSet(importedBatch, true).clear();
+      activeBatches.removeUpToIncluding(importedBatch);
       commonAncestorSlot = importedBatch.getLastSlot();
     }
     startNextImport();
@@ -240,7 +227,6 @@ public class FinalizedSync {
   }
 
   private void fillRetrievingQueue() {
-    // TODO: Check if we have reached the chain target
     eventThread.checkOnEventThread();
 
     final long incompleteBatchCount =
@@ -270,7 +256,7 @@ public class FinalizedSync {
 
   private UInt64 getNextSlotToRequest() {
     final UInt64 lastRequestedSlot =
-        activeBatches.isEmpty() ? this.commonAncestorSlot : activeBatches.last().getLastSlot();
+        activeBatches.last().map(Batch::getLastSlot).orElse(this.commonAncestorSlot);
     return lastRequestedSlot.plus(1);
   }
 
