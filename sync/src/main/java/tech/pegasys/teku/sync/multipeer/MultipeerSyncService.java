@@ -29,7 +29,6 @@ import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.sync.SyncStatus;
 import tech.pegasys.teku.sync.SyncingStatus;
 import tech.pegasys.teku.sync.gossip.BlockManager;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
@@ -102,7 +101,7 @@ public class MultipeerSyncService extends Service implements SyncService {
 
   @Override
   public SyncingStatus getSyncStatus() {
-    return new SyncingStatus(false, new SyncStatus(UInt64.ZERO, UInt64.ZERO, UInt64.ZERO));
+    return new SyncingStatus(false, UInt64.ZERO);
   }
 
   @Override
