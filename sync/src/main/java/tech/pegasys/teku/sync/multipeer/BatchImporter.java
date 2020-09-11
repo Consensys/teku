@@ -13,10 +13,26 @@
 
 package tech.pegasys.teku.sync.multipeer;
 
+import static com.google.common.base.Preconditions.checkState;
+
+import java.util.ArrayList;
+import java.util.List;
+import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.sync.multipeer.batches.Batch;
 
 public class BatchImporter {
+
+  private final BlockImporter blockImporter;
+  private final AsyncRunner asyncRunner;
+
+  public BatchImporter(final BlockImporter blockImporter, final AsyncRunner asyncRunner) {
+    this.blockImporter = blockImporter;
+    this.asyncRunner = asyncRunner;
+  }
 
   /**
    * Import the blocks in the specified batch.
@@ -27,7 +43,30 @@ public class BatchImporter {
    * @return a future reporting the result of the import
    */
   public SafeFuture<BatchImportResult> importBatch(final Batch batch) {
-    throw new UnsupportedOperationException("Not implemented yet");
+    // Copy the blocks as we're going to use them from off the event thread.
+    final List<SignedBeaconBlock> blocks = new ArrayList<>(batch.getBlocks());
+    checkState(!blocks.isEmpty(), "Batch has no blocks to import");
+    return asyncRunner.runAsync(
+        () -> {
+          SafeFuture<BlockImportResult> importResult = blockImporter.importBlock(blocks.get(0));
+          for (int i = 1; i < blocks.size(); i++) {
+            final SignedBeaconBlock block = blocks.get(i);
+            importResult =
+                importResult.thenCompose(
+                    previousResult -> {
+                      if (previousResult.isSuccessful()) {
+                        return blockImporter.importBlock(block);
+                      } else {
+                        return SafeFuture.completedFuture(previousResult);
+                      }
+                    });
+          }
+          return importResult.thenApply(
+              lastBlockImportResult ->
+                  lastBlockImportResult.isSuccessful()
+                      ? BatchImportResult.IMPORTED_ALL_BLOCKS
+                      : BatchImportResult.IMPORT_FAILED);
+        });
   }
 
   public enum BatchImportResult {

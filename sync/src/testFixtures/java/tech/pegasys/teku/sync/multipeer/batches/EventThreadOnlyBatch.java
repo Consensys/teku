@@ -14,6 +14,7 @@
 package tech.pegasys.teku.sync.multipeer.batches;
 
 import com.google.common.base.MoreObjects;
+import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
@@ -51,6 +52,12 @@ public class EventThreadOnlyBatch implements Batch {
   public Optional<SignedBeaconBlock> getLastBlock() {
     eventThread.checkOnEventThread();
     return delegate.getLastBlock();
+  }
+
+  @Override
+  public List<SignedBeaconBlock> getBlocks() {
+    eventThread.checkOnEventThread();
+    return delegate.getBlocks();
   }
 
   @Override

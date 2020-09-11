@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.sync.multipeer.batches;
 
+import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -26,6 +27,8 @@ public interface Batch {
   Optional<SignedBeaconBlock> getFirstBlock();
 
   Optional<SignedBeaconBlock> getLastBlock();
+
+  List<SignedBeaconBlock> getBlocks();
 
   void markComplete();
 

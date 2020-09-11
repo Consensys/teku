@@ -89,6 +89,11 @@ public class StubBatch implements Batch {
   }
 
   @Override
+  public List<SignedBeaconBlock> getBlocks() {
+    return blocks;
+  }
+
+  @Override
   public void markComplete() {
     complete = true;
   }
