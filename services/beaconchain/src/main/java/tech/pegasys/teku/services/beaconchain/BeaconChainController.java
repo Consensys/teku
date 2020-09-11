@@ -107,6 +107,7 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
+import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 public class BeaconChainController extends Service implements TimeTickChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -122,6 +123,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final EventBus eventBus;
   private final SlotEventsChannel slotEventsChannelPublisher;
   private final AsyncRunner networkAsyncRunner;
+  private final WeakSubjectivityValidator weakSubjectivityValidator;
 
   private volatile ForkChoice forkChoice;
   private volatile StateTransition stateTransition;
@@ -154,6 +156,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.config = serviceConfig.getConfig();
     this.metricsSystem = serviceConfig.getMetricsSystem();
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
+    // TODO(#2779) - make this validator strict when it is fully fleshed out
+    weakSubjectivityValidator = WeakSubjectivityValidator.lenient();
   }
 
   @Override
@@ -592,11 +596,22 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void onStoreInitialized() {
     UInt64 genesisTime = recentChainData.getGenesisTime();
     UInt64 currentTime = timeProvider.getTimeInSeconds();
-    UInt64 currentSlot = ZERO;
+    final UInt64 currentSlot;
     if (currentTime.compareTo(genesisTime) >= 0) {
       UInt64 deltaTime = currentTime.minus(genesisTime);
       currentSlot = deltaTime.dividedBy(SECONDS_PER_SLOT);
+      // Validate that we're running within the weak subjectivity period
+      recentChainData
+          .getStore()
+          .retrieveFinalizedCheckpointAndState()
+          .thenAccept(
+              finalizedCheckpointState -> {
+                final UInt64 slot = currentSlot.max(recentChainData.getCurrentSlot().orElse(ZERO));
+                weakSubjectivityValidator.validateLatestFinalizedCheckpoint(
+                    finalizedCheckpointState, slot);
+              });
     } else {
+      currentSlot = ZERO;
       UInt64 timeUntilGenesis = genesisTime.minus(currentTime);
       genesisTimeTracker = currentTime;
       STATUS_LOG.timeUntilGenesis(timeUntilGenesis.longValue(), p2pNetwork.getPeerCount());
