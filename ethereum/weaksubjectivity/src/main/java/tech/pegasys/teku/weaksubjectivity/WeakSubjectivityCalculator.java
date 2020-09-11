@@ -28,7 +28,6 @@ import tech.pegasys.teku.util.config.Constants;
  */
 public class WeakSubjectivityCalculator {
   public static float DEFAULT_SAFETY_DECAY = .1f;
-
   static final UInt64 WITHDRAWAL_DELAY =
       UInt64.valueOf(Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY);
 

@@ -790,21 +790,21 @@ class Store implements UpdatableStore {
       }
 
       final Checkpoint finalizedCheckpoint = getFinalizedCheckpoint();
-      final SafeFuture<Optional<BeaconState>> checkpointFuture =
+      final SafeFuture<Optional<BeaconState>> stateFuture =
           retrieveCheckpointState(finalizedCheckpoint);
       final SafeFuture<Optional<SignedBeaconBlock>> blockFuture =
           retrieveSignedBlock(finalizedCheckpoint.getRoot());
 
-      return SafeFuture.allOf(checkpointFuture, blockFuture)
+      return SafeFuture.allOf(stateFuture, blockFuture)
           .thenCompose(
               (__) -> {
-                final Optional<BeaconState> checkpoint = checkpointFuture.join();
+                final Optional<BeaconState> state = stateFuture.join();
                 final Optional<SignedBeaconBlock> block = blockFuture.join();
-                if (checkpoint.isEmpty() || block.isEmpty()) {
+                if (state.isEmpty() || block.isEmpty()) {
                   return Store.this.retrieveFinalizedCheckpointAndState();
                 } else {
                   return SafeFuture.completedFuture(
-                      new CheckpointState(finalizedCheckpoint, block.get(), checkpoint.get()));
+                      new CheckpointState(finalizedCheckpoint, block.get(), state.get()));
                 }
               });
     }
