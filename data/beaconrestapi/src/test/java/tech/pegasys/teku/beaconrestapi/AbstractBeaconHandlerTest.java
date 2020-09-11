@@ -19,10 +19,13 @@ import static org.mockito.Mockito.verify;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
+import java.util.concurrent.ExecutionException;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
+import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -30,7 +33,6 @@ import tech.pegasys.teku.sync.SyncService;
 
 public abstract class AbstractBeaconHandlerTest {
 
-  @SuppressWarnings("unchecked")
   protected final Eth2Network eth2Network = mock(Eth2Network.class);
 
   protected final Context context = mock(Context.class);
@@ -41,7 +43,11 @@ public abstract class AbstractBeaconHandlerTest {
   protected final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);
   private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);
 
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
+
   protected final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
+  protected final ValidatorDataProvider validatorDataProvider = mock(ValidatorDataProvider.class);
 
   protected void verifyCacheStatus(final String cacheControlString) {
     verify(context).header(Header.CACHE_CONTROL, cacheControlString);
@@ -55,6 +61,14 @@ public abstract class AbstractBeaconHandlerTest {
     verify(context).result(stringArgs.capture());
     String val = stringArgs.getValue();
     return jsonProvider.jsonToObject(val, clazz);
+  }
+
+  protected <T> T getResponseFromFuture(Class<T> clazz)
+      throws ExecutionException, InterruptedException, JsonProcessingException {
+    verify(context).result(args.capture());
+    SafeFuture<String> future = args.getValue();
+    String data = future.get();
+    return jsonProvider.jsonToObject(data, clazz);
   }
 
   protected tech.pegasys.teku.sync.SyncingStatus getSyncStatus(

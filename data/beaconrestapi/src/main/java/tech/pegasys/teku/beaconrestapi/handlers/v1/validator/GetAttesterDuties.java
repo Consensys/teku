@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.INDEX;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -64,6 +63,17 @@ public class GetAttesterDuties extends AbstractHandler implements Handler {
     this.chainDataProvider = dataProvider.getChainDataProvider();
   }
 
+  GetAttesterDuties(
+      final ChainDataProvider chainDataProvider,
+      final SyncDataProvider syncDataProvider,
+      final ValidatorDataProvider validatorDataProvider,
+      final JsonProvider jsonProvider) {
+    super(jsonProvider);
+    this.chainDataProvider = chainDataProvider;
+    this.validatorDataProvider = validatorDataProvider;
+    this.syncDataProvider = syncDataProvider;
+  }
+
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
@@ -95,7 +105,7 @@ public class GetAttesterDuties extends AbstractHandler implements Handler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    if (!validatorDataProvider.isStoreAvailable() || syncDataProvider.getSyncStatus().is_syncing) {
+    if (!validatorDataProvider.isStoreAvailable() || syncDataProvider.isSyncing()) {
       ctx.status(SC_SERVICE_UNAVAILABLE);
       return;
     }
@@ -120,7 +130,7 @@ public class GetAttesterDuties extends AbstractHandler implements Handler {
       SafeFuture<Optional<List<AttesterDuty>>> future =
           validatorDataProvider.getAttesterDuties(epoch, indexes);
 
-      handleOptionalResult(ctx, future, this::handleResult, SC_INTERNAL_SERVER_ERROR);
+      handleOptionalResult(ctx, future, this::handleResult, List.of());
 
     } catch (NumberFormatException ex) {
       LOG.trace("Error parsing", ex);

@@ -44,8 +44,8 @@ public class ListQueryParameterUtils {
     String integerList = "";
     try {
       integerList = String.join(",", validateQueryParameter(parameterMap, key));
-      //fixme split on char
-      //splitter.on (omitEmptyStrings)
+      // fixme split on char
+      // splitter.on (omitEmptyStrings)
       return Arrays.stream(integerList.split(",+"))
           .map(Integer::parseUnsignedInt)
           .collect(Collectors.toList());
