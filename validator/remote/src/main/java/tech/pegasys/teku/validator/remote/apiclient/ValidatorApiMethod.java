@@ -26,7 +26,6 @@ public enum ValidatorApiMethod {
   SUBSCRIBE_TO_PERSISTENT_SUBNETS("validator/persistent_subnets_subscription"),
   GET_ATTESTATION_DUTIES("eth/v1/validator/duties/attester/:epoch");
 
-
   private final String path;
 
   ValidatorApiMethod(final String path) {

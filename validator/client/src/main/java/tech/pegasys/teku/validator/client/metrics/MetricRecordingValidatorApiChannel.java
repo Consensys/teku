@@ -38,7 +38,8 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   public static final String FORK_REQUESTS_COUNTER_NAME = "beacon_node_fork_info_requests_total";
   public static final String DUTIES_REQUESTS_COUNTER_NAME = "beacon_node_duties_requests_total";
-  public static final String ATTESTATION_DUTIES_REQUESTS_COUNTER_NAME = "beacon_node_attestation_duties_requests_total";
+  public static final String ATTESTATION_DUTIES_REQUESTS_COUNTER_NAME =
+      "beacon_node_attestation_duties_requests_total";
   public static final String UNSIGNED_BLOCK_REQUESTS_COUNTER_NAME =
       "beacon_node_unsigned_block_requests_total";
   public static final String UNSIGNED_ATTESTATION_REQUEST_COUNTER_NAME =
@@ -81,7 +82,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             metricsSystem,
             DUTIES_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for validator duties");
-    attestationDutiesRequestCounter  =
+    attestationDutiesRequestCounter =
         BeaconChainRequestCounter.create(
             metricsSystem,
             ATTESTATION_DUTIES_REQUESTS_COUNTER_NAME,
@@ -140,8 +141,10 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<ValidatorDuties>>> getAttestationDuties(final UInt64 epoch, final Collection<Integer> validatorIndexes) {
-    return countRequest(delegate.getAttestationDuties(epoch, validatorIndexes), attestationDutiesRequestCounter);
+  public SafeFuture<Optional<List<ValidatorDuties>>> getAttestationDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+    return countRequest(
+        delegate.getAttestationDuties(epoch, validatorIndexes), attestationDutiesRequestCounter);
   }
 
   @Override

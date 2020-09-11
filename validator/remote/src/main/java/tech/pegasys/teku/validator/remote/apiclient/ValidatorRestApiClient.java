@@ -36,7 +36,8 @@ public interface ValidatorRestApiClient {
 
   List<ValidatorDuties> getDuties(ValidatorDutiesRequest request);
 
-  List<AttesterDuty> getAttestationDuties(final UInt64 epoch, final Collection<Integer> validatorIndexes);
+  List<AttesterDuty> getAttestationDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndexes);
 
   Optional<BeaconBlock> createUnsignedBlock(
       UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);

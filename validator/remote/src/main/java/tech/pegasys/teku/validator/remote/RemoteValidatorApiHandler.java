@@ -98,7 +98,8 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<ValidatorDuties>>> getAttestationDuties(final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+  public SafeFuture<Optional<List<ValidatorDuties>>> getAttestationDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndexes) {
     return asyncRunner.runAsync(
         () -> {
           final List<ValidatorDuties> validatorDuties =
@@ -110,10 +111,9 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
         });
   }
 
-  private ValidatorDuties mapToApiValidatorDuties(
-      final AttesterDuty attesterDuty
-  ) {
-    return ValidatorDuties.withDuties(attesterDuty.pubkey.asBLSPublicKey(),
+  private ValidatorDuties mapToApiValidatorDuties(final AttesterDuty attesterDuty) {
+    return ValidatorDuties.withDuties(
+        attesterDuty.pubkey.asBLSPublicKey(),
         attesterDuty.validatorIndex.intValue(),
         attesterDuty.committeeIndex.intValue(),
         attesterDuty.validatorCommitteeIndex.intValue(),

@@ -96,8 +96,12 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public List<AttesterDuty> getAttestationDuties(final UInt64 epoch, final Collection<Integer> validatorIndexes) {
-    return get(GET_ATTESTATION_DUTIES, Map.of("index",validatorIndexes.toString()), GetAttesterDutiesResponse.class)
+  public List<AttesterDuty> getAttestationDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+    return get(
+            GET_ATTESTATION_DUTIES,
+            Map.of("index", validatorIndexes.toString()),
+            GetAttesterDutiesResponse.class)
         .map(response -> response.data)
         .orElse(Collections.emptyList());
   }

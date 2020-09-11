@@ -134,7 +134,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<ValidatorDuties>>> getAttestationDuties(final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+  public SafeFuture<Optional<List<ValidatorDuties>>> getAttestationDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndexes) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -150,9 +151,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 optionalState
                     .map(state -> processSlots(state, slot))
                     .map(state -> getValidatorDutiesFromIndexes(state, epoch, validatorIndexes)));
-
   }
-
 
   private BeaconState processSlots(final BeaconState startingState, final UInt64 targetSlot) {
     if (startingState.getSlot().compareTo(targetSlot) >= 0) {
@@ -347,11 +346,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return headEpoch.plus(1).isLessThan(currentEpoch);
   }
 
-
-  private List<ValidatorDuties> getValidatorDutiesFromIndexes(final BeaconState state, final UInt64 epoch, final Collection<Integer> validatorIndexes) {
-    List<BLSPublicKey> publicKeys = validatorIndexes.stream().map(index -> state.getValidators().get(index)).map(Validator::getPubkey).collect(toList());
+  private List<ValidatorDuties> getValidatorDutiesFromIndexes(
+      final BeaconState state, final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+    List<BLSPublicKey> publicKeys =
+        validatorIndexes.stream()
+            .map(index -> state.getValidators().get(index))
+            .map(Validator::getPubkey)
+            .collect(toList());
     return getValidatorDutiesFromState(state, epoch, publicKeys);
-
   }
 
   private List<ValidatorDuties> getValidatorDutiesFromState(
