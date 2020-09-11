@@ -43,6 +43,7 @@ public class TekuConfigurationBuilder {
   private int targetSubnetSubscriberCount;
   private List<String> p2pStaticPeers;
   private Boolean p2pSnappyEnabled;
+  private boolean multiPeerSyncEnabled = false;
   private Integer interopGenesisTime;
   private int interopOwnedValidatorStartIndex;
   private int interopOwnedValidatorCount;
@@ -186,6 +187,11 @@ public class TekuConfigurationBuilder {
 
   public TekuConfigurationBuilder setP2pSnappyEnabled(final Boolean p2pSnappyEnabled) {
     this.p2pSnappyEnabled = p2pSnappyEnabled;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setMultiPeerSyncEnabled(final boolean multiPeerSyncEnabled) {
+    this.multiPeerSyncEnabled = multiPeerSyncEnabled;
     return this;
   }
 
@@ -513,6 +519,7 @@ public class TekuConfigurationBuilder {
         targetSubnetSubscriberCount,
         p2pStaticPeers,
         p2pSnappyEnabled,
+        multiPeerSyncEnabled,
         interopGenesisTime,
         interopOwnedValidatorStartIndex,
         interopOwnedValidatorCount,
