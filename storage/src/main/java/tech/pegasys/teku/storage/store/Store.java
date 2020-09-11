@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.store;
 
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromDynamicMap;
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
+import static tech.pegasys.teku.core.stategenerator.CheckpointStateTask.AsyncStateProvider.fromBlockAndState;
 
 import com.google.common.collect.Sets;
 import java.util.HashMap;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
@@ -376,6 +378,30 @@ class Store implements UpdatableStore {
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint) {
     return checkpointStates.perform(new CheckpointStateTask(checkpoint, this::retrieveBlockState));
+  }
+
+  @Override
+  public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
+    final Checkpoint finalizedCheckpoint;
+    final SignedBlockAndState finalizedBlockAndState;
+
+    readLock.lock();
+    try {
+      finalizedCheckpoint = this.finalized_checkpoint;
+      finalizedBlockAndState = this.finalizedBlockAndState;
+    } finally {
+      readLock.unlock();
+    }
+
+    return checkpointStates
+        .perform(
+            new CheckpointStateTask(finalizedCheckpoint, fromBlockAndState(finalizedBlockAndState)))
+        .thenApply(
+            maybeState ->
+                new CheckpointState(
+                    finalizedCheckpoint,
+                    finalizedBlockAndState.getBlock(),
+                    maybeState.orElseThrow()));
   }
 
   @Override
@@ -751,14 +777,36 @@ class Store implements UpdatableStore {
       if (inMemoryCheckpointBlockState != null) {
         // Not executing the task via the task queue to avoid caching the result before the tx is
         // committed
-        return new CheckpointStateTask(
-                checkpoint,
-                root ->
-                    SafeFuture.completedFuture(
-                        Optional.of(inMemoryCheckpointBlockState.getState())))
+        return new CheckpointStateTask(checkpoint, fromBlockAndState(inMemoryCheckpointBlockState))
             .performTask();
       }
       return Store.this.retrieveCheckpointState(checkpoint);
+    }
+
+    @Override
+    public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
+      if (this.finalized_checkpoint.isEmpty()) {
+        return Store.this.retrieveFinalizedCheckpointAndState();
+      }
+
+      final Checkpoint finalizedCheckpoint = getFinalizedCheckpoint();
+      final SafeFuture<Optional<BeaconState>> checkpointFuture =
+          retrieveCheckpointState(finalizedCheckpoint);
+      final SafeFuture<Optional<SignedBeaconBlock>> blockFuture =
+          retrieveSignedBlock(finalizedCheckpoint.getRoot());
+
+      return SafeFuture.allOf(checkpointFuture, blockFuture)
+          .thenCompose(
+              (__) -> {
+                final Optional<BeaconState> checkpoint = checkpointFuture.join();
+                final Optional<SignedBeaconBlock> block = blockFuture.join();
+                if (checkpoint.isEmpty() || block.isEmpty()) {
+                  return Store.this.retrieveFinalizedCheckpointAndState();
+                } else {
+                  return SafeFuture.completedFuture(
+                      new CheckpointState(finalizedCheckpoint, block.get(), checkpoint.get()));
+                }
+              });
     }
 
     @Override
