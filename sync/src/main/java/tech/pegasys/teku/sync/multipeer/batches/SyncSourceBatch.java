@@ -141,17 +141,18 @@ public class SyncSourceBatch implements Batch {
     final UInt64 remainingSlots = count.minus(startSlot.minus(firstSlot));
     syncSource
         .requestBlocksByRange(startSlot, remainingSlots, UInt64.ONE, requestHandler)
-        .thenRunAsync(
-            () -> {
-              final List<SignedBeaconBlock> newBlocks = requestHandler.complete();
-              blocks.addAll(newBlocks);
-              if (newBlocks.isEmpty()
-                  || newBlocks.get(newBlocks.size() - 1).getSlot().equals(getLastSlot())) {
-                complete = true;
-              }
-              callback.run();
-            },
-            eventThread);
+        .thenRunAsync(() -> onRequestComplete(requestHandler), eventThread)
+        .thenRun(callback)
+        .reportExceptions();
+  }
+
+  private void onRequestComplete(final RequestHandler requestHandler) {
+    final List<SignedBeaconBlock> newBlocks = requestHandler.complete();
+    blocks.addAll(newBlocks);
+    if (newBlocks.isEmpty()
+        || newBlocks.get(newBlocks.size() - 1).getSlot().equals(getLastSlot())) {
+      complete = true;
+    }
   }
 
   @Override
