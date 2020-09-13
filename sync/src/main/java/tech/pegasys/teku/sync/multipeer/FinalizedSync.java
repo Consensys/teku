@@ -297,6 +297,7 @@ public class FinalizedSync {
   }
 
   private void requestMoreBlocks(final Batch batch) {
+    LOG.trace("Requesting blocks from batch starting at slot {}", batch.getFirstSlot());
     batch.requestMoreBlocks(() -> eventThread.execute(() -> onBatchReceivedBlocks(batch)));
   }
 

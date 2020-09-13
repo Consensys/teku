@@ -18,13 +18,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.assertj.core.api.AbstractAssert;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class BatchAssert extends AbstractAssert<BatchAssert, StubBatch> {
+public class BatchAssert extends AbstractAssert<BatchAssert, Batch> {
 
-  private BatchAssert(final StubBatch batch, final Class<?> selfType) {
+  private BatchAssert(final Batch batch, final Class<?> selfType) {
     super(batch, selfType);
   }
 
-  public static BatchAssert assertThatBatch(final StubBatch batch) {
+  public static BatchAssert assertThatBatch(final Batch batch) {
     return new BatchAssert(batch, BatchAssert.class);
   }
 
@@ -49,6 +49,20 @@ public class BatchAssert extends AbstractAssert<BatchAssert, StubBatch> {
   public void isNotConfirmed() {
     assertThat(actual.isConfirmed())
         .withFailMessage("Expected batch %s to not be confirmed but was", actual)
+        .isFalse();
+  }
+
+  public void hasConfirmedFirstBlock() {
+    assertThat(actual.isFirstBlockConfirmed())
+        .withFailMessage(
+            "Expected batch %s to have first block confirmed but was unconfirmed", actual)
+        .isTrue();
+  }
+
+  public void hasUnconfirmedFirstBlock() {
+    assertThat(actual.isFirstBlockConfirmed())
+        .withFailMessage(
+            "Expected batch %s to have first block unconfirmed but was confirmed", actual)
         .isFalse();
   }
 
@@ -77,13 +91,15 @@ public class BatchAssert extends AbstractAssert<BatchAssert, StubBatch> {
   }
 
   public void isInvalid() {
-    assertThat(actual.isInvalid())
+    isInstanceOf(StubBatch.class);
+    assertThat(((StubBatch) actual).isInvalid())
         .withFailMessage("Expected batch %s to be invalid but was not", actual)
         .isTrue();
   }
 
   public void isNotInvalid() {
-    assertThat(actual.isInvalid())
+    isInstanceOf(StubBatch.class);
+    assertThat(((StubBatch) actual).isInvalid())
         .withFailMessage("Expected batch %s to not be invalid but was", actual)
         .isFalse();
   }

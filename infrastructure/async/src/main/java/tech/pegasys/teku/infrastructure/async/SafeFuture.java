@@ -357,6 +357,11 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   @Override
+  public SafeFuture<Void> thenRunAsync(final Runnable action, final Executor executor) {
+    return (SafeFuture<Void>) super.thenRunAsync(action, executor);
+  }
+
+  @Override
   public SafeFuture<Void> thenAccept(final Consumer<? super T> action) {
     return (SafeFuture<Void>) super.thenAccept(action);
   }

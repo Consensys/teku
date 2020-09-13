@@ -13,11 +13,26 @@
 
 package tech.pegasys.teku.sync.multipeer.batches;
 
+import java.util.Collection;
+import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 
 public class BatchFactory {
+  private final EventThread eventThread;
+
+  public BatchFactory(final EventThread eventThread) {
+    this.eventThread = eventThread;
+  }
+
   public Batch createBatch(final TargetChain chain, final UInt64 start, final UInt64 count) {
-    throw new UnsupportedOperationException("Not implemented yet");
+    eventThread.checkOnEventThread();
+    final SyncSource peer = selectRandomPeer(chain.getPeers());
+    return new SyncSourceBatch(eventThread, peer, chain, start, count);
+  }
+
+  private SyncSource selectRandomPeer(final Collection<SyncSource> peers) {
+    return peers.stream().skip((int) (peers.size() * Math.random())).findFirst().orElseThrow();
   }
 }
