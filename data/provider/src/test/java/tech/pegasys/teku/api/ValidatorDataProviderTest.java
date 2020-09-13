@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
@@ -361,6 +363,51 @@ public class ValidatorDataProviderTest {
         provider.submitSignedBlock(signedBeaconBlock);
 
     assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(500);
+  }
+
+  @Test
+  public void getAttesterDuties_shouldHandleEmptyIndexesList()
+      throws ExecutionException, InterruptedException {
+    final SafeFuture<Optional<List<AttesterDuty>>> future =
+        provider.getAttesterDuties(UInt64.ONE, List.of());
+    assertThat(future.get()).isEmpty();
+  }
+
+  @Test
+  public void getAttesterDuties_shouldReturnDutiesForKnownValidator()
+      throws ExecutionException, InterruptedException {
+    tech.pegasys.teku.validator.api.ValidatorDuties v1 =
+        tech.pegasys.teku.validator.api.ValidatorDuties.withDuties(
+            BLSPublicKey.random(0), 1, 2, 3, 4, List.of(), UInt64.ONE);
+    tech.pegasys.teku.validator.api.ValidatorDuties v2 =
+        tech.pegasys.teku.validator.api.ValidatorDuties.withDuties(
+            BLSPublicKey.random(1), 11, 12, 13, 14, List.of(), UInt64.ZERO);
+    tech.pegasys.teku.validator.api.ValidatorDuties v3 =
+        tech.pegasys.teku.validator.api.ValidatorDuties.noDuties(BLSPublicKey.random(2));
+    when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(v1, v2, v3))));
+
+    final SafeFuture<Optional<List<AttesterDuty>>> future =
+        provider.getAttesterDuties(ONE, List.of(1, 2, 3));
+    final Optional<List<AttesterDuty>> maybeList = future.get();
+    final List<AttesterDuty> list = maybeList.get();
+    assertThat(list)
+        .containsExactlyInAnyOrder(asAttesterDuty(v1), asAttesterDuty(v2), asAttesterDuty(v3));
+  }
+
+  private AttesterDuty asAttesterDuty(
+      final tech.pegasys.teku.validator.api.ValidatorDuties duties) {
+    if (duties.getDuties().isEmpty()) {
+      return new AttesterDuty(new BLSPubKey(duties.getPublicKey()), null, null, null, null, null);
+    }
+    final tech.pegasys.teku.validator.api.ValidatorDuties.Duties duties1 = duties.getDuties().get();
+    return new AttesterDuty(
+        new BLSPubKey(duties.getPublicKey()),
+        UInt64.valueOf(duties1.getValidatorIndex()),
+        UInt64.valueOf(duties1.getAttestationCommitteeIndex()),
+        UInt64.valueOf(duties1.getAggregatorModulo()),
+        UInt64.valueOf(duties1.getAttestationCommitteePosition()),
+        duties1.getAttestationSlot());
   }
 
   private List<BLSPubKey> generatePublicKeys(final int count) {

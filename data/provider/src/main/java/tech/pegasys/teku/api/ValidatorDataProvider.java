@@ -220,7 +220,7 @@ public class ValidatorDataProvider {
   public SafeFuture<Optional<List<AttesterDuty>>> getAttesterDuties(
       final UInt64 epoch, final List<Integer> indexes) {
     if (indexes.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
+      return SafeFuture.completedFuture(Optional.empty());
     }
     return SafeFuture.of(() -> validatorApiChannel.getAttestationDuties(epoch, indexes))
         .thenApply(

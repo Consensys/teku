@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.INDEX;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
@@ -112,7 +113,7 @@ public class GetAttesterDuties extends AbstractHandler implements Handler {
 
     final Map<String, String> parameters = ctx.pathParamMap();
     try {
-      final UInt64 epoch = UInt64.valueOf(parameters.get("epoch"));
+      final UInt64 epoch = UInt64.valueOf(parameters.get(EPOCH));
       final UInt64 currentEpoch = chainDataProvider.getCurrentEpoch();
       if (currentEpoch.plus(UInt64.ONE).isLessThan(epoch)) {
         ctx.result(
@@ -125,7 +126,7 @@ public class GetAttesterDuties extends AbstractHandler implements Handler {
         return;
       }
       final List<Integer> indexes =
-          ListQueryParameterUtils.getParameterAsIntegerList(ctx.queryParamMap(), "index");
+          ListQueryParameterUtils.getParameterAsIntegerList(ctx.queryParamMap(), INDEX);
 
       SafeFuture<Optional<List<AttesterDuty>>> future =
           validatorDataProvider.getAttesterDuties(epoch, indexes);
@@ -137,7 +138,7 @@ public class GetAttesterDuties extends AbstractHandler implements Handler {
       ctx.status(SC_BAD_REQUEST);
       ctx.result(
           jsonProvider.objectToJSON(
-              new BadRequest("Invalid epoch " + parameters.get("epoch") + " or index specified")));
+              new BadRequest("Invalid epoch " + parameters.get(EPOCH) + " or index specified")));
     } catch (IllegalArgumentException ex) {
       LOG.trace("Illegal argument in GetAttesterDuties", ex);
       ctx.status(SC_BAD_REQUEST);

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import java.util.Arrays;
+import com.google.common.base.Splitter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class ListQueryParameterUtils {
   public static final String MISSING_QUERY_PARAMETER = "Query parameter %s not found";
+  public static final Splitter splitter = Splitter.on(',').trimResults().omitEmptyStrings();
 
   public static List<String> validateQueryParameter(
       final Map<String, List<String>> parameterMap, final String key)
@@ -44,9 +45,8 @@ public class ListQueryParameterUtils {
     String integerList = "";
     try {
       integerList = String.join(",", validateQueryParameter(parameterMap, key));
-      // fixme split on char
-      // splitter.on (omitEmptyStrings)
-      return Arrays.stream(integerList.split(",+"))
+      return splitter
+          .splitToStream(integerList)
           .map(Integer::parseUnsignedInt)
           .collect(Collectors.toList());
     } catch (NumberFormatException ex) {
