@@ -25,10 +25,9 @@ import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.storage.events.FinalizedChainData;
 import tech.pegasys.teku.storage.events.StorageUpdate;
-import tech.pegasys.teku.storage.store.Store.Transaction;
 
 class StoreTransactionUpdates {
-  private final Store.Transaction tx;
+  private final StoreTransaction tx;
 
   private final Optional<FinalizedChainData> finalizedChainData;
   private final Map<Bytes32, SignedBeaconBlock> hotBlocks;
@@ -40,7 +39,7 @@ class StoreTransactionUpdates {
   private final Optional<BlockTree> updatedBlockTree;
 
   StoreTransactionUpdates(
-      final Transaction tx,
+      final StoreTransaction tx,
       final Optional<FinalizedChainData> finalizedChainData,
       final Map<Bytes32, SignedBeaconBlock> hotBlocks,
       final Map<Bytes32, SignedBlockAndState> hotBlockAndStates,
