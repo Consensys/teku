@@ -386,6 +386,12 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   @Override
+  public <U> SafeFuture<U> thenComposeAsync(
+      final Function<? super T, ? extends CompletionStage<U>> fn, final Executor executor) {
+    return (SafeFuture<U>) super.thenComposeAsync(fn, executor);
+  }
+
+  @Override
   public SafeFuture<T> exceptionally(final Function<Throwable, ? extends T> fn) {
     return (SafeFuture<T>) super.exceptionally(fn);
   }
