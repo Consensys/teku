@@ -83,7 +83,7 @@ public class MultipeerSyncService extends Service implements SyncService {
             recentChainData,
             new BatchImporter(blockImporter, asyncRunner),
             new BatchFactory(eventThread),
-            Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
+            Constants.SYNC_BATCH_SIZE);
     final SyncController syncController =
         new SyncController(
             eventThread, new FinalizedTargetChainSelector(recentChainData), finalizedSync);
