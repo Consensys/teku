@@ -67,6 +67,7 @@ public class SyncSourceBatchTest extends AbstractBatchTest {
     syncSources.get(batch).assertRequestedBlocks(76, 44);
   }
 
+  @Override
   protected Batch createBatch(final long startSlot, final long count) {
     final StubSyncSource syncSource = new StubSyncSource();
     final SyncSourceBatch batch =
@@ -87,7 +88,9 @@ public class SyncSourceBatchTest extends AbstractBatchTest {
     private Optional<ResponseStreamListener<SignedBeaconBlock>> currentListener = Optional.empty();
 
     public void receiveBlocks(final SignedBeaconBlock... blocks) {
-      Stream.of(blocks).forEach(currentListener.orElseThrow()::onResponse);
+      final ResponseStreamListener<SignedBeaconBlock> listener = currentListener.orElseThrow();
+      Stream.of(blocks)
+          .forEach(response -> assertThat(listener.onResponse(response)).isCompleted());
       currentRequest.orElseThrow().complete(null);
     }
 
