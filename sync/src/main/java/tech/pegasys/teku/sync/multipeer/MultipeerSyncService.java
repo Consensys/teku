@@ -14,13 +14,13 @@
 package tech.pegasys.teku.sync.multipeer;
 
 import com.google.common.eventbus.EventBus;
+import java.util.Optional;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -39,16 +39,19 @@ public class MultipeerSyncService extends Service implements SyncService {
   private final BlockManager blockManager;
   private final RecentChainData recentChainData;
   private final PeerChainTracker peerChainTracker;
+  private final SyncController syncController;
 
   MultipeerSyncService(
       final EventThread eventThread,
       final BlockManager blockManager,
       final RecentChainData recentChainData,
-      final PeerChainTracker peerChainTracker) {
+      final PeerChainTracker peerChainTracker,
+      final SyncController syncController) {
     this.eventThread = eventThread;
     this.blockManager = blockManager;
     this.recentChainData = recentChainData;
     this.peerChainTracker = peerChainTracker;
+    this.syncController = syncController;
   }
 
   public static MultipeerSyncService create(
@@ -74,8 +77,16 @@ public class MultipeerSyncService extends Service implements SyncService {
             recentChainData,
             blockImporter);
 
-    final PeerChainTracker peerChainTracker = new PeerChainTracker(eventThread, p2pNetwork);
-    return new MultipeerSyncService(eventThread, blockManager, recentChainData, peerChainTracker);
+    // TODO(#1844): Clearly these are still placeholders...
+    final ChainSelector chainSelector = __ -> Optional.empty();
+    final Sync sync = __ -> SafeFuture.COMPLETE;
+
+    final SyncController syncController =
+        new SyncController(eventThread, recentChainData, chainSelector, sync);
+    final PeerChainTracker peerChainTracker =
+        new PeerChainTracker(eventThread, p2pNetwork, syncController);
+    return new MultipeerSyncService(
+        eventThread, blockManager, recentChainData, peerChainTracker, syncController);
   }
 
   @Override
@@ -101,19 +112,21 @@ public class MultipeerSyncService extends Service implements SyncService {
 
   @Override
   public SyncingStatus getSyncStatus() {
-    return new SyncingStatus(false, UInt64.ZERO);
+    return syncController.getSyncStatus();
   }
 
   @Override
   public boolean isSyncActive() {
-    return false;
+    return syncController.isSyncActive();
   }
 
   @Override
   public long subscribeToSyncChanges(final SyncSubscriber subscriber) {
-    return 0;
+    return syncController.subscribeToSyncChanges(subscriber);
   }
 
   @Override
-  public void unsubscribeFromSyncChanges(final long subscriberId) {}
+  public void unsubscribeFromSyncChanges(final long subscriberId) {
+    syncController.unsubscribeFromSyncChanges(subscriberId);
+  }
 }
