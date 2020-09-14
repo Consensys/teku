@@ -33,11 +33,13 @@ import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 public class BlockImporter {
   private static final Logger LOG = LogManager.getLogger();
   private final RecentChainData recentChainData;
   private final ForkChoice forkChoice;
+  private final WeakSubjectivityValidator weakSubjectivityValidator;
   private final EventBus eventBus;
 
   private final Subscribers<VerifiedBlockOperationsListener<Attestation>> attestationSubscribers =
@@ -50,9 +52,13 @@ public class BlockImporter {
       voluntaryExitSubscribers = Subscribers.create(true);
 
   public BlockImporter(
-      final RecentChainData recentChainData, final ForkChoice forkChoice, final EventBus eventBus) {
+      final RecentChainData recentChainData,
+      final ForkChoice forkChoice,
+      final WeakSubjectivityValidator weakSubjectivityValidator,
+      final EventBus eventBus) {
     this.recentChainData = recentChainData;
     this.forkChoice = forkChoice;
+    this.weakSubjectivityValidator = weakSubjectivityValidator;
     this.eventBus = eventBus;
     eventBus.register(this);
   }
@@ -66,8 +72,8 @@ public class BlockImporter {
       return SafeFuture.completedFuture(BlockImportResult.knownBlock(block));
     }
 
-    return recentChainData
-        .retrieveBlockState(block.getParent_root())
+    return validateFinalizedCheckpointIsWithinWeakSubjectivityPeriod()
+        .thenCompose(__ -> recentChainData.retrieveBlockState(block.getParent_root()))
         .thenCompose(preState -> forkChoice.onBlock(block, preState))
         .thenApply(
             result -> {
@@ -97,6 +103,23 @@ public class BlockImporter {
             (e) -> {
               LOG.error("Internal error while importing block: {}", formatBlock(block), e);
               return BlockImportResult.internalError(e);
+            });
+  }
+
+  private SafeFuture<?> validateFinalizedCheckpointIsWithinWeakSubjectivityPeriod() {
+    return SafeFuture.of(() -> recentChainData.getStore().retrieveFinalizedCheckpointAndState())
+        .thenCombine(
+            SafeFuture.of(() -> recentChainData.getCurrentSlot().orElseThrow()),
+            (finalizedCheckpointState, currentSlot) -> {
+              weakSubjectivityValidator.validateLatestFinalizedCheckpoint(
+                  finalizedCheckpointState, currentSlot);
+              return null;
+            })
+        .exceptionally(
+            err -> {
+              weakSubjectivityValidator.handleValidationFailure(
+                  "Encountered an error while trying to validate latest finalized checkpoint", err);
+              throw new RuntimeException(err);
             });
   }
 

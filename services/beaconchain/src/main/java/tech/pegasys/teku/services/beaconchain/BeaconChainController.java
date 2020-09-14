@@ -532,7 +532,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initBlockImporter() {
     LOG.debug("BeaconChainController.initBlockImporter()");
-    blockImporter = new BlockImporter(recentChainData, forkChoice, eventBus);
+    blockImporter =
+        new BlockImporter(recentChainData, forkChoice, weakSubjectivityValidator, eventBus);
   }
 
   public void initSyncManager() {

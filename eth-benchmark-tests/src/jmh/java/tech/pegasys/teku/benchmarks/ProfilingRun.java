@@ -43,6 +43,7 @@ import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 /** The test to be run manually for profiling block imports */
 public class ProfilingRun {
@@ -83,7 +84,9 @@ public class ProfilingRun {
       recentChainData.initializeFromGenesis(initialState).join();
       ForkChoice forkChoice =
           new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
-      BlockImporter blockImporter = new BlockImporter(recentChainData, forkChoice, localEventBus);
+      BlockImporter blockImporter =
+          new BlockImporter(
+              recentChainData, forkChoice, WeakSubjectivityValidator.lenient(), localEventBus);
 
       System.out.println("Start blocks import from " + blocksFile);
       int blockCount = 0;
@@ -152,7 +155,9 @@ public class ProfilingRun {
       initialState = null;
       ForkChoice forkChoice =
           new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
-      BlockImporter blockImporter = new BlockImporter(recentChainData, forkChoice, localEventBus);
+      BlockImporter blockImporter =
+          new BlockImporter(
+              recentChainData, forkChoice, WeakSubjectivityValidator.lenient(), localEventBus);
 
       System.out.println("Start blocks import from " + blocksFile);
       int counter = 1;

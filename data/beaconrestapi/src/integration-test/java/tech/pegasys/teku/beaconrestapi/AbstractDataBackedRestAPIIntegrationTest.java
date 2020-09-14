@@ -59,6 +59,7 @@ import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
@@ -125,7 +126,12 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   }
 
   private void setupAndStartRestAPI(TekuConfiguration config) {
-    blockImporter = new BlockImporter(recentChainData, forkChoice, storageSystem.eventBus());
+    blockImporter =
+        new BlockImporter(
+            recentChainData,
+            forkChoice,
+            WeakSubjectivityValidator.lenient(),
+            storageSystem.eventBus());
     combinedChainDataClient = storageSystem.combinedChainDataClient();
     dataProvider =
         new DataProvider(
