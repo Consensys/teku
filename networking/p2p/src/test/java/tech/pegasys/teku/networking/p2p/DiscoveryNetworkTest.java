@@ -45,6 +45,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
@@ -97,12 +98,19 @@ class DiscoveryNetworkTest {
   }
 
   @Test
+  public void shouldReturnEnrFromDiscoveryService() {
+    when(discoveryService.getEnr()).thenReturn(Optional.of("enr:-"));
+    assertThat(discoveryNetwork.getEnr()).contains("enr:-");
+  }
+
+  @Test
+  @SuppressWarnings({"FutureReturnValueIgnored"})
   public void shouldStopConnectionManagerBeforeNetworkAndDiscovery() {
     final SafeFuture<Void> connectionStop = new SafeFuture<>();
     doReturn(new SafeFuture<Void>()).when(discoveryService).stop();
     doReturn(connectionStop).when(connectionManager).stop();
 
-    discoveryNetwork.stop();
+    Waiter.waitFor(discoveryNetwork::stop);
 
     verify(connectionManager).stop();
     verify(discoveryService).updateCustomENRField(any(), any());
@@ -116,12 +124,13 @@ class DiscoveryNetworkTest {
   }
 
   @Test
+  @SuppressWarnings({"FutureReturnValueIgnored"})
   public void shouldStopNetworkAndDiscoveryWhenConnectionManagerStopFails() {
     final SafeFuture<Void> connectionStop = new SafeFuture<>();
     doReturn(new SafeFuture<Void>()).when(discoveryService).stop();
     doReturn(connectionStop).when(connectionManager).stop();
 
-    discoveryNetwork.stop();
+    Waiter.waitFor(discoveryNetwork::stop);
 
     verify(connectionManager).stop();
     verify(discoveryService).updateCustomENRField(any(), any());
@@ -132,12 +141,6 @@ class DiscoveryNetworkTest {
     connectionStop.completeExceptionally(new RuntimeException("Nope"));
     verify(p2pNetwork).stop();
     verify(discoveryService).stop();
-  }
-
-  @Test
-  public void shouldReturnEnrFromDiscoveryService() {
-    when(discoveryService.getEnr()).thenReturn(Optional.of("enr:-"));
-    assertThat(discoveryNetwork.getEnr()).contains("enr:-");
   }
 
   @Test

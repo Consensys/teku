@@ -24,10 +24,13 @@ import java.util.OptionalInt;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
@@ -52,8 +55,9 @@ public class DiscoveryNetworkFactory {
     return new DiscoveryNetworkBuilder();
   }
 
-  public void stopAll() {
-    networks.forEach(DiscoveryNetwork::stop);
+  public void stopAll() throws InterruptedException, ExecutionException, TimeoutException {
+    Waiter.waitFor(
+        SafeFuture.allOf(networks.stream().map(DiscoveryNetwork::stop).toArray(SafeFuture[]::new)));
   }
 
   public class DiscoveryNetworkBuilder {
@@ -123,7 +127,7 @@ public class DiscoveryNetworkFactory {
                 "Port conflict detected, retrying with a new port. Original message: {}",
                 e.getMessage());
             attempt++;
-            network.stop();
+            Waiter.waitFor(network.stop());
           } else {
             throw e;
           }

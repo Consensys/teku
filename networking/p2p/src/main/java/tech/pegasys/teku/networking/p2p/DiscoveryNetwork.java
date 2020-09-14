@@ -51,9 +51,10 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 
 public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
+  private static final Logger LOG = LogManager.getLogger();
+
   public static final String ATTESTATION_SUBNET_ENR_FIELD = "attnets";
   public static final String ETH2_ENR_FIELD = "eth2";
-  private static final Logger LOG = LogManager.getLogger();
 
   private final P2PNetwork<P> p2pNetwork;
   private final DiscoveryService discoveryService;
@@ -121,18 +122,13 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   @Override
-  public void stop() {
-    connectionManager
+  public SafeFuture<?> stop() {
+    return connectionManager
         .stop()
-        .exceptionally(
-            error -> {
-              LOG.error("Failed to stop connection manager", error);
-              return null;
-            })
-        .always(
-            () -> {
-              p2pNetwork.stop();
-              discoveryService.stop().reportExceptions();
+        .handleComposed(
+            (__, err) -> {
+              LOG.warn("Error shutting down connection manager");
+              return SafeFuture.allOf(p2pNetwork.stop(), discoveryService.stop());
             });
   }
 

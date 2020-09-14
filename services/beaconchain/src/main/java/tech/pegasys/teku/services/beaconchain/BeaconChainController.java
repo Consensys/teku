@@ -205,7 +205,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         syncStateTracker.stop(),
         syncService.stop(),
         attestationManager.stop(),
-        SafeFuture.fromRunnable(p2pNetwork::stop));
+        p2pNetwork.stop());
   }
 
   private SafeFuture<?> initialize() {
