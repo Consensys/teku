@@ -174,7 +174,6 @@ public class BlockImporterTest {
                   currentSlotFinal, aggregatedAttestations);
             })
         .hasMessageContaining("signature");
-    assertWeakSubjectivityWasChecked();
   }
 
   @Test
