@@ -16,6 +16,8 @@ package tech.pegasys.teku.networking.p2p;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -27,7 +29,7 @@ public class DiscoveryNetworkIntegrationTest {
   private final DiscoveryNetworkFactory discoveryNetworkFactory = new DiscoveryNetworkFactory();
 
   @AfterEach
-  public void tearDown() {
+  public void tearDown() throws InterruptedException, ExecutionException, TimeoutException {
     discoveryNetworkFactory.stopAll();
   }
 

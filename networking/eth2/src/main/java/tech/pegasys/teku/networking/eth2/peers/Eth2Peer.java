@@ -100,7 +100,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer, SyncSource {
             },
             error -> {
               LOG.error("Failed to validate updated peer status", error);
-              disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK);
+              disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK).reportExceptions();
             });
   }
 
@@ -216,7 +216,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer, SyncSource {
       LOG.debug("Peer {} disconnected due to block rate limits", getId());
       callback.completeWithErrorResponse(
           new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
-      disconnectCleanly(DisconnectReason.RATE_LIMITING);
+      disconnectCleanly(DisconnectReason.RATE_LIMITING).reportExceptions();
       return false;
     }
     return true;
@@ -225,7 +225,7 @@ public class Eth2Peer extends DelegatingPeer implements Peer, SyncSource {
   public boolean wantToMakeRequest() {
     if (requestTracker.wantToRequestObjects(1L) == 0L) {
       LOG.debug("Peer {} disconnected due to request rate limits", getId());
-      disconnectCleanly(DisconnectReason.RATE_LIMITING);
+      disconnectCleanly(DisconnectReason.RATE_LIMITING).reportExceptions();
       return false;
     }
     return true;
