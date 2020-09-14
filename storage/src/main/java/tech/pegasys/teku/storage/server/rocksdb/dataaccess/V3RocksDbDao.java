@@ -249,6 +249,11 @@ public class V3RocksDbDao
     }
 
     @Override
+    public void clearWeakSubjectivityCheckpoint() {
+      transaction.delete(V3Schema.WEAK_SUBJECTIVITY_CHECKPOINT);
+    }
+
+    @Override
     public void setLatestFinalizedState(final BeaconState state) {
       transaction.put(V3Schema.LATEST_FINALIZED_STATE, state);
     }

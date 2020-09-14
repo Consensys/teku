@@ -187,6 +187,11 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     }
 
     @Override
+    public void clearWeakSubjectivityCheckpoint() {
+      transaction.delete(V4SchemaHot.WEAK_SUBJECTIVITY_CHECKPOINT);
+    }
+
+    @Override
     public void setLatestFinalizedState(final BeaconState state) {
       transaction.put(V4SchemaHot.LATEST_FINALIZED_STATE, state);
     }

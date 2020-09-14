@@ -74,6 +74,8 @@ public interface RocksDbHotDao extends AutoCloseable {
 
     void setWeakSubjectivityCheckpoint(final Checkpoint checkpoint);
 
+    void clearWeakSubjectivityCheckpoint();
+
     void setLatestFinalizedState(final BeaconState state);
 
     void addHotBlock(final SignedBeaconBlock block);
