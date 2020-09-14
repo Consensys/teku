@@ -15,6 +15,7 @@ package tech.pegasys.teku.api.response.v1.node;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Objects;
 
 public class VersionResponse {
   public final Version data;
@@ -22,5 +23,18 @@ public class VersionResponse {
   @JsonCreator
   public VersionResponse(@JsonProperty("data") final Version data) {
     this.data = data;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final VersionResponse that = (VersionResponse) o;
+    return Objects.equals(data, that.data);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(data);
   }
 }

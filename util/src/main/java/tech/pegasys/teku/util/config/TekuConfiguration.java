@@ -28,7 +28,8 @@ import org.apache.logging.log4j.status.StatusLogger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.metrics.MetricsConfig;
+import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
+import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 
 /** Configuration of an instance of Teku. */
 public class TekuConfiguration implements MetricsConfig {
@@ -54,6 +55,7 @@ public class TekuConfiguration implements MetricsConfig {
   private final int targetSubnetSubscriberCount;
   private final List<String> p2pStaticPeers;
   private final boolean p2pSnappyEnabled;
+  private final boolean multiPeerSyncEnabled;
 
   // Interop
   private final Integer interopGenesisTime;
@@ -151,6 +153,7 @@ public class TekuConfiguration implements MetricsConfig {
       final int targetSubnetSubscriberCount,
       final List<String> p2pStaticPeers,
       final boolean p2pSnappyEnabled,
+      final boolean multiPeerSyncEnabled,
       final Integer interopGenesisTime,
       final int interopOwnedValidatorStartIndex,
       final int interopOwnedValidatorCount,
@@ -221,6 +224,7 @@ public class TekuConfiguration implements MetricsConfig {
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.p2pStaticPeers = p2pStaticPeers;
     this.p2pSnappyEnabled = p2pSnappyEnabled;
+    this.multiPeerSyncEnabled = multiPeerSyncEnabled;
     this.interopGenesisTime = interopGenesisTime;
     this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
     this.interopOwnedValidatorCount = interopOwnedValidatorCount;
@@ -349,6 +353,10 @@ public class TekuConfiguration implements MetricsConfig {
 
   public boolean isP2pSnappyEnabled() {
     return p2pSnappyEnabled;
+  }
+
+  public boolean isMultiPeerSyncEnabled() {
+    return multiPeerSyncEnabled;
   }
 
   public Integer getInteropGenesisTime() {

@@ -28,8 +28,8 @@ import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.metrics.TekuMetricCategory;
-import tech.pegasys.teku.util.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class CachingTaskQueue<K, V> {
 
@@ -176,7 +176,13 @@ public class CachingTaskQueue<K, V> {
     asyncRunner
         .runAsync(task::performTask)
         .thenPeek(result -> result.ifPresent(value -> cache(task.getKey(), value)))
-        .whenComplete((result, error) -> completePendingTask(task, result, error))
+        .handle(
+            (result, error) -> {
+              completePendingTask(task, result, error);
+              // Errors are propagated to the result, so convert to a completed future here
+              // Otherwise it will be reported as an unhandled exception.
+              return null;
+            })
         .alwaysRun(
             () -> {
               activeTasks.decrementAndGet();

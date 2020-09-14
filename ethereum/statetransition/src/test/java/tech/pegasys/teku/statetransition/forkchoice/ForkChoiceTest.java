@@ -15,7 +15,10 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.core.StateTransition;
@@ -36,7 +40,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -66,22 +70,24 @@ class ForkChoiceTest {
     final SafeFuture<Void> initialized = recentChainData.initializeFromGenesis(genesis.getState());
     assertThat(initialized).isCompleted();
 
-    storageSystem.chainUpdater().setTime(UInt64.valueOf(492849242972424L));
+    storageSystem
+        .chainUpdater()
+        .setTime(genesis.getState().getGenesis_time().plus(10 * SECONDS_PER_SLOT));
   }
 
   @Test
   void shouldTriggerReorgWhenEmptyHeadSlotFilled() {
     // Run fork choice with an empty slot 1
-    forkChoice.processHead(ONE);
+    forkChoice.processHead(ONE, false);
 
     // Then rerun with a filled slot 1
     final SignedBlockAndState slot1Block = storageSystem.chainUpdater().advanceChain(ONE);
-    forkChoice.processHead(ONE);
+    forkChoice.processHead(ONE, false);
 
     final List<ReorgEvent> reorgEvents = storageSystem.reorgEventChannel().getReorgEvents();
     assertThat(reorgEvents).hasSize(1);
     assertThat(reorgEvents.get(0).getBestSlot()).isEqualTo(ONE);
-    assertThat(reorgEvents.get(0).getBestBlockRoot()).isEqualTo(slot1Block.getRoot());
+    assertThat(reorgEvents.get(0).getNewBestBlockRoot()).isEqualTo(slot1Block.getRoot());
   }
 
   @Test
@@ -96,10 +102,24 @@ class ForkChoiceTest {
   }
 
   @Test
+  void onBlock_shouldNotImmediatelyMakeChildOfCurrentHeadTheNewHeadWhenItIsTooFarBehind() {
+    storageSystem
+        .chainUpdater()
+        .setTime(genesis.getState().getGenesis_time().plus(34 * SECONDS_PER_SLOT));
+    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
+    final SafeFuture<BlockImportResult> importResult =
+        forkChoice.onBlock(blockAndState.getBlock(), Optional.of(genesis.getState()));
+    assertBlockImportedSuccessfully(importResult);
+
+    assertThat(recentChainData.getHeadBlock()).contains(genesis.getBlock());
+    assertThat(recentChainData.getHeadSlot()).isEqualTo(genesis.getSlot());
+  }
+
+  @Test
   void onBlock_shouldTriggerReorgWhenSelectingChildOfChainHeadWhenForkChoiceSlotHasAdvanced() {
     // Advance the current head
     final UInt64 nodeSlot = UInt64.valueOf(5);
-    forkChoice.processHead(nodeSlot);
+    forkChoice.processHead(nodeSlot, false);
 
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     final SafeFuture<BlockImportResult> importResult =
@@ -113,6 +133,7 @@ class ForkChoiceTest {
             new ReorgEvent(
                 blockAndState.getRoot(),
                 blockAndState.getSlot(),
+                genesis.getRoot(),
                 blockAndState.getSlot().minus(1)));
   }
 
@@ -143,7 +164,7 @@ class ForkChoiceTest {
     assertThat(recentChainData.getBestBlockRoot()).contains(forkBlock.getRoot());
 
     // Should have processed the attestations and switched to this fork
-    forkChoice.processHead(blockWithAttestations.getSlot());
+    forkChoice.processHead(blockWithAttestations.getSlot(), false);
     assertThat(recentChainData.getBestBlockRoot()).contains(blockWithAttestations.getRoot());
   }
 
@@ -189,7 +210,7 @@ class ForkChoiceTest {
     importBlock(chainBuilder, blockWithAttestations);
 
     // Apply these votes
-    forkChoice.processHead(blockWithAttestations.getSlot());
+    forkChoice.processHead(blockWithAttestations.getSlot(), false);
     assertThat(recentChainData.getBestBlockRoot()).contains(blockWithAttestations.getRoot());
 
     // Now we import the fork block
@@ -201,7 +222,34 @@ class ForkChoiceTest {
 
     // And we should be able to apply the new weightings without making the fork block's weight
     // negative
-    assertDoesNotThrow(() -> forkChoice.processHead(updatedAttestationSlot));
+    assertDoesNotThrow(() -> forkChoice.processHead(updatedAttestationSlot, false));
+  }
+
+  @Test
+  void onAttestation_shouldBeInvalidWhenInvalidCheckpointThrown() {
+    final SignedBlockAndState targetBlock = chainBuilder.generateBlockAtSlot(5);
+    importBlock(chainBuilder, targetBlock);
+
+    // Attestation where the target checkpoint has a slot prior to the block it references
+    final Checkpoint targetCheckpoint = new Checkpoint(ZERO, targetBlock.getRoot());
+    final Attestation attestation =
+        new Attestation(
+            new Bitlist(5, 5),
+            new AttestationData(
+                targetBlock.getSlot(),
+                compute_epoch_at_slot(targetBlock.getSlot()),
+                targetBlock.getRoot(),
+                targetBlock.getState().getCurrent_justified_checkpoint(),
+                targetCheckpoint),
+            BLSSignature.empty());
+    final SafeFuture<AttestationProcessingResult> result =
+        forkChoice.onAttestation(ValidateableAttestation.fromAttestation(attestation));
+    assertThat(result)
+        .isCompletedWithValue(
+            AttestationProcessingResult.invalid(
+                String.format(
+                    "Checkpoint state (%s) must be at or prior to checkpoint slot boundary (%s)",
+                    targetBlock.getSlot(), targetCheckpoint.getEpochStartSlot())));
   }
 
   private UInt64 applyAttestationFromValidator(
@@ -219,8 +267,7 @@ class ForkChoiceTest {
                     targetBlock.getRoot(),
                     recentChainData.getStore().getJustifiedCheckpoint(),
                     new Checkpoint(
-                        BeaconStateUtil.compute_epoch_at_slot(updatedAttestationSlot),
-                        targetBlock.getRoot())),
+                        compute_epoch_at_slot(updatedAttestationSlot), targetBlock.getRoot())),
                 dataStructureUtil.randomSignature()));
     updatedVote.setIndexedAttestation(
         new IndexedAttestation(

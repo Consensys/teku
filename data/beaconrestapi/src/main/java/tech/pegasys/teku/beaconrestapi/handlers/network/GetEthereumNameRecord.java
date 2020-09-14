@@ -38,11 +38,14 @@ public class GetEthereumNameRecord implements Handler {
   }
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get the listening ENR address of the node.",
       tags = {TAG_NETWORK},
-      description = "Returns the beacon node's listening Ethereum Node Record (ENR) address.",
+      description =
+          "Returns the beacon node's listening Ethereum Node Record (ENR) address."
+              + " Replaced by standard api endpoint `/eth/v1/node/identity`.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,

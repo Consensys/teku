@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
-import static tech.pegasys.teku.logging.ValidatorLogger.VALIDATOR_LOGGER;
+import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;

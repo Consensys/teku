@@ -31,7 +31,7 @@ import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.connection.PeerPools.PeerPool;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
@@ -149,7 +149,9 @@ public class ConnectionManager extends Service {
   private void onPeerConnected(final Peer peer) {
     peerSelectionStrategy
         .selectPeersToDisconnect(network, peerPools)
-        .forEach(peerToDrop -> peerToDrop.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS));
+        .forEach(
+            peerToDrop ->
+                peerToDrop.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS).reportExceptions());
   }
 
   @Override

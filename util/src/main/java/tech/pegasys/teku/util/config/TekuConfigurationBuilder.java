@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
 public class TekuConfigurationBuilder {
 
@@ -42,6 +43,7 @@ public class TekuConfigurationBuilder {
   private int targetSubnetSubscriberCount;
   private List<String> p2pStaticPeers;
   private Boolean p2pSnappyEnabled;
+  private boolean multiPeerSyncEnabled = false;
   private Integer interopGenesisTime;
   private int interopOwnedValidatorStartIndex;
   private int interopOwnedValidatorCount;
@@ -185,6 +187,11 @@ public class TekuConfigurationBuilder {
 
   public TekuConfigurationBuilder setP2pSnappyEnabled(final Boolean p2pSnappyEnabled) {
     this.p2pSnappyEnabled = p2pSnappyEnabled;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setMultiPeerSyncEnabled(final boolean multiPeerSyncEnabled) {
+    this.multiPeerSyncEnabled = multiPeerSyncEnabled;
     return this;
   }
 
@@ -363,7 +370,7 @@ public class TekuConfigurationBuilder {
 
   public TekuConfigurationBuilder setDataPath(final String dataPath) {
     this.dataPath = dataPath;
-    this.setValidatorsSlashingProtectionPath(Path.of(dataPath, "validators", "slashingprotection"));
+    this.setValidatorsSlashingProtectionPath(Path.of(dataPath, "validators", "slashprotection"));
     return this;
   }
 
@@ -512,6 +519,7 @@ public class TekuConfigurationBuilder {
         targetSubnetSubscriberCount,
         p2pStaticPeers,
         p2pSnappyEnabled,
+        multiPeerSyncEnabled,
         interopGenesisTime,
         interopOwnedValidatorStartIndex,
         interopOwnedValidatorCount,

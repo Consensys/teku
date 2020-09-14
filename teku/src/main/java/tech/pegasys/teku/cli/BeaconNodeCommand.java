@@ -30,7 +30,9 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Unmatched;
+import tech.pegasys.teku.cli.converter.LogTypeConverter;
 import tech.pegasys.teku.cli.converter.MetricCategoryConverter;
+import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconRestApiOptions;
 import tech.pegasys.teku.cli.options.DataOptions;
 import tech.pegasys.teku.cli.options.DataStorageOptions;
@@ -56,11 +58,9 @@ import tech.pegasys.teku.cli.subcommand.debug.DebugToolsCommand;
 import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
 import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
-import tech.pegasys.teku.logging.LoggingConfigurator;
-import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
-import tech.pegasys.teku.util.cli.LogTypeConverter;
-import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.NetworkDefinition;
@@ -337,6 +337,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setTargetSubnetSubscriberCount(p2POptions.getP2pTargetSubnetSubscriberCount())
         .setP2pStaticPeers(p2POptions.getP2pStaticPeers())
         .setP2pSnappyEnabled(p2POptions.isP2pSnappyEnabled())
+        .setMultiPeerSyncEnabled(p2POptions.isMultiPeerSyncEnabled())
         .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
         .setInteropOwnedValidatorStartIndex(interopOptions.getInteropOwnerValidatorStartIndex())
         .setInteropOwnedValidatorCount(interopOptions.getInteropOwnerValidatorCount())

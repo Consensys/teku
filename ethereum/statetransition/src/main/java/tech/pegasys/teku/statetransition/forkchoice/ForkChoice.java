@@ -15,7 +15,10 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
 import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
+import com.google.common.base.Throwables;
 import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -27,6 +30,7 @@ import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
@@ -39,6 +43,13 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ForkChoice {
   private static final Logger LOG = LogManager.getLogger();
+  /**
+   * Number of slots within head that new blocks are automatically set as the new chain head if
+   * possible. The update causes a re-org event so we skip it if we are syncing blocks from a long
+   * way back to avoid unnecessary work and noise about the reorg in the logs.
+   */
+  private static final int SHORT_SYNC_SLOTS = 2 * SLOTS_PER_EPOCH;
+
   private final ForkChoiceExecutor forkChoiceExecutor;
   private final RecentChainData recentChainData;
   private final StateTransition stateTransition;
@@ -58,14 +69,14 @@ public class ForkChoice {
   }
 
   public void processHead() {
-    processHead(Optional.empty());
+    processHead(Optional.empty(), false);
   }
 
-  public void processHead(UInt64 nodeSlot) {
-    processHead(Optional.of(nodeSlot));
+  public void processHead(UInt64 nodeSlot, boolean syncing) {
+    processHead(Optional.of(nodeSlot), syncing);
   }
 
-  private void processHead(Optional<UInt64> nodeSlot) {
+  private void processHead(Optional<UInt64> nodeSlot, boolean syncing) {
     final Checkpoint retrievedJustifiedCheckpoint =
         recentChainData.getStore().getJustifiedCheckpoint();
     recentChainData
@@ -105,7 +116,8 @@ public class ForkChoice {
                                       () ->
                                           new IllegalStateException(
                                               "Unable to retrieve the slot of fork choice head: "
-                                                  + headBlockRoot))));
+                                                  + headBlockRoot))),
+                          syncing);
                       return transaction.commit();
                     }))
         .join();
@@ -166,11 +178,16 @@ public class ForkChoice {
               // a better choice than the block itself.  So the first block we receive that is a
               // child of our current chain head, must be the new chain head. If we'd had any other
               // child of the current chain head we'd have already selected it as head.
-              if (recentChainData
-                  .getHeadBlock()
-                  .map(currentHead -> currentHead.getRoot().equals(block.getParent_root()))
-                  .orElse(false)) {
+              if (block
+                      .getSlot()
+                      .plus(SHORT_SYNC_SLOTS)
+                      .isGreaterThan(recentChainData.getCurrentSlot().orElse(ZERO))
+                  && recentChainData
+                      .getHeadBlock()
+                      .map(currentHead -> currentHead.getRoot().equals(block.getParent_root()))
+                      .orElse(false)) {
                 recentChainData.updateHead(block.getRoot(), block.getSlot());
+                result.markAsCanonical();
               }
             });
   }
@@ -190,7 +207,16 @@ public class ForkChoice {
                       return result.isSuccessful()
                           ? transaction.commit().thenApply(__ -> result)
                           : SafeFuture.completedFuture(result);
-                    }));
+                    }))
+        .exceptionallyCompose(
+            error -> {
+              final Throwable rootCause = Throwables.getRootCause(error);
+              if (rootCause instanceof InvalidCheckpointException) {
+                return SafeFuture.completedFuture(
+                    AttestationProcessingResult.invalid(rootCause.getMessage()));
+              }
+              return SafeFuture.failedFuture(error);
+            });
   }
 
   public void save() {

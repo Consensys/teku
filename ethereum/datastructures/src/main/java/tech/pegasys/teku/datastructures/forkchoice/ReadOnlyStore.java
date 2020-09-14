@@ -22,6 +22,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -86,6 +87,8 @@ public interface ReadOnlyStore {
   SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot);
 
   SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint);
+
+  SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState();
 
   SafeFuture<Optional<BeaconState>> retrieveCheckpointState(
       Checkpoint checkpoint, BeaconState latestStateAtEpoch);

@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.GetForkResponse;
+import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -94,6 +95,31 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
           return Optional.of(validatorDuties);
         });
+  }
+
+  @Override
+  public SafeFuture<Optional<List<ValidatorDuties>>> getAttestationDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+    return asyncRunner.runAsync(
+        () -> {
+          final List<ValidatorDuties> validatorDuties =
+              apiClient.getAttestationDuties(epoch, validatorIndexes).stream()
+                  .map(this::mapToApiValidatorDuties)
+                  .collect(Collectors.toList());
+
+          return Optional.of(validatorDuties);
+        });
+  }
+
+  private ValidatorDuties mapToApiValidatorDuties(final AttesterDuty attesterDuty) {
+    return ValidatorDuties.withDuties(
+        attesterDuty.pubkey.asBLSPublicKey(),
+        attesterDuty.validatorIndex.intValue(),
+        attesterDuty.committeeIndex.intValue(),
+        attesterDuty.validatorCommitteeIndex.intValue(),
+        attesterDuty.committeeLength.intValue(),
+        List.of(),
+        attesterDuty.slot);
   }
 
   private ValidatorDuties mapToApiValidatorDuties(

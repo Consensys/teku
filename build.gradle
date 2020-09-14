@@ -428,6 +428,22 @@ subprojects {
     return result
   }
 
+  apply plugin: 'idea'
+  idea {
+    module {
+      testSourceDirs += project.sourceSets.testFixtures.java.srcDirs
+      testSourceDirs += project.sourceSets.testFixtures.resources.srcDirs
+      testSourceDirs += project.sourceSets.integrationTest.java.srcDirs
+      testSourceDirs += project.sourceSets.integrationTest.resources.srcDirs
+      testSourceDirs += project.sourceSets.acceptanceTest.java.srcDirs
+      testSourceDirs += project.sourceSets.acceptanceTest.resources.srcDirs
+      testSourceDirs += project.sourceSets.compatibilityTest.java.srcDirs
+      testSourceDirs += project.sourceSets.compatibilityTest.resources.srcDirs
+      testSourceDirs += project.sourceSets.referenceTest.java.srcDirs
+      testSourceDirs += project.sourceSets.referenceTest.resources.srcDirs
+    }
+  }
+
   if (sourceSetIsPopulated("main") || sourceSetIsPopulated("testFixtures")) {
     apply plugin: 'com.jfrog.bintray'
     apply plugin: 'maven-publish'
@@ -525,7 +541,7 @@ subprojects {
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testImplementation 'org.junit.jupiter:junit-jupiter-params'
 
-    testRuntimeOnly testFixtures(project(':logging'))
+    testRuntimeOnly testFixtures(project(':infrastructure:logging'))
 
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 

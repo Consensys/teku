@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.pow;
 
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;

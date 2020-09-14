@@ -119,6 +119,26 @@ public class ForkChoiceUtil {
     return roots;
   }
 
+  /**
+   * @param forkChoiceStrategy the object that stores information on forks and block roots
+   * @param root the root that dictates the block/fork that we walk backwards from
+   * @param startSlot the slot (exclusive) until which we walk the chain backwards
+   * @return every block root from root (inclusive) to start slot (exclusive) traversing the chain
+   *     backwards
+   */
+  public static NavigableMap<UInt64, Bytes32> getAncestorsOnFork(
+      ForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 startSlot) {
+    final NavigableMap<UInt64, Bytes32> roots = new TreeMap<>();
+    Bytes32 parentRoot = root;
+    Optional<UInt64> parentSlot = forkChoiceStrategy.blockSlot(parentRoot);
+    while (parentSlot.isPresent() && parentSlot.get().isGreaterThan(startSlot)) {
+      maybeAddRoot(startSlot, UInt64.ONE, roots, UInt64.MAX_VALUE, parentRoot, parentSlot);
+      parentRoot = forkChoiceStrategy.blockParentRoot(parentRoot).orElseThrow();
+      parentSlot = forkChoiceStrategy.blockSlot(parentRoot);
+    }
+    return roots;
+  }
+
   private static void maybeAddRoot(
       final UInt64 startSlot,
       final UInt64 step,

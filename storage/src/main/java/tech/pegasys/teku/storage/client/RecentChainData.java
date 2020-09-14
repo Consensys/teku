@@ -15,7 +15,7 @@ package tech.pegasys.teku.storage.client;
 
 import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.logging.LogFormatter.formatBlock;
+import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 
 import com.google.common.eventbus.EventBus;
 import java.util.NavigableMap;
@@ -41,8 +41,8 @@ import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.metrics.TekuMetricCategory;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
@@ -176,7 +176,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store;
   }
 
-  public NavigableMap<UInt64, Bytes32> getAncestorRoots(
+  public NavigableMap<UInt64, Bytes32> getAncestorRootsOnHeadChain(
       final UInt64 startSlot, final UInt64 step, final UInt64 count) {
     return chainHead
         .map(
@@ -184,6 +184,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
                 ForkChoiceUtil.getAncestors(
                     forkChoiceStrategy.orElseThrow(), head.getRoot(), startSlot, step, count))
         .orElseGet(TreeMap::new);
+  }
+
+  public NavigableMap<UInt64, Bytes32> getAncestorsOnFork(final UInt64 startSlot, Bytes32 root) {
+    return ForkChoiceUtil.getAncestorsOnFork(forkChoiceStrategy.orElseThrow(), root, startSlot);
   }
 
   public Optional<ForkChoiceStrategy> getForkChoiceStrategy() {
@@ -203,25 +207,33 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * @param currentSlot The current slot - the slot at which the new head was selected
    */
   public void updateHead(Bytes32 root, UInt64 currentSlot) {
+    updateHead(root, currentSlot, false);
+  }
+
+  public void updateHead(Bytes32 root, UInt64 currentSlot, boolean syncing) {
     final Optional<ChainHead> originalChainHead = chainHead;
+
+    // Never let the fork choice slot go backwards.
+    final UInt64 newForkChoiceSlot =
+        currentSlot.max(originalChainHead.map(ChainHead::getForkChoiceSlot).orElse(UInt64.ZERO));
     store
         .retrieveBlockAndState(root)
         .thenApply(
             headBlockAndState ->
                 headBlockAndState
-                    .map(head -> ChainHead.create(head, currentSlot))
+                    .map(head -> ChainHead.create(head, newForkChoiceSlot))
                     .orElseThrow(
                         () ->
                             new IllegalStateException(
                                 String.format(
                                     "Unable to update head block as of slot %s.  Block is unavailable: %s.",
                                     currentSlot, root))))
-        .thenAccept(headBlock -> updateChainHead(originalChainHead, headBlock))
+        .thenAccept(headBlock -> updateChainHead(originalChainHead, headBlock, syncing))
         .reportExceptions();
   }
 
   private void updateChainHead(
-      final Optional<ChainHead> originalHead, final ChainHead newChainHead) {
+      final Optional<ChainHead> originalHead, final ChainHead newChainHead, final boolean syncing) {
     synchronized (this) {
       if (!chainHead.equals(originalHead)) {
         // The chain head has been updated while we were waiting for the newChainHead
@@ -238,14 +250,22 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
         final UInt64 commonAncestorSlot = previousChainHead.findCommonAncestor(newChainHead);
 
-        LOG.info(
-            "Chain reorg from {} to {}",
-            formatBlock(previousChainHead.getForkChoiceSlot(), previousChainHead.getRoot()),
-            formatBlock(newChainHead.getForkChoiceSlot(), newChainHead.getRoot()));
+        if (!syncing) {
+          // Don't log reorgs while syncing as it's just pointless noise.
+          // We're filling in historic slots so every block is a reorg vs the chain of empty slots
+          LOG.info(
+              "Chain reorg from {} to {}. Common ancestor at slot {}",
+              formatBlock(previousChainHead.getForkChoiceSlot(), previousChainHead.getRoot()),
+              formatBlock(newChainHead.getForkChoiceSlot(), newChainHead.getRoot()),
+              commonAncestorSlot);
+        }
 
         reorgCounter.inc();
         reorgEventChannel.reorgOccurred(
-            newChainHead.getRoot(), newChainHead.getSlot(), commonAncestorSlot);
+            newChainHead.getRoot(),
+            newChainHead.getSlot(),
+            previousChainHead.getRoot(),
+            commonAncestorSlot);
       }
     }
 

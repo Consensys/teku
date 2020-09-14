@@ -27,14 +27,17 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.channels.ChannelInterface;
 
 public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<Optional<ForkInfo>> getForkInfo();
 
   SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
       UInt64 epoch, Collection<BLSPublicKey> publicKeys);
+
+  SafeFuture<Optional<List<ValidatorDuties>>> getAttestationDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndexes);
 
   SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);

@@ -29,11 +29,13 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
+import tech.pegasys.teku.util.config.Constants;
 
 class StoreTest extends AbstractStoreTest {
 
@@ -168,6 +170,28 @@ class StoreTest extends AbstractStoreTest {
   }
 
   @Test
+  public void retrieveFinalizedCheckpointAndState() {
+    final UpdatableStore store = createGenesisStore();
+    final SignedBlockAndState finalizedBlockAndState =
+        chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH - 1);
+    final Checkpoint finalizedCheckpoint =
+        new Checkpoint(UInt64.ONE, finalizedBlockAndState.getRoot());
+
+    final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
+    tx.putBlockAndState(finalizedBlockAndState);
+    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+    assertThat(tx.commit()).isCompleted();
+
+    final SafeFuture<CheckpointState> result = store.retrieveFinalizedCheckpointAndState();
+    assertThat(result).isCompleted();
+    assertThat(result.join().getCheckpoint()).isEqualTo(finalizedCheckpoint);
+    assertThat(result.join().getBlock()).isEqualTo(finalizedBlockAndState.getBlock());
+    assertThat(result.join().getState()).isNotEqualTo(finalizedBlockAndState.getState());
+    assertThat(result.join().getState().getSlot())
+        .isEqualTo(finalizedBlockAndState.getSlot().plus(1));
+  }
+
+  @Test
   public void
       retrieveCheckpointState_shouldThrowInvalidCheckpointExceptionWhenEpochBeforeBlockRoot() {
     final UpdatableStore store = createGenesisStore();
@@ -270,6 +294,11 @@ class StoreTest extends AbstractStoreTest {
     assertThat(store.getFinalizedCheckpoint()).isEqualTo(checkpoint1);
     assertThat(store.getJustifiedCheckpoint()).isEqualTo(checkpoint2);
     assertThat(store.getBestJustifiedCheckpoint()).isEqualTo(checkpoint3);
+    // Extra checks for finalized checkpoint
+    final SafeFuture<CheckpointState> finalizedCheckpointState =
+        store.retrieveFinalizedCheckpointAndState();
+    assertThat(finalizedCheckpointState).isCompleted();
+    assertThat(finalizedCheckpointState.join().getCheckpoint()).isEqualTo(checkpoint1);
     // Check time
     assertThat(store.getTime()).isEqualTo(initialTime.plus(UInt64.ONE));
     assertThat(store.getGenesisTime()).isEqualTo(genesisTime.plus(UInt64.ONE));

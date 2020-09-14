@@ -1,15 +1,16 @@
 dependencies {
-  implementation project(':events')
+  implementation project(':infrastructure:events')
   implementation project(':data:beaconrestapi')
-  implementation project(':data:metrics')
+  implementation project(':infrastructure:metrics')
   implementation project(':data:provider')
   implementation project(':ethereum:core')
   implementation project(':ethereum:statetransition')
   implementation project(':ethereum:datastructures')
+  implementation project(':ethereum:weaksubjectivity')
   implementation project(':infrastructure:async')
   implementation project(':networking:p2p')
   implementation project(':networking:eth2')
-  implementation project(':logging')
+  implementation project(':infrastructure:logging')
   implementation project(':pow')
   implementation project(':protoarray')
   implementation project(':services:serviceutils')
@@ -26,7 +27,7 @@ dependencies {
   testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':storage'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
-  testImplementation testFixtures(project(':data:metrics'))
+  testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':util'))
 
   implementation 'io.libp2p:jvm-libp2p-minimal'

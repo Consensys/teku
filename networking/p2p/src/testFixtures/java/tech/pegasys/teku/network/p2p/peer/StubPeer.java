@@ -17,6 +17,7 @@ import java.util.Optional;
 import javax.naming.OperationNotSupportedException;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
@@ -27,7 +28,6 @@ import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedSubscriber;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
-import tech.pegasys.teku.util.events.Subscribers;
 
 public class StubPeer implements Peer {
 
@@ -39,6 +39,10 @@ public class StubPeer implements Peer {
 
   public StubPeer() {
     this(new MockNodeId());
+  }
+
+  public StubPeer(final int id) {
+    this(new MockNodeId(id));
   }
 
   public StubPeer(final NodeId nodeId) {
@@ -64,11 +68,12 @@ public class StubPeer implements Peer {
   }
 
   @Override
-  public void disconnectCleanly(final DisconnectReason reason) {
+  public SafeFuture<?> disconnectCleanly(final DisconnectReason reason) {
     disconnectReason = Optional.of(reason);
     disconnectedSubscribers.forEach(
         subscriber -> subscriber.onDisconnected(Optional.of(reason), true));
     connected = false;
+    return SafeFuture.COMPLETE;
   }
 
   public Optional<DisconnectReason> getDisconnectReason() {

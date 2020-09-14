@@ -5,7 +5,9 @@ dependencies {
 
   implementation project(':bls')
   implementation project(':infrastructure:async')
-  implementation project(':logging')
+  implementation project(':infrastructure:collections')
+  implementation project(':infrastructure:io')
+  implementation project(':infrastructure:logging')
   implementation project(':pow')
   implementation project(':util')
 

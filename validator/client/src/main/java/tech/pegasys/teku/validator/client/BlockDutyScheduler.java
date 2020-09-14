@@ -14,8 +14,8 @@
 package tech.pegasys.teku.validator.client;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.metrics.TekuMetricCategory;
 
 public class BlockDutyScheduler extends AbstractDutyScheduler {
 

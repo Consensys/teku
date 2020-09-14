@@ -32,8 +32,8 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.logging.StatusLogger;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
 import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -48,11 +48,13 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
+import tech.pegasys.teku.storage.store.KeyValueStore;
 
 public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
+  private static final Logger LOG = LogManager.getLogger();
+
   public static final String ATTESTATION_SUBNET_ENR_FIELD = "attnets";
   public static final String ETH2_ENR_FIELD = "eth2";
-  private static final Logger LOG = LogManager.getLogger();
 
   private final P2PNetwork<P> p2pNetwork;
   private final DiscoveryService discoveryService;
@@ -83,10 +85,11 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   public static <P extends Peer> DiscoveryNetwork<P> create(
       final MetricsSystem metricsSystem,
       final AsyncRunner asyncRunner,
+      final KeyValueStore<String, Bytes> kvStore,
       final P2PNetwork<P> p2pNetwork,
       final PeerSelectionStrategy peerSelectionStrategy,
       final NetworkConfig p2pConfig) {
-    final DiscoveryService discoveryService = createDiscoveryService(p2pConfig);
+    final DiscoveryService discoveryService = createDiscoveryService(p2pConfig, kvStore);
     final ConnectionManager connectionManager =
         new ConnectionManager(
             metricsSystem,
@@ -100,10 +103,11 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
     return new DiscoveryNetwork<>(p2pNetwork, discoveryService, connectionManager);
   }
 
-  private static DiscoveryService createDiscoveryService(final NetworkConfig p2pConfig) {
+  private static DiscoveryService createDiscoveryService(
+      final NetworkConfig p2pConfig, final KeyValueStore<String, Bytes> kvStore) {
     final DiscoveryService discoveryService;
     if (p2pConfig.isDiscoveryEnabled()) {
-      discoveryService = DiscV5Service.create(p2pConfig);
+      discoveryService = DiscV5Service.create(p2pConfig, kvStore);
     } else {
       discoveryService = new NoOpDiscoveryService();
     }
@@ -118,18 +122,13 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   @Override
-  public void stop() {
-    connectionManager
+  public SafeFuture<?> stop() {
+    return connectionManager
         .stop()
-        .exceptionally(
-            error -> {
-              LOG.error("Failed to stop connection manager", error);
-              return null;
-            })
-        .always(
-            () -> {
-              p2pNetwork.stop();
-              discoveryService.stop().reportExceptions();
+        .handleComposed(
+            (__, err) -> {
+              LOG.warn("Error shutting down connection manager");
+              return SafeFuture.allOf(p2pNetwork.stop(), discoveryService.stop());
             });
   }
 

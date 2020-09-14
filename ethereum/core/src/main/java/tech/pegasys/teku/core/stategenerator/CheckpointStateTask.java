@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.core.stategenerator;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -20,6 +21,7 @@ import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
 import tech.pegasys.teku.core.stategenerator.CachingTaskQueue.CacheableTask;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -95,7 +97,9 @@ public class CheckpointStateTask implements CacheableTask<Checkpoint, BeaconStat
   private BeaconState regenerateFromState(final BeaconState state) {
     if (state.getSlot().isGreaterThan(checkpoint.getEpochStartSlot())) {
       throw new InvalidCheckpointException(
-          "Checkpoint state must be at or prior to checkpoint slot boundary");
+          String.format(
+              "Checkpoint state (%s) must be at or prior to checkpoint slot boundary (%s)",
+              state.getSlot(), checkpoint.getEpochStartSlot()));
     }
     try {
       if (state.getSlot().equals(checkpoint.getEpochStartSlot())) {
@@ -110,6 +114,16 @@ public class CheckpointStateTask implements CacheableTask<Checkpoint, BeaconStat
 
   @FunctionalInterface
   public interface AsyncStateProvider {
+    static AsyncStateProvider fromBlockAndState(final SignedBlockAndState blockAndState) {
+      return (Bytes32 root) -> {
+        if (Objects.equals(root, blockAndState.getRoot())) {
+          return SafeFuture.completedFuture(Optional.of(blockAndState.getState()));
+        } else {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+      };
+    };
+
     SafeFuture<Optional<BeaconState>> getState(Bytes32 blockRoot);
   }
 }

@@ -40,6 +40,7 @@ import tech.pegasys.teku.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
@@ -126,6 +127,11 @@ public final class DataStructureUtil {
     return randomSSZList(classInfo, maxSize / 10, maxSize, valueGenerator);
   }
 
+  public <T> SSZList<T> randomSSZList(
+      Class<? extends T> classInfo, long maxSize, Supplier<T> valueGenerator, long numItems) {
+    return randomSSZList(classInfo, numItems, maxSize, valueGenerator);
+  }
+
   public <T> SSZList<T> randomFullSSZList(
       Class<? extends T> classInfo, long maxSize, Supplier<T> valueGenerator) {
     return randomSSZList(classInfo, maxSize, maxSize, valueGenerator);
@@ -189,6 +195,10 @@ public final class DataStructureUtil {
    */
   public UInt64 randomEpoch() {
     return UInt64.valueOf(new Random(nextSeed()).nextInt(1_000_000_000));
+  }
+
+  public SlotAndBlockRoot randomSlotAndBlockRoot() {
+    return new SlotAndBlockRoot(randomUInt64(), randomBytes32());
   }
 
   public Checkpoint randomCheckpoint() {
@@ -379,15 +389,22 @@ public final class DataStructureUtil {
         randomEth1Data(),
         Bytes32.ZERO,
         randomSSZList(
-            ProposerSlashing.class, Constants.MAX_PROPOSER_SLASHINGS, this::randomProposerSlashing),
+            ProposerSlashing.class,
+            Constants.MAX_PROPOSER_SLASHINGS,
+            this::randomProposerSlashing,
+            1),
         randomSSZList(
-            AttesterSlashing.class, Constants.MAX_ATTESTER_SLASHINGS, this::randomAttesterSlashing),
-        randomSSZList(Attestation.class, Constants.MAX_ATTESTATIONS, this::randomAttestation),
-        randomSSZList(Deposit.class, Constants.MAX_DEPOSITS, this::randomDepositWithoutIndex),
+            AttesterSlashing.class,
+            Constants.MAX_ATTESTER_SLASHINGS,
+            this::randomAttesterSlashing,
+            1),
+        randomSSZList(Attestation.class, Constants.MAX_ATTESTATIONS, this::randomAttestation, 3),
+        randomSSZList(Deposit.class, Constants.MAX_DEPOSITS, this::randomDepositWithoutIndex, 1),
         randomSSZList(
             SignedVoluntaryExit.class,
             Constants.MAX_VOLUNTARY_EXITS,
-            this::randomSignedVoluntaryExit));
+            this::randomSignedVoluntaryExit,
+            1));
   }
 
   public BeaconBlockBody randomFullBeaconBlockBody() {

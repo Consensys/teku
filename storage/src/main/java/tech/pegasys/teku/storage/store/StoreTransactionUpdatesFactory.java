@@ -32,13 +32,12 @@ import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.events.FinalizedChainData;
-import tech.pegasys.teku.storage.store.Store.Transaction;
 
 class StoreTransactionUpdatesFactory {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Store baseStore;
-  private final Store.Transaction tx;
+  private final StoreTransaction tx;
 
   private final Map<Bytes32, SignedBeaconBlock> hotBlocks;
   private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
@@ -51,7 +50,7 @@ class StoreTransactionUpdatesFactory {
 
   public StoreTransactionUpdatesFactory(
       final Store baseStore,
-      final Transaction tx,
+      final StoreTransaction tx,
       final SignedBlockAndState latestFinalizedBlockAndState) {
     this.baseStore = baseStore;
     this.tx = tx;
@@ -65,7 +64,7 @@ class StoreTransactionUpdatesFactory {
   }
 
   public static StoreTransactionUpdates create(
-      final Store baseStore, final Transaction tx, final SignedBlockAndState latestFinalized) {
+      final Store baseStore, final StoreTransaction tx, final SignedBlockAndState latestFinalized) {
     return new StoreTransactionUpdatesFactory(baseStore, tx, latestFinalized).build();
   }
 
@@ -146,7 +145,7 @@ class StoreTransactionUpdatesFactory {
   }
 
   private Set<SignedBeaconBlock> collectFinalizedBlocks(
-      final Store.Transaction tx, final Map<Bytes32, Bytes32> finalizedChildToParent) {
+      final StoreTransaction tx, final Map<Bytes32, Bytes32> finalizedChildToParent) {
     return finalizedChildToParent.keySet().stream()
         .map(root -> tx.getBlockIfAvailable(root).orElse(null))
         .filter(Objects::nonNull)
@@ -154,7 +153,7 @@ class StoreTransactionUpdatesFactory {
   }
 
   private Map<Bytes32, BeaconState> collectFinalizedStates(
-      final Store.Transaction tx, final Map<Bytes32, Bytes32> finalizedChildToParent) {
+      final StoreTransaction tx, final Map<Bytes32, Bytes32> finalizedChildToParent) {
     final Map<Bytes32, BeaconState> states = new HashMap<>();
     for (Bytes32 finalizedRoot : finalizedChildToParent.keySet()) {
       tx.getBlockStateIfAvailable(finalizedRoot)
@@ -163,7 +162,7 @@ class StoreTransactionUpdatesFactory {
     return states;
   }
 
-  private void calculatePrunedHotBlockRoots(Transaction tx, final BlockTree prunedTree) {
+  private void calculatePrunedHotBlockRoots(StoreTransaction tx, final BlockTree prunedTree) {
     tx.getBlockRoots().stream()
         .filter(root -> !prunedTree.contains(root))
         .forEach(prunedHotBlockRoots::add);

@@ -29,7 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.events.EventChannels;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
@@ -137,7 +137,7 @@ class RemoteValidatorBeaconChainEventAdapterTest {
     final BeaconChainReorgEvent expectedAdaptedEvent =
         new BeaconChainReorgEvent(BeaconChainEvent.REORG_OCCURRED, slot, commonAncestorSlot);
 
-    eventsAdapter.reorgOccurred(Bytes32.ZERO, slot, commonAncestorSlot);
+    eventsAdapter.reorgOccurred(Bytes32.ZERO, slot, Bytes32.ZERO, commonAncestorSlot);
     verify(listener).onEvent(beaconChainEventArgCaptor.capture());
 
     assertThat(beaconChainEventArgCaptor.getValue()).isEqualTo(expectedAdaptedEvent);

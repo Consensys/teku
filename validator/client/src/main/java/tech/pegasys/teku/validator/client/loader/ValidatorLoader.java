@@ -14,7 +14,7 @@
 package tech.pegasys.teku.validator.client.loader;
 
 import static java.util.stream.Collectors.toMap;
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -27,17 +27,14 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.signatures.LocalMessageSignerService;
-import tech.pegasys.teku.core.signatures.MessageSignerService;
+import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.core.signatures.SlashingProtectedSigner;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
-import tech.pegasys.teku.core.signatures.UnprotectedSigner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.util.bytes.KeyFormatter;
 import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.validator.client.Validator;
-import tech.pegasys.teku.validator.client.signer.ExternalMessageSignerService;
+import tech.pegasys.teku.validator.client.signer.ExternalSigner;
 
 public class ValidatorLoader {
 
@@ -60,7 +57,7 @@ public class ValidatorLoader {
     STATUS_LOG.validatorsInitialised(
         validators.values().stream()
             .map(Validator::getPublicKey)
-            .map(KeyFormatter::shortPublicKey)
+            .map(BLSPublicKey::toAbbreviatedString)
             .collect(Collectors.toList()));
     return validators;
   }
@@ -71,9 +68,8 @@ public class ValidatorLoader {
             blsKeyPair ->
                 new Validator(
                     blsKeyPair.getPublicKey(),
-                    createSigner(
-                        blsKeyPair.getPublicKey(),
-                        new LocalMessageSignerService(blsKeyPair, asyncRunner)),
+                    createSlashingProtectedSigner(
+                        blsKeyPair.getPublicKey(), new LocalSigner(blsKeyPair, asyncRunner)),
                     Optional.ofNullable(config.getGraffiti())))
         .collect(toMap(Validator::getPublicKey, Function.identity()));
   }
@@ -86,18 +82,16 @@ public class ValidatorLoader {
             publicKey ->
                 new Validator(
                     publicKey,
-                    createSigner(
+                    createSlashingProtectedSigner(
                         publicKey,
-                        new ExternalMessageSignerService(
+                        new ExternalSigner(
                             config.getValidatorExternalSignerUrl(), publicKey, timeout)),
                     Optional.ofNullable(config.getGraffiti())))
         .collect(toMap(Validator::getPublicKey, Function.identity()));
   }
 
-  private Signer createSigner(
-      final BLSPublicKey publicKey, final MessageSignerService messageSignerService) {
-    return new SlashingProtectedSigner(
-        publicKey, slashingProtector, new UnprotectedSigner(messageSignerService));
+  private Signer createSlashingProtectedSigner(final BLSPublicKey publicKey, final Signer signer) {
+    return new SlashingProtectedSigner(publicKey, slashingProtector, signer);
   }
 
   private static Collection<BLSKeyPair> loadValidatorKeys(final TekuConfiguration config) {

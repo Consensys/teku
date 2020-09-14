@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -117,6 +119,14 @@ public class P2POptions {
       arity = "1")
   private Boolean p2pSnappyEnabled = null;
 
+  @Option(
+      names = {"--Xp2p-multipeer-sync-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enables experimental multipeer sync",
+      hidden = true,
+      arity = "1")
+  private boolean multiPeerSyncEnabled = false;
+
   public boolean isP2pEnabled() {
     return p2pEnabled;
   }
@@ -150,11 +160,21 @@ public class P2POptions {
   }
 
   public int getP2pLowerBound() {
-    return p2pLowerBound;
+    if (p2pLowerBound > p2pUpperBound) {
+      STATUS_LOG.adjustingP2pLowerBoundToUpperBound(p2pUpperBound);
+      return p2pUpperBound;
+    } else {
+      return p2pLowerBound;
+    }
   }
 
   public int getP2pUpperBound() {
-    return p2pUpperBound;
+    if (p2pUpperBound < p2pLowerBound) {
+      STATUS_LOG.adjustingP2pUpperBoundToLowerBound(p2pLowerBound);
+      return p2pLowerBound;
+    } else {
+      return p2pUpperBound;
+    }
   }
 
   public int getP2pTargetSubnetSubscriberCount() {
@@ -167,5 +187,9 @@ public class P2POptions {
 
   public Boolean isP2pSnappyEnabled() {
     return p2pSnappyEnabled;
+  }
+
+  public boolean isMultiPeerSyncEnabled() {
+    return multiPeerSyncEnabled;
   }
 }

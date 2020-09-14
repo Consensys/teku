@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
-import tech.pegasys.teku.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 
 class TekuDefaultExceptionHandlerTest {
 

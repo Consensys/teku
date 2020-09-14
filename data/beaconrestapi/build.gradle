@@ -5,7 +5,7 @@ dependencies {
     implementation project(':ethereum:datastructures')
     implementation project(':ethereum:statetransition')
     implementation project(':infrastructure:async')
-    implementation project(':logging')
+    implementation project(':infrastructure:logging')
     implementation project(':networking:eth2')
     implementation project(':services:serviceutils')
     implementation project(':storage')
@@ -15,6 +15,7 @@ dependencies {
     implementation project(':validator:coordinator')
 
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+    implementation 'com.google.guava:guava'
     implementation 'io.swagger.core.v3:swagger-core'
     implementation 'io.swagger.core.v3:swagger-annotations'
     implementation 'io.github.classgraph:classgraph'

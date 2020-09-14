@@ -27,6 +27,8 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.RootCauseExceptionHandler;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.networking.eth2.AttestationSubnetService;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
@@ -42,7 +44,6 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.events.Subscribers;
 import tech.pegasys.teku.util.time.TimeProvider;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
@@ -213,7 +214,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
               if (!peer.hasStatus()) {
                 LOG.trace(
                     "Disconnecting peer {} because initial status was not received", peer.getId());
-                peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT);
+                peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT).reportExceptions();
               }
             },
             Constants.RESP_TIMEOUT,
@@ -232,7 +233,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   void sendPeriodicPing(Eth2Peer peer) {
     if (peer.getOutstandingPings() >= eth2RpcOutstandingPingThreshold) {
       LOG.debug("Disconnecting the peer {} due to PING timeout.", peer.getId());
-      peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE);
+      peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE).reportExceptions();
     } else {
       peer.sendPing()
           .finish(
@@ -286,5 +287,12 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
 
   private boolean peerIsReady(Eth2Peer peer) {
     return peer.hasStatus();
+  }
+
+  public SafeFuture<?> sendGoodbyeToPeers() {
+    return SafeFuture.allOf(
+        connectedPeerMap.values().stream()
+            .map(peer -> peer.disconnectCleanly(DisconnectReason.SHUTTING_DOWN))
+            .toArray(SafeFuture[]::new));
   }
 }

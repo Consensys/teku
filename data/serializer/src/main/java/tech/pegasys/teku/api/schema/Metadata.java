@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.PATTERN_UINT64;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -27,7 +29,7 @@ public class Metadata {
   @JsonProperty("seq_number")
   @Schema(
       type = "string",
-      pattern = "^0-9+$",
+      pattern = PATTERN_UINT64,
       description =
           "Uint64 starting at 0 used to version the node's metadata. "
               + "If any other field in the local MetaData changes, the node MUST increment seq_number by 1.")

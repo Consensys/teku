@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.sync;
 
-import static tech.pegasys.teku.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
+import static tech.pegasys.teku.infrastructure.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
 
 import com.google.common.eventbus.EventBus;
 import java.util.List;
@@ -22,9 +22,9 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.events.EventChannels;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory;
@@ -40,6 +40,10 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.sync.gossip.BlockManager;
+import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
+import tech.pegasys.teku.sync.singlepeer.SinglePeerSyncService;
+import tech.pegasys.teku.sync.singlepeer.SyncManager;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class SyncingNodeManager {
@@ -106,7 +110,7 @@ public class SyncingNodeManager {
     SyncManager syncManager =
         SyncManager.create(
             asyncRunner, eth2Network, recentChainData, blockImporter, new NoOpMetricsSystem());
-    SyncService syncService = new DefaultSyncService(blockManager, syncManager, recentChainData);
+    SyncService syncService = new SinglePeerSyncService(blockManager, syncManager, recentChainData);
 
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)

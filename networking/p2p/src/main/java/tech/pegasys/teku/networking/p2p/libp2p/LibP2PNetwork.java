@@ -14,8 +14,7 @@
 package tech.pegasys.teku.networking.p2p.libp2p;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
-import static tech.pegasys.teku.infrastructure.async.SafeFuture.reportExceptions;
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Host;
@@ -48,10 +47,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
+import kotlin.jvm.functions.Function0;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -79,6 +78,7 @@ import tech.pegasys.teku.util.cli.VersionProvider;
 public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static Function0<Long> NULL_SEQNO_GENERATOR = () -> null;
 
   private final PrivKey privKey;
   private final NodeId nodeId;
@@ -112,7 +112,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
     // Setup gossip
     gossip = createGossip();
-    final PubsubPublisherApi publisher = gossip.createPublisher(privKey, new Random().nextLong());
+    final PubsubPublisherApi publisher = gossip.createPublisher(null, NULL_SEQNO_GENERATOR);
     gossipNetwork = new LibP2PGossipNetwork(gossip, publisher);
 
     // Setup rpc methods
@@ -267,6 +267,11 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
+  public NodeId parseNodeId(final String nodeId) {
+    return new LibP2PNodeId(PeerId.fromBase58(nodeId));
+  }
+
+  @Override
   public int getPeerCount() {
     return peerManager.getPeerCount();
   }
@@ -277,12 +282,12 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public void stop() {
+  public SafeFuture<?> stop() {
     if (!state.compareAndSet(State.RUNNING, State.STOPPED)) {
-      return;
+      return SafeFuture.COMPLETE;
     }
     LOG.debug("JvmLibP2PNetwork.stop()");
-    reportExceptions(host.stop());
+    return SafeFuture.of(host.stop());
   }
 
   @Override

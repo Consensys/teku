@@ -25,8 +25,11 @@ public class TrackingReorgEventChannel implements ReorgEventChannel {
 
   @Override
   public void reorgOccurred(
-      final Bytes32 bestBlockRoot, final UInt64 bestSlot, final UInt64 commonAncestorSlot) {
-    reorgEvents.add(new ReorgEvent(bestBlockRoot, bestSlot, commonAncestorSlot));
+      final Bytes32 bestBlockRoot,
+      final UInt64 bestSlot,
+      final Bytes32 oldBestBlockRoot,
+      final UInt64 commonAncestorSlot) {
+    reorgEvents.add(new ReorgEvent(bestBlockRoot, bestSlot, oldBestBlockRoot, commonAncestorSlot));
   }
 
   public List<ReorgEvent> getReorgEvents() {
@@ -34,19 +37,24 @@ public class TrackingReorgEventChannel implements ReorgEventChannel {
   }
 
   public static class ReorgEvent {
-    private final Bytes32 bestBlockRoot;
+    private final Bytes32 newBestBlockRoot;
     private final UInt64 bestSlot;
+    private final Bytes32 oldBestBlockRoot;
     private final UInt64 commonAncestorSlot;
 
     public ReorgEvent(
-        final Bytes32 bestBlockRoot, final UInt64 bestSlot, final UInt64 commonAncestorSlot) {
-      this.bestBlockRoot = bestBlockRoot;
+        final Bytes32 newBestBlockRoot,
+        final UInt64 bestSlot,
+        final Bytes32 oldBestBlockRoot,
+        final UInt64 commonAncestorSlot) {
+      this.newBestBlockRoot = newBestBlockRoot;
       this.bestSlot = bestSlot;
+      this.oldBestBlockRoot = oldBestBlockRoot;
       this.commonAncestorSlot = commonAncestorSlot;
     }
 
-    public Bytes32 getBestBlockRoot() {
-      return bestBlockRoot;
+    public Bytes32 getNewBestBlockRoot() {
+      return newBestBlockRoot;
     }
 
     public UInt64 getBestSlot() {
@@ -55,6 +63,10 @@ public class TrackingReorgEventChannel implements ReorgEventChannel {
 
     public UInt64 getCommonAncestorSlot() {
       return commonAncestorSlot;
+    }
+
+    public Bytes32 getOldBestBlockRoot() {
+      return oldBestBlockRoot;
     }
 
     @Override
@@ -66,20 +78,20 @@ public class TrackingReorgEventChannel implements ReorgEventChannel {
         return false;
       }
       final ReorgEvent that = (ReorgEvent) o;
-      return Objects.equals(bestBlockRoot, that.bestBlockRoot)
+      return Objects.equals(newBestBlockRoot, that.newBestBlockRoot)
           && Objects.equals(bestSlot, that.bestSlot)
           && Objects.equals(commonAncestorSlot, that.commonAncestorSlot);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(bestBlockRoot, bestSlot, commonAncestorSlot);
+      return Objects.hash(newBestBlockRoot, bestSlot, commonAncestorSlot);
     }
 
     @Override
     public String toString() {
       return MoreObjects.toStringHelper(this)
-          .add("bestBlockRoot", bestBlockRoot)
+          .add("bestBlockRoot", newBestBlockRoot)
           .add("bestSlot", bestSlot)
           .add("commonAncestorSlot", commonAncestorSlot)
           .toString();
