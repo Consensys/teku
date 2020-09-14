@@ -78,12 +78,8 @@ public class SyncController {
     currentSync = newFinalizedSync;
   }
 
-  private void onSyncComplete(final Optional<Throwable> error) {
+  private void onSyncComplete() {
     eventThread.checkOnEventThread();
-    error
-        .filter(e -> !(Throwables.getRootCause(e) instanceof CancellationException))
-        .ifPresent(e -> LOG.debug("Error during sync", e));
-
     if (isSyncActive()) {
       // A different sync is now running so ignore this change.
       return;
@@ -117,15 +113,18 @@ public class SyncController {
       return currentSync.get();
     }
     final UInt64 startSlot = recentChainData.getHeadSlot();
-    final SafeFuture<Void> syncResult =
-        finalizedSync
-            .syncToChain(chain)
-            .handleAsync(
-                (__, error) -> {
-                  onSyncComplete(Optional.ofNullable(error));
-                  return null;
-                },
-                eventThread);
+    final SafeFuture<Void> syncResult = finalizedSync.syncToChain(chain);
+    syncResult.finishAsync(
+        this::onSyncComplete,
+        error -> {
+          if (!(Throwables.getRootCause(error) instanceof CancellationException)) {
+            LOG.error("Error encountered during sync", error);
+          } else {
+            LOG.trace("Sync cancelled");
+          }
+          onSyncComplete();
+        },
+        eventThread);
     return new InProgressSync(startSlot, chain, syncResult);
   }
 
