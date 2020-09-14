@@ -33,12 +33,12 @@ public class KeystoreLocker {
   private static final Logger LOG = LogManager.getLogger();
   private final byte[] processPID = getProcessPID();
 
-  public void lockKeystoreFile(Path keystoreFile) {
-    deleteIfStaleLockfileExists(keystoreFile);
+  public void lockKeystore(Path keystoreFile) {
+    Path lockfilePath = Path.of(keystoreFile.toString() + ".lock");
+    deleteIfStaleLockfileExists(lockfilePath);
     try {
-      final Path keystoreLockFile =
-          Files.write(Path.of(keystoreFile.toString() + ".lock"), processPID, CREATE_NEW);
-      keystoreLockFile.toFile().deleteOnExit();
+      final Path lockfile = Files.write(lockfilePath, processPID, CREATE_NEW);
+      lockfile.toFile().deleteOnExit();
     } catch (FileAlreadyExistsException e) {
       throw new InvalidConfigurationException("Keystore file " + keystoreFile + " already in use.");
     } catch (IOException e) {
@@ -46,33 +46,29 @@ public class KeystoreLocker {
     }
   }
 
-  static boolean deleteIfStaleLockfileExists(Path keystoreFile) {
-    Path keystoreLockfile = Path.of(keystoreFile.toString() + ".lock");
-    if (!keystoreLockfile.toFile().exists()) {
-      return false;
+  private static void deleteIfStaleLockfileExists(Path lockfilePath) {
+    if (!lockfilePath.toFile().exists()) {
+      return;
     }
 
     try {
-      byte[] pidInBytes = Files.readAllBytes(keystoreLockfile);
+      byte[] pidInBytes = Files.readAllBytes(lockfilePath);
       if (pidInBytes.length == Long.BYTES) {
         long pid = nativeByteArrayToLong(pidInBytes);
         Optional<ProcessHandle> processHandle =
             ProcessHandle.of(pid).filter(ProcessHandle::isAlive);
         if (processHandle.isEmpty()) {
-          if (!keystoreLockfile.toFile().delete() && keystoreLockfile.toFile().exists()) {
+          if (!lockfilePath.toFile().delete() && lockfilePath.toFile().exists()) {
             LOG.warn("Could not delete stale lockfile.");
-            return false;
           }
-          return true;
         }
       }
     } catch (IOException e) {
       throw new UncheckedIOException("Unexpected error when trying read a keystore lockfile.", e);
     }
-    return false;
   }
 
-  private byte[] getProcessPID() {
+  private static byte[] getProcessPID() {
     byte[] pidBytes;
     try {
       long pid = ProcessHandle.current().pid();
@@ -92,7 +88,7 @@ public class KeystoreLocker {
     return buffer.array();
   }
 
-  private static long nativeByteArrayToLong(final byte[] bytes) {
+  static long nativeByteArrayToLong(final byte[] bytes) {
     final ByteBuffer readBuffer = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.nativeOrder());
     readBuffer.put(bytes);
     return readBuffer.getLong(0);

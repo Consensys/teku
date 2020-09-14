@@ -13,83 +13,82 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import static java.nio.file.StandardOpenOption.CREATE_NEW;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static tech.pegasys.teku.validator.client.loader.KeystoreLocker.deleteIfStaleLockfileExists;
-import static tech.pegasys.teku.validator.client.loader.KeystoreLocker.longPidToNativeByteArray;
-
-import com.google.common.io.Resources;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.validator.client.loader.KeystoreLocker.longPidToNativeByteArray;
+import static tech.pegasys.teku.validator.client.loader.KeystoreLocker.nativeByteArrayToLong;
 
 public class KeystoreLockerTest {
 
-  private KeystoreLocker keystoreLocker = new KeystoreLocker();
+  private final KeystoreLocker keystoreLocker = new KeystoreLocker();
 
   @Test
-  void shouldLockKeystoreFileAndFailWhenTryingCreateLockForLockedFile() throws Exception {
-    final Path keystoreFile = Path.of(Resources.getResource("scryptTestVector.json").toURI());
-    deletePastLockfile(keystoreFile);
-
-    Assertions.assertThatCode(() -> keystoreLocker.lockKeystoreFile(keystoreFile))
+  void shouldLockKeystoreFileAndFailWhenTryingCreateLockForLockedFile(final @TempDir Path keystoreFile) throws Exception {
+    Assertions.assertThatCode(() -> keystoreLocker.lockKeystore(keystoreFile))
         .doesNotThrowAnyException();
-    Assertions.assertThatThrownBy(() -> keystoreLocker.lockKeystoreFile(keystoreFile))
+    Assertions.assertThatThrownBy(() -> keystoreLocker.lockKeystore(keystoreFile))
         .isExactlyInstanceOf(InvalidConfigurationException.class);
   }
 
   @Test
-  void doNotDeleteLockfileIfTheProcessIsAlive() throws Exception {
-    final Path keystoreFile = Path.of(Resources.getResource("lockfileTest1.json").toURI());
-    deletePastLockfile(keystoreFile);
-
-    Process process = new ProcessBuilder("/bin/sleep", "5").start();
-    long pid = process.pid();
-    assertThat(process.isAlive()).isTrue();
-    createLockfileWithContent(keystoreFile, longPidToNativeByteArray(pid));
-    assertThat(deleteIfStaleLockfileExists(keystoreFile)).isFalse();
-  }
-
-  @Test
-  void deleteLockfileIfTheProcessIsNotAlive() throws Exception {
-    final Path keystoreFile = Path.of(Resources.getResource("lockfileTest2.json").toURI());
-    deletePastLockfile(keystoreFile);
-
+  @EnabledOnOs({OS.LINUX, OS.MAC})
+  void deleteLockfileIfTheProcessIsNotAlive(final @TempDir Path keystoreFile) throws Exception {
     Process process = new ProcessBuilder("/bin/sleep", "1").start();
-    Thread.sleep(2000);
+    Thread.sleep(1500);
     long pid = process.pid();
     assertThat(process.isAlive()).isFalse();
     createLockfileWithContent(keystoreFile, longPidToNativeByteArray(pid));
-    assertThat(deleteIfStaleLockfileExists(keystoreFile)).isTrue();
+    Assertions.assertThatCode(() -> keystoreLocker.lockKeystore(keystoreFile))
+            .doesNotThrowAnyException();
+    long lockfilePid = readLockfileContent(keystoreFile);
+    assertThat(lockfilePid).isNotEqualTo(pid);
+    assertThat(lockfilePid).isEqualTo(ProcessHandle.current().pid());
   }
 
   @Test
-  void doNotDeleteIfLockfileIsEmpty() throws Exception {
-    final Path keystoreFile = Path.of(Resources.getResource("lockfileTest3.json").toURI());
-    deletePastLockfile(keystoreFile);
-
+  void doNotDeleteIfLockfileIsEmpty(final @TempDir Path keystoreFile) throws Exception {
     createLockfileWithContent(keystoreFile, new byte[0]);
-    assertThat(deleteIfStaleLockfileExists(keystoreFile)).isFalse();
+    Assertions.assertThatThrownBy(() -> keystoreLocker.lockKeystore(keystoreFile))
+            .isExactlyInstanceOf(InvalidConfigurationException.class);
   }
 
   @Test
-  void doNotDeleteIfLockfileContainsSomethingThatIsNotLong() throws Exception {
-    final Path keystoreFile = Path.of(Resources.getResource("lockfileTest3.json").toURI());
-    deletePastLockfile(keystoreFile);
-
+  void doNotDeleteIfLockfileContainsSomethingThatIsNotLong(final @TempDir Path keystoreFile) throws Exception {
     createLockfileWithContent(keystoreFile, new byte[Long.BYTES + 1]);
-    assertThat(deleteIfStaleLockfileExists(keystoreFile)).isFalse();
+    Assertions.assertThatThrownBy(() -> keystoreLocker.lockKeystore(keystoreFile))
+            .isExactlyInstanceOf(InvalidConfigurationException.class);
   }
 
-  private void createLockfileWithContent(final Path keystoreFile, final byte[] content)
+  @Test
+  void throwIOExceptionWhenTryingToLockNonExistentKeystoreInNonExistingDirectory(final @TempDir Path keystoreFile) {
+    Path nonExistingKeystoreFile = Path.of(keystoreFile.toString() + "/yo/keystore.json");
+    Assertions.assertThatThrownBy(() -> keystoreLocker.lockKeystore(nonExistingKeystoreFile))
+            .isExactlyInstanceOf(UncheckedIOException.class);
+  }
+
+  private void createLockfileWithContent(final Path keystorePath, final byte[] content)
       throws IOException {
-    Files.write(Path.of(keystoreFile.toString() + ".lock"), content, CREATE_NEW);
+    Files.write(getLockfilePath(keystorePath), content, CREATE_NEW);
   }
 
-  private void deletePastLockfile(final Path keystoreFile) throws IOException {
-    Files.deleteIfExists(Path.of(keystoreFile.toString() + ".lock"));
+  private long readLockfileContent(final Path keystorePath) throws Exception {
+    byte[] pidInBytes = Files.readAllBytes(getLockfilePath(keystorePath));
+    return nativeByteArrayToLong(pidInBytes);
+  }
+
+  private Path getLockfilePath(final Path keystorePath) {
+    return Path.of(keystorePath.toString() + ".lock");
   }
 }

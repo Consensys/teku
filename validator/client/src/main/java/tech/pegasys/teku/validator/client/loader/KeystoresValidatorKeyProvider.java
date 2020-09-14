@@ -91,7 +91,7 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
 
   private Bytes32 loadBLSPrivateKey(final Path keystoreFile, final String password) {
     try {
-      keystoreLocker.lockKeystoreFile(keystoreFile);
+      keystoreLocker.lockKeystore(keystoreFile);
       final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(keystoreFile);
       if (!KeyStore.validatePassword(password, keyStoreData)) {
         throw new IllegalArgumentException("Invalid keystore password: " + keystoreFile);
