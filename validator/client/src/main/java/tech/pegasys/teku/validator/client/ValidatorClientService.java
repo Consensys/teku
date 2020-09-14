@@ -120,6 +120,6 @@ public class ValidatorClientService extends Service {
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.of(beaconChainEventAdapter.start());
+    return SafeFuture.of(beaconChainEventAdapter.stop());
   }
 }
