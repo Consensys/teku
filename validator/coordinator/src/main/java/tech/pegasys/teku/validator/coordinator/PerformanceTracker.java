@@ -141,13 +141,12 @@ public class PerformanceTracker implements SlotEventsChannel {
         .collect(Collectors.toList());
   }
 
-  private List<Attestation> getAttestationsInEpoch(UInt64 epoch) {
+  private Map<UInt64, List<Attestation>> getAttestationsInEpoch(UInt64 epoch) {
     return getBlocksInEpoch(epoch).stream()
-        .map(BeaconBlock::getBody)
-        .map(BeaconBlockBody::getAttestations)
-        .map(SSZImmutableCollection::asList)
-        .flatMap(List::stream)
-        .collect(Collectors.toList());
+            .collect(Collectors.toMap(
+                    BeaconBlock::getSlot,
+                    block -> block.getBody().getAttestations().asList()
+            ));
   }
 
   public void saveSentAttestation(Attestation attestation) {
