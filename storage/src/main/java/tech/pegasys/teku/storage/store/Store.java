@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.store;
 
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromDynamicMap;
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
+import static tech.pegasys.teku.core.stategenerator.CheckpointStateTask.AsyncStateProvider.fromBlockAndState;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
@@ -372,6 +374,30 @@ class Store implements UpdatableStore {
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint) {
     return checkpointStates.perform(new CheckpointStateTask(checkpoint, this::retrieveBlockState));
+  }
+
+  @Override
+  public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
+    final Checkpoint finalizedCheckpoint;
+    final SignedBlockAndState finalizedBlockAndState;
+
+    readLock.lock();
+    try {
+      finalizedCheckpoint = this.finalized_checkpoint;
+      finalizedBlockAndState = this.finalizedBlockAndState;
+    } finally {
+      readLock.unlock();
+    }
+
+    return checkpointStates
+        .perform(
+            new CheckpointStateTask(finalizedCheckpoint, fromBlockAndState(finalizedBlockAndState)))
+        .thenApply(
+            maybeState ->
+                new CheckpointState(
+                    finalizedCheckpoint,
+                    finalizedBlockAndState.getBlock(),
+                    maybeState.orElseThrow()));
   }
 
   @Override

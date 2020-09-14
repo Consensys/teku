@@ -29,8 +29,8 @@ import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -92,8 +92,9 @@ public abstract class AbstractStoreTest {
     final List<CheckpointState> allCheckpoints = new ArrayList<>();
     for (int i = 0; i <= chainBuilder.getLatestEpoch().intValue(); i++) {
       Checkpoint checkpoint = chainBuilder.getCurrentCheckpointForEpoch(i);
-      BeaconState state = chainBuilder.getBlockAndState(checkpoint.getRoot()).get().getState();
-      allCheckpoints.add(new CheckpointState(checkpoint, state));
+      SignedBlockAndState blockAndState = chainBuilder.getBlockAndState(checkpoint.getRoot()).get();
+      allCheckpoints.add(
+          new CheckpointState(checkpoint, blockAndState.getBlock(), blockAndState.getState()));
     }
     assertThat(allCheckpoints.size()).isEqualTo(epochsToProcess + 1);
 
@@ -151,23 +152,5 @@ public abstract class AbstractStoreTest {
                 .map(chainBuilder::getBlock)
                 .flatMap(Optional::stream)
                 .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity())));
-  }
-
-  static class CheckpointState {
-    private final Checkpoint checkpoint;
-    private final BeaconState state;
-
-    private CheckpointState(Checkpoint checkpoint, BeaconState state) {
-      this.checkpoint = checkpoint;
-      this.state = state;
-    }
-
-    public Checkpoint getCheckpoint() {
-      return checkpoint;
-    }
-
-    public BeaconState getState() {
-      return state;
-    }
   }
 }
