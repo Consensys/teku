@@ -101,14 +101,21 @@ class FinalizedSyncTest {
     sync.syncToChain(targetChain);
 
     assertThat(batches).hasSize(5);
+
     // Should start from the slot after our finalized epoch
-    assertThatBatch(batches.get(0)).hasFirstSlot(ONE);
-    assertThatBatch(batches.get(1)).hasFirstSlot(BATCH_SIZE.plus(1));
-    assertThatBatch(batches.get(2)).hasFirstSlot(BATCH_SIZE.times(2).plus(1));
-    assertThatBatch(batches.get(3)).hasFirstSlot(BATCH_SIZE.times(3).plus(1));
-    assertThatBatch(batches.get(4)).hasFirstSlot(BATCH_SIZE.times(4).plus(1));
+    final StubBatch batch0 = batches.get(0);
+    final StubBatch batch1 = batches.get(1);
+    final StubBatch batch2 = batches.get(2);
+    final StubBatch batch3 = batches.get(3);
+    final StubBatch batch4 = batches.get(4);
+    assertThatBatch(batch0).hasFirstSlot(ONE);
+    assertThatBatch(batch1).hasFirstSlot(batch0.getLastSlot().plus(1));
+    assertThatBatch(batch2).hasFirstSlot(batch1.getLastSlot().plus(1));
+    assertThatBatch(batch3).hasFirstSlot(batch2.getLastSlot().plus(1));
+    assertThatBatch(batch4).hasFirstSlot(batch3.getLastSlot().plus(1));
     batches.forEach(
-        batch -> assertThatBatch(batch).hasLastSlot(batch.getFirstSlot().plus(BATCH_SIZE)));
+        batch ->
+            assertThatBatch(batch).hasLastSlot(batch.getFirstSlot().plus(BATCH_SIZE).minus(1)));
   }
 
   @Test
@@ -188,16 +195,17 @@ class FinalizedSyncTest {
 
   @Test
   void shouldMarkBatchInvalidWhenSlotIsTargetHeadSlotAndRootDoesNotMatch() {
-    targetChain = chainWith(new SlotAndBlockRoot(ONE, dataStructureUtil.randomBytes32()));
+    final UInt64 lastSlot = UInt64.valueOf(2);
+    targetChain = chainWith(new SlotAndBlockRoot(lastSlot, dataStructureUtil.randomBytes32()));
 
     sync.syncToChain(targetChain);
 
     final StubBatch batch0 = batches.get(0);
-    assertThatBatch(batch0).hasLastSlot(ONE);
+    assertThatBatch(batch0).hasLastSlot(lastSlot);
 
     // We get a block in the last slot which doesn't match the target root
     // (it does match the starting point though)
-    batch0.receiveBlocks(chainBuilder.generateBlockAtSlot(ONE).getBlock());
+    batch0.receiveBlocks(chainBuilder.generateBlockAtSlot(lastSlot).getBlock());
 
     // So the batch must be invalid
     assertThatBatch(batch0).isInvalid();
@@ -206,7 +214,8 @@ class FinalizedSyncTest {
   @Test
   void shouldContestBatchesWhenLastBlockDoesNotMatchTargetAndHasOnlyEmptyBatchesAfterIt() {
     targetChain =
-        chainWith(new SlotAndBlockRoot(BATCH_SIZE.times(2), dataStructureUtil.randomBytes32()));
+        chainWith(
+            new SlotAndBlockRoot(BATCH_SIZE.times(2).minus(1), dataStructureUtil.randomBytes32()));
 
     sync.syncToChain(targetChain);
 
@@ -227,7 +236,8 @@ class FinalizedSyncTest {
   @Test
   void shouldNotContestBatchesWhenAnIncompleteBatchIsFollowedByEmptyBatchesAtEndOfChain() {
     targetChain =
-        chainWith(new SlotAndBlockRoot(BATCH_SIZE.times(2), dataStructureUtil.randomBytes32()));
+        chainWith(
+            new SlotAndBlockRoot(BATCH_SIZE.times(2).minus(1), dataStructureUtil.randomBytes32()));
 
     sync.syncToChain(targetChain);
 
@@ -246,10 +256,12 @@ class FinalizedSyncTest {
   @Test
   void shouldContestAllBatchesWhenEndSlotIsReachedWithNoBlocksReceived() {
     targetChain =
-        chainWith(new SlotAndBlockRoot(BATCH_SIZE.times(2), dataStructureUtil.randomBytes32()));
+        chainWith(
+            new SlotAndBlockRoot(BATCH_SIZE.times(2).minus(1), dataStructureUtil.randomBytes32()));
 
     sync.syncToChain(targetChain);
 
+    assertThat(batches).hasSize(2);
     final StubBatch batch0 = batches.get(0);
     final StubBatch batch1 = batches.get(1);
     assertThatBatch(batch1).hasLastSlot(targetChain.getChainHead().getSlot());
@@ -275,7 +287,7 @@ class FinalizedSyncTest {
   @Test
   void shouldNotImportBatchUntilConfirmed() {
     final SignedBeaconBlock lastBlockOfFirstBatch =
-        chainBuilder.generateBlockAtSlot(BATCH_SIZE.plus(1)).getBlock();
+        chainBuilder.generateBlockAtSlot(BATCH_SIZE).getBlock();
     sync.syncToChain(targetChain);
 
     final StubBatch firstBatch = batches.get(0);

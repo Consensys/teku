@@ -273,6 +273,25 @@ public class SafeFuture<T> extends CompletableFuture<T> {
         .reportExceptions();
   }
 
+  public void finishAsync(final Consumer<Throwable> onError, final Executor executor) {
+    finishAsync(__ -> {}, onError, executor);
+  }
+
+  public void finishAsync(
+      final Consumer<T> onSuccess, final Consumer<Throwable> onError, final Executor executor) {
+    handleAsync(
+            (result, error) -> {
+              if (error != null) {
+                onError.accept(error);
+              } else {
+                onSuccess.accept(result);
+              }
+              return null;
+            },
+            executor)
+        .reportExceptions();
+  }
+
   /**
    * Returns a new CompletionStage that, when the provided stage completes exceptionally, is
    * executed with the provided stage's exception as the argument to the supplied function.
@@ -400,6 +419,13 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   @Override
   public <U> SafeFuture<U> handle(final BiFunction<? super T, Throwable, ? extends U> fn) {
     return (SafeFuture<U>) super.handle(fn);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public <U> SafeFuture<U> handleAsync(
+      final BiFunction<? super T, Throwable, ? extends U> fn, final Executor executor) {
+    return (SafeFuture<U>) super.handleAsync(fn, executor);
   }
 
   @Override

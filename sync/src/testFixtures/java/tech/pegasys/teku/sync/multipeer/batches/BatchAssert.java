@@ -134,4 +134,8 @@ public class BatchAssert extends AbstractAssert<BatchAssert, Batch> {
   public void isAwaitingBlocks() {
     assertThat(actual.isAwaitingBlocks()).describedAs("awaiting blocks").isTrue();
   }
+
+  public void isNotAwaitingBlocks() {
+    assertThat(actual.isAwaitingBlocks()).describedAs("awaiting blocks").isFalse();
+  }
 }

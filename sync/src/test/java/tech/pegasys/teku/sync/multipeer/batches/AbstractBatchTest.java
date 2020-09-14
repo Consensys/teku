@@ -14,6 +14,7 @@
 package tech.pegasys.teku.sync.multipeer.batches;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.sync.multipeer.batches.BatchAssert.assertThatBatch;
 import static tech.pegasys.teku.sync.multipeer.chains.TargetChainTestUtil.chainWith;
 
@@ -41,7 +42,8 @@ abstract class AbstractBatchTest {
   @Test
   void getLastSlot_shouldCalculateLastSlot() {
     final Batch batch = createBatch(5, 20);
-    assertThatBatch(batch).hasLastSlot(UInt64.valueOf(25));
+    // Slot 5 is the first block returned so it's one less slot than you might expect
+    assertThatBatch(batch).hasLastSlot(UInt64.valueOf(24));
   }
 
   @Test
@@ -69,7 +71,7 @@ abstract class AbstractBatchTest {
   void isComplete_shouldBeCompleteAfterInitialRequestReturnsBlockInLastSlot() {
     final Batch batch = createBatch(10, 3);
     batch.requestMoreBlocks(() -> {});
-    receiveBlocks(batch, dataStructureUtil.randomSignedBeaconBlock(13));
+    receiveBlocks(batch, dataStructureUtil.randomSignedBeaconBlock(batch.getLastSlot()));
     assertThatBatch(batch).isComplete();
     assertThatBatch(batch).isNotEmpty();
   }
@@ -210,10 +212,55 @@ abstract class AbstractBatchTest {
   }
 
   @Test
+  void isAwaitingBlocks_shouldBeFalseInitially() {
+    final Batch batch = createBatch(5, 2);
+    assertThatBatch(batch).isNotAwaitingBlocks();
+    batch.requestMoreBlocks(() -> {});
+
+    assertThatBatch(batch).isAwaitingBlocks();
+  }
+
+  @Test
+  void isAwaitingBlocks_shouldBeAwaitingBlocksWhenRequestIsPending() {
+    final Batch batch = createBatch(5, 2);
+    batch.requestMoreBlocks(() -> {});
+
+    assertThatBatch(batch).isAwaitingBlocks();
+  }
+
+  @Test
+  void isAwaitingBlocks_shouldNotBeAwaitingBlocksWhenRequestIsCompleted() {
+    final Batch batch = createBatch(5, 2);
+    batch.requestMoreBlocks(() -> {});
+    receiveBlocks(batch);
+
+    assertThatBatch(batch).isNotAwaitingBlocks();
+  }
+
+  @Test
+  void isAwaitingBlocks_shouldNotBeAwaitingBlocksWhenRequestFails() {
+    final Batch batch = createBatch(5, 2);
+    batch.requestMoreBlocks(() -> {});
+    requestError(batch, new RuntimeException("Oops"));
+
+    assertThatBatch(batch).isNotAwaitingBlocks();
+  }
+
+  @Test
+  void requestMoreBlocks_shouldThrowErrorWhenRequestingBlocksForCompleteBatch() {
+    final Batch batch = createBatch(5, 8);
+    batch.markComplete();
+    assertThatThrownBy(() -> batch.requestMoreBlocks(() -> {}))
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
   @Disabled
   void markInvalid_shouldDoSomethingGood() {}
 
   protected abstract Batch createBatch(final long startSlot, final long count);
 
   protected abstract void receiveBlocks(final Batch batch, final SignedBeaconBlock... blocks);
+
+  protected abstract void requestError(final Batch batch, final Throwable error);
 }

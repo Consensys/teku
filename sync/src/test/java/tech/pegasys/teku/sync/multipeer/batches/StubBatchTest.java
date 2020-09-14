@@ -27,4 +27,9 @@ public class StubBatchTest extends AbstractBatchTest {
   protected void receiveBlocks(final Batch batch, final SignedBeaconBlock... blocks) {
     ((StubBatch) batch).receiveBlocks(blocks);
   }
+
+  @Override
+  protected void requestError(final Batch batch, final Throwable error) {
+    ((StubBatch) batch).requestError();
+  }
 }

@@ -74,6 +74,7 @@ public class FinalizedSync {
   }
 
   private void switchSyncTarget(final TargetChain targetChain) {
+    LOG.debug("Switching to sync target {}", targetChain.getChainHead());
     eventThread.checkOnEventThread();
     this.targetChain = targetChain;
     this.commonAncestorSlot = getCommonAncestorSlot();
@@ -131,10 +132,16 @@ public class FinalizedSync {
         // If any are incomplete, we might yet get the blocks we need
         // Otherwise at least one of them is wrong so contest them all
         if (batchesFromLastBlock.stream().allMatch(Batch::isComplete)) {
+          LOG.debug(
+              "Contesting {} batches because blocks do not lead to target chain head",
+              batchesFromLastBlock.size());
           markBatchesAsContested(batchesFromLastBlock);
         }
       } else {
         // We got blocks but they didn't lead to the target so must be invalid
+        LOG.debug(
+            "Marking batch {} as invalid because returned blocks do not match the sync target",
+            batch);
         batch.markAsInvalid();
       }
     }
@@ -160,7 +167,11 @@ public class FinalizedSync {
       batch.markAsInvalid();
     } else if (previousBatches.stream().allMatch(Batch::isComplete)) {
       // All the previous batches claim to be empty but we don't match up.
-      markBatchesAsContested(activeBatches.batchesBeforeInclusive(batch));
+      final NavigableSet<Batch> contestedBatches = activeBatches.batchesBeforeInclusive(batch);
+      LOG.debug(
+          "Contesting {} batches because first block does not match sync start point",
+          contestedBatches.size());
+      markBatchesAsContested(contestedBatches);
     }
   }
 
@@ -176,7 +187,14 @@ public class FinalizedSync {
           firstBatch, secondBatch, activeBatches.batchesBetweenExclusive(firstBatch, secondBatch));
     } else if (firstBatch.isComplete() && !secondBatch.isEmpty()) {
       if (firstBatch.getTargetChain().equals(secondBatch.getTargetChain())) {
-        markBatchesAsContested(activeBatches.batchesBetweenInclusive(firstBatch, secondBatch));
+        final NavigableSet<Batch> contestedBatches =
+            activeBatches.batchesBetweenInclusive(firstBatch, secondBatch);
+        LOG.debug(
+            "Marking {} batches as contested because {} and {} do not form a chain",
+            contestedBatches.size(),
+            firstBatch,
+            secondBatch);
+        markBatchesAsContested(contestedBatches);
       } else {
         // We switched chains but they didn't actually match up. Go back to the finalized epoch
         activeBatches.removeAll();
@@ -237,6 +255,7 @@ public class FinalizedSync {
         if (!batch.isFirstBlockConfirmed()) {
           break;
         }
+        LOG.debug("Marking batch {} as invalid because it extends from an invalid block", batch);
         batch.markAsInvalid();
       }
     } else {
@@ -277,13 +296,14 @@ public class FinalizedSync {
     UInt64 nextBatchStart = getNextSlotToRequest();
     final UInt64 targetSlot = targetChain.getChainHead().getSlot();
     for (long i = pendingBatchesCount;
-        i < MAX_PENDING_BATCHES && nextBatchStart.isLessThanOrEqualTo(targetSlot);
+        i < MAX_PENDING_BATCHES && nextBatchStart.isLessThan(targetSlot);
         i++) {
-      final UInt64 count = targetSlot.minus(nextBatchStart).min(batchSize);
+      final UInt64 remainingSlots = targetSlot.minus(nextBatchStart).plus(1);
+      final UInt64 count = remainingSlots.min(batchSize);
       final Batch batch = batchFactory.createBatch(targetChain, nextBatchStart, count);
       activeBatches.add(batch);
       requestMoreBlocks(batch);
-      nextBatchStart = nextBatchStart.plus(batchSize);
+      nextBatchStart = batch.getLastSlot().plus(1);
       if (nextBatchStart.isGreaterThan(targetSlot)) {
         break;
       }
@@ -297,7 +317,6 @@ public class FinalizedSync {
   }
 
   private void requestMoreBlocks(final Batch batch) {
-    LOG.trace("Requesting blocks from batch starting at slot {}", batch.getFirstSlot());
     batch.requestMoreBlocks(() -> eventThread.execute(() -> onBatchReceivedBlocks(batch)));
   }
 

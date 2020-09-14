@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.sync.multipeer.batches;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Arrays.asList;
 
@@ -40,6 +41,8 @@ public class StubBatch implements Batch {
   private boolean lastBlockCorrect = false;
 
   public StubBatch(final TargetChain targetChain, final UInt64 firstSlot, final UInt64 count) {
+    checkArgument(
+        count.isGreaterThanOrEqualTo(UInt64.ONE), "Must include at least one slot in a batch");
     this.targetChain = targetChain;
     this.firstSlot = firstSlot;
     this.count = count;
@@ -55,6 +58,11 @@ public class StubBatch implements Batch {
     final boolean markComplete =
         blocks.length == 0 || blocks[blocks.length - 1].getSlot().equals(getLastSlot());
     receiveBlocks(blocks, markComplete);
+  }
+
+  public void requestError() {
+    blockCallback.orElseThrow().run();
+    blockCallback = Optional.empty();
   }
 
   private void receiveBlocks(final SignedBeaconBlock[] blocks, final boolean markComplete) {
@@ -75,7 +83,7 @@ public class StubBatch implements Batch {
 
   @Override
   public UInt64 getLastSlot() {
-    return firstSlot.plus(count);
+    return firstSlot.plus(count).minus(1);
   }
 
   @Override
@@ -148,6 +156,7 @@ public class StubBatch implements Batch {
 
   @Override
   public void requestMoreBlocks(final Runnable callback) {
+    checkState(!complete || contested, "Attempting to request blocks for a complete batch");
     blockCallback = Optional.of(callback);
   }
 
