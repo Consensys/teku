@@ -261,7 +261,7 @@ public class RocksDbInstance implements RocksDbAccessor {
             try {
               rocksDbTx.delete(defaultHandle, variable.getId().toArrayUnsafe());
             } catch (RocksDBException e) {
-              throw new DatabaseStorageException("Failed to put variable", e);
+              throw new DatabaseStorageException("Failed to delete variable", e);
             }
           });
     }
