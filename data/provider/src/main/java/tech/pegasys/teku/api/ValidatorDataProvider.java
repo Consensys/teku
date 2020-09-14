@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
+import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -214,5 +215,37 @@ public class ValidatorDataProvider {
                 .map(SubnetSubscription::asInternalSubnetSubscription)
                 .collect(Collectors.toSet());
     validatorApiChannel.subscribeToPersistentSubnets(internalSubnetSubscriptions);
+  }
+
+  public SafeFuture<Optional<List<AttesterDuty>>> getAttesterDuties(
+      final UInt64 epoch, final List<Integer> indexes) {
+    if (indexes.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.of(emptyList()));
+    }
+    return SafeFuture.of(() -> validatorApiChannel.getAttestationDuties(epoch, indexes))
+        .thenApply(
+            res ->
+                res.map(
+                    duties ->
+                        duties.stream()
+                            .filter(duty -> duty.getPublicKey() != null)
+                            .map(this::mapToAttesterDuties)
+                            .collect(toList())));
+  }
+
+  private AttesterDuty mapToAttesterDuties(
+      final tech.pegasys.teku.validator.api.ValidatorDuties duty) {
+    final BLSPubKey pubKey = new BLSPubKey(duty.getPublicKey().toBytesCompressed());
+    if (duty.getDuties().isEmpty()) {
+      return new AttesterDuty(pubKey, null, null, null, null, null);
+    }
+    final Duties duties = duty.getDuties().get();
+    return new AttesterDuty(
+        pubKey,
+        UInt64.valueOf(duties.getValidatorIndex()),
+        UInt64.valueOf(duties.getAttestationCommitteeIndex()),
+        UInt64.valueOf(duties.getAggregatorModulo()),
+        UInt64.valueOf(duties.getAttestationCommitteePosition()),
+        duties.getAttestationSlot());
   }
 }
