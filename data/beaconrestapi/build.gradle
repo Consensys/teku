@@ -32,6 +32,7 @@ dependencies {
 
     integrationTestImplementation testFixtures(project(':bls'))
     integrationTestImplementation testFixtures(project(':ethereum:datastructures'))
+    integrationTestImplementation project(':ethereum:weaksubjectivity')
     integrationTestImplementation testFixtures(project(':ethereum:core'))
 
     integrationTestImplementation project(':networking:p2p')

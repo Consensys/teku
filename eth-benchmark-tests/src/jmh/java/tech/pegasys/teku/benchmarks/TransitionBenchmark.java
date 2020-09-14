@@ -44,6 +44,7 @@ import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 /** JMH base class for measuring state transitions performance */
 @BenchmarkMode(Mode.SingleShotTime)
@@ -85,7 +86,9 @@ public abstract class TransitionBenchmark {
 
     ForkChoice forkChoice =
         new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
-    blockImporter = new BlockImporter(recentChainData, forkChoice, localEventBus);
+    blockImporter =
+        new BlockImporter(
+            recentChainData, forkChoice, WeakSubjectivityValidator.lenient(), localEventBus);
     blockIterator = BlockIO.createResourceReader(blocksFile).iterator();
     System.out.println("Importing blocks from " + blocksFile);
   }
