@@ -14,6 +14,7 @@
 package tech.pegasys.teku.sync.multipeer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -22,8 +23,10 @@ import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import static tech.pegasys.teku.sync.multipeer.chains.TargetChainTestUtil.chainWith;
 
 import java.util.Optional;
+import java.util.concurrent.Executor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
@@ -40,12 +43,14 @@ class SyncControllerTest {
   private final ChainSelector finalizedChainSelector = mock(ChainSelector.class);
   private final Sync finalizedSync = mock(Sync.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
+  private final Executor subscriberExecutor = mock(Executor.class);
 
   private final TargetChains finalizedChains = new TargetChains();
   private final TargetChain targetChain = chainWith(dataStructureUtil.randomSlotAndBlockRoot());
 
   private final SyncController syncController =
-      new SyncController(eventThread, recentChainData, finalizedChainSelector, finalizedSync);
+      new SyncController(
+          eventThread, subscriberExecutor, recentChainData, finalizedChainSelector, finalizedSync);
   private static final UInt64 HEAD_SLOT = UInt64.valueOf(2338);
 
   @BeforeEach
@@ -135,11 +140,11 @@ class SyncControllerTest {
 
     final SafeFuture<Void> syncResult = startFinalizedSync();
 
-    verify(subscriber).onSyncingChange(true);
+    assertSyncSubscriberNotified(subscriber, true);
 
     syncResult.complete(null);
 
-    verify(subscriber).onSyncingChange(false);
+    assertSyncSubscriberNotified(subscriber, false);
   }
 
   @Test
@@ -148,7 +153,7 @@ class SyncControllerTest {
     syncController.subscribeToSyncChanges(subscriber);
     ignoreFuture(startFinalizedSync());
 
-    verify(subscriber).onSyncingChange(true);
+    assertSyncSubscriberNotified(subscriber, true);
 
     // Sync switches to a better chain
     final TargetChain newTargetChain = chainWith(dataStructureUtil.randomSlotAndBlockRoot());
@@ -159,6 +164,19 @@ class SyncControllerTest {
 
     // But subscribers are not notified because we're already syncing.
     verifyNoMoreInteractions(subscriber);
+  }
+
+  private void assertSyncSubscriberNotified(
+      final SyncSubscriber subscriber, final boolean syncing) {
+    // Shouldn't notify on the event thread
+    verifyNoMoreInteractions(subscriber);
+
+    // Notification happens via the subscriberExecutor
+    final ArgumentCaptor<Runnable> notificationCaptor = ArgumentCaptor.forClass(Runnable.class);
+    verify(subscriberExecutor, atLeastOnce()).execute(notificationCaptor.capture());
+    notificationCaptor.getValue().run();
+
+    verify(subscriber).onSyncingChange(syncing);
   }
 
   private SafeFuture<Void> startFinalizedSync() {
