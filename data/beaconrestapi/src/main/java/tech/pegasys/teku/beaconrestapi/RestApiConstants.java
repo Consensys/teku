@@ -25,6 +25,7 @@ public class RestApiConstants {
   public static final String RANDAO_REVEAL = "randao_reveal";
   public static final String GRAFFITI = "graffiti";
   public static final String ATTESTATION_DATA_ROOT = "attestation_data_root";
+  public static final String INDEX = "index";
 
   public static final String TAG_ADMIN = "Admin";
   public static final String TAG_BEACON = "Beacon";
@@ -32,7 +33,8 @@ public class RestApiConstants {
   public static final String TAG_NETWORK = "Network";
   public static final String TAG_VALIDATOR = "Validator";
 
-  public static final String TAG_V1_NODE = "V1-Node";
+  public static final String TAG_V1_NODE = "Node V1";
+  public static final String TG_V1_VALIDATOR = "Validator V1";
 
   public static final String RES_OK = "200"; // SC_OK
   public static final String RES_ACCEPTED = "202"; // SC_ACCEPTED
