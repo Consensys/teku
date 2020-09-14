@@ -47,7 +47,7 @@ public class GossipMessageHandlerIntegrationTest {
   private final Eth2NetworkFactory networkFactory = new Eth2NetworkFactory();
 
   @AfterEach
-  public void tearDown() {
+  public void tearDown() throws Exception {
     networkFactory.stopAll();
   }
 

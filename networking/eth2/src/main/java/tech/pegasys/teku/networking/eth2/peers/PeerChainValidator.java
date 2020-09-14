@@ -71,7 +71,7 @@ public class PeerChainValidator {
                 // We are not on the same chain
                 LOG.trace("Disconnecting peer on different chain: {}", peer.getId());
                 chainInvalidCounter.inc();
-                peer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK);
+                peer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK).reportExceptions();
               } else {
                 LOG.trace("Validated peer's chain: {}", peer.getId());
                 chainValidCounter.inc();
@@ -82,7 +82,7 @@ public class PeerChainValidator {
             err -> {
               LOG.debug("Unable to validate peer's chain, disconnecting {}", peer.getId(), err);
               validationErrorCounter.inc();
-              peer.disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK);
+              peer.disconnectCleanly(DisconnectReason.UNABLE_TO_VERIFY_NETWORK).reportExceptions();
               return false;
             });
   }
