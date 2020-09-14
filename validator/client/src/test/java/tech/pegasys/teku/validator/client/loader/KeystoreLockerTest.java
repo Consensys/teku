@@ -13,6 +13,15 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.validator.client.loader.KeystoreLocker.longPidToNativeByteArray;
+import static tech.pegasys.teku.validator.client.loader.KeystoreLocker.nativeByteArrayToLong;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
@@ -20,22 +29,13 @@ import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
-import static java.nio.file.StandardOpenOption.CREATE_NEW;
-import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.validator.client.loader.KeystoreLocker.longPidToNativeByteArray;
-import static tech.pegasys.teku.validator.client.loader.KeystoreLocker.nativeByteArrayToLong;
-
 public class KeystoreLockerTest {
 
   private final KeystoreLocker keystoreLocker = new KeystoreLocker();
 
   @Test
-  void shouldLockKeystoreFileAndFailWhenTryingCreateLockForLockedFile(final @TempDir Path keystoreFile) throws Exception {
+  void shouldLockKeystoreFileAndFailWhenTryingCreateLockForLockedFile(
+      final @TempDir Path keystoreFile) throws Exception {
     Assertions.assertThatCode(() -> keystoreLocker.lockKeystore(keystoreFile))
         .doesNotThrowAnyException();
     Assertions.assertThatThrownBy(() -> keystoreLocker.lockKeystore(keystoreFile))
@@ -51,7 +51,7 @@ public class KeystoreLockerTest {
     assertThat(process.isAlive()).isFalse();
     createLockfileWithContent(keystoreFile, longPidToNativeByteArray(pid));
     Assertions.assertThatCode(() -> keystoreLocker.lockKeystore(keystoreFile))
-            .doesNotThrowAnyException();
+        .doesNotThrowAnyException();
     long lockfilePid = readLockfileContent(keystoreFile);
     assertThat(lockfilePid).isNotEqualTo(pid);
     assertThat(lockfilePid).isEqualTo(ProcessHandle.current().pid());
@@ -61,21 +61,23 @@ public class KeystoreLockerTest {
   void doNotDeleteIfLockfileIsEmpty(final @TempDir Path keystoreFile) throws Exception {
     createLockfileWithContent(keystoreFile, new byte[0]);
     Assertions.assertThatThrownBy(() -> keystoreLocker.lockKeystore(keystoreFile))
-            .isExactlyInstanceOf(InvalidConfigurationException.class);
+        .isExactlyInstanceOf(InvalidConfigurationException.class);
   }
 
   @Test
-  void doNotDeleteIfLockfileContainsSomethingThatIsNotLong(final @TempDir Path keystoreFile) throws Exception {
+  void doNotDeleteIfLockfileContainsSomethingThatIsNotLong(final @TempDir Path keystoreFile)
+      throws Exception {
     createLockfileWithContent(keystoreFile, new byte[Long.BYTES + 1]);
     Assertions.assertThatThrownBy(() -> keystoreLocker.lockKeystore(keystoreFile))
-            .isExactlyInstanceOf(InvalidConfigurationException.class);
+        .isExactlyInstanceOf(InvalidConfigurationException.class);
   }
 
   @Test
-  void throwIOExceptionWhenTryingToLockNonExistentKeystoreInNonExistingDirectory(final @TempDir Path keystoreFile) {
+  void throwIOExceptionWhenTryingToLockNonExistentKeystoreInNonExistingDirectory(
+      final @TempDir Path keystoreFile) {
     Path nonExistingKeystoreFile = Path.of(keystoreFile.toString() + "/yo/keystore.json");
     Assertions.assertThatThrownBy(() -> keystoreLocker.lockKeystore(nonExistingKeystoreFile))
-            .isExactlyInstanceOf(UncheckedIOException.class);
+        .isExactlyInstanceOf(UncheckedIOException.class);
   }
 
   private void createLockfileWithContent(final Path keystorePath, final byte[] content)
