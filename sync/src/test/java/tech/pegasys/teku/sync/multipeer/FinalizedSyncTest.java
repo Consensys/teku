@@ -391,36 +391,32 @@ class FinalizedSyncTest {
   }
 
   @Test
-  void shouldLimitTheNumberOfBatchesRequestedAtAnyOneTime() {
+  void shouldLimitTheNumberOfBatchesWithBlocksPendingImport() {
+    // Avoid the queue of blocks to import getting too long
+    // but allow any number of empty batches since we can only confirm blocks, not empty batches
     sync.syncToChain(targetChain);
+
+    assertThat(batches).hasSize(5);
 
     final StubBatch batch0 = batches.get(0);
     final StubBatch batch1 = batches.get(1);
     final StubBatch batch2 = batches.get(2);
+    final StubBatch batch3 = batches.get(3);
 
-    final SignedBeaconBlock batch0Block1 = chainBuilder.generateBlockAtSlot(1).getBlock();
-    final SignedBeaconBlock batch0Block2 = chainBuilder.generateBlockAtSlot(3).getBlock();
-    final SignedBeaconBlock batch1Block1 =
-        chainBuilder.generateBlockAtSlot(batch1.getLastSlot()).getBlock();
+    batch0.receiveBlocks(chainBuilder.generateBlockAtSlot(batch0.getLastSlot()).getBlock());
+    batch1.receiveBlocks(chainBuilder.generateBlockAtSlot(batch1.getLastSlot()).getBlock());
+    batch2.receiveBlocks(chainBuilder.generateBlockAtSlot(batch2.getLastSlot()).getBlock());
 
-    // 5 requests made initially
+    // Don't create more batches even though some are complete because we haven't imported any
     assertThat(batches).hasSize(5);
 
-    batch0.receiveBlocks(batch0Block1); // Batch 0 receives a partial response
-    assertThatBatch(batch0).isAwaitingBlocks(); // Another request is scheduled
-    assertThat(batches).hasSize(5); // But no new batch is started
-    batches.forEach(batch -> assertThatBatch(batch).isNotContested());
+    // But finding an empty batch allows us to request another one
+    batch3.receiveBlocks();
+    assertThat(batches).hasSize(6);
 
-    batch1.receiveBlocks(batch1Block1); // Batch 1 receives a complete response
-    assertThat(batches).hasSize(6); // So now we start requesting a new batch
-    batches.forEach(batch -> assertThatBatch(batch).isNotContested());
-
-    batch2.receiveBlocks(); // Batch 2 receives an empty response
-    batches.forEach(batch -> assertThatBatch(batch).isNotContested());
-    assertThat(batches).hasSize(7); // So another batch can start because batch 2 is now complete
-
-    batch0.receiveBlocks(batch0Block2); // Batch 0 gets another block which we know is the last
-    assertThat(batches).hasSize(8); // That frees up another slot to request blocks
+    // And when the first batch completes importing, we can request another one
+    batch0.getImportResult().complete(IMPORTED_ALL_BLOCKS);
+    assertThat(batches).hasSize(7);
   }
 
   @Test

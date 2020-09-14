@@ -265,8 +265,8 @@ public class FinalizedSync {
   private void fillRetrievingQueue() {
     eventThread.checkOnEventThread();
 
-    final long incompleteBatchCount =
-        activeBatches.stream().filter(batch -> !batch.isComplete()).count();
+    final long pendingBatchesCount =
+        activeBatches.stream().filter(batch -> !batch.isEmpty() || !batch.isComplete()).count();
 
     // First check if there are batches that should request more blocks
     activeBatches.stream()
@@ -276,7 +276,7 @@ public class FinalizedSync {
     // Add more pending batches if there is room
     UInt64 nextBatchStart = getNextSlotToRequest();
     final UInt64 targetSlot = targetChain.getChainHead().getSlot();
-    for (long i = incompleteBatchCount;
+    for (long i = pendingBatchesCount;
         i < MAX_PENDING_BATCHES && nextBatchStart.isLessThanOrEqualTo(targetSlot);
         i++) {
       final UInt64 count = targetSlot.minus(nextBatchStart).min(batchSize);
