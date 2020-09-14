@@ -53,7 +53,6 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
-import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
@@ -346,16 +345,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return headEpoch.plus(1).isLessThan(currentEpoch);
   }
 
-  private List<ValidatorDuties> getValidatorDutiesFromIndexes(
-      final BeaconState state, final UInt64 epoch, final Collection<Integer> validatorIndexes) {
-    List<BLSPublicKey> publicKeys =
-        validatorIndexes.stream()
-            .map(index -> state.getValidators().get(index))
-            .map(Validator::getPubkey)
-            .collect(toList());
-    return getValidatorDutiesFromState(state, epoch, publicKeys);
-  }
-
   private List<ValidatorDuties> getValidatorDutiesFromState(
       final BeaconState state, final UInt64 epoch, final Collection<BLSPublicKey> publicKeys) {
     final Map<Integer, List<UInt64>> proposalSlotsByValidatorIndex =
@@ -374,6 +363,24 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .map(
             index -> createValidatorDuties(proposalSlotsByValidatorIndex, key, state, epoch, index))
         .orElseGet(() -> ValidatorDuties.noDuties(key));
+  }
+
+  private List<ValidatorDuties> getValidatorDutiesFromIndexes(
+      final BeaconState state, final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+    return validatorIndexes.stream()
+        .map(index -> createValidatorDuties(state, epoch, index))
+        .collect(toList());
+  }
+
+  private ValidatorDuties createValidatorDuties(
+      final BeaconState state, final UInt64 epoch, final Integer validatorIndex) {
+    try {
+      BLSPublicKey pkey = state.getValidators().get(validatorIndex).getPubkey();
+      return createValidatorDuties(Map.of(), pkey, state, epoch, validatorIndex);
+    } catch (IndexOutOfBoundsException ex) {
+      LOG.debug(ex);
+      return ValidatorDuties.withDuties(null, validatorIndex, 0, 0, 0, List.of(), null);
+    }
   }
 
   private ValidatorDuties createValidatorDuties(

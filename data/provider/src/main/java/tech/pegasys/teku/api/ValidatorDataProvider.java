@@ -220,13 +220,17 @@ public class ValidatorDataProvider {
   public SafeFuture<Optional<List<AttesterDuty>>> getAttesterDuties(
       final UInt64 epoch, final List<Integer> indexes) {
     if (indexes.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.empty());
+      return SafeFuture.completedFuture(Optional.of(emptyList()));
     }
     return SafeFuture.of(() -> validatorApiChannel.getAttestationDuties(epoch, indexes))
         .thenApply(
             res ->
                 res.map(
-                    duties -> duties.stream().map(this::mapToAttesterDuties).collect(toList())));
+                    duties ->
+                        duties.stream()
+                            .filter(duty -> duty.getPublicKey() != null)
+                            .map(this::mapToAttesterDuties)
+                            .collect(toList())));
   }
 
   private AttesterDuty mapToAttesterDuties(

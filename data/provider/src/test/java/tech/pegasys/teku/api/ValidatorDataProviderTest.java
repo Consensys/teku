@@ -366,16 +366,17 @@ public class ValidatorDataProviderTest {
   }
 
   @Test
-  public void getAttesterDuties_shouldHandleEmptyIndexesList()
-      throws ExecutionException, InterruptedException {
+  public void getAttesterDuties_shouldHandleEmptyIndexesList() {
     final SafeFuture<Optional<List<AttesterDuty>>> future =
         provider.getAttesterDuties(UInt64.ONE, List.of());
-    assertThat(future.get()).isEmpty();
+    assertThat(future).isCompleted();
+    Optional<List<AttesterDuty>> maybeData = future.join();
+    assertThat(maybeData.isPresent()).isTrue();
+    assertThat(maybeData.get()).isEmpty();
   }
 
   @Test
-  public void getAttesterDuties_shouldReturnDutiesForKnownValidator()
-      throws ExecutionException, InterruptedException {
+  public void getAttesterDuties_shouldReturnDutiesForKnownValidator() {
     tech.pegasys.teku.validator.api.ValidatorDuties v1 =
         tech.pegasys.teku.validator.api.ValidatorDuties.withDuties(
             BLSPublicKey.random(0), 1, 2, 3, 4, List.of(), UInt64.ONE);
@@ -389,7 +390,8 @@ public class ValidatorDataProviderTest {
 
     final SafeFuture<Optional<List<AttesterDuty>>> future =
         provider.getAttesterDuties(ONE, List.of(1, 2, 3));
-    final Optional<List<AttesterDuty>> maybeList = future.get();
+    assertThat(future).isCompleted();
+    final Optional<List<AttesterDuty>> maybeList = future.join();
     final List<AttesterDuty> list = maybeList.get();
     assertThat(list)
         .containsExactlyInAnyOrder(asAttesterDuty(v1), asAttesterDuty(v2), asAttesterDuty(v3));

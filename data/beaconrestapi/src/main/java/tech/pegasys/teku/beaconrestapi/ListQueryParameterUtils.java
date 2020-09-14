@@ -23,7 +23,7 @@ public class ListQueryParameterUtils {
   public static final String MISSING_QUERY_PARAMETER = "Query parameter %s not found";
   public static final Splitter splitter = Splitter.on(',').trimResults().omitEmptyStrings();
 
-  public static List<String> validateQueryParameter(
+  private static List<String> validateQueryParameter(
       final Map<String, List<String>> parameterMap, final String key)
       throws IllegalArgumentException {
     if (parameterMap.containsKey(key)) {

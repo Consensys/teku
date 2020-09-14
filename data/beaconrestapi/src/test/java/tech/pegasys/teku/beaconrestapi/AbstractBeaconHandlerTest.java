@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
-import java.util.concurrent.ExecutionException;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
@@ -63,11 +63,11 @@ public abstract class AbstractBeaconHandlerTest {
     return jsonProvider.jsonToObject(val, clazz);
   }
 
-  protected <T> T getResponseFromFuture(Class<T> clazz)
-      throws ExecutionException, InterruptedException, JsonProcessingException {
+  protected <T> T getResponseFromFuture(Class<T> clazz) throws JsonProcessingException {
     verify(context).result(args.capture());
     SafeFuture<String> future = args.getValue();
-    String data = future.get();
+    assertThat(future).isCompleted();
+    String data = future.join();
     return jsonProvider.jsonToObject(data, clazz);
   }
 
