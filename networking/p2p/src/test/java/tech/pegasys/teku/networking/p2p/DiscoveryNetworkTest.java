@@ -13,6 +13,25 @@
 
 package tech.pegasys.teku.networking.p2p;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
+import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
+
+import java.net.InetSocketAddress;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
@@ -39,26 +58,6 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
-
-import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.function.Predicate;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_fork_digest;
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
-import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.util.config.Constants.GENESIS_FORK_VERSION;
 
 class DiscoveryNetworkTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
