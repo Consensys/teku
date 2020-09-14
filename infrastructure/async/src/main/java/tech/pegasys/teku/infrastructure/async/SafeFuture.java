@@ -402,6 +402,13 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return (SafeFuture<U>) super.handle(fn);
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
+  public <U> SafeFuture<U> handleAsync(
+      final BiFunction<? super T, Throwable, ? extends U> fn, final Executor executor) {
+    return (SafeFuture<U>) super.handleAsync(fn, executor);
+  }
+
   @Override
   public SafeFuture<T> whenComplete(final BiConsumer<? super T, ? super Throwable> action) {
     return (SafeFuture<T>) super.whenComplete(action);

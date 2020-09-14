@@ -13,7 +13,11 @@
 
 package tech.pegasys.teku.sync.multipeer;
 
+import com.google.common.base.Throwables;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
@@ -25,6 +29,7 @@ import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
 
 public class SyncController {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Subscribers<SyncSubscriber> subscribers = Subscribers.create(true);
 
@@ -73,8 +78,12 @@ public class SyncController {
     currentSync = newFinalizedSync;
   }
 
-  private void onSyncComplete() {
+  private void onSyncComplete(final Optional<Throwable> error) {
     eventThread.checkOnEventThread();
+    error
+        .filter(e -> !(Throwables.getRootCause(e) instanceof CancellationException))
+        .ifPresent(e -> LOG.debug("Error during sync", e));
+
     if (isSyncActive()) {
       // A different sync is now running so ignore this change.
       return;
@@ -108,8 +117,15 @@ public class SyncController {
       return currentSync.get();
     }
     final UInt64 startSlot = recentChainData.getHeadSlot();
-    final SafeFuture<Void> syncResult = finalizedSync.syncToChain(chain);
-    syncResult.thenRunAsync(this::onSyncComplete, eventThread).reportExceptions();
+    final SafeFuture<Void> syncResult =
+        finalizedSync
+            .syncToChain(chain)
+            .handleAsync(
+                (__, error) -> {
+                  onSyncComplete(Optional.ofNullable(error));
+                  return null;
+                },
+                eventThread);
     return new InProgressSync(startSlot, chain, syncResult);
   }
 
