@@ -26,8 +26,10 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -208,6 +210,112 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
     SafeFuture<Optional<BeaconState>> result = tx.retrieveCheckpointState(checkpoint);
     assertThat(result).isCompletedWithValue(Optional.of(blockAndState.getState()));
+  }
+
+  @Test
+  public void retrieveFinalizedCheckpointAndState_finalizedBlockInMemory() {
+    final UpdatableStore store = createGenesisStore();
+    final SignedBlockAndState finalizedBlockAndState =
+        chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH - 1);
+    final Checkpoint finalizedCheckpoint =
+        new Checkpoint(UInt64.ONE, finalizedBlockAndState.getRoot());
+
+    final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
+    tx.putBlockAndState(finalizedBlockAndState);
+    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+
+    final SafeFuture<CheckpointState> result = tx.retrieveFinalizedCheckpointAndState();
+    assertThat(result).isCompleted();
+    assertThat(result.join().getCheckpoint()).isEqualTo(finalizedCheckpoint);
+    assertThat(result.join().getBlock()).isEqualTo(finalizedBlockAndState.getBlock());
+    assertThat(result.join().getState()).isNotEqualTo(finalizedBlockAndState.getState());
+    assertThat(result.join().getState().getSlot())
+        .isEqualTo(finalizedBlockAndState.getSlot().plus(1));
+  }
+
+  @Test
+  public void retrieveFinalizedCheckpointAndState_finalizedBlockInStore() {
+    final UpdatableStore store = createGenesisStore();
+    final SignedBlockAndState finalizedBlockAndState =
+        chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH - 1);
+    final Checkpoint finalizedCheckpoint =
+        new Checkpoint(UInt64.ONE, finalizedBlockAndState.getRoot());
+
+    final StoreTransaction blockTx = store.startTransaction(new StubStorageUpdateChannel());
+    blockTx.putBlockAndState(finalizedBlockAndState);
+    assertThat(blockTx.commit()).isCompleted();
+
+    final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
+    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+
+    final SafeFuture<CheckpointState> result = tx.retrieveFinalizedCheckpointAndState();
+    assertThat(result).isCompleted();
+    assertThat(result.join().getCheckpoint()).isEqualTo(finalizedCheckpoint);
+    assertThat(result.join().getBlock()).isEqualTo(finalizedBlockAndState.getBlock());
+    assertThat(result.join().getState()).isNotEqualTo(finalizedBlockAndState.getState());
+    assertThat(result.join().getState().getSlot())
+        .isEqualTo(finalizedBlockAndState.getSlot().plus(1));
+  }
+
+  @Test
+  public void retrieveFinalizedCheckpointAndState_pullFromStore() {
+    final UpdatableStore store = createGenesisStore();
+    final SignedBlockAndState finalizedBlockAndState =
+        chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH - 1);
+    final Checkpoint finalizedCheckpoint =
+        new Checkpoint(UInt64.ONE, finalizedBlockAndState.getRoot());
+
+    final StoreTransaction finalizingTx = store.startTransaction(new StubStorageUpdateChannel());
+    finalizingTx.setFinalizedCheckpoint(finalizedCheckpoint);
+    finalizingTx.putBlockAndState(finalizedBlockAndState);
+    assertThat(finalizingTx.commit()).isCompleted();
+
+    final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
+
+    final SafeFuture<CheckpointState> result = tx.retrieveFinalizedCheckpointAndState();
+    assertThat(result).isCompleted();
+    assertThat(result.join().getCheckpoint()).isEqualTo(finalizedCheckpoint);
+    assertThat(result.join().getBlock()).isEqualTo(finalizedBlockAndState.getBlock());
+    assertThat(result.join().getState()).isNotEqualTo(finalizedBlockAndState.getState());
+    assertThat(result.join().getState().getSlot())
+        .isEqualTo(finalizedBlockAndState.getSlot().plus(1));
+  }
+
+  @Test
+  public void retrieveFinalizedCheckpointAndState_finalizedCheckpointPruned() {
+    final UpdatableStore store = createGenesisStore();
+    final SignedBlockAndState finalizedBlockAndState =
+        chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH - 1);
+    final Checkpoint finalizedCheckpoint =
+        new Checkpoint(UInt64.ONE, finalizedBlockAndState.getRoot());
+
+    final SignedBlockAndState newerFinalizedBlockAndState =
+        chainBuilder.generateBlockAtSlot(Constants.SLOTS_PER_EPOCH * 2);
+    final Checkpoint newerFinalizedCheckpoint =
+        new Checkpoint(UInt64.valueOf(2), newerFinalizedBlockAndState.getRoot());
+
+    // Save blocks
+    final StoreTransaction blockTx = store.startTransaction(new StubStorageUpdateChannel());
+    blockTx.putBlockAndState(finalizedBlockAndState);
+    blockTx.putBlockAndState(newerFinalizedBlockAndState);
+    assertThat(blockTx.commit()).isCompleted();
+
+    // Start tx finalizing epoch 1
+    final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
+    tx.setFinalizedCheckpoint(finalizedCheckpoint);
+
+    // Finalize epoch 2
+    final StoreTransaction otherTx = store.startTransaction(new StubStorageUpdateChannel());
+    otherTx.putBlockAndState(newerFinalizedBlockAndState);
+    otherTx.setFinalizedCheckpoint(newerFinalizedCheckpoint);
+    assertThat(otherTx.commit()).isCompleted();
+
+    // Check response from tx1 for finalized value
+    final SafeFuture<CheckpointState> result = tx.retrieveFinalizedCheckpointAndState();
+    assertThat(result).isCompleted();
+    assertThat(result.join().getCheckpoint()).isEqualTo(newerFinalizedCheckpoint);
+    assertThat(result.join().getBlock()).isEqualTo(newerFinalizedBlockAndState.getBlock());
+    assertThat(result.join().getState()).isEqualTo(newerFinalizedBlockAndState.getState());
   }
 
   @Test

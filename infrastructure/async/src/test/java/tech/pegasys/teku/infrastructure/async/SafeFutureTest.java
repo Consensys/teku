@@ -783,6 +783,40 @@ public class SafeFutureTest {
     assertThatSafeFuture(result).isCompletedExceptionallyWith(exception);
   }
 
+  @Test
+  void handleComposed_shouldComposeTheNewFuture() {
+    SafeFuture<String> source = new SafeFuture<>();
+    SafeFuture<String> result =
+        source.handleComposed(
+            (string, err) -> {
+              if (err != null) {
+                throw new IllegalStateException();
+              }
+              return SafeFuture.completedFuture(string);
+            });
+
+    source.complete("yo");
+    assertThat(result).isCompleted();
+    assertThat(result).isCompletedWithValue("yo");
+  }
+
+  @Test
+  void handleComposed_shouldPassTheErrorToTheNextFunction() {
+    SafeFuture<String> source = new SafeFuture<>();
+    SafeFuture<String> result =
+        source.handleComposed(
+            (string, err) -> {
+              if (err != null) {
+                return SafeFuture.completedFuture("yo");
+              }
+              return SafeFuture.completedFuture(string);
+            });
+
+    source.completeExceptionally(new UnsupportedOperationException());
+    assertThat(result).isCompleted();
+    assertThat(result).isCompletedWithValue("yo");
+  }
+
   private List<Throwable> collectUncaughtExceptions() {
     final List<Throwable> caughtExceptions = new ArrayList<>();
     Thread.currentThread().setUncaughtExceptionHandler((t, e) -> caughtExceptions.add(e));

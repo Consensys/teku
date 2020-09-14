@@ -59,6 +59,22 @@ public abstract class AbstractHandler implements Handler {
       final Context ctx,
       SafeFuture<Optional<T>> future,
       ResultProcessor<T> resultProcessor,
+      final T emptyResponse) {
+    ctx.result(
+        future.thenApplyChecked(
+            result -> {
+              if (result.isPresent()) {
+                return resultProcessor.process(ctx, result.get()).orElse(null);
+              } else {
+                return resultProcessor.process(ctx, emptyResponse).orElse(null);
+              }
+            }));
+  }
+
+  protected <T> void handleOptionalResult(
+      final Context ctx,
+      SafeFuture<Optional<T>> future,
+      ResultProcessor<T> resultProcessor,
       final int missingStatus) {
     ctx.result(
         future.thenApplyChecked(

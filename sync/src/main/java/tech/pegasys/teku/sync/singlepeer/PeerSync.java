@@ -262,7 +262,7 @@ public class PeerSync {
   }
 
   private void disconnectFromPeer(Eth2Peer peer) {
-    peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT);
+    peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT).reportExceptions();
   }
 
   public UInt64 getStartingSlot() {
