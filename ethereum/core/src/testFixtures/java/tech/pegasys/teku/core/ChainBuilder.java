@@ -16,6 +16,7 @@ package tech.pegasys.teku.core;
 import static org.assertj.core.util.Preconditions.checkState;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.common.collect.Maps;
@@ -35,8 +36,8 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
-import tech.pegasys.teku.core.signatures.MessageSignerService;
-import tech.pegasys.teku.core.signatures.TestMessageSignerService;
+import tech.pegasys.teku.core.signatures.LocalSigner;
+import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
@@ -351,7 +352,7 @@ public class ChainBuilder {
     final Bytes32 parentRoot = latestBlockAndState.getBlock().getMessage().hash_tree_root();
 
     final int proposerIndex = blockProposalTestUtil.getProposerIndexForSlot(preState, slot);
-    final MessageSignerService signer = getSigner(proposerIndex);
+    final Signer signer = getSigner(proposerIndex);
     final SignedBlockAndState nextBlockAndState;
     try {
       nextBlockAndState =
@@ -379,8 +380,8 @@ public class ChainBuilder {
     return Optional.ofNullable(result).map(SignedBlockAndState::getBlock).orElse(null);
   }
 
-  private MessageSignerService getSigner(final int proposerIndex) {
-    return new TestMessageSignerService(validatorKeys.get(proposerIndex));
+  private Signer getSigner(final int proposerIndex) {
+    return new LocalSigner(validatorKeys.get(proposerIndex), SYNC_RUNNER);
   }
 
   public static final class BlockOptions {

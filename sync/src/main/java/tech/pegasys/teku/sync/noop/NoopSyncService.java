@@ -17,7 +17,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.sync.SyncStatus;
 import tech.pegasys.teku.sync.SyncingStatus;
 
 public class NoopSyncService implements SyncService {
@@ -34,7 +33,7 @@ public class NoopSyncService implements SyncService {
 
   @Override
   public SyncingStatus getSyncStatus() {
-    return new SyncingStatus(false, new SyncStatus(ZERO, ZERO, ZERO));
+    return new SyncingStatus(false, ZERO);
   }
 
   @Override

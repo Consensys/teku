@@ -11,31 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync;
+package tech.pegasys.teku.weaksubjectivity.policies;
 
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class SyncStatus {
-  private final UInt64 startingSlot;
-  private final UInt64 currentSlot;
-  private final UInt64 highestSlot;
+public interface WeakSubjectivityViolationPolicy {
 
-  public SyncStatus(
-      final UInt64 startingSlot, final UInt64 currentSlot, final UInt64 highest_slot) {
-    this.startingSlot = startingSlot;
-    this.currentSlot = currentSlot;
-    this.highestSlot = highest_slot;
-  }
+  void onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
+      final CheckpointState latestFinalizedCheckpoint,
+      final int activeValidatorCount,
+      final UInt64 currentSlot);
 
-  public UInt64 getStartingSlot() {
-    return startingSlot;
-  }
+  void onFailedToPerformValidation(final String message);
 
-  public UInt64 getCurrentSlot() {
-    return currentSlot;
-  }
-
-  public UInt64 getHighestSlot() {
-    return highestSlot;
-  }
+  void onFailedToPerformValidation(final String message, Throwable error);
 }

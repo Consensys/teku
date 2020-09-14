@@ -52,6 +52,7 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.StartupUtil;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -92,6 +93,7 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncStateTracker;
+import tech.pegasys.teku.sync.multipeer.MultipeerSyncService;
 import tech.pegasys.teku.sync.noop.NoopSyncService;
 import tech.pegasys.teku.sync.singlepeer.SinglePeerSyncServiceFactory;
 import tech.pegasys.teku.util.cli.VersionProvider;
@@ -107,6 +109,7 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
+import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 public class BeaconChainController extends Service implements TimeTickChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -122,6 +125,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final EventBus eventBus;
   private final SlotEventsChannel slotEventsChannelPublisher;
   private final AsyncRunner networkAsyncRunner;
+  private final AsyncRunnerFactory asyncRunnerFactory;
+  private final WeakSubjectivityValidator weakSubjectivityValidator;
 
   private volatile ForkChoice forkChoice;
   private volatile StateTransition stateTransition;
@@ -146,6 +151,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private ForkChoiceExecutor forkChoiceExecutor;
 
   public BeaconChainController(final ServiceConfig serviceConfig) {
+    asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
     this.asyncRunner = serviceConfig.createAsyncRunner("beaconchain");
     this.networkAsyncRunner = serviceConfig.createAsyncRunner("p2p", 10);
     this.timeProvider = serviceConfig.getTimeProvider();
@@ -154,6 +160,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.config = serviceConfig.getConfig();
     this.metricsSystem = serviceConfig.getMetricsSystem();
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
+    // TODO(#2779) - make this validator strict when it is fully fleshed out
+    weakSubjectivityValidator = WeakSubjectivityValidator.lenient();
   }
 
   @Override
@@ -531,6 +539,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initSyncManager()");
     if (!config.isP2pEnabled()) {
       syncService = new NoopSyncService();
+    } else if (config.isMultiPeerSyncEnabled()) {
+      syncService =
+          MultipeerSyncService.create(
+              asyncRunnerFactory,
+              asyncRunner,
+              eventBus,
+              recentChainData,
+              p2pNetwork,
+              blockImporter);
     } else {
       syncService =
           SinglePeerSyncServiceFactory.create(
@@ -592,16 +609,35 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void onStoreInitialized() {
     UInt64 genesisTime = recentChainData.getGenesisTime();
     UInt64 currentTime = timeProvider.getTimeInSeconds();
-    UInt64 currentSlot = ZERO;
+    final UInt64 currentSlot;
     if (currentTime.compareTo(genesisTime) >= 0) {
       UInt64 deltaTime = currentTime.minus(genesisTime);
       currentSlot = deltaTime.dividedBy(SECONDS_PER_SLOT);
+      // Validate that we're running within the weak subjectivity period
+      validateLatestCheckpointIsWithinWeakSubjectivityPeriod(currentSlot);
     } else {
+      currentSlot = ZERO;
       UInt64 timeUntilGenesis = genesisTime.minus(currentTime);
       genesisTimeTracker = currentTime;
       STATUS_LOG.timeUntilGenesis(timeUntilGenesis.longValue(), p2pNetwork.getPeerCount());
     }
     slotProcessor.setCurrentSlot(currentSlot);
+  }
+
+  private void validateLatestCheckpointIsWithinWeakSubjectivityPeriod(final UInt64 currentSlot) {
+    SafeFuture.of(() -> recentChainData.getStore().retrieveFinalizedCheckpointAndState())
+        .thenAccept(
+            finalizedCheckpointState -> {
+              final UInt64 slot = currentSlot.max(recentChainData.getCurrentSlot().orElse(ZERO));
+              weakSubjectivityValidator.validateLatestFinalizedCheckpoint(
+                  finalizedCheckpointState, slot);
+            })
+        .finish(
+            err -> {
+              weakSubjectivityValidator.handleValidationFailure(
+                  "Encountered an error while trying to validate latest finalized checkpoint", err);
+              throw new RuntimeException(err);
+            });
   }
 
   @Override

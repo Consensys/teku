@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 import static tech.pegasys.teku.util.config.Constants.MIN_ATTESTATION_INCLUSION_DELAY;
 
 import java.util.List;
@@ -25,8 +26,8 @@ import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.BlockProposalTestUtil;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.core.signatures.MessageSignerService;
-import tech.pegasys.teku.core.signatures.TestMessageSignerService;
+import tech.pegasys.teku.core.signatures.LocalSigner;
+import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.Eth1Data;
@@ -202,7 +203,7 @@ public class BeaconChainUtil {
               + ": "
               + block);
     }
-    forkChoice.processHead(slot);
+    forkChoice.processHead(slot, false);
     return importResult.getBlock();
   }
 
@@ -254,7 +255,7 @@ public class BeaconChainUtil {
     final int proposerIndex =
         withValidProposer ? correctProposerIndex : getWrongProposerIndex(correctProposerIndex);
 
-    final MessageSignerService signer = getSigner(proposerIndex);
+    final Signer signer = getSigner(proposerIndex);
     return blockCreator.createBlock(
         signer, slot, preState, bestBlockRoot, attestations, deposits, exits, eth1Data);
   }
@@ -296,7 +297,7 @@ public class BeaconChainUtil {
     return actualProposerIndex == 0 ? 1 : actualProposerIndex - 1;
   }
 
-  public MessageSignerService getSigner(final int proposerIndex) {
-    return new TestMessageSignerService(validatorKeys.get(proposerIndex));
+  public Signer getSigner(final int proposerIndex) {
+    return new LocalSigner(validatorKeys.get(proposerIndex), SYNC_RUNNER);
   }
 }

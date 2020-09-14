@@ -23,8 +23,7 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
-import tech.pegasys.teku.core.signatures.MessageSignerService;
-import tech.pegasys.teku.core.signatures.UnprotectedSigner;
+import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists;
@@ -51,7 +50,7 @@ public class BlockProposalTestUtil {
   }
 
   public SignedBlockAndState createNewBlock(
-      final MessageSignerService signer,
+      final Signer signer,
       final UInt64 newSlot,
       final BeaconState state,
       final Bytes32 parentBlockSigningRoot,
@@ -64,7 +63,7 @@ public class BlockProposalTestUtil {
 
     final UInt64 newEpoch = compute_epoch_at_slot(newSlot);
     final BLSSignature randaoReveal =
-        new UnprotectedSigner(signer).createRandaoReveal(newEpoch, state.getForkInfo()).join();
+        signer.createRandaoReveal(newEpoch, state.getForkInfo()).join();
 
     final BeaconBlockAndState newBlockAndState =
         blockProposalUtil.createNewUnsignedBlock(
@@ -83,15 +82,14 @@ public class BlockProposalTestUtil {
 
     // Sign block and set block signature
     final BeaconBlock block = newBlockAndState.getBlock();
-    BLSSignature blockSignature =
-        new UnprotectedSigner(signer).signBlock(block, state.getForkInfo()).join();
+    BLSSignature blockSignature = signer.signBlock(block, state.getForkInfo()).join();
 
     final SignedBeaconBlock signedBlock = new SignedBeaconBlock(block, blockSignature);
     return new SignedBlockAndState(signedBlock, newBlockAndState.getState());
   }
 
   public SignedBlockAndState createBlock(
-      final MessageSignerService signer,
+      final Signer signer,
       final UInt64 newSlot,
       final BeaconState previousState,
       final Bytes32 parentBlockSigningRoot,
