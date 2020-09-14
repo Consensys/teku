@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -23,14 +25,13 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
+
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
 
 public class KeystoreLocker {
 
   private static final Logger LOG = LogManager.getLogger();
-  private final byte[] processPID = longPidToNativeByteArray(ProcessHandle.current().pid());
+  private final byte[] processPID = getProcessPID();
 
   public void lockKeystoreFile(Path keystoreFile) {
     deleteIfStaleLockfileExists(keystoreFile);
@@ -71,19 +72,24 @@ public class KeystoreLocker {
     return false;
   }
 
-  static byte[] longPidToNativeByteArray(final long pid) {
+  private byte[] getProcessPID() {
     byte[] pidBytes;
     try {
-      final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.nativeOrder());
-      buffer.putLong(pid);
-      pidBytes = buffer.array();
+      long pid = ProcessHandle.current().pid();
+      pidBytes = longPidToNativeByteArray(pid);
     } catch (final UnsupportedOperationException e) {
       LOG.warn(
-          "Process ID can not be detected. This will inhibit Teku from "
-              + "deleting stale validator keystore lockfiles in the future");
+              "Process ID can not be detected. This will inhibit Teku from "
+                      + "deleting stale validator keystore lockfiles in the future");
       pidBytes = new byte[0];
     }
     return pidBytes;
+  }
+
+  static byte[] longPidToNativeByteArray(final long pid) {
+    final ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.nativeOrder());
+    buffer.putLong(pid);
+    return buffer.array();
   }
 
   private static long nativeByteArrayToLong(final byte[] bytes) {
