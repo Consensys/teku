@@ -45,6 +45,7 @@ import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
 import tech.pegasys.teku.sync.singlepeer.SinglePeerSyncService;
 import tech.pegasys.teku.sync.singlepeer.SyncManager;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 public class SyncingNodeManager {
   private final EventBus eventBus;
@@ -92,7 +93,9 @@ public class SyncingNodeManager {
 
     ForkChoice forkChoice =
         new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
-    BlockImporter blockImporter = new BlockImporter(recentChainData, forkChoice, eventBus);
+    BlockImporter blockImporter =
+        new BlockImporter(
+            recentChainData, forkChoice, WeakSubjectivityValidator.lenient(), eventBus);
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
     final FutureItems<SignedBeaconBlock> futureBlocks =
         new FutureItems<>(SignedBeaconBlock::getSlot);
