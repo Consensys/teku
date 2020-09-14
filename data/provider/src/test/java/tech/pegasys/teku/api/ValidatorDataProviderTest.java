@@ -370,7 +370,10 @@ public class ValidatorDataProviderTest {
   public void getAttesterDuties_shouldHandleEmptyIndexesList() {
     final SafeFuture<Optional<List<AttesterDuty>>> future =
         provider.getAttesterDuties(UInt64.ONE, List.of());
-    assertThatSafeFuture(future).isCompletedWithEmptyOptional();
+    assertThat(future).isCompleted();
+    Optional<List<AttesterDuty>> maybeData = future.join();
+    assertThat(maybeData.isPresent()).isTrue();
+    assertThat(maybeData.get()).isEmpty();
   }
 
   @Test
