@@ -63,4 +63,6 @@ public interface V4SchemaHot extends Schema {
       RocksDbVariable.create(6, MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER);
   RocksDbVariable<ProtoArraySnapshot> PROTO_ARRAY_SNAPSHOT =
       RocksDbVariable.create(7, PROTO_ARRAY_SNAPSHOT_SERIALIZER);
+  RocksDbVariable<Checkpoint> WEAK_SUBJECTIVITY_CHECKPOINT =
+      RocksDbVariable.create(8, CHECKPOINT_SERIALIZER);
 }

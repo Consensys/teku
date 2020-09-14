@@ -133,6 +133,11 @@ public class V3RocksDbDao
   }
 
   @Override
+  public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
+    return db.get(V3Schema.WEAK_SUBJECTIVITY_CHECKPOINT);
+  }
+
+  @Override
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks() {
     return db.getAll(V3Schema.HOT_BLOCKS_BY_ROOT);
   }
@@ -236,6 +241,11 @@ public class V3RocksDbDao
     @Override
     public void setFinalizedCheckpoint(final Checkpoint checkpoint) {
       transaction.put(V3Schema.FINALIZED_CHECKPOINT, checkpoint);
+    }
+
+    @Override
+    public void setWeakSubjectivityCheckpoint(Checkpoint checkpoint) {
+      transaction.put(V3Schema.WEAK_SUBJECTIVITY_CHECKPOINT, checkpoint);
     }
 
     @Override
