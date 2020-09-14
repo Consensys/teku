@@ -29,6 +29,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -130,6 +131,26 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 optionalState
                     .map(state -> processSlots(state, slot))
                     .map(state -> getValidatorDutiesFromState(state, epoch, publicKeys)));
+  }
+
+  @Override
+  public SafeFuture<Optional<List<ValidatorDuties>>> getAttestationDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
+    if (validatorIndexes.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.of(emptyList()));
+    }
+    final UInt64 slot = CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
+    LOG.trace("Retrieving attestation duties from epoch {} using state at slot {}", epoch, slot);
+    return combinedChainDataClient
+        .getLatestStateAtSlot(slot)
+        .thenApply(
+            optionalState ->
+                optionalState
+                    .map(state -> processSlots(state, slot))
+                    .map(state -> getValidatorDutiesFromIndexes(state, epoch, validatorIndexes)));
   }
 
   private BeaconState processSlots(final BeaconState startingState, final UInt64 targetSlot) {
@@ -343,6 +364,24 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .map(
             index -> createValidatorDuties(proposalSlotsByValidatorIndex, key, state, epoch, index))
         .orElseGet(() -> ValidatorDuties.noDuties(key));
+  }
+
+  private List<ValidatorDuties> getValidatorDutiesFromIndexes(
+      final BeaconState state, final UInt64 epoch, final Collection<Integer> validatorIndexes) {
+    return validatorIndexes.stream()
+        .map(index -> createValidatorDuties(state, epoch, index))
+        .collect(toList());
+  }
+
+  private ValidatorDuties createValidatorDuties(
+      final BeaconState state, final UInt64 epoch, final Integer validatorIndex) {
+    try {
+      BLSPublicKey pkey = state.getValidators().get(validatorIndex).getPubkey();
+      return createValidatorDuties(Collections.emptyMap(), pkey, state, epoch, validatorIndex);
+    } catch (IndexOutOfBoundsException ex) {
+      LOG.debug(ex);
+      return ValidatorDuties.withDuties(null, validatorIndex, 0, 0, 0, List.of(), null);
+    }
   }
 
   private ValidatorDuties createValidatorDuties(

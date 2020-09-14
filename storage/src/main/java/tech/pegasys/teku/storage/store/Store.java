@@ -17,7 +17,6 @@ import static tech.pegasys.teku.core.lookup.BlockProvider.fromDynamicMap;
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
 import static tech.pegasys.teku.core.stategenerator.CheckpointStateTask.AsyncStateProvider.fromBlockAndState;
 
-import com.google.common.collect.Sets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -25,13 +24,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
-import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -43,7 +39,6 @@ import tech.pegasys.teku.core.stategenerator.CheckpointStateTask;
 import tech.pegasys.teku.core.stategenerator.StateGenerationTask;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
@@ -227,7 +222,8 @@ class Store implements UpdatableStore {
   @Override
   public StoreTransaction startTransaction(
       final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
-    return new Transaction(storageUpdateChannel, updateHandler);
+    return new tech.pegasys.teku.storage.store.StoreTransaction(
+        this, lock, storageUpdateChannel, updateHandler);
   }
 
   @Override
@@ -422,7 +418,7 @@ class Store implements UpdatableStore {
     }
   }
 
-  private VoteTracker getVote(UInt64 validatorIndex) {
+  VoteTracker getVote(UInt64 validatorIndex) {
     readLock.lock();
     try {
       return votes.get(validatorIndex);
@@ -544,287 +540,6 @@ class Store implements UpdatableStore {
       }
     } finally {
       writeLock.unlock();
-    }
-  }
-
-  class Transaction implements StoreTransaction {
-
-    private final StorageUpdateChannel storageUpdateChannel;
-    Optional<UInt64> time = Optional.empty();
-    Optional<UInt64> genesis_time = Optional.empty();
-    Optional<Checkpoint> justified_checkpoint = Optional.empty();
-    Optional<Checkpoint> finalized_checkpoint = Optional.empty();
-    Optional<Checkpoint> best_justified_checkpoint = Optional.empty();
-    Map<Bytes32, SlotAndBlockRoot> stateRoots = new HashMap<>();
-    Map<Bytes32, SignedBlockAndState> blockAndStates = new HashMap<>();
-    Map<UInt64, VoteTracker> votes = new ConcurrentHashMap<>();
-    private final StoreUpdateHandler updateHandler;
-
-    Transaction(
-        final StorageUpdateChannel storageUpdateChannel, final StoreUpdateHandler updateHandler) {
-      this.storageUpdateChannel = storageUpdateChannel;
-      this.updateHandler = updateHandler;
-    }
-
-    @Override
-    public void putBlockAndState(final SignedBeaconBlock block, final BeaconState state) {
-      putBlockAndState(new SignedBlockAndState(block, state));
-    }
-
-    @Override
-    public void putBlockAndState(final SignedBlockAndState blockAndState) {
-      blockAndStates.put(blockAndState.getRoot(), blockAndState);
-      putStateRoot(
-          blockAndState.getState().hash_tree_root(),
-          new SlotAndBlockRoot(blockAndState.getSlot(), blockAndState.getRoot()));
-    }
-
-    @Override
-    public void putStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
-      stateRoots.put(stateRoot, slotAndBlockRoot);
-    }
-
-    @Override
-    public void setTime(UInt64 time) {
-      this.time = Optional.of(time);
-    }
-
-    @Override
-    public void setGenesis_time(UInt64 genesis_time) {
-      this.genesis_time = Optional.of(genesis_time);
-    }
-
-    @Override
-    public void setJustifiedCheckpoint(Checkpoint justified_checkpoint) {
-      this.justified_checkpoint = Optional.of(justified_checkpoint);
-    }
-
-    @Override
-    public void setFinalizedCheckpoint(Checkpoint finalized_checkpoint) {
-      this.finalized_checkpoint = Optional.of(finalized_checkpoint);
-    }
-
-    @Override
-    public void setBestJustifiedCheckpoint(Checkpoint best_justified_checkpoint) {
-      this.best_justified_checkpoint = Optional.of(best_justified_checkpoint);
-    }
-
-    @Override
-    public VoteTracker getVote(UInt64 validatorIndex) {
-      VoteTracker vote = votes.get(validatorIndex);
-      if (vote == null) {
-        vote = Store.this.getVote(validatorIndex);
-        if (vote == null) {
-          vote = VoteTracker.Default();
-        } else {
-          vote = vote.copy();
-        }
-        votes.put(validatorIndex, vote);
-      }
-      return vote;
-    }
-
-    @CheckReturnValue
-    @Override
-    public SafeFuture<Void> commit() {
-      return retrieveBlockAndState(getFinalizedCheckpoint().getRoot())
-          .thenCompose(
-              maybeLatestFinalized -> {
-                final SignedBlockAndState latestFinalized =
-                    maybeLatestFinalized.orElseThrow(
-                        () ->
-                            new IllegalStateException("Missing latest finalized block and state"));
-                final StoreTransactionUpdates updates;
-                // Lock so that we have a consistent view while calculating our updates
-                final Lock writeLock = Store.this.lock.writeLock();
-                writeLock.lock();
-                try {
-                  updates =
-                      StoreTransactionUpdatesFactory.create(Store.this, this, latestFinalized);
-                } finally {
-                  writeLock.unlock();
-                }
-
-                return storageUpdateChannel
-                    .onStorageUpdate(updates.createStorageUpdate())
-                    .thenAccept(
-                        __ -> {
-                          // Propagate changes to Store
-                          writeLock.lock();
-                          try {
-                            // Add new data
-                            updates.applyToStore(Store.this);
-                          } finally {
-                            writeLock.unlock();
-                          }
-
-                          // Signal back changes to the handler
-                          finalized_checkpoint.ifPresent(updateHandler::onNewFinalizedCheckpoint);
-                        });
-              });
-    }
-
-    @Override
-    public void commit(final Runnable onSuccess, final String errorMessage) {
-      commit(onSuccess, err -> LOG.error(errorMessage, err));
-    }
-
-    @Override
-    public UInt64 getTime() {
-      return time.orElseGet(Store.this::getTime);
-    }
-
-    @Override
-    public UInt64 getGenesisTime() {
-      return genesis_time.orElseGet(Store.this::getGenesisTime);
-    }
-
-    @Override
-    public Checkpoint getJustifiedCheckpoint() {
-      return justified_checkpoint.orElseGet(Store.this::getJustifiedCheckpoint);
-    }
-
-    @Override
-    public Checkpoint getFinalizedCheckpoint() {
-      return finalized_checkpoint.orElseGet(Store.this::getFinalizedCheckpoint);
-    }
-
-    @Override
-    public SignedBlockAndState getLatestFinalizedBlockAndState() {
-      if (finalized_checkpoint.isPresent()) {
-        // Ideally we wouldn't join here - but seems not worth making this API async since we're
-        // unlikely to call this on tx objects
-        return retrieveBlockAndState(finalized_checkpoint.get().getRoot()).join().orElseThrow();
-      }
-      return Store.this.getLatestFinalizedBlockAndState();
-    }
-
-    @Override
-    public UInt64 getLatestFinalizedBlockSlot() {
-      return getLatestFinalizedBlockAndState().getSlot();
-    }
-
-    @Override
-    public Checkpoint getBestJustifiedCheckpoint() {
-      return best_justified_checkpoint.orElseGet(Store.this::getBestJustifiedCheckpoint);
-    }
-
-    @Override
-    public boolean containsBlock(final Bytes32 blockRoot) {
-      return blockAndStates.containsKey(blockRoot) || Store.this.containsBlock(blockRoot);
-    }
-
-    @Override
-    public Set<Bytes32> getBlockRoots() {
-      return Sets.union(blockAndStates.keySet(), Store.this.getBlockRoots());
-    }
-
-    @Override
-    public List<Bytes32> getOrderedBlockRoots() {
-      if (this.blockAndStates.isEmpty()) {
-        return Store.this.getOrderedBlockRoots();
-      }
-
-      Store.this.lock.readLock().lock();
-      try {
-        final HashTree.Builder treeBuilder = Store.this.blockTree.getHashTree().updater();
-        this.blockAndStates.values().stream()
-            .map(SignedBlockAndState::getBlock)
-            .forEach(treeBuilder::block);
-        return treeBuilder.build().breadthFirstStream().collect(Collectors.toList());
-      } finally {
-        Store.this.lock.readLock().unlock();
-      }
-    }
-
-    @Override
-    public Optional<BeaconState> getBlockStateIfAvailable(final Bytes32 blockRoot) {
-      return Optional.ofNullable(blockAndStates.get(blockRoot))
-          .map(SignedBlockAndState::getState)
-          .or(() -> Store.this.getBlockStateIfAvailable(blockRoot));
-    }
-
-    @Override
-    public SafeFuture<Optional<SignedBeaconBlock>> retrieveSignedBlock(Bytes32 blockRoot) {
-      if (blockAndStates.containsKey(blockRoot)) {
-        return SafeFuture.completedFuture(
-            Optional.of(blockAndStates.get(blockRoot)).map(SignedBlockAndState::getBlock));
-      }
-      return Store.this.retrieveSignedBlock(blockRoot);
-    }
-
-    @Override
-    public SafeFuture<Optional<SignedBlockAndState>> retrieveBlockAndState(Bytes32 blockRoot) {
-      if (blockAndStates.containsKey(blockRoot)) {
-        final SignedBlockAndState result = blockAndStates.get(blockRoot);
-        return SafeFuture.completedFuture(Optional.of(result));
-      }
-      return Store.this.retrieveBlockAndState(blockRoot);
-    }
-
-    @Override
-    public SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot) {
-      if (blockAndStates.containsKey(blockRoot)) {
-        return SafeFuture.completedFuture(
-            Optional.of(blockAndStates.get(blockRoot)).map(SignedBlockAndState::getState));
-      }
-      return Store.this.retrieveBlockState(blockRoot);
-    }
-
-    @Override
-    public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint) {
-      SignedBlockAndState inMemoryCheckpointBlockState = blockAndStates.get(checkpoint.getRoot());
-      if (inMemoryCheckpointBlockState != null) {
-        // Not executing the task via the task queue to avoid caching the result before the tx is
-        // committed
-        return new CheckpointStateTask(checkpoint, fromBlockAndState(inMemoryCheckpointBlockState))
-            .performTask();
-      }
-      return Store.this.retrieveCheckpointState(checkpoint);
-    }
-
-    @Override
-    public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
-      if (this.finalized_checkpoint.isEmpty()) {
-        return Store.this.retrieveFinalizedCheckpointAndState();
-      }
-
-      final Checkpoint finalizedCheckpoint = getFinalizedCheckpoint();
-      final SafeFuture<Optional<BeaconState>> stateFuture =
-          retrieveCheckpointState(finalizedCheckpoint);
-      final SafeFuture<Optional<SignedBeaconBlock>> blockFuture =
-          retrieveSignedBlock(finalizedCheckpoint.getRoot());
-
-      return SafeFuture.allOf(stateFuture, blockFuture)
-          .thenCompose(
-              (__) -> {
-                final Optional<BeaconState> state = stateFuture.join();
-                final Optional<SignedBeaconBlock> block = blockFuture.join();
-                if (state.isEmpty() || block.isEmpty()) {
-                  return Store.this.retrieveFinalizedCheckpointAndState();
-                } else {
-                  return SafeFuture.completedFuture(
-                      new CheckpointState(finalizedCheckpoint, block.get(), state.get()));
-                }
-              });
-    }
-
-    @Override
-    public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(
-        final Checkpoint checkpoint, final BeaconState latestStateAtEpoch) {
-      return Store.this.retrieveCheckpointState(checkpoint, latestStateAtEpoch);
-    }
-
-    @Override
-    public Optional<SignedBeaconBlock> getBlockIfAvailable(final Bytes32 blockRoot) {
-      return Optional.ofNullable(blockAndStates.get(blockRoot))
-          .map(SignedBlockAndState::getBlock)
-          .or(() -> Store.this.getBlockIfAvailable(blockRoot));
-    }
-
-    @Override
-    public Set<UInt64> getVotedValidatorIndices() {
-      return Sets.union(votes.keySet(), Store.this.getVotedValidatorIndices());
     }
   }
 

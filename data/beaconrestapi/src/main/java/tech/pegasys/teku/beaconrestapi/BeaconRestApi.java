@@ -62,6 +62,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAggregate;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetNewBlock;
@@ -95,9 +96,12 @@ public class BeaconRestApi {
     addBeaconHandlers(dataProvider);
     addNetworkHandlers(dataProvider.getNetworkDataProvider());
     addNodeHandlers(dataProvider);
-    addV1NodeHandlers(dataProvider);
     addValidatorHandlers(dataProvider);
     addCustomErrorPages(configuration);
+
+    // standard api endpoint inclusion
+    addV1NodeHandlers(dataProvider);
+    addV1ValidatorHandlers(dataProvider);
   }
 
   private void addHostAllowlistHandler(final TekuConfiguration configuration) {
@@ -223,6 +227,10 @@ public class BeaconRestApi {
     app.get(
         tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion(jsonProvider));
+  }
+
+  private void addV1ValidatorHandlers(final DataProvider dataProvider) {
+    app.get(GetAttesterDuties.ROUTE, new GetAttesterDuties(dataProvider, jsonProvider));
   }
 
   private void addNodeHandlers(final DataProvider provider) {

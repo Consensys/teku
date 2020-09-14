@@ -13,11 +13,13 @@
 
 package tech.pegasys.teku.validator.remote.apiclient;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.GetForkResponse;
+import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
@@ -33,6 +35,9 @@ public interface ValidatorRestApiClient {
   Optional<GetForkResponse> getFork();
 
   List<ValidatorDuties> getDuties(ValidatorDutiesRequest request);
+
+  List<AttesterDuty> getAttestationDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndexes);
 
   Optional<BeaconBlock> createUnsignedBlock(
       UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);
