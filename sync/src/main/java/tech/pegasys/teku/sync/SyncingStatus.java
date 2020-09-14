@@ -14,6 +14,7 @@
 package tech.pegasys.teku.sync;
 
 import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -66,6 +67,26 @@ public class SyncingStatus {
 
   public boolean isSyncing() {
     return syncing;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final SyncingStatus that = (SyncingStatus) o;
+    return syncing == that.syncing
+        && Objects.equals(currentSlot, that.currentSlot)
+        && Objects.equals(startingSlot, that.startingSlot)
+        && Objects.equals(highestSlot, that.highestSlot);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(syncing, currentSlot, startingSlot, highestSlot);
   }
 
   @Override
