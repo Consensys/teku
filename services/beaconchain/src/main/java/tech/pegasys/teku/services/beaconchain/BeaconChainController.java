@@ -632,13 +632,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               weakSubjectivityValidator.validateLatestFinalizedCheckpoint(
                   finalizedCheckpointState, slot);
             })
-        .exceptionally(
+        .finish(
             err -> {
               weakSubjectivityValidator.handleValidationFailure(
                   "Encountered an error while trying to validate latest finalized checkpoint", err);
               throw new RuntimeException(err);
-            })
-        .reportExceptions();
+            });
   }
 
   @Override
