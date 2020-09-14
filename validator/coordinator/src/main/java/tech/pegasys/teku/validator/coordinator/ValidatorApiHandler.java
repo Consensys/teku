@@ -29,6 +29,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -376,7 +377,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BeaconState state, final UInt64 epoch, final Integer validatorIndex) {
     try {
       BLSPublicKey pkey = state.getValidators().get(validatorIndex).getPubkey();
-      return createValidatorDuties(Map.of(), pkey, state, epoch, validatorIndex);
+      return createValidatorDuties(Collections.emptyMap(), pkey, state, epoch, validatorIndex);
     } catch (IndexOutOfBoundsException ex) {
       LOG.debug(ex);
       return ValidatorDuties.withDuties(null, validatorIndex, 0, 0, 0, List.of(), null);
