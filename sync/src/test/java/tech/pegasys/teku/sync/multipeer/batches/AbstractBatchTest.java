@@ -104,10 +104,12 @@ abstract class AbstractBatchTest {
     final Batch batch = createBatch(10, 7);
     batch.requestMoreBlocks(() -> {});
     final SignedBeaconBlock firstBlock = dataStructureUtil.randomSignedBeaconBlock(10);
-    receiveBlocks(batch, firstBlock, dataStructureUtil.randomSignedBeaconBlock(11));
+    final SignedBeaconBlock secondBlock =
+        dataStructureUtil.randomSignedBeaconBlock(11, firstBlock.getRoot());
+    receiveBlocks(batch, firstBlock, secondBlock);
 
     batch.requestMoreBlocks(() -> {});
-    receiveBlocks(batch, dataStructureUtil.randomSignedBeaconBlock(12));
+    receiveBlocks(batch, dataStructureUtil.randomSignedBeaconBlock(12, secondBlock.getRoot()));
     assertThat(batch.getFirstBlock()).contains(firstBlock);
   }
 
@@ -138,13 +140,14 @@ abstract class AbstractBatchTest {
   void getLastBlock_shouldBeLastBlockAfterMultipleRequests() {
     final Batch batch = createBatch(10, 7);
     batch.requestMoreBlocks(() -> {});
-    receiveBlocks(
-        batch,
-        dataStructureUtil.randomSignedBeaconBlock(10),
-        dataStructureUtil.randomSignedBeaconBlock(11));
+    final SignedBeaconBlock firstBlock = dataStructureUtil.randomSignedBeaconBlock(10);
+    final SignedBeaconBlock secondBlock =
+        dataStructureUtil.randomSignedBeaconBlock(11, firstBlock.getRoot());
+    receiveBlocks(batch, firstBlock, secondBlock);
 
     batch.requestMoreBlocks(() -> {});
-    final SignedBeaconBlock lastBlock = dataStructureUtil.randomSignedBeaconBlock(12);
+    final SignedBeaconBlock lastBlock =
+        dataStructureUtil.randomSignedBeaconBlock(12, secondBlock.getRoot());
     receiveBlocks(batch, lastBlock);
     assertThat(batch.getLastBlock()).contains(lastBlock);
   }

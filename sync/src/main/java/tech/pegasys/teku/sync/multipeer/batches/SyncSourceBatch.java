@@ -216,12 +216,23 @@ public class SyncSourceBatch implements Batch {
   private void onRequestComplete(final RequestHandler requestHandler) {
     eventThread.checkOnEventThread();
     final List<SignedBeaconBlock> newBlocks = requestHandler.complete();
+
+    awaitingBlocks = false;
+    if (!blocks.isEmpty() && !newBlocks.isEmpty()) {
+      final SignedBeaconBlock previousBlock = blocks.get(blocks.size() - 1);
+      final SignedBeaconBlock firstNewBlock = newBlocks.get(0);
+      if (!firstNewBlock.getParent_root().equals(previousBlock.getRoot())) {
+        LOG.debug(
+            "Marking batch invalid because new blocks do not form a chain with previous blocks");
+        markAsInvalid();
+        return;
+      }
+    }
     blocks.addAll(newBlocks);
     if (newBlocks.isEmpty()
         || newBlocks.get(newBlocks.size() - 1).getSlot().equals(getLastSlot())) {
       complete = true;
     }
-    awaitingBlocks = false;
   }
 
   @Override

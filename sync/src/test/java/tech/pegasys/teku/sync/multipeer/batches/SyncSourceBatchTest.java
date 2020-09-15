@@ -163,6 +163,22 @@ public class SyncSourceBatchTest extends AbstractBatchTest {
     verifyNoMoreInteractions(conflictResolutionStrategy);
   }
 
+  @Test
+  void shouldReportAsInvalidWhenSecondRequestDoesNotFormChainWithExistingBlocks() {
+    final Batch batch = createBatch(10, 10);
+
+    batch.requestMoreBlocks(() -> {});
+    receiveBlocks(batch, dataStructureUtil.randomSignedBeaconBlock(10));
+    verifyNoInteractions(conflictResolutionStrategy);
+
+    // Second request returns a block whose parent doesn't match the previous block
+    batch.requestMoreBlocks(() -> {});
+    receiveBlocks(batch, dataStructureUtil.randomSignedBeaconBlock(11));
+
+    // Node is disagreeing with itself so mark it as invalid
+    verify(conflictResolutionStrategy).reportInvalidBatch(batch, getSyncSource(batch));
+  }
+
   @Override
   protected Batch createBatch(final long startSlot, final long count) {
     final List<StubSyncSource> syncSources = new ArrayList<>();
