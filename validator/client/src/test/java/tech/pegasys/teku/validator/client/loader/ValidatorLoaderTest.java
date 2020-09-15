@@ -27,7 +27,7 @@ import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.validator.client.Validator;
 
 class ValidatorLoaderTest {
@@ -48,13 +48,13 @@ class ValidatorLoaderTest {
 
   @Test
   void initializeValidatorsWithExternalMessageSignerWhenConfigHasExternalSigningPublicKeys() {
-    final TekuConfiguration tekuConfiguration =
-        TekuConfiguration.builder()
+    final GlobalConfiguration globalConfiguration =
+        GlobalConfiguration.builder()
             .setValidatorExternalSignerUrl("http://localhost:9000")
             .setValidatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(tekuConfiguration);
+        validatorLoader.initializeValidators(globalConfiguration);
 
     assertThat(validators).hasSize(1);
     final BLSPublicKey key = BLSPublicKey.fromSSZBytes(Bytes.fromHexString(PUBLIC_KEY1));
@@ -70,12 +70,12 @@ class ValidatorLoaderTest {
     final Path validatorKeyFile = tempDir.resolve("validatorKeyFile");
     Files.writeString(validatorKeyFile, VALIDATOR_KEY_FILE);
 
-    final TekuConfiguration tekuConfiguration =
-        TekuConfiguration.builder()
+    final GlobalConfiguration globalConfiguration =
+        GlobalConfiguration.builder()
             .setValidatorKeyFile(validatorKeyFile.toAbsolutePath().toString())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(tekuConfiguration);
+        validatorLoader.initializeValidators(globalConfiguration);
 
     assertThat(validators).hasSize(1);
     final BLSPublicKey key = BLSPublicKey.fromSSZBytes(Bytes.fromHexString(PUBLIC_KEY1));
@@ -91,14 +91,14 @@ class ValidatorLoaderTest {
     final Path validatorKeyFile = tempDir.resolve("validatorKeyFile");
     Files.writeString(validatorKeyFile, VALIDATOR_KEY_FILE);
 
-    final TekuConfiguration tekuConfiguration =
-        TekuConfiguration.builder()
+    final GlobalConfiguration globalConfiguration =
+        GlobalConfiguration.builder()
             .setValidatorExternalSignerUrl("http://localhost:9000")
             .setValidatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY2))
             .setValidatorKeyFile(validatorKeyFile.toAbsolutePath().toString())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(tekuConfiguration);
+        validatorLoader.initializeValidators(globalConfiguration);
 
     assertThat(validators).hasSize(2);
 
@@ -121,14 +121,14 @@ class ValidatorLoaderTest {
     final Path validatorKeyFile = tempDir.resolve("validatorKeyFile");
     Files.writeString(validatorKeyFile, VALIDATOR_KEY_FILE);
 
-    final TekuConfiguration tekuConfiguration =
-        TekuConfiguration.builder()
+    final GlobalConfiguration globalConfiguration =
+        GlobalConfiguration.builder()
             .setValidatorExternalSignerUrl("http://localhost:9000")
             .setValidatorExternalSignerPublicKeys(Collections.singletonList(PUBLIC_KEY1))
             .setValidatorKeyFile(validatorKeyFile.toAbsolutePath().toString())
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(tekuConfiguration);
+        validatorLoader.initializeValidators(globalConfiguration);
 
     // Both local and external validators get loaded.
     assertThat(validators).hasSize(1);
@@ -144,13 +144,13 @@ class ValidatorLoaderTest {
   @Test
   void initializeInteropValidatorsWhenInteropIsEnabled() {
     final int ownedValidatorCount = 10;
-    final TekuConfiguration tekuConfiguration =
-        TekuConfiguration.builder()
+    final GlobalConfiguration globalConfiguration =
+        GlobalConfiguration.builder()
             .setInteropEnabled(true)
             .setInteropOwnedValidatorCount(ownedValidatorCount)
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(tekuConfiguration);
+        validatorLoader.initializeValidators(globalConfiguration);
 
     assertThat(validators).hasSize(ownedValidatorCount);
   }
@@ -158,13 +158,13 @@ class ValidatorLoaderTest {
   @Test
   void doNotInitializeInteropValidatorsWhenInteropIsDisabled() {
     final int ownedValidatorCount = 10;
-    final TekuConfiguration tekuConfiguration =
-        TekuConfiguration.builder()
+    final GlobalConfiguration globalConfiguration =
+        GlobalConfiguration.builder()
             .setInteropEnabled(false)
             .setInteropOwnedValidatorCount(ownedValidatorCount)
             .build();
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(tekuConfiguration);
+        validatorLoader.initializeValidators(globalConfiguration);
 
     assertThat(validators).isEmpty();
   }

@@ -22,7 +22,12 @@ import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
-public class TekuConfigurationBuilder {
+/**
+ * @deprecated - Use TekuConfigurationBuilder where possible. Global application configuration
+ *     builder.
+ */
+@Deprecated
+public class GlobalConfigurationBuilder {
 
   private static final boolean DEFAULT_P2P_SNAPPY_ENABLED = true;
   private String constants;
@@ -98,387 +103,391 @@ public class TekuConfigurationBuilder {
   private String beaconNodeApiEndpoint;
   private String beaconNodeEventsWsEndpoint;
 
-  public TekuConfigurationBuilder setConstants(final String constants) {
+  public GlobalConfigurationBuilder setConstants(final String constants) {
     this.constants = constants;
     return this;
   }
 
-  public TekuConfigurationBuilder setStartupTargetPeerCount(final Integer startupTargetPeerCount) {
+  public GlobalConfigurationBuilder setStartupTargetPeerCount(
+      final Integer startupTargetPeerCount) {
     this.startupTargetPeerCount = startupTargetPeerCount;
     return this;
   }
 
-  public TekuConfigurationBuilder setStartupTimeoutSeconds(final Integer startupTimeoutSeconds) {
+  public GlobalConfigurationBuilder setStartupTimeoutSeconds(final Integer startupTimeoutSeconds) {
     this.startupTimeoutSeconds = startupTimeoutSeconds;
     return this;
   }
 
-  public TekuConfigurationBuilder setPeerRateLimit(final Integer peerRateLimit) {
+  public GlobalConfigurationBuilder setPeerRateLimit(final Integer peerRateLimit) {
     this.peerRateLimit = peerRateLimit;
     return this;
   }
 
-  public TekuConfigurationBuilder setPeerRequestLimit(final Integer peerRequestLimit) {
+  public GlobalConfigurationBuilder setPeerRequestLimit(final Integer peerRequestLimit) {
     this.peerRequestLimit = peerRequestLimit;
     return this;
   }
 
-  public TekuConfigurationBuilder setP2pEnabled(final boolean p2pEnabled) {
+  public GlobalConfigurationBuilder setP2pEnabled(final boolean p2pEnabled) {
     this.p2pEnabled = p2pEnabled;
     return this;
   }
 
-  public TekuConfigurationBuilder setP2pInterface(final String p2pInterface) {
+  public GlobalConfigurationBuilder setP2pInterface(final String p2pInterface) {
     this.p2pInterface = p2pInterface;
     return this;
   }
 
-  public TekuConfigurationBuilder setP2pPort(final int p2pPort) {
+  public GlobalConfigurationBuilder setP2pPort(final int p2pPort) {
     this.p2pPort = p2pPort;
     return this;
   }
 
-  public TekuConfigurationBuilder setP2pDiscoveryEnabled(final boolean p2pDiscoveryEnabled) {
+  public GlobalConfigurationBuilder setP2pDiscoveryEnabled(final boolean p2pDiscoveryEnabled) {
     this.p2pDiscoveryEnabled = p2pDiscoveryEnabled;
     return this;
   }
 
-  public TekuConfigurationBuilder setP2pDiscoveryBootnodes(
+  public GlobalConfigurationBuilder setP2pDiscoveryBootnodes(
       final List<String> p2pDiscoveryBootnodes) {
     this.p2pDiscoveryBootnodes = p2pDiscoveryBootnodes;
     return this;
   }
 
-  public TekuConfigurationBuilder setP2pAdvertisedIp(final Optional<String> p2pAdvertisedIp) {
+  public GlobalConfigurationBuilder setP2pAdvertisedIp(final Optional<String> p2pAdvertisedIp) {
     this.p2pAdvertisedIp = p2pAdvertisedIp;
     return this;
   }
 
-  public TekuConfigurationBuilder setP2pAdvertisedPort(final OptionalInt p2pAdvertisedPort) {
+  public GlobalConfigurationBuilder setP2pAdvertisedPort(final OptionalInt p2pAdvertisedPort) {
     this.p2pAdvertisedPort = p2pAdvertisedPort;
     return this;
   }
 
-  public TekuConfigurationBuilder setP2pPrivateKeyFile(final String p2pPrivateKeyFile) {
+  public GlobalConfigurationBuilder setP2pPrivateKeyFile(final String p2pPrivateKeyFile) {
     this.p2pPrivateKeyFile = p2pPrivateKeyFile;
     return this;
   }
 
-  public TekuConfigurationBuilder setP2pPeerLowerBound(final int p2pPeerLowerBound) {
+  public GlobalConfigurationBuilder setP2pPeerLowerBound(final int p2pPeerLowerBound) {
     this.p2pPeerLowerBound = p2pPeerLowerBound;
     return this;
   }
 
-  public TekuConfigurationBuilder setP2pPeerUpperBound(final int p2pPeerUpperBound) {
+  public GlobalConfigurationBuilder setP2pPeerUpperBound(final int p2pPeerUpperBound) {
     this.p2pPeerUpperBound = p2pPeerUpperBound;
     return this;
   }
 
-  public TekuConfigurationBuilder setTargetSubnetSubscriberCount(
+  public GlobalConfigurationBuilder setTargetSubnetSubscriberCount(
       final int targetSubnetSubscriberCount) {
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     return this;
   }
 
-  public TekuConfigurationBuilder setP2pStaticPeers(final List<String> p2pStaticPeers) {
+  public GlobalConfigurationBuilder setP2pStaticPeers(final List<String> p2pStaticPeers) {
     this.p2pStaticPeers = p2pStaticPeers;
     return this;
   }
 
-  public TekuConfigurationBuilder setP2pSnappyEnabled(final Boolean p2pSnappyEnabled) {
+  public GlobalConfigurationBuilder setP2pSnappyEnabled(final Boolean p2pSnappyEnabled) {
     this.p2pSnappyEnabled = p2pSnappyEnabled;
     return this;
   }
 
-  public TekuConfigurationBuilder setMultiPeerSyncEnabled(final boolean multiPeerSyncEnabled) {
+  public GlobalConfigurationBuilder setMultiPeerSyncEnabled(final boolean multiPeerSyncEnabled) {
     this.multiPeerSyncEnabled = multiPeerSyncEnabled;
     return this;
   }
 
-  public TekuConfigurationBuilder setInteropGenesisTime(final Integer interopGenesisTime) {
+  public GlobalConfigurationBuilder setInteropGenesisTime(final Integer interopGenesisTime) {
     this.interopGenesisTime = interopGenesisTime;
     return this;
   }
 
-  public TekuConfigurationBuilder setInteropOwnedValidatorStartIndex(
+  public GlobalConfigurationBuilder setInteropOwnedValidatorStartIndex(
       final int interopOwnedValidatorStartIndex) {
     this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
     return this;
   }
 
-  public TekuConfigurationBuilder setInteropOwnedValidatorCount(
+  public GlobalConfigurationBuilder setInteropOwnedValidatorCount(
       final int interopOwnedValidatorCount) {
     this.interopOwnedValidatorCount = interopOwnedValidatorCount;
     return this;
   }
 
-  public TekuConfigurationBuilder setInitialState(final String initialState) {
+  public GlobalConfigurationBuilder setInitialState(final String initialState) {
     this.initialState = initialState;
     return this;
   }
 
-  public TekuConfigurationBuilder setInteropNumberOfValidators(
+  public GlobalConfigurationBuilder setInteropNumberOfValidators(
       final int interopNumberOfValidators) {
     this.interopNumberOfValidators = interopNumberOfValidators;
     return this;
   }
 
-  public TekuConfigurationBuilder setInteropEnabled(final boolean interopEnabled) {
+  public GlobalConfigurationBuilder setInteropEnabled(final boolean interopEnabled) {
     this.interopEnabled = interopEnabled;
     return this;
   }
 
-  public TekuConfigurationBuilder setValidatorKeyFile(final String validatorsKeyFile) {
+  public GlobalConfigurationBuilder setValidatorKeyFile(final String validatorsKeyFile) {
     this.validatorsKeyFile = validatorsKeyFile;
     return this;
   }
 
-  public TekuConfigurationBuilder setValidatorKeystoreFiles(
+  public GlobalConfigurationBuilder setValidatorKeystoreFiles(
       final List<String> validatorKeystoreFiles) {
     this.validatorKeystoreFiles = validatorKeystoreFiles;
     return this;
   }
 
-  public TekuConfigurationBuilder setValidatorKeystorePasswordFiles(
+  public GlobalConfigurationBuilder setValidatorKeystorePasswordFiles(
       final List<String> validatorKeystorePasswordFiles) {
     this.validatorKeystorePasswordFiles = validatorKeystorePasswordFiles;
     return this;
   }
 
-  public TekuConfigurationBuilder setValidatorKeys(final List<String> validatorKeys) {
+  public GlobalConfigurationBuilder setValidatorKeys(final List<String> validatorKeys) {
     this.validatorKeys = validatorKeys;
     return this;
   }
 
-  public TekuConfigurationBuilder setValidatorExternalSignerPublicKeys(
+  public GlobalConfigurationBuilder setValidatorExternalSignerPublicKeys(
       final List<String> validatorsExternalSignerPublicKeys) {
     this.validatorExternalSignerPublicKeys = validatorsExternalSignerPublicKeys;
     return this;
   }
 
-  public TekuConfigurationBuilder setValidatorExternalSignerUrl(
+  public GlobalConfigurationBuilder setValidatorExternalSignerUrl(
       final String validatorsExternalSignerUrl) {
     this.validatorExternalSignerUrl = validatorsExternalSignerUrl;
     return this;
   }
 
-  public TekuConfigurationBuilder setValidatorExternalSignerTimeout(
+  public GlobalConfigurationBuilder setValidatorExternalSignerTimeout(
       final int validatorsExternalSignerTimeout) {
     this.validatorExternalSignerTimeout = validatorsExternalSignerTimeout;
     return this;
   }
 
-  public TekuConfigurationBuilder setEth1DepositContractAddress(
+  public GlobalConfigurationBuilder setEth1DepositContractAddress(
       final Eth1Address eth1DepositContractAddress) {
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     return this;
   }
 
-  public TekuConfigurationBuilder setEth1Endpoint(final String eth1Endpoint) {
+  public GlobalConfigurationBuilder setEth1Endpoint(final String eth1Endpoint) {
     this.eth1Endpoint = eth1Endpoint;
     return this;
   }
 
-  public TekuConfigurationBuilder setEth1DepositsFromStorageEnabled(
+  public GlobalConfigurationBuilder setEth1DepositsFromStorageEnabled(
       final boolean eth1DepositsFromStorageEnabled) {
     this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
     return this;
   }
 
-  public TekuConfigurationBuilder setLogColorEnabled(final boolean logColorEnabled) {
+  public GlobalConfigurationBuilder setLogColorEnabled(final boolean logColorEnabled) {
     this.logColorEnabled = logColorEnabled;
     return this;
   }
 
-  public TekuConfigurationBuilder setLogIncludeEventsEnabled(
+  public GlobalConfigurationBuilder setLogIncludeEventsEnabled(
       final boolean logIncludeEventsEnabled) {
     this.logIncludeEventsEnabled = logIncludeEventsEnabled;
     return this;
   }
 
-  public TekuConfigurationBuilder setLogIncludeValidatorDutiesEnabled(
+  public GlobalConfigurationBuilder setLogIncludeValidatorDutiesEnabled(
       final boolean logIncludeValidatorDutiesEnabled) {
     this.logIncludeValidatorDutiesEnabled = logIncludeValidatorDutiesEnabled;
     return this;
   }
 
-  public TekuConfigurationBuilder setLogDestination(final LoggingDestination logDestination) {
+  public GlobalConfigurationBuilder setLogDestination(final LoggingDestination logDestination) {
     this.logDestination = logDestination;
     return this;
   }
 
-  public TekuConfigurationBuilder setLogFile(final String logFile) {
+  public GlobalConfigurationBuilder setLogFile(final String logFile) {
     this.logFile = logFile;
     return this;
   }
 
-  public TekuConfigurationBuilder setLogFileNamePattern(final String logFileNamePattern) {
+  public GlobalConfigurationBuilder setLogFileNamePattern(final String logFileNamePattern) {
     this.logFileNamePattern = logFileNamePattern;
     return this;
   }
 
-  public TekuConfigurationBuilder setLogWireCipher(boolean logWireCipher) {
+  public GlobalConfigurationBuilder setLogWireCipher(boolean logWireCipher) {
     this.logWireCipher = logWireCipher;
     return this;
   }
 
-  public TekuConfigurationBuilder setLogWirePlain(boolean logWirePlain) {
+  public GlobalConfigurationBuilder setLogWirePlain(boolean logWirePlain) {
     this.logWirePlain = logWirePlain;
     return this;
   }
 
-  public TekuConfigurationBuilder setLogWireMuxFrames(boolean logWireMuxFrames) {
+  public GlobalConfigurationBuilder setLogWireMuxFrames(boolean logWireMuxFrames) {
     this.logWireMuxFrames = logWireMuxFrames;
     return this;
   }
 
-  public TekuConfigurationBuilder setLogWireGossip(boolean logWireGossip) {
+  public GlobalConfigurationBuilder setLogWireGossip(boolean logWireGossip) {
     this.logWireGossip = logWireGossip;
     return this;
   }
 
-  public TekuConfigurationBuilder setTransitionRecordDirectory(
+  public GlobalConfigurationBuilder setTransitionRecordDirectory(
       final String transitionRecordDirectory) {
     this.transitionRecordDirectory = transitionRecordDirectory;
     return this;
   }
 
-  public TekuConfigurationBuilder setMetricsEnabled(final boolean metricsEnabled) {
+  public GlobalConfigurationBuilder setMetricsEnabled(final boolean metricsEnabled) {
     this.metricsEnabled = metricsEnabled;
     return this;
   }
 
-  public TekuConfigurationBuilder setMetricsPort(final int metricsPort) {
+  public GlobalConfigurationBuilder setMetricsPort(final int metricsPort) {
     this.metricsPort = metricsPort;
     return this;
   }
 
-  public TekuConfigurationBuilder setMetricsInterface(final String metricsInterface) {
+  public GlobalConfigurationBuilder setMetricsInterface(final String metricsInterface) {
     this.metricsInterface = metricsInterface;
     return this;
   }
 
-  public TekuConfigurationBuilder setMetricsCategories(final List<String> metricsCategories) {
+  public GlobalConfigurationBuilder setMetricsCategories(final List<String> metricsCategories) {
     this.metricsCategories = metricsCategories;
     return this;
   }
 
-  public TekuConfigurationBuilder setMetricsHostAllowlist(final List<String> metricsHostAllowlist) {
+  public GlobalConfigurationBuilder setMetricsHostAllowlist(
+      final List<String> metricsHostAllowlist) {
     this.metricsHostAllowlist = metricsHostAllowlist;
     return this;
   }
 
-  public TekuConfigurationBuilder setDataPath(final String dataPath) {
+  public GlobalConfigurationBuilder setDataPath(final String dataPath) {
     this.dataPath = dataPath;
     this.setValidatorsSlashingProtectionPath(Path.of(dataPath, "validators", "slashprotection"));
     return this;
   }
 
-  public TekuConfigurationBuilder setDataStorageMode(final StateStorageMode dataStorageMode) {
+  public GlobalConfigurationBuilder setDataStorageMode(final StateStorageMode dataStorageMode) {
     this.dataStorageMode = dataStorageMode;
     return this;
   }
 
-  public TekuConfigurationBuilder setDataStorageFrequency(final long dataStorageFrequency) {
+  public GlobalConfigurationBuilder setDataStorageFrequency(final long dataStorageFrequency) {
     this.dataStorageFrequency = dataStorageFrequency;
     return this;
   }
 
-  public TekuConfigurationBuilder setDataStorageCreateDbVersion(
+  public GlobalConfigurationBuilder setDataStorageCreateDbVersion(
       final String dataStorageCreateDbVersion) {
     this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
     return this;
   }
 
-  public TekuConfigurationBuilder setHotStatePersistenceFrequencyInEpochs(
+  public GlobalConfigurationBuilder setHotStatePersistenceFrequencyInEpochs(
       final int hotStatePersistenceFrequencyInEpochs) {
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
     return this;
   }
 
-  public TekuConfigurationBuilder setIsBlockProcessingAtStartupDisabled(final boolean isDisabled) {
+  public GlobalConfigurationBuilder setIsBlockProcessingAtStartupDisabled(
+      final boolean isDisabled) {
     this.isBlockProcessingAtStartupDisabled = isDisabled;
     return this;
   }
 
-  public TekuConfigurationBuilder setRestApiPort(final int restApiPort) {
+  public GlobalConfigurationBuilder setRestApiPort(final int restApiPort) {
     this.restApiPort = restApiPort;
     return this;
   }
 
-  public TekuConfigurationBuilder setRestApiDocsEnabled(final boolean restApiDocsEnabled) {
+  public GlobalConfigurationBuilder setRestApiDocsEnabled(final boolean restApiDocsEnabled) {
     this.restApiDocsEnabled = restApiDocsEnabled;
     return this;
   }
 
-  public TekuConfigurationBuilder setRestApiEnabled(final boolean restApiEnabled) {
+  public GlobalConfigurationBuilder setRestApiEnabled(final boolean restApiEnabled) {
     this.restApiEnabled = restApiEnabled;
     return this;
   }
 
-  public TekuConfigurationBuilder setRestApiInterface(final String restApiInterface) {
+  public GlobalConfigurationBuilder setRestApiInterface(final String restApiInterface) {
     this.restApiInterface = restApiInterface;
     return this;
   }
 
-  public TekuConfigurationBuilder setRestApiHostAllowlist(final List<String> restApiHostAllowlist) {
+  public GlobalConfigurationBuilder setRestApiHostAllowlist(
+      final List<String> restApiHostAllowlist) {
     this.restApiHostAllowlist = restApiHostAllowlist;
     return this;
   }
 
-  public TekuConfigurationBuilder setRemoteValidatorApiInterface(final String host) {
+  public GlobalConfigurationBuilder setRemoteValidatorApiInterface(final String host) {
     this.remoteValidatorApiInterface = host;
     return this;
   }
 
-  public TekuConfigurationBuilder setRemoteValidatorApiPort(final int port) {
+  public GlobalConfigurationBuilder setRemoteValidatorApiPort(final int port) {
     this.remoteValidatorApiPort = port;
     return this;
   }
 
-  public TekuConfigurationBuilder setRemoteValidatorApiMaxSubscribers(final int maxSubscribers) {
+  public GlobalConfigurationBuilder setRemoteValidatorApiMaxSubscribers(final int maxSubscribers) {
     this.remoteValidatorApiMaxSubscribers = maxSubscribers;
     return this;
   }
 
-  public TekuConfigurationBuilder setRemoteValidatorApiEnabled(final boolean enabled) {
+  public GlobalConfigurationBuilder setRemoteValidatorApiEnabled(final boolean enabled) {
     this.remoteValidatorApiEnabled = enabled;
     return this;
   }
 
-  public TekuConfigurationBuilder setGraffiti(final Bytes32 graffiti) {
+  public GlobalConfigurationBuilder setGraffiti(final Bytes32 graffiti) {
     this.graffiti = graffiti;
     return this;
   }
 
-  public TekuConfigurationBuilder setNetwork(final NetworkDefinition network) {
+  public GlobalConfigurationBuilder setNetwork(final NetworkDefinition network) {
     this.network = network;
     return this;
   }
 
-  public TekuConfigurationBuilder setValidatorsSlashingProtectionPath(
+  public GlobalConfigurationBuilder setValidatorsSlashingProtectionPath(
       final Path validatorsSlashingProtectionPath) {
     this.validatorsSlashingProtectionPath = validatorsSlashingProtectionPath;
     return this;
   }
 
-  public TekuConfigurationBuilder setValidatorClient(final boolean isValidatorOnly) {
+  public GlobalConfigurationBuilder setValidatorClient(final boolean isValidatorOnly) {
     this.isValidatorClient = isValidatorOnly;
     return this;
   }
 
-  public TekuConfigurationBuilder setBeaconNodeApiEndpoint(final String beaconNodeApiEndpoint) {
+  public GlobalConfigurationBuilder setBeaconNodeApiEndpoint(final String beaconNodeApiEndpoint) {
     this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
     return this;
   }
 
-  public TekuConfigurationBuilder setBeaconNodeEventsWsEndpoint(
+  public GlobalConfigurationBuilder setBeaconNodeEventsWsEndpoint(
       final String beaconNodeEventsWsEndpoint) {
     this.beaconNodeEventsWsEndpoint = beaconNodeEventsWsEndpoint;
     return this;
   }
 
-  public TekuConfiguration build() {
+  public GlobalConfiguration build() {
     if (network != null) {
       constants = getOrDefault(constants, network::getConstants);
       initialState = getOrOptionalDefault(initialState, network::getInitialState);
@@ -500,7 +509,7 @@ public class TekuConfigurationBuilder {
     }
 
     p2pSnappyEnabled = Optional.ofNullable(p2pSnappyEnabled).orElse(DEFAULT_P2P_SNAPPY_ENABLED);
-    return new TekuConfiguration(
+    return new GlobalConfiguration(
         constants,
         startupTargetPeerCount,
         startupTimeoutSeconds,

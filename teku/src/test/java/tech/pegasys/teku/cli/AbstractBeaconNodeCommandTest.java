@@ -28,7 +28,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public abstract class AbstractBeaconNodeCommandTest {
   private static final Logger LOG = LogManager.getLogger();
@@ -43,6 +44,10 @@ public abstract class AbstractBeaconNodeCommandTest {
       new BeaconNodeCommand(outputWriter, errorWriter, Collections.emptyMap(), startAction);
 
   @TempDir Path dataPath;
+
+  public GlobalConfiguration getResultingGlobalConfiguration() {
+    return getResultingTekuConfiguration().global();
+  }
 
   public TekuConfiguration getResultingTekuConfiguration() {
     try {
@@ -60,9 +65,17 @@ public abstract class AbstractBeaconNodeCommandTest {
     }
   }
 
+  public GlobalConfiguration getGlobalConfigurationFromArguments(String... arguments) {
+    return getTekuConfigurationFromArguments(arguments).global();
+  }
+
   public TekuConfiguration getTekuConfigurationFromArguments(String... arguments) {
     beaconNodeCommand.parse(arguments);
     return getResultingTekuConfiguration();
+  }
+
+  public GlobalConfiguration getGlobalConfigurationFromFile(String resourceFilename) {
+    return getTekuConfigurationFromFile(resourceFilename).global();
   }
 
   public TekuConfiguration getTekuConfigurationFromFile(String resourceFilename) {

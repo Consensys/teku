@@ -31,8 +31,9 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 
-/** Configuration of an instance of Teku. */
-public class TekuConfiguration implements MetricsConfig {
+/** @deprecated - Use TekuConfiguration where possible. Global application configuration. */
+@Deprecated
+public class GlobalConfiguration implements MetricsConfig {
   // Network
   private final String constants;
   private final String initialState;
@@ -130,11 +131,11 @@ public class TekuConfiguration implements MetricsConfig {
   private final String beaconNodeApiEndpoint;
   private final String beaconNodeEventsWsEndpoint;
 
-  public static TekuConfigurationBuilder builder() {
-    return new TekuConfigurationBuilder();
+  public static GlobalConfigurationBuilder builder() {
+    return new GlobalConfigurationBuilder();
   }
 
-  TekuConfiguration(
+  GlobalConfiguration(
       final String constants,
       final Integer startupTargetPeerCount,
       final Integer startupTimeoutSeconds,

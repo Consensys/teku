@@ -28,16 +28,16 @@ import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class BeaconChainControllerTest {
 
   @TempDir public File dataDir;
 
-  private ServiceConfig mockServiceConfig(TekuConfiguration tekuConfiguration) {
+  private ServiceConfig mockServiceConfig(GlobalConfiguration globalConfiguration) {
     ServiceConfig serviceConfig = mock(ServiceConfig.class);
-    when(serviceConfig.getConfig()).thenReturn(tekuConfiguration);
+    when(serviceConfig.getConfig()).thenReturn(globalConfiguration);
     EventChannels eventChannels = mock(EventChannels.class);
     when(eventChannels.getPublisher(any())).thenReturn(mock(SlotEventsChannel.class));
     when(serviceConfig.getEventChannels()).thenReturn(eventChannels);
@@ -46,10 +46,10 @@ public class BeaconChainControllerTest {
 
   @Test
   void getP2pPrivateKeyBytes_generatedKeyTest() throws IOException {
-    TekuConfiguration tekuConfiguration =
-        TekuConfiguration.builder().setDataPath(dataDir.getCanonicalPath()).build();
+    GlobalConfiguration globalConfiguration =
+        GlobalConfiguration.builder().setDataPath(dataDir.getCanonicalPath()).build();
     BeaconChainController controller =
-        new BeaconChainController(mockServiceConfig(tekuConfiguration));
+        new BeaconChainController(mockServiceConfig(globalConfiguration));
 
     MemKeyValueStore<String, Bytes> store = new MemKeyValueStore<>();
 
@@ -74,13 +74,13 @@ public class BeaconChainControllerTest {
     Path customPKFile = dataDir.toPath().resolve("customPK.hex");
     Files.writeString(customPKFile, generatedPK.toHexString());
 
-    TekuConfiguration tekuConfiguration1 =
-        TekuConfiguration.builder()
+    GlobalConfiguration globalConfiguration1 =
+        GlobalConfiguration.builder()
             .setDataPath(dataDir.getCanonicalPath())
             .setP2pPrivateKeyFile(customPKFile.toString())
             .build();
     BeaconChainController controller1 =
-        new BeaconChainController(mockServiceConfig(tekuConfiguration1));
+        new BeaconChainController(mockServiceConfig(globalConfiguration1));
     Bytes customPK = controller1.getP2pPrivateKeyBytes(store);
     assertThat(customPK).isEqualTo(generatedPK);
   }

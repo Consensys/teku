@@ -32,7 +32,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class BeaconRestApiWithSwaggerTest {
   private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(new EventBus());
@@ -47,8 +47,8 @@ public class BeaconRestApiWithSwaggerTest {
 
   @BeforeEach
   public void setup() {
-    TekuConfiguration config =
-        TekuConfiguration.builder().setRestApiPort(THE_PORT).setRestApiDocsEnabled(true).build();
+    GlobalConfiguration config =
+        GlobalConfiguration.builder().setRestApiPort(THE_PORT).setRestApiDocsEnabled(true).build();
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
         new DataProvider(

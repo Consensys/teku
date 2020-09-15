@@ -27,14 +27,14 @@ import org.assertj.core.util.introspection.FieldSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.services.remotevalidator.RemoteValidatorSubscriptions.SubscriptionStatus;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.validator.remote.BeaconChainEvent;
 
 class RemoteValidatorSubscriptionsTest {
 
   private static final int MAX_SUBSCRIBERS = 2;
 
-  private final TekuConfiguration configuration = mock(TekuConfiguration.class);
+  private final GlobalConfiguration configuration = mock(GlobalConfiguration.class);
   private final RemoteValidatorMetrics metrics = mock(RemoteValidatorMetrics.class);
 
   @SuppressWarnings("unchecked")

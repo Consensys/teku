@@ -22,7 +22,7 @@ import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.DataOptions;
 import tech.pegasys.teku.data.SlashingProtectionImporter;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 @CommandLine.Command(
     name = "import",
@@ -88,7 +88,7 @@ public class ImportCommand implements Runnable {
     }
   }
 
-  private TekuConfiguration tekuConfiguration() {
-    return TekuConfiguration.builder().setDataPath(dataOptions.getDataPath()).build();
+  private GlobalConfiguration tekuConfiguration() {
+    return GlobalConfiguration.builder().setDataPath(dataOptions.getDataPath()).build();
   }
 }
