@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.loader;
 
 import static java.nio.file.StandardOpenOption.CREATE_NEW;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
@@ -45,11 +46,11 @@ public class KeystoreLocker {
     }
   }
 
+  @SuppressWarnings("EmptyCatch")
   private static void deleteIfStaleLockfileExists(Path lockfilePath) {
     if (!lockfilePath.toFile().exists()) {
       return;
     }
-
     try {
       byte[] pidInBytes = Files.readAllBytes(lockfilePath);
       if (pidInBytes.length == Long.BYTES) {
@@ -62,6 +63,7 @@ public class KeystoreLocker {
           }
         }
       }
+    } catch (FileNotFoundException ignored) {
     } catch (IOException e) {
       throw new UncheckedIOException("Unexpected error when trying read a keystore lockfile.", e);
     }

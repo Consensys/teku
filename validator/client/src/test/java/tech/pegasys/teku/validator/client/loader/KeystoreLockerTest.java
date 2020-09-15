@@ -24,8 +24,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
@@ -43,12 +41,9 @@ public class KeystoreLockerTest {
   }
 
   @Test
-  @EnabledOnOs({OS.LINUX, OS.MAC})
   void deleteLockfileIfTheProcessIsNotAlive(final @TempDir Path keystoreFile) throws Exception {
-    Process process = new ProcessBuilder("/bin/sleep", "1").start();
-    Thread.sleep(1500);
-    long pid = process.pid();
-    assertThat(process.isAlive()).isFalse();
+    // Assuming there won't be any live process with pid: Long.MAX_VALUE
+    long pid = Long.MAX_VALUE;
     createLockfileWithContent(keystoreFile, longPidToNativeByteArray(pid));
     Assertions.assertThatCode(() -> keystoreLocker.lockKeystore(keystoreFile))
         .doesNotThrowAnyException();
