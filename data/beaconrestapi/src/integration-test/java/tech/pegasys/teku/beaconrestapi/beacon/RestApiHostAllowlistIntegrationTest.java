@@ -19,14 +19,14 @@ import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class RestApiHostAllowlistIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
   @Test
   public void shouldReturnForbiddenIfHostNotAuthorized() throws Exception {
-    final TekuConfiguration config =
-        TekuConfiguration.builder()
+    final GlobalConfiguration config =
+        GlobalConfiguration.builder()
             .setRestApiPort(0)
             .setRestApiEnabled(true)
             .setRestApiDocsEnabled(false)
