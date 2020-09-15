@@ -66,15 +66,23 @@ public abstract class AbstractBeaconNodeCommandTest {
   }
 
   public GlobalConfiguration getGlobalConfigurationFromArguments(String... arguments) {
+    return getTekuConfigurationFromArguments(arguments).global();
+  }
+
+  public TekuConfiguration getTekuConfigurationFromArguments(String... arguments) {
     beaconNodeCommand.parse(arguments);
-    return getResultingGlobalConfiguration();
+    return getResultingTekuConfiguration();
   }
 
   public GlobalConfiguration getGlobalConfigurationFromFile(String resourceFilename) {
+    return getTekuonfigurationFromFile(resourceFilename).global();
+  }
+
+  public TekuConfiguration getTekuonfigurationFromFile(String resourceFilename) {
     final String configFile = this.getClass().getResource("/" + resourceFilename).getPath();
     final String[] args = {CONFIG_FILE_OPTION_NAME, configFile};
     beaconNodeCommand.parse(args);
-    return getResultingGlobalConfiguration();
+    return getResultingTekuConfiguration();
   }
 
   public String getCommandLineOutput() {

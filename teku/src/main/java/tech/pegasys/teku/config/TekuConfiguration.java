@@ -14,12 +14,16 @@
 package tech.pegasys.teku.config;
 
 import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class TekuConfiguration {
   private final GlobalConfiguration globalConfiguration;
+  private final WeakSubjectivityConfig weakSubjectivityConfig;
 
-  TekuConfiguration(GlobalConfiguration globalConfiguration) {
+  TekuConfiguration(
+      GlobalConfiguration globalConfiguration, WeakSubjectivityConfig weakSubjectivityConfig) {
     this.globalConfiguration = globalConfiguration;
+    this.weakSubjectivityConfig = weakSubjectivityConfig;
   }
 
   public static TekuConfigurationBuilder builder() {
@@ -28,5 +32,9 @@ public class TekuConfiguration {
 
   public GlobalConfiguration global() {
     return globalConfiguration;
+  }
+
+  public WeakSubjectivityConfig weakSubjectivity() {
+    return weakSubjectivityConfig;
   }
 }

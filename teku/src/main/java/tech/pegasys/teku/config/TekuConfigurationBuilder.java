@@ -15,19 +15,28 @@ package tech.pegasys.teku.config;
 
 import java.util.function.Consumer;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
+import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class TekuConfigurationBuilder {
   private GlobalConfigurationBuilder globalConfigurationBuilder = new GlobalConfigurationBuilder();
+  private WeakSubjectivityConfig.Builder weakSubjectivityBuilder = WeakSubjectivityConfig.builder();
 
   TekuConfigurationBuilder() {}
 
   public TekuConfiguration build() {
-    return new TekuConfiguration(globalConfigurationBuilder.build());
+    return new TekuConfiguration(
+        globalConfigurationBuilder.build(), weakSubjectivityBuilder.build());
   }
 
   public TekuConfigurationBuilder globalConfig(
       final Consumer<GlobalConfigurationBuilder> globalConfigConsumer) {
     globalConfigConsumer.accept(globalConfigurationBuilder);
+    return this;
+  }
+
+  public TekuConfigurationBuilder weakSubjectivity(
+      final Consumer<WeakSubjectivityConfig.Builder> wsConfigConsumer) {
+    wsConfigConsumer.accept(weakSubjectivityBuilder);
     return this;
   }
 }

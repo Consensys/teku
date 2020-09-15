@@ -47,6 +47,7 @@ import tech.pegasys.teku.cli.options.RemoteValidatorApiOptions;
 import tech.pegasys.teku.cli.options.StoreOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
+import tech.pegasys.teku.cli.options.WeakSubjectivityOptions;
 import tech.pegasys.teku.cli.subcommand.DepositCommand;
 import tech.pegasys.teku.cli.subcommand.GenesisCommand;
 import tech.pegasys.teku.cli.subcommand.PeerCommand;
@@ -59,6 +60,7 @@ import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
 import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.config.TekuConfigurationBuilder;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
@@ -171,6 +173,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   @Mixin(name = "Validator Client")
   private ValidatorClientOptions validatorClientOptions;
+
+  @Mixin(name = "Weak Subjectivity")
+  private WeakSubjectivityOptions weakSubjectivityOptions;
 
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
@@ -319,7 +324,12 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   protected TekuConfiguration tekuConfiguration() {
-    return TekuConfiguration.builder().globalConfig(this::buildGlobalConfiguration).build();
+    TekuConfigurationBuilder builder = TekuConfiguration.builder();
+
+    builder.globalConfig(this::buildGlobalConfiguration);
+    weakSubjectivityOptions.configure(builder);
+
+    return builder.build();
   }
 
   private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
