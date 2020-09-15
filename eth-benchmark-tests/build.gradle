@@ -13,6 +13,7 @@ dependencies {
   implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
+  implementation project(':ethereum:weaksubjectivity')
   implementation project(':eth-tests')
   implementation project(':infrastructure:async')
   implementation project(':storage')

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -23,6 +24,8 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
+import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -30,7 +33,6 @@ import tech.pegasys.teku.sync.SyncService;
 
 public abstract class AbstractBeaconHandlerTest {
 
-  @SuppressWarnings("unchecked")
   protected final Eth2Network eth2Network = mock(Eth2Network.class);
 
   protected final Context context = mock(Context.class);
@@ -39,10 +41,13 @@ public abstract class AbstractBeaconHandlerTest {
 
   protected final SyncService syncService = mock(SyncService.class);
   protected final SyncDataProvider syncDataProvider = new SyncDataProvider(syncService);
-
   private final ArgumentCaptor<String> stringArgs = ArgumentCaptor.forClass(String.class);
 
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
+
   protected final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
+  protected final ValidatorDataProvider validatorDataProvider = mock(ValidatorDataProvider.class);
 
   protected void verifyCacheStatus(final String cacheControlString) {
     verify(context).header(Header.CACHE_CONTROL, cacheControlString);
@@ -58,6 +63,14 @@ public abstract class AbstractBeaconHandlerTest {
     return jsonProvider.jsonToObject(val, clazz);
   }
 
+  protected <T> T getResponseFromFuture(Class<T> clazz) throws JsonProcessingException {
+    verify(context).result(args.capture());
+    SafeFuture<String> future = args.getValue();
+    assertThat(future).isCompleted();
+    String data = future.join();
+    return jsonProvider.jsonToObject(data, clazz);
+  }
+
   protected tech.pegasys.teku.sync.SyncingStatus getSyncStatus(
       final boolean isSyncing,
       final long startSlot,
@@ -65,7 +78,8 @@ public abstract class AbstractBeaconHandlerTest {
       final long highestSlot) {
     return new tech.pegasys.teku.sync.SyncingStatus(
         isSyncing,
-        new tech.pegasys.teku.sync.SyncStatus(
-            UInt64.valueOf(startSlot), UInt64.valueOf(currentSlot), UInt64.valueOf(highestSlot)));
+        UInt64.valueOf(currentSlot),
+        UInt64.valueOf(startSlot),
+        UInt64.valueOf(highestSlot));
   }
 }

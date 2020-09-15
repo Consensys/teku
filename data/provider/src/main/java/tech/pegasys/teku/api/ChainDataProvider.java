@@ -118,6 +118,10 @@ public class ChainDataProvider {
     return combinedChainDataClient.getBestBlockRoot();
   }
 
+  public UInt64 getCurrentEpoch() {
+    return combinedChainDataClient.getCurrentEpoch();
+  }
+
   public SafeFuture<Optional<GetBlockResponse>> getBlockByBlockRoot(final Bytes32 blockParam) {
     if (!isStoreAvailable()) {
       return chainUnavailable();

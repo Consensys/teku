@@ -3,6 +3,7 @@ dependencies {
   implementation project(':data')
   implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
+  implementation project(':ethereum:weaksubjectivity')
   implementation project(':infrastructure:async')
   implementation project(':infrastructure:collections')
   implementation project(':infrastructure:logging')
@@ -34,6 +35,7 @@ dependencies {
 
   testFixturesImplementation project(':ethereum:core')
   testFixturesImplementation project(':infrastructure:async')
+  testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation testFixtures(project(':protoarray'))
   testFixturesImplementation testFixtures(project(':ethereum:core'))
   testFixturesImplementation testFixtures(project(':ethereum:datastructures'))

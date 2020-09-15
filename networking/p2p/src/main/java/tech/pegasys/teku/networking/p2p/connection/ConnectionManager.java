@@ -149,7 +149,9 @@ public class ConnectionManager extends Service {
   private void onPeerConnected(final Peer peer) {
     peerSelectionStrategy
         .selectPeersToDisconnect(network, peerPools)
-        .forEach(peerToDrop -> peerToDrop.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS));
+        .forEach(
+            peerToDrop ->
+                peerToDrop.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS).reportExceptions());
   }
 
   @Override

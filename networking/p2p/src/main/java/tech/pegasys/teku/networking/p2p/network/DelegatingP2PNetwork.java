@@ -92,8 +92,8 @@ public abstract class DelegatingP2PNetwork<T extends Peer> implements P2PNetwork
   }
 
   @Override
-  public void stop() {
-    network.stop();
+  public SafeFuture<?> stop() {
+    return network.stop();
   }
 
   @Override

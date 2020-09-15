@@ -51,7 +51,8 @@ public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrat
       final long highestSlot) {
     return new tech.pegasys.teku.sync.SyncingStatus(
         isSyncing,
-        new tech.pegasys.teku.sync.SyncStatus(
-            UInt64.valueOf(startSlot), UInt64.valueOf(currentSlot), UInt64.valueOf(highestSlot)));
+        UInt64.valueOf(currentSlot),
+        UInt64.valueOf(startSlot),
+        UInt64.valueOf(highestSlot));
   }
 }

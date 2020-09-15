@@ -78,6 +78,8 @@ public interface RocksDbAccessor extends AutoCloseable {
 
     <K, V> void delete(RocksDbColumn<K, V> column, K key);
 
+    <T> void delete(RocksDbVariable<T> variable);
+
     void commit();
 
     void rollback();

@@ -11,25 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.core.signatures;
+package tech.pegasys.teku.networking.eth2.peers;
 
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 
-public interface MessageSignerService {
-
-  SafeFuture<BLSSignature> signBlock(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signAttestation(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signAggregationSlot(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signAggregateAndProof(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signRandaoReveal(Bytes signingRoot);
-
-  SafeFuture<BLSSignature> signVoluntaryExit(Bytes signingRoot);
-
-  boolean isLocal();
+/**
+ * Represents an external source of blocks to sync. Typically a peer, but this provides the minimal
+ * interface required by the sync system.
+ */
+public interface SyncSource {
+  SafeFuture<Void> requestBlocksByRange(
+      final UInt64 startSlot,
+      final UInt64 count,
+      final UInt64 step,
+      final ResponseStreamListener<SignedBeaconBlock> listener);
 }

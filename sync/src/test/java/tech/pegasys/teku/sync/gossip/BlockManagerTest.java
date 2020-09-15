@@ -46,6 +46,7 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 public class BlockManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -73,7 +74,8 @@ public class BlockManagerTest {
   private final ImportedBlocks importedBlocks = new ImportedBlocks(localEventBus);
 
   private final BlockImporter blockImporter =
-      new BlockImporter(localRecentChainData, forkChoice, localEventBus);
+      new BlockImporter(
+          localRecentChainData, forkChoice, WeakSubjectivityValidator.lenient(), localEventBus);
   private final BlockManager blockManager =
       new BlockManager(
           localEventBus,
