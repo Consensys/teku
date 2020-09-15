@@ -24,14 +24,19 @@ import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
 public class PeerChainTracker {
   private final EventThread eventThread;
   private final P2PNetwork<Eth2Peer> p2pNetwork;
+  private final SyncController syncController;
   private final TargetChains finalizedChains = new TargetChains();
   private final TargetChains nonFinalizedChains = new TargetChains();
   private volatile long connectSubscription;
 
   @VisibleForTesting
-  PeerChainTracker(final EventThread eventThread, final P2PNetwork<Eth2Peer> p2pNetwork) {
+  PeerChainTracker(
+      final EventThread eventThread,
+      final P2PNetwork<Eth2Peer> p2pNetwork,
+      final SyncController syncController) {
     this.eventThread = eventThread;
     this.p2pNetwork = p2pNetwork;
+    this.syncController = syncController;
   }
 
   public void start() {
@@ -66,6 +71,8 @@ public class PeerChainTracker {
     final SlotAndBlockRoot nonFinalizedChainHead =
         new SlotAndBlockRoot(status.getHeadSlot(), status.getHeadRoot());
     nonFinalizedChains.onPeerStatusUpdated(peer, nonFinalizedChainHead);
+
+    syncController.onTargetChainsUpdated(finalizedChains);
   }
 
   @VisibleForTesting

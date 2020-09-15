@@ -41,6 +41,8 @@ class PeerChainTrackerTest {
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Eth2Peer> p2pNetwork = mock(P2PNetwork.class);
 
+  private final SyncController syncController = mock(SyncController.class);
+
   private final Eth2Peer peer = mock(Eth2Peer.class);
 
   private final EventThread eventThread = new InlineEventThread();
@@ -52,7 +54,8 @@ class PeerChainTrackerTest {
           dataStructureUtil.randomBytes32(),
           dataStructureUtil.randomUInt64());
 
-  private final PeerChainTracker tracker = new PeerChainTracker(eventThread, p2pNetwork);
+  private final PeerChainTracker tracker =
+      new PeerChainTracker(eventThread, p2pNetwork, syncController);
 
   @BeforeEach
   void setUp() {
@@ -74,6 +77,8 @@ class PeerChainTrackerTest {
         chainWith(new SlotAndBlockRoot(status.getHeadSlot(), status.getHeadRoot()), peer);
     assertThat(tracker.getFinalizedChains().streamChains()).containsExactly(finalizedChain);
     assertThat(tracker.getNonFinalizedChains().streamChains()).containsExactly(nonfinalizedChain);
+
+    verify(syncController).onTargetChainsUpdated(tracker.getFinalizedChains());
   }
 
   @Test

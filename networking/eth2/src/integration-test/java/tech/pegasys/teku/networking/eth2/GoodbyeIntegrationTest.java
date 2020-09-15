@@ -40,7 +40,7 @@ public class GoodbyeIntegrationTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  public void tearDown() throws Exception {
     networkFactory.stopAll();
   }
 
@@ -49,7 +49,7 @@ public class GoodbyeIntegrationTest {
   public void shouldCloseConnectionAfterGoodbyeReceived(
       final String encodingName, final RpcEncoding encoding) throws Exception {
     setUp(encoding);
-    peer1.disconnectCleanly(DisconnectReason.SHUTTING_DOWN);
+    Waiter.waitFor(peer1.disconnectCleanly(DisconnectReason.SHUTTING_DOWN));
     Waiter.waitFor(() -> assertThat(peer1.isConnected()).isFalse());
     Waiter.waitFor(() -> assertThat(peer2.isConnected()).isFalse());
   }

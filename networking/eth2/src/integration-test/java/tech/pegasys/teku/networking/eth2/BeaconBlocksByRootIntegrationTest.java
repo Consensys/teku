@@ -23,6 +23,8 @@ import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -34,6 +36,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -87,7 +90,7 @@ public abstract class BeaconBlocksByRootIntegrationTest {
   protected abstract RpcEncoding getEncoding();
 
   @AfterEach
-  public void tearDown() {
+  public void tearDown() throws Exception {
     networkFactory.stopAll();
   }
 
@@ -123,11 +126,12 @@ public abstract class BeaconBlocksByRootIntegrationTest {
   }
 
   @Test
-  public void requestBlocksByRootAfterPeerDisconnected() throws RpcException {
+  public void requestBlocksByRootAfterPeerDisconnected()
+      throws RpcException, InterruptedException, ExecutionException, TimeoutException {
     final SignedBeaconBlock block = addBlock();
     final Bytes32 blockHash = block.getMessage().hash_tree_root();
 
-    peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS);
+    Waiter.waitFor(peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS));
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     final SafeFuture<Void> res =
         peer1.requestBlocksByRoot(List.of(blockHash), ResponseStreamListener.from(blocks::add));
@@ -152,11 +156,12 @@ public abstract class BeaconBlocksByRootIntegrationTest {
   }
 
   @Test
-  public void requestBlockByRootAfterPeerDisconnected() {
+  public void requestBlockByRootAfterPeerDisconnected()
+      throws InterruptedException, ExecutionException, TimeoutException {
     final SignedBeaconBlock block = addBlock();
     final Bytes32 blockHash = block.getMessage().hash_tree_root();
 
-    peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS);
+    Waiter.waitFor(peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS));
     final SafeFuture<SignedBeaconBlock> res = peer1.requestBlockByRoot(blockHash);
 
     waitFor(() -> assertThat(res).isDone());

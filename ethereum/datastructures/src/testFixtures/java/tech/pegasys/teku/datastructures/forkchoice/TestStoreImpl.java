@@ -25,6 +25,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -171,6 +172,13 @@ class TestStoreImpl implements MutableStore {
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint) {
     return SafeFuture.completedFuture(getCheckpointState(checkpoint));
+  }
+
+  @Override
+  public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
+    final BeaconState state = getCheckpointState(finalized_checkpoint).orElseThrow();
+    final SignedBeaconBlock block = getSignedBlock(finalized_checkpoint.getRoot());
+    return SafeFuture.completedFuture(new CheckpointState(finalized_checkpoint, block, state));
   }
 
   @Override

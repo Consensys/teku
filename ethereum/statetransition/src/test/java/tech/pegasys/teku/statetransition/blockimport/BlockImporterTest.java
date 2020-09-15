@@ -15,7 +15,10 @@ package tech.pegasys.teku.statetransition.blockimport;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.google.common.eventbus.EventBus;
@@ -40,7 +43,9 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -49,11 +54,14 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 public class BlockImporterTest {
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
   private final EventBus localEventBus = mock(EventBus.class);
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
+  private final WeakSubjectivityValidator weakSubjectivityValidator =
+      mock(WeakSubjectivityValidator.class);
   private final ForkChoice forkChoice =
       new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
   private final BeaconChainUtil localChain =
@@ -65,7 +73,7 @@ public class BlockImporterTest {
       BeaconChainUtil.create(otherStorage, validatorKeys, false);
 
   private final BlockImporter blockImporter =
-      new BlockImporter(recentChainData, forkChoice, localEventBus);
+      new BlockImporter(recentChainData, forkChoice, weakSubjectivityValidator, localEventBus);
 
   @BeforeAll
   public static void init() {
@@ -91,7 +99,21 @@ public class BlockImporterTest {
     localChain.setSlot(block.getSlot());
 
     final BlockImportResult result = blockImporter.importBlock(block).get();
+    assertWeakSubjectivityWasChecked();
     assertSuccessfulResult(result);
+  }
+
+  @Test
+  public void importBlock_errorDuringWeakSubjectivityCheck() throws Exception {
+    final SignedBeaconBlock block = otherChain.createBlockAtSlot(UInt64.ONE);
+    localChain.setSlot(block.getSlot());
+    doThrow(new RuntimeException("oops"))
+        .when(weakSubjectivityValidator)
+        .validateLatestFinalizedCheckpoint(any(), any());
+
+    final BlockImportResult result = blockImporter.importBlock(block).get();
+    assertWeakSubjectivityWasChecked();
+    assertImportFailed(result, FailureReason.INTERNAL_ERROR);
   }
 
   @Test
@@ -301,5 +323,14 @@ public class BlockImporterTest {
       final BlockImportResult result, final BlockImportResult.FailureReason expectedReason) {
     assertThat(result.isSuccessful()).isFalse();
     assertThat(result.getFailureReason()).isEqualTo(expectedReason);
+  }
+
+  private void assertWeakSubjectivityWasChecked() {
+    SafeFuture<CheckpointState> finalizedCheckpoint =
+        recentChainData.getStore().retrieveFinalizedCheckpointAndState();
+    assertThat(finalizedCheckpoint).isCompleted();
+    UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
+    verify(weakSubjectivityValidator)
+        .validateLatestFinalizedCheckpoint(finalizedCheckpoint.join(), currentSlot);
   }
 }
