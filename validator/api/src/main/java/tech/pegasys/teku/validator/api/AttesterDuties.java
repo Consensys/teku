@@ -22,7 +22,7 @@ public class AttesterDuties {
   private final BLSPublicKey publicKey;
   private final int validatorIndex;
   private final int committeeLength;
-  // the committee index of the committee that includes the specified validator
+  /** the committee index of the committee that includes the specified validator */
   private final int committeeIndex;
   // index of the validator in the committee
   private final int validatorCommitteeIndex;
