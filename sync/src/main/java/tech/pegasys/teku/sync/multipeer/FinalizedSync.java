@@ -275,6 +275,9 @@ public class FinalizedSync implements Sync {
     }
     startNextImport();
     fillRetrievingQueue();
+    if (activeBatches.isEmpty()) {
+      syncResult.complete(SyncResult.COMPLETE);
+    }
   }
 
   private Boolean batchesFormChain(final Batch previousBatch, final Batch secondBatch) {

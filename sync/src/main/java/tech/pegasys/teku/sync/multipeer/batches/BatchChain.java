@@ -102,6 +102,10 @@ public class BatchChain implements Iterable<Batch> {
     return batches.contains(batch);
   }
 
+  public boolean isEmpty() {
+    return batches.isEmpty();
+  }
+
   @Override
   public Iterator<Batch> iterator() {
     return batches.iterator();

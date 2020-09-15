@@ -38,6 +38,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -98,7 +99,7 @@ class FinalizedSyncTest {
 
   @Test
   void shouldStartSyncFromEmptyDatabase() {
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     assertThat(batches).hasSize(5);
 
@@ -122,7 +123,7 @@ class FinalizedSyncTest {
   void shouldImportFirstBatchWhenSecondBatchFormsChain() {
     final SignedBlockAndState block5 = chainBuilder.generateBlockAtSlot(5);
     final SignedBlockAndState block26 = chainBuilder.generateBlockAtSlot(26);
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     // First two batches come back, each with a block that matches correctly
     final StubBatch batch1 = batches.get(0);
@@ -138,7 +139,7 @@ class FinalizedSyncTest {
   @Test
   void shouldMarkEmptyBatchesAsCompleteAndConfirmedWhenLaterBatchMatchesChainStart() {
     final SignedBeaconBlock block = chainBuilder.generateBlockAtSlot(BATCH_SIZE.plus(1)).getBlock();
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     final StubBatch batch0 = batches.get(0);
     final StubBatch batch1 = batches.get(1);
@@ -154,7 +155,7 @@ class FinalizedSyncTest {
   void shouldResumeSyncFromFinalizedEpochAfterRestart() {
     // TODO: Should restore the ability to find the common ancestor and sync from there
     storageSystem.chainUpdater().finalizeEpoch(ONE);
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     assertThatBatch(batches.get(0)).hasFirstSlot(compute_start_slot_at_epoch(ONE).plus(1));
   }
@@ -163,7 +164,7 @@ class FinalizedSyncTest {
   void shouldNotRequestBlocksPastTargetChainHead() {
     final UInt64 headSlot = BATCH_SIZE.times(3).minus(5);
     targetChain = chainWith(new SlotAndBlockRoot(headSlot, dataStructureUtil.randomBytes32()));
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     assertThat(batches).hasSize(3);
     assertThatBatch(batches.get(2)).hasLastSlot(headSlot);
@@ -175,7 +176,8 @@ class FinalizedSyncTest {
     final SignedBeaconBlock block3 = chainBuilder.generateBlockAtSlot(3).getBlock();
     final SignedBeaconBlock headBlock = chainBuilder.generateBlockAtSlot(headSlot).getBlock();
     targetChain = chainWith(new SlotAndBlockRoot(headSlot, headBlock.getRoot()));
-    sync.syncToChain(targetChain);
+    final SafeFuture<SyncResult> result = sync.syncToChain(targetChain);
+    assertThat(result).isNotDone();
 
     assertThat(batches).hasSize(2);
     final StubBatch batch1 = batches.get(0);
@@ -183,14 +185,17 @@ class FinalizedSyncTest {
 
     batch1.receiveBlocks(block3);
     batch2.receiveBlocks(headBlock);
+    assertThat(result).isNotDone();
 
     // Both batches should be imported
     assertBatchImported(batch1);
 
     batch1.getImportResult().complete(IMPORTED_ALL_BLOCKS);
+    assertThat(result).isNotDone();
 
     assertBatchImported(batch2);
     batch2.getImportResult().complete(IMPORTED_ALL_BLOCKS);
+    assertThat(result).isCompletedWithValue(SyncResult.COMPLETE);
   }
 
   @Test
@@ -198,7 +203,7 @@ class FinalizedSyncTest {
     final UInt64 lastSlot = UInt64.valueOf(2);
     targetChain = chainWith(new SlotAndBlockRoot(lastSlot, dataStructureUtil.randomBytes32()));
 
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     final StubBatch batch0 = batches.get(0);
     assertThatBatch(batch0).hasLastSlot(lastSlot);
@@ -217,7 +222,7 @@ class FinalizedSyncTest {
         chainWith(
             new SlotAndBlockRoot(BATCH_SIZE.times(2).minus(1), dataStructureUtil.randomBytes32()));
 
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     final StubBatch batch0 = batches.get(0);
     final StubBatch batch1 = batches.get(1);
@@ -239,7 +244,7 @@ class FinalizedSyncTest {
         chainWith(
             new SlotAndBlockRoot(BATCH_SIZE.times(2).minus(1), dataStructureUtil.randomBytes32()));
 
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     final StubBatch batch0 = batches.get(0);
     final StubBatch batch1 = batches.get(1);
@@ -259,7 +264,7 @@ class FinalizedSyncTest {
         chainWith(
             new SlotAndBlockRoot(BATCH_SIZE.times(2).minus(1), dataStructureUtil.randomBytes32()));
 
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     assertThat(batches).hasSize(2);
     final StubBatch batch0 = batches.get(0);
@@ -276,7 +281,7 @@ class FinalizedSyncTest {
 
   @Test
   void shouldRejectFirstBatchIfItDoesNotBuildOnKnownBlock() {
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     final StubBatch firstBatch = batches.get(0);
     firstBatch.receiveBlocks(dataStructureUtil.randomSignedBeaconBlock(1));
@@ -288,7 +293,7 @@ class FinalizedSyncTest {
   void shouldNotImportBatchUntilConfirmed() {
     final SignedBeaconBlock lastBlockOfFirstBatch =
         chainBuilder.generateBlockAtSlot(BATCH_SIZE).getBlock();
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     final StubBatch firstBatch = batches.get(0);
     firstBatch.receiveBlocks(lastBlockOfFirstBatch);
@@ -303,7 +308,7 @@ class FinalizedSyncTest {
   @Test
   void shouldConfirmLaterBatchWhenPreviousAndNextBatchFormChain() {
     chainBuilder.generateBlockAtSlot(1);
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     final StubBatch batch1 = batches.get(1);
     final StubBatch batch2 = batches.get(2);
@@ -322,7 +327,7 @@ class FinalizedSyncTest {
   @Test
   void shouldImportPreviouslyConfirmedBatchesWhenEarlierBatchConfirmed() {
     final SignedBeaconBlock block1 = chainBuilder.generateBlockAtSlot(1).getBlock();
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     final StubBatch batch0 = batches.get(0);
     final StubBatch batch1 = batches.get(1);
@@ -357,7 +362,7 @@ class FinalizedSyncTest {
 
   @Test
   void shouldNotMarkBatchAsContestedWhenNextBatchIsEmpty() {
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     final StubBatch batch0 = batches.get(0);
     final StubBatch batch1 = batches.get(1);
@@ -377,7 +382,7 @@ class FinalizedSyncTest {
 
   @Test
   void shouldMarkBatchAsContestedWhenNextBatchDoesNotLineUp() {
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     final StubBatch batch0 = batches.get(0);
     final StubBatch batch1 = batches.get(1);
@@ -406,7 +411,7 @@ class FinalizedSyncTest {
   void shouldLimitTheNumberOfBatchesWithBlocksPendingImport() {
     // Avoid the queue of blocks to import getting too long
     // but allow any number of empty batches since we can only confirm blocks, not empty batches
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     assertThat(batches).hasSize(5);
 
@@ -433,7 +438,7 @@ class FinalizedSyncTest {
 
   @Test
   void shouldMarkAllBatchesInChainAsInvalidWhenBlockFailsToImport() {
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     final StubBatch batch0 = batches.get(0);
     final StubBatch batch1 = batches.get(1);
@@ -465,7 +470,7 @@ class FinalizedSyncTest {
 
   @Test
   void shouldRemoveBatchFromActiveSetWhenImportCompletesSuccessfully() {
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     final StubBatch batch0 = batches.get(0);
     final StubBatch batch1 = batches.get(1);
@@ -482,7 +487,7 @@ class FinalizedSyncTest {
   @Test
   void shouldSwitchChains() {
     // Start sync to first chain
-    sync.syncToChain(targetChain);
+    final SafeFuture<SyncResult> firstSyncResult = sync.syncToChain(targetChain);
 
     assertThat(batches).hasSize(5);
     final StubBatch batch0 = batches.get(0);
@@ -490,7 +495,8 @@ class FinalizedSyncTest {
 
     targetChain =
         chainWith(new SlotAndBlockRoot(UInt64.valueOf(2000), dataStructureUtil.randomBytes32()));
-    sync.syncToChain(targetChain);
+    final SafeFuture<SyncResult> secondSyncResult = sync.syncToChain(targetChain);
+    assertThat(firstSyncResult).isCompletedWithValue(SyncResult.TARGET_CHANGED);
 
     // It should optimistically assume the new chain is an extension of the old one and just keep
     // adding batches of block to the end
@@ -499,12 +505,13 @@ class FinalizedSyncTest {
     assertThat(batches).hasSize(6);
     final StubBatch batch5 = batches.get(5);
     assertThatBatch(batch5).hasFirstSlot(batch4.getLastSlot().plus(1));
+    assertThat(secondSyncResult).isNotDone();
   }
 
   @Test
   void shouldRestartSyncFromFinalizedCheckpointWhenBatchFromNewChainDoesNotLineUp() {
     // Start sync to first chain
-    sync.syncToChain(targetChain);
+    final SafeFuture<SyncResult> firstSyncResult = sync.syncToChain(targetChain);
 
     assertThat(batches).hasSize(5);
     final StubBatch batch0 = batches.get(0);
@@ -512,7 +519,8 @@ class FinalizedSyncTest {
 
     targetChain =
         chainWith(new SlotAndBlockRoot(UInt64.valueOf(2000), dataStructureUtil.randomBytes32()));
-    sync.syncToChain(targetChain);
+    final SafeFuture<SyncResult> secondSyncResult = sync.syncToChain(targetChain);
+    assertThat(firstSyncResult).isCompletedWithValue(SyncResult.TARGET_CHANGED);
 
     // It should optimistically assume the new chain is an extension of the old one and just keep
     // adding batches of block to the end
@@ -541,11 +549,12 @@ class FinalizedSyncTest {
     assertThat(batches).hasSize(5);
     assertThatBatch(batches.get(0))
         .hasFirstSlot(compute_start_slot_at_epoch(recentChainData.getFinalizedEpoch()).plus(1));
+    assertThat(secondSyncResult).isNotDone();
   }
 
   @Test
   void shouldImportNextConfirmedBatchWhenFirstBatchImportCompletes() {
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     final StubBatch batch0 = batches.get(0);
     final StubBatch batch1 = batches.get(1);
@@ -565,7 +574,7 @@ class FinalizedSyncTest {
 
   @Test
   void shouldProgressWhenThereAreManyEmptyBatchesInARow() {
-    sync.syncToChain(targetChain);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     final int initialBatchCount = batches.size();
     // All the requested batches are empty
