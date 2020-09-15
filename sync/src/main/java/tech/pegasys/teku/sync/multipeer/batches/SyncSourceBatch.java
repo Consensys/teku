@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
@@ -147,6 +148,9 @@ public class SyncSourceBatch implements Batch {
 
   @Override
   public void markAsInvalid() {
+    if (!contested) {
+      conflictResolutionStrategy.reportInvalidBatch(this, currentSyncSource.orElseThrow());
+    }
     currentSyncSource = Optional.empty();
     reset();
   }
@@ -186,15 +190,19 @@ public class SyncSourceBatch implements Batch {
 
   private void handleRequestErrors(final Throwable error) {
     eventThread.checkOnEventThread();
+    awaitingBlocks = false;
     final Throwable rootCause = Throwables.getRootCause(error);
     if (rootCause instanceof PeerDisconnectedException) {
       LOG.debug("Failed to retrieve blocks because peer disconnected", error);
-      currentSyncSource = Optional.empty();
+      markAsInvalid();
+    } else if (rootCause instanceof BlocksByRangeResponseInvalidResponseException) {
+      LOG.debug("Inconsistent blocks returned from blocks by range request", error);
+      markAsInvalid();
     } else {
       LOG.debug("Error while requesting blocks", error);
+      currentSyncSource = Optional.empty();
+      reset();
     }
-    reset();
-    awaitingBlocks = false;
   }
 
   private void reset() {
@@ -240,9 +248,8 @@ public class SyncSourceBatch implements Batch {
     private final List<SignedBeaconBlock> blocks = new ArrayList<>();
 
     @Override
-    public SafeFuture<?> onResponse(final SignedBeaconBlock response) {
-      // TODO: Verify the blocks form a chain internally and with previous blocks in this batch
-      blocks.add(response);
+    public SafeFuture<?> onResponse(final SignedBeaconBlock block) {
+      blocks.add(block);
       return SafeFuture.COMPLETE;
     }
 

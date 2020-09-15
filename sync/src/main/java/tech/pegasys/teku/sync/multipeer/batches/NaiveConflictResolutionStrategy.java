@@ -14,11 +14,21 @@
 package tech.pegasys.teku.sync.multipeer.batches;
 
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 
-public class PessimisticConflictResolutionStrategy implements ConflictResolutionStrategy {
+public class NaiveConflictResolutionStrategy implements ConflictResolutionStrategy {
 
   @Override
   public void verifyBatch(final Batch batch, final SyncSource originalSource) {
+    // Re-download all contested batches, but no penalties are applied to peers
+    // Just hope it works out better next time.
     batch.markAsInvalid();
+  }
+
+  @Override
+  public void reportInvalidBatch(final Batch batch, final SyncSource source) {
+    // Disconnect any peer that gives us clearly invalid data.
+    // This assumes malice where a simple chain reorg may have explained it
+    source.disconnectCleanly(DisconnectReason.REMOTE_FAULT).reportExceptions();
   }
 }

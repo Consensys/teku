@@ -35,7 +35,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException.InvalidResponseType;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 
 public class SyncSourceBatchTest extends AbstractBatchTest {
@@ -120,6 +123,46 @@ public class SyncSourceBatchTest extends AbstractBatchTest {
     verify(conflictResolutionStrategy).verifyBatch(batch, getSyncSource(batch));
   }
 
+  @Test
+  void shouldBeInvalidWhenInconsistentResponseReceived() {
+    final Runnable callback = mock(Runnable.class);
+    final Batch batch = createBatch(10, 10);
+    batch.requestMoreBlocks(callback);
+
+    requestError(
+        batch,
+        new BlocksByRangeResponseInvalidResponseException(
+            InvalidResponseType.BLOCK_PARENT_ROOT_DOES_NOT_MATCH));
+
+    verify(conflictResolutionStrategy).reportInvalidBatch(batch, getSyncSource(batch));
+    verify(callback).run();
+    // Invalid blocks are discarded
+    assertThatBatch(batch).isEmpty();
+    assertThatBatch(batch).isNotComplete();
+  }
+
+  @Test
+  void shouldReportAsInvalidToConflictResolutionStrategyWhenMarkedAsInvalid() {
+    final Batch batch = createBatch(10, 10);
+    batch.requestMoreBlocks(() -> {});
+    batch.markAsInvalid();
+
+    verify(conflictResolutionStrategy).reportInvalidBatch(batch, getSyncSource(batch));
+  }
+
+  @Test
+  void shouldNotReportAsInvalidToConflictResolutionStrategyWhenAlreadyContested() {
+    final Batch batch = createBatch(10, 10);
+    batch.requestMoreBlocks(() -> {});
+    batch.markAsContested();
+
+    verify(conflictResolutionStrategy).verifyBatch(batch, getSyncSource(batch));
+    // Conflict resolution determines the batch is invalid
+    batch.markAsInvalid();
+    // But it shouldn't be notified again
+    verifyNoMoreInteractions(conflictResolutionStrategy);
+  }
+
   @Override
   protected Batch createBatch(final long startSlot, final long count) {
     final List<StubSyncSource> syncSources = new ArrayList<>();
@@ -184,6 +227,11 @@ public class SyncSourceBatchTest extends AbstractBatchTest {
       currentRequest = Optional.of(request);
       currentListener = Optional.of(listener);
       return request;
+    }
+
+    @Override
+    public SafeFuture<?> disconnectCleanly(final DisconnectReason reason) {
+      return SafeFuture.COMPLETE;
     }
 
     public void assertRequestedBlocks(final long startSlot, final long count) {

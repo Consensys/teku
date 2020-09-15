@@ -28,4 +28,15 @@ public interface ConflictResolutionStrategy {
    * @param originalSource the {@link SyncSource} that original provided the data for the batch
    */
   void verifyBatch(Batch batch, SyncSource originalSource);
+
+  /**
+   * Report that a batch was detected as invalid so that any reputation changes can be applied.
+   *
+   * <p>Note that this is not called when {@link #verifyBatch(Batch, SyncSource)} marks the batch as
+   * invalid.
+   *
+   * @param batch the invalid batch
+   * @param source the source that provided the batch data
+   */
+  void reportInvalidBatch(Batch batch, SyncSource source);
 }

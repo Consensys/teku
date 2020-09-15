@@ -15,6 +15,8 @@ package tech.pegasys.teku.sync.multipeer.batches;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.sync.multipeer.batches.BatchAssert.assertThatBatch;
 import static tech.pegasys.teku.sync.multipeer.chains.TargetChainTestUtil.chainWith;
 
@@ -245,6 +247,26 @@ abstract class AbstractBatchTest {
     requestError(batch, new RuntimeException("Oops"));
 
     assertThatBatch(batch).isNotAwaitingBlocks();
+  }
+
+  @Test
+  void requestMoreBlocks_shouldInvokeCallbackWhenRequestComplete() {
+    final Runnable callback = mock(Runnable.class);
+    final Batch batch = createBatch(5, 2);
+    batch.requestMoreBlocks(callback);
+    receiveBlocks(batch);
+
+    verify(callback).run();
+  }
+
+  @Test
+  void requestMoreBlocks_shouldInvokeCallbackWhenRequestFails() {
+    final Runnable callback = mock(Runnable.class);
+    final Batch batch = createBatch(5, 2);
+    batch.requestMoreBlocks(callback);
+    requestError(batch, new RuntimeException("Oops"));
+
+    verify(callback).run();
   }
 
   @Test

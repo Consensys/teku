@@ -31,7 +31,7 @@ public class BatchFactory {
     eventThread.checkOnEventThread();
     final Supplier<SyncSource> syncSourceProvider = () -> selectRandomPeer(chain.getPeers());
     final ConflictResolutionStrategy conflictResolutionStrategy =
-        new PessimisticConflictResolutionStrategy();
+        new NaiveConflictResolutionStrategy();
     return new EventThreadOnlyBatch(
         eventThread,
         new SyncSourceBatch(
