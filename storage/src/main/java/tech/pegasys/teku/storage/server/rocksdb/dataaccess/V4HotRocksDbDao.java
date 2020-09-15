@@ -84,6 +84,11 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
   }
 
   @Override
+  public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
+    return db.get(V4SchemaHot.WEAK_SUBJECTIVITY_CHECKPOINT);
+  }
+
+  @Override
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks() {
     return db.getAll(V4SchemaHot.HOT_BLOCKS_BY_ROOT);
   }
@@ -174,6 +179,16 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
     @Override
     public void setFinalizedCheckpoint(final Checkpoint checkpoint) {
       transaction.put(V4SchemaHot.FINALIZED_CHECKPOINT, checkpoint);
+    }
+
+    @Override
+    public void setWeakSubjectivityCheckpoint(Checkpoint checkpoint) {
+      transaction.put(V4SchemaHot.WEAK_SUBJECTIVITY_CHECKPOINT, checkpoint);
+    }
+
+    @Override
+    public void clearWeakSubjectivityCheckpoint() {
+      transaction.delete(V4SchemaHot.WEAK_SUBJECTIVITY_CHECKPOINT);
     }
 
     @Override
