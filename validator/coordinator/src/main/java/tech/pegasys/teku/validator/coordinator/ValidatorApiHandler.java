@@ -403,7 +403,17 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BeaconState state, final UInt64 epoch) {
     final List<ProposerDuties> result = new ArrayList<>();
     getProposalSlotsForEpoch(state, epoch)
-        .forEach((slot, publicKey) -> result.add(new ProposerDuties(publicKey, slot)));
+        .forEach(
+            (slot, publicKey) -> {
+              Optional<Integer> maybeIndex = ValidatorsUtil.getValidatorIndex(state, publicKey);
+              if (maybeIndex.isEmpty()) {
+                throw new IllegalStateException(
+                    String.format(
+                        "Assigned public key %s could not be found at epoch %s",
+                        publicKey.toString(), epoch.toString()));
+              }
+              result.add(new ProposerDuties(publicKey, maybeIndex.get(), slot));
+            });
     return result;
   }
 

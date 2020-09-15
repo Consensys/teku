@@ -34,6 +34,13 @@ public class ProposerDuty {
               + "48-bytes, hex encoded with 0x prefix, case insensitive.")
   public final BLSPubKey pubkey;
 
+  @JsonProperty("validator_index")
+  @Schema(
+      type = "string",
+      example = EXAMPLE_UINT64,
+      description = "Index of validator in validator registry")
+  public final UInt64 validatorIndex;
+
   @JsonProperty("slot")
   @Schema(
       type = "string",
@@ -42,8 +49,11 @@ public class ProposerDuty {
   public final UInt64 slot;
 
   public ProposerDuty(
-      @JsonProperty("pubkey") final BLSPubKey pubkey, @JsonProperty("slot") final UInt64 slot) {
+      @JsonProperty("pubkey") final BLSPubKey pubkey,
+      @JsonProperty("validator_index") final int validatorIndex,
+      @JsonProperty("slot") final UInt64 slot) {
     this.pubkey = pubkey;
+    this.validatorIndex = UInt64.valueOf(validatorIndex);
     this.slot = slot;
   }
 
@@ -52,11 +62,13 @@ public class ProposerDuty {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     final ProposerDuty that = (ProposerDuty) o;
-    return Objects.equals(pubkey, that.pubkey) && Objects.equals(slot, that.slot);
+    return Objects.equals(pubkey, that.pubkey)
+        && Objects.equals(validatorIndex, that.validatorIndex)
+        && Objects.equals(slot, that.slot);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(pubkey, slot);
+    return Objects.hash(pubkey, validatorIndex, slot);
   }
 }

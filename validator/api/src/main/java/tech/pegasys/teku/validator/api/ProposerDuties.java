@@ -18,15 +18,21 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ProposerDuties {
   private final BLSPublicKey publicKey;
+  private final int validatorIndex;
   private final UInt64 slot;
 
-  public ProposerDuties(final BLSPublicKey publicKey, final UInt64 slot) {
+  public ProposerDuties(final BLSPublicKey publicKey, final int validatorIndex, final UInt64 slot) {
     this.publicKey = publicKey;
+    this.validatorIndex = validatorIndex;
     this.slot = slot;
   }
 
   public BLSPublicKey getPublicKey() {
     return publicKey;
+  }
+
+  public int getValidatorIndex() {
+    return validatorIndex;
   }
 
   public UInt64 getSlot() {

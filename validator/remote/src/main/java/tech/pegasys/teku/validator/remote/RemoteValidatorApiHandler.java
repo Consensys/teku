@@ -128,7 +128,10 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private ProposerDuties mapToProposerDuties(final ProposerDuty proposerDuty) {
-    return new ProposerDuties(proposerDuty.pubkey.asBLSPublicKey(), proposerDuty.slot);
+    return new ProposerDuties(
+        proposerDuty.pubkey.asBLSPublicKey(),
+        proposerDuty.validatorIndex.intValue(),
+        proposerDuty.slot);
   }
 
   private AttesterDuties mapToApiAttesterDuties(final AttesterDuty attesterDuty) {
