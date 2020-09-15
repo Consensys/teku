@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
@@ -75,7 +76,7 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
   protected abstract RpcEncoding getEncoding();
 
   @AfterEach
-  public void tearDown() {
+  public void tearDown() throws Exception {
     networkFactory.stopAll();
   }
 
@@ -133,7 +134,7 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
     recentChainData1.updateHead(block2Root, block2.getSlot());
 
-    peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS);
+    Waiter.waitFor(peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS));
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     final SafeFuture<Void> res =
         peer1.requestBlocksByRange(
@@ -169,7 +170,7 @@ public abstract class BeaconBlocksByRangeIntegrationTest {
     final Bytes32 block2Root = block2.getMessage().hash_tree_root();
     recentChainData1.updateHead(block2Root, block2.getSlot());
 
-    peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS);
+    Waiter.waitFor(peer1.disconnectCleanly(DisconnectReason.TOO_MANY_PEERS));
     final SafeFuture<SignedBeaconBlock> res = peer1.requestBlockBySlot(UInt64.ONE);
 
     waitFor(() -> assertThat(res).isDone());

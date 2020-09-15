@@ -72,7 +72,7 @@ public class PeerChainTracker {
         new SlotAndBlockRoot(status.getHeadSlot(), status.getHeadRoot());
     nonFinalizedChains.onPeerStatusUpdated(peer, nonFinalizedChainHead);
 
-    syncController.onTargetChainsUpdated(finalizedChains, nonFinalizedChains);
+    syncController.onTargetChainsUpdated(finalizedChains);
   }
 
   @VisibleForTesting

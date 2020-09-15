@@ -23,6 +23,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -32,7 +33,7 @@ import tech.pegasys.teku.sync.multipeer.batches.BatchChain;
 import tech.pegasys.teku.sync.multipeer.batches.BatchFactory;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 
-public class FinalizedSync {
+public class FinalizedSync implements Sync {
   private static final Logger LOG = LogManager.getLogger();
   private static final int MAX_PENDING_BATCHES = 5;
 
@@ -49,6 +50,7 @@ public class FinalizedSync {
   private UInt64 commonAncestorSlot;
 
   private TargetChain targetChain;
+  private SafeFuture<SyncResult> syncResult = SafeFuture.completedFuture(SyncResult.COMPLETE);
 
   public FinalizedSync(
       final EventThread eventThread,
@@ -68,16 +70,24 @@ public class FinalizedSync {
    * chain, the sync will switch to this new chain.
    *
    * @param targetChain the finalized chain that is the target to sync to
+   * @return a future which completes when the sync finishes
    */
-  void syncToChain(final TargetChain targetChain) {
-    eventThread.execute(() -> switchSyncTarget(targetChain));
+  @Override
+  public SafeFuture<SyncResult> syncToChain(final TargetChain targetChain) {
+    final SafeFuture<SyncResult> result = new SafeFuture<>();
+    eventThread.execute(() -> switchSyncTarget(targetChain, result));
+    return result;
   }
 
-  private void switchSyncTarget(final TargetChain targetChain) {
+  private void switchSyncTarget(
+      final TargetChain targetChain, final SafeFuture<SyncResult> syncResult) {
     LOG.debug("Switching to sync target {}", targetChain.getChainHead());
     eventThread.checkOnEventThread();
+    // Cancel the existing sync
+    this.syncResult.complete(SyncResult.TARGET_CHANGED);
     this.targetChain = targetChain;
     this.commonAncestorSlot = getCommonAncestorSlot();
+    this.syncResult = syncResult;
     fillRetrievingQueue();
   }
 

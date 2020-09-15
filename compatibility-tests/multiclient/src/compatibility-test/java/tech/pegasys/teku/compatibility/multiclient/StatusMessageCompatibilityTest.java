@@ -45,7 +45,7 @@ class StatusMessageCompatibilityTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  public void tearDown() throws Exception {
     networkFactory.stopAll();
     Constants.setConstants("minimal");
   }

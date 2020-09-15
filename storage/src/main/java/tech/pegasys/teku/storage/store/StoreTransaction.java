@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage.store;
 
+import static tech.pegasys.teku.core.stategenerator.CheckpointStateTask.AsyncStateProvider.fromBlockAndState;
+
 import com.google.common.collect.Sets;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +37,7 @@ import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -276,13 +279,36 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     if (inMemoryCheckpointBlockState != null) {
       // Not executing the task via the task queue to avoid caching the result before the tx is
       // committed
-      return new CheckpointStateTask(
-              checkpoint,
-              root ->
-                  SafeFuture.completedFuture(Optional.of(inMemoryCheckpointBlockState.getState())))
+      return new CheckpointStateTask(checkpoint, fromBlockAndState(inMemoryCheckpointBlockState))
           .performTask();
     }
     return store.retrieveCheckpointState(checkpoint);
+  }
+
+  @Override
+  public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
+    if (this.finalized_checkpoint.isEmpty()) {
+      return store.retrieveFinalizedCheckpointAndState();
+    }
+
+    final Checkpoint finalizedCheckpoint = getFinalizedCheckpoint();
+    final SafeFuture<Optional<BeaconState>> stateFuture =
+        retrieveCheckpointState(finalizedCheckpoint);
+    final SafeFuture<Optional<SignedBeaconBlock>> blockFuture =
+        retrieveSignedBlock(finalizedCheckpoint.getRoot());
+
+    return SafeFuture.allOf(stateFuture, blockFuture)
+        .thenCompose(
+            (__) -> {
+              final Optional<BeaconState> state = stateFuture.join();
+              final Optional<SignedBeaconBlock> block = blockFuture.join();
+              if (state.isEmpty() || block.isEmpty()) {
+                return store.retrieveFinalizedCheckpointAndState();
+              } else {
+                return SafeFuture.completedFuture(
+                    new CheckpointState(finalizedCheckpoint, block.get(), state.get()));
+              }
+            });
   }
 
   @Override

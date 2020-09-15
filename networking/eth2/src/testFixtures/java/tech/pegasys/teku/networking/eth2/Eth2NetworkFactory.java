@@ -32,6 +32,7 @@ import java.util.OptionalInt;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -46,6 +47,7 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -91,8 +93,9 @@ public class Eth2NetworkFactory {
     return new Eth2P2PNetworkBuilder();
   }
 
-  public void stopAll() {
-    networks.forEach(P2PNetwork::stop);
+  public void stopAll() throws InterruptedException, ExecutionException, TimeoutException {
+    Waiter.waitFor(
+        SafeFuture.allOf(networks.stream().map(P2PNetwork::stop).toArray(SafeFuture[]::new)));
   }
 
   public class Eth2P2PNetworkBuilder {
@@ -142,7 +145,7 @@ public class Eth2NetworkFactory {
                 "Port conflict detected, retrying with a new port. Original message: {}",
                 e.getMessage());
             attempt++;
-            network.stop();
+            Waiter.waitFor(network.stop());
           } else {
             throw e;
           }

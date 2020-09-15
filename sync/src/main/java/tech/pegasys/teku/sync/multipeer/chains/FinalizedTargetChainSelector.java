@@ -18,8 +18,9 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.sync.multipeer.ChainSelector;
 
-public class FinalizedTargetChainSelector {
+public class FinalizedTargetChainSelector implements ChainSelector {
 
   private static final int SYNC_THRESHOLD_IN_EPOCHS = 1;
   private final RecentChainData recentChainData;
@@ -28,6 +29,7 @@ public class FinalizedTargetChainSelector {
     this.recentChainData = recentChainData;
   }
 
+  @Override
   public Optional<TargetChain> selectTargetChain(final TargetChains chains) {
     final UInt64 ourFinalizedEpoch = recentChainData.getFinalizedEpoch();
     final UInt64 minimumSlot =
