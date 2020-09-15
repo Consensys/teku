@@ -13,28 +13,30 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IntSummaryStatistics;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
-import org.web3j.abi.datatypes.generated.Uint64;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.SSZImmutableCollection;
-import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
 public class PerformanceTracker implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -83,24 +85,72 @@ public class PerformanceTracker implements SlotEventsChannel {
   }
 
   private void outputAttestationPerformanceInfo(final UInt64 epoch) {
+    // Attestations can be included in either the epoch they were produced in or in the following epoch.
+    // Thus, the most recent attestation performance we can evaluate is not the last epoch, but the epoch before.
     UInt64 previousEpoch = epoch.decrement();
+    UInt64 nextEpoch = epoch.increment();
 
-    Map<UInt64, List<Attestation>> attestations = getAttestationsInEpochs(epoch.decrement(), epoch);
+    // Get included attestations for the given epochs in a map from slot to included attestations in block list
+    Map<UInt64, List<Attestation>> attestations = getAttestationsIncludedInEpochs(previousEpoch, nextEpoch);
 
+    UInt64 previousEpochStartSlot = compute_start_slot_at_epoch(previousEpoch);
+    UInt64 nextEpochStartSlot = compute_start_slot_at_epoch(nextEpoch);
+    BeaconState state = recentChainData.getBestState().orElseThrow();
+
+    int correctTargetCount = 0;
+    int correctHeadBlockCount = 0;
+
+    // Get the sent attestations
     List<Attestation> sentAttestations = sentAttestationsByEpoch.get(previousEpoch);
+
+    List<Integer> inclusionDistances = new ArrayList<>();
+    for (Attestation sentAttestation : sentAttestations) {
+      // Check if the sent attestation is included in any of the block attestation lists in the last 2 epochs.
+      UInt64 attestationSlot = sentAttestation.getData().getSlot();
+      for (UInt64 currSlot = previousEpochStartSlot;
+           currSlot.isLessThan(nextEpochStartSlot);
+           currSlot = currSlot.increment()) {
+        if (attestations.containsKey(currSlot)) {
+          if (checkIfAttestationIsIncludedInList(sentAttestation, attestations.get(currSlot))) {
+            inclusionDistances.add(currSlot.minus(attestationSlot).intValue());
+          }
+        }
+      }
+
+      // Check if the attestation had correct target
+      Bytes32 attestationTargetRoot = sentAttestation.getData().getTarget().getRoot();
+      if (attestationTargetRoot.equals(get_block_root(state, previousEpoch))) {
+        correctTargetCount++;
+
+        // Check if the attestation had correct head block root
+        Bytes32 attestationHeadBlockRoot = sentAttestation.getData().getBeacon_block_root();
+        if (attestationHeadBlockRoot.equals(get_block_root_at_slot(state, attestationSlot))) {
+          correctHeadBlockCount++;
+        }
+      }
+    }
+
+    IntSummaryStatistics inclusionDistancesStatistics =
+            inclusionDistances.stream().mapToInt(x -> x).summaryStatistics();
     long numberOfSentAttestations = sentAttestations.size();
-    long numberOfIncludedSentAttestations =
-        sentAttestations.stream()
-            .filter(a -> checkIfAttestationIsIncludedInList(a, attestations))
-            .count();
+    long numberOfIncludedAttestations = inclusionDistancesStatistics.getCount();
 
     LOG.info(
-        "Number of sent attestations: {} | Number of sent attestations included on chain: {}.",
-        numberOfSentAttestations,
-        numberOfIncludedSentAttestations);
-    LOG.info(
-        "Attestation inclusion at: {}%",
-        getPercentage(numberOfIncludedSentAttestations, numberOfSentAttestations));
+            " ===== Attestation Performance Information ===== \n" +
+                    " - Number of sent attestations: {}\n" +
+                    " - Number of sent attestations included on chain: {}\n" +
+                    " - Inclusion at: {}%\n" +
+                    " - Inclusion distances: average: {}, min: {}, max: {}\n" +
+                    " - %age with correct target: {}\n" +
+                    " - %age with correct head block root: {}\n",
+            numberOfSentAttestations,
+            numberOfIncludedAttestations,
+            getPercentage(numberOfIncludedAttestations, numberOfSentAttestations),
+            inclusionDistancesStatistics.getAverage(),
+            inclusionDistancesStatistics.getMin(),
+            inclusionDistancesStatistics.getMax(),
+            getPercentage(correctTargetCount, numberOfSentAttestations),
+            getPercentage(correctHeadBlockCount, numberOfSentAttestations));
   }
 
   private boolean checkIfAttestationIsIncludedInList(
@@ -123,11 +173,11 @@ public class PerformanceTracker implements SlotEventsChannel {
 
   private List<BeaconBlock> getBlocksInEpochs(UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
     UInt64 epochStartSlot = compute_start_slot_at_epoch(startEpochInclusive);
-    UInt64 nextEpochStartSlot = compute_start_slot_at_epoch(endEpochExclusive);
+    UInt64 endEpochStartSlot = compute_start_slot_at_epoch(endEpochExclusive);
 
     List<Bytes32> blockRootsInEpoch = new ArrayList<>();
     for (UInt64 currSlot = epochStartSlot;
-        currSlot.isLessThan(nextEpochStartSlot);
+        currSlot.isLessThan(endEpochStartSlot);
         currSlot = currSlot.increment()) {
       recentChainData.getBlockRootBySlot(currSlot).ifPresent(blockRootsInEpoch::add);
     }
@@ -140,7 +190,7 @@ public class PerformanceTracker implements SlotEventsChannel {
         .collect(Collectors.toList());
   }
 
-  private Map<UInt64, List<Attestation>> getAttestationsInEpochs(UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
+  private Map<UInt64, List<Attestation>> getAttestationsIncludedInEpochs(UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
     return getBlocksInEpochs(startEpochInclusive, endEpochExclusive)
             .stream()
             .collect(Collectors.toMap(
