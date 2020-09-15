@@ -14,7 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine;
-import tech.pegasys.teku.config.TekuConfigurationBuilder;
+import tech.pegasys.teku.config.TekuConfiguration;
 
 public class WeakSubjectivityOptions {
   // TODO(#2779) - Make this option public when we're ready
@@ -26,7 +26,7 @@ public class WeakSubjectivityOptions {
       hidden = true)
   private String weakSubjectivityCheckpoint = "";
 
-  public TekuConfigurationBuilder configure(TekuConfigurationBuilder builder) {
+  public TekuConfiguration.Builder configure(TekuConfiguration.Builder builder) {
     return builder.weakSubjectivity(
         wsBuilder -> {
           if (!weakSubjectivityCheckpoint.isBlank()) {

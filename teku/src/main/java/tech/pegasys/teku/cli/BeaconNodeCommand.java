@@ -60,7 +60,6 @@ import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
 import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.config.TekuConfigurationBuilder;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
@@ -324,7 +323,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   protected TekuConfiguration tekuConfiguration() {
-    TekuConfigurationBuilder builder = TekuConfiguration.builder();
+    TekuConfiguration.Builder builder = TekuConfiguration.builder();
 
     builder.globalConfig(this::buildGlobalConfiguration);
     weakSubjectivityOptions.configure(builder);
