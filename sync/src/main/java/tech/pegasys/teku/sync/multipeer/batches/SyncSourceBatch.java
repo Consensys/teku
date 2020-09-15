@@ -146,7 +146,10 @@ public class SyncSourceBatch implements Batch {
   }
 
   @Override
-  public void markAsInvalid() {}
+  public void markAsInvalid() {
+    currentSyncSource = Optional.empty();
+    reset();
+  }
 
   @Override
   public void requestMoreBlocks(final Runnable callback) {

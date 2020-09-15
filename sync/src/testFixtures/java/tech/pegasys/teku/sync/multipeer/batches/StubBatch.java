@@ -38,7 +38,7 @@ public class StubBatch implements Batch {
   private boolean complete = false;
   private boolean contested = false;
   private boolean firstBlockConfirmed = false;
-  private boolean lastBlockCorrect = false;
+  private boolean lastBlockConfirmed = false;
 
   public StubBatch(final TargetChain targetChain, final UInt64 firstSlot, final UInt64 count) {
     checkArgument(
@@ -113,7 +113,7 @@ public class StubBatch implements Batch {
 
   @Override
   public boolean isConfirmed() {
-    return firstBlockConfirmed && lastBlockCorrect;
+    return firstBlockConfirmed && lastBlockConfirmed;
   }
 
   @Override
@@ -133,7 +133,7 @@ public class StubBatch implements Batch {
 
   @Override
   public void markLastBlockConfirmed() {
-    lastBlockCorrect = true;
+    lastBlockConfirmed = true;
   }
 
   @Override
@@ -168,6 +168,11 @@ public class StubBatch implements Batch {
   @Override
   public void markAsInvalid() {
     invalid = true;
+    complete = false;
+    blocks.clear();
+    firstBlockConfirmed = false;
+    lastBlockConfirmed = false;
+    contested = false;
   }
 
   // Real batch would just reset and select a different peer to retrieve from
@@ -188,7 +193,7 @@ public class StubBatch implements Batch {
         .add("invalid", invalid)
         .add("complete", complete)
         .add("firstBlockCorrect", firstBlockConfirmed)
-        .add("lastBlockCorrect", lastBlockCorrect)
+        .add("lastBlockCorrect", lastBlockConfirmed)
         .toString();
   }
 }

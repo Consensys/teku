@@ -19,7 +19,6 @@ import static tech.pegasys.teku.sync.multipeer.batches.BatchAssert.assertThatBat
 import static tech.pegasys.teku.sync.multipeer.chains.TargetChainTestUtil.chainWith;
 
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -255,8 +254,26 @@ abstract class AbstractBatchTest {
   }
 
   @Test
-  @Disabled
-  void markInvalid_shouldDoSomethingGood() {}
+  void markInvalid_shouldDiscardCurrentStateAndRerequestData() {
+    final Batch batch = createBatch(5, 10);
+    batch.requestMoreBlocks(() -> {});
+    receiveBlocks(
+        batch,
+        dataStructureUtil.randomSignedBeaconBlock(6),
+        dataStructureUtil.randomSignedBeaconBlock(14));
+    assertThatBatch(batch).isComplete();
+
+    batch.markAsInvalid();
+
+    // Discards the current blocks and is no longer complete
+    assertThatBatch(batch).isNotComplete();
+    assertThatBatch(batch).isEmpty();
+
+    final SignedBeaconBlock realBlock = dataStructureUtil.randomSignedBeaconBlock(12);
+    batch.requestMoreBlocks(() -> {});
+    receiveBlocks(batch, realBlock);
+    assertThat(batch.getBlocks()).containsExactly(realBlock);
+  }
 
   protected abstract Batch createBatch(final long startSlot, final long count);
 
