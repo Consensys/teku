@@ -70,7 +70,7 @@ class FinalizedSyncTest {
       chainWith(new SlotAndBlockRoot(UInt64.valueOf(1000), dataStructureUtil.randomBytes32()));
 
   private final FinalizedSync sync =
-      new FinalizedSync(eventThread, recentChainData, batchImporter, batchFactory, BATCH_SIZE);
+      FinalizedSync.create(eventThread, recentChainData, batchImporter, batchFactory, BATCH_SIZE);
 
   @BeforeEach
   void setUp() {

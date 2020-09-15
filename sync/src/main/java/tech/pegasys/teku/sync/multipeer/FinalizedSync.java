@@ -35,15 +35,13 @@ import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 
 public class FinalizedSync implements Sync {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int MAX_PENDING_BATCHES = 5;
 
   private final EventThread eventThread;
   private final RecentChainData recentChainData;
   private final BatchImporter batchImporter;
-  private final BatchFactory batchFactory;
-  private final UInt64 batchSize;
+  private final BatchDataRequester batchDataRequester;
 
-  private final BatchChain activeBatches = new BatchChain();
+  private final BatchChain activeBatches;
 
   private Optional<Batch> importingBatch = Optional.empty();
 
@@ -52,17 +50,30 @@ public class FinalizedSync implements Sync {
   private TargetChain targetChain;
   private SafeFuture<SyncResult> syncResult = SafeFuture.completedFuture(SyncResult.COMPLETE);
 
-  public FinalizedSync(
+  private FinalizedSync(
+      final EventThread eventThread,
+      final RecentChainData recentChainData,
+      final BatchChain activeBatches,
+      final BatchImporter batchImporter,
+      final BatchDataRequester batchDataRequester) {
+    this.eventThread = eventThread;
+    this.recentChainData = recentChainData;
+    this.activeBatches = activeBatches;
+    this.batchImporter = batchImporter;
+    this.batchDataRequester = batchDataRequester;
+  }
+
+  public static FinalizedSync create(
       final EventThread eventThread,
       final RecentChainData recentChainData,
       final BatchImporter batchImporter,
       final BatchFactory batchFactory,
       final UInt64 batchSize) {
-    this.eventThread = eventThread;
-    this.recentChainData = recentChainData;
-    this.batchImporter = batchImporter;
-    this.batchFactory = batchFactory;
-    this.batchSize = batchSize;
+    final BatchChain activeBatches = new BatchChain();
+    final BatchDataRequester batchDataRequester =
+        new BatchDataRequester(eventThread, activeBatches, batchFactory, batchSize);
+    return new FinalizedSync(
+        eventThread, recentChainData, activeBatches, batchImporter, batchDataRequester);
   }
 
   /**
@@ -295,42 +306,8 @@ public class FinalizedSync implements Sync {
   }
 
   private void fillRetrievingQueue() {
-    eventThread.checkOnEventThread();
-
-    final long pendingBatchesCount =
-        activeBatches.stream().filter(batch -> !batch.isEmpty() || !batch.isComplete()).count();
-
-    // First check if there are batches that should request more blocks
-    activeBatches.stream()
-        .filter(batch -> (!batch.isComplete() || batch.isContested()) && !batch.isAwaitingBlocks())
-        .forEach(this::requestMoreBlocks);
-
-    // Add more pending batches if there is room
-    UInt64 nextBatchStart = getNextSlotToRequest();
-    final UInt64 targetSlot = targetChain.getChainHead().getSlot();
-    for (long i = pendingBatchesCount;
-        i < MAX_PENDING_BATCHES && nextBatchStart.isLessThan(targetSlot);
-        i++) {
-      final UInt64 remainingSlots = targetSlot.minus(nextBatchStart).plus(1);
-      final UInt64 count = remainingSlots.min(batchSize);
-      final Batch batch = batchFactory.createBatch(targetChain, nextBatchStart, count);
-      activeBatches.add(batch);
-      requestMoreBlocks(batch);
-      nextBatchStart = batch.getLastSlot().plus(1);
-      if (nextBatchStart.isGreaterThan(targetSlot)) {
-        break;
-      }
-    }
-  }
-
-  private UInt64 getNextSlotToRequest() {
-    final UInt64 lastRequestedSlot =
-        activeBatches.last().map(Batch::getLastSlot).orElse(this.commonAncestorSlot);
-    return lastRequestedSlot.plus(1);
-  }
-
-  private void requestMoreBlocks(final Batch batch) {
-    batch.requestMoreBlocks(() -> eventThread.execute(() -> onBatchReceivedBlocks(batch)));
+    batchDataRequester.fillRetrievingQueue(
+        targetChain, commonAncestorSlot, this::onBatchReceivedBlocks);
   }
 
   @VisibleForTesting

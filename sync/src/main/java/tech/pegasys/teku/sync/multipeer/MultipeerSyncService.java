@@ -81,7 +81,7 @@ public class MultipeerSyncService extends Service implements SyncService {
             blockImporter);
 
     final FinalizedSync finalizedSync =
-        new FinalizedSync(
+        FinalizedSync.create(
             eventThread,
             recentChainData,
             new BatchImporter(blockImporter, asyncRunner),
