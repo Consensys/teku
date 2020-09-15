@@ -22,7 +22,7 @@ public class TekuConfiguration {
   private final GlobalConfiguration globalConfiguration;
   private final WeakSubjectivityConfig weakSubjectivityConfig;
 
-  TekuConfiguration(
+  private TekuConfiguration(
       GlobalConfiguration globalConfiguration, WeakSubjectivityConfig weakSubjectivityConfig) {
     this.globalConfiguration = globalConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
@@ -46,7 +46,7 @@ public class TekuConfiguration {
     private WeakSubjectivityConfig.Builder weakSubjectivityBuilder =
         WeakSubjectivityConfig.builder();
 
-    Builder() {}
+    private Builder() {}
 
     public TekuConfiguration build() {
       return new TekuConfiguration(
