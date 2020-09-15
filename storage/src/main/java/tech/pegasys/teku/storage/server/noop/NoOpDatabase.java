@@ -24,12 +24,14 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
+import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 
@@ -42,7 +44,15 @@ public class NoOpDatabase implements Database {
   public void update(final StorageUpdate event) {}
 
   @Override
+  public void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate) {}
+
+  @Override
   public Optional<StoreBuilder> createMemoryStore() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
     return Optional.empty();
   }
 

@@ -53,6 +53,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.events.AnchorPoint;
+import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -146,6 +147,37 @@ public abstract class AbstractDatabaseTest {
   public void shouldRecreateOriginalGenesisStore() {
     final UpdatableStore memoryStore = recreateStore();
     assertStoresMatch(memoryStore, store);
+  }
+
+  @Test
+  public void updateWeakSubjectivityState_setValue() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
+    assertThat(database.getWeakSubjectivityCheckpoint()).isEmpty();
+
+    final WeakSubjectivityUpdate update =
+        WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(checkpoint);
+    database.updateWeakSubjectivityState(update);
+
+    assertThat(database.getWeakSubjectivityCheckpoint()).contains(checkpoint);
+  }
+
+  @Test
+  public void updateWeakSubjectivityState_clearValue() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
+
+    // Set an initial value
+    final WeakSubjectivityUpdate initUpdate =
+        WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(checkpoint);
+    database.updateWeakSubjectivityState(initUpdate);
+    assertThat(database.getWeakSubjectivityCheckpoint()).contains(checkpoint);
+
+    // Clear the checkpoint
+    final WeakSubjectivityUpdate update = WeakSubjectivityUpdate.clearWeakSubjectivityCheckpoint();
+    database.updateWeakSubjectivityState(update);
+
+    assertThat(database.getWeakSubjectivityCheckpoint()).isEmpty();
   }
 
   @Test

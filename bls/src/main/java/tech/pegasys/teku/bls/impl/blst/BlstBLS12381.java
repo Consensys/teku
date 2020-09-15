@@ -45,10 +45,10 @@ public class BlstBLS12381 implements BLS12381 {
   static {
     boolean libraryLoaded;
     try {
-      NativeUtils.loadLibraryFromJar("/" + System.mapLibraryName("jblst"));
+      JBlst.loadNativeLibrary();
       libraryLoaded = true;
       LOG.debug("Successfully loaded native BLS library");
-    } catch (Throwable e) {
+    } catch (UnsupportedOperationException e) {
       LOG.debug("Couldn't load native BLS library: " + e);
       libraryLoaded = false;
     }

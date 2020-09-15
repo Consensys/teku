@@ -43,6 +43,8 @@ public interface RocksDbHotDao extends AutoCloseable {
   // In hot dao because it must be in sync with the finalized checkpoint
   Optional<BeaconState> getLatestFinalizedState();
 
+  Optional<Checkpoint> getWeakSubjectivityCheckpoint();
+
   Optional<SignedBeaconBlock> getHotBlock(final Bytes32 root);
 
   Optional<BeaconState> getHotState(final Bytes32 root);
@@ -69,6 +71,10 @@ public interface RocksDbHotDao extends AutoCloseable {
     void setBestJustifiedCheckpoint(final Checkpoint checkpoint);
 
     void setFinalizedCheckpoint(final Checkpoint checkpoint);
+
+    void setWeakSubjectivityCheckpoint(final Checkpoint checkpoint);
+
+    void clearWeakSubjectivityCheckpoint();
 
     void setLatestFinalizedState(final BeaconState state);
 
