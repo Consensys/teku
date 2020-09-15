@@ -24,8 +24,8 @@ import java.util.Collection;
 import java.util.IntSummaryStatistics;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -43,8 +43,8 @@ import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 public class PerformanceTracker implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final SortedMap<UInt64, List<SignedBeaconBlock>> sentBlocksByEpoch = new TreeMap<>();
-  private final SortedMap<UInt64, List<Attestation>> sentAttestationsByEpoch = new TreeMap<>();
+  private final NavigableMap<UInt64, List<SignedBeaconBlock>> sentBlocksByEpoch = new TreeMap<>();
+  private final NavigableMap<UInt64, List<Attestation>> sentAttestationsByEpoch = new TreeMap<>();
 
   private static final UInt64 BLOCK_PERFORMANCE_EVALUATION_INTERVAL = UInt64.valueOf(100); // epochs
   private final RecentChainData recentChainData;
