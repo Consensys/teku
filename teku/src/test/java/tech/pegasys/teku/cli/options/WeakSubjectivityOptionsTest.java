@@ -34,7 +34,7 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void dataStorageFrequency_shouldDefault() {
+  public void weakSubjectivityCheckpoint_shouldDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     assertThat(config.weakSubjectivity().getWeakSubjectivityCheckpoint()).isEmpty();
   }
