@@ -14,7 +14,7 @@
 package tech.pegasys.teku.sync.multipeer.batches;
 
 import java.util.Collection;
-import java.util.function.Supplier;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
@@ -29,7 +29,7 @@ public class BatchFactory {
 
   public Batch createBatch(final TargetChain chain, final UInt64 start, final UInt64 count) {
     eventThread.checkOnEventThread();
-    final Supplier<SyncSource> syncSourceProvider = () -> selectRandomPeer(chain.getPeers());
+    final SyncSourceSelector syncSourceProvider = () -> selectRandomPeer(chain.getPeers());
     final ConflictResolutionStrategy conflictResolutionStrategy =
         new NaiveConflictResolutionStrategy();
     return new EventThreadOnlyBatch(
@@ -38,8 +38,7 @@ public class BatchFactory {
             eventThread, syncSourceProvider, conflictResolutionStrategy, chain, start, count));
   }
 
-  private SyncSource selectRandomPeer(final Collection<SyncSource> peers) {
-    // TODO: Need to handle the case where there are no peers?
-    return peers.stream().skip((int) (peers.size() * Math.random())).findFirst().orElseThrow();
+  private Optional<SyncSource> selectRandomPeer(final Collection<SyncSource> peers) {
+    return peers.stream().skip((int) (peers.size() * Math.random())).findFirst();
   }
 }

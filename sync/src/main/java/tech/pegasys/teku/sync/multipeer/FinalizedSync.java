@@ -131,8 +131,7 @@ public class FinalizedSync implements Sync {
             followingBatch -> checkBatchesFormChain(batch, followingBatch),
             () -> checkAgainstTargetHead(batch));
 
-    startNextImport();
-    fillRetrievingQueue();
+    progressSync();
   }
 
   private void checkAgainstTargetHead(final Batch batch) {
@@ -295,8 +294,7 @@ public class FinalizedSync implements Sync {
       activeBatches.removeUpToIncluding(importedBatch);
       commonAncestorSlot = importedBatch.getLastSlot();
     }
-    startNextImport();
-    fillRetrievingQueue();
+    progressSync();
     if (activeBatches.isEmpty()) {
       syncResult.complete(SyncResult.COMPLETE);
     }
@@ -314,6 +312,18 @@ public class FinalizedSync implements Sync {
   private Boolean blocksForChain(
       final SignedBeaconBlock lastBlock, final SignedBeaconBlock firstBlock) {
     return lastBlock.getRoot().equals(firstBlock.getParent_root());
+  }
+
+  private void progressSync() {
+    if (syncResult.isDone()) {
+      return;
+    }
+    if (targetChain.getPeers().isEmpty()) {
+      syncResult.complete(SyncResult.FAILED);
+      return;
+    }
+    startNextImport();
+    fillRetrievingQueue();
   }
 
   private void fillRetrievingQueue() {

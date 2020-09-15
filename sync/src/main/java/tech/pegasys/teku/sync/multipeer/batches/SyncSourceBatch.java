@@ -21,7 +21,6 @@ import com.google.common.base.Throwables;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -39,7 +38,7 @@ public class SyncSourceBatch implements Batch {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventThread eventThread;
-  private final Supplier<SyncSource> syncSourceProvider;
+  private final SyncSourceSelector syncSourceProvider;
   private final ConflictResolutionStrategy conflictResolutionStrategy;
   private final TargetChain targetChain;
   private final UInt64 firstSlot;
@@ -55,7 +54,7 @@ public class SyncSourceBatch implements Batch {
 
   SyncSourceBatch(
       final EventThread eventThread,
-      final Supplier<SyncSource> syncSourceProvider,
+      final SyncSourceSelector syncSourceProvider,
       final ConflictResolutionStrategy conflictResolutionStrategy,
       final TargetChain targetChain,
       final UInt64 firstSlot,
@@ -167,7 +166,11 @@ public class SyncSourceBatch implements Batch {
         remainingSlots.isGreaterThan(UInt64.ZERO),
         "Attempting to request more blocks when block for last slot already present.");
     if (currentSyncSource.isEmpty()) {
-      currentSyncSource = Optional.of(syncSourceProvider.get());
+      currentSyncSource = syncSourceProvider.selectSource();
+      if (currentSyncSource.isEmpty()) {
+        callback.run();
+        return;
+      }
     }
     awaitingBlocks = true;
     final SyncSource syncSource = currentSyncSource.orElseThrow();

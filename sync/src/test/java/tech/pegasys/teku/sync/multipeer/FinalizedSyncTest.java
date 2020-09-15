@@ -41,6 +41,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -49,6 +50,7 @@ import tech.pegasys.teku.sync.multipeer.batches.BatchFactory;
 import tech.pegasys.teku.sync.multipeer.batches.EventThreadOnlyBatch;
 import tech.pegasys.teku.sync.multipeer.batches.StubBatch;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
+import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 class FinalizedSyncTest {
@@ -61,13 +63,16 @@ class FinalizedSyncTest {
   private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
+  private final SyncSource syncSource = mock(SyncSource.class);
   private final BatchImporter batchImporter = mock(BatchImporter.class);
   private final BatchFactory batchFactory = mock(BatchFactory.class);
   private final Map<StubBatch, Batch> wrappedBatches = new HashMap<>();
   private final List<StubBatch> batches = new ArrayList<>();
 
   private TargetChain targetChain =
-      chainWith(new SlotAndBlockRoot(UInt64.valueOf(1000), dataStructureUtil.randomBytes32()));
+      chainWith(
+          new SlotAndBlockRoot(UInt64.valueOf(1000), dataStructureUtil.randomBytes32()),
+          syncSource);
 
   private final FinalizedSync sync =
       FinalizedSync.create(eventThread, recentChainData, batchImporter, batchFactory, BATCH_SIZE);
@@ -159,9 +164,30 @@ class FinalizedSyncTest {
   }
 
   @Test
+  void shouldFailSyncWhenTargetChainHasNoPeersAndThereAreNoOutstandingRequests() {
+    final TargetChains targetChains = new TargetChains();
+    targetChains.onPeerStatusUpdated(syncSource, targetChain.getChainHead());
+    targetChain = targetChains.streamChains().findFirst().orElseThrow();
+
+    // Start the sync
+    final SafeFuture<SyncResult> result = sync.syncToChain(targetChain);
+
+    // Then the last peer is moved off that chain but we keep waiting for pending requests
+    targetChains.onPeerDisconnected(syncSource);
+    assertThat(result).isNotDone();
+    final int originalBatchCount = batches.size();
+
+    // Next time the sync progresses, it aborts because there are no more peers.
+    batches.get(0).receiveBlocks();
+    assertThat(result).isCompletedWithValue(SyncResult.FAILED);
+    assertThat(batches).hasSize(originalBatchCount); // No more batches created
+  }
+
+  @Test
   void shouldNotRequestBlocksPastTargetChainHead() {
     final UInt64 headSlot = BATCH_SIZE.times(3).minus(5);
-    targetChain = chainWith(new SlotAndBlockRoot(headSlot, dataStructureUtil.randomBytes32()));
+    targetChain =
+        chainWith(new SlotAndBlockRoot(headSlot, dataStructureUtil.randomBytes32()), syncSource);
     assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     assertThat(batches).hasSize(3);
@@ -173,7 +199,7 @@ class FinalizedSyncTest {
     final UInt64 headSlot = BATCH_SIZE.times(2).minus(5);
     final SignedBeaconBlock block3 = chainBuilder.generateBlockAtSlot(3).getBlock();
     final SignedBeaconBlock headBlock = chainBuilder.generateBlockAtSlot(headSlot).getBlock();
-    targetChain = chainWith(new SlotAndBlockRoot(headSlot, headBlock.getRoot()));
+    targetChain = chainWith(new SlotAndBlockRoot(headSlot, headBlock.getRoot()), syncSource);
     final SafeFuture<SyncResult> result = sync.syncToChain(targetChain);
     assertThat(result).isNotDone();
 
@@ -199,7 +225,8 @@ class FinalizedSyncTest {
   @Test
   void shouldMarkBatchInvalidWhenSlotIsTargetHeadSlotAndRootDoesNotMatch() {
     final UInt64 lastSlot = UInt64.valueOf(2);
-    targetChain = chainWith(new SlotAndBlockRoot(lastSlot, dataStructureUtil.randomBytes32()));
+    targetChain =
+        chainWith(new SlotAndBlockRoot(lastSlot, dataStructureUtil.randomBytes32()), syncSource);
 
     assertThat(sync.syncToChain(targetChain)).isNotDone();
 
@@ -218,7 +245,8 @@ class FinalizedSyncTest {
   void shouldContestBatchesWhenLastBlockDoesNotMatchTargetAndHasOnlyEmptyBatchesAfterIt() {
     targetChain =
         chainWith(
-            new SlotAndBlockRoot(BATCH_SIZE.times(2).minus(1), dataStructureUtil.randomBytes32()));
+            new SlotAndBlockRoot(BATCH_SIZE.times(2).minus(1), dataStructureUtil.randomBytes32()),
+            syncSource);
 
     assertThat(sync.syncToChain(targetChain)).isNotDone();
 
@@ -240,7 +268,8 @@ class FinalizedSyncTest {
   void shouldNotContestBatchesWhenAnIncompleteBatchIsFollowedByEmptyBatchesAtEndOfChain() {
     targetChain =
         chainWith(
-            new SlotAndBlockRoot(BATCH_SIZE.times(2).minus(1), dataStructureUtil.randomBytes32()));
+            new SlotAndBlockRoot(BATCH_SIZE.times(2).minus(1), dataStructureUtil.randomBytes32()),
+            syncSource);
 
     assertThat(sync.syncToChain(targetChain)).isNotDone();
 
@@ -260,7 +289,8 @@ class FinalizedSyncTest {
   void shouldContestAllBatchesWhenEndSlotIsReachedWithNoBlocksReceived() {
     targetChain =
         chainWith(
-            new SlotAndBlockRoot(BATCH_SIZE.times(2).minus(1), dataStructureUtil.randomBytes32()));
+            new SlotAndBlockRoot(BATCH_SIZE.times(2).minus(1), dataStructureUtil.randomBytes32()),
+            syncSource);
 
     assertThat(sync.syncToChain(targetChain)).isNotDone();
 
@@ -398,7 +428,7 @@ class FinalizedSyncTest {
     assertThatBatch(batch0).isContested();
     assertThatBatch(batch1).isContested();
 
-    // Both batches now requeset the same range from a different peer
+    // Both batches now request the same range from a different peer
     batch0.receiveBlocks(batch0Block); // Batch 0 is unchanged
     batch1.receiveBlocks(batch1Block); // Batch 1 now gives us valid data
 
@@ -524,7 +554,9 @@ class FinalizedSyncTest {
     final StubBatch batch4 = batches.get(4);
 
     targetChain =
-        chainWith(new SlotAndBlockRoot(UInt64.valueOf(2000), dataStructureUtil.randomBytes32()));
+        chainWith(
+            new SlotAndBlockRoot(UInt64.valueOf(2000), dataStructureUtil.randomBytes32()),
+            syncSource);
     final SafeFuture<SyncResult> secondSyncResult = sync.syncToChain(targetChain);
     assertThat(firstSyncResult).isCompletedWithValue(SyncResult.TARGET_CHANGED);
 
@@ -548,7 +580,9 @@ class FinalizedSyncTest {
     final StubBatch batch4 = batches.get(4);
 
     targetChain =
-        chainWith(new SlotAndBlockRoot(UInt64.valueOf(2000), dataStructureUtil.randomBytes32()));
+        chainWith(
+            new SlotAndBlockRoot(UInt64.valueOf(2000), dataStructureUtil.randomBytes32()),
+            syncSource);
     final SafeFuture<SyncResult> secondSyncResult = sync.syncToChain(targetChain);
     assertThat(firstSyncResult).isCompletedWithValue(SyncResult.TARGET_CHANGED);
 

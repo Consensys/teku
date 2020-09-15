@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
@@ -179,14 +178,32 @@ public class SyncSourceBatchTest extends AbstractBatchTest {
     verify(conflictResolutionStrategy).reportInvalidBatch(batch, getSyncSource(batch));
   }
 
+  @Test
+  void shouldSkipMakingRequestWhenNoTargetPeerIsAvailable() {
+    final SyncSourceSelector emptySourceSelector = Optional::empty;
+    final SyncSourceBatch batch =
+        new SyncSourceBatch(
+            eventThread,
+            emptySourceSelector,
+            conflictResolutionStrategy,
+            targetChain,
+            UInt64.ONE,
+            UInt64.ONE);
+
+    final Runnable callback = mock(Runnable.class);
+    batch.requestMoreBlocks(callback);
+    verify(callback).run();
+    assertThatBatch(batch).isNotAwaitingBlocks();
+  }
+
   @Override
   protected Batch createBatch(final long startSlot, final long count) {
     final List<StubSyncSource> syncSources = new ArrayList<>();
-    final Supplier<SyncSource> syncSourceProvider =
+    final SyncSourceSelector syncSourceProvider =
         () -> {
           final StubSyncSource source = new StubSyncSource();
           syncSources.add(source);
-          return source;
+          return Optional.of(source);
         };
     final SyncSourceBatch batch =
         new SyncSourceBatch(
