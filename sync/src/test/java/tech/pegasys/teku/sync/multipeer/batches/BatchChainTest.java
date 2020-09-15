@@ -262,6 +262,17 @@ class BatchChainTest {
   }
 
   @Test
+  void isEmpty_shouldBeTrueWhenChainIsEmpty() {
+    assertThat(batchChain.isEmpty()).isTrue();
+  }
+
+  @Test
+  void isEmpty_shouldBeFalseWhenChainIsNotEmpty() {
+    batchChain.add(createBatch(1));
+    assertThat(batchChain.isEmpty()).isFalse();
+  }
+
+  @Test
   void previousNonEmptyBatch_shouldBeEmptyWhenChainIsEmpty() {
     assertThat(batchChain.previousNonEmptyBatch(createBatch(1))).isEmpty();
   }

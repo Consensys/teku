@@ -139,8 +139,10 @@ public class SyncSourceBatch implements Batch {
   @Override
   public void markAsContested() {
     contested = true;
-    currentSyncSource = Optional.empty();
-    reset();
+    // TODO: Need to apply some form of conflict resolution strategy.
+    // This code gets sync working but is pretty brute force and not well thought out
+    //    currentSyncSource = Optional.empty();
+    //    reset();
   }
 
   @Override
@@ -190,7 +192,6 @@ public class SyncSourceBatch implements Batch {
   }
 
   private void reset() {
-    eventThread.checkOnEventThread();
     complete = false;
     contested = false;
     firstBlockConfirmed = false;
