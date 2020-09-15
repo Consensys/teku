@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.sync.multipeer;
 
-import com.google.common.base.Throwables;
 import java.util.Optional;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -69,22 +67,23 @@ public class SyncController {
    */
   public void onTargetChainsUpdated(final TargetChains finalizedChains) {
     eventThread.checkOnEventThread();
+    final boolean currentlySyncing = isSyncActive();
     final Optional<InProgressSync> newFinalizedSync =
         finalizedTargetChainSelector
             .selectTargetChain(finalizedChains)
             .map(this::startFinalizedSync);
-    if (newFinalizedSync.isEmpty() && isSyncActive()) {
+    if (newFinalizedSync.isEmpty() && currentlySyncing) {
       return;
     }
-    if (!isSyncActive() && newFinalizedSync.isPresent()) {
+    if (!currentlySyncing && newFinalizedSync.isPresent()) {
       notifySubscribers(true);
     }
     currentSync = newFinalizedSync;
   }
 
-  private void onSyncComplete() {
+  private void onSyncComplete(final SyncResult result) {
     eventThread.checkOnEventThread();
-    if (isSyncActive()) {
+    if (isSyncActive() || result == SyncResult.TARGET_CHANGED) {
       // A different sync is now running so ignore this change.
       return;
     }
@@ -121,16 +120,12 @@ public class SyncController {
       return currentSync.get();
     }
     final UInt64 startSlot = recentChainData.getHeadSlot();
-    final SafeFuture<Void> syncResult = finalizedSync.syncToChain(chain);
+    final SafeFuture<SyncResult> syncResult = finalizedSync.syncToChain(chain);
     syncResult.finishAsync(
         this::onSyncComplete,
         error -> {
-          if (!(Throwables.getRootCause(error) instanceof CancellationException)) {
-            LOG.error("Error encountered during sync", error);
-          } else {
-            LOG.trace("Sync cancelled");
-          }
-          onSyncComplete();
+          LOG.error("Error encountered during sync", error);
+          onSyncComplete(SyncResult.FAILED);
         },
         eventThread);
     return new InProgressSync(startSlot, chain, syncResult);
@@ -139,10 +134,12 @@ public class SyncController {
   private class InProgressSync {
     private final UInt64 startSlot;
     private final TargetChain targetChain;
-    private final SafeFuture<Void> result;
+    private final SafeFuture<SyncResult> result;
 
     private InProgressSync(
-        final UInt64 startSlot, final TargetChain targetChain, final SafeFuture<Void> result) {
+        final UInt64 startSlot,
+        final TargetChain targetChain,
+        final SafeFuture<SyncResult> result) {
       this.startSlot = startSlot;
       this.targetChain = targetChain;
       this.result = result;

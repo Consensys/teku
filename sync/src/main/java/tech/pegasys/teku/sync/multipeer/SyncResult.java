@@ -13,17 +13,8 @@
 
 package tech.pegasys.teku.sync.multipeer;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
-
-public interface Sync {
-
-  /**
-   * Sync to a target chain. This may be called while a previous sync is in progress to switch the
-   * sync target to a new chain.
-   *
-   * @param targetChain the chain to sync to
-   * @return a future that completes when the sync is complete
-   */
-  SafeFuture<SyncResult> syncToChain(TargetChain targetChain);
+public enum SyncResult {
+  COMPLETE,
+  TARGET_CHANGED,
+  FAILED
 }

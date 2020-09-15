@@ -80,7 +80,7 @@ public class MultipeerSyncService extends Service implements SyncService {
 
     // TODO(#1844): Clearly these are still placeholders...
     final ChainSelector chainSelector = __ -> Optional.empty();
-    final Sync sync = __ -> SafeFuture.COMPLETE;
+    final Sync sync = __ -> SafeFuture.completedFuture(SyncResult.FAILED);
 
     final SyncController syncController =
         new SyncController(
