@@ -77,7 +77,8 @@ public class PerformanceTracker implements SlotEventsChannel {
       UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
     List<BeaconBlock> blockInEpoch = getBlocksInEpochs(startEpochInclusive, endEpochExclusive);
     List<SignedBeaconBlock> sentBlocks =
-        sentBlocksByEpoch.subMap(startEpochInclusive, endEpochExclusive).values().stream()
+        sentBlocksByEpoch.subMap(startEpochInclusive, true, endEpochExclusive, false).values()
+            .stream()
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
     long numberOfIncludedBlocks =
@@ -107,7 +108,8 @@ public class PerformanceTracker implements SlotEventsChannel {
 
     // Get sent attestations in range
     List<Attestation> sentAttestations =
-        sentAttestationsByEpoch.subMap(analyzedEpoch, epochFollowingAnalyzedEpoch).values().stream()
+        sentAttestationsByEpoch.subMap(analyzedEpoch, true, epochFollowingAnalyzedEpoch, false)
+            .values().stream()
             .flatMap(Collection::stream)
             .collect(Collectors.toList());
     UInt64 analyzedEpochStartSlot = compute_start_slot_at_epoch(analyzedEpoch);
