@@ -47,16 +47,16 @@ public class WeakSubjectivityConfig {
       return new WeakSubjectivityConfig(weakSubjectivityCheckpoint);
     }
 
-    public Builder setWeakSubjectivityCheckpoint(Checkpoint weakSubjectivityCheckpoint) {
+    public Builder weakSubjectivityCheckpoint(Checkpoint weakSubjectivityCheckpoint) {
       checkNotNull(weakSubjectivityCheckpoint);
       this.weakSubjectivityCheckpoint = Optional.of(weakSubjectivityCheckpoint);
       return this;
     }
 
-    public Builder setWeakSubjectivityCheckpoint(String weakSubjectivityCheckpoint) {
+    public Builder weakSubjectivityCheckpoint(String weakSubjectivityCheckpoint) {
       checkNotNull(weakSubjectivityCheckpoint);
       final Checkpoint checkpoint = parser.parseCheckpoint(weakSubjectivityCheckpoint);
-      return setWeakSubjectivityCheckpoint(checkpoint);
+      return weakSubjectivityCheckpoint(checkpoint);
     }
   }
 }

@@ -75,10 +75,10 @@ public abstract class AbstractBeaconNodeCommandTest {
   }
 
   public GlobalConfiguration getGlobalConfigurationFromFile(String resourceFilename) {
-    return getTekuonfigurationFromFile(resourceFilename).global();
+    return getTekuConfigurationFromFile(resourceFilename).global();
   }
 
-  public TekuConfiguration getTekuonfigurationFromFile(String resourceFilename) {
+  public TekuConfiguration getTekuConfigurationFromFile(String resourceFilename) {
     final String configFile = this.getClass().getResource("/" + resourceFilename).getPath();
     final String[] args = {CONFIG_FILE_OPTION_NAME, configFile};
     beaconNodeCommand.parse(args);

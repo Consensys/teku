@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -89,14 +88,14 @@ public class WeakSubjectivityParamaterParserTest {
   }
 
   public static Stream<Arguments> getValidCheckpointArguments() {
-    List<Arguments> blockRoots = validBlockRootValues().collect(Collectors.toList());
-    List<Arguments> epochs = validEpochNumbers().collect(Collectors.toList());
+    List<String> blockRoots = validBlockRootValues();
+    List<String> epochs = validEpochNumbers();
 
     final Stream.Builder<Arguments> builder = Stream.builder();
-    for (Arguments blockRoot : blockRoots) {
-      for (Arguments epoch : epochs) {
-        final String input = blockRoot.get()[0] + ":" + epoch.get()[0];
-        builder.add(Arguments.of(input, blockRoot.get()[0], epoch.get()[0]));
+    for (String blockRoot : blockRoots) {
+      for (String epoch : epochs) {
+        final String input = blockRoot + ":" + epoch;
+        builder.add(Arguments.of(input, blockRoot, epoch));
       }
     }
 
@@ -104,14 +103,10 @@ public class WeakSubjectivityParamaterParserTest {
   }
 
   public static Stream<Arguments> getInvalidCheckpointArguments() {
-    List<String> validBlockRoots =
-        validBlockRootValues().map(a -> (String) a.get()[0]).collect(Collectors.toList());
-    List<String> validEpochs =
-        validEpochNumbers().map(a -> (String) a.get()[0]).collect(Collectors.toList());
-    List<String> invalidBlockRoots =
-        invalidBlockRootValues().map(a -> (String) a.get()[0]).collect(Collectors.toList());
-    List<String> invalidEpochs =
-        invalidEpochNumbers().map(a -> (String) a.get()[0]).collect(Collectors.toList());
+    List<String> validBlockRoots = validBlockRootValues();
+    List<String> validEpochs = validEpochNumbers();
+    List<String> invalidBlockRoots = invalidBlockRootValues();
+    List<String> invalidEpochs = invalidEpochNumbers();
     final Stream.Builder<Arguments> builder = Stream.builder();
 
     // Use valid args in reverse order
@@ -142,25 +137,24 @@ public class WeakSubjectivityParamaterParserTest {
     return builder.build();
   }
 
-  private static Stream<Arguments> validBlockRootValues() {
-    return Stream.of(
-        Arguments.of(Bytes32.fromHexStringLenient("0x0102").toUnprefixedHexString()),
-        Arguments.of(Bytes32.fromHexStringLenient("0x0102").toHexString()));
+  private static List<String> validBlockRootValues() {
+    return List.of(
+        Bytes32.fromHexStringLenient("0x0102").toUnprefixedHexString(),
+        Bytes32.fromHexStringLenient("0x0102").toHexString());
   }
 
-  private static Stream<Arguments> validEpochNumbers() {
-    return Stream.of(Arguments.of("11"), Arguments.of("12345678"));
+  private static List<String> validEpochNumbers() {
+    return List.of("11", "12345678");
   }
 
-  private static Stream<Arguments> invalidBlockRootValues() {
-    return Stream.of(
-        Arguments.of(
-            Bytes32.fromHexStringLenient("0x0102").toUnprefixedHexString().substring(0, 30)),
-        Arguments.of(Bytes32.fromHexStringLenient("0x0102").toHexString().substring(0, 30)),
-        Arguments.of(""));
+  private static List<String> invalidBlockRootValues() {
+    return List.of(
+        Bytes32.fromHexStringLenient("0x0102").toUnprefixedHexString().substring(0, 30),
+        Bytes32.fromHexStringLenient("0x0102").toHexString().substring(0, 30),
+        "");
   }
 
-  private static Stream<Arguments> invalidEpochNumbers() {
-    return Stream.of(Arguments.of("0xFF00"), Arguments.of(""));
+  private static List<String> invalidEpochNumbers() {
+    return List.of("0xFF00", "");
   }
 }

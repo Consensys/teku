@@ -30,7 +30,7 @@ public class WeakSubjectivityOptions {
     return builder.weakSubjectivity(
         wsBuilder -> {
           if (!weakSubjectivityCheckpoint.isBlank()) {
-            wsBuilder.setWeakSubjectivityCheckpoint(weakSubjectivityCheckpoint);
+            wsBuilder.weakSubjectivityCheckpoint(weakSubjectivityCheckpoint);
           }
         });
   }
