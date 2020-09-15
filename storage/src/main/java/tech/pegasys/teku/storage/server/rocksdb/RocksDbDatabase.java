@@ -178,12 +178,8 @@ public class RocksDbDatabase implements Database {
   public void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate) {
     try (final HotUpdater updater = hotDao.hotUpdater()) {
       Optional<Checkpoint> checkpoint = weakSubjectivityUpdate.getWeakSubjectivityCheckpoint();
-      if (checkpoint.isPresent()) {
-        updater.setWeakSubjectivityCheckpoint(checkpoint.get());
-      } else {
-        updater.clearWeakSubjectivityCheckpoint();
-      }
-
+      checkpoint.ifPresentOrElse(
+          updater::setWeakSubjectivityCheckpoint, updater::clearWeakSubjectivityCheckpoint);
       updater.commit();
     }
   }
