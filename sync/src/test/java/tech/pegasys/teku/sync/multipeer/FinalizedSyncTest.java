@@ -432,9 +432,9 @@ class FinalizedSyncTest {
     // Then when batch 1 arrives, everything lines up.
     batch1.receiveBlocks(batch1Block);
 
-    assertThat(batch0.isConfirmed());
-    assertThat(batch1.isConfirmed());
-    assertThat(batch2.isFirstBlockConfirmed());
+    assertThatBatch(batch0).isConfirmed();
+    assertThatBatch(batch1).isConfirmed();
+    assertThatBatch(batch2).hasConfirmedFirstBlock();
   }
 
   @Test
