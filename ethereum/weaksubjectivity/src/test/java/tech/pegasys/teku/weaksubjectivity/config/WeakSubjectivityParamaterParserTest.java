@@ -54,6 +54,33 @@ public class WeakSubjectivityParamaterParserTest {
   }
 
   @ParameterizedTest(name = "input = {0}")
+  @MethodSource("getValidCheckpointArguments")
+  public void parseCheckpoint_valid_withLeadingWhitespace(
+      final String input, final String blockRoot, final String epoch) {
+    Checkpoint result = parser.parseCheckpoint("  " + input);
+    assertThat(result.getRoot()).isEqualTo(Bytes32.fromHexString(blockRoot));
+    assertThat(result.getEpoch()).isEqualTo(UInt64.valueOf(epoch));
+  }
+
+  @ParameterizedTest(name = "input = {0}")
+  @MethodSource("getValidCheckpointArguments")
+  public void parseCheckpoint_valid_withTrailingWhitespace(
+      final String input, final String blockRoot, final String epoch) {
+    Checkpoint result = parser.parseCheckpoint(input + " ");
+    assertThat(result.getRoot()).isEqualTo(Bytes32.fromHexString(blockRoot));
+    assertThat(result.getEpoch()).isEqualTo(UInt64.valueOf(epoch));
+  }
+
+  @ParameterizedTest(name = "input = {0}")
+  @MethodSource("getValidCheckpointArguments")
+  public void parseCheckpoint_valid_withLeadingAndTrailingWhitespace(
+      final String input, final String blockRoot, final String epoch) {
+    Checkpoint result = parser.parseCheckpoint(" " + input + "   ");
+    assertThat(result.getRoot()).isEqualTo(Bytes32.fromHexString(blockRoot));
+    assertThat(result.getEpoch()).isEqualTo(UInt64.valueOf(epoch));
+  }
+
+  @ParameterizedTest(name = "input = {0}")
   @MethodSource("getInvalidCheckpointArguments")
   public void parseCheckpoint_invalid(final String input) {
     assertThatThrownBy(() -> parser.parseCheckpoint(input))

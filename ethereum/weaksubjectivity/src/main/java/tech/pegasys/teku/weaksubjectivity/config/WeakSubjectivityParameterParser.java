@@ -28,9 +28,10 @@ public class WeakSubjectivityParameterParser {
 
   public Checkpoint parseCheckpoint(final String checkpointString) {
     checkNotNull(checkpointString);
-    checkArgument(checkpointString.length() > 0);
+    final String trimmed = checkpointString.trim();
+    checkArgument(trimmed.length() > 0);
 
-    List<String> parts = Splitter.on(':').splitToList(checkpointString);
+    List<String> parts = Splitter.on(':').splitToList(trimmed);
     checkArgument(parts.size() == 2, CHECKPOINT_ERROR);
 
     try {
