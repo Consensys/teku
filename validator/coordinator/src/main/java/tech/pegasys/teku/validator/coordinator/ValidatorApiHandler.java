@@ -143,7 +143,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     if (validatorIndexes.isEmpty()) {
       return SafeFuture.completedFuture(Optional.of(emptyList()));
     }
-    if (epoch.isGreaterThan(combinedChainDataClient.getCurrentEpoch().plus(UInt64.ONE))) {
+    if (epoch.isGreaterThan(combinedChainDataClient.getCurrentEpoch().plus(Constants.MIN_SEED_LOOKAHEAD))) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
               String.format(
