@@ -38,9 +38,9 @@ public final class Teku {
   private static void start(final TekuConfiguration config) {
     final Node node;
     if (config.global().isValidatorClient()) {
-      node = new ValidatorNode(config.global());
+      node = new ValidatorNode(config);
     } else {
-      node = new BeaconNode(config.global());
+      node = new BeaconNode(config);
     }
 
     node.start();
