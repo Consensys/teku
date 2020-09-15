@@ -44,6 +44,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties.Duties;
 
@@ -233,19 +234,13 @@ public class ValidatorDataProvider {
                             .collect(toList())));
   }
 
-  private AttesterDuty mapToAttesterDuties(
-      final tech.pegasys.teku.validator.api.ValidatorDuties duty) {
-    final BLSPubKey pubKey = new BLSPubKey(duty.getPublicKey().toBytesCompressed());
-    if (duty.getDuties().isEmpty()) {
-      return new AttesterDuty(pubKey, null, null, null, null, null);
-    }
-    final Duties duties = duty.getDuties().get();
+  private AttesterDuty mapToAttesterDuties(final AttesterDuties duties) {
     return new AttesterDuty(
-        pubKey,
+        new BLSPubKey(duties.getPublicKey()),
         UInt64.valueOf(duties.getValidatorIndex()),
-        UInt64.valueOf(duties.getAttestationCommitteeIndex()),
-        UInt64.valueOf(duties.getAggregatorModulo()),
-        UInt64.valueOf(duties.getAttestationCommitteePosition()),
-        duties.getAttestationSlot());
+        UInt64.valueOf(duties.getCommitteeIndex()),
+        UInt64.valueOf(duties.getCommitteeLength()),
+        UInt64.valueOf(duties.getValidatorCommitteeIndex()),
+        duties.getSlot());
   }
 }
