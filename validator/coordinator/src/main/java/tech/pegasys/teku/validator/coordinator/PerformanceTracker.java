@@ -135,7 +135,7 @@ public class PerformanceTracker implements SlotEventsChannel {
     }
 
     IntSummaryStatistics inclusionDistancesStatistics =
-        inclusionDistances.stream().mapToInt(x -> x).summaryStatistics();
+        inclusionDistances.stream().collect(Collectors.summarizingInt(Integer::intValue));
     long numberOfSentAttestations = sentAttestations.size();
     long numberOfIncludedAttestations = inclusionDistancesStatistics.getCount();
 
