@@ -204,6 +204,8 @@ abstract class AbstractBatchTest {
   @Test
   void isContested_shouldBeContestedWhenMarkedContested() {
     final Batch batch = createBatch(5, 10);
+    batch.requestMoreBlocks(() -> {});
+    receiveBlocks(batch);
     assertThatBatch(batch).isNotContested();
 
     batch.markAsContested();

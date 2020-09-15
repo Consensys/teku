@@ -206,22 +206,33 @@ public class FinalizedSync implements Sync {
     if (batchesFormChain(firstBatch, secondBatch)) {
       markBatchesAsFormingChain(
           firstBatch, secondBatch, activeBatches.batchesBetweenExclusive(firstBatch, secondBatch));
-    } else if (firstBatch.isComplete() && !secondBatch.isEmpty()) {
-      if (firstBatch.getTargetChain().equals(secondBatch.getTargetChain())) {
-        final NavigableSet<Batch> contestedBatches =
-            activeBatches.batchesBetweenInclusive(firstBatch, secondBatch);
-        LOG.debug(
-            "Marking {} batches as contested because {} and {} do not form a chain",
-            contestedBatches.size(),
-            firstBatch,
-            secondBatch);
-        markBatchesAsContested(contestedBatches);
-      } else {
-        // We switched chains but they didn't actually match up. Go back to the finalized epoch
-        activeBatches.removeAll();
-        commonAncestorSlot = getCommonAncestorSlot();
-      }
+      return;
     }
+    if (!firstBatch.isComplete() || secondBatch.isEmpty()) {
+      return;
+    }
+    if (!firstBatch.getTargetChain().equals(secondBatch.getTargetChain())) {
+      // We switched chains but they didn't actually match up. Go back to the finalized epoch
+      activeBatches.removeAll();
+      commonAncestorSlot = getCommonAncestorSlot();
+      return;
+    }
+
+    final boolean allComplete =
+        activeBatches.batchesBetweenExclusive(firstBatch, secondBatch).stream()
+            .allMatch(Batch::isComplete);
+    if (!allComplete) {
+      // Not a conflict, because we're still waiting on some blocks in the middle
+      return;
+    }
+    final NavigableSet<Batch> contestedBatches =
+        activeBatches.batchesBetweenInclusive(firstBatch, secondBatch);
+    LOG.debug(
+        "Marking {} batches as contested because {} and {} do not form a chain",
+        contestedBatches.size(),
+        firstBatch,
+        secondBatch);
+    markBatchesAsContested(contestedBatches);
     // Otherwise there must be a block in firstBatch we haven't received yet
   }
 

@@ -406,6 +406,38 @@ class FinalizedSyncTest {
   }
 
   @Test
+  void shouldNotMarkBatchesAsContestedWhenBlocksDoNotLineUpBecauseOfIncompleteBatchesBetween() {
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
+
+    final StubBatch batch0 = batches.get(0);
+    final StubBatch batch1 = batches.get(1);
+    final StubBatch batch2 = batches.get(2);
+
+    final SignedBeaconBlock batch0Block =
+        chainBuilder.generateBlockAtSlot(batch0.getLastSlot()).getBlock();
+    final SignedBeaconBlock batch1Block =
+        chainBuilder.generateBlockAtSlot(batch1.getLastSlot()).getBlock();
+    final SignedBeaconBlock batch2Block =
+        chainBuilder.generateBlockAtSlot(batch2.getLastSlot()).getBlock();
+
+    // Receive blocks from batch 0 and 2 first which won't line up because batch1 is still missing
+    batch0.receiveBlocksAndMarkComplete(batch0Block);
+    batch2.receiveBlocksAndMarkComplete(batch2Block);
+
+    assertNoBatchesImported();
+    assertThatBatch(batch0).isNotContested();
+    assertThatBatch(batch1).isNotContested();
+    assertThatBatch(batch2).isNotContested();
+
+    // Then when batch 1 arrives, everything lines up.
+    batch1.receiveBlocks(batch1Block);
+
+    assertThat(batch0.isConfirmed());
+    assertThat(batch1.isConfirmed());
+    assertThat(batch2.isFirstBlockConfirmed());
+  }
+
+  @Test
   void shouldLimitTheNumberOfBatchesWithBlocksPendingImport() {
     // Avoid the queue of blocks to import getting too long
     // but allow any number of empty batches since we can only confirm blocks, not empty batches

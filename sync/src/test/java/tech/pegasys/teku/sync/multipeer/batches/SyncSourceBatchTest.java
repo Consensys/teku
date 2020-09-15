@@ -40,6 +40,8 @@ import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 
 public class SyncSourceBatchTest extends AbstractBatchTest {
   private final InlineEventThread eventThread = new InlineEventThread();
+  private final ConflictResolutionStrategy conflictResolutionStrategy =
+      mock(ConflictResolutionStrategy.class);
   private final Map<Batch, List<StubSyncSource>> syncSources = new HashMap<>();
 
   @Test
@@ -108,6 +110,16 @@ public class SyncSourceBatchTest extends AbstractBatchTest {
     secondSyncSource.assertRequestedBlocks(70, 50);
   }
 
+  @Test
+  void markContested_shouldVerifyBatchWithConflictResolutionStrategy() {
+    final Batch batch = createBatch(1, 3);
+    batch.requestMoreBlocks(() -> {});
+    receiveBlocks(batch);
+    batch.markAsContested();
+
+    verify(conflictResolutionStrategy).verifyBatch(batch, getSyncSource(batch));
+  }
+
   @Override
   protected Batch createBatch(final long startSlot, final long count) {
     final List<StubSyncSource> syncSources = new ArrayList<>();
@@ -121,6 +133,7 @@ public class SyncSourceBatchTest extends AbstractBatchTest {
         new SyncSourceBatch(
             eventThread,
             syncSourceProvider,
+            conflictResolutionStrategy,
             targetChain,
             UInt64.valueOf(startSlot),
             UInt64.valueOf(count));

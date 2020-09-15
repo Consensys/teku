@@ -39,6 +39,7 @@ public class SyncSourceBatch implements Batch {
 
   private final EventThread eventThread;
   private final Supplier<SyncSource> syncSourceProvider;
+  private final ConflictResolutionStrategy conflictResolutionStrategy;
   private final TargetChain targetChain;
   private final UInt64 firstSlot;
   private final UInt64 count;
@@ -54,6 +55,7 @@ public class SyncSourceBatch implements Batch {
   SyncSourceBatch(
       final EventThread eventThread,
       final Supplier<SyncSource> syncSourceProvider,
+      final ConflictResolutionStrategy conflictResolutionStrategy,
       final TargetChain targetChain,
       final UInt64 firstSlot,
       final UInt64 count) {
@@ -61,6 +63,7 @@ public class SyncSourceBatch implements Batch {
         count.isGreaterThanOrEqualTo(UInt64.ONE), "Must include at least one slot in a batch");
     this.eventThread = eventThread;
     this.syncSourceProvider = syncSourceProvider;
+    this.conflictResolutionStrategy = conflictResolutionStrategy;
     this.targetChain = targetChain;
     this.firstSlot = firstSlot;
     this.count = count;
@@ -139,10 +142,7 @@ public class SyncSourceBatch implements Batch {
   @Override
   public void markAsContested() {
     contested = true;
-    // TODO: Need to apply some form of conflict resolution strategy.
-    // This code gets sync working but is pretty brute force and not well thought out
-    //    currentSyncSource = Optional.empty();
-    //    reset();
+    conflictResolutionStrategy.verifyBatch(this, currentSyncSource.orElseThrow());
   }
 
   @Override
@@ -159,6 +159,9 @@ public class SyncSourceBatch implements Batch {
     final UInt64 startSlot =
         getLastBlock().map(SignedBeaconBlock::getSlot).map(UInt64::increment).orElse(firstSlot);
     final UInt64 remainingSlots = count.minus(startSlot.minus(firstSlot));
+    checkState(
+        remainingSlots.isGreaterThan(UInt64.ZERO),
+        "Attempting to request more blocks when block for last slot already present.");
     if (currentSyncSource.isEmpty()) {
       currentSyncSource = Optional.of(syncSourceProvider.get());
     }
