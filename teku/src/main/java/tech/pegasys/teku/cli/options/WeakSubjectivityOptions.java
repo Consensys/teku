@@ -17,6 +17,7 @@ import picocli.CommandLine;
 import tech.pegasys.teku.config.TekuConfigurationBuilder;
 
 public class WeakSubjectivityOptions {
+  // TODO(#2779) - Make this option public when we're ready
   @CommandLine.Option(
       names = {"--Xweak-subjectivity-checkpoint"},
       paramLabel = "<BLOCK_ROOT>:<EPOCH_NUMBER>",
