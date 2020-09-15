@@ -23,9 +23,9 @@ import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 
 public class EventThreadOnlyBatch implements Batch {
   private final EventThread eventThread;
-  private final StubBatch delegate;
+  private final Batch delegate;
 
-  public EventThreadOnlyBatch(final EventThread eventThread, final StubBatch delegate) {
+  public EventThreadOnlyBatch(final EventThread eventThread, final Batch delegate) {
     this.eventThread = eventThread;
     this.delegate = delegate;
   }
@@ -136,10 +136,6 @@ public class EventThreadOnlyBatch implements Batch {
   public void markAsInvalid() {
     eventThread.checkOnEventThread();
     delegate.markAsInvalid();
-  }
-
-  public StubBatch getDelegate() {
-    return delegate;
   }
 
   @Override

@@ -76,9 +76,7 @@ class FinalizedSyncTest {
   void setUp() {
     storageSystem.chainUpdater().initializeGenesis();
     when(batchImporter.importBatch(any()))
-        .thenAnswer(
-            invocation ->
-                ((EventThreadOnlyBatch) invocation.getArgument(0)).getDelegate().getImportResult());
+        .thenAnswer(invocation -> unwrapBatch(invocation.getArgument(0)).getImportResult());
     when(batchFactory.createBatch(any(), any(), any()))
         .thenAnswer(
             invocation -> {
@@ -626,5 +624,13 @@ class FinalizedSyncTest {
 
   private void assertNoBatchesImported() {
     verifyNoInteractions(batchImporter);
+  }
+
+  private StubBatch unwrapBatch(final Batch wrappedBatch) {
+    return wrappedBatches.entrySet().stream()
+        .filter(entry -> entry.getValue().equals(wrappedBatch))
+        .map(Map.Entry::getKey)
+        .findFirst()
+        .orElseThrow();
   }
 }

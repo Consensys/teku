@@ -30,7 +30,8 @@ public class BatchFactory {
   public Batch createBatch(final TargetChain chain, final UInt64 start, final UInt64 count) {
     eventThread.checkOnEventThread();
     final Supplier<SyncSource> syncSourceProvider = () -> selectRandomPeer(chain.getPeers());
-    return new SyncSourceBatch(eventThread, syncSourceProvider, chain, start, count);
+    return new EventThreadOnlyBatch(
+        eventThread, new SyncSourceBatch(eventThread, syncSourceProvider, chain, start, count));
   }
 
   private SyncSource selectRandomPeer(final Collection<SyncSource> peers) {
