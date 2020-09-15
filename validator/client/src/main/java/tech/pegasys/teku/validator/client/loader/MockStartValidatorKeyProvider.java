@@ -19,14 +19,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 class MockStartValidatorKeyProvider implements ValidatorKeyProvider {
 
   private static final Logger LOG = LogManager.getLogger();
 
   @Override
-  public List<BLSKeyPair> loadValidatorKeys(final TekuConfiguration config) {
+  public List<BLSKeyPair> loadValidatorKeys(final GlobalConfiguration config) {
     final int startIndex = config.getInteropOwnedValidatorStartIndex();
     final int endIndex = startIndex + config.getInteropOwnedValidatorCount();
     LOG.log(Level.DEBUG, "Owning validator range " + startIndex + " to " + endIndex);
