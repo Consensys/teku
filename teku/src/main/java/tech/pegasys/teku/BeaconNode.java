@@ -36,7 +36,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.BeaconNodeServiceController;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.time.SystemTimeProvider;
 
 public class BeaconNode implements Node {
@@ -51,7 +51,7 @@ public class BeaconNode implements Node {
   private final EventChannels eventChannels;
   private final MetricsEndpoint metricsEndpoint;
 
-  public BeaconNode(final TekuConfiguration config) {
+  public BeaconNode(final GlobalConfiguration config) {
 
     LoggingConfigurator.update(
         new LoggingConfiguration(

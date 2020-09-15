@@ -40,9 +40,9 @@ import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.util.config.Eth1Address;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.NetworkDefinition;
-import tech.pegasys.teku.util.config.TekuConfiguration;
-import tech.pegasys.teku.util.config.TekuConfigurationBuilder;
 
 public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
@@ -185,9 +185,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void interopEnabled_shouldNotRequireAValue() {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromArguments("--Xinterop-enabled");
-    assertThat(tekuConfiguration.isInteropEnabled()).isTrue();
+    assertThat(globalConfiguration.isInteropEnabled()).isTrue();
   }
 
   @ParameterizedTest(name = "{0}")
@@ -264,7 +264,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     };
   }
 
-  private TekuConfigurationBuilder expectedDefaultConfigurationBuilder() {
+  private GlobalConfigurationBuilder expectedDefaultConfigurationBuilder() {
     return expectedConfigurationBuilder()
         .setNetwork(NetworkDefinition.fromCliArg("medalla"))
         .setEth1DepositContractAddress(null)
@@ -286,16 +286,16 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN);
   }
 
-  private TekuConfigurationBuilder expectedCompleteConfigInFileBuilder() {
+  private GlobalConfigurationBuilder expectedCompleteConfigInFileBuilder() {
     return expectedConfigurationBuilder()
         .setLogFile("teku.log")
         .setLogDestination(LoggingDestination.BOTH)
         .setLogFileNamePattern("teku_%d{yyyy-MM-dd}.log");
   }
 
-  private TekuConfigurationBuilder expectedConfigurationBuilder() {
+  private GlobalConfigurationBuilder expectedConfigurationBuilder() {
     Eth1Address address = Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
-    return TekuConfiguration.builder()
+    return GlobalConfiguration.builder()
         .setNetwork(NetworkDefinition.fromCliArg("minimal"))
         .setP2pEnabled(false)
         .setP2pInterface("1.2.3.4")
@@ -350,8 +350,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setBeaconNodeEventsWsEndpoint("ws://127.0.0.1:9999");
   }
 
-  private void assertTekuConfiguration(final TekuConfiguration expected) {
-    final TekuConfiguration actual = getResultingTekuConfiguration();
+  private void assertTekuConfiguration(final GlobalConfiguration expected) {
+    final GlobalConfiguration actual = getResultingTekuConfiguration();
     assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
   }
 

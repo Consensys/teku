@@ -31,7 +31,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
 
@@ -39,7 +39,7 @@ public class YamlValidatorKeyProvider implements ValidatorKeyProvider {
 
   @SuppressWarnings("unchecked")
   @Override
-  public List<BLSKeyPair> loadValidatorKeys(final TekuConfiguration config) {
+  public List<BLSKeyPair> loadValidatorKeys(final GlobalConfiguration config) {
     final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
     final Path keyFile = Path.of(config.getValidatorsKeyFile());
     LOG.log(Level.DEBUG, "Loading validator keys from " + keyFile.toAbsolutePath().toString());

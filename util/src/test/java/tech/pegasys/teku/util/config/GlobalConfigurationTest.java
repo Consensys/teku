@@ -19,13 +19,13 @@ import java.util.List;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-class TekuConfigurationTest {
+class GlobalConfigurationTest {
 
-  private TekuConfigurationBuilder tekuConfigurationBuilder = new TekuConfigurationBuilder();
+  private GlobalConfigurationBuilder globalConfigurationBuilder = new GlobalConfigurationBuilder();
 
   @Test
   public void shouldThrowExceptionIfValidatorKeystoreFilesButNotValidatorKeystorePasswordFiles() {
-    final TekuConfiguration config = buildConfig(emptyList(), null);
+    final GlobalConfiguration config = buildConfig(emptyList(), null);
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(config::validateConfig)
         .withMessageContaining(
@@ -34,7 +34,7 @@ class TekuConfigurationTest {
 
   @Test
   public void shouldThrowExceptionIfValidatorKeystorePasswordFilesButNotValidatorKeystoreFiles() {
-    final TekuConfiguration config = buildConfig(null, emptyList());
+    final GlobalConfiguration config = buildConfig(null, emptyList());
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(config::validateConfig)
         .withMessageContaining(
@@ -43,17 +43,17 @@ class TekuConfigurationTest {
 
   @Test
   public void shouldThrowExceptionIfValidatorKeystoreFilesPasswordsLengthMismatch() {
-    final TekuConfiguration config = buildConfig(emptyList(), List.of("password"));
+    final GlobalConfiguration config = buildConfig(emptyList(), List.of("password"));
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(config::validateConfig)
         .withMessageContaining(
             "Invalid configuration. The number of --validators-key-files (0) must equal the number of --validators-key-password-files (1)");
   }
 
-  private TekuConfiguration buildConfig(
+  private GlobalConfiguration buildConfig(
       final List<String> validatorKeystoreFiles,
       final List<String> validatorKeystorePasswordFiles) {
-    return tekuConfigurationBuilder
+    return globalConfigurationBuilder
         .setInteropNumberOfValidators(10)
         .setValidatorKeystoreFiles(validatorKeystoreFiles)
         .setValidatorKeystorePasswordFiles(validatorKeystorePasswordFiles)

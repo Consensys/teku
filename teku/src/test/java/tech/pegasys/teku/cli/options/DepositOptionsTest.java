@@ -18,13 +18,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.util.config.Eth1Address;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldReadDepositOptionsFromConfigurationFile() {
-    final TekuConfiguration config = getTekuConfigurationFromFile("depositOptions_config.yaml");
+    final GlobalConfiguration config = getTekuConfigurationFromFile("depositOptions_config.yaml");
     final Eth1Address address =
         Eth1Address.fromHexString("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73");
 
@@ -42,20 +42,22 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
       "--eth1-deposit-contract-address",
       "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"
     };
-    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(args);
-    assertThat(tekuConfiguration.isEth1Enabled()).isTrue();
+    final GlobalConfiguration globalConfiguration = getTekuConfigurationFromArguments(args);
+    assertThat(globalConfiguration.isEth1Enabled()).isTrue();
   }
 
   @Test
   public void shouldReportEth1DisabledIfEndpointNotSpecified() {
-    final TekuConfiguration tekuConfigurationFromArguments = getTekuConfigurationFromArguments();
-    assertThat(tekuConfigurationFromArguments.isEth1Enabled()).isFalse();
+    final GlobalConfiguration globalConfigurationFromArguments =
+        getTekuConfigurationFromArguments();
+    assertThat(globalConfigurationFromArguments.isEth1Enabled()).isFalse();
   }
 
   @Test
   public void shouldDisableLoadFromStorageByDefault() {
-    final TekuConfiguration tekuConfigurationFromArguments = getTekuConfigurationFromArguments();
-    assertThat(tekuConfigurationFromArguments.isEth1DepositsFromStorageEnabled()).isTrue();
+    final GlobalConfiguration globalConfigurationFromArguments =
+        getTekuConfigurationFromArguments();
+    assertThat(globalConfigurationFromArguments.isEth1DepositsFromStorageEnabled()).isTrue();
   }
 
   @Test

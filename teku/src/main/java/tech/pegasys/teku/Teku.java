@@ -19,7 +19,7 @@ import java.io.PrintWriter;
 import java.security.Security;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public final class Teku {
 
@@ -35,7 +35,7 @@ public final class Teku {
     }
   }
 
-  private static void start(final TekuConfiguration config) {
+  private static void start(final GlobalConfiguration config) {
     final Node node;
     if (config.isValidatorClient()) {
       node = new ValidatorNode(config);

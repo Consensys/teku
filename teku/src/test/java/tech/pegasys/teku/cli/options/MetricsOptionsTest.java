@@ -20,12 +20,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void shouldReadFromConfigurationFile() {
-    final TekuConfiguration config = getTekuConfigurationFromFile("metricsOptions_config.yaml");
+    final GlobalConfiguration config = getTekuConfigurationFromFile("metricsOptions_config.yaml");
 
     assertThat(config.getMetricsInterface()).isEqualTo("127.100.0.1");
     assertThat(config.getMetricsPort()).isEqualTo(8888);
@@ -36,46 +36,46 @@ public class MetricsOptionsTest extends AbstractBeaconNodeCommandTest {
   @ParameterizedTest(name = "{0}")
   @ValueSource(strings = {"BEACON", "LIBP2P", "NETWORK", "EVENTBUS", "JVM", "PROCESS"})
   public void metricsCategories_shouldAcceptValues(String category) {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromArguments("--metrics-categories", category);
-    assertThat(tekuConfiguration.getMetricsCategories()).isEqualTo(List.of(category));
+    assertThat(globalConfiguration.getMetricsCategories()).isEqualTo(List.of(category));
   }
 
   @Test
   public void metricsCategories_shouldAcceptMultipleValues() {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromArguments(
             "--metrics-categories", "LIBP2P,NETWORK,EVENTBUS,PROCESS");
-    assertThat(tekuConfiguration.getMetricsCategories())
+    assertThat(globalConfiguration.getMetricsCategories())
         .isEqualTo(List.of("LIBP2P", "NETWORK", "EVENTBUS", "PROCESS"));
   }
 
   @Test
   public void metricsEnabled_shouldNotRequireAValue() {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromArguments("--metrics-enabled");
-    assertThat(tekuConfiguration.isMetricsEnabled()).isTrue();
+    assertThat(globalConfiguration.isMetricsEnabled()).isTrue();
   }
 
   @Test
   public void metricsHostAllowlist_shouldNotRequireAValue() {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromArguments("--metrics-host-allowlist");
-    assertThat(tekuConfiguration.getMetricsHostAllowlist()).isEmpty();
+    assertThat(globalConfiguration.getMetricsHostAllowlist()).isEmpty();
   }
 
   @Test
   public void metricsHostAllowlist_shouldSupportAllowingMultipleHosts() {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromArguments("--metrics-host-allowlist", "my.host,their.host");
-    assertThat(tekuConfiguration.getMetricsHostAllowlist()).containsOnly("my.host", "their.host");
+    assertThat(globalConfiguration.getMetricsHostAllowlist()).containsOnly("my.host", "their.host");
   }
 
   @Test
   public void metricsHostAllowlist_shouldSupportAllowingAllHosts() {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromArguments("--metrics-host-allowlist", "*");
-    assertThat(tekuConfiguration.getMetricsHostAllowlist()).containsOnly("*");
+    assertThat(globalConfiguration.getMetricsHostAllowlist()).containsOnly("*");
   }
 
   @Test

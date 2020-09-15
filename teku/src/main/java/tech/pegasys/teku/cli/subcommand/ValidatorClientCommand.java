@@ -29,9 +29,9 @@ import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.NetworkDefinition;
-import tech.pegasys.teku.util.config.TekuConfiguration;
 
 @Command(
     name = "validator-client",
@@ -76,8 +76,8 @@ public class ValidatorClientCommand implements Callable<Integer> {
   public Integer call() {
     try {
       parentCommand.setLogLevels();
-      final TekuConfiguration tekuConfiguration = tekuConfiguration();
-      parentCommand.getStartAction().accept(tekuConfiguration);
+      final GlobalConfiguration globalConfiguration = tekuConfiguration();
+      parentCommand.getStartAction().accept(globalConfiguration);
       return 0;
     } catch (InvalidConfigurationException | DatabaseStorageException ex) {
       parentCommand.reportUserError(ex);
@@ -93,8 +93,8 @@ public class ValidatorClientCommand implements Callable<Integer> {
     return 1;
   }
 
-  private TekuConfiguration tekuConfiguration() {
-    return TekuConfiguration.builder()
+  private GlobalConfiguration tekuConfiguration() {
+    return GlobalConfiguration.builder()
         .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
         .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
         .setInteropOwnedValidatorStartIndex(interopOptions.getInteropOwnerValidatorStartIndex())

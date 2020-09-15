@@ -62,9 +62,9 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.util.config.Eth1Address;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.NetworkDefinition;
-import tech.pegasys.teku.util.config.TekuConfiguration;
 
 @SuppressWarnings("unused")
 @Command(
@@ -97,7 +97,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private final PrintWriter outputWriter;
   private final PrintWriter errorWriter;
   private final Map<String, String> environment;
-  private final Consumer<TekuConfiguration> startAction;
+  private final Consumer<GlobalConfiguration> startAction;
   private final MetricCategoryConverter metricCategoryConverter = new MetricCategoryConverter();
 
   // allows two pass approach to obtain optional config file
@@ -175,7 +175,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       final PrintWriter outputWriter,
       final PrintWriter errorWriter,
       final Map<String, String> environment,
-      final Consumer<TekuConfiguration> startAction) {
+      final Consumer<GlobalConfiguration> startAction) {
     this.outputWriter = outputWriter;
     this.errorWriter = errorWriter;
     this.environment = environment;
@@ -270,8 +270,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
   public Integer call() {
     try {
       setLogLevels();
-      final TekuConfiguration tekuConfiguration = tekuConfiguration();
-      startAction.accept(tekuConfiguration);
+      final GlobalConfiguration globalConfiguration = tekuConfiguration();
+      startAction.accept(globalConfiguration);
       return 0;
     } catch (InvalidConfigurationException | DatabaseStorageException ex) {
       reportUserError(ex);
@@ -313,12 +313,12 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return this.logLevel;
   }
 
-  public Consumer<TekuConfiguration> getStartAction() {
+  public Consumer<GlobalConfiguration> getStartAction() {
     return startAction;
   }
 
-  protected TekuConfiguration tekuConfiguration() {
-    return TekuConfiguration.builder()
+  protected GlobalConfiguration tekuConfiguration() {
+    return GlobalConfiguration.builder()
         .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
         .setStartupTargetPeerCount(networkOptions.getStartupTargetPeerCount())
         .setStartupTimeoutSeconds(networkOptions.getStartupTimeoutSeconds())

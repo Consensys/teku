@@ -34,7 +34,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.ValidatorNodeServiceController;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.time.SystemTimeProvider;
 
 public class ValidatorNode implements Node {
@@ -49,7 +49,7 @@ public class ValidatorNode implements Node {
   private final EventChannels eventChannels;
   private final MetricsEndpoint metricsEndpoint;
 
-  public ValidatorNode(final TekuConfiguration config) {
+  public ValidatorNode(final GlobalConfiguration config) {
 
     LoggingConfigurator.update(
         new LoggingConfiguration(

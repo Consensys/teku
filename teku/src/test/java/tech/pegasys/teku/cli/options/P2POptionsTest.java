@@ -19,13 +19,13 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldReadFromConfigurationFile() {
-    final TekuConfiguration config = getTekuConfigurationFromFile("P2POptions_config.yaml");
+    final GlobalConfiguration config = getTekuConfigurationFromFile("P2POptions_config.yaml");
 
     assertThat(config.getP2pAdvertisedIp()).isEqualTo(Optional.of("127.200.0.1"));
     assertThat(config.getP2pInterface()).isEqualTo("127.100.0.1");
@@ -41,15 +41,16 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void p2pEnabled_shouldNotRequireAValue() {
-    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments("--p2p-enabled");
-    assertThat(tekuConfiguration.isP2pEnabled()).isTrue();
+    final GlobalConfiguration globalConfiguration =
+        getTekuConfigurationFromArguments("--p2p-enabled");
+    assertThat(globalConfiguration.isP2pEnabled()).isTrue();
   }
 
   @Test
   public void p2pDiscoveryEnabled_shouldNotRequireAValue() {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromArguments("--p2p-discovery-enabled");
-    assertThat(tekuConfiguration.isP2pEnabled()).isTrue();
+    assertThat(globalConfiguration.isP2pEnabled()).isTrue();
   }
 
   @Test
@@ -58,8 +59,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
-    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isTrue();
+    final GlobalConfiguration globalConfiguration = getResultingTekuConfiguration();
+    assertThat(globalConfiguration.isP2pSnappyEnabled()).isTrue();
   }
 
   @Test
@@ -68,8 +69,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
-    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isTrue();
+    final GlobalConfiguration globalConfiguration = getResultingTekuConfiguration();
+    assertThat(globalConfiguration.isP2pSnappyEnabled()).isTrue();
   }
 
   @Test
@@ -78,8 +79,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
-    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isTrue();
+    final GlobalConfiguration globalConfiguration = getResultingTekuConfiguration();
+    assertThat(globalConfiguration.isP2pSnappyEnabled()).isTrue();
   }
 
   @Test
@@ -88,8 +89,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
-    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isFalse();
+    final GlobalConfiguration globalConfiguration = getResultingTekuConfiguration();
+    assertThat(globalConfiguration.isP2pSnappyEnabled()).isFalse();
   }
 
   @Test
@@ -101,8 +102,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
-    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isFalse();
+    final GlobalConfiguration globalConfiguration = getResultingTekuConfiguration();
+    assertThat(globalConfiguration.isP2pSnappyEnabled()).isFalse();
   }
 
   @Test
@@ -114,8 +115,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
-    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isTrue();
+    final GlobalConfiguration globalConfiguration = getResultingTekuConfiguration();
+    assertThat(globalConfiguration.isP2pSnappyEnabled()).isTrue();
   }
 
   @Test

@@ -17,12 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void shouldReadFromConfigurationFile() {
-    final TekuConfiguration config =
+    final GlobalConfiguration config =
         getTekuConfigurationFromFile("beaconRestApiOptions_config.yaml");
 
     assertThat(config.getRestApiInterface()).isEqualTo("127.100.0.1");
@@ -33,37 +33,37 @@ public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void restApiDocsEnabled_shouldNotRequireAValue() {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromArguments("--rest-api-docs-enabled");
-    assertThat(tekuConfiguration.isRestApiDocsEnabled()).isTrue();
+    assertThat(globalConfiguration.isRestApiDocsEnabled()).isTrue();
   }
 
   @Test
   public void restApiEnabled_shouldNotRequireAValue() {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromArguments("--rest-api-enabled");
-    assertThat(tekuConfiguration.isRestApiEnabled()).isTrue();
+    assertThat(globalConfiguration.isRestApiEnabled()).isTrue();
   }
 
   @Test
   public void restApiHostAllowlist_shouldNotRequireAValue() {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromArguments("--rest-api-host-allowlist");
-    assertThat(tekuConfiguration.getRestApiHostAllowlist()).isEmpty();
+    assertThat(globalConfiguration.getRestApiHostAllowlist()).isEmpty();
   }
 
   @Test
   public void restApiHostAllowlist_shouldSupportAllowingMultipleHosts() {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromArguments("--rest-api-host-allowlist", "my.host,their.host");
-    assertThat(tekuConfiguration.getRestApiHostAllowlist()).containsOnly("my.host", "their.host");
+    assertThat(globalConfiguration.getRestApiHostAllowlist()).containsOnly("my.host", "their.host");
   }
 
   @Test
   public void restApiHostAllowlist_shouldSupportAllowingAllHosts() {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromArguments("--rest-api-host-allowlist", "*");
-    assertThat(tekuConfiguration.getRestApiHostAllowlist()).containsOnly("*");
+    assertThat(globalConfiguration.getRestApiHostAllowlist()).containsOnly("*");
   }
 
   @Test

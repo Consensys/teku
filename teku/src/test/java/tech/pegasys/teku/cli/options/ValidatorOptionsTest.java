@@ -22,7 +22,7 @@ import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -35,7 +35,7 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
         BLSPublicKey.fromBytesCompressed(
             Bytes48.fromHexString(
                 "0xad113a7d152dc74ae2b26db65bfb89ed07501c818bf47671c6d34e5a2f7224e4c5525dd4fddaa93aa328da86b7205009"));
-    final TekuConfiguration config = getTekuConfigurationFromFile("validatorOptions_config.yaml");
+    final GlobalConfiguration config = getTekuConfigurationFromFile("validatorOptions_config.yaml");
 
     assertThat(config.getValidatorKeystoreFiles()).containsExactly("a.key", "b.key");
     assertThat(config.getValidatorKeystorePasswordFiles())

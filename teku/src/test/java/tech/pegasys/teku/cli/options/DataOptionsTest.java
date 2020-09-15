@@ -19,65 +19,65 @@ import static tech.pegasys.teku.util.config.StateStorageMode.PRUNE;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
   private static final String TEST_PATH = "/tmp/teku";
 
   @Test
   public void dataPath_shouldReadFromConfigurationFile() {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromFile("dataOptions_config.yaml");
-    assertThat(tekuConfiguration.getDataPath()).isEqualTo(TEST_PATH);
-    assertThat(tekuConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
-    assertThat(tekuConfiguration.getDataStorageCreateDbVersion()).isEqualTo("4");
-    assertThat(tekuConfiguration.getDataStorageFrequency()).isEqualTo(128L);
+    assertThat(globalConfiguration.getDataPath()).isEqualTo(TEST_PATH);
+    assertThat(globalConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
+    assertThat(globalConfiguration.getDataStorageCreateDbVersion()).isEqualTo("4");
+    assertThat(globalConfiguration.getDataStorageFrequency()).isEqualTo(128L);
   }
 
   @Test
   public void dataStorageMode_shouldAcceptPrune() {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromArguments("--data-storage-mode", "prune");
-    assertThat(tekuConfiguration.getDataStorageMode()).isEqualTo(PRUNE);
+    assertThat(globalConfiguration.getDataStorageMode()).isEqualTo(PRUNE);
   }
 
   @Test
   public void dataStorageMode_shouldAcceptArchive() {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromArguments("--data-storage-mode", "archive");
-    assertThat(tekuConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
+    assertThat(globalConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
   }
 
   @Test
   public void dataPath_shouldAcceptNonDefaultValues() {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromArguments("--data-path", TEST_PATH);
-    assertThat(tekuConfiguration.getDataPath()).isEqualTo(TEST_PATH);
+    assertThat(globalConfiguration.getDataPath()).isEqualTo(TEST_PATH);
   }
 
   @Test
   public void dataStorageFrequency_shouldDefault() {
-    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
-    assertThat(tekuConfiguration.getDataStorageFrequency()).isEqualTo(2048L);
+    final GlobalConfiguration globalConfiguration = getTekuConfigurationFromArguments();
+    assertThat(globalConfiguration.getDataStorageFrequency()).isEqualTo(2048L);
   }
 
   @Test
   public void dataStorageFrequency_shouldAcceptNonDefaultValues() {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromArguments("--data-storage-archive-frequency", "1024000");
-    assertThat(tekuConfiguration.getDataStorageFrequency()).isEqualTo(1024000L);
+    assertThat(globalConfiguration.getDataStorageFrequency()).isEqualTo(1024000L);
   }
 
   @Test
   public void dataStorageCreateDbVersion_shouldDefault() {
-    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
-    assertThat(tekuConfiguration.getDataStorageCreateDbVersion()).isEqualTo("5");
+    final GlobalConfiguration globalConfiguration = getTekuConfigurationFromArguments();
+    assertThat(globalConfiguration.getDataStorageCreateDbVersion()).isEqualTo("5");
   }
 
   @Test
   public void dataStorageCreateDbVersion_shouldAcceptNonDefaultValues() {
-    final TekuConfiguration tekuConfiguration =
+    final GlobalConfiguration globalConfiguration =
         getTekuConfigurationFromArguments("--Xdata-storage-create-db-version", "3.0");
-    assertThat(tekuConfiguration.getDataStorageCreateDbVersion()).isEqualTo("3.0");
+    assertThat(globalConfiguration.getDataStorageCreateDbVersion()).isEqualTo("3.0");
   }
 }
