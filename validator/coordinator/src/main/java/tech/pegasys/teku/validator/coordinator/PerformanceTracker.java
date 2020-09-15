@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.web3j.abi.datatypes.generated.Uint64;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBody;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -64,7 +65,7 @@ public class PerformanceTracker implements SlotEventsChannel {
   }
 
   private void outputBlockPerformanceInfo(UInt64 epoch) {
-    List<BeaconBlock> blockInEpoch = getBlocksInEpoch(epoch);
+    List<BeaconBlock> blockInEpoch = getBlocksInEpochs(epoch, epoch.increment());
     List<SignedBeaconBlock> sentBlocks = sentBlocksByEpoch.get(epoch);
     long numberOfSentBlocks = sentBlocks.size();
     long numberOfIncludedSentBlocks =
@@ -84,15 +85,13 @@ public class PerformanceTracker implements SlotEventsChannel {
   private void outputAttestationPerformanceInfo(final UInt64 epoch) {
     UInt64 previousEpoch = epoch.decrement();
 
-    List<Attestation> allAttestations = new ArrayList<>();
-    allAttestations.addAll(getAttestationsInEpoch(epoch));
-    allAttestations.addAll(getAttestationsInEpoch(previousEpoch));
+    Map<UInt64, List<Attestation>> attestations = getAttestationsInEpochs(epoch.decrement(), epoch);
 
     List<Attestation> sentAttestations = sentAttestationsByEpoch.get(previousEpoch);
     long numberOfSentAttestations = sentAttestations.size();
     long numberOfIncludedSentAttestations =
         sentAttestations.stream()
-            .filter(a -> checkIfAttestationIsIncludedInList(a, allAttestations))
+            .filter(a -> checkIfAttestationIsIncludedInList(a, attestations))
             .count();
 
     LOG.info(
@@ -122,9 +121,9 @@ public class PerformanceTracker implements SlotEventsChannel {
             .isSuperSetOf(sentAttestation.getAggregation_bits());
   }
 
-  private List<BeaconBlock> getBlocksInEpoch(UInt64 epoch) {
-    UInt64 epochStartSlot = compute_start_slot_at_epoch(epoch);
-    UInt64 nextEpochStartSlot = compute_start_slot_at_epoch(epoch.increment());
+  private List<BeaconBlock> getBlocksInEpochs(UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
+    UInt64 epochStartSlot = compute_start_slot_at_epoch(startEpochInclusive);
+    UInt64 nextEpochStartSlot = compute_start_slot_at_epoch(endEpochExclusive);
 
     List<Bytes32> blockRootsInEpoch = new ArrayList<>();
     for (UInt64 currSlot = epochStartSlot;
@@ -141,8 +140,9 @@ public class PerformanceTracker implements SlotEventsChannel {
         .collect(Collectors.toList());
   }
 
-  private Map<UInt64, List<Attestation>> getAttestationsInEpoch(UInt64 epoch) {
-    return getBlocksInEpoch(epoch).stream()
+  private Map<UInt64, List<Attestation>> getAttestationsInEpochs(UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
+    return getBlocksInEpochs(startEpochInclusive, endEpochExclusive)
+            .stream()
             .collect(Collectors.toMap(
                     BeaconBlock::getSlot,
                     block -> block.getBody().getAttestations().asList()
