@@ -16,6 +16,7 @@ package tech.pegasys.teku.sync.multipeer;
 import com.google.common.base.Throwables;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.Executor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -34,6 +35,7 @@ public class SyncController {
   private final Subscribers<SyncSubscriber> subscribers = Subscribers.create(true);
 
   private final EventThread eventThread;
+  private final Executor subscriberExecutor;
   private final RecentChainData recentChainData;
   private final ChainSelector finalizedTargetChainSelector;
   private final Sync finalizedSync;
@@ -49,10 +51,12 @@ public class SyncController {
 
   public SyncController(
       final EventThread eventThread,
+      final Executor subscriberExecutor,
       final RecentChainData recentChainData,
       final ChainSelector finalizedTargetChainSelector,
       final Sync finalizedSync) {
     this.eventThread = eventThread;
+    this.subscriberExecutor = subscriberExecutor;
     this.recentChainData = recentChainData;
     this.finalizedTargetChainSelector = finalizedTargetChainSelector;
     this.finalizedSync = finalizedSync;
@@ -73,7 +77,7 @@ public class SyncController {
       return;
     }
     if (!isSyncActive() && newFinalizedSync.isPresent()) {
-      subscribers.deliver(SyncSubscriber::onSyncingChange, true);
+      notifySubscribers(true);
     }
     currentSync = newFinalizedSync;
   }
@@ -84,7 +88,7 @@ public class SyncController {
       // A different sync is now running so ignore this change.
       return;
     }
-    subscribers.deliver(SyncSubscriber::onSyncingChange, false);
+    notifySubscribers(false);
   }
 
   public boolean isSyncActive() {
@@ -105,6 +109,10 @@ public class SyncController {
 
   public void unsubscribeFromSyncChanges(final long subscriberId) {
     subscribers.unsubscribe(subscriberId);
+  }
+
+  private void notifySubscribers(final boolean syncing) {
+    subscriberExecutor.execute(() -> subscribers.deliver(SyncSubscriber::onSyncingChange, syncing));
   }
 
   private InProgressSync startFinalizedSync(final TargetChain chain) {

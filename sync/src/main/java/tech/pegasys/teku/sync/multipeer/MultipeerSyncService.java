@@ -18,6 +18,7 @@ import java.util.Optional;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
+import tech.pegasys.teku.infrastructure.async.OrderedAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
@@ -82,7 +83,8 @@ public class MultipeerSyncService extends Service implements SyncService {
     final Sync sync = __ -> SafeFuture.COMPLETE;
 
     final SyncController syncController =
-        new SyncController(eventThread, recentChainData, chainSelector, sync);
+        new SyncController(
+            eventThread, new OrderedAsyncRunner(asyncRunner), recentChainData, chainSelector, sync);
     final PeerChainTracker peerChainTracker =
         new PeerChainTracker(eventThread, p2pNetwork, syncController);
     return new MultipeerSyncService(
