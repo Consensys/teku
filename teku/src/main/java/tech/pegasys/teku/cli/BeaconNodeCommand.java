@@ -58,11 +58,12 @@ import tech.pegasys.teku.cli.subcommand.debug.DebugToolsCommand;
 import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
 import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
+import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.util.config.Eth1Address;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 
@@ -97,7 +98,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private final PrintWriter outputWriter;
   private final PrintWriter errorWriter;
   private final Map<String, String> environment;
-  private final Consumer<GlobalConfiguration> startAction;
+  private final Consumer<TekuConfiguration> startAction;
   private final MetricCategoryConverter metricCategoryConverter = new MetricCategoryConverter();
 
   // allows two pass approach to obtain optional config file
@@ -175,7 +176,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       final PrintWriter outputWriter,
       final PrintWriter errorWriter,
       final Map<String, String> environment,
-      final Consumer<GlobalConfiguration> startAction) {
+      final Consumer<TekuConfiguration> startAction) {
     this.outputWriter = outputWriter;
     this.errorWriter = errorWriter;
     this.environment = environment;
@@ -270,8 +271,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
   public Integer call() {
     try {
       setLogLevels();
-      final GlobalConfiguration globalConfiguration = tekuConfiguration();
-      startAction.accept(globalConfiguration);
+      final TekuConfiguration tekuConfig = tekuConfiguration();
+      startAction.accept(tekuConfig);
       return 0;
     } catch (InvalidConfigurationException | DatabaseStorageException ex) {
       reportUserError(ex);
@@ -313,12 +314,16 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return this.logLevel;
   }
 
-  public Consumer<GlobalConfiguration> getStartAction() {
+  public Consumer<TekuConfiguration> getStartAction() {
     return startAction;
   }
 
-  protected GlobalConfiguration tekuConfiguration() {
-    return GlobalConfiguration.builder()
+  protected TekuConfiguration tekuConfiguration() {
+    return TekuConfiguration.builder().globalConfig(this::buildGlobalConfiguration).build();
+  }
+
+  private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
+    builder
         .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
         .setStartupTargetPeerCount(networkOptions.getStartupTargetPeerCount())
         .setStartupTimeoutSeconds(networkOptions.getStartupTimeoutSeconds())
@@ -389,7 +394,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setRemoteValidatorApiEnabled(remoteValidatorApiOptions.isApiEnabled())
         .setValidatorClient(false)
         .setBeaconNodeApiEndpoint(validatorClientOptions.getBeaconNodeApiEndpoint())
-        .setBeaconNodeEventsWsEndpoint(validatorClientOptions.getBeaconNodeEventsWsEndpoint())
-        .build();
+        .setBeaconNodeEventsWsEndpoint(validatorClientOptions.getBeaconNodeEventsWsEndpoint());
   }
 }

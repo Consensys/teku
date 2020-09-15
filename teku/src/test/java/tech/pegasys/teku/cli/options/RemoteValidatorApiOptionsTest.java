@@ -24,7 +24,7 @@ public class RemoteValidatorApiOptionsTest extends AbstractBeaconNodeCommandTest
   @Test
   public void shouldReadFromConfigurationFile() {
     final GlobalConfiguration config =
-        getTekuConfigurationFromFile("remoteValidatorApiOptions_config.yaml");
+        getGlobalConfigurationFromFile("remoteValidatorApiOptions_config.yaml");
 
     assertThat(config.getRemoteValidatorApiInterface()).isEqualTo("127.0.0.123");
     assertThat(config.getRemoteValidatorApiPort()).isEqualTo(1234);
@@ -34,7 +34,7 @@ public class RemoteValidatorApiOptionsTest extends AbstractBeaconNodeCommandTest
 
   @Test
   public void shouldHaveExpectedDefaultValues() {
-    final GlobalConfiguration config = getTekuConfigurationFromArguments();
+    final GlobalConfiguration config = getGlobalConfigurationFromArguments();
 
     assertThat(config.getRemoteValidatorApiInterface()).isEqualTo("127.0.0.1");
     assertThat(config.getRemoteValidatorApiPort()).isEqualTo(9999);
@@ -45,35 +45,35 @@ public class RemoteValidatorApiOptionsTest extends AbstractBeaconNodeCommandTest
   @Test
   public void remoteValidatorApiEnabled_shouldNotRequireAValue() {
     final GlobalConfiguration globalConfiguration =
-        getTekuConfigurationFromArguments("--Xremote-validator-api-enabled");
+        getGlobalConfigurationFromArguments("--Xremote-validator-api-enabled");
     assertThat(globalConfiguration.isRemoteValidatorApiEnabled()).isTrue();
   }
 
   @Test
   public void remoteValidatorApiInterface_shouldOverrideValue() {
     final GlobalConfiguration globalConfiguration =
-        getTekuConfigurationFromArguments("--Xremote-validator-api-interface", "127.0.9.9");
+        getGlobalConfigurationFromArguments("--Xremote-validator-api-interface", "127.0.9.9");
     assertThat(globalConfiguration.getRemoteValidatorApiInterface()).isEqualTo("127.0.9.9");
   }
 
   @Test
   public void remoteValidatorApiPort_shouldOverrideValue() {
     final GlobalConfiguration globalConfiguration =
-        getTekuConfigurationFromArguments("--Xremote-validator-api-port", "8888");
+        getGlobalConfigurationFromArguments("--Xremote-validator-api-port", "8888");
     assertThat(globalConfiguration.getRemoteValidatorApiPort()).isEqualTo(8888);
   }
 
   @Test
   public void remoteValidatorApiMaxConnections_shouldOverrideValue() {
     final GlobalConfiguration globalConfiguration =
-        getTekuConfigurationFromArguments("--Xremote-validator-api-max-subscribers", "9876");
+        getGlobalConfigurationFromArguments("--Xremote-validator-api-max-subscribers", "9876");
     assertThat(globalConfiguration.getRemoteValidatorApiMaxSubscribers()).isEqualTo(9_876);
   }
 
   @Test
   public void remoteValidatorApiEnabled_shouldOverrideValue() {
     final GlobalConfiguration globalConfiguration =
-        getTekuConfigurationFromArguments("--Xremote-validator-api-enabled", "true");
+        getGlobalConfigurationFromArguments("--Xremote-validator-api-enabled", "true");
     assertThat(globalConfiguration.isRemoteValidatorApiEnabled()).isTrue();
   }
 }

@@ -186,7 +186,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void interopEnabled_shouldNotRequireAValue() {
     final GlobalConfiguration globalConfiguration =
-        getTekuConfigurationFromArguments("--Xinterop-enabled");
+        getGlobalConfigurationFromArguments("--Xinterop-enabled");
     assertThat(globalConfiguration.isInteropEnabled()).isTrue();
   }
 
@@ -351,7 +351,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   private void assertTekuConfiguration(final GlobalConfiguration expected) {
-    final GlobalConfiguration actual = getResultingTekuConfiguration();
+    final GlobalConfiguration actual = getResultingGlobalConfiguration();
     assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
   }
 

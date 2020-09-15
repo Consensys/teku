@@ -35,7 +35,8 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
         BLSPublicKey.fromBytesCompressed(
             Bytes48.fromHexString(
                 "0xad113a7d152dc74ae2b26db65bfb89ed07501c818bf47671c6d34e5a2f7224e4c5525dd4fddaa93aa328da86b7205009"));
-    final GlobalConfiguration config = getTekuConfigurationFromFile("validatorOptions_config.yaml");
+    final GlobalConfiguration config =
+        getGlobalConfigurationFromFile("validatorOptions_config.yaml");
 
     assertThat(config.getValidatorKeystoreFiles()).containsExactly("a.key", "b.key");
     assertThat(config.getValidatorKeystorePasswordFiles())

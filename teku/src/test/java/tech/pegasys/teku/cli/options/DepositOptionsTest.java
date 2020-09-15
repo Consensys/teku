@@ -24,7 +24,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldReadDepositOptionsFromConfigurationFile() {
-    final GlobalConfiguration config = getTekuConfigurationFromFile("depositOptions_config.yaml");
+    final GlobalConfiguration config = getGlobalConfigurationFromFile("depositOptions_config.yaml");
     final Eth1Address address =
         Eth1Address.fromHexString("0xfe3b557e8fb62b89f4916b721be55ceb828dbd73");
 
@@ -42,21 +42,21 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
       "--eth1-deposit-contract-address",
       "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73"
     };
-    final GlobalConfiguration globalConfiguration = getTekuConfigurationFromArguments(args);
+    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments(args);
     assertThat(globalConfiguration.isEth1Enabled()).isTrue();
   }
 
   @Test
   public void shouldReportEth1DisabledIfEndpointNotSpecified() {
     final GlobalConfiguration globalConfigurationFromArguments =
-        getTekuConfigurationFromArguments();
+        getGlobalConfigurationFromArguments();
     assertThat(globalConfigurationFromArguments.isEth1Enabled()).isFalse();
   }
 
   @Test
   public void shouldDisableLoadFromStorageByDefault() {
     final GlobalConfiguration globalConfigurationFromArguments =
-        getTekuConfigurationFromArguments();
+        getGlobalConfigurationFromArguments();
     assertThat(globalConfigurationFromArguments.isEth1DepositsFromStorageEnabled()).isTrue();
   }
 

@@ -23,7 +23,7 @@ public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void shouldReadFromConfigurationFile() {
     final GlobalConfiguration config =
-        getTekuConfigurationFromFile("beaconRestApiOptions_config.yaml");
+        getGlobalConfigurationFromFile("beaconRestApiOptions_config.yaml");
 
     assertThat(config.getRestApiInterface()).isEqualTo("127.100.0.1");
     assertThat(config.getRestApiPort()).isEqualTo(5055);
@@ -34,41 +34,41 @@ public class BeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void restApiDocsEnabled_shouldNotRequireAValue() {
     final GlobalConfiguration globalConfiguration =
-        getTekuConfigurationFromArguments("--rest-api-docs-enabled");
+        getGlobalConfigurationFromArguments("--rest-api-docs-enabled");
     assertThat(globalConfiguration.isRestApiDocsEnabled()).isTrue();
   }
 
   @Test
   public void restApiEnabled_shouldNotRequireAValue() {
     final GlobalConfiguration globalConfiguration =
-        getTekuConfigurationFromArguments("--rest-api-enabled");
+        getGlobalConfigurationFromArguments("--rest-api-enabled");
     assertThat(globalConfiguration.isRestApiEnabled()).isTrue();
   }
 
   @Test
   public void restApiHostAllowlist_shouldNotRequireAValue() {
     final GlobalConfiguration globalConfiguration =
-        getTekuConfigurationFromArguments("--rest-api-host-allowlist");
+        getGlobalConfigurationFromArguments("--rest-api-host-allowlist");
     assertThat(globalConfiguration.getRestApiHostAllowlist()).isEmpty();
   }
 
   @Test
   public void restApiHostAllowlist_shouldSupportAllowingMultipleHosts() {
     final GlobalConfiguration globalConfiguration =
-        getTekuConfigurationFromArguments("--rest-api-host-allowlist", "my.host,their.host");
+        getGlobalConfigurationFromArguments("--rest-api-host-allowlist", "my.host,their.host");
     assertThat(globalConfiguration.getRestApiHostAllowlist()).containsOnly("my.host", "their.host");
   }
 
   @Test
   public void restApiHostAllowlist_shouldSupportAllowingAllHosts() {
     final GlobalConfiguration globalConfiguration =
-        getTekuConfigurationFromArguments("--rest-api-host-allowlist", "*");
+        getGlobalConfigurationFromArguments("--rest-api-host-allowlist", "*");
     assertThat(globalConfiguration.getRestApiHostAllowlist()).containsOnly("*");
   }
 
   @Test
   public void restApiHostAllowlist_shouldDefaultToLocalhost() {
-    assertThat(getTekuConfigurationFromArguments().getRestApiHostAllowlist())
+    assertThat(getGlobalConfigurationFromArguments().getRestApiHostAllowlist())
         .containsOnly("localhost", "127.0.0.1");
   }
 }

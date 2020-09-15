@@ -28,8 +28,9 @@ import tech.pegasys.teku.cli.options.MetricsOptions;
 import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
+import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 
@@ -76,7 +77,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
   public Integer call() {
     try {
       parentCommand.setLogLevels();
-      final GlobalConfiguration globalConfiguration = tekuConfiguration();
+      final TekuConfiguration globalConfiguration = tekuConfiguration();
       parentCommand.getStartAction().accept(globalConfiguration);
       return 0;
     } catch (InvalidConfigurationException | DatabaseStorageException ex) {
@@ -93,8 +94,12 @@ public class ValidatorClientCommand implements Callable<Integer> {
     return 1;
   }
 
-  private GlobalConfiguration tekuConfiguration() {
-    return GlobalConfiguration.builder()
+  private TekuConfiguration tekuConfiguration() {
+    return TekuConfiguration.builder().globalConfig(this::buildGlobalConfiguration).build();
+  }
+
+  private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
+    builder
         .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
         .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
         .setInteropOwnedValidatorStartIndex(interopOptions.getInteropOwnerValidatorStartIndex())
@@ -127,7 +132,6 @@ public class ValidatorClientCommand implements Callable<Integer> {
         .setDataPath(dataOptions.getDataPath())
         .setValidatorClient(true)
         .setBeaconNodeApiEndpoint(validatorClientOptions.getBeaconNodeApiEndpoint())
-        .setBeaconNodeEventsWsEndpoint(validatorClientOptions.getBeaconNodeEventsWsEndpoint())
-        .build();
+        .setBeaconNodeEventsWsEndpoint(validatorClientOptions.getBeaconNodeEventsWsEndpoint());
   }
 }

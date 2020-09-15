@@ -27,7 +27,7 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void dataPath_shouldReadFromConfigurationFile() {
     final GlobalConfiguration globalConfiguration =
-        getTekuConfigurationFromFile("dataOptions_config.yaml");
+        getGlobalConfigurationFromFile("dataOptions_config.yaml");
     assertThat(globalConfiguration.getDataPath()).isEqualTo(TEST_PATH);
     assertThat(globalConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
     assertThat(globalConfiguration.getDataStorageCreateDbVersion()).isEqualTo("4");
@@ -37,47 +37,47 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void dataStorageMode_shouldAcceptPrune() {
     final GlobalConfiguration globalConfiguration =
-        getTekuConfigurationFromArguments("--data-storage-mode", "prune");
+        getGlobalConfigurationFromArguments("--data-storage-mode", "prune");
     assertThat(globalConfiguration.getDataStorageMode()).isEqualTo(PRUNE);
   }
 
   @Test
   public void dataStorageMode_shouldAcceptArchive() {
     final GlobalConfiguration globalConfiguration =
-        getTekuConfigurationFromArguments("--data-storage-mode", "archive");
+        getGlobalConfigurationFromArguments("--data-storage-mode", "archive");
     assertThat(globalConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
   }
 
   @Test
   public void dataPath_shouldAcceptNonDefaultValues() {
     final GlobalConfiguration globalConfiguration =
-        getTekuConfigurationFromArguments("--data-path", TEST_PATH);
+        getGlobalConfigurationFromArguments("--data-path", TEST_PATH);
     assertThat(globalConfiguration.getDataPath()).isEqualTo(TEST_PATH);
   }
 
   @Test
   public void dataStorageFrequency_shouldDefault() {
-    final GlobalConfiguration globalConfiguration = getTekuConfigurationFromArguments();
+    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments();
     assertThat(globalConfiguration.getDataStorageFrequency()).isEqualTo(2048L);
   }
 
   @Test
   public void dataStorageFrequency_shouldAcceptNonDefaultValues() {
     final GlobalConfiguration globalConfiguration =
-        getTekuConfigurationFromArguments("--data-storage-archive-frequency", "1024000");
+        getGlobalConfigurationFromArguments("--data-storage-archive-frequency", "1024000");
     assertThat(globalConfiguration.getDataStorageFrequency()).isEqualTo(1024000L);
   }
 
   @Test
   public void dataStorageCreateDbVersion_shouldDefault() {
-    final GlobalConfiguration globalConfiguration = getTekuConfigurationFromArguments();
+    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments();
     assertThat(globalConfiguration.getDataStorageCreateDbVersion()).isEqualTo("5");
   }
 
   @Test
   public void dataStorageCreateDbVersion_shouldAcceptNonDefaultValues() {
     final GlobalConfiguration globalConfiguration =
-        getTekuConfigurationFromArguments("--Xdata-storage-create-db-version", "3.0");
+        getGlobalConfigurationFromArguments("--Xdata-storage-create-db-version", "3.0");
     assertThat(globalConfiguration.getDataStorageCreateDbVersion()).isEqualTo("3.0");
   }
 }

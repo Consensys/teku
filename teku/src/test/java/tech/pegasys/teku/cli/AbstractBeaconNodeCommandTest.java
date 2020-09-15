@@ -28,6 +28,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public abstract class AbstractBeaconNodeCommandTest {
@@ -37,17 +38,21 @@ public abstract class AbstractBeaconNodeCommandTest {
   protected final PrintWriter errorWriter = new PrintWriter(stringWriter, true);
 
   @SuppressWarnings("unchecked")
-  final Consumer<GlobalConfiguration> startAction = mock(Consumer.class);
+  final Consumer<TekuConfiguration> startAction = mock(Consumer.class);
 
   protected BeaconNodeCommand beaconNodeCommand =
       new BeaconNodeCommand(outputWriter, errorWriter, Collections.emptyMap(), startAction);
 
   @TempDir Path dataPath;
 
-  public GlobalConfiguration getResultingTekuConfiguration() {
+  public GlobalConfiguration getResultingGlobalConfiguration() {
+    return getResultingTekuConfiguration().global();
+  }
+
+  public TekuConfiguration getResultingTekuConfiguration() {
     try {
-      final ArgumentCaptor<GlobalConfiguration> configCaptor =
-          ArgumentCaptor.forClass(GlobalConfiguration.class);
+      final ArgumentCaptor<TekuConfiguration> configCaptor =
+          ArgumentCaptor.forClass(TekuConfiguration.class);
       verify(startAction).accept(configCaptor.capture());
       assertThat(stringWriter.toString()).isEmpty();
 
@@ -60,16 +65,16 @@ public abstract class AbstractBeaconNodeCommandTest {
     }
   }
 
-  public GlobalConfiguration getTekuConfigurationFromArguments(String... arguments) {
+  public GlobalConfiguration getGlobalConfigurationFromArguments(String... arguments) {
     beaconNodeCommand.parse(arguments);
-    return getResultingTekuConfiguration();
+    return getResultingGlobalConfiguration();
   }
 
-  public GlobalConfiguration getTekuConfigurationFromFile(String resourceFilename) {
+  public GlobalConfiguration getGlobalConfigurationFromFile(String resourceFilename) {
     final String configFile = this.getClass().getResource("/" + resourceFilename).getPath();
     final String[] args = {CONFIG_FILE_OPTION_NAME, configFile};
     beaconNodeCommand.parse(args);
-    return getResultingTekuConfiguration();
+    return getResultingGlobalConfiguration();
   }
 
   public String getCommandLineOutput() {

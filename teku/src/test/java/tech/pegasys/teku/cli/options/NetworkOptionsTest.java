@@ -28,7 +28,7 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   public void shouldReadFromConfigurationFile() {
     final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg("mainnet");
     final GlobalConfiguration globalConfiguration =
-        getTekuConfigurationFromFile("networkOptions_config.yaml");
+        getGlobalConfigurationFromFile("networkOptions_config.yaml");
     assertThat(globalConfiguration.getConstants()).isEqualTo(networkDefinition.getConstants());
   }
 
@@ -38,7 +38,7 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg(networkName);
 
     beaconNodeCommand.parse(new String[] {"--network", networkName});
-    final GlobalConfiguration config = getResultingTekuConfiguration();
+    final GlobalConfiguration config = getResultingGlobalConfiguration();
     assertThat(config.getP2pDiscoveryBootnodes())
         .isEqualTo(networkDefinition.getDiscoveryBootnodes());
     assertThat(config.getConstants()).isEqualTo(networkDefinition.getConstants());
@@ -58,7 +58,7 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   public void overrideDefaultBootnodesWithEmptyList() {
     beaconNodeCommand.parse(new String[] {"--network", "topaz", "--p2p-discovery-bootnodes"});
 
-    final GlobalConfiguration globalConfiguration = getResultingTekuConfiguration();
+    final GlobalConfiguration globalConfiguration = getResultingGlobalConfiguration();
     assertThat(globalConfiguration.getP2pDiscoveryBootnodes()).isEmpty();
   }
 
@@ -67,7 +67,7 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     String url = "https://some.site/with/config.yaml";
     beaconNodeCommand.parse(new String[] {"--network", url});
 
-    final GlobalConfiguration globalConfiguration = getResultingTekuConfiguration();
+    final GlobalConfiguration globalConfiguration = getResultingGlobalConfiguration();
     assertThat(globalConfiguration.getConstants()).isEqualTo(url);
   }
 
@@ -75,21 +75,21 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   public void useInitialState() {
     String initialState = "some-file-or-url";
     final GlobalConfiguration config =
-        getTekuConfigurationFromArguments("--initial-state", initialState);
+        getGlobalConfigurationFromArguments("--initial-state", initialState);
     assertThat(config.getInitialState()).isEqualTo(initialState);
   }
 
   @Test
   public void setPeerRateLimit() {
     final GlobalConfiguration config =
-        getTekuConfigurationFromArguments("--Xpeer-rate-limit", "10");
+        getGlobalConfigurationFromArguments("--Xpeer-rate-limit", "10");
     assertThat(config.getPeerRateLimit()).isEqualTo(10);
   }
 
   @Test
   public void setPeerRequestLimit() {
     final GlobalConfiguration config =
-        getTekuConfigurationFromArguments("--Xpeer-request-limit", "10");
+        getGlobalConfigurationFromArguments("--Xpeer-request-limit", "10");
     assertThat(config.getPeerRequestLimit()).isEqualTo(10);
   }
 }
