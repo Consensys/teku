@@ -13,6 +13,18 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.IntSummaryStatistics;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -24,19 +36,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.IntSummaryStatistics;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
 public class PerformanceTracker implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -85,13 +84,17 @@ public class PerformanceTracker implements SlotEventsChannel {
   }
 
   private void outputAttestationPerformanceInfo(final UInt64 epoch) {
-    // Attestations can be included in either the epoch they were produced in or in the following epoch.
-    // Thus, the most recent attestation performance we can evaluate is not the last epoch, but the epoch before.
+    // Attestations can be included in either the epoch they were produced in or in the following
+    // epoch.
+    // Thus, the most recent attestation performance we can evaluate is not the last epoch, but the
+    // epoch before.
     UInt64 previousEpoch = epoch.decrement();
     UInt64 nextEpoch = epoch.increment();
 
-    // Get included attestations for the given epochs in a map from slot to included attestations in block list
-    Map<UInt64, List<Attestation>> attestations = getAttestationsIncludedInEpochs(previousEpoch, nextEpoch);
+    // Get included attestations for the given epochs in a map from slot to included attestations in
+    // block list
+    Map<UInt64, List<Attestation>> attestations =
+        getAttestationsIncludedInEpochs(previousEpoch, nextEpoch);
 
     UInt64 previousEpochStartSlot = compute_start_slot_at_epoch(previousEpoch);
     UInt64 nextEpochStartSlot = compute_start_slot_at_epoch(nextEpoch);
@@ -105,11 +108,12 @@ public class PerformanceTracker implements SlotEventsChannel {
 
     List<Integer> inclusionDistances = new ArrayList<>();
     for (Attestation sentAttestation : sentAttestations) {
-      // Check if the sent attestation is included in any of the block attestation lists in the last 2 epochs.
+      // Check if the sent attestation is included in any of the block attestation lists in the last
+      // 2 epochs.
       UInt64 attestationSlot = sentAttestation.getData().getSlot();
       for (UInt64 currSlot = previousEpochStartSlot;
-           currSlot.isLessThan(nextEpochStartSlot);
-           currSlot = currSlot.increment()) {
+          currSlot.isLessThan(nextEpochStartSlot);
+          currSlot = currSlot.increment()) {
         if (attestations.containsKey(currSlot)) {
           if (checkIfAttestationIsIncludedInList(sentAttestation, attestations.get(currSlot))) {
             inclusionDistances.add(currSlot.minus(attestationSlot).intValue());
@@ -131,26 +135,26 @@ public class PerformanceTracker implements SlotEventsChannel {
     }
 
     IntSummaryStatistics inclusionDistancesStatistics =
-            inclusionDistances.stream().mapToInt(x -> x).summaryStatistics();
+        inclusionDistances.stream().mapToInt(x -> x).summaryStatistics();
     long numberOfSentAttestations = sentAttestations.size();
     long numberOfIncludedAttestations = inclusionDistancesStatistics.getCount();
 
     LOG.info(
-            " ===== Attestation Performance Information ===== \n" +
-                    " - Number of sent attestations: {}\n" +
-                    " - Number of sent attestations included on chain: {}\n" +
-                    " - Inclusion at: {}%\n" +
-                    " - Inclusion distances: average: {}, min: {}, max: {}\n" +
-                    " - %age with correct target: {}\n" +
-                    " - %age with correct head block root: {}\n",
-            numberOfSentAttestations,
-            numberOfIncludedAttestations,
-            getPercentage(numberOfIncludedAttestations, numberOfSentAttestations),
-            inclusionDistancesStatistics.getAverage(),
-            inclusionDistancesStatistics.getMin(),
-            inclusionDistancesStatistics.getMax(),
-            getPercentage(correctTargetCount, numberOfSentAttestations),
-            getPercentage(correctHeadBlockCount, numberOfSentAttestations));
+        " ===== Attestation Performance Information ===== \n"
+            + " - Number of sent attestations: {}\n"
+            + " - Number of sent attestations included on chain: {}\n"
+            + " - Inclusion at: {}%\n"
+            + " - Inclusion distances: average: {}, min: {}, max: {}\n"
+            + " - %age with correct target: {}\n"
+            + " - %age with correct head block root: {}\n",
+        numberOfSentAttestations,
+        numberOfIncludedAttestations,
+        getPercentage(numberOfIncludedAttestations, numberOfSentAttestations),
+        inclusionDistancesStatistics.getAverage(),
+        inclusionDistancesStatistics.getMin(),
+        inclusionDistancesStatistics.getMax(),
+        getPercentage(correctTargetCount, numberOfSentAttestations),
+        getPercentage(correctHeadBlockCount, numberOfSentAttestations));
   }
 
   private boolean checkIfAttestationIsIncludedInList(
@@ -171,7 +175,8 @@ public class PerformanceTracker implements SlotEventsChannel {
             .isSuperSetOf(sentAttestation.getAggregation_bits());
   }
 
-  private List<BeaconBlock> getBlocksInEpochs(UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
+  private List<BeaconBlock> getBlocksInEpochs(
+      UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
     UInt64 epochStartSlot = compute_start_slot_at_epoch(startEpochInclusive);
     UInt64 endEpochStartSlot = compute_start_slot_at_epoch(endEpochExclusive);
 
@@ -190,13 +195,12 @@ public class PerformanceTracker implements SlotEventsChannel {
         .collect(Collectors.toList());
   }
 
-  private Map<UInt64, List<Attestation>> getAttestationsIncludedInEpochs(UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
-    return getBlocksInEpochs(startEpochInclusive, endEpochExclusive)
-            .stream()
-            .collect(Collectors.toMap(
-                    BeaconBlock::getSlot,
-                    block -> block.getBody().getAttestations().asList()
-            ));
+  private Map<UInt64, List<Attestation>> getAttestationsIncludedInEpochs(
+      UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
+    return getBlocksInEpochs(startEpochInclusive, endEpochExclusive).stream()
+        .collect(
+            Collectors.toMap(
+                BeaconBlock::getSlot, block -> block.getBody().getAttestations().asList()));
   }
 
   public void saveSentAttestation(Attestation attestation) {
