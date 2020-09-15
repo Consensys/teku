@@ -13,6 +13,21 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.IntSummaryStatistics;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -24,22 +39,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.IntSummaryStatistics;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
 public class PerformanceTracker implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -63,48 +62,54 @@ public class PerformanceTracker implements SlotEventsChannel {
 
     // Output attestation performance information for current epoch - 2 since attestations can be
     // included in both the epoch they were produced in or in the one following.
-    LOG.info(getAttestationPerformanceForEpoch(currentEpoch, currentEpoch.minus(UInt64.valueOf(2))));
+    LOG.info(
+        getAttestationPerformanceForEpoch(currentEpoch, currentEpoch.minus(UInt64.valueOf(2))));
 
     // Output block performance information for the past BLOCK_PERFORMANCE_INTERVAL epochs
     if (currentEpoch.mod(BLOCK_PERFORMANCE_EVALUATION_INTERVAL).equals(UInt64.ZERO)) {
       LOG.info(
-              getBlockPerformanceForEpochs(
-                      currentEpoch.minus(BLOCK_PERFORMANCE_EVALUATION_INTERVAL),
-                      currentEpoch)
-      );
+          getBlockPerformanceForEpochs(
+              currentEpoch.minus(BLOCK_PERFORMANCE_EVALUATION_INTERVAL), currentEpoch));
     }
   }
 
-  private BlockPerformance getBlockPerformanceForEpochs(UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
+  private BlockPerformance getBlockPerformanceForEpochs(
+      UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
     List<BeaconBlock> blockInEpoch = getBlocksInEpochs(startEpochInclusive, endEpochExclusive);
-    List<SignedBeaconBlock> sentBlocks = sentBlocksByEpoch.subMap(startEpochInclusive, endEpochExclusive)
-            .values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+    List<SignedBeaconBlock> sentBlocks =
+        sentBlocksByEpoch.subMap(startEpochInclusive, endEpochExclusive).values().stream()
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
     long numberOfIncludedBlocks =
-            sentBlocks.stream()
-                    .map(SignedBeaconBlock::getMessage)
-                    .filter(blockInEpoch::contains)
-                    .count();
+        sentBlocks.stream()
+            .map(SignedBeaconBlock::getMessage)
+            .filter(blockInEpoch::contains)
+            .count();
 
     return new BlockPerformance((int) numberOfIncludedBlocks, sentBlocks.size());
   }
 
-  private AttestationPerformance getAttestationPerformanceForEpoch(UInt64 currentEpoch, UInt64 analyzedEpoch) {
+  private AttestationPerformance getAttestationPerformanceForEpoch(
+      UInt64 currentEpoch, UInt64 analyzedEpoch) {
     checkArgument(
-            analyzedEpoch.isLessThanOrEqualTo(currentEpoch.minus(UInt64.valueOf(2))),
-            "Epoch to analyze attestation performance must be at least 2 epochs less than the current epoch");
+        analyzedEpoch.isLessThanOrEqualTo(currentEpoch.minus(UInt64.valueOf(2))),
+        "Epoch to analyze attestation performance must be at least 2 epochs less than the current epoch");
     // Attestations can be included in either the epoch they were produced in or in
-    // the following epoch. Thus, the most recent epoch for which we can evaluate attestation performance
+    // the following epoch. Thus, the most recent epoch for which we can evaluate attestation
+    // performance
     // is current epoch - 2.
     UInt64 epochFollowingAnalyzedEpoch = analyzedEpoch.increment();
 
     // Get included attestations for the given epochs in a map from slot to attestations
     // included in block.
     Map<UInt64, List<Attestation>> attestations =
-            getAttestationsIncludedInEpochs(analyzedEpoch, epochFollowingAnalyzedEpoch);
+        getAttestationsIncludedInEpochs(analyzedEpoch, epochFollowingAnalyzedEpoch);
 
     // Get sent attestations in range
-    List<Attestation> sentAttestations = sentAttestationsByEpoch.subMap(analyzedEpoch, epochFollowingAnalyzedEpoch)
-            .values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+    List<Attestation> sentAttestations =
+        sentAttestationsByEpoch.subMap(analyzedEpoch, epochFollowingAnalyzedEpoch).values().stream()
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
     UInt64 analyzedEpochStartSlot = compute_start_slot_at_epoch(analyzedEpoch);
     UInt64 rangeEndSlot = compute_start_slot_at_epoch(epochFollowingAnalyzedEpoch.plus(UInt64.ONE));
     BeaconState state = recentChainData.getBestState().orElseThrow();
@@ -118,8 +123,8 @@ public class PerformanceTracker implements SlotEventsChannel {
       // Appropriate range being: [ attestation_production_epoch, attestation_production_epoch + 1 ]
       UInt64 attestationSlot = sentAttestation.getData().getSlot();
       for (UInt64 currSlot = analyzedEpochStartSlot;
-           currSlot.isLessThan(rangeEndSlot);
-           currSlot = currSlot.increment()) {
+          currSlot.isLessThan(rangeEndSlot);
+          currSlot = currSlot.increment()) {
         if (attestations.containsKey(currSlot)) {
           if (checkIfAttestationIsIncludedInList(sentAttestation, attestations.get(currSlot))) {
             inclusionDistances.add(currSlot.minus(attestationSlot).intValue());
@@ -141,17 +146,16 @@ public class PerformanceTracker implements SlotEventsChannel {
     }
 
     IntSummaryStatistics inclusionDistanceStatistics =
-            inclusionDistances.stream().collect(Collectors.summarizingInt(Integer::intValue));
+        inclusionDistances.stream().collect(Collectors.summarizingInt(Integer::intValue));
 
     return new AttestationPerformance(
-            sentAttestations.size(),
-            (int) inclusionDistanceStatistics.getCount(),
-            inclusionDistanceStatistics.getMax(),
-            inclusionDistanceStatistics.getMin(),
-            inclusionDistanceStatistics.getAverage(),
-            correctTargetCount,
-            correctHeadBlockCount
-    );
+        sentAttestations.size(),
+        (int) inclusionDistanceStatistics.getCount(),
+        inclusionDistanceStatistics.getMax(),
+        inclusionDistanceStatistics.getMin(),
+        inclusionDistanceStatistics.getAverage(),
+        correctTargetCount,
+        correctHeadBlockCount);
   }
 
   private boolean checkIfAttestationIsIncludedInList(
