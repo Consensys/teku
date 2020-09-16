@@ -43,6 +43,7 @@ public class Constants {
   public static UInt64 HYSTERESIS_QUOTIENT;
   public static UInt64 HYSTERESIS_DOWNWARD_MULTIPLIER;
   public static UInt64 HYSTERESIS_UPWARD_MULTIPLIER;
+  public static int PROPORTIONAL_SLASHING_MULTIPLIER;
   public static final int MAX_REQUEST_BLOCKS = 1024;
 
   // Gwei values
@@ -183,7 +184,8 @@ public class Constants {
             "minimal",
             "swift",
             "altona",
-            "medalla")
+            "medalla",
+            "spadina")
         .load(source)
         .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
   }
