@@ -88,6 +88,14 @@ public class NetworkDefinition {
                       // Proto
                       "enr:-Ku4QFVactU18ogiqPPasKs3jhUm5ISszUrUMK2c6SUPbGtANXVJ2wFapsKwVEVnVKxZ7Gsr9yEc4PYF-a14ahPa1q0Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAYrkzLAAAAAf__________gmlkgnY0gmlwhGQbAHyJc2VjcDI1NmsxoQILF-Ya2i5yowVkQtlnZLjG0kqC4qtwmSk8ha7tKLuME4N1ZHCCIyg")
                   .build())
+          .put(
+              "spadina",
+              builder()
+                  .constants("spadina")
+                  .snappyCompressionEnabled(true)
+                  .startupTimeoutSeconds(120)
+                  .eth1DepositContractAddress("0x48B597F4b53C21B48AD95c7256B49D1779Bd5890")
+                  .build())
           .build();
 
   private final String constants;
