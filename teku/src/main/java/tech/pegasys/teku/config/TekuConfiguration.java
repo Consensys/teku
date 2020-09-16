@@ -14,6 +14,7 @@
 package tech.pegasys.teku.config;
 
 import java.util.function.Consumer;
+import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
@@ -21,11 +22,13 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 public class TekuConfiguration {
   private final GlobalConfiguration globalConfiguration;
   private final WeakSubjectivityConfig weakSubjectivityConfig;
+  private final BeaconChainConfiguration beaconChainConfig;
 
   private TekuConfiguration(
       GlobalConfiguration globalConfiguration, WeakSubjectivityConfig weakSubjectivityConfig) {
     this.globalConfiguration = globalConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
+    this.beaconChainConfig = new BeaconChainConfiguration(weakSubjectivityConfig);
   }
 
   public static Builder builder() {
@@ -38,6 +41,10 @@ public class TekuConfiguration {
 
   public WeakSubjectivityConfig weakSubjectivity() {
     return weakSubjectivityConfig;
+  }
+
+  public BeaconChainConfiguration beaconChain() {
+    return beaconChainConfig;
   }
 
   public static class Builder {

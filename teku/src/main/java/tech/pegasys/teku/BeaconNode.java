@@ -91,7 +91,7 @@ public class BeaconNode implements Node {
       eventBus.register(sszTransitionRecorder);
     }
 
-    this.serviceController = new BeaconNodeServiceController(serviceConfig);
+    this.serviceController = new BeaconNodeServiceController(tekuConfig, serviceConfig);
     STATUS_LOG.dataPathSet(serviceConfig.getConfig().getDataPath());
   }
 

@@ -150,7 +150,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private UInt64 genesisTimeTracker = ZERO;
   private ForkChoiceExecutor forkChoiceExecutor;
 
-  public BeaconChainController(final ServiceConfig serviceConfig) {
+  public BeaconChainController(
+      BeaconChainConfiguration beaconConfig, final ServiceConfig serviceConfig) {
     asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
     this.asyncRunner = serviceConfig.createAsyncRunner("beaconchain");
     this.networkAsyncRunner = serviceConfig.createAsyncRunner("p2p", 10);
