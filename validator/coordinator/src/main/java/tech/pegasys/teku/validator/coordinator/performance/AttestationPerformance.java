@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import static tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker.getPercentage;
-
 import com.google.common.base.Objects;
+
+import static tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker.getPercentage;
 
 public class AttestationPerformance {
   private final int numberOfSentAttestations;
@@ -74,7 +74,7 @@ public class AttestationPerformance {
     return String.format(
         "\n ===== Attestation Performance Information ===== \n"
             + " - Number of sent attestations: %d\n"
-            + " - Number of sent attestations included on chain: %d\n"
+            + " - Number of attestations included on chain: %d\n"
             + " - %%age of inclusion at: %d%%\n"
             + " - Inclusion distances: average: %f, min: %d, max: %d\n"
             + " - %%age with correct target at: %d%%\n"

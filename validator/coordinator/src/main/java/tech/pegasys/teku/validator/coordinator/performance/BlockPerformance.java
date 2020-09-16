@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import static tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker.getPercentage;
-
 import com.google.common.base.Objects;
+
+import static tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker.getPercentage;
 
 public class BlockPerformance {
   private final int numberOfIncludedBlocks;
@@ -45,7 +45,7 @@ public class BlockPerformance {
     return String.format(
         "\n ===== Block Performance Information ===== \n"
             + " - Number of sent blocks: %d\n"
-            + " - Number of sent blocks included on chain: %d\n"
+            + " - Number of blocks included on chain: %d\n"
             + " - %%age of inclusion at: %d%%",
         numberOfSentBlocks,
         numberOfIncludedBlocks,
