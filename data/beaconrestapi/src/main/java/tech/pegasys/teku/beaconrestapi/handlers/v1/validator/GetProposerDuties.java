@@ -16,7 +16,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.EPOCH;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.INDEX;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
@@ -29,7 +28,6 @@ import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Map;
@@ -41,31 +39,29 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
-import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
-import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
+import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.util.config.Constants;
 
-public class GetAttesterDuties extends AbstractHandler implements Handler {
+public class GetProposerDuties extends AbstractHandler implements Handler {
   private static final Logger LOG = LogManager.getLogger();
-  public static final String ROUTE = "/eth/v1/validator/duties/attester/:epoch";
+  public static final String ROUTE = "/eth/v1/validator/duties/proposer/:epoch";
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
   private final ChainDataProvider chainDataProvider;
 
-  public GetAttesterDuties(final DataProvider dataProvider, final JsonProvider jsonProvider) {
+  public GetProposerDuties(final DataProvider dataProvider, final JsonProvider jsonProvider) {
     super(jsonProvider);
     this.validatorDataProvider = dataProvider.getValidatorDataProvider();
     this.syncDataProvider = dataProvider.getSyncDataProvider();
     this.chainDataProvider = dataProvider.getChainDataProvider();
   }
 
-  GetAttesterDuties(
+  GetProposerDuties(
       final ChainDataProvider chainDataProvider,
       final SyncDataProvider syncDataProvider,
       final ValidatorDataProvider validatorDataProvider,
@@ -79,25 +75,14 @@ public class GetAttesterDuties extends AbstractHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get attester duties",
+      summary = "Get proposer duties",
       tags = {TG_V1_VALIDATOR},
       description =
-          "Requests the beacon node to provide a set of attestation duties, "
-              + "which should be performed by validators, for a particular epoch. "
-              + "Duties should only need to be checked once per epoch, however a "
-              + "chain reorganization (of > MIN_SEED_LOOKAHEAD epochs) could occur, "
-              + "resulting in a change of duties. For full safety, "
-              + "you should monitor chain reorganizations events.",
-      queryParams = {
-        @OpenApiParam(
-            name = INDEX,
-            required = true,
-            description = "Validator indexes. Allows comma separated values per field."),
-      },
+          "Request beacon node to provide all validators that are scheduled to propose a block in the given epoch.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = GetAttesterDutiesResponse.class)),
+            content = @OpenApiContent(from = GetProposerDutiesResponse.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
         @OpenApiResponse(
@@ -116,39 +101,30 @@ public class GetAttesterDuties extends AbstractHandler implements Handler {
     try {
       final UInt64 epoch = UInt64.valueOf(parameters.get(EPOCH));
       final UInt64 currentEpoch = chainDataProvider.getCurrentEpoch();
-      if (currentEpoch.plus(Constants.MIN_SEED_LOOKAHEAD).isLessThan(epoch)) {
+      if (currentEpoch.isLessThan(epoch)) {
         ctx.result(
             jsonProvider.objectToJSON(
                 new BadRequest(
-                    "Cannot get attester duties for "
+                    "Cannot get proposer duties for "
                         + epoch.minus(currentEpoch)
                         + " epochs ahead")));
         ctx.status(SC_BAD_REQUEST);
         return;
       }
-      final List<Integer> indexes =
-          ListQueryParameterUtils.getParameterAsIntegerList(ctx.queryParamMap(), INDEX);
-
-      SafeFuture<Optional<List<AttesterDuty>>> future =
-          validatorDataProvider.getAttesterDuties(epoch, indexes);
-
+      SafeFuture<Optional<List<ProposerDuty>>> future =
+          validatorDataProvider.getProposerDuties(epoch);
       handleOptionalResult(ctx, future, this::handleResult, List.of());
-
     } catch (NumberFormatException ex) {
       LOG.trace("Error parsing", ex);
       ctx.status(SC_BAD_REQUEST);
       ctx.result(
           jsonProvider.objectToJSON(
               new BadRequest("Invalid epoch " + parameters.get(EPOCH) + " or index specified")));
-    } catch (IllegalArgumentException ex) {
-      LOG.trace("Illegal argument in GetAttesterDuties", ex);
-      ctx.status(SC_BAD_REQUEST);
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(ex.getMessage())));
     }
   }
 
-  private Optional<String> handleResult(Context ctx, final List<AttesterDuty> response)
+  private Optional<String> handleResult(Context ctx, final List<ProposerDuty> response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetAttesterDutiesResponse(response)));
+    return Optional.of(jsonProvider.objectToJSON(new GetProposerDutiesResponse(response)));
   }
 }
