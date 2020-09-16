@@ -24,7 +24,8 @@ public enum ValidatorApiMethod {
   SEND_SIGNED_AGGREGATE_AND_PROOF("validator/aggregate_and_proofs"),
   SUBSCRIBE_TO_COMMITTEE_FOR_AGGREGATION("validator/beacon_committee_subscription"),
   SUBSCRIBE_TO_PERSISTENT_SUBNETS("validator/persistent_subnets_subscription"),
-  GET_ATTESTATION_DUTIES("eth/v1/validator/duties/attester/:epoch");
+  GET_ATTESTATION_DUTIES("eth/v1/validator/duties/attester/:epoch"),
+  GET_PROPOSER_DUTIES("eth/v1/validator/duties/proposer/:epoch");
 
   private final String path;
 

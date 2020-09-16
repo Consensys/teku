@@ -59,6 +59,7 @@ import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorDataProviderTest {
@@ -377,39 +378,28 @@ public class ValidatorDataProviderTest {
 
   @Test
   public void getAttesterDuties_shouldReturnDutiesForKnownValidator() {
-    tech.pegasys.teku.validator.api.ValidatorDuties v1 =
-        tech.pegasys.teku.validator.api.ValidatorDuties.withDuties(
-            BLSPublicKey.random(0), 1, 2, 3, 4, List.of(), UInt64.ONE);
-    tech.pegasys.teku.validator.api.ValidatorDuties v2 =
-        tech.pegasys.teku.validator.api.ValidatorDuties.withDuties(
-            BLSPublicKey.random(1), 11, 12, 13, 14, List.of(), UInt64.ZERO);
-    tech.pegasys.teku.validator.api.ValidatorDuties v3 =
-        tech.pegasys.teku.validator.api.ValidatorDuties.noDuties(BLSPublicKey.random(2));
+    AttesterDuties v1 = new AttesterDuties(BLSPublicKey.random(0), 1, 2, 3, 4, ONE);
+    AttesterDuties v2 = new AttesterDuties(BLSPublicKey.random(1), 11, 12, 13, 14, ZERO);
     when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(v1, v2, v3))));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(v1, v2))));
 
     final SafeFuture<Optional<List<AttesterDuty>>> future =
-        provider.getAttesterDuties(ONE, List.of(1, 2, 3));
+        provider.getAttesterDuties(ONE, List.of(1, 11));
     assertThat(future).isCompleted();
     final Optional<List<AttesterDuty>> maybeList = future.join();
     final List<AttesterDuty> list = maybeList.get();
-    assertThat(list)
-        .containsExactlyInAnyOrder(asAttesterDuty(v1), asAttesterDuty(v2), asAttesterDuty(v3));
+    assertThat(list).containsExactlyInAnyOrder(asAttesterDuty(v1), asAttesterDuty(v2));
   }
 
-  private AttesterDuty asAttesterDuty(
-      final tech.pegasys.teku.validator.api.ValidatorDuties duties) {
-    if (duties.getDuties().isEmpty()) {
-      return new AttesterDuty(new BLSPubKey(duties.getPublicKey()), null, null, null, null, null);
-    }
-    final tech.pegasys.teku.validator.api.ValidatorDuties.Duties duties1 = duties.getDuties().get();
+  private AttesterDuty asAttesterDuty(final tech.pegasys.teku.validator.api.AttesterDuties duties) {
+
     return new AttesterDuty(
         new BLSPubKey(duties.getPublicKey()),
-        UInt64.valueOf(duties1.getValidatorIndex()),
-        UInt64.valueOf(duties1.getAttestationCommitteeIndex()),
-        UInt64.valueOf(duties1.getAggregatorModulo()),
-        UInt64.valueOf(duties1.getAttestationCommitteePosition()),
-        duties1.getAttestationSlot());
+        UInt64.valueOf(duties.getValidatorIndex()),
+        UInt64.valueOf(duties.getCommitteeIndex()),
+        UInt64.valueOf(duties.getCommitteeLength()),
+        UInt64.valueOf(duties.getValidatorCommitteeIndex()),
+        duties.getSlot());
   }
 
   private List<BLSPubKey> generatePublicKeys(final int count) {

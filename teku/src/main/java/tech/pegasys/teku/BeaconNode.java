@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.data.recorder.SSZTransitionRecorder;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -36,7 +37,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.BeaconNodeServiceController;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.time.SystemTimeProvider;
 
 public class BeaconNode implements Node {
@@ -51,19 +52,20 @@ public class BeaconNode implements Node {
   private final EventChannels eventChannels;
   private final MetricsEndpoint metricsEndpoint;
 
-  public BeaconNode(final TekuConfiguration config) {
+  public BeaconNode(final TekuConfiguration tekuConfig) {
+    final GlobalConfiguration globalConfig = tekuConfig.global();
 
     LoggingConfigurator.update(
         new LoggingConfiguration(
-            config.isLogColorEnabled(),
-            config.isLogIncludeEventsEnabled(),
-            config.isLogIncludeValidatorDutiesEnabled(),
-            config.getLogDestination(),
-            config.getLogFile(),
-            config.getLogFileNamePattern()));
+            globalConfig.isLogColorEnabled(),
+            globalConfig.isLogIncludeEventsEnabled(),
+            globalConfig.isLogIncludeValidatorDutiesEnabled(),
+            globalConfig.getLogDestination(),
+            globalConfig.getLogFile(),
+            globalConfig.getLogFileNamePattern()));
 
     STATUS_LOG.onStartup(VersionProvider.VERSION);
-    this.metricsEndpoint = new MetricsEndpoint(config, vertx);
+    this.metricsEndpoint = new MetricsEndpoint(globalConfig, vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
     final TekuDefaultExceptionHandler subscriberExceptionHandler =
         new TekuDefaultExceptionHandler();
@@ -78,11 +80,11 @@ public class BeaconNode implements Node {
             eventBus,
             eventChannels,
             metricsSystem,
-            config);
+            globalConfig);
     serviceConfig.getConfig().validateConfig();
-    Constants.setConstants(config.getConstants());
+    Constants.setConstants(globalConfig.getConstants());
 
-    final String transitionRecordDir = config.getTransitionRecordDirectory();
+    final String transitionRecordDir = globalConfig.getTransitionRecordDirectory();
     if (transitionRecordDir != null) {
       SSZTransitionRecorder sszTransitionRecorder =
           new SSZTransitionRecorder(Path.of(transitionRecordDir));

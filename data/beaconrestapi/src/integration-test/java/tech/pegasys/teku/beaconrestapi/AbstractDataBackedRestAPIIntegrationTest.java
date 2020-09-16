@@ -56,8 +56,8 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.sync.SyncService;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.StateStorageMode;
-import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
@@ -65,8 +65,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
   private static final okhttp3.MediaType JSON =
       okhttp3.MediaType.parse("application/json; charset=utf-8");
-  private static final TekuConfiguration CONFIG =
-      TekuConfiguration.builder()
+  private static final GlobalConfiguration CONFIG =
+      GlobalConfiguration.builder()
           .setRestApiPort(0)
           .setRestApiEnabled(true)
           .setRestApiDocsEnabled(true)
@@ -125,7 +125,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
         BeaconChainUtil.create(recentChainData, chainBuilder.getValidatorKeys(), forkChoice, true);
   }
 
-  private void setupAndStartRestAPI(TekuConfiguration config) {
+  private void setupAndStartRestAPI(GlobalConfiguration config) {
     blockImporter =
         new BlockImporter(
             recentChainData,
@@ -168,7 +168,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     setupAndStartRestAPI();
   }
 
-  protected void startPreGenesisRestAPIWithConfig(TekuConfiguration config) {
+  protected void startPreGenesisRestAPIWithConfig(GlobalConfiguration config) {
     setupStorage(StateStorageMode.ARCHIVE, false);
     // Start API
     setupAndStartRestAPI(config);

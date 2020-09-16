@@ -29,11 +29,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 class KeystoresValidatorKeyProviderTest {
   private static final String EXPECTED_PASSWORD = "testpassword";
-  private final TekuConfiguration config = mock(TekuConfiguration.class);
+  private final GlobalConfiguration config = mock(GlobalConfiguration.class);
   private final KeystoreLocker keystoreLocker = mock(KeystoreLocker.class);
   private final KeystoresValidatorKeyProvider keystoresValidatorKeyProvider =
       new KeystoresValidatorKeyProvider(keystoreLocker);

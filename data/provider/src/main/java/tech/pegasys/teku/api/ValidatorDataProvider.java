@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
+import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -44,6 +45,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties.Duties;
 
@@ -233,19 +236,30 @@ public class ValidatorDataProvider {
                             .collect(toList())));
   }
 
-  private AttesterDuty mapToAttesterDuties(
-      final tech.pegasys.teku.validator.api.ValidatorDuties duty) {
-    final BLSPubKey pubKey = new BLSPubKey(duty.getPublicKey().toBytesCompressed());
-    if (duty.getDuties().isEmpty()) {
-      return new AttesterDuty(pubKey, null, null, null, null, null);
-    }
-    final Duties duties = duty.getDuties().get();
+  public SafeFuture<Optional<List<ProposerDuty>>> getProposerDuties(final UInt64 epoch) {
+    return SafeFuture.of(() -> validatorApiChannel.getProposerDuties(epoch))
+        .thenApply(
+            res ->
+                res.map(
+                    duties ->
+                        duties.stream()
+                            .filter(duty -> duty.getPublicKey() != null)
+                            .map(this::mapToProposerDuties)
+                            .collect(toList())));
+  }
+
+  private ProposerDuty mapToProposerDuties(final ProposerDuties duties) {
+    return new ProposerDuty(
+        new BLSPubKey(duties.getPublicKey()), duties.getValidatorIndex(), duties.getSlot());
+  }
+
+  private AttesterDuty mapToAttesterDuties(final AttesterDuties duties) {
     return new AttesterDuty(
-        pubKey,
+        new BLSPubKey(duties.getPublicKey()),
         UInt64.valueOf(duties.getValidatorIndex()),
-        UInt64.valueOf(duties.getAttestationCommitteeIndex()),
-        UInt64.valueOf(duties.getAggregatorModulo()),
-        UInt64.valueOf(duties.getAttestationCommitteePosition()),
-        duties.getAttestationSlot());
+        UInt64.valueOf(duties.getCommitteeIndex()),
+        UInt64.valueOf(duties.getCommitteeLength()),
+        UInt64.valueOf(duties.getValidatorCommitteeIndex()),
+        duties.getSlot());
   }
 }
