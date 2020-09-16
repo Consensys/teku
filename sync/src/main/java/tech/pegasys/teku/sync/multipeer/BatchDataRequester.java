@@ -22,21 +22,23 @@ import tech.pegasys.teku.sync.multipeer.batches.BatchFactory;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 
 public class BatchDataRequester {
-  private static final int MAX_PENDING_BATCHES = 5;
   private final EventThread eventThread;
   private final BatchChain activeBatches;
   private final BatchFactory batchFactory;
   private final UInt64 batchSize;
+  private final int maxPendingBatches;
 
   public BatchDataRequester(
       final EventThread eventThread,
       final BatchChain activeBatches,
       final BatchFactory batchFactory,
-      final UInt64 batchSize) {
+      final UInt64 batchSize,
+      final int maxPendingBatches) {
     this.eventThread = eventThread;
     this.activeBatches = activeBatches;
     this.batchFactory = batchFactory;
     this.batchSize = batchSize;
+    this.maxPendingBatches = maxPendingBatches;
   }
 
   public void fillRetrievingQueue(
@@ -57,7 +59,7 @@ public class BatchDataRequester {
     UInt64 nextBatchStart = getNextSlotToRequest(commonAncestorSlot);
     final UInt64 targetSlot = targetChain.getChainHead().getSlot();
     for (long i = pendingBatchesCount;
-        i < MAX_PENDING_BATCHES && nextBatchStart.isLessThan(targetSlot);
+        i < maxPendingBatches && nextBatchStart.isLessThan(targetSlot);
         i++) {
       final UInt64 remainingSlots = targetSlot.minus(nextBatchStart).plus(1);
       final UInt64 count = remainingSlots.min(batchSize);

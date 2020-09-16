@@ -35,6 +35,7 @@ import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 
 public class FinalizedSync implements Sync {
   private static final Logger LOG = LogManager.getLogger();
+  private static final int MAX_PENDING_BATCHES = 5;
 
   private final EventThread eventThread;
   private final RecentChainData recentChainData;
@@ -71,7 +72,8 @@ public class FinalizedSync implements Sync {
       final UInt64 batchSize) {
     final BatchChain activeBatches = new BatchChain();
     final BatchDataRequester batchDataRequester =
-        new BatchDataRequester(eventThread, activeBatches, batchFactory, batchSize);
+        new BatchDataRequester(
+            eventThread, activeBatches, batchFactory, batchSize, MAX_PENDING_BATCHES);
     return new FinalizedSync(
         eventThread, recentChainData, activeBatches, batchImporter, batchDataRequester);
   }

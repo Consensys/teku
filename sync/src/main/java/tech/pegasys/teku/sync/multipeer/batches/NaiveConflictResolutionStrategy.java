@@ -22,7 +22,7 @@ public class NaiveConflictResolutionStrategy implements ConflictResolutionStrate
   private static final Logger LOG = LogManager.getLogger();
 
   @Override
-  public void verifyBatch(final Batch batch, final SyncSource originalSource) {
+  public void verifyBatch(final Batch batch, final SyncSource source) {
     LOG.debug("Invalidating batch {}", batch);
     // Re-download all contested batches, but no penalties are applied to peers
     // Just hope it works out better next time.
