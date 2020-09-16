@@ -13,60 +13,31 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
-import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class GetAttesterDutiesTest extends AbstractBeaconHandlerTest {
-  final GetAttesterDuties handler =
-      new GetAttesterDuties(
-          chainDataProvider, syncDataProvider, validatorDataProvider, jsonProvider);
+public class GetAttesterDutiesTest extends AbstractValidatorApiTest {
 
-  @Test
-  public void shouldReturnNotReadyWhenSyncing() throws Exception {
-    when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.isSyncActive()).thenReturn(true);
-
-    handler.handle(context);
-    verifyStatusCode(SC_SERVICE_UNAVAILABLE);
-  }
-
-  @Test
-  public void shouldReturnNotReadyWhenStoreNotReady() throws Exception {
-    when(validatorDataProvider.isStoreAvailable()).thenReturn(false);
-
-    handler.handle(context);
-    verify(syncService, never()).isSyncActive();
-    verifyStatusCode(SC_SERVICE_UNAVAILABLE);
-  }
-
-  @Test
-  public void shouldReturnBadRequestIfEpochTooFarAhead() throws Exception {
-    when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.isSyncActive()).thenReturn(false);
-    when(chainDataProvider.getCurrentEpoch()).thenReturn(UInt64.valueOf(98));
-    when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
-
-    handler.handle(context);
-    verifyStatusCode(SC_BAD_REQUEST);
+  @BeforeEach
+  public void setup() {
+    handler =
+        new GetAttesterDuties(
+            chainDataProvider, syncDataProvider, validatorDataProvider, jsonProvider);
   }
 
   @Test
