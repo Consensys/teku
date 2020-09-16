@@ -51,7 +51,7 @@ public class GetPeers implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get node network peers",
+      summary = "Get node peers",
       tags = {TAG_V1_NODE},
       description = "Retrieves data about the node's network peers.",
       responses = {
