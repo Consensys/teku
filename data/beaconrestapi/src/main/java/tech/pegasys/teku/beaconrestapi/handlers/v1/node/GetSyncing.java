@@ -49,7 +49,7 @@ public class GetSyncing implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get node syncing status.",
+      summary = "Get node syncing status",
       description =
           "Requests the beacon node to describe if it's currently syncing or not, "
               + "and if it is, what block it is up to.",
