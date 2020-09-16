@@ -19,6 +19,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
@@ -40,7 +41,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 public class PerformanceTracker implements SlotEventsChannel {
 
@@ -49,9 +49,11 @@ public class PerformanceTracker implements SlotEventsChannel {
 
   private static final UInt64 BLOCK_PERFORMANCE_EVALUATION_INTERVAL = UInt64.valueOf(2); // epochs
   private final RecentChainData recentChainData;
+  private final StatusLogger statusLogger;
 
-  public PerformanceTracker(RecentChainData recentChainData) {
+  public PerformanceTracker(RecentChainData recentChainData, StatusLogger statusLogger) {
     this.recentChainData = recentChainData;
+    this.statusLogger = statusLogger;
   }
 
   @Override
@@ -64,13 +66,13 @@ public class PerformanceTracker implements SlotEventsChannel {
     // Output attestation performance information for current epoch - 2 since attestations can be
     // included in both the epoch they were produced in or in the one following.
     if (currentEpoch.isGreaterThanOrEqualTo(UInt64.valueOf(2))) {
-      STATUS_LOG.performance(getAttestationPerformanceForEpoch(currentEpoch, currentEpoch.minus(UInt64.valueOf(2))).toString());
+      statusLogger.performance(getAttestationPerformanceForEpoch(currentEpoch, currentEpoch.minus(UInt64.valueOf(2))).toString());
     }
 
     // Output block performance information for the past BLOCK_PERFORMANCE_INTERVAL epochs
     if (currentEpoch.isGreaterThanOrEqualTo(BLOCK_PERFORMANCE_EVALUATION_INTERVAL)) {
       if (currentEpoch.mod(BLOCK_PERFORMANCE_EVALUATION_INTERVAL).equals(UInt64.ZERO)) {
-        STATUS_LOG.performance(
+        statusLogger.performance(
             getBlockPerformanceForEpochs(
                 currentEpoch.minus(BLOCK_PERFORMANCE_EVALUATION_INTERVAL), currentEpoch).toString());
       }
