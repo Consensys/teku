@@ -78,7 +78,7 @@ public class GetProposerDuties extends AbstractHandler implements Handler {
       summary = "Get proposer duties",
       tags = {TG_V1_VALIDATOR},
       description =
-          "Request beacon node to provide all validators that are supposed to propose a block in the given epoch.",
+          "Request beacon node to provide all validators that are scheduled to propose a block in the given epoch.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,

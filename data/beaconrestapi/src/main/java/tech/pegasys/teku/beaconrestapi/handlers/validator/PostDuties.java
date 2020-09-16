@@ -61,7 +61,9 @@ public class PostDuties extends AbstractHandler implements Handler {
       tags = {TAG_VALIDATOR},
       description =
           "Returns the validator duties for validators that match the specified public keys and epoch.\n\n"
-              + "Public keys that do not match a validator are returned without validator information.",
+              + "Public keys that do not match a validator are returned without validator information.\n"
+              + "Deprecated - use`/eth/v1/validator/duties/attester/{epoch}` and "
+              + "`/eth/v1/validator/duties/proposer/{epoch}` instead.",
       requestBody =
           @OpenApiRequestBody(
               content = @OpenApiContent(from = ValidatorsRequest.class),
