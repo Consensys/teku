@@ -43,7 +43,7 @@ public class Constants {
   public static UInt64 HYSTERESIS_QUOTIENT;
   public static UInt64 HYSTERESIS_DOWNWARD_MULTIPLIER;
   public static UInt64 HYSTERESIS_UPWARD_MULTIPLIER;
-  public static int PROPORTIONAL_SLASHING_MULTIPLIER;
+  public static int PROPORTIONAL_SLASHING_MULTIPLIER = 3;
   public static final int MAX_REQUEST_BLOCKS = 1024;
 
   // Gwei values
