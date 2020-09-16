@@ -73,6 +73,7 @@ import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
+import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -85,6 +86,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final AttestationTopicSubscriber attestationTopicSubscriber;
   private final EventBus eventBus;
   private final DutyMetrics dutyMetrics;
+  private final PerformanceTracker performanceTracker;
 
   public ValidatorApiHandler(
       final CombinedChainDataClient combinedChainDataClient,
@@ -95,7 +97,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final AttestationManager attestationManager,
       final AttestationTopicSubscriber attestationTopicSubscriber,
       final EventBus eventBus,
-      final DutyMetrics dutyMetrics) {
+      final DutyMetrics dutyMetrics,
+      final PerformanceTracker performanceTracker) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateTracker = syncStateTracker;
     this.stateTransition = stateTransition;
@@ -105,6 +108,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.attestationTopicSubscriber = attestationTopicSubscriber;
     this.eventBus = eventBus;
     this.dutyMetrics = dutyMetrics;
+    this.performanceTracker = performanceTracker;
   }
 
   @Override
@@ -290,6 +294,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                           expectedValidatorIndex,
                           reason));
               dutyMetrics.onAttestationPublished(attestation.getData().getSlot());
+              performanceTracker.saveSentAttestation(attestation);
             },
             err ->
                 LOG.error(
@@ -317,12 +322,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     attestationManager
         .onAttestation(ValidateableAttestation.fromSignedAggregate(aggregateAndProof))
         .finish(
-            result ->
-                result.ifInvalid(
-                    reason ->
-                        VALIDATOR_LOGGER.producedInvalidAggregate(
-                            aggregateAndProof.getMessage().getAggregate().getData().getSlot(),
-                            reason)),
+            result -> {
+              result.ifInvalid(
+                  reason ->
+                      VALIDATOR_LOGGER.producedInvalidAggregate(
+                          aggregateAndProof.getMessage().getAggregate().getData().getSlot(),
+                          reason));
+            },
             err ->
                 LOG.error(
                     "Failed to send aggregate for slot {}",
@@ -332,6 +338,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public void sendSignedBlock(final SignedBeaconBlock block) {
     eventBus.post(new ProposedBlockEvent(block));
+    performanceTracker.saveSentBlock(block);
   }
 
   @VisibleForTesting

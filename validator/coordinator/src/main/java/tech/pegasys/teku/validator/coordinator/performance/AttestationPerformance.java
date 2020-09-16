@@ -72,13 +72,13 @@ public class AttestationPerformance {
   @Override
   public String toString() {
     return String.format(
-        " ===== Attestation Performance Information ===== \n"
+        "\n ===== Attestation Performance Information ===== \n"
             + " - Number of sent attestations: %d\n"
             + " - Number of sent attestations included on chain: %d\n"
-            + " - %age of inclusion at: %d%%\n"
-            + " - Inclusion distances: average: %d, min: %d, max: %d\n"
-            + " - %age with correct target at: %d%%\n"
-            + " - %age with correct head block root at: %d%%\n",
+            + " - %%age of inclusion at: %d%%\n"
+            + " - Inclusion distances: average: %f, min: %d, max: %d\n"
+            + " - %%age with correct target at: %d%%\n"
+            + " - %%age with correct head block root at: %d%%",
         numberOfSentAttestations,
         numberOfIncludedAttestations,
         getPercentage(numberOfIncludedAttestations, numberOfSentAttestations),

@@ -109,6 +109,7 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
+import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 public class BeaconChainController extends Service implements TimeTickChannel {
@@ -145,6 +146,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile OperationPool<ProposerSlashing> proposerSlashingPool;
   private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private volatile OperationsReOrgManager operationsReOrgManager;
+  private volatile PerformanceTracker performanceTracker;
 
   private SyncStateTracker syncStateTracker;
   private UInt64 genesisTimeTracker = ZERO;
@@ -268,9 +270,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initSlotProcessor();
     initMetrics();
     initSyncStateTracker();
+    initPerformanceTracker();
     initValidatorApiHandler();
     initRestAPI();
     initOperationsReOrgManager();
+  }
+
+  private void initPerformanceTracker() {
+    performanceTracker = new PerformanceTracker(recentChainData);
+    eventChannels.subscribe(SlotEventsChannel.class, performanceTracker);
   }
 
   private void initAttesterSlashingPool() {
@@ -371,7 +379,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationManager,
             attestationTopicSubscriber,
             eventBus,
-            DutyMetrics.create(metricsSystem, timeProvider, recentChainData));
+            DutyMetrics.create(metricsSystem, timeProvider, recentChainData),
+            performanceTracker);
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationTopicSubscriber)
         .subscribe(ValidatorApiChannel.class, validatorApiHandler);

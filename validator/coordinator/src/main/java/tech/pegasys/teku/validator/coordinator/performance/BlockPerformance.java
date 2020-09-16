@@ -43,10 +43,10 @@ public class BlockPerformance {
   @Override
   public String toString() {
     return String.format(
-        " ===== Block Performance Information ===== \n"
+        "\n ===== Block Performance Information ===== \n"
             + " - Number of sent blocks: %d\n"
             + " - Number of sent blocks included on chain: %d\n"
-            + " - %age of inclusion at: %d%%\n",
+            + " - %%age of inclusion at: %d%%",
         numberOfSentBlocks,
         numberOfIncludedBlocks,
         getPercentage(numberOfIncludedBlocks, numberOfSentBlocks));

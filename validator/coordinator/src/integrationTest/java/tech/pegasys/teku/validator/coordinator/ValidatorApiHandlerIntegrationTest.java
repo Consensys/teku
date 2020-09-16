@@ -41,6 +41,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.sync.SyncState;
 import tech.pegasys.teku.sync.SyncStateTracker;
 import tech.pegasys.teku.util.config.StateStorageMode;
+import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class ValidatorApiHandlerIntegrationTest {
 
@@ -59,6 +60,7 @@ public class ValidatorApiHandlerIntegrationTest {
   private final AttestationManager attestationManager = mock(AttestationManager.class);
   private final AttestationTopicSubscriber attestationTopicSubscriber =
       mock(AttestationTopicSubscriber.class);
+  private final PerformanceTracker performanceTracker = mock(PerformanceTracker.class);
 
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   private final ValidatorApiHandler handler =
@@ -71,7 +73,8 @@ public class ValidatorApiHandlerIntegrationTest {
           attestationManager,
           attestationTopicSubscriber,
           eventBus,
-          mock(DutyMetrics.class));
+          mock(DutyMetrics.class),
+          performanceTracker);
 
   @BeforeEach
   public void setup() {

@@ -21,11 +21,13 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_ro
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.IntSummaryStatistics;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -43,10 +45,10 @@ import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 public class PerformanceTracker implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final NavigableMap<UInt64, List<SignedBeaconBlock>> sentBlocksByEpoch = new TreeMap<>();
-  private final NavigableMap<UInt64, List<Attestation>> sentAttestationsByEpoch = new TreeMap<>();
+  private final NavigableMap<UInt64, Set<SignedBeaconBlock>> sentBlocksByEpoch = new TreeMap<>();
+  private final NavigableMap<UInt64, Set<Attestation>> sentAttestationsByEpoch = new TreeMap<>();
 
-  private static final UInt64 BLOCK_PERFORMANCE_EVALUATION_INTERVAL = UInt64.valueOf(100); // epochs
+  private static final UInt64 BLOCK_PERFORMANCE_EVALUATION_INTERVAL = UInt64.valueOf(2); // epochs
   private final RecentChainData recentChainData;
 
   public PerformanceTracker(RecentChainData recentChainData) {
@@ -62,14 +64,18 @@ public class PerformanceTracker implements SlotEventsChannel {
 
     // Output attestation performance information for current epoch - 2 since attestations can be
     // included in both the epoch they were produced in or in the one following.
-    LOG.info(
-        getAttestationPerformanceForEpoch(currentEpoch, currentEpoch.minus(UInt64.valueOf(2))));
+    if (currentEpoch.isGreaterThanOrEqualTo(UInt64.valueOf(2))) {
+      LOG.info(
+          getAttestationPerformanceForEpoch(currentEpoch, currentEpoch.minus(UInt64.valueOf(2))));
+    }
 
     // Output block performance information for the past BLOCK_PERFORMANCE_INTERVAL epochs
-    if (currentEpoch.mod(BLOCK_PERFORMANCE_EVALUATION_INTERVAL).equals(UInt64.ZERO)) {
-      LOG.info(
-          getBlockPerformanceForEpochs(
-              currentEpoch.minus(BLOCK_PERFORMANCE_EVALUATION_INTERVAL), currentEpoch));
+    if (currentEpoch.isGreaterThanOrEqualTo(BLOCK_PERFORMANCE_EVALUATION_INTERVAL)) {
+      if (currentEpoch.mod(BLOCK_PERFORMANCE_EVALUATION_INTERVAL).equals(UInt64.ZERO)) {
+        LOG.info(
+            getBlockPerformanceForEpochs(
+                currentEpoch.minus(BLOCK_PERFORMANCE_EVALUATION_INTERVAL), currentEpoch));
+      }
     }
   }
 
@@ -97,23 +103,18 @@ public class PerformanceTracker implements SlotEventsChannel {
         "Epoch to analyze attestation performance must be at least 2 epochs less than the current epoch");
     // Attestations can be included in either the epoch they were produced in or in
     // the following epoch. Thus, the most recent epoch for which we can evaluate attestation
-    // performance
-    // is current epoch - 2.
-    UInt64 epochFollowingAnalyzedEpoch = analyzedEpoch.increment();
+    // performance is current epoch - 2.
+    UInt64 analysisRangeEndEpoch = analyzedEpoch.plus(UInt64.valueOf(2));
 
     // Get included attestations for the given epochs in a map from slot to attestations
     // included in block.
     Map<UInt64, List<Attestation>> attestations =
-        getAttestationsIncludedInEpochs(analyzedEpoch, epochFollowingAnalyzedEpoch);
+        getAttestationsIncludedInEpochs(analyzedEpoch, analysisRangeEndEpoch);
 
     // Get sent attestations in range
-    List<Attestation> sentAttestations =
-        sentAttestationsByEpoch.subMap(analyzedEpoch, true, epochFollowingAnalyzedEpoch, false)
-            .values().stream()
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
+    Set<Attestation> sentAttestations = sentAttestationsByEpoch.get(analyzedEpoch);
     UInt64 analyzedEpochStartSlot = compute_start_slot_at_epoch(analyzedEpoch);
-    UInt64 rangeEndSlot = compute_start_slot_at_epoch(epochFollowingAnalyzedEpoch.plus(UInt64.ONE));
+    UInt64 rangeEndSlot = compute_start_slot_at_epoch(analysisRangeEndEpoch);
     BeaconState state = recentChainData.getBestState().orElseThrow();
 
     int correctTargetCount = 0;
@@ -208,15 +209,15 @@ public class PerformanceTracker implements SlotEventsChannel {
 
   public void saveSentAttestation(Attestation attestation) {
     UInt64 epoch = compute_epoch_at_slot(attestation.getData().getSlot());
-    List<Attestation> attestationsInEpoch =
-        sentAttestationsByEpoch.computeIfAbsent(epoch, __ -> new ArrayList<>());
+    Set<Attestation> attestationsInEpoch =
+        sentAttestationsByEpoch.computeIfAbsent(epoch, __ -> new HashSet<>());
     attestationsInEpoch.add(attestation);
   }
 
   public void saveSentBlock(SignedBeaconBlock block) {
     UInt64 epoch = compute_epoch_at_slot(block.getSlot());
-    List<SignedBeaconBlock> blocksInEpoch =
-        sentBlocksByEpoch.computeIfAbsent(epoch, __ -> new ArrayList<>());
+    Set<SignedBeaconBlock> blocksInEpoch =
+        sentBlocksByEpoch.computeIfAbsent(epoch, __ -> new HashSet<>());
     blocksInEpoch.add(block);
   }
 
