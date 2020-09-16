@@ -11,24 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.peers;
+package tech.pegasys.teku.sync.multipeer.batches;
 
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
-import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 
-/**
- * Represents an external source of blocks to sync. Typically a peer, but this provides the minimal
- * interface required by the sync system.
- */
-public interface SyncSource {
-  SafeFuture<Void> requestBlocksByRange(
-      UInt64 startSlot,
-      UInt64 count,
-      UInt64 step,
-      ResponseStreamListener<SignedBeaconBlock> listener);
+public class StubBatchTest extends AbstractBatchTest {
 
-  SafeFuture<?> disconnectCleanly(DisconnectReason reason);
+  @Override
+  protected Batch createBatch(final long startSlot, final long count) {
+    return new StubBatch(targetChain, UInt64.valueOf(startSlot), UInt64.valueOf(count));
+  }
+
+  @Override
+  protected void receiveBlocks(final Batch batch, final SignedBeaconBlock... blocks) {
+    ((StubBatch) batch).receiveBlocks(blocks);
+  }
+
+  @Override
+  protected void requestError(final Batch batch, final Throwable error) {
+    ((StubBatch) batch).requestError();
+  }
 }

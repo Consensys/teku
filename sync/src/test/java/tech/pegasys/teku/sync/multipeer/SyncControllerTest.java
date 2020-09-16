@@ -77,11 +77,11 @@ class SyncControllerTest {
 
   @Test
   void shouldNotBeSyncingWhenSyncCompletes() {
-    final SafeFuture<Void> syncResult = startFinalizedSync();
+    final SafeFuture<SyncResult> syncResult = startFinalizedSync();
 
     assertThat(syncController.isSyncActive()).isTrue();
 
-    syncResult.complete(null);
+    syncResult.complete(SyncResult.COMPLETE);
 
     assertNotSyncing();
   }
@@ -119,7 +119,7 @@ class SyncControllerTest {
 
   @Test
   void shouldRemainSyncingWhenNoTargetChainSelectedButPreviousSyncStillActive() {
-    final SafeFuture<Void> previousSync = startFinalizedSync();
+    final SafeFuture<SyncResult> previousSync = startFinalizedSync();
 
     assertThat(syncController.isSyncActive()).isTrue();
 
@@ -128,7 +128,7 @@ class SyncControllerTest {
 
     assertThat(syncController.isSyncActive()).isTrue();
 
-    previousSync.complete(null);
+    previousSync.complete(SyncResult.COMPLETE);
 
     assertNotSyncing();
   }
@@ -138,11 +138,11 @@ class SyncControllerTest {
     final SyncSubscriber subscriber = mock(SyncSubscriber.class);
     syncController.subscribeToSyncChanges(subscriber);
 
-    final SafeFuture<Void> syncResult = startFinalizedSync();
+    final SafeFuture<SyncResult> syncResult = startFinalizedSync();
 
     assertSyncSubscriberNotified(subscriber, true);
 
-    syncResult.complete(null);
+    syncResult.complete(SyncResult.COMPLETE);
 
     assertSyncSubscriberNotified(subscriber, false);
   }
@@ -151,7 +151,7 @@ class SyncControllerTest {
   void shouldNotNotifySubscribersAgainWhenSyncTargetChanges() {
     final SyncSubscriber subscriber = mock(SyncSubscriber.class);
     syncController.subscribeToSyncChanges(subscriber);
-    ignoreFuture(startFinalizedSync());
+    final SafeFuture<SyncResult> previousSync = startFinalizedSync();
 
     assertSyncSubscriberNotified(subscriber, true);
 
@@ -159,10 +159,16 @@ class SyncControllerTest {
     final TargetChain newTargetChain = chainWith(dataStructureUtil.randomSlotAndBlockRoot());
     when(finalizedChainSelector.selectTargetChain(finalizedChains))
         .thenReturn(Optional.of(newTargetChain));
-    when(finalizedSync.syncToChain(newTargetChain)).thenReturn(new SafeFuture<>());
+    when(finalizedSync.syncToChain(newTargetChain))
+        .thenAnswer(
+            invocation -> {
+              previousSync.complete(SyncResult.TARGET_CHANGED);
+              return new SafeFuture<>();
+            });
     onTargetChainsUpdated();
 
     // But subscribers are not notified because we're already syncing.
+    verifyNoMoreInteractions(subscriberExecutor);
     verifyNoMoreInteractions(subscriber);
   }
 
@@ -179,8 +185,8 @@ class SyncControllerTest {
     verify(subscriber).onSyncingChange(syncing);
   }
 
-  private SafeFuture<Void> startFinalizedSync() {
-    final SafeFuture<Void> syncResult = new SafeFuture<>();
+  private SafeFuture<SyncResult> startFinalizedSync() {
+    final SafeFuture<SyncResult> syncResult = new SafeFuture<>();
     when(finalizedChainSelector.selectTargetChain(finalizedChains))
         .thenReturn(Optional.of(targetChain));
     when(finalizedSync.syncToChain(targetChain)).thenReturn(syncResult);
