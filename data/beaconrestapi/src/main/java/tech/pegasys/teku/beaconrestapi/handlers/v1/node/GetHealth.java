@@ -51,7 +51,8 @@ public class GetHealth implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Returns node health status in http status codes. Useful for load balancers.",
+      summary = "Get node health",
+      description = "Returns node health status in http status codes. Useful for load balancers.",
       tags = {TAG_V1_NODE},
       responses = {
         @OpenApiResponse(status = RES_OK, description = "Node is ready"),

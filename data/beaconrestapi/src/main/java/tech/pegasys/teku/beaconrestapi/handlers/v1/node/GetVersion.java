@@ -42,7 +42,9 @@ public class GetVersion implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Retrieves the version of the node software.",
+      summary = "Get node version",
+      description =
+          "similar to [HTTP User-Agent](https://tools.ietf.org/html/rfc7231#section-5.5.3).",
       tags = {TAG_V1_NODE},
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = VersionResponse.class))
