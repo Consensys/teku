@@ -35,7 +35,6 @@ import tech.pegasys.teku.sync.SyncingStatus;
 import tech.pegasys.teku.sync.gossip.BlockManager;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
 import tech.pegasys.teku.sync.multipeer.batches.BatchFactory;
-import tech.pegasys.teku.sync.multipeer.chains.FinalizedTargetChainSelector;
 import tech.pegasys.teku.util.config.Constants;
 
 public class MultipeerSyncService extends Service implements SyncService {
@@ -95,7 +94,7 @@ public class MultipeerSyncService extends Service implements SyncService {
             eventThread,
             new OrderedAsyncRunner(asyncRunner),
             recentChainData,
-            new FinalizedTargetChainSelector(recentChainData),
+            ChainSelector.createFinalizedChainSelector(recentChainData),
             finalizedSync);
     final PeerChainTracker peerChainTracker =
         new PeerChainTracker(eventThread, p2pNetwork, syncController);
