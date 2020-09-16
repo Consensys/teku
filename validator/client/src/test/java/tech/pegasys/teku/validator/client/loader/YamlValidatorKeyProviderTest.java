@@ -27,11 +27,11 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 class YamlValidatorKeyProviderTest {
   private final YamlValidatorKeyProvider provider = new YamlValidatorKeyProvider();
-  private final TekuConfiguration config = mock(TekuConfiguration.class);
+  private final GlobalConfiguration config = mock(GlobalConfiguration.class);
 
   @Test
   public void shouldLoadExampleFile(@TempDir Path tempDirectory) throws Exception {

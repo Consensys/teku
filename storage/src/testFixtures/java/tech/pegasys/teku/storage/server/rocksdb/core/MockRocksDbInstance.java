@@ -191,7 +191,7 @@ public class MockRocksDbInstance implements RocksDbAccessor {
     private final MockRocksDbInstance dbInstance;
     private final Map<RocksDbColumn<?, ?>, Map<Bytes, Bytes>> columnUpdates = new HashMap<>();
     private final Map<RocksDbColumn<?, ?>, Set<Bytes>> deletedColumnKeys = new HashMap<>();
-    private final Map<RocksDbVariable<?>, Bytes> variableUpdates = new HashMap<>();
+    private final Map<RocksDbVariable<?>, Optional<Bytes>> variableUpdates = new HashMap<>();
     private boolean closed = false;
 
     public MockRocksDbTransaction(final MockRocksDbInstance mockRocksDbInstance) {
@@ -203,7 +203,7 @@ public class MockRocksDbInstance implements RocksDbAccessor {
       assertOpen();
       dbInstance.assertValidVariable(variable);
       final Bytes valueBytes = Bytes.wrap(variable.getSerializer().serialize(value));
-      variableUpdates.put(variable, valueBytes);
+      variableUpdates.put(variable, Optional.of(valueBytes));
     }
 
     @Override
@@ -240,10 +240,24 @@ public class MockRocksDbInstance implements RocksDbAccessor {
     }
 
     @Override
+    public <T> void delete(RocksDbVariable<T> variable) {
+      assertOpen();
+      dbInstance.assertValidVariable(variable);
+      variableUpdates.put(variable, Optional.empty());
+    }
+
+    @Override
     public void commit() {
       assertOpen();
       dbInstance.assertOpen();
-      variableUpdates.forEach(dbInstance.variableData::put);
+      variableUpdates.forEach(
+          (key, value) -> {
+            if (value.isPresent()) {
+              dbInstance.variableData.put(key, value.get());
+            } else {
+              dbInstance.variableData.remove(key);
+            }
+          });
       columnUpdates.forEach(
           (col, updates) -> {
             final NavigableMap<Bytes, Bytes> targetColumn = dbInstance.columnData.get(col);

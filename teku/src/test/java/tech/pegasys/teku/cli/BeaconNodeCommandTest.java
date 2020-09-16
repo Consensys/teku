@@ -36,13 +36,14 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.util.config.Eth1Address;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.NetworkDefinition;
-import tech.pegasys.teku.util.config.TekuConfiguration;
-import tech.pegasys.teku.util.config.TekuConfigurationBuilder;
 
 public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
@@ -117,7 +118,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    assertTekuConfiguration(expectedConfigurationBuilder().setP2pInterface("1.2.3.5").build());
+    TekuConfiguration expected =
+        expectedConfigurationBuilder()
+            .globalConfig(
+                b -> {
+                  b.setP2pInterface("1.2.3.5");
+                })
+            .build();
+    assertTekuConfiguration(expected);
   }
 
   @Test
@@ -133,8 +141,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    assertTekuConfiguration(
-        expectedCompleteConfigInFileBuilder().setP2pInterface("1.2.3.5").build());
+    final TekuConfiguration expected =
+        expectedCompleteConfigInFileBuilder()
+            .globalConfig(
+                b -> {
+                  b.setP2pInterface("1.2.3.5");
+                })
+            .build();
+    assertTekuConfiguration(expected);
   }
 
   @Test
@@ -146,8 +160,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    assertTekuConfiguration(
-        expectedCompleteConfigInFileBuilder().setP2pInterface("1.2.3.5").build());
+    final TekuConfiguration expected =
+        expectedCompleteConfigInFileBuilder()
+            .globalConfig(
+                b -> {
+                  b.setP2pInterface("1.2.3.5");
+                })
+            .build();
+    assertTekuConfiguration(expected);
   }
 
   @Test
@@ -185,9 +205,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void interopEnabled_shouldNotRequireAValue() {
-    final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--Xinterop-enabled");
-    assertThat(tekuConfiguration.isInteropEnabled()).isTrue();
+    final GlobalConfiguration globalConfiguration =
+        getGlobalConfigurationFromArguments("--Xinterop-enabled");
+    assertThat(globalConfiguration.isInteropEnabled()).isTrue();
   }
 
   @ParameterizedTest(name = "{0}")
@@ -264,38 +284,51 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     };
   }
 
-  private TekuConfigurationBuilder expectedDefaultConfigurationBuilder() {
+  private TekuConfiguration.Builder expectedDefaultConfigurationBuilder() {
     return expectedConfigurationBuilder()
-        .setNetwork(NetworkDefinition.fromCliArg("medalla"))
-        .setEth1DepositContractAddress(null)
-        .setEth1Endpoint(null)
-        .setMetricsCategories(
-            DEFAULT_METRICS_CATEGORIES.stream().map(Object::toString).collect(Collectors.toList()))
-        .setP2pAdvertisedPort(OptionalInt.empty())
-        .setP2pDiscoveryEnabled(true)
-        .setP2pInterface("0.0.0.0")
-        .setP2pPort(9000)
-        .setP2pPrivateKeyFile(null)
-        .setInteropEnabled(false)
-        .setPeerRateLimit(500)
-        .setPeerRequestLimit(50)
-        .setInteropGenesisTime(0)
-        .setInteropOwnedValidatorCount(0)
-        .setLogDestination(DEFAULT_BOTH)
-        .setLogFile(DEFAULT_LOG_FILE)
-        .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN);
+        .globalConfig(
+            b -> {
+              b.setNetwork(NetworkDefinition.fromCliArg("medalla"))
+                  .setEth1DepositContractAddress(null)
+                  .setEth1Endpoint(null)
+                  .setMetricsCategories(
+                      DEFAULT_METRICS_CATEGORIES.stream()
+                          .map(Object::toString)
+                          .collect(Collectors.toList()))
+                  .setP2pAdvertisedPort(OptionalInt.empty())
+                  .setP2pDiscoveryEnabled(true)
+                  .setP2pInterface("0.0.0.0")
+                  .setP2pPort(9000)
+                  .setP2pPrivateKeyFile(null)
+                  .setInteropEnabled(false)
+                  .setPeerRateLimit(500)
+                  .setPeerRequestLimit(50)
+                  .setInteropGenesisTime(0)
+                  .setInteropOwnedValidatorCount(0)
+                  .setLogDestination(DEFAULT_BOTH)
+                  .setLogFile(DEFAULT_LOG_FILE)
+                  .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN);
+            });
   }
 
-  private TekuConfigurationBuilder expectedCompleteConfigInFileBuilder() {
+  private TekuConfiguration.Builder expectedCompleteConfigInFileBuilder() {
     return expectedConfigurationBuilder()
-        .setLogFile("teku.log")
-        .setLogDestination(LoggingDestination.BOTH)
-        .setLogFileNamePattern("teku_%d{yyyy-MM-dd}.log");
+        .globalConfig(
+            builder -> {
+              builder
+                  .setLogFile("teku.log")
+                  .setLogDestination(LoggingDestination.BOTH)
+                  .setLogFileNamePattern("teku_%d{yyyy-MM-dd}.log");
+            });
   }
 
-  private TekuConfigurationBuilder expectedConfigurationBuilder() {
+  private TekuConfiguration.Builder expectedConfigurationBuilder() {
+    return TekuConfiguration.builder().globalConfig(this::buildExpectedGlobalConfiguration);
+  }
+
+  private void buildExpectedGlobalConfiguration(final GlobalConfigurationBuilder builder) {
     Eth1Address address = Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
-    return TekuConfiguration.builder()
+    builder
         .setNetwork(NetworkDefinition.fromCliArg("minimal"))
         .setP2pEnabled(false)
         .setP2pInterface("1.2.3.4")

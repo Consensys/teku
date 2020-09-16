@@ -18,7 +18,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.time.TimeProvider;
 
 public class ServiceConfig {
@@ -28,7 +28,7 @@ public class ServiceConfig {
   private final EventBus eventBus;
   private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
-  private final TekuConfiguration config;
+  private final GlobalConfiguration config;
 
   public ServiceConfig(
       final AsyncRunnerFactory asyncRunnerFactory,
@@ -36,7 +36,7 @@ public class ServiceConfig {
       final EventBus eventBus,
       final EventChannels eventChannels,
       final MetricsSystem metricsSystem,
-      final TekuConfiguration config) {
+      final GlobalConfiguration config) {
     this.asyncRunnerFactory = asyncRunnerFactory;
     this.timeProvider = timeProvider;
     this.eventBus = eventBus;
@@ -57,7 +57,7 @@ public class ServiceConfig {
     return eventChannels;
   }
 
-  public TekuConfiguration getConfig() {
+  public GlobalConfiguration getConfig() {
     return this.config;
   }
 

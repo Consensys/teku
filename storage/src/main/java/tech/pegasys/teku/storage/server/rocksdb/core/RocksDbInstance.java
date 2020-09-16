@@ -255,6 +255,18 @@ public class RocksDbInstance implements RocksDbAccessor {
     }
 
     @Override
+    public <T> void delete(RocksDbVariable<T> variable) {
+      applyUpdate(
+          () -> {
+            try {
+              rocksDbTx.delete(defaultHandle, variable.getId().toArrayUnsafe());
+            } catch (RocksDBException e) {
+              throw new DatabaseStorageException("Failed to delete variable", e);
+            }
+          });
+    }
+
+    @Override
     public void commit() {
       applyUpdate(
           () -> {

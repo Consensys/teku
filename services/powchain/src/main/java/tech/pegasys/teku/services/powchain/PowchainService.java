@@ -42,7 +42,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.util.cli.VersionProvider;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class PowchainService extends Service {
 
@@ -52,7 +52,7 @@ public class PowchainService extends Service {
   private final Eth1HeadTracker headTracker;
 
   public PowchainService(final ServiceConfig config) {
-    TekuConfiguration tekuConfig = config.getConfig();
+    GlobalConfiguration tekuConfig = config.getConfig();
 
     AsyncRunner asyncRunner = config.createAsyncRunner("powchain");
 
@@ -108,7 +108,7 @@ public class PowchainService extends Service {
             new MinimumGenesisTimeBlockFinder(eth1Provider));
   }
 
-  private Web3j createWeb3j(final TekuConfiguration tekuConfig) {
+  private Web3j createWeb3j(final GlobalConfiguration tekuConfig) {
     final HttpService web3jService =
         new HttpService(tekuConfig.getEth1Endpoint(), createOkHttpClient());
     web3jService.addHeader("User-Agent", VersionProvider.VERSION);
