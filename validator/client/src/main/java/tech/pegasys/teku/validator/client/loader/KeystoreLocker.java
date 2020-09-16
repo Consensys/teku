@@ -13,9 +13,8 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import static java.nio.file.StandardOpenOption.WRITE;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -28,9 +27,9 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
-
-import static java.nio.file.StandardOpenOption.CREATE_NEW;
-import static java.nio.file.StandardOpenOption.WRITE;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 public class KeystoreLocker {
 
@@ -45,7 +44,8 @@ public class KeystoreLocker {
         FileLock lockfileLock = FileChannel.open(lockfilePath, WRITE).lock();
         if (isLockFileValid(lockfilePath)) {
           lockfileLock.release();
-          throw new InvalidConfigurationException("Keystore file " + keystoreFile + " already in use.");
+          throw new InvalidConfigurationException(
+              "Keystore file " + keystoreFile + " already in use.");
         }
         lockfile = Files.write(lockfilePath, processPID, WRITE);
         lockfileLock.release();
@@ -67,8 +67,7 @@ public class KeystoreLocker {
         return true;
       }
       long pid = nativeByteArrayToLong(pidInBytes);
-      Optional<ProcessHandle> processHandle =
-              ProcessHandle.of(pid).filter(ProcessHandle::isAlive);
+      Optional<ProcessHandle> processHandle = ProcessHandle.of(pid).filter(ProcessHandle::isAlive);
       return processHandle.isPresent();
     } catch (FileNotFoundException ignored) {
       return false;
