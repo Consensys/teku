@@ -47,14 +47,14 @@ class FinalizedTargetChainSelectorTest {
 
   @Test
   void shouldNotSelectTargetChainsLessThanCurrentFinalizedEpoch() {
-    addPeerAtSlot(UInt64.ONE);
+    addPeerAtEpoch(UInt64.ONE);
 
     assertThat(selector.selectTargetChain(targetChains)).isEmpty();
   }
 
   @Test
   void shouldNotSelectTargetChainsWithSameFinalizedEpoch() {
-    addPeerAtSlot(recentChainData.getFinalizedEpoch());
+    addPeerAtEpoch(recentChainData.getFinalizedEpoch());
 
     assertThat(selector.selectTargetChain(targetChains)).isEmpty();
   }
@@ -62,7 +62,7 @@ class FinalizedTargetChainSelectorTest {
   @Test
   void shouldNotSelectTargetChainsWithNextFinalizedEpoch() {
     // Avoids triggering a sync when we may be just about to finalize the next epoch anyway
-    addPeerAtSlot(recentChainData.getFinalizedEpoch().plus(1));
+    addPeerAtEpoch(recentChainData.getFinalizedEpoch().plus(1));
 
     assertThat(selector.selectTargetChain(targetChains)).isEmpty();
   }
@@ -70,8 +70,8 @@ class FinalizedTargetChainSelectorTest {
   @Test
   void shouldSelectSuitableTargetChainWithMostPeers() {
     // Avoids triggering a sync when we may be just about to finalize the next epoch anyway
-    final SlotAndBlockRoot chainHead1 = addPeerAtSlot(recentChainData.getFinalizedEpoch().plus(2));
-    final SlotAndBlockRoot chainHead2 = addPeerAtSlot(recentChainData.getFinalizedEpoch().plus(2));
+    final SlotAndBlockRoot chainHead1 = addPeerAtEpoch(recentChainData.getFinalizedEpoch().plus(2));
+    final SlotAndBlockRoot chainHead2 = addPeerAtEpoch(recentChainData.getFinalizedEpoch().plus(2));
     addPeerToChain(chainHead1);
     addPeerToChain(chainHead1);
     addPeerToChain(chainHead2);
@@ -82,7 +82,7 @@ class FinalizedTargetChainSelectorTest {
         .contains(chainHead1);
   }
 
-  private SlotAndBlockRoot addPeerAtSlot(final UInt64 epoch) {
+  private SlotAndBlockRoot addPeerAtEpoch(final UInt64 epoch) {
     final SlotAndBlockRoot chainHead =
         new SlotAndBlockRoot(compute_start_slot_at_epoch(epoch), dataStructureUtil.randomBytes32());
     addPeerToChain(chainHead);
