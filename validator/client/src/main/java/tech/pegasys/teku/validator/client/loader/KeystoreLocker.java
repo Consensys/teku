@@ -13,20 +13,24 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
+
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import static java.nio.file.StandardOpenOption.WRITE;
 
 public class KeystoreLocker {
 
@@ -35,9 +39,19 @@ public class KeystoreLocker {
 
   public void lockKeystore(Path keystoreFile) {
     Path lockfilePath = Path.of(keystoreFile.toString() + ".lock");
-    deleteIfStaleLockfileExists(lockfilePath);
     try {
-      final Path lockfile = Files.write(lockfilePath, processPID, CREATE_NEW);
+      Path lockfile;
+      if (lockfilePath.toFile().exists()) {
+        FileLock lockfileLock = FileChannel.open(lockfilePath, WRITE).lock();
+        if (isLockFileValid(lockfilePath)) {
+          lockfileLock.release();
+          throw new InvalidConfigurationException("Keystore file " + keystoreFile + " already in use.");
+        }
+        lockfile = Files.write(lockfilePath, processPID, WRITE);
+        lockfileLock.release();
+      } else {
+        lockfile = Files.write(lockfilePath, processPID, CREATE_NEW);
+      }
       lockfile.toFile().deleteOnExit();
     } catch (FileAlreadyExistsException e) {
       throw new InvalidConfigurationException("Keystore file " + keystoreFile + " already in use.");
@@ -46,24 +60,18 @@ public class KeystoreLocker {
     }
   }
 
-  @SuppressWarnings("EmptyCatch")
-  private static void deleteIfStaleLockfileExists(Path lockfilePath) {
-    if (!lockfilePath.toFile().exists()) {
-      return;
-    }
+  private static boolean isLockFileValid(Path lockfilePath) {
     try {
       byte[] pidInBytes = Files.readAllBytes(lockfilePath);
-      if (pidInBytes.length == Long.BYTES) {
-        long pid = nativeByteArrayToLong(pidInBytes);
-        Optional<ProcessHandle> processHandle =
-            ProcessHandle.of(pid).filter(ProcessHandle::isAlive);
-        if (processHandle.isEmpty()) {
-          if (!lockfilePath.toFile().delete() && lockfilePath.toFile().exists()) {
-            LOG.warn("Could not delete stale lockfile.");
-          }
-        }
+      if (pidInBytes.length != Long.BYTES) {
+        return true;
       }
+      long pid = nativeByteArrayToLong(pidInBytes);
+      Optional<ProcessHandle> processHandle =
+              ProcessHandle.of(pid).filter(ProcessHandle::isAlive);
+      return processHandle.isPresent();
     } catch (FileNotFoundException ignored) {
+      return false;
     } catch (IOException e) {
       throw new UncheckedIOException("Unexpected error when trying read a keystore lockfile.", e);
     }
