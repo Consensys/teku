@@ -99,7 +99,7 @@ public class FinalizedSync implements Sync {
     this.targetChain = targetChain;
     this.commonAncestorSlot = getCommonAncestorSlot();
     this.syncResult = syncResult;
-    fillRetrievingQueue();
+    progressSync();
   }
 
   private UInt64 getCommonAncestorSlot() {
@@ -183,7 +183,10 @@ public class FinalizedSync implements Sync {
       batch.markFirstBlockConfirmed();
       previousBatches.forEach(this::confirmEmptyBatch);
     } else if (previousBatches.isEmpty()) {
-      // There are no previous batches but this doesn't match our chain so must be invalid
+      // There are no previous batches but this doesn't match our chain so must be invalid]
+      LOG.debug(
+          "Marking batch {} as invalid because there are no previous batches and it does not connect to our chain",
+          batch);
       batch.markAsInvalid();
     } else if (previousBatches.stream().allMatch(Batch::isComplete)) {
       // All the previous batches claim to be empty but we don't match up.
@@ -212,6 +215,10 @@ public class FinalizedSync implements Sync {
     }
     if (!firstBatch.getTargetChain().equals(secondBatch.getTargetChain())) {
       // We switched chains but they didn't actually match up. Go back to the finalized epoch
+      LOG.debug(
+          "New chain did not extend previous chain. {} and {} did not form chain",
+          firstBatch,
+          secondBatch);
       activeBatches.removeAll();
       commonAncestorSlot = getCommonAncestorSlot();
       return;
