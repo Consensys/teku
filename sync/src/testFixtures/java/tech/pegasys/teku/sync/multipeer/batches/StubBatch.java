@@ -135,7 +135,6 @@ public class StubBatch implements Batch {
 
   @Override
   public void markAsContested() {
-    // TODO: Be more careful about exact behaviour here
     contested = true;
     complete = false;
     blocks.clear();
