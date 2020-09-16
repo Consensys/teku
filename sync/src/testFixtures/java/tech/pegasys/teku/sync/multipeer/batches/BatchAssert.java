@@ -131,6 +131,11 @@ public class BatchAssert extends AbstractAssert<BatchAssert, Batch> {
     assertThat(actual.getLastSlot()).describedAs("lastSlot").isEqualTo(expected);
   }
 
+  public void hasRange(final long firstSlot, final long lastSlot) {
+    hasFirstSlot(firstSlot);
+    hasLastSlot(lastSlot);
+  }
+
   public void isAwaitingBlocks() {
     assertThat(actual.isAwaitingBlocks()).describedAs("awaiting blocks").isTrue();
   }

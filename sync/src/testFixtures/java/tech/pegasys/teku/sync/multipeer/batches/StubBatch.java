@@ -154,6 +154,7 @@ public class StubBatch implements Batch {
   @Override
   public void requestMoreBlocks(final Runnable callback) {
     checkState(!complete || contested, "Attempting to request blocks for a complete batch");
+    checkState(!isAwaitingBlocks(), "Attempting to make multiple requests at once");
     blockCallback = Optional.of(callback);
   }
 
