@@ -201,8 +201,6 @@ public class FinalizedSync implements Sync {
   }
 
   private boolean isChildOfStartingPoint(final SignedBeaconBlock firstBlock) {
-    // TODO: We should track where we actually started requesting blocks from and check it matches
-    // that block, not just any block we have.
     return recentChainData.containsBlock(firstBlock.getParent_root());
   }
 
