@@ -280,13 +280,19 @@ public class FinalizedSync implements Sync {
 
   private void onImportComplete(final BatchImportResult result, final Batch importedBatch) {
     eventThread.checkOnEventThread();
-    if (!isActiveBatch(importedBatch)) {
-      return;
-    }
     checkState(
-        importingBatch.isPresent() && importingBatch.get().equals(importedBatch),
+        isCurrentlyImportingBatch(importedBatch),
         "Received import complete for batch that shouldn't have been importing");
     importingBatch = Optional.empty();
+    if (!isActiveBatch(importedBatch)) {
+      // We switched to a different chain while this was importing. Can't infer anything about other
+      // batches from this result but should still penalise the peer that sent it to us.
+      if (result.isFailure()) {
+        importedBatch.markAsInvalid();
+      }
+      progressSync();
+      return;
+    }
     if (result.isFailure()) {
       // Mark all batches that form a chain with this one as invalid
       for (Batch batch : activeBatches.batchesAfterInclusive(importedBatch)) {
@@ -305,6 +311,12 @@ public class FinalizedSync implements Sync {
     if (activeBatches.isEmpty()) {
       syncResult.complete(SyncResult.COMPLETE);
     }
+  }
+
+  private Boolean isCurrentlyImportingBatch(final Batch importedBatch) {
+    return importingBatch
+        .map(currentImportingBatch -> currentImportingBatch.equals(importedBatch))
+        .orElse(false);
   }
 
   private Boolean batchesFormChain(final Batch previousBatch, final Batch secondBatch) {

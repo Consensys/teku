@@ -637,6 +637,59 @@ class FinalizedSyncTest {
   }
 
   @Test
+  void shouldHandleSwitchingToNewChainWhileABatchIsImporting() {
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
+
+    final ChainBuilder fork = chainBuilder.fork();
+    final StubBatch batch0 = batches.get(0);
+    final StubBatch batch1 = batches.get(1);
+    batch0.receiveBlocks(chainBuilder.generateBlockAtSlot(1).getBlock());
+    batch1.receiveBlocks(chainBuilder.generateBlockAtSlot(batch1.getFirstSlot()).getBlock());
+
+    assertBatchImported(batch0);
+
+    final StubBatch batch4 = batches.get(4);
+
+    // Switch to a new chain
+    targetChain = chainWith(dataStructureUtil.randomSlotAndBlockRoot(), syncSource);
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
+
+    // And return blocks so the new chain doesn't match up.
+    batch4.receiveBlocks(chainBuilder.generateBlockAtSlot(batch4.getLastSlot()).getBlock());
+    final StubBatch batch5 = batches.get(5);
+    batch5.receiveBlocks(dataStructureUtil.randomSignedBeaconBlock(batch5.getFirstSlot()));
+
+    assertBatchNotActive(batch0);
+
+    // All pending batches returns at least one block so need to wait for an import to complete
+    eventThread.execute(
+        () -> {
+          batches.stream()
+              .filter(batch -> sync.isActiveBatch(wrappedBatches.get(batch)))
+              .filter(Batch::isAwaitingBlocks)
+              .forEach(
+                  batch ->
+                      batch.receiveBlocks(
+                          fork.generateBlockAtSlot(batch.getLastSlot()).getBlock()));
+          assertThat(
+                  batches.stream().filter(batch -> sync.isActiveBatch(wrappedBatches.get(batch))))
+              .noneMatch(Batch::isAwaitingBlocks);
+        });
+
+    batch0.getImportResult().complete(IMPORT_FAILED);
+    // Should trigger a new import
+    eventThread.execute(
+        () -> {
+          final StubBatch firstPendingBatch =
+              batches.stream()
+                  .filter(batch -> sync.isActiveBatch(wrappedBatches.get(batch)))
+                  .findFirst()
+                  .orElseThrow();
+          assertBatchImported(firstPendingBatch);
+        });
+  }
+
+  @Test
   void shouldProgressWhenThereAreManyEmptyBatchesInARow() {
     assertThat(sync.syncToChain(targetChain)).isNotDone();
 
