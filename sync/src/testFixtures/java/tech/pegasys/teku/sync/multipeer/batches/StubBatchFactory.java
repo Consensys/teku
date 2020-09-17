@@ -36,10 +36,12 @@ public class StubBatchFactory extends BatchFactory implements Iterable<Batch> {
   private final Map<Batch, BatchSupport> batchSupports = new HashMap<>();
 
   private final EventThread eventThread;
+  private final boolean enforceEventThread;
 
-  public StubBatchFactory(final EventThread eventThread) {
+  public StubBatchFactory(final EventThread eventThread, final boolean enforceEventThread) {
     super(eventThread);
     this.eventThread = eventThread;
+    this.enforceEventThread = enforceEventThread;
   }
 
   public Batch get(final int index) {
@@ -62,10 +64,6 @@ public class StubBatchFactory extends BatchFactory implements Iterable<Batch> {
 
   public void receiveBlocks(final Batch batch, final SignedBeaconBlock... blocks) {
     batchSupports.get(batch).syncSource.receiveBlocks(blocks);
-  }
-
-  public void requestError(final Batch batch, final Throwable error) {
-    batchSupports.get(batch).syncSource.failRequest(error);
   }
 
   public void assertMarkedInvalid(final Batch batch) {
@@ -93,7 +91,7 @@ public class StubBatchFactory extends BatchFactory implements Iterable<Batch> {
     // Can look up batch support by either the wrapped or unwrapped batch
     batchSupports.put(support.batch, support);
     batchSupports.put(support.eventThreadOnlyBatch, support);
-    return support.eventThreadOnlyBatch;
+    return enforceEventThread ? support.eventThreadOnlyBatch : support.batch;
   }
 
   public int size() {

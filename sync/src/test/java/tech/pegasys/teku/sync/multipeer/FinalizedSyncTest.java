@@ -60,7 +60,7 @@ class FinalizedSyncTest {
 
   private final SyncSource syncSource = mock(SyncSource.class);
   private final BatchImporter batchImporter = mock(BatchImporter.class);
-  private final StubBatchFactory batches = new StubBatchFactory(eventThread);
+  private final StubBatchFactory batches = new StubBatchFactory(eventThread, true);
 
   private TargetChain targetChain =
       chainWith(
