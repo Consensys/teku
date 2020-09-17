@@ -17,7 +17,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.Optional;
-import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
@@ -28,22 +27,34 @@ public class ChainSelector {
   private static final int SYNC_THRESHOLD_IN_EPOCHS = 1;
   private static final int SYNC_THRESHOLD_IN_SLOTS = SYNC_THRESHOLD_IN_EPOCHS * SLOTS_PER_EPOCH;
 
-  private final Supplier<UInt64> minimumSlotCalculator;
+  private final MinimumSlotCalculator minimumSlotCalculator;
 
-  private ChainSelector(final Supplier<UInt64> minimumSlotCalculator) {
+  private ChainSelector(final MinimumSlotCalculator minimumSlotCalculator) {
     this.minimumSlotCalculator = minimumSlotCalculator;
   }
 
   public static ChainSelector createFinalizedChainSelector(final RecentChainData recentChainData) {
     return new ChainSelector(
-        () ->
-            compute_start_slot_at_epoch(
-                recentChainData.getFinalizedEpoch().plus(SYNC_THRESHOLD_IN_EPOCHS)));
+        syncInProgress -> getMinimumSlotForFinalizedTargetChain(recentChainData, syncInProgress));
+  }
+
+  private static UInt64 getMinimumSlotForFinalizedTargetChain(
+      final RecentChainData recentChainData, final boolean syncInProgress) {
+    final UInt64 localFinalizedEpoch = recentChainData.getFinalizedEpoch();
+    return compute_start_slot_at_epoch(
+        syncInProgress ? localFinalizedEpoch : localFinalizedEpoch.plus(SYNC_THRESHOLD_IN_EPOCHS));
   }
 
   public static ChainSelector createNonfinalizedChainSelector(
       final RecentChainData recentChainData) {
-    return new ChainSelector(() -> recentChainData.getHeadSlot().plus(SYNC_THRESHOLD_IN_SLOTS));
+    return new ChainSelector(
+        syncInProgress -> getMinimumSlotForNonfinalizedChain(recentChainData, syncInProgress));
+  }
+
+  private static UInt64 getMinimumSlotForNonfinalizedChain(
+      final RecentChainData recentChainData, final boolean syncInProgress) {
+    final UInt64 localHeadSlot = recentChainData.getHeadSlot();
+    return syncInProgress ? localHeadSlot : localHeadSlot.plus(SYNC_THRESHOLD_IN_SLOTS);
   }
 
   /**
@@ -51,13 +62,20 @@ public class ChainSelector {
    * the node is considered in sync.
    *
    * @param availableChains the chains to select from
+   * @param syncInProgress whether or not an existing sync is already in progress.
    * @return the sync target or empty if no sync is required
    */
-  public Optional<TargetChain> selectTargetChain(TargetChains availableChains) {
-    final UInt64 minimumSlot = minimumSlotCalculator.get();
+  public Optional<TargetChain> selectTargetChain(
+      TargetChains availableChains, final boolean syncInProgress) {
+    final UInt64 minimumSlot =
+        minimumSlotCalculator.getMinimumSlotForSuitableTargetChain(syncInProgress);
     return availableChains
         .streamChains()
         .filter(chain -> chain.getChainHead().getSlot().isGreaterThan(minimumSlot))
         .findFirst();
+  }
+
+  private interface MinimumSlotCalculator {
+    UInt64 getMinimumSlotForSuitableTargetChain(boolean syncInProgress);
   }
 }
