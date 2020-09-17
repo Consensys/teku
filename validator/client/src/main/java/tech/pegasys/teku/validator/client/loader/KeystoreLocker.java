@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import static java.nio.file.StandardOpenOption.CREATE_NEW;
-import static java.nio.file.StandardOpenOption.WRITE;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -26,10 +27,9 @@ import java.nio.channels.FileLock;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
+import java.nio.file.StandardOpenOption;
+
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
 
 public class KeystoreLocker {
 
@@ -39,41 +39,60 @@ public class KeystoreLocker {
   public void lockKeystore(Path keystoreFile) {
     Path lockfilePath = Path.of(keystoreFile.toString() + ".lock");
     try {
-      Path lockfile;
       if (lockfilePath.toFile().exists()) {
-        FileLock lockfileLock = FileChannel.open(lockfilePath, WRITE).lock();
-        if (isLockFileValid(lockfilePath)) {
-          lockfileLock.release();
-          throw new InvalidConfigurationException(
-              "Keystore file " + keystoreFile + " already in use.");
-        }
-        lockfile = Files.write(lockfilePath, processPID, WRITE);
-        lockfileLock.release();
+        attemptReplaceStaleLockFile(lockfilePath);
       } else {
-        lockfile = Files.write(lockfilePath, processPID, CREATE_NEW);
+        createNewLock(lockfilePath);
       }
-      lockfile.toFile().deleteOnExit();
+      lockfilePath.toFile().deleteOnExit();
     } catch (FileAlreadyExistsException e) {
-      throw new InvalidConfigurationException("Keystore file " + keystoreFile + " already in use.");
+      throw keystoreInUseException(keystoreFile);
     } catch (IOException e) {
       throw new UncheckedIOException("Unexpected error when trying to lock a keystore file.", e);
     }
   }
 
-  private static boolean isLockFileValid(Path lockfilePath) {
-    try {
-      byte[] pidInBytes = Files.readAllBytes(lockfilePath);
-      if (pidInBytes.length != Long.BYTES) {
-        return true;
+  public void attemptReplaceStaleLockFile(final Path lockfilePath) throws IOException {
+    try (final FileChannel channel =
+                 FileChannel.open(lockfilePath, StandardOpenOption.READ, StandardOpenOption.WRITE);
+         final FileLock lock = channel.tryLock()) {
+      if (lock == null) {
+        // File is already locked, consider it a valid lock
+        throw keystoreInUseException(lockfilePath);
       }
-      long pid = nativeByteArrayToLong(pidInBytes);
-      Optional<ProcessHandle> processHandle = ProcessHandle.of(pid).filter(ProcessHandle::isAlive);
-      return processHandle.isPresent();
-    } catch (FileNotFoundException ignored) {
-      return false;
-    } catch (IOException e) {
-      throw new UncheckedIOException("Unexpected error when trying read a keystore lockfile.", e);
+      if (channel.size() != Long.BYTES) {
+        throw keystoreInUseException(lockfilePath);
+      }
+      final long pidFromFile = readPidFromFile(channel);
+      if (processIsAlive(pidFromFile)) {
+        throw keystoreInUseException(lockfilePath);
+      }
+
+      LOG.warn("Stale PID file for process ID {} detected. Overwriting.", pidFromFile);
+      channel.write(ByteBuffer.wrap(processPID), 0);
+      lock.release();
+    } catch (final FileNotFoundException e) {
+      // File doesn't exist so try to create it new
+      createNewLock(lockfilePath);
     }
+  }
+
+  private Boolean processIsAlive(final long pid) {
+    return ProcessHandle.of(pid).map(ProcessHandle::isAlive).orElse(false);
+  }
+
+  private InvalidConfigurationException keystoreInUseException(final Path keystoreFile) {
+    return new InvalidConfigurationException("Keystore file " + keystoreFile + " already in use.");
+  }
+
+  private long readPidFromFile(final FileChannel channel) throws IOException {
+    final ByteBuffer content = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.nativeOrder());
+    channel.read(content, 0);
+    return content.getLong(0);
+  }
+
+  private void createNewLock(final Path lockfilePath) throws IOException {
+    Files.write(lockfilePath, processPID, CREATE_NEW);
   }
 
   private static byte[] getProcessPID() {
@@ -83,8 +102,8 @@ public class KeystoreLocker {
       pidBytes = longPidToNativeByteArray(pid);
     } catch (final UnsupportedOperationException e) {
       LOG.warn(
-          "Process ID can not be detected. This will inhibit Teku from "
-              + "deleting stale validator keystore lockfiles in the future");
+              "Process ID can not be detected. This will inhibit Teku from "
+                      + "deleting stale validator keystore lockfiles in the future");
       pidBytes = new byte[0];
     }
     return pidBytes;
