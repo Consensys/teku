@@ -279,6 +279,10 @@ public class ChainBuilder {
     return generateBlockAtSlot(slot, BlockOptions.create());
   }
 
+  public SignedBlockAndState generateBlockAtSlot(final long slot, final BlockOptions options) {
+    return generateBlockAtSlot(UInt64.valueOf(slot), options);
+  }
+
   public SignedBlockAndState generateBlockAtSlot(final UInt64 slot, final BlockOptions options) {
     assertBlockCanBeGenerated();
     final SignedBlockAndState latest = getLatestBlockAndState();
@@ -287,6 +291,18 @@ public class ChainBuilder {
         "Cannot generate block at historical slot");
 
     return appendNewBlockToChain(slot, options);
+  }
+
+  /**
+   * Utility for streaming valid attestations available for inclusion at the given slot. This
+   * utility can be used to assign valid attestations to a generated block.
+   *
+   * @param slot The slot at which attestations are to be included
+   * @return A stream of valid attestations that can be included in a block generated at the given
+   *     slot
+   */
+  public Stream<Attestation> streamValidAttestationsForBlockAtSlot(final long slot) {
+    return streamValidAttestationsForBlockAtSlot(UInt64.valueOf(slot));
   }
 
   /**

@@ -19,6 +19,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -46,7 +47,9 @@ public class PerformanceTracker implements SlotEventsChannel {
   private final NavigableMap<UInt64, Set<SignedBeaconBlock>> sentBlocksByEpoch = new TreeMap<>();
   private final NavigableMap<UInt64, Set<Attestation>> sentAttestationsByEpoch = new TreeMap<>();
 
-  private static final UInt64 BLOCK_PERFORMANCE_EVALUATION_INTERVAL = UInt64.valueOf(2); // epochs
+  @VisibleForTesting
+  static final UInt64 BLOCK_PERFORMANCE_EVALUATION_INTERVAL = UInt64.valueOf(2); // epochs
+
   private final RecentChainData recentChainData;
   private final StatusLogger statusLogger;
 
@@ -83,7 +86,7 @@ public class PerformanceTracker implements SlotEventsChannel {
 
   private BlockPerformance getBlockPerformanceForEpochs(
       UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
-    List<BeaconBlock> blockInEpoch = getBlocksInEpochs(startEpochInclusive, endEpochExclusive);
+    Set<BeaconBlock> blockInEpoch = getBlocksInEpochs(startEpochInclusive, endEpochExclusive);
     List<SignedBeaconBlock> sentBlocks =
         sentBlocksByEpoch.subMap(startEpochInclusive, true, endEpochExclusive, false).values()
             .stream()
@@ -114,7 +117,8 @@ public class PerformanceTracker implements SlotEventsChannel {
         getAttestationsIncludedInEpochs(analyzedEpoch, analysisRangeEndEpoch);
 
     // Get sent attestations in range
-    Set<Attestation> sentAttestations = sentAttestationsByEpoch.get(analyzedEpoch);
+    Set<Attestation> sentAttestations =
+        sentAttestationsByEpoch.getOrDefault(analyzedEpoch, new HashSet<>());
     UInt64 analyzedEpochStartSlot = compute_start_slot_at_epoch(analyzedEpoch);
     UInt64 rangeEndSlot = compute_start_slot_at_epoch(analysisRangeEndEpoch);
     BeaconState state = recentChainData.getBestState().orElseThrow();
@@ -181,8 +185,7 @@ public class PerformanceTracker implements SlotEventsChannel {
             .isSuperSetOf(sentAttestation.getAggregation_bits());
   }
 
-  private List<BeaconBlock> getBlocksInEpochs(
-      UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
+  private Set<BeaconBlock> getBlocksInEpochs(UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
     UInt64 epochStartSlot = compute_start_slot_at_epoch(startEpochInclusive);
     UInt64 endEpochStartSlot = compute_start_slot_at_epoch(endEpochExclusive);
 
@@ -198,7 +201,7 @@ public class PerformanceTracker implements SlotEventsChannel {
         .map(SafeFuture::join)
         .filter(Optional::isPresent)
         .map(Optional::get)
-        .collect(Collectors.toList());
+        .collect(Collectors.toSet());
   }
 
   private Map<UInt64, List<Attestation>> getAttestationsIncludedInEpochs(
