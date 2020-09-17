@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.util.config.InvalidConfigurationException;
+import static java.nio.file.StandardOpenOption.CREATE_NEW;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -28,8 +26,9 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-
-import static java.nio.file.StandardOpenOption.CREATE_NEW;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 public class KeystoreLocker {
 
@@ -54,8 +53,8 @@ public class KeystoreLocker {
 
   public void attemptReplaceStaleLockFile(final Path lockfilePath) throws IOException {
     try (final FileChannel channel =
-                 FileChannel.open(lockfilePath, StandardOpenOption.READ, StandardOpenOption.WRITE);
-         final FileLock lock = channel.tryLock()) {
+            FileChannel.open(lockfilePath, StandardOpenOption.READ, StandardOpenOption.WRITE);
+        final FileLock lock = channel.tryLock()) {
       if (lock == null) {
         // File is already locked, consider it a valid lock
         throw keystoreInUseException(lockfilePath);
@@ -102,8 +101,8 @@ public class KeystoreLocker {
       pidBytes = longPidToNativeByteArray(pid);
     } catch (final UnsupportedOperationException e) {
       LOG.warn(
-              "Process ID can not be detected. This will inhibit Teku from "
-                      + "deleting stale validator keystore lockfiles in the future");
+          "Process ID can not be detected. This will inhibit Teku from "
+              + "deleting stale validator keystore lockfiles in the future");
       pidBytes = new byte[0];
     }
     return pidBytes;
