@@ -43,6 +43,7 @@ public class Constants {
   public static UInt64 HYSTERESIS_QUOTIENT;
   public static UInt64 HYSTERESIS_DOWNWARD_MULTIPLIER;
   public static UInt64 HYSTERESIS_UPWARD_MULTIPLIER;
+  public static int PROPORTIONAL_SLASHING_MULTIPLIER = 3;
   public static final int MAX_REQUEST_BLOCKS = 1024;
 
   // Gwei values
@@ -117,6 +118,7 @@ public class Constants {
 
   // Sync
   public static final UInt64 MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UInt64.valueOf(200);
+  public static final UInt64 SYNC_BATCH_SIZE = UInt64.valueOf(50);
 
   public static int DEPOSIT_CHAIN_ID;
   public static int DEPOSIT_NETWORK_ID;
@@ -183,7 +185,8 @@ public class Constants {
             "minimal",
             "swift",
             "altona",
-            "medalla")
+            "medalla",
+            "spadina")
         .load(source)
         .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
   }

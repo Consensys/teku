@@ -42,7 +42,6 @@ class PeerChainTrackerTest {
   private final P2PNetwork<Eth2Peer> p2pNetwork = mock(P2PNetwork.class);
 
   private final SyncController syncController = mock(SyncController.class);
-
   private final Eth2Peer peer = mock(Eth2Peer.class);
 
   private final EventThread eventThread = new InlineEventThread();

@@ -249,6 +249,11 @@ public class SyncSourceBatch implements Batch {
         .add("firstSlot", firstSlot)
         .add("lastSlot", getLastSlot())
         .add("count", count)
+        .add(
+            "requiredParent",
+            getFirstBlock()
+                .map(block -> LogFormatter.formatHashRoot(block.getParent_root()))
+                .orElse("<unknown>"))
         .add("firstBlock", getFirstBlock().map(this::formatBlock).orElse("<none>"))
         .add("lastBlock", getLastBlock().map(this::formatBlock).orElse("<none>"))
         .toString();

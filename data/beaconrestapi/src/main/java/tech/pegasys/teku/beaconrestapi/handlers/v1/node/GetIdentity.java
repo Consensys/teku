@@ -50,7 +50,8 @@ public class GetIdentity implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Retrieves data about the node's network presence.",
+      summary = "Get node identity",
+      description = "Retrieves data about the node's network presence.",
       tags = {TAG_V1_NODE},
       responses = {
         @OpenApiResponse(

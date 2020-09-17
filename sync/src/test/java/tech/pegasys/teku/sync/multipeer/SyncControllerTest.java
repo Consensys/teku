@@ -14,6 +14,8 @@
 package tech.pegasys.teku.sync.multipeer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -104,7 +106,7 @@ class SyncControllerTest {
     ignoreFuture(startFinalizedSync());
     verify(finalizedSync).syncToChain(targetChain);
 
-    when(finalizedChainSelector.selectTargetChain(finalizedChains))
+    when(finalizedChainSelector.selectTargetChain(finalizedChains, true))
         .thenReturn(Optional.of(newTargetChain));
     when(finalizedSync.syncToChain(newTargetChain)).thenReturn(new SafeFuture<>());
     onTargetChainsUpdated();
@@ -123,7 +125,8 @@ class SyncControllerTest {
 
     assertThat(syncController.isSyncActive()).isTrue();
 
-    when(finalizedChainSelector.selectTargetChain(finalizedChains)).thenReturn(Optional.empty());
+    when(finalizedChainSelector.selectTargetChain(finalizedChains, true))
+        .thenReturn(Optional.empty());
     onTargetChainsUpdated();
 
     assertThat(syncController.isSyncActive()).isTrue();
@@ -157,7 +160,7 @@ class SyncControllerTest {
 
     // Sync switches to a better chain
     final TargetChain newTargetChain = chainWith(dataStructureUtil.randomSlotAndBlockRoot());
-    when(finalizedChainSelector.selectTargetChain(finalizedChains))
+    when(finalizedChainSelector.selectTargetChain(finalizedChains, true))
         .thenReturn(Optional.of(newTargetChain));
     when(finalizedSync.syncToChain(newTargetChain))
         .thenAnswer(
@@ -187,7 +190,7 @@ class SyncControllerTest {
 
   private SafeFuture<SyncResult> startFinalizedSync() {
     final SafeFuture<SyncResult> syncResult = new SafeFuture<>();
-    when(finalizedChainSelector.selectTargetChain(finalizedChains))
+    when(finalizedChainSelector.selectTargetChain(eq(finalizedChains), anyBoolean()))
         .thenReturn(Optional.of(targetChain));
     when(finalizedSync.syncToChain(targetChain)).thenReturn(syncResult);
     onTargetChainsUpdated();

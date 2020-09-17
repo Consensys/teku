@@ -22,13 +22,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.sync.multipeer.BatchImporter.BatchImportResult;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 
 public class StubBatch implements Batch {
   private final TargetChain targetChain;
   private final UInt64 firstSlot;
   private final UInt64 count;
+  private final SafeFuture<BatchImportResult> importResult = new SafeFuture<>();
   private final List<SignedBeaconBlock> blocks = new ArrayList<>();
   private boolean invalid = false;
   private Optional<Runnable> blockCallback = Optional.empty();
@@ -176,6 +179,10 @@ public class StubBatch implements Batch {
   // but we want to know it was marked invalid for tests
   public boolean isInvalid() {
     return invalid;
+  }
+
+  public SafeFuture<BatchImportResult> getImportResult() {
+    return importResult;
   }
 
   @Override
