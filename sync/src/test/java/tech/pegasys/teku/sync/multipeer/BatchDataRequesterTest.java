@@ -15,16 +15,12 @@ package tech.pegasys.teku.sync.multipeer;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.sync.multipeer.batches.BatchAssert.assertThatBatch;
 
 import java.util.List;
 import java.util.function.Consumer;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -32,8 +28,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.sync.multipeer.batches.Batch;
 import tech.pegasys.teku.sync.multipeer.batches.BatchChain;
-import tech.pegasys.teku.sync.multipeer.batches.BatchFactory;
-import tech.pegasys.teku.sync.multipeer.batches.StubBatch;
+import tech.pegasys.teku.sync.multipeer.batches.StubBatchFactory;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChainTestUtil;
 
@@ -43,7 +38,7 @@ class BatchDataRequesterTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final InlineEventThread eventThread = new InlineEventThread();
   private final BatchChain batchChain = new BatchChain();
-  private final BatchFactory batchFactory = mock(BatchFactory.class);
+  private final StubBatchFactory batchFactory = new StubBatchFactory(eventThread, false);
 
   @SuppressWarnings("unchecked")
   private final Consumer<Batch> requestCompleteCallback = mock(Consumer.class);
@@ -56,37 +51,26 @@ class BatchDataRequesterTest {
       new BatchDataRequester(
           eventThread, batchChain, batchFactory, BATCH_SIZE, MAX_PENDING_BATCHES);
 
-  @BeforeEach
-  void setUp() {
-    when(batchFactory.createBatch(eq(targetChain), any(), any()))
-        .thenAnswer(
-            invocation ->
-                new StubBatch(
-                    invocation.getArgument(0),
-                    invocation.getArgument(1),
-                    invocation.getArgument(2)));
-  }
-
   @Test
   void shouldCreateNewBatchesWhenChainIsEmpty() {
     fillQueue(UInt64.valueOf(24));
 
-    final List<Batch> batches = batchChain.stream().collect(toList());
-    assertThat(batches).hasSize(MAX_PENDING_BATCHES);
-    assertThatBatch(batches.get(0)).hasRange(25, 74);
-    assertThatBatch(batches.get(1)).hasRange(75, 124);
-    assertThatBatch(batches.get(2)).hasRange(125, 174);
-    assertThatBatch(batches.get(3)).hasRange(175, 224);
-    assertThatBatch(batches.get(4)).hasRange(225, 274);
-    batches.forEach(batch -> assertThatBatch(batch).isAwaitingBlocks());
+    assertThat(batchFactory).hasSize(MAX_PENDING_BATCHES);
+    assertThatBatch(batchFactory.get(0)).hasRange(25, 74);
+    assertThatBatch(batchFactory.get(1)).hasRange(75, 124);
+    assertThatBatch(batchFactory.get(2)).hasRange(125, 174);
+    assertThatBatch(batchFactory.get(3)).hasRange(175, 224);
+    assertThatBatch(batchFactory.get(4)).hasRange(225, 274);
+    batchFactory.forEach(batch -> assertThatBatch(batch).isAwaitingBlocks());
   }
 
   @Test
   void shouldRequestAdditionalDataFromBatchesThatAreNotYetComplete() {
     // Block with some blocks, but not yet complete
-    final StubBatch batch = new StubBatch(targetChain, UInt64.valueOf(6), UInt64.valueOf(10));
+    final Batch batch =
+        batchFactory.createBatch(targetChain, UInt64.valueOf(6), UInt64.valueOf(10));
     batch.requestMoreBlocks(() -> {});
-    batch.receiveBlocks(dataStructureUtil.randomSignedBeaconBlock(8));
+    batchFactory.receiveBlocks(batch, dataStructureUtil.randomSignedBeaconBlock(8));
 
     batchChain.add(batch);
 
@@ -101,7 +85,8 @@ class BatchDataRequesterTest {
 
   @Test
   void shouldNotIncludeEmptyBatchesInThePendingBatchCount() {
-    final StubBatch batch = new StubBatch(targetChain, UInt64.valueOf(6), UInt64.valueOf(10));
+    final Batch batch =
+        batchFactory.createBatch(targetChain, UInt64.valueOf(6), UInt64.valueOf(10));
     batch.markComplete(); // Complete empty batch
     batchChain.add(batch);
 
@@ -117,9 +102,11 @@ class BatchDataRequesterTest {
   @Test
   void shouldIncludeNonEmptyIncompleteBatchesInThePendingBatchCount() {
     // Add a non-empty, complete batch
-    final StubBatch batch = new StubBatch(targetChain, UInt64.valueOf(6), UInt64.valueOf(10));
+    final Batch batch =
+        batchFactory.createBatch(targetChain, UInt64.valueOf(6), UInt64.valueOf(10));
     batch.requestMoreBlocks(() -> {});
-    batch.receiveBlocks(dataStructureUtil.randomSignedBeaconBlock(batch.getLastSlot()));
+    batchFactory.receiveBlocks(
+        batch, dataStructureUtil.randomSignedBeaconBlock(batch.getLastSlot()));
     batchChain.add(batch);
 
     fillQueue(ZERO);
@@ -133,7 +120,7 @@ class BatchDataRequesterTest {
 
   @Test
   void shouldNotScheduleMoreBatchesWhenTargetSlotReached() {
-    final StubBatch batch = new StubBatch(targetChain, UInt64.valueOf(440), BATCH_SIZE);
+    final Batch batch = batchFactory.createBatch(targetChain, UInt64.valueOf(440), BATCH_SIZE);
     batchChain.add(batch);
 
     fillQueue(ZERO);
