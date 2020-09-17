@@ -33,6 +33,7 @@ import tech.pegasys.teku.sync.multipeer.batches.BatchChain;
 import tech.pegasys.teku.sync.multipeer.batches.BatchFactory;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 
+/** Manages the sync process to reach a finalized chain. */
 public class FinalizedSync implements Sync {
   private static final Logger LOG = LogManager.getLogger();
   private static final int MAX_PENDING_BATCHES = 5;

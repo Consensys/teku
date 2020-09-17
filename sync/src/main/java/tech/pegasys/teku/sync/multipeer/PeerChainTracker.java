@@ -21,6 +21,10 @@ import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
 
+/**
+ * Tracks the {@link tech.pegasys.teku.sync.multipeer.chains.TargetChain} available from the current
+ * peer set, both for finalized and non-finalized chains.
+ */
 public class PeerChainTracker {
   private final EventThread eventThread;
   private final P2PNetwork<Eth2Peer> p2pNetwork;
