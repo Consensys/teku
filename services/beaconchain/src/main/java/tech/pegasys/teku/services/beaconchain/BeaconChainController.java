@@ -162,7 +162,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.metricsSystem = serviceConfig.getMetricsSystem();
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
     // TODO(#2779) - make this validator strict when it is fully fleshed out
-    weakSubjectivityValidator = WeakSubjectivityValidator.lenient();
+    weakSubjectivityValidator = WeakSubjectivityValidator.lenient(beaconConfig.weakSubjectivity());
   }
 
   @Override

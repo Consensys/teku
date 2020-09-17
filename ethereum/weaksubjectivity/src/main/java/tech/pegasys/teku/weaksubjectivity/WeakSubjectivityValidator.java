@@ -14,7 +14,11 @@
 package tech.pegasys.teku.weaksubjectivity;
 
 import java.util.List;
+import java.util.Optional;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
@@ -23,14 +27,20 @@ import tech.pegasys.teku.weaksubjectivity.policies.StrictWeakSubjectivityViolati
 import tech.pegasys.teku.weaksubjectivity.policies.WeakSubjectivityViolationPolicy;
 
 public class WeakSubjectivityValidator {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final WeakSubjectivityCalculator calculator;
   private final List<WeakSubjectivityViolationPolicy> violationPolicies;
 
+  private final Optional<Checkpoint> wsCheckpoint;
+
   WeakSubjectivityValidator(
       WeakSubjectivityCalculator calculator,
-      List<WeakSubjectivityViolationPolicy> violationPolicies) {
+      List<WeakSubjectivityViolationPolicy> violationPolicies,
+      Optional<Checkpoint> wsCheckpoint) {
     this.calculator = calculator;
     this.violationPolicies = violationPolicies;
+    this.wsCheckpoint = wsCheckpoint;
   }
 
   public static WeakSubjectivityValidator strict(final WeakSubjectivityConfig config) {
@@ -39,7 +49,8 @@ public class WeakSubjectivityValidator {
         List.of(
             new LoggingWeakSubjectivityViolationPolicy(Level.FATAL),
             new StrictWeakSubjectivityViolationPolicy());
-    return new WeakSubjectivityValidator(calculator, policies);
+    return new WeakSubjectivityValidator(
+        calculator, policies, config.getWeakSubjectivityCheckpoint());
   }
 
   public static WeakSubjectivityValidator lenient() {
@@ -50,7 +61,8 @@ public class WeakSubjectivityValidator {
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     final List<WeakSubjectivityViolationPolicy> policies =
         List.of(new LoggingWeakSubjectivityViolationPolicy(Level.TRACE));
-    return new WeakSubjectivityValidator(calculator, policies);
+    return new WeakSubjectivityValidator(
+        calculator, policies, config.getWeakSubjectivityCheckpoint());
   }
 
   /**
