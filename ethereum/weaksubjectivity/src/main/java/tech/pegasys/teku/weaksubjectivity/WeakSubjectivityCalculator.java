@@ -23,20 +23,21 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 /**
- * This utility contains helpers for calculating weak-subjectivity related values. Logic is derived
- * from: https://notes.ethereum.org/@adiasg/weak-subjectvity-eth2
+ * This utility contains helpers for calculating weak-subjectivity-related values. Logic is derived
+ * from: https://notes.ethereum.org/@adiasg/weak-subjectvity-eth2 and:
+ * https://github.com/ethereum/eth2.0-specs/blob/weak-subjectivity-guide/specs/phase0/weak-subjectivity.md
  */
 public class WeakSubjectivityCalculator {
-  public static float DEFAULT_SAFETY_DECAY = .1f;
-  static final UInt64 WITHDRAWAL_DELAY =
+  public static UInt64 DEFAULT_SAFETY_DECAY = UInt64.valueOf(10);
+  private static final UInt64 WITHDRAWAL_DELAY =
       UInt64.valueOf(Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY);
 
-  private final float safetyDecay;
+  private final UInt64 safetyDecay;
   // Use injectable activeValidatorCalculator to make unit testing simpler
   private final ActiveValidatorCalculator activeValidatorCalculator;
 
   WeakSubjectivityCalculator(
-      final float safetyDecay, final ActiveValidatorCalculator activeValidatorCalculator) {
+      final UInt64 safetyDecay, final ActiveValidatorCalculator activeValidatorCalculator) {
     this.safetyDecay = safetyDecay;
     this.activeValidatorCalculator = activeValidatorCalculator;
   }
@@ -45,13 +46,13 @@ public class WeakSubjectivityCalculator {
     return create(DEFAULT_SAFETY_DECAY);
   }
 
-  public static WeakSubjectivityCalculator create(float safetyDecay) {
+  public static WeakSubjectivityCalculator create(UInt64 safetyDecay) {
     return new WeakSubjectivityCalculator(safetyDecay, ActiveValidatorCalculator.DEFAULT);
   }
 
   /**
-   * Calculates the safety margin in epochs from the latest finalized checkpoint. Returns true if
-   * the current epoch is still within this safety margin.
+   * Determines whether the weak subjectivity period calculated from the latest finalized checkpoint
+   * extends through the current epoch.
    *
    * @param finalizedCheckpoint The latest finalized checkpoint
    * @param currentSlot The current slot by clock time
@@ -60,15 +61,13 @@ public class WeakSubjectivityCalculator {
   public boolean isWithinWeakSubjectivityPeriod(
       final CheckpointState finalizedCheckpoint, final UInt64 currentSlot) {
     final int validatorCount = getActiveValidators(finalizedCheckpoint.getState());
-    // Add WITHDRAWAL_DELAY to safetyMargin (see "Note 1" from
-    // https://notes.ethereum.org/@adiasg/weak-subjectvity-eth2)
-    UInt64 safetyMargin = calculateSafeEpochs(validatorCount).plus(WITHDRAWAL_DELAY);
+    UInt64 wsPeriod = computeWeakSubjectivityPeriod(validatorCount);
     final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
 
     return finalizedCheckpoint
         .getCheckpoint()
         .getEpoch()
-        .plus(safetyMargin)
+        .plus(wsPeriod)
         .isGreaterThanOrEqualTo(currentEpoch);
   }
 
@@ -89,21 +88,20 @@ public class WeakSubjectivityCalculator {
 
   // TODO(#2779) - This calculation is still under development, make sure it is updated to the
   // latest when possible
-  final UInt64 calculateSafeEpochs(int validatorCount) {
+  public UInt64 computeWeakSubjectivityPeriod(final int validatorCount) {
     final UInt64 safeEpochs;
     if (validatorCount > Constants.MIN_PER_EPOCH_CHURN_LIMIT * Constants.CHURN_LIMIT_QUOTIENT) {
-      safeEpochs = UInt64.valueOf((long) (safetyDecay * Constants.CHURN_LIMIT_QUOTIENT / 2));
+      safeEpochs = safetyDecay.times(Constants.CHURN_LIMIT_QUOTIENT).dividedBy(200);
     } else {
       safeEpochs =
-          UInt64.valueOf(
-              (long) (safetyDecay * validatorCount / (2 * Constants.MIN_PER_EPOCH_CHURN_LIMIT)));
+          safetyDecay.times(validatorCount).dividedBy(200 * Constants.MIN_PER_EPOCH_CHURN_LIMIT);
     }
 
-    return safeEpochs;
+    return safeEpochs.plus(WITHDRAWAL_DELAY);
   }
 
   final UInt64 getWeakSubjectivityMod(int validatorCount) {
-    return calculateSafeEpochs(validatorCount).dividedBy(256).times(256).plus(WITHDRAWAL_DELAY);
+    return computeWeakSubjectivityPeriod(validatorCount).dividedBy(256).times(256);
   }
 
   public int getActiveValidators(final BeaconState state) {
