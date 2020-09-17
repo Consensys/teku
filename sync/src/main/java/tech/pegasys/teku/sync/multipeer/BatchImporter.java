@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -25,6 +27,7 @@ import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.sync.multipeer.batches.Batch;
 
 public class BatchImporter {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final BlockImporter blockImporter;
   private final AsyncRunner asyncRunner;
@@ -62,10 +65,17 @@ public class BatchImporter {
                     });
           }
           return importResult.thenApply(
-              lastBlockImportResult ->
-                  lastBlockImportResult.isSuccessful()
-                      ? BatchImportResult.IMPORTED_ALL_BLOCKS
-                      : BatchImportResult.IMPORT_FAILED);
+              lastBlockImportResult -> {
+                if (lastBlockImportResult.isSuccessful()) {
+                  return BatchImportResult.IMPORTED_ALL_BLOCKS;
+                }
+                LOG.debug(
+                    "Failed to import batch {}: {}",
+                    batch,
+                    lastBlockImportResult.getFailureReason(),
+                    lastBlockImportResult.getFailureCause().orElse(null));
+                return BatchImportResult.IMPORT_FAILED;
+              });
         });
   }
 

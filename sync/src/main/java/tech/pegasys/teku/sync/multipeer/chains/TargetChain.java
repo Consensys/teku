@@ -22,6 +22,7 @@ import java.util.Set;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 
+/** A chain which some set of peers claim to have that may be used as a target to sync to. */
 public class TargetChain {
   private final SlotAndBlockRoot chainHead;
   private final Set<SyncSource> peers = new HashSet<>();
