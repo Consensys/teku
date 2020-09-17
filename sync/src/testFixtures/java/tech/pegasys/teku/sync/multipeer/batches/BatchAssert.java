@@ -90,29 +90,10 @@ public class BatchAssert extends AbstractAssert<BatchAssert, Batch> {
         .isFalse();
   }
 
-  public void isInvalid() {
-    isInstanceOf(StubBatch.class);
-    assertThat(((StubBatch) actual).isInvalid())
-        .withFailMessage("Expected batch %s to be invalid but was not", actual)
-        .isTrue();
-  }
-
-  public void isNotInvalid() {
-    isInstanceOf(StubBatch.class);
-    assertThat(((StubBatch) actual).isInvalid())
-        .withFailMessage("Expected batch %s to not be invalid but was", actual)
-        .isFalse();
-  }
-
   public void isConfirmedAsEmpty() {
     isComplete();
     isConfirmed();
     isEmpty();
-  }
-
-  public void isNotContestedOrInvalid() {
-    isNotContested();
-    isNotInvalid();
   }
 
   public void hasFirstSlot(final long expected) {
