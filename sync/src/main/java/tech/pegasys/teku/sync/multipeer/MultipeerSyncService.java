@@ -14,7 +14,8 @@
 package tech.pegasys.teku.sync.multipeer;
 
 import com.google.common.eventbus.EventBus;
-import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -33,9 +34,12 @@ import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncingStatus;
 import tech.pegasys.teku.sync.gossip.BlockManager;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
+import tech.pegasys.teku.sync.multipeer.batches.BatchFactory;
+import tech.pegasys.teku.sync.multipeer.chains.FinalizedTargetChainSelector;
+import tech.pegasys.teku.util.config.Constants;
 
 public class MultipeerSyncService extends Service implements SyncService {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final EventThread eventThread;
   private final BlockManager blockManager;
   private final RecentChainData recentChainData;
@@ -62,6 +66,7 @@ public class MultipeerSyncService extends Service implements SyncService {
       final RecentChainData recentChainData,
       final P2PNetwork<Eth2Peer> p2pNetwork,
       final BlockImporter blockImporter) {
+    LOG.info("Using multipeer sync");
     final EventThread eventThread = new AsyncRunnerEventThread("sync", asyncRunnerFactory);
 
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
@@ -78,13 +83,20 @@ public class MultipeerSyncService extends Service implements SyncService {
             recentChainData,
             blockImporter);
 
-    // TODO(#1844): Clearly these are still placeholders...
-    final ChainSelector chainSelector = __ -> Optional.empty();
-    final Sync sync = __ -> SafeFuture.completedFuture(SyncResult.FAILED);
-
+    final FinalizedSync finalizedSync =
+        FinalizedSync.create(
+            eventThread,
+            recentChainData,
+            new BatchImporter(blockImporter, asyncRunner),
+            new BatchFactory(eventThread),
+            Constants.SYNC_BATCH_SIZE);
     final SyncController syncController =
         new SyncController(
-            eventThread, new OrderedAsyncRunner(asyncRunner), recentChainData, chainSelector, sync);
+            eventThread,
+            new OrderedAsyncRunner(asyncRunner),
+            recentChainData,
+            new FinalizedTargetChainSelector(recentChainData),
+            finalizedSync);
     final PeerChainTracker peerChainTracker =
         new PeerChainTracker(eventThread, p2pNetwork, syncController);
     return new MultipeerSyncService(

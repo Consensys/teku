@@ -21,6 +21,11 @@ import tech.pegasys.teku.sync.multipeer.batches.BatchChain;
 import tech.pegasys.teku.sync.multipeer.batches.BatchFactory;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 
+/**
+ * Attempts to create a {@link BatchChain} and download the blocks for each batch.
+ *
+ * <p>Applies limits to the number of batches awaiting import to avoid excessive memory usage.
+ */
 public class BatchDataRequester {
   private final EventThread eventThread;
   private final BatchChain activeBatches;
