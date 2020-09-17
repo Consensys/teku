@@ -70,7 +70,7 @@ public class SyncController {
     final boolean currentlySyncing = isSyncActive();
     final Optional<InProgressSync> newFinalizedSync =
         finalizedTargetChainSelector
-            .selectTargetChain(finalizedChains)
+            .selectTargetChain(finalizedChains, currentlySyncing)
             .map(this::startFinalizedSync);
     if (newFinalizedSync.isEmpty() && currentlySyncing) {
       return;
