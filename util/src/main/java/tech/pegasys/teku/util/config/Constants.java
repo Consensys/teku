@@ -118,6 +118,7 @@ public class Constants {
 
   // Sync
   public static final UInt64 MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UInt64.valueOf(200);
+  public static final UInt64 SYNC_BATCH_SIZE = UInt64.valueOf(50);
 
   public static int DEPOSIT_CHAIN_ID;
   public static int DEPOSIT_NETWORK_ID;
