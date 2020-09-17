@@ -72,6 +72,15 @@ public class WeakSubjectivityValidator {
    */
   public void validateLatestFinalizedCheckpoint(
       final CheckpointState latestFinalizedCheckpoint, final UInt64 currentSlot) {
+    if (isPriorToWeakSubjectivityCheckpoint(latestFinalizedCheckpoint)) {
+      // Defer validation until we reach the weakSubjectivity checkpoint
+      LOG.debug(
+          "Latest finalized checkpoint at epoch {} is prior to weak subjectivity checkpoint at epoch {}. Defer validation.",
+          latestFinalizedCheckpoint.getEpoch(),
+          wsCheckpoint.orElseThrow().getEpoch());
+      return;
+    }
+
     if (!calculator.isWithinWeakSubjectivityPeriod(latestFinalizedCheckpoint, currentSlot)) {
       final int activeValidators =
           calculator.getActiveValidators(latestFinalizedCheckpoint.getState());
@@ -80,6 +89,10 @@ public class WeakSubjectivityValidator {
             latestFinalizedCheckpoint, activeValidators, currentSlot);
       }
     }
+  }
+
+  private boolean isPriorToWeakSubjectivityCheckpoint(final CheckpointState checkpoint) {
+    return wsCheckpoint.map(c -> checkpoint.getEpoch().isLessThan(c.getEpoch())).orElse(false);
   }
 
   /**
