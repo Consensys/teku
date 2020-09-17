@@ -87,7 +87,7 @@ public class BlockFactory {
     }
 
     // Collect attestations to include
-    final BeaconState blockSlotState = stateTransition.process_slots(previousState, newSlot);
+    final BeaconState blockSlotState = stateTransition.process_slots(blockPreState, newSlot);
     SSZList<Attestation> attestations =
         attestationPool.getAttestationsForBlock(
             blockSlotState, new AttestationForkChecker(blockSlotState));
