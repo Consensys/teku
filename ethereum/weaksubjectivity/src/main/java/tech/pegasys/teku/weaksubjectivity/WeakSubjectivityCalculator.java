@@ -21,6 +21,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 /**
  * This utility contains helpers for calculating weak-subjectivity-related values. Logic is derived
@@ -28,7 +29,6 @@ import tech.pegasys.teku.util.config.Constants;
  * https://github.com/ethereum/eth2.0-specs/blob/weak-subjectivity-guide/specs/phase0/weak-subjectivity.md
  */
 public class WeakSubjectivityCalculator {
-  public static UInt64 DEFAULT_SAFETY_DECAY = UInt64.valueOf(10);
   private static final UInt64 WITHDRAWAL_DELAY =
       UInt64.valueOf(Constants.MIN_VALIDATOR_WITHDRAWABILITY_DELAY);
 
@@ -42,12 +42,9 @@ public class WeakSubjectivityCalculator {
     this.activeValidatorCalculator = activeValidatorCalculator;
   }
 
-  public static WeakSubjectivityCalculator create() {
-    return create(DEFAULT_SAFETY_DECAY);
-  }
-
-  public static WeakSubjectivityCalculator create(UInt64 safetyDecay) {
-    return new WeakSubjectivityCalculator(safetyDecay, ActiveValidatorCalculator.DEFAULT);
+  public static WeakSubjectivityCalculator create(final WeakSubjectivityConfig config) {
+    return new WeakSubjectivityCalculator(
+        config.getSafetyDecay(), ActiveValidatorCalculator.DEFAULT);
   }
 
   /**

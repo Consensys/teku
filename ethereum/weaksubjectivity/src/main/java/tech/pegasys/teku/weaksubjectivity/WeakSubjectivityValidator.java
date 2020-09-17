@@ -17,6 +17,7 @@ import java.util.List;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 import tech.pegasys.teku.weaksubjectivity.policies.LoggingWeakSubjectivityViolationPolicy;
 import tech.pegasys.teku.weaksubjectivity.policies.StrictWeakSubjectivityViolationPolicy;
 import tech.pegasys.teku.weaksubjectivity.policies.WeakSubjectivityViolationPolicy;
@@ -32,8 +33,8 @@ public class WeakSubjectivityValidator {
     this.violationPolicies = violationPolicies;
   }
 
-  public static WeakSubjectivityValidator strict() {
-    final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create();
+  public static WeakSubjectivityValidator strict(final WeakSubjectivityConfig config) {
+    final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     final List<WeakSubjectivityViolationPolicy> policies =
         List.of(
             new LoggingWeakSubjectivityViolationPolicy(Level.FATAL),
@@ -42,7 +43,11 @@ public class WeakSubjectivityValidator {
   }
 
   public static WeakSubjectivityValidator lenient() {
-    final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create();
+    return lenient(WeakSubjectivityConfig.defaultConfig());
+  }
+
+  public static WeakSubjectivityValidator lenient(final WeakSubjectivityConfig config) {
+    final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     final List<WeakSubjectivityViolationPolicy> policies =
         List.of(new LoggingWeakSubjectivityViolationPolicy(Level.TRACE));
     return new WeakSubjectivityValidator(calculator, policies);
