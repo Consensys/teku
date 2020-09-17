@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
@@ -48,6 +49,8 @@ public class StubSyncSource implements SyncSource {
       final UInt64 count,
       final UInt64 step,
       final ResponseStreamListener<SignedBeaconBlock> listener) {
+    checkArgument(count.isGreaterThan(UInt64.ZERO), "Count must be greater than zero");
+    checkArgument(step.isGreaterThan(UInt64.ZERO), "Step must be greater than zero");
     requests.add(Pair.of(startSlot, count));
     final SafeFuture<Void> request = new SafeFuture<>();
     currentRequest = Optional.of(request);
