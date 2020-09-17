@@ -475,7 +475,7 @@ class FinalizedSyncTest {
         chainWith(
             new SlotAndBlockRoot(UInt64.valueOf(2000), dataStructureUtil.randomBytes32()),
             syncSource);
-    assertThat(sync.syncToChain(targetChain));
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
 
     final StubBatch batch0 = batches.get(0);
     final StubBatch batch1 = batches.get(1);
