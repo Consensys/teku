@@ -18,9 +18,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -29,7 +29,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 
 public class StubSyncSource implements SyncSource {
 
-  private final List<Pair<UInt64, UInt64>> requests = new ArrayList<>();
+  private final List<Request> requests = new ArrayList<>();
   private Optional<SafeFuture<Void>> currentRequest = Optional.empty();
   private Optional<ResponseStreamListener<SignedBeaconBlock>> currentListener = Optional.empty();
 
@@ -51,7 +51,7 @@ public class StubSyncSource implements SyncSource {
       final ResponseStreamListener<SignedBeaconBlock> listener) {
     checkArgument(count.isGreaterThan(UInt64.ZERO), "Count must be greater than zero");
     checkArgument(step.isGreaterThan(UInt64.ZERO), "Step must be greater than zero");
-    requests.add(Pair.of(startSlot, count));
+    requests.add(new Request(startSlot, count));
     final SafeFuture<Void> request = new SafeFuture<>();
     currentRequest = Optional.of(request);
     currentListener = Optional.of(listener);
@@ -64,6 +64,33 @@ public class StubSyncSource implements SyncSource {
   }
 
   public void assertRequestedBlocks(final long startSlot, final long count) {
-    assertThat(requests).contains(Pair.of(UInt64.valueOf(startSlot), UInt64.valueOf(count)));
+    assertThat(requests).contains(new Request(UInt64.valueOf(startSlot), UInt64.valueOf(count)));
+  }
+
+  private static final class Request {
+    private final UInt64 start;
+    private final UInt64 count;
+
+    private Request(final UInt64 start, final UInt64 count) {
+      this.start = start;
+      this.count = count;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final Request request = (Request) o;
+      return Objects.equals(start, request.start) && Objects.equals(count, request.count);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(start, count);
+    }
   }
 }
