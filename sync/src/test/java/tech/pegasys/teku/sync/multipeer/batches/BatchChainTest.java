@@ -19,6 +19,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChainTestUtil;
@@ -27,6 +28,8 @@ class BatchChainTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final TargetChain targetChain =
       TargetChainTestUtil.chainWith(new SlotAndBlockRoot(UInt64.MAX_VALUE, Bytes32.ZERO));
+  private final StubBatchFactory batchFactory =
+      new StubBatchFactory(new InlineEventThread(), false);
   private final BatchChain batchChain = new BatchChain();
 
   @Test
@@ -389,14 +392,15 @@ class BatchChainTest {
   }
 
   private Batch createNonEmptyBatch(final int startSlot) {
-    final StubBatch batch2 =
-        new StubBatch(targetChain, UInt64.valueOf(startSlot), UInt64.valueOf(startSlot));
-    batch2.requestMoreBlocks(() -> {});
-    batch2.receiveBlocks(dataStructureUtil.randomSignedBeaconBlock(2));
-    return batch2;
+    final Batch batch =
+        batchFactory.createBatch(targetChain, UInt64.valueOf(startSlot), UInt64.valueOf(startSlot));
+    batch.requestMoreBlocks(() -> {});
+    batchFactory.receiveBlocks(batch, dataStructureUtil.randomSignedBeaconBlock(2));
+    return batch;
   }
 
   private Batch createBatch(final long startSlot) {
-    return new StubBatch(targetChain, UInt64.valueOf(startSlot), UInt64.valueOf(startSlot));
+    return batchFactory.createBatch(
+        targetChain, UInt64.valueOf(startSlot), UInt64.valueOf(startSlot));
   }
 }
