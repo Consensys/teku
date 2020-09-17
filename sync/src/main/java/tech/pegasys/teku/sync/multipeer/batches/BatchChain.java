@@ -25,6 +25,7 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+/** Tracks a set of batches which form a contiguous chain. */
 public class BatchChain implements Iterable<Batch> {
 
   private final NavigableSet<Batch> batches =
