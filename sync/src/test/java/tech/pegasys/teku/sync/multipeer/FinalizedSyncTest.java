@@ -468,6 +468,50 @@ class FinalizedSyncTest {
   }
 
   @Test
+  void shouldNotResetOnChainSwitchWhenBlocksDoNotLineUpBecauseOfIncompleteBatches() {
+    assertThat(sync.syncToChain(targetChain)).isNotDone();
+
+    targetChain =
+        chainWith(
+            new SlotAndBlockRoot(UInt64.valueOf(2000), dataStructureUtil.randomBytes32()),
+            syncSource);
+    assertThat(sync.syncToChain(targetChain));
+
+    final StubBatch batch0 = batches.get(0);
+    final StubBatch batch1 = batches.get(1);
+    final StubBatch batch2 = batches.get(2);
+
+    final SignedBeaconBlock batch0Block =
+        chainBuilder.generateBlockAtSlot(batch0.getLastSlot()).getBlock();
+    // Generate a block between batch 0 and 5 that we won't have
+    chainBuilder.generateBlockAtSlot(batch2.getLastSlot());
+
+    // Receive block from batch 0 so we have a block from the first chain to compare to
+    batch0.receiveBlocksAndMarkComplete(batch0Block);
+    // Batch 1 is empty to trigger requesting a new batch from the new chain
+    batch1.receiveBlocks();
+
+    // Get the first batch from the new chain
+    final StubBatch batch5 = batches.get(5);
+    assertThat(batch5.getTargetChain()).isEqualTo(targetChain);
+    final SignedBeaconBlock batch5Block =
+        chainBuilder.generateBlockAtSlot(batch5.getLastSlot()).getBlock();
+
+    // Receive first blocks from new chain which won't line up because batches are still incomplete
+    batch5.receiveBlocksAndMarkComplete(batch5Block);
+
+    assertNoBatchesImported();
+    assertThatBatch(batch0).isNotContested();
+    assertThatBatch(batch1).isNotContested();
+    assertThatBatch(batch5).isNotContested();
+
+    // Should still be optimistically assuming the chains join up
+    assertBatchActive(batch0);
+    assertBatchActive(batch1);
+    assertBatchActive(batch5);
+  }
+
+  @Test
   void shouldLimitTheNumberOfBatchesWithBlocksPendingImport() {
     // Avoid the queue of blocks to import getting too long
     // but allow any number of empty batches since we can only confirm blocks, not empty batches

@@ -112,6 +112,7 @@ public class FinalizedSync implements Sync {
     eventThread.checkOnEventThread();
     if (!isActiveBatch(batch)) {
       LOG.debug("Ignoring update from batch {} as it is no longer useful", batch);
+      progressSync();
       return;
     }
 
@@ -210,7 +211,12 @@ public class FinalizedSync implements Sync {
           firstBatch, secondBatch, activeBatches.batchesBetweenExclusive(firstBatch, secondBatch));
       return;
     }
-    if (!firstBatch.isComplete() || secondBatch.isEmpty()) {
+    if (!firstBatch.isComplete()
+        || secondBatch.isEmpty()
+        || !activeBatches.batchesBetweenExclusive(firstBatch, secondBatch).stream()
+            .allMatch(Batch::isComplete)) {
+      // Not a conflict if the first batch or any batch between the two batches may be missing
+      // blocks or if the second batch is empty (the chain should be formed by a later batch)
       return;
     }
     if (!firstBatch.getTargetChain().equals(secondBatch.getTargetChain())) {
@@ -224,13 +230,6 @@ public class FinalizedSync implements Sync {
       return;
     }
 
-    final boolean allComplete =
-        activeBatches.batchesBetweenExclusive(firstBatch, secondBatch).stream()
-            .allMatch(Batch::isComplete);
-    if (!allComplete) {
-      // Not a conflict, because we're still waiting on some blocks in the middle
-      return;
-    }
     final NavigableSet<Batch> contestedBatches =
         activeBatches.batchesBetweenInclusive(firstBatch, secondBatch);
     LOG.debug(
