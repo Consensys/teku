@@ -13,17 +13,13 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.logging.StatusLogger;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.storage.client.RecentChainData;
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -35,12 +31,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class RecentChainDataPerformanceTracker implements PerformanceTracker {
 
@@ -57,7 +56,8 @@ public class RecentChainDataPerformanceTracker implements PerformanceTracker {
   private final StatusLogger statusLogger;
   private Optional<UInt64> nodeStartEpoch = Optional.empty();
 
-  public RecentChainDataPerformanceTracker(RecentChainData recentChainData, StatusLogger statusLogger) {
+  public RecentChainDataPerformanceTracker(
+      RecentChainData recentChainData, StatusLogger statusLogger) {
     this.recentChainData = recentChainData;
     this.statusLogger = statusLogger;
   }
