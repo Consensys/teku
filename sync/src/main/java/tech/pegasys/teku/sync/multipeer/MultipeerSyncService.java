@@ -87,6 +87,8 @@ public class MultipeerSyncService extends Service implements SyncService {
             recentChainData,
             blockImporter);
 
+    final TargetChains finalizedTargetChains = new TargetChains();
+    final TargetChains nonfinalizedTargetChains = new TargetChains();
     final FinalizedSync finalizedSync =
         FinalizedSync.create(
             eventThread,
@@ -99,10 +101,14 @@ public class MultipeerSyncService extends Service implements SyncService {
             eventThread,
             new OrderedAsyncRunner(asyncRunner),
             recentChainData,
-            ChainSelector.createFinalizedChainSelector(recentChainData),
+            ChainSelector.createFinalizedChainSelector(recentChainData, finalizedTargetChains),
+            ChainSelector.createNonfinalizedChainSelector(
+                recentChainData, nonfinalizedTargetChains),
             finalizedSync);
     final PeerChainTracker peerChainTracker =
-        new PeerChainTracker(eventThread, p2pNetwork, syncController);
+        new PeerChainTracker(
+            eventThread, p2pNetwork, finalizedTargetChains, nonfinalizedTargetChains);
+    peerChainTracker.subscribeToTargetChainUpdates(syncController::onTargetChainsUpdated);
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);

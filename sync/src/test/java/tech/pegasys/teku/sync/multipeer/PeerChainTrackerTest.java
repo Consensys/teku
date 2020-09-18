@@ -34,6 +34,7 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedSubscriber;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
+import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
 
 class PeerChainTrackerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -41,9 +42,11 @@ class PeerChainTrackerTest {
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Eth2Peer> p2pNetwork = mock(P2PNetwork.class);
 
-  private final SyncController syncController = mock(SyncController.class);
+  private final Runnable updatedChainsSubscriber = mock(Runnable.class);
   private final Eth2Peer peer = mock(Eth2Peer.class);
 
+  private final TargetChains finalizedChains = new TargetChains();
+  private final TargetChains nonfinalizedChains = new TargetChains();
   private final EventThread eventThread = new InlineEventThread();
   private final PeerStatus status =
       new PeerStatus(
@@ -54,7 +57,7 @@ class PeerChainTrackerTest {
           dataStructureUtil.randomUInt64());
 
   private final PeerChainTracker tracker =
-      new PeerChainTracker(eventThread, p2pNetwork, syncController);
+      new PeerChainTracker(eventThread, p2pNetwork, finalizedChains, nonfinalizedChains);
 
   @BeforeEach
   void setUp() {
@@ -63,6 +66,7 @@ class PeerChainTrackerTest {
 
   @Test
   void shouldUpdatePeerChainWhenStatusUpdates() {
+    tracker.subscribeToTargetChainUpdates(updatedChainsSubscriber);
     connectPeer(peer);
 
     updateStatus(peer, status);
@@ -74,10 +78,10 @@ class PeerChainTrackerTest {
             peer);
     final TargetChain nonfinalizedChain =
         chainWith(new SlotAndBlockRoot(status.getHeadSlot(), status.getHeadRoot()), peer);
-    assertThat(tracker.getFinalizedChains().streamChains()).containsExactly(finalizedChain);
-    assertThat(tracker.getNonFinalizedChains().streamChains()).containsExactly(nonfinalizedChain);
+    assertThat(finalizedChains.streamChains()).containsExactly(finalizedChain);
+    assertThat(nonfinalizedChains.streamChains()).containsExactly(nonfinalizedChain);
 
-    verify(syncController).onTargetChainsUpdated(tracker.getFinalizedChains());
+    verify(updatedChainsSubscriber).run();
   }
 
   @Test
@@ -87,8 +91,8 @@ class PeerChainTrackerTest {
 
     disconnectPeer(peer);
 
-    assertThat(tracker.getFinalizedChains().streamChains()).isEmpty();
-    assertThat(tracker.getNonFinalizedChains().streamChains()).isEmpty();
+    assertThat(finalizedChains.streamChains()).isEmpty();
+    assertThat(nonfinalizedChains.streamChains()).isEmpty();
   }
 
   private void updateStatus(final Eth2Peer peer, final PeerStatus status) {

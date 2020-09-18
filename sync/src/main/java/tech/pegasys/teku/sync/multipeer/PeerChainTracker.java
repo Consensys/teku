@@ -16,6 +16,7 @@ package tech.pegasys.teku.sync.multipeer;
 import com.google.common.annotations.VisibleForTesting;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
@@ -28,19 +29,21 @@ import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
 public class PeerChainTracker {
   private final EventThread eventThread;
   private final P2PNetwork<Eth2Peer> p2pNetwork;
-  private final SyncController syncController;
-  private final TargetChains finalizedChains = new TargetChains();
-  private final TargetChains nonFinalizedChains = new TargetChains();
+  private final Subscribers<Runnable> chainsUpdatedSubscribers = Subscribers.create(true);
+  private final TargetChains finalizedChains;
+  private final TargetChains nonfinalizedChains;
   private volatile long connectSubscription;
 
   @VisibleForTesting
   PeerChainTracker(
       final EventThread eventThread,
       final P2PNetwork<Eth2Peer> p2pNetwork,
-      final SyncController syncController) {
+      final TargetChains finalizedChains,
+      final TargetChains nonfinalizedChains) {
     this.eventThread = eventThread;
     this.p2pNetwork = p2pNetwork;
-    this.syncController = syncController;
+    this.finalizedChains = finalizedChains;
+    this.nonfinalizedChains = nonfinalizedChains;
   }
 
   public void start() {
@@ -59,10 +62,14 @@ public class PeerChainTracker {
     p2pNetwork.unsubscribeConnect(connectSubscription);
   }
 
+  public void subscribeToTargetChainUpdates(final Runnable subscriber) {
+    chainsUpdatedSubscribers.subscribe(subscriber);
+  }
+
   private void onPeerDisconnected(final Eth2Peer peer) {
     eventThread.checkOnEventThread();
     finalizedChains.onPeerDisconnected(peer);
-    nonFinalizedChains.onPeerDisconnected(peer);
+    nonfinalizedChains.onPeerDisconnected(peer);
   }
 
   private void onPeerStatusUpdate(final Eth2Peer peer, final PeerStatus status) {
@@ -74,18 +81,8 @@ public class PeerChainTracker {
 
     final SlotAndBlockRoot nonFinalizedChainHead =
         new SlotAndBlockRoot(status.getHeadSlot(), status.getHeadRoot());
-    nonFinalizedChains.onPeerStatusUpdated(peer, nonFinalizedChainHead);
+    nonfinalizedChains.onPeerStatusUpdated(peer, nonFinalizedChainHead);
 
-    syncController.onTargetChainsUpdated(finalizedChains);
-  }
-
-  @VisibleForTesting
-  TargetChains getFinalizedChains() {
-    return finalizedChains;
-  }
-
-  @VisibleForTesting
-  TargetChains getNonFinalizedChains() {
-    return nonFinalizedChains;
+    chainsUpdatedSubscribers.forEach(Runnable::run);
   }
 }
