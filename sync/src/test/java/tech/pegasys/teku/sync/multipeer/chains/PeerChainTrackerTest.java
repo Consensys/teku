@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync.multipeer;
+package tech.pegasys.teku.sync.multipeer.chains;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -33,8 +33,6 @@ import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedSubscriber;
-import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
-import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
 
 class PeerChainTrackerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

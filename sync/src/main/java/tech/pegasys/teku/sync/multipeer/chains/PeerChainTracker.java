@@ -11,16 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync.multipeer;
+package tech.pegasys.teku.sync.multipeer.chains;
 
-import com.google.common.annotations.VisibleForTesting;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
-import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
 
 /**
  * Tracks the {@link tech.pegasys.teku.sync.multipeer.chains.TargetChain} available from the current
@@ -34,8 +32,7 @@ public class PeerChainTracker {
   private final TargetChains nonfinalizedChains;
   private volatile long connectSubscription;
 
-  @VisibleForTesting
-  PeerChainTracker(
+  public PeerChainTracker(
       final EventThread eventThread,
       final P2PNetwork<Eth2Peer> p2pNetwork,
       final TargetChains finalizedChains,

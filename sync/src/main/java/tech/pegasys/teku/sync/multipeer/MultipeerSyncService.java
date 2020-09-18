@@ -37,6 +37,7 @@ import tech.pegasys.teku.sync.SyncingStatus;
 import tech.pegasys.teku.sync.gossip.BlockManager;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
 import tech.pegasys.teku.sync.multipeer.batches.BatchFactory;
+import tech.pegasys.teku.sync.multipeer.chains.PeerChainTracker;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;

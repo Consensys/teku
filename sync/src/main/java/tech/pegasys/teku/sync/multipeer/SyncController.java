@@ -113,7 +113,10 @@ public class SyncController {
       // A different sync is now running so ignore this change.
       return;
     }
-    LOG.debug("Completed sync to chain {}", currentSync.map(Objects::toString).orElse("<unknown>"));
+    LOG.debug(
+        "Completed sync to chain {} with result {}",
+        currentSync.map(Objects::toString).orElse("<unknown>"),
+        result);
     // See if there's a new sync we should start (possibly switching to non-finalized sync)
     currentSync = selectNewSyncTarget(true);
     if (!isSyncActive()) {
