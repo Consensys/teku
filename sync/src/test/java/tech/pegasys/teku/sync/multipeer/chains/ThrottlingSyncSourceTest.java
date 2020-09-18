@@ -60,8 +60,8 @@ class ThrottlingSyncSourceTest {
   @Test
   void shouldRequestBlocksImmediatelyIfRateLimitNotExceeded() {
     final UInt64 count = UInt64.valueOf(MAX_BLOCKS_PER_MINUTE - 1);
-    source.requestBlocksByRange(UInt64.ZERO, count, ONE, listener);
-    source.requestBlocksByRange(UInt64.valueOf(100), count, ONE, listener);
+    ignoreFuture(source.requestBlocksByRange(UInt64.ZERO, count, ONE, listener));
+    ignoreFuture(source.requestBlocksByRange(UInt64.valueOf(100), count, ONE, listener));
 
     // Both requests happen immediately
     ignoreFuture(verify(delegate).requestBlocksByRange(UInt64.ZERO, count, ONE, listener));
@@ -71,8 +71,8 @@ class ThrottlingSyncSourceTest {
   @Test
   void shouldDelayRequestIfBlockLimitAlreadyExceeded() {
     final UInt64 count = UInt64.valueOf(MAX_BLOCKS_PER_MINUTE);
-    source.requestBlocksByRange(UInt64.ZERO, count, ONE, listener);
-    source.requestBlocksByRange(UInt64.valueOf(100), count, ONE, listener);
+    ignoreFuture(source.requestBlocksByRange(UInt64.ZERO, count, ONE, listener));
+    ignoreFuture(source.requestBlocksByRange(UInt64.valueOf(100), count, ONE, listener));
 
     // Both requests happen immediately
     ignoreFuture(verify(delegate).requestBlocksByRange(UInt64.ZERO, count, ONE, listener));
@@ -87,8 +87,8 @@ class ThrottlingSyncSourceTest {
   @Test
   void shouldContinueDelayingIfRequestStillExceeded() {
     final UInt64 count = UInt64.valueOf(MAX_BLOCKS_PER_MINUTE);
-    source.requestBlocksByRange(UInt64.ZERO, count, ONE, listener);
-    source.requestBlocksByRange(UInt64.valueOf(100), count, ONE, listener);
+    ignoreFuture(source.requestBlocksByRange(UInt64.ZERO, count, ONE, listener));
+    ignoreFuture(source.requestBlocksByRange(UInt64.valueOf(100), count, ONE, listener));
 
     // Both requests happen immediately
     ignoreFuture(verify(delegate).requestBlocksByRange(UInt64.ZERO, count, ONE, listener));
