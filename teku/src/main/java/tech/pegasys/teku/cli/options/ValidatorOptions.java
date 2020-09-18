@@ -13,12 +13,11 @@
 
 package tech.pegasys.teku.cli.options;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class ValidatorOptions {
   @Option(
@@ -83,10 +82,10 @@ public class ValidatorOptions {
   private Bytes32 graffiti;
 
   @Option(
-          names = {"--validator-performance-tracking"},
-          paramLabel = "<BOOLEAN>",
-          description = "Activate validator performance tracking and logging",
-          arity = "1")
+      names = {"--validator-performance-tracking"},
+      paramLabel = "<BOOLEAN>",
+      description = "Activate validator performance tracking and logging",
+      arity = "1")
   private boolean validatorPerformanceTrackingEnabled = false;
 
   public boolean isValidatorPerformanceTrackingEnabled() {

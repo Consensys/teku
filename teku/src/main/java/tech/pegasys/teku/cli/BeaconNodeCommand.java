@@ -14,6 +14,14 @@
 package tech.pegasys.teku.cli;
 
 import com.google.common.base.Throwables;
+import java.io.File;
+import java.io.PrintWriter;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionException;
+import java.util.function.Consumer;
 import org.apache.logging.log4j.Level;
 import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
@@ -57,15 +65,6 @@ import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 import tech.pegasys.teku.util.config.TekuConfiguration;
-
-import java.io.File;
-import java.io.PrintWriter;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionException;
-import java.util.function.Consumer;
 
 @SuppressWarnings("unused")
 @Command(
@@ -345,7 +344,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setInitialState(networkOptions.getInitialState())
         .setInteropNumberOfValidators(interopOptions.getInteropNumberOfValidators())
         .setInteropEnabled(interopOptions.isInteropEnabled())
-        .setValidatorPerformanceTrackingEnabled(validatorOptions.isValidatorPerformanceTrackingEnabled())
+        .setValidatorPerformanceTrackingEnabled(
+            validatorOptions.isValidatorPerformanceTrackingEnabled())
         .setValidatorKeystoreFiles(validatorOptions.getValidatorKeystoreFiles())
         .setValidatorKeystorePasswordFiles(validatorOptions.getValidatorKeystorePasswordFiles())
         .setValidatorKeys(validatorOptions.getValidatorKeys())

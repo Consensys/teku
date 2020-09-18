@@ -13,7 +13,13 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker.BLOCK_PERFORMANCE_EVALUATION_INTERVAL;
+
 import com.google.common.eventbus.EventBus;
+import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,13 +36,6 @@ import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
-
-import java.util.List;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker.BLOCK_PERFORMANCE_EVALUATION_INTERVAL;
 
 public class PerformanceTrackerTest {
 
@@ -161,15 +160,15 @@ public class PerformanceTrackerTest {
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(8));
     ChainBuilder.BlockOptions block1Options = ChainBuilder.BlockOptions.create();
     Attestation attestation1 =
-            chainBuilder
-                    .streamValidAttestationsForBlockAtSlot(9)
-                    .filter(
-                            a ->
-                                    a.getData()
-                                            .getBeacon_block_root()
-                                            .equals(chainBuilder.getBlockAtSlot(8).getRoot()))
-                    .findFirst()
-                    .get();
+        chainBuilder
+            .streamValidAttestationsForBlockAtSlot(9)
+            .filter(
+                a ->
+                    a.getData()
+                        .getBeacon_block_root()
+                        .equals(chainBuilder.getBlockAtSlot(8).getRoot()))
+            .findFirst()
+            .get();
     block1Options.addAttestation(attestation1);
     SignedBlockAndState blockAndState1 = chainBuilder.generateBlockAtSlot(9, block1Options);
     chainUpdater.saveBlock(blockAndState1);
@@ -179,15 +178,15 @@ public class PerformanceTrackerTest {
     chainUpdaterFork.advanceChainUntil(9);
     ChainBuilder.BlockOptions block2Options = ChainBuilder.BlockOptions.create();
     Attestation attestation2 =
-            chainBuilderFork
-                    .streamValidAttestationsForBlockAtSlot(10)
-                    .filter(
-                            a ->
-                                    a.getData()
-                                            .getBeacon_block_root()
-                                            .equals(chainBuilderFork.getBlockAtSlot(9).getRoot()))
-                    .findFirst()
-                    .get();
+        chainBuilderFork
+            .streamValidAttestationsForBlockAtSlot(10)
+            .filter(
+                a ->
+                    a.getData()
+                        .getBeacon_block_root()
+                        .equals(chainBuilderFork.getBlockAtSlot(9).getRoot()))
+            .findFirst()
+            .get();
     block2Options.addAttestation(attestation2);
     SignedBlockAndState blockAndState2 = chainBuilder.generateBlockAtSlot(10, block2Options);
     chainUpdater.saveBlock(blockAndState2);
@@ -197,7 +196,7 @@ public class PerformanceTrackerTest {
     performanceTracker.saveSentAttestation(attestation2);
     performanceTracker.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(4)));
     AttestationPerformance expectedAttestationPerformance =
-            new AttestationPerformance(2, 2, 1, 1, 1, 1, 1);
+        new AttestationPerformance(2, 2, 1, 1, 1, 1, 1);
     verify(log).performance(expectedAttestationPerformance.toString());
   }
 
@@ -211,15 +210,15 @@ public class PerformanceTrackerTest {
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(9));
     ChainBuilder.BlockOptions block1Options = ChainBuilder.BlockOptions.create();
     Attestation attestation1 =
-            chainBuilder
-                    .streamValidAttestationsForBlockAtSlot(10)
-                    .filter(
-                            a ->
-                                    a.getData()
-                                            .getBeacon_block_root()
-                                            .equals(chainBuilder.getBlockAtSlot(9).getRoot()))
-                    .findFirst()
-                    .get();
+        chainBuilder
+            .streamValidAttestationsForBlockAtSlot(10)
+            .filter(
+                a ->
+                    a.getData()
+                        .getBeacon_block_root()
+                        .equals(chainBuilder.getBlockAtSlot(9).getRoot()))
+            .findFirst()
+            .get();
     block1Options.addAttestation(attestation1);
     SignedBlockAndState blockAndState1 = chainBuilder.generateBlockAtSlot(10, block1Options);
     chainUpdater.saveBlock(blockAndState1);
@@ -227,8 +226,10 @@ public class PerformanceTrackerTest {
 
     SignedBlockAndState blockAndState = chainUpdaterFork.advanceChainUntil(8);
     ChainBuilder.BlockOptions block2Options = ChainBuilder.BlockOptions.create();
-    AttestationGenerator attestationGenerator = new AttestationGenerator(chainBuilder.getValidatorKeys());
-    Attestation attestation2 = attestationGenerator.validAttestation(blockAndState.toUnsigned(), UInt64.valueOf(9));
+    AttestationGenerator attestationGenerator =
+        new AttestationGenerator(chainBuilder.getValidatorKeys());
+    Attestation attestation2 =
+        attestationGenerator.validAttestation(blockAndState.toUnsigned(), UInt64.valueOf(9));
     block2Options.addAttestation(attestation2);
     SignedBlockAndState blockAndState2 = chainBuilder.generateBlockAtSlot(11, block2Options);
     chainUpdater.saveBlock(blockAndState2);
@@ -238,7 +239,7 @@ public class PerformanceTrackerTest {
     performanceTracker.saveSentAttestation(attestation2);
     performanceTracker.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(4)));
     AttestationPerformance expectedAttestationPerformance =
-            new AttestationPerformance(2, 2, 2, 1, 1.5, 2, 1);
+        new AttestationPerformance(2, 2, 2, 1, 1.5, 2, 1);
     verify(log).performance(expectedAttestationPerformance.toString());
   }
 }

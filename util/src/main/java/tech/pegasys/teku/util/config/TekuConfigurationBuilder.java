@@ -13,15 +13,14 @@
 
 package tech.pegasys.teku.util.config;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
-
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
 public class TekuConfigurationBuilder {
 
@@ -230,7 +229,8 @@ public class TekuConfigurationBuilder {
     return this;
   }
 
-  public TekuConfigurationBuilder setValidatorPerformanceTrackingEnabled(final boolean trackingEnabled) {
+  public TekuConfigurationBuilder setValidatorPerformanceTrackingEnabled(
+      final boolean trackingEnabled) {
     this.validatorPerformanceTrackingEnabled = trackingEnabled;
     return this;
   }
