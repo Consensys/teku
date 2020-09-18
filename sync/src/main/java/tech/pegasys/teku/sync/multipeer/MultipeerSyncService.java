@@ -23,19 +23,23 @@ import tech.pegasys.teku.infrastructure.async.OrderedAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncingStatus;
 import tech.pegasys.teku.sync.gossip.BlockManager;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
 import tech.pegasys.teku.sync.multipeer.batches.BatchFactory;
+import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class MultipeerSyncService extends Service implements SyncService {
   private static final Logger LOG = LogManager.getLogger();
@@ -62,6 +66,7 @@ public class MultipeerSyncService extends Service implements SyncService {
       final AsyncRunnerFactory asyncRunnerFactory,
       final AsyncRunner asyncRunner,
       final EventBus eventBus,
+      final EventChannels eventChannels,
       final RecentChainData recentChainData,
       final P2PNetwork<Eth2Peer> p2pNetwork,
       final BlockImporter blockImporter) {
@@ -98,6 +103,9 @@ public class MultipeerSyncService extends Service implements SyncService {
             finalizedSync);
     final PeerChainTracker peerChainTracker =
         new PeerChainTracker(eventThread, p2pNetwork, syncController);
+    eventChannels
+        .subscribe(SlotEventsChannel.class, blockManager)
+        .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
     return new MultipeerSyncService(
         eventThread, blockManager, recentChainData, peerChainTracker, syncController);
   }
