@@ -28,6 +28,7 @@ public class WeakSubjectivityValidator {
   private final WeakSubjectivityCalculator calculator;
   private final List<WeakSubjectivityViolationPolicy> violationPolicies;
 
+  @SuppressWarnings("unused")
   private final Optional<Checkpoint> wsCheckpoint;
 
   WeakSubjectivityValidator(
