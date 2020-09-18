@@ -38,8 +38,10 @@ import tech.pegasys.teku.sync.gossip.BlockManager;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
 import tech.pegasys.teku.sync.multipeer.batches.BatchFactory;
 import tech.pegasys.teku.sync.multipeer.chains.PeerChainTracker;
+import tech.pegasys.teku.sync.multipeer.chains.SyncSourceFactory;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.time.TimeProvider;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class MultipeerSyncService extends Service implements SyncService {
@@ -66,6 +68,7 @@ public class MultipeerSyncService extends Service implements SyncService {
   public static MultipeerSyncService create(
       final AsyncRunnerFactory asyncRunnerFactory,
       final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
       final EventBus eventBus,
       final EventChannels eventChannels,
       final RecentChainData recentChainData,
@@ -108,7 +111,11 @@ public class MultipeerSyncService extends Service implements SyncService {
             batchSync);
     final PeerChainTracker peerChainTracker =
         new PeerChainTracker(
-            eventThread, p2pNetwork, finalizedTargetChains, nonfinalizedTargetChains);
+            eventThread,
+            p2pNetwork,
+            new SyncSourceFactory(asyncRunner, timeProvider),
+            finalizedTargetChains,
+            nonfinalizedTargetChains);
     peerChainTracker.subscribeToTargetChainUpdates(syncController::onTargetChainsUpdated);
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)

@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
+import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 
 /**
@@ -28,6 +29,7 @@ public class PeerChainTracker {
   private final EventThread eventThread;
   private final P2PNetwork<Eth2Peer> p2pNetwork;
   private final Subscribers<Runnable> chainsUpdatedSubscribers = Subscribers.create(true);
+  private final SyncSourceFactory syncSourceFactory;
   private final TargetChains finalizedChains;
   private final TargetChains nonfinalizedChains;
   private volatile long connectSubscription;
@@ -35,10 +37,12 @@ public class PeerChainTracker {
   public PeerChainTracker(
       final EventThread eventThread,
       final P2PNetwork<Eth2Peer> p2pNetwork,
+      final SyncSourceFactory syncSourceFactory,
       final TargetChains finalizedChains,
       final TargetChains nonfinalizedChains) {
     this.eventThread = eventThread;
     this.p2pNetwork = p2pNetwork;
+    this.syncSourceFactory = syncSourceFactory;
     this.finalizedChains = finalizedChains;
     this.nonfinalizedChains = nonfinalizedChains;
   }
@@ -65,20 +69,23 @@ public class PeerChainTracker {
 
   private void onPeerDisconnected(final Eth2Peer peer) {
     eventThread.checkOnEventThread();
-    finalizedChains.onPeerDisconnected(peer);
-    nonfinalizedChains.onPeerDisconnected(peer);
+    final SyncSource syncSource = syncSourceFactory.getOrCreateSyncSource(peer);
+    finalizedChains.onPeerDisconnected(syncSource);
+    nonfinalizedChains.onPeerDisconnected(syncSource);
+    syncSourceFactory.onPeerDisconnected(peer);
   }
 
   private void onPeerStatusUpdate(final Eth2Peer peer, final PeerStatus status) {
     eventThread.checkOnEventThread();
+    final SyncSource syncSource = syncSourceFactory.getOrCreateSyncSource(peer);
     final SlotAndBlockRoot finalizedChainHead =
         new SlotAndBlockRoot(
             status.getFinalizedCheckpoint().getEpochStartSlot(), status.getFinalizedRoot());
-    finalizedChains.onPeerStatusUpdated(peer, finalizedChainHead);
+    finalizedChains.onPeerStatusUpdated(syncSource, finalizedChainHead);
 
     final SlotAndBlockRoot nonFinalizedChainHead =
         new SlotAndBlockRoot(status.getHeadSlot(), status.getHeadRoot());
-    nonfinalizedChains.onPeerStatusUpdated(peer, nonFinalizedChainHead);
+    nonfinalizedChains.onPeerStatusUpdated(syncSource, nonFinalizedChainHead);
 
     chainsUpdatedSubscribers.forEach(Runnable::run);
   }

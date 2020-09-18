@@ -49,8 +49,12 @@ public class RateTracker {
   }
 
   void pruneRequests() {
+    final UInt64 currentTime = timeProvider.getTimeInSeconds();
+    if (currentTime.isLessThan(timeoutSeconds)) {
+      return;
+    }
     final NavigableMap<UInt64, Long> headMap =
-        requestCount.headMap(timeProvider.getTimeInSeconds().minus(timeoutSeconds), false);
+        requestCount.headMap(currentTime.minus(timeoutSeconds), false);
     headMap.values().forEach(value -> requestsWithinWindow -= value);
     headMap.clear();
   }

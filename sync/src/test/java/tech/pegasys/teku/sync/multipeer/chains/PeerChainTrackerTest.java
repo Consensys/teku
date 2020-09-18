@@ -16,6 +16,7 @@ package tech.pegasys.teku.sync.multipeer.chains;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.sync.multipeer.chains.TargetChainTestUtil.chainWith;
 
@@ -30,6 +31,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.PeerStatusSubscriber;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
+import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedSubscriber;
@@ -42,6 +44,8 @@ class PeerChainTrackerTest {
 
   private final Runnable updatedChainsSubscriber = mock(Runnable.class);
   private final Eth2Peer peer = mock(Eth2Peer.class);
+  private final SyncSource syncSource = mock(SyncSource.class);
+  private final SyncSourceFactory syncSourceFactory = mock(SyncSourceFactory.class);
 
   private final TargetChains finalizedChains = new TargetChains();
   private final TargetChains nonfinalizedChains = new TargetChains();
@@ -55,10 +59,12 @@ class PeerChainTrackerTest {
           dataStructureUtil.randomUInt64());
 
   private final PeerChainTracker tracker =
-      new PeerChainTracker(eventThread, p2pNetwork, finalizedChains, nonfinalizedChains);
+      new PeerChainTracker(
+          eventThread, p2pNetwork, syncSourceFactory, finalizedChains, nonfinalizedChains);
 
   @BeforeEach
   void setUp() {
+    when(syncSourceFactory.getOrCreateSyncSource(peer)).thenReturn(syncSource);
     tracker.start();
   }
 
@@ -73,9 +79,9 @@ class PeerChainTrackerTest {
         chainWith(
             new SlotAndBlockRoot(
                 compute_start_slot_at_epoch(status.getFinalizedEpoch()), status.getFinalizedRoot()),
-            peer);
+            syncSource);
     final TargetChain nonfinalizedChain =
-        chainWith(new SlotAndBlockRoot(status.getHeadSlot(), status.getHeadRoot()), peer);
+        chainWith(new SlotAndBlockRoot(status.getHeadSlot(), status.getHeadRoot()), syncSource);
     assertThat(finalizedChains.streamChains()).containsExactly(finalizedChain);
     assertThat(nonfinalizedChains.streamChains()).containsExactly(nonfinalizedChain);
 
