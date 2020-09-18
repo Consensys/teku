@@ -13,13 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker.BLOCK_PERFORMANCE_EVALUATION_INTERVAL;
-
 import com.google.common.eventbus.EventBus;
-import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +30,14 @@ import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker.BLOCK_PERFORMANCE_EVALUATION_INTERVAL;
 
 public class PerformanceTrackerTest {
 
@@ -241,5 +243,15 @@ public class PerformanceTrackerTest {
     AttestationPerformance expectedAttestationPerformance =
         new AttestationPerformance(2, 2, 2, 1, 1.5, 2, 1);
     verify(log).performance(expectedAttestationPerformance.toString());
+  }
+
+  @Test
+  void shouldClearOldSentBlocks() {
+    chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(10));
+    performanceTracker.saveSentBlock(chainUpdater.chainBuilder.getBlockAtSlot(1));
+    performanceTracker.saveSentBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
+    performanceTracker.onSlot(compute_start_slot_at_epoch(BLOCK_PERFORMANCE_EVALUATION_INTERVAL));
+    assertThat(performanceTracker.sentAttestationsByEpoch).isEmpty();
+    assertThat(performanceTracker.sentBlocksByEpoch).isEmpty();
   }
 }

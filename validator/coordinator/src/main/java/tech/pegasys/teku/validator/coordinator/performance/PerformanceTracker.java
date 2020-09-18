@@ -13,24 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
-
 import com.google.common.annotations.VisibleForTesting;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.IntSummaryStatistics;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -42,10 +25,30 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.IntSummaryStatistics;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
+
 public class PerformanceTracker implements SlotEventsChannel {
 
-  private final NavigableMap<UInt64, Set<SignedBeaconBlock>> sentBlocksByEpoch = new TreeMap<>();
-  private final NavigableMap<UInt64, Set<Attestation>> sentAttestationsByEpoch = new TreeMap<>();
+  @VisibleForTesting
+  final NavigableMap<UInt64, Set<SignedBeaconBlock>> sentBlocksByEpoch = new TreeMap<>();
+  @VisibleForTesting
+  final NavigableMap<UInt64, Set<Attestation>> sentAttestationsByEpoch = new TreeMap<>();
 
   @VisibleForTesting
   static final UInt64 BLOCK_PERFORMANCE_EVALUATION_INTERVAL = UInt64.valueOf(2); // epochs
@@ -82,6 +85,10 @@ public class PerformanceTracker implements SlotEventsChannel {
                 .toString());
       }
     }
+
+    UInt64 epoch = currentEpoch.minus(BLOCK_PERFORMANCE_EVALUATION_INTERVAL)
+            .min(currentEpoch.minus(UInt64.valueOf(2)));
+    clearReduntantSavedSentObjects(epoch);
   }
 
   private BlockPerformance getBlockPerformanceForEpochs(
@@ -210,6 +217,11 @@ public class PerformanceTracker implements SlotEventsChannel {
         .collect(
             Collectors.toMap(
                 BeaconBlock::getSlot, block -> block.getBody().getAttestations().asList()));
+  }
+
+  private void clearReduntantSavedSentObjects(UInt64 epoch) {
+    sentAttestationsByEpoch.headMap(epoch, true).clear();
+    sentBlocksByEpoch.headMap(epoch, true).clear();
   }
 
   public void saveSentAttestation(Attestation attestation) {
