@@ -16,8 +16,6 @@ package tech.pegasys.teku.weaksubjectivity;
 import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -27,8 +25,6 @@ import tech.pegasys.teku.weaksubjectivity.policies.StrictWeakSubjectivityViolati
 import tech.pegasys.teku.weaksubjectivity.policies.WeakSubjectivityViolationPolicy;
 
 public class WeakSubjectivityValidator {
-  private static final Logger LOG = LogManager.getLogger();
-
   private final WeakSubjectivityCalculator calculator;
   private final List<WeakSubjectivityViolationPolicy> violationPolicies;
 
