@@ -72,7 +72,8 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
                       executorService.submit(
                           () -> {
                             Bytes32 privateKey =
-                                loadBLSPrivateKey(pair.getLeft(), loadPassword(pair.getRight()));
+                                loadBLSPrivateKey(
+                                    config, pair.getLeft(), loadPassword(pair.getRight()));
                             int loadedValidatorCount = numberOfLoadedKeys.incrementAndGet();
                             if (loadedValidatorCount % 10 == 0) {
                               StatusLogger.STATUS_LOG.atLoadedValidatorNumber(
@@ -101,9 +102,12 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
     }
   }
 
-  private Bytes32 loadBLSPrivateKey(final Path keystoreFile, final String password) {
+  private Bytes32 loadBLSPrivateKey(
+      GlobalConfiguration config, final Path keystoreFile, final String password) {
     try {
-      keystoreLocker.lockKeystore(keystoreFile);
+      if (config.isValidatorKeystoreLockingEnabled()) {
+        keystoreLocker.lockKeystore(keystoreFile);
+      }
       final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(keystoreFile);
       if (!KeyStore.validatePassword(password, keyStoreData)) {
         throw new IllegalArgumentException("Invalid keystore password: " + keystoreFile);
