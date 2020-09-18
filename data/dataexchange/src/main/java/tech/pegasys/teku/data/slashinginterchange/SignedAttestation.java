@@ -14,11 +14,14 @@
 package tech.pegasys.teku.data.slashinginterchange;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SignedAttestation {
   public final UInt64 sourceEpoch;
   public final UInt64 targetEpoch;
@@ -50,6 +53,15 @@ public class SignedAttestation {
 
   public UInt64 getTargetEpoch() {
     return targetEpoch;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("sourceEpoch", sourceEpoch)
+        .add("targetEpoch", targetEpoch)
+        .add("signingRoot", signingRoot)
+        .toString();
   }
 
   @Override

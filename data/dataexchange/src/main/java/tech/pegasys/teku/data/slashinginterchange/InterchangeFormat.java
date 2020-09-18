@@ -14,6 +14,5 @@
 package tech.pegasys.teku.data.slashinginterchange;
 
 public enum InterchangeFormat {
-  complete,
-  minimal
+  complete
 }
