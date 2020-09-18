@@ -117,6 +117,7 @@ public class SyncController {
     // See if there's a new sync we should start (possibly switching to non-finalized sync)
     currentSync = selectNewSyncTarget(true);
     if (!isSyncActive()) {
+      currentSync = Optional.empty();
       notifySubscribers(false);
     }
   }
