@@ -25,7 +25,7 @@ public class AsyncRunnerEventThread implements EventThread {
   private final AsyncRunnerFactory asyncRunnerFactory;
   private AsyncRunner thread;
 
-  /** The ID of the event thread. The first task executed by the executor sets this ID. */
+  /** The ID of the event thread. */
   private volatile long eventThreadId = -1;
 
   public AsyncRunnerEventThread(final String name, final AsyncRunnerFactory asyncRunnerFactory) {
@@ -48,7 +48,6 @@ public class AsyncRunnerEventThread implements EventThread {
       return;
     }
     thread = asyncRunnerFactory.create(name, 1);
-    thread.runAsync(() -> eventThreadId = Thread.currentThread().getId()).reportExceptions();
     started.set(true);
   }
 
@@ -71,7 +70,23 @@ public class AsyncRunnerEventThread implements EventThread {
     if (isEventThread()) {
       task.run();
     } else {
-      thread.runAsync(task::run).reportExceptions();
+      thread.runAsync(() -> recordEventThreadIdAndExecute(task)).reportExceptions();
     }
+  }
+
+  /**
+   * Record the ID of the current thread as the event thread ID and execute the specified task.
+   *
+   * <p>While there is only one event thread, if there is no activity for some time the thread may
+   * expire and shutdown, then a different thread created to handle the next event. This is still
+   * thread-safe but we need to make sure we have the latest thread ID to make isEventThread work.
+   *
+   * @param task the task to execute.
+   */
+  private void recordEventThreadIdAndExecute(final Runnable task) {
+    eventThreadId = Thread.currentThread().getId();
+    task.run();
+    // Reset again to avoid problems if the thread exits and its ID is reused.
+    eventThreadId = -1;
   }
 }

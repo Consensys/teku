@@ -546,6 +546,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               asyncRunnerFactory,
               asyncRunner,
               eventBus,
+              eventChannels,
               recentChainData,
               p2pNetwork,
               blockImporter);
