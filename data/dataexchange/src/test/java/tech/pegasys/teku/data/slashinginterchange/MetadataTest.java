@@ -39,7 +39,7 @@ public class MetadataTest {
 
   @Test
   public void shouldSerializeMinimalFormat() throws JsonProcessingException {
-    final Metadata metadata = new Metadata(InterchangeFormat.minimal, INTERCHANGE_VERSION, root);
+    final Metadata metadata = new Metadata(InterchangeFormat.complete, INTERCHANGE_VERSION, root);
     assertThat(jsonProvider.objectToPrettyJSON(metadata)).isEqualTo(jsonData);
   }
 
@@ -54,7 +54,7 @@ public class MetadataTest {
   public void shouldDeserialize() throws JsonProcessingException {
     final Metadata metadata = jsonProvider.jsonToObject(jsonData, Metadata.class);
     assertThat(metadata.interchangeFormatVersion).isEqualTo(INTERCHANGE_VERSION);
-    assertThat(metadata.interchangeFormat).isEqualTo(InterchangeFormat.minimal);
+    assertThat(metadata.interchangeFormat).isEqualTo(InterchangeFormat.complete);
     assertThat(metadata.genesisValidatorsRoot).isEqualTo(root);
   }
 
@@ -75,6 +75,6 @@ public class MetadataTest {
 
     JsonNode metadataJson = mapper.readTree(minimalJson).get("metadata");
     Metadata metadata = mapper.treeToValue(metadataJson, Metadata.class);
-    assertThat(metadata.interchangeFormat).isEqualTo(InterchangeFormat.minimal);
+    assertThat(metadata.interchangeFormat).isEqualTo(InterchangeFormat.complete);
   }
 }
