@@ -31,15 +31,15 @@ import tech.pegasys.teku.api.schema.PublicKeyException;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.data.slashinginterchange.InterchangeFormat;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
-import tech.pegasys.teku.data.slashinginterchange.MinimalSigningHistory;
-import tech.pegasys.teku.data.slashinginterchange.MinimalSlashingProtectionInterchangeFormat;
+import tech.pegasys.teku.data.slashinginterchange.SigningHistory;
+import tech.pegasys.teku.data.slashinginterchange.SlashingProtectionInterchangeFormat;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class SlashingProtectionExporter {
   private final JsonProvider jsonProvider = new JsonProvider();
-  private final List<MinimalSigningHistory> minimalSigningHistoryList = new ArrayList<>();
+  private final List<SigningHistory> signingHistoryList = new ArrayList<>();
   private Bytes32 genesisValidatorsRoot = null;
   private final SyncDataAccessor syncDataAccessor = new SyncDataAccessor();
   private final SubCommandLogger log;
@@ -78,8 +78,8 @@ public class SlashingProtectionExporter {
       }
       final String pubkey = file.getName().substring(0, file.getName().length() - ".yml".length());
       log.display("Exporting " + pubkey);
-      minimalSigningHistoryList.add(
-          new MinimalSigningHistory(BLSPubKey.fromHexString(pubkey), validatorSigningRecord));
+      signingHistoryList.add(
+          new SigningHistory(BLSPubKey.fromHexString(pubkey), validatorSigningRecord));
     } catch (IOException e) {
       log.exit(1, "Failed to read from file " + file.toString(), e);
     } catch (PublicKeyException e) {
@@ -91,7 +91,7 @@ public class SlashingProtectionExporter {
     syncDataAccessor.syncedWrite(Path.of(toFileName), getJsonByteData());
     log.display(
         "Wrote "
-            + minimalSigningHistoryList.size()
+            + signingHistoryList.size()
             + " validator slashing protection records to "
             + toFileName);
   }
@@ -99,9 +99,10 @@ public class SlashingProtectionExporter {
   private Bytes getJsonByteData() throws JsonProcessingException {
     final String prettyJson =
         jsonProvider.objectToPrettyJSON(
-            new MinimalSlashingProtectionInterchangeFormat(
-                new Metadata(InterchangeFormat.minimal, INTERCHANGE_VERSION, genesisValidatorsRoot),
-                minimalSigningHistoryList));
+            new SlashingProtectionInterchangeFormat(
+                new Metadata(
+                    InterchangeFormat.complete, INTERCHANGE_VERSION, genesisValidatorsRoot),
+                signingHistoryList));
     return Bytes.of(prettyJson.getBytes(StandardCharsets.UTF_8));
   }
 }

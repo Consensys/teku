@@ -16,13 +16,13 @@ package tech.pegasys.teku.data.slashinginterchange;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import java.util.List;
 
-public class MinimalSlashingProtectionInterchangeFormat {
+public class SlashingProtectionInterchangeFormat {
   public final Metadata metadata;
-  public final List<MinimalSigningHistory> data;
+  public final List<SigningHistory> data;
 
   @JsonCreator
-  public MinimalSlashingProtectionInterchangeFormat(
-      final Metadata metadata, final List<MinimalSigningHistory> data) {
+  public SlashingProtectionInterchangeFormat(
+      final Metadata metadata, final List<SigningHistory> data) {
     this.metadata = metadata;
     this.data = data;
   }
