@@ -13,13 +13,17 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
-
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.storage.client.RecentChainData;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -31,15 +35,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.logging.StatusLogger;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.storage.client.RecentChainData;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
 public class RecentChainDataPerformanceTracker implements PerformanceTracker {
 
@@ -54,15 +55,24 @@ public class RecentChainDataPerformanceTracker implements PerformanceTracker {
 
   private final RecentChainData recentChainData;
   private final StatusLogger statusLogger;
+  private Optional<UInt64> nodeStartEpoch = Optional.empty();
 
-  public RecentChainDataPerformanceTracker(
-      RecentChainData recentChainData, StatusLogger statusLogger) {
+  public RecentChainDataPerformanceTracker(RecentChainData recentChainData, StatusLogger statusLogger) {
     this.recentChainData = recentChainData;
     this.statusLogger = statusLogger;
   }
 
   @Override
+  public void start(UInt64 nodeStartSlot) {
+    this.nodeStartEpoch = Optional.of(compute_epoch_at_slot(nodeStartSlot));
+  }
+
+  @Override
   public void onSlot(UInt64 slot) {
+    if (nodeStartEpoch.isEmpty()) {
+      return;
+    }
+
     UInt64 currentEpoch = compute_epoch_at_slot(slot);
     if (!compute_start_slot_at_epoch(currentEpoch).equals(slot)) {
       return;
@@ -70,7 +80,7 @@ public class RecentChainDataPerformanceTracker implements PerformanceTracker {
 
     // Output attestation performance information for current epoch - 2 since attestations can be
     // included in both the epoch they were produced in or in the one following.
-    if (currentEpoch.isGreaterThanOrEqualTo(UInt64.valueOf(2))) {
+    if (currentEpoch.isGreaterThanOrEqualTo(nodeStartEpoch.get().plus(UInt64.valueOf(2)))) {
       statusLogger.performance(
           getAttestationPerformanceForEpoch(currentEpoch, currentEpoch.minus(UInt64.valueOf(2)))
               .toString());

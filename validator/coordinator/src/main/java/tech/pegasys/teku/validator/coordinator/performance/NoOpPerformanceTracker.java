@@ -18,6 +18,10 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class NoOpPerformanceTracker implements PerformanceTracker {
+
+  @Override
+  public void start(UInt64 nodeStartSlot) {}
+
   @Override
   public void saveSentAttestation(Attestation attestation) {}
 
