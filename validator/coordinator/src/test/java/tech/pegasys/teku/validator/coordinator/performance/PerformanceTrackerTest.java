@@ -13,7 +13,14 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.validator.coordinator.performance.RecentChainDataPerformanceTracker.BLOCK_PERFORMANCE_EVALUATION_INTERVAL;
+
 import com.google.common.eventbus.EventBus;
+import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,21 +38,14 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.validator.coordinator.performance.RecentChainDataPerformanceTracker.BLOCK_PERFORMANCE_EVALUATION_INTERVAL;
-
 public class PerformanceTrackerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final StatusLogger log = mock(StatusLogger.class);
   private final RecentChainData recentChainData =
       MemoryOnlyRecentChainData.create(mock(EventBus.class));
-  private RecentChainDataPerformanceTracker performanceTracker = new RecentChainDataPerformanceTracker(recentChainData, log);
+  private RecentChainDataPerformanceTracker performanceTracker =
+      new RecentChainDataPerformanceTracker(recentChainData, log);
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(64);
   private final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
   private final ChainUpdater chainUpdater = new ChainUpdater(recentChainData, chainBuilder);

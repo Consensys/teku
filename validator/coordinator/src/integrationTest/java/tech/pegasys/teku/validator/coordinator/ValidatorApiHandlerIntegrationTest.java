@@ -60,7 +60,8 @@ public class ValidatorApiHandlerIntegrationTest {
   private final AttestationManager attestationManager = mock(AttestationManager.class);
   private final AttestationTopicSubscriber attestationTopicSubscriber =
       mock(AttestationTopicSubscriber.class);
-  private final RecentChainDataPerformanceTracker performanceTracker = mock(RecentChainDataPerformanceTracker.class);
+  private final RecentChainDataPerformanceTracker performanceTracker =
+      mock(RecentChainDataPerformanceTracker.class);
 
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   private final ValidatorApiHandler handler =

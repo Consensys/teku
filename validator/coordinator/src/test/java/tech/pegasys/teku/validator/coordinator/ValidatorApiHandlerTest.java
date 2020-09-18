@@ -85,7 +85,8 @@ class ValidatorApiHandlerTest {
   private final AttestationTopicSubscriber attestationTopicSubscriptions =
       mock(AttestationTopicSubscriber.class);
   private final EventBus eventBus = mock(EventBus.class);
-  private final RecentChainDataPerformanceTracker performanceTracker = mock(RecentChainDataPerformanceTracker.class);
+  private final RecentChainDataPerformanceTracker performanceTracker =
+      mock(RecentChainDataPerformanceTracker.class);
 
   private final ValidatorApiHandler validatorApiHandler =
       new ValidatorApiHandler(
