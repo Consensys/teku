@@ -28,13 +28,18 @@ public class ChainSelector {
   private static final int SYNC_THRESHOLD_IN_SLOTS = SYNC_THRESHOLD_IN_EPOCHS * SLOTS_PER_EPOCH;
 
   private final MinimumSlotCalculator minimumSlotCalculator;
+  private final TargetChains availableChains;
 
-  private ChainSelector(final MinimumSlotCalculator minimumSlotCalculator) {
+  private ChainSelector(
+      final TargetChains availableChains, final MinimumSlotCalculator minimumSlotCalculator) {
     this.minimumSlotCalculator = minimumSlotCalculator;
+    this.availableChains = availableChains;
   }
 
-  public static ChainSelector createFinalizedChainSelector(final RecentChainData recentChainData) {
+  public static ChainSelector createFinalizedChainSelector(
+      final RecentChainData recentChainData, final TargetChains availableChains) {
     return new ChainSelector(
+        availableChains,
         syncInProgress -> getMinimumSlotForFinalizedTargetChain(recentChainData, syncInProgress));
   }
 
@@ -46,8 +51,9 @@ public class ChainSelector {
   }
 
   public static ChainSelector createNonfinalizedChainSelector(
-      final RecentChainData recentChainData) {
+      final RecentChainData recentChainData, final TargetChains availableChains) {
     return new ChainSelector(
+        availableChains,
         syncInProgress -> getMinimumSlotForNonfinalizedChain(recentChainData, syncInProgress));
   }
 
@@ -61,12 +67,10 @@ public class ChainSelector {
    * Select the best chain to sync to out of the supplied available chains. If empty is returned,
    * the node is considered in sync.
    *
-   * @param availableChains the chains to select from
    * @param syncInProgress whether or not an existing sync is already in progress.
    * @return the sync target or empty if no sync is required
    */
-  public Optional<TargetChain> selectTargetChain(
-      TargetChains availableChains, final boolean syncInProgress) {
+  public Optional<TargetChain> selectTargetChain(final boolean syncInProgress) {
     final UInt64 minimumSlot =
         minimumSlotCalculator.getMinimumSlotForSuitableTargetChain(syncInProgress);
     return availableChains

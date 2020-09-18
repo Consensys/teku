@@ -26,4 +26,11 @@ public interface EventThread extends Executor {
   void start();
 
   void stop();
+
+  /**
+   * Add a task to the end of the event queue. Unlike {@link
+   * EventThread#execute(java.lang.Runnable)}, guarantees that the task will not be executed
+   * immediately, even if the current thread is the event thread.
+   */
+  void executeLater(final Runnable task);
 }

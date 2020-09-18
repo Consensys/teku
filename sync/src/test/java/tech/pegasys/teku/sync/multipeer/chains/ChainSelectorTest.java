@@ -71,7 +71,6 @@ class ChainSelectorTest {
 
   @Test
   void finalized_shouldSelectSuitableTargetChainWithMostPeers() {
-    // Avoids triggering a sync when we may be just about to finalize the next epoch anyway
     final SlotAndBlockRoot chainHead1 = addPeerAtEpoch(recentChainData.getFinalizedEpoch().plus(2));
     final SlotAndBlockRoot chainHead2 = addPeerAtEpoch(recentChainData.getFinalizedEpoch().plus(2));
     addPeerToChain(chainHead1);
@@ -87,14 +86,14 @@ class ChainSelectorTest {
   @Test
   void finalized_shouldNotAddToleranceWhenSyncAlreadyInProgress() {
     addPeerAtEpoch(recentChainData.getFinalizedEpoch().plus(1));
-    assertThat(createFinalizedChainSelector(recentChainData).selectTargetChain(targetChains, true))
+    assertThat(createFinalizedChainSelector(recentChainData, targetChains).selectTargetChain(true))
         .isPresent();
   }
 
   @Test
   void finalized_shouldNotSelectChainsThatAreNotAheadWhenSyncAlreadyInProgress() {
     addPeerAtEpoch(recentChainData.getFinalizedEpoch());
-    assertThat(createFinalizedChainSelector(recentChainData).selectTargetChain(targetChains, true))
+    assertThat(createFinalizedChainSelector(recentChainData, targetChains).selectTargetChain(true))
         .isEmpty();
   }
 
@@ -144,7 +143,7 @@ class ChainSelectorTest {
   void nonfinalized_shouldNotAddToleranceWhenSyncAlreadyInProgress() {
     addPeerAtSlot(recentChainData.getHeadSlot().plus(1));
     assertThat(
-            createNonfinalizedChainSelector(recentChainData).selectTargetChain(targetChains, true))
+            createNonfinalizedChainSelector(recentChainData, targetChains).selectTargetChain(true))
         .isPresent();
   }
 
@@ -152,7 +151,7 @@ class ChainSelectorTest {
   void nonfinalized_shouldNotSelectChainsThatAreNotAheadWhenSyncAlreadyInProgress() {
     addPeerAtSlot(recentChainData.getHeadSlot());
     assertThat(
-            createNonfinalizedChainSelector(recentChainData).selectTargetChain(targetChains, true))
+            createNonfinalizedChainSelector(recentChainData, targetChains).selectTargetChain(true))
         .isEmpty();
   }
 
@@ -172,10 +171,10 @@ class ChainSelectorTest {
   }
 
   private Optional<TargetChain> selectFinalSyncTarget() {
-    return createFinalizedChainSelector(recentChainData).selectTargetChain(targetChains, false);
+    return createFinalizedChainSelector(recentChainData, targetChains).selectTargetChain(false);
   }
 
   private Optional<TargetChain> selectNonfinalSyncTarget() {
-    return createNonfinalizedChainSelector(recentChainData).selectTargetChain(targetChains, false);
+    return createNonfinalizedChainSelector(recentChainData, targetChains).selectTargetChain(false);
   }
 }

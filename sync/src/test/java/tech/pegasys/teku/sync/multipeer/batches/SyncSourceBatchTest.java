@@ -197,6 +197,11 @@ public class SyncSourceBatchTest {
 
     final Runnable callback = mock(Runnable.class);
     batch.requestMoreBlocks(callback);
+    // Should only invoke callback via executeLater to give a chance for disconnected events to
+    // be processed on the event thread, rather than executing a tight loop retrying requests
+    // to disconnected peers.
+    verifyNoInteractions(callback);
+    eventThread.executePendingTasks();
     verify(callback).run();
     assertThatBatch(batch).isNotAwaitingBlocks();
   }

@@ -545,6 +545,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
           MultipeerSyncService.create(
               asyncRunnerFactory,
               asyncRunner,
+              timeProvider,
               eventBus,
               eventChannels,
               recentChainData,
