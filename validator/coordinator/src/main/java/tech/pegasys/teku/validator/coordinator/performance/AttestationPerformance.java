@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import static tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker.getPercentage;
-
 import com.google.common.base.Objects;
+
+import static tech.pegasys.teku.validator.coordinator.performance.RecentChainDataPerformanceTracker.getPercentage;
 
 public class AttestationPerformance {
   private final int numberOfSentAttestations;
@@ -41,6 +41,10 @@ public class AttestationPerformance {
     this.inclusionDistanceAverage = inclusionDistanceAverage;
     this.correctTargetCount = correctTargetCount;
     this.correctHeadBlockCount = correctHeadBlockCount;
+  }
+
+  public static AttestationPerformance empty() {
+    return new AttestationPerformance(0, 0, 0, 0, 0, 0, 0);
   }
 
   @Override

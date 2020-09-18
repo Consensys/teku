@@ -67,7 +67,7 @@ import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
-import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
+import tech.pegasys.teku.validator.coordinator.performance.RecentChainDataPerformanceTracker;
 
 class ValidatorApiHandlerTest {
 
@@ -85,7 +85,7 @@ class ValidatorApiHandlerTest {
   private final AttestationTopicSubscriber attestationTopicSubscriptions =
       mock(AttestationTopicSubscriber.class);
   private final EventBus eventBus = mock(EventBus.class);
-  private final PerformanceTracker performanceTracker = mock(PerformanceTracker.class);
+  private final RecentChainDataPerformanceTracker performanceTracker = mock(RecentChainDataPerformanceTracker.class);
 
   private final ValidatorApiHandler validatorApiHandler =
       new ValidatorApiHandler(

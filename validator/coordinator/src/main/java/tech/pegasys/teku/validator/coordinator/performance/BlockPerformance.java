@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import static tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker.getPercentage;
-
 import com.google.common.base.Objects;
+
+import static tech.pegasys.teku.validator.coordinator.performance.RecentChainDataPerformanceTracker.getPercentage;
 
 public class BlockPerformance {
   private final int numberOfIncludedBlocks;
