@@ -13,14 +13,15 @@
 
 package tech.pegasys.teku.util.config;
 
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
 /**
  * @deprecated - Use TekuConfigurationBuilder where possible. Global application configuration
@@ -55,6 +56,7 @@ public class GlobalConfigurationBuilder {
   private String initialState;
   private int interopNumberOfValidators;
   private boolean interopEnabled;
+  private boolean validatorKeystoreLockingEnabled;
   private String validatorsKeyFile;
   private List<String> validatorKeystoreFiles = new ArrayList<>();
   private List<String> validatorKeystorePasswordFiles = new ArrayList<>();
@@ -231,6 +233,11 @@ public class GlobalConfigurationBuilder {
 
   public GlobalConfigurationBuilder setInteropEnabled(final boolean interopEnabled) {
     this.interopEnabled = interopEnabled;
+    return this;
+  }
+
+  public GlobalConfigurationBuilder setValidatorKeystoreLockingEnabled(final boolean keystoreLockingEnabled) {
+    this.validatorKeystoreLockingEnabled = keystoreLockingEnabled;
     return this;
   }
 
@@ -535,6 +542,7 @@ public class GlobalConfigurationBuilder {
         initialState,
         interopNumberOfValidators,
         interopEnabled,
+        validatorKeystoreLockingEnabled,
         validatorsKeyFile,
         validatorKeystoreFiles,
         validatorKeystorePasswordFiles,

@@ -13,11 +13,12 @@
 
 package tech.pegasys.teku.cli.options;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ValidatorOptions {
   @Option(
@@ -80,6 +81,17 @@ public class ValidatorOptions {
           "Graffiti to include during block creation (gets converted to bytes and padded to Bytes32).",
       arity = "1")
   private Bytes32 graffiti;
+
+  @Option(
+          names = {"--validators-keystore-locking-enabled"},
+          paramLabel = "<BOOLEAN>",
+          description = "Enable locking validator keystore files",
+          arity = "1")
+  private boolean validatorKeystoreLockingEnabled = true;
+
+  public boolean isValidatorKeystoreLockingEnabled() {
+    return validatorKeystoreLockingEnabled;
+  }
 
   public List<String> getValidatorKeystoreFiles() {
     return validatorKeystoreFiles;
