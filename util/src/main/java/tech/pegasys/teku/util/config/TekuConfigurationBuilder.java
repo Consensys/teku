@@ -13,14 +13,15 @@
 
 package tech.pegasys.teku.util.config;
 
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
 public class TekuConfigurationBuilder {
 
@@ -50,6 +51,7 @@ public class TekuConfigurationBuilder {
   private String initialState;
   private int interopNumberOfValidators;
   private boolean interopEnabled;
+  private boolean validatorPerformanceTrackingEnabled;
   private String validatorsKeyFile;
   private List<String> validatorKeystoreFiles = new ArrayList<>();
   private List<String> validatorKeystorePasswordFiles = new ArrayList<>();
@@ -225,6 +227,11 @@ public class TekuConfigurationBuilder {
 
   public TekuConfigurationBuilder setInteropEnabled(final boolean interopEnabled) {
     this.interopEnabled = interopEnabled;
+    return this;
+  }
+
+  public TekuConfigurationBuilder setValidatorPerformanceTrackingEnabled(final boolean trackingEnabled) {
+    this.validatorPerformanceTrackingEnabled = trackingEnabled;
     return this;
   }
 
@@ -526,6 +533,7 @@ public class TekuConfigurationBuilder {
         initialState,
         interopNumberOfValidators,
         interopEnabled,
+        validatorPerformanceTrackingEnabled,
         validatorsKeyFile,
         validatorKeystoreFiles,
         validatorKeystorePasswordFiles,
