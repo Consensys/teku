@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
@@ -93,6 +94,7 @@ public class BlockImporterTest {
   public void setup() {
     otherChain.initializeStorage();
     localChain.initializeStorage();
+    when(weakSubjectivityValidator.isBlockValid(any(), any())).thenReturn(true);
   }
 
   @Test
