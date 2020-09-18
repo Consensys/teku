@@ -66,6 +66,7 @@ public class GlobalConfiguration implements MetricsConfig {
   private final boolean interopEnabled;
 
   // Validator
+  private final boolean validatorKeystoreLockingEnabled;
   private final String validatorsKeyFile;
   private final List<String> validatorKeystoreFiles;
   private final List<String> validatorKeystorePasswordFiles;
@@ -161,6 +162,7 @@ public class GlobalConfiguration implements MetricsConfig {
       final String initialState,
       final int interopNumberOfValidators,
       final boolean interopEnabled,
+      final boolean validatorKeystoreLockingEnabled,
       final String validatorsKeyFile,
       final List<String> validatorKeystoreFiles,
       final List<String> validatorKeystorePasswordFiles,
@@ -232,6 +234,7 @@ public class GlobalConfiguration implements MetricsConfig {
     this.initialState = initialState;
     this.interopNumberOfValidators = interopNumberOfValidators;
     this.interopEnabled = interopEnabled;
+    this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
     this.validatorsKeyFile = validatorsKeyFile;
     this.validatorKeystoreFiles = validatorKeystoreFiles;
     this.validatorKeystorePasswordFiles = validatorKeystorePasswordFiles;
@@ -386,6 +389,10 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public boolean isInteropEnabled() {
     return interopEnabled;
+  }
+
+  public boolean isValidatorKeystoreLockingEnabled() {
+    return validatorKeystoreLockingEnabled;
   }
 
   public String getValidatorsKeyFile() {
