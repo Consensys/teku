@@ -17,6 +17,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 
 /**
  * Represents an external source of blocks to sync. Typically a peer, but this provides the minimal
@@ -24,8 +25,10 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
  */
 public interface SyncSource {
   SafeFuture<Void> requestBlocksByRange(
-      final UInt64 startSlot,
-      final UInt64 count,
-      final UInt64 step,
-      final ResponseStreamListener<SignedBeaconBlock> listener);
+      UInt64 startSlot,
+      UInt64 count,
+      UInt64 step,
+      ResponseStreamListener<SignedBeaconBlock> listener);
+
+  SafeFuture<Void> disconnectCleanly(DisconnectReason reason);
 }

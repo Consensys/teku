@@ -36,12 +36,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.services.remotevalidator.RemoteValidatorSubscriptions.SubscriptionStatus;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.validator.remote.BeaconChainEvent;
 
 class RemoteValidatorApiTest {
 
-  private final TekuConfiguration configuration = mock(TekuConfiguration.class);
+  private final GlobalConfiguration configuration = mock(GlobalConfiguration.class);
 
   private final RemoteValidatorSubscriptions subscriptionManager =
       mock(RemoteValidatorSubscriptions.class);

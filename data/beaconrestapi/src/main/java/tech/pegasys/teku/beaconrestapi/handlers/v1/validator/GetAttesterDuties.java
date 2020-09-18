@@ -49,6 +49,7 @@ import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.util.config.Constants;
 
 public class GetAttesterDuties extends AbstractHandler implements Handler {
   private static final Logger LOG = LogManager.getLogger();
@@ -78,7 +79,7 @@ public class GetAttesterDuties extends AbstractHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get validator duties",
+      summary = "Get attester duties",
       tags = {TG_V1_VALIDATOR},
       description =
           "Requests the beacon node to provide a set of attestation duties, "
@@ -115,7 +116,7 @@ public class GetAttesterDuties extends AbstractHandler implements Handler {
     try {
       final UInt64 epoch = UInt64.valueOf(parameters.get(EPOCH));
       final UInt64 currentEpoch = chainDataProvider.getCurrentEpoch();
-      if (currentEpoch.plus(UInt64.ONE).isLessThan(epoch)) {
+      if (currentEpoch.plus(Constants.MIN_SEED_LOOKAHEAD).isLessThan(epoch)) {
         ctx.result(
             jsonProvider.objectToJSON(
                 new BadRequest(

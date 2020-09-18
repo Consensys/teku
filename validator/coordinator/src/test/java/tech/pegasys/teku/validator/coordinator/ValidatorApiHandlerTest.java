@@ -25,6 +25,7 @@ import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.eventbus.EventBus;
@@ -62,14 +63,16 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.SyncState;
 import tech.pegasys.teku.sync.SyncStateTracker;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
+import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 class ValidatorApiHandlerTest {
 
   private static final UInt64 EPOCH = UInt64.valueOf(13);
-  private static final UInt64 PREVIOUS_EPOCH = EPOCH.minus(UInt64.ONE);
+  private static final UInt64 PREVIOUS_EPOCH = EPOCH.minus(ONE);
   private static final UInt64 PREVIOUS_EPOCH_START_SLOT =
       BeaconStateUtil.compute_start_slot_at_epoch(PREVIOUS_EPOCH);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -291,11 +294,88 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
+  public void getAttestationDuties_shouldFailWhenNodeIsSyncing() {
+    nodeIsSyncing();
+    final SafeFuture<Optional<List<AttesterDuties>>> duties =
+        validatorApiHandler.getAttestationDuties(EPOCH, List.of(1));
+    assertThat(duties).isCompletedExceptionally();
+    assertThatThrownBy(duties::get).hasRootCauseInstanceOf(NodeSyncingException.class);
+  }
+
+  @Test
+  public void getAttestationDuties_shouldFailWhenNoIndexesSpecified() {
+    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+        .thenReturn(completedFuture(Optional.of(createStateWithActiveValidators())));
+
+    final SafeFuture<Optional<List<AttesterDuties>>> result =
+        validatorApiHandler.getAttestationDuties(EPOCH, emptyList());
+    final Optional<List<AttesterDuties>> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.get()).isEmpty();
+  }
+
+  @Test
+  public void getAttestationDuties_shouldFailForEpochTooFarAhead() {
+    when(chainDataClient.getCurrentEpoch()).thenReturn(UInt64.valueOf(11));
+
+    final SafeFuture<Optional<List<AttesterDuties>>> result =
+        validatorApiHandler.getAttestationDuties(EPOCH, List.of(1));
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get).hasRootCauseInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void getAttestationDuties_shouldReturnDutiesAndSkipMissingValidators() {
+    final BeaconState state = createStateWithActiveValidators();
+    final BLSPublicKey validator1Key = state.getValidators().get(1).getPubkey();
+    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+        .thenReturn(completedFuture(Optional.of(state)));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
+
+    final SafeFuture<Optional<List<AttesterDuties>>> result =
+        validatorApiHandler.getAttestationDuties(EPOCH, List.of(1, 32));
+    final Optional<List<AttesterDuties>> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.get())
+        .containsExactly(new AttesterDuties(validator1Key, 1, 4, 0, 1, UInt64.valueOf(108)));
+  }
+
+  @Test
+  public void getProposerDuties_shouldFailWhenNodeIsSyncing() {
+    nodeIsSyncing();
+    final SafeFuture<Optional<List<ProposerDuties>>> duties =
+        validatorApiHandler.getProposerDuties(EPOCH);
+    assertThat(duties).isCompletedExceptionally();
+    assertThatThrownBy(duties::get).hasRootCauseInstanceOf(NodeSyncingException.class);
+  }
+
+  @Test
+  public void getProposerDuties_shouldFailForEpochTooFarAhead() {
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(UInt64.ONE));
+
+    final SafeFuture<Optional<List<ProposerDuties>>> result =
+        validatorApiHandler.getProposerDuties(EPOCH);
+    assertThat(result).isCompletedExceptionally();
+    assertThatThrownBy(result::get).hasRootCauseInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void getProposerDuties_shouldReturnDutiesForCurrentEpoch() {
+    final BeaconState state = createStateWithActiveValidators();
+    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+        .thenReturn(completedFuture(Optional.of(state)));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
+
+    final SafeFuture<Optional<List<ProposerDuties>>> result =
+        validatorApiHandler.getProposerDuties(EPOCH);
+    final Optional<List<ProposerDuties>> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.get().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
+  }
+
+  @Test
   public void createUnsignedBlock_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
     final SafeFuture<Optional<BeaconBlock>> result =
         validatorApiHandler.createUnsignedBlock(
-            UInt64.ONE, dataStructureUtil.randomSignature(), Optional.empty());
+            ONE, dataStructureUtil.randomSignature(), Optional.empty());
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -313,7 +393,7 @@ class ValidatorApiHandlerTest {
 
     when(chainDataClient.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     when(chainDataClient.getHeadSlot()).thenReturn(UInt64.valueOf(24));
-    when(chainDataClient.getBlockAndStateInEffectAtSlot(newSlot.minus(UInt64.ONE)))
+    when(chainDataClient.getBlockAndStateInEffectAtSlot(newSlot.minus(ONE)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(previousBlockAndState)));
     when(blockFactory.createUnsignedBlock(
             previousState,
@@ -333,7 +413,7 @@ class ValidatorApiHandlerTest {
   public void createUnsignedAttestation_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
     final SafeFuture<Optional<Attestation>> result =
-        validatorApiHandler.createUnsignedAttestation(UInt64.ONE, 1);
+        validatorApiHandler.createUnsignedAttestation(ONE, 1);
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -341,7 +421,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void createUnsignedAttestation_shouldCreateAttestation() {
-    final UInt64 slot = compute_start_slot_at_epoch(EPOCH).plus(UInt64.ONE);
+    final UInt64 slot = compute_start_slot_at_epoch(EPOCH).plus(ONE);
 
     final BeaconState state = createStateWithActiveValidators(PREVIOUS_EPOCH_START_SLOT);
     final SignedBeaconBlock block =
@@ -450,8 +530,8 @@ class ValidatorApiHandlerTest {
         .onAttestation(ValidateableAttestation.fromSignedAggregate(aggregateAndProof));
   }
 
-  private Optional<List<ValidatorDuties>> assertCompletedSuccessfully(
-      final SafeFuture<Optional<List<ValidatorDuties>>> result) {
+  private <T> Optional<List<T>> assertCompletedSuccessfully(
+      final SafeFuture<Optional<List<T>>> result) {
     assertThat(result).isCompleted();
     return result.join();
   }

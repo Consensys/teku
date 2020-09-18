@@ -21,7 +21,7 @@ import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.DataOptions;
 import tech.pegasys.teku.data.SlashingProtectionExporter;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 @CommandLine.Command(
     name = "export",
@@ -78,7 +78,7 @@ public class ExportCommand implements Runnable {
     }
   }
 
-  private TekuConfiguration tekuConfiguration() {
-    return TekuConfiguration.builder().setDataPath(dataOptions.getDataPath()).build();
+  private GlobalConfiguration tekuConfiguration() {
+    return GlobalConfiguration.builder().setDataPath(dataOptions.getDataPath()).build();
   }
 }

@@ -288,7 +288,10 @@ public class ChainBuilder {
     final SignedBlockAndState latest = getLatestBlockAndState();
     checkState(
         slot.compareTo(latest.getState().getSlot()) > 0,
-        "Cannot generate block at historical slot");
+        "Cannot generate block at historical slot. Latest slot "
+            + latest.getState().getSlot()
+            + " asked for: "
+            + slot);
 
     return appendNewBlockToChain(slot, options);
   }

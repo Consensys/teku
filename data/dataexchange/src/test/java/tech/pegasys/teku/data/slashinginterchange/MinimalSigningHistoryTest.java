@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.schema.BLSPubKey;
+import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
@@ -47,15 +48,16 @@ public class MinimalSigningHistoryTest {
     JsonNode metadataJson = jsonNode.get("metadata");
     Metadata metadata = mapper.treeToValue(metadataJson, Metadata.class);
     assertThat(metadata)
-        .isEqualTo(new Metadata(InterchangeFormat.minimal, INTERCHANGE_VERSION, GENESIS_ROOT));
+        .isEqualTo(new Metadata(InterchangeFormat.complete, INTERCHANGE_VERSION, GENESIS_ROOT));
 
-    List<MinimalSigningHistory> minimalSigningHistoryList =
-        Arrays.asList(
-            mapper.readValue(jsonNode.get("data").toString(), MinimalSigningHistory[].class));
+    List<SigningHistory> minimalSigningHistoryList =
+        Arrays.asList(mapper.readValue(jsonNode.get("data").toString(), SigningHistory[].class));
 
-    assertThat(minimalSigningHistoryList)
-        .containsExactly(
-            new MinimalSigningHistory(
-                blsPubKey, UInt64.valueOf(89765), UInt64.valueOf(2990), UInt64.valueOf(3007)));
+    SigningHistory element =
+        new SigningHistory(
+            blsPubKey,
+            new ValidatorSigningRecord(
+                GENESIS_ROOT, UInt64.valueOf(81952), UInt64.valueOf(2290), UInt64.valueOf(3007)));
+    assertThat(minimalSigningHistoryList).containsExactly(element);
   }
 }

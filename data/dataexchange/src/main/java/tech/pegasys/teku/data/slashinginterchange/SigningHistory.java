@@ -15,6 +15,9 @@ package tech.pegasys.teku.data.slashinginterchange;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -22,63 +25,76 @@ import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class MinimalSigningHistory {
+public class SigningHistory {
   @JsonProperty("pubkey")
   public final BLSPubKey pubkey;
 
-  @JsonProperty("last_signed_block_slot")
-  public final UInt64 lastSignedBlockSlot;
+  @JsonProperty("signed_blocks")
+  public final List<SignedBlock> signedBlocks;
 
-  @JsonProperty("last_signed_attestation_source_epoch")
-  public final UInt64 lastSignedAttestationSourceEpoch;
-
-  @JsonProperty("last_signed_attestation_target_epoch")
-  public final UInt64 lastSignedAttestationTargetEpoch;
+  @JsonProperty("signed_attestations")
+  public final List<SignedAttestation> signedAttestations;
 
   @JsonCreator
-  public MinimalSigningHistory(
+  public SigningHistory(
       @JsonProperty("pubkey") final BLSPubKey pubkey,
-      @JsonProperty("last_signed_block_slot") final UInt64 lastSignedBlockSlot,
-      @JsonProperty("last_signed_attestation_source_epoch")
-          final UInt64 lastSignedAttestationSourceEpoch,
-      @JsonProperty("last_signed_attestation_target_epoch")
-          final UInt64 lastSignedAttestationTargetEpoch) {
+      @JsonProperty("signed_blocks") final List<SignedBlock> signedBlocks,
+      @JsonProperty("signed_attestations") final List<SignedAttestation> signedAttestations) {
     this.pubkey = pubkey;
-    this.lastSignedBlockSlot = lastSignedBlockSlot;
-    this.lastSignedAttestationSourceEpoch = lastSignedAttestationSourceEpoch;
-    this.lastSignedAttestationTargetEpoch = lastSignedAttestationTargetEpoch;
+    this.signedBlocks = signedBlocks;
+    this.signedAttestations = signedAttestations;
   }
 
-  public MinimalSigningHistory(
-      final BLSPubKey blsPubKey, final ValidatorSigningRecord validatorSigningRecord) {
-    this.pubkey = blsPubKey;
-    this.lastSignedBlockSlot = validatorSigningRecord.getBlockSlot();
-    this.lastSignedAttestationSourceEpoch = validatorSigningRecord.getAttestationSourceEpoch();
-    this.lastSignedAttestationTargetEpoch = validatorSigningRecord.getAttestationTargetEpoch();
+  public SigningHistory(final BLSPubKey pubkey, final ValidatorSigningRecord record) {
+    this.pubkey = pubkey;
+    this.signedBlocks = new ArrayList<>();
+    signedBlocks.add(new SignedBlock(record.getBlockSlot(), null));
+    this.signedAttestations = new ArrayList<>();
+    signedAttestations.add(
+        new SignedAttestation(
+            record.getAttestationSourceEpoch(), record.getAttestationTargetEpoch(), null));
   }
 
   @Override
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final MinimalSigningHistory that = (MinimalSigningHistory) o;
+    final SigningHistory that = (SigningHistory) o;
     return Objects.equals(pubkey, that.pubkey)
-        && Objects.equals(lastSignedBlockSlot, that.lastSignedBlockSlot)
-        && Objects.equals(lastSignedAttestationSourceEpoch, that.lastSignedAttestationSourceEpoch)
-        && Objects.equals(lastSignedAttestationTargetEpoch, that.lastSignedAttestationTargetEpoch);
+        && Objects.equals(signedBlocks, that.signedBlocks)
+        && Objects.equals(signedAttestations, that.signedAttestations);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("pubkey", pubkey)
+        .add("signedBlocks", signedBlocks)
+        .add("signedAttestations", signedAttestations)
+        .toString();
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-        pubkey,
-        lastSignedBlockSlot,
-        lastSignedAttestationSourceEpoch,
-        lastSignedAttestationTargetEpoch);
+    return Objects.hash(pubkey, signedBlocks, signedAttestations);
   }
 
   public ValidatorSigningRecord toValidatorSigningRecord(
       final Optional<ValidatorSigningRecord> maybeRecord, final Bytes32 genesisValidatorsRoot) {
+
+    final UInt64 lastSignedBlockSlot =
+        signedBlocks.stream().map(SignedBlock::getSlot).max(UInt64::compareTo).orElse(UInt64.ZERO);
+    final UInt64 lastSignedAttestationSourceEpoch =
+        signedAttestations.stream()
+            .map(SignedAttestation::getSourceEpoch)
+            .max(UInt64::compareTo)
+            .orElse(null);
+    final UInt64 lastSignedAttestationTargetEpoch =
+        signedAttestations.stream()
+            .map(SignedAttestation::getTargetEpoch)
+            .max(UInt64::compareTo)
+            .orElse(null);
+
     if (maybeRecord.isPresent()) {
       final ValidatorSigningRecord record = maybeRecord.get();
       return new ValidatorSigningRecord(

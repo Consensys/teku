@@ -47,6 +47,7 @@ import tech.pegasys.teku.cli.options.RemoteValidatorApiOptions;
 import tech.pegasys.teku.cli.options.StoreOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
+import tech.pegasys.teku.cli.options.WeakSubjectivityOptions;
 import tech.pegasys.teku.cli.subcommand.DepositCommand;
 import tech.pegasys.teku.cli.subcommand.GenesisCommand;
 import tech.pegasys.teku.cli.subcommand.PeerCommand;
@@ -58,13 +59,14 @@ import tech.pegasys.teku.cli.subcommand.debug.DebugToolsCommand;
 import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
 import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
+import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.util.config.Eth1Address;
+import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.NetworkDefinition;
-import tech.pegasys.teku.util.config.TekuConfiguration;
 
 @SuppressWarnings("unused")
 @Command(
@@ -171,6 +173,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Mixin(name = "Validator Client")
   private ValidatorClientOptions validatorClientOptions;
 
+  @Mixin(name = "Weak Subjectivity")
+  private WeakSubjectivityOptions weakSubjectivityOptions;
+
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
       final PrintWriter errorWriter,
@@ -270,8 +275,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
   public Integer call() {
     try {
       setLogLevels();
-      final TekuConfiguration tekuConfiguration = tekuConfiguration();
-      startAction.accept(tekuConfiguration);
+      final TekuConfiguration tekuConfig = tekuConfiguration();
+      startAction.accept(tekuConfig);
       return 0;
     } catch (InvalidConfigurationException | DatabaseStorageException ex) {
       reportUserError(ex);
@@ -318,7 +323,16 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   protected TekuConfiguration tekuConfiguration() {
-    return TekuConfiguration.builder()
+    TekuConfiguration.Builder builder = TekuConfiguration.builder();
+
+    builder.globalConfig(this::buildGlobalConfiguration);
+    weakSubjectivityOptions.configure(builder);
+
+    return builder.build();
+  }
+
+  private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
+    builder
         .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
         .setStartupTargetPeerCount(networkOptions.getStartupTargetPeerCount())
         .setStartupTimeoutSeconds(networkOptions.getStartupTimeoutSeconds())
@@ -391,7 +405,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setRemoteValidatorApiEnabled(remoteValidatorApiOptions.isApiEnabled())
         .setValidatorClient(false)
         .setBeaconNodeApiEndpoint(validatorClientOptions.getBeaconNodeApiEndpoint())
-        .setBeaconNodeEventsWsEndpoint(validatorClientOptions.getBeaconNodeEventsWsEndpoint())
-        .build();
+        .setBeaconNodeEventsWsEndpoint(validatorClientOptions.getBeaconNodeEventsWsEndpoint());
   }
 }

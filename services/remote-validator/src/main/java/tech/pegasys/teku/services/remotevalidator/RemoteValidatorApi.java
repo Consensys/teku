@@ -26,7 +26,7 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.websocket.api.StatusCode;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.services.remotevalidator.RemoteValidatorSubscriptions.SubscriptionStatus;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 class RemoteValidatorApi {
 
@@ -37,7 +37,7 @@ class RemoteValidatorApi {
   private final JsonProvider jsonProvider = new JsonProvider();
 
   RemoteValidatorApi(
-      final TekuConfiguration configuration,
+      final GlobalConfiguration configuration,
       final RemoteValidatorSubscriptions subscriptionManager) {
     checkNotNull(configuration, "TekuConfiguration can't be null");
     checkNotNull(subscriptionManager, "RemoteValidatorSubscriptions can't be null");
@@ -55,7 +55,7 @@ class RemoteValidatorApi {
     configureServer(configuration);
   }
 
-  private void configureServer(final TekuConfiguration configuration) {
+  private void configureServer(final GlobalConfiguration configuration) {
     Objects.requireNonNull(this.app.server())
         .setServerHost(configuration.getRemoteValidatorApiInterface());
     Objects.requireNonNull(this.app.server())

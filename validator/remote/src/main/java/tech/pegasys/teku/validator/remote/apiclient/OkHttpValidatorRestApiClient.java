@@ -17,6 +17,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_FORK;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF;
@@ -49,6 +50,8 @@ import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
 import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
@@ -102,6 +105,13 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             GET_ATTESTATION_DUTIES,
             Map.of("index", validatorIndexes.toString()),
             GetAttesterDutiesResponse.class)
+        .map(response -> response.data)
+        .orElse(Collections.emptyList());
+  }
+
+  @Override
+  public List<ProposerDuty> getProposerDuties(final UInt64 epoch) {
+    return get(GET_PROPOSER_DUTIES, Collections.emptyMap(), GetProposerDutiesResponse.class)
         .map(response -> response.data)
         .orElse(Collections.emptyList());
   }

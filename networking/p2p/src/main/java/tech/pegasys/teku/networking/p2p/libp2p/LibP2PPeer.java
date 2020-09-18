@@ -87,7 +87,7 @@ public class LibP2PPeer implements Peer {
   }
 
   @Override
-  public SafeFuture<?> disconnectCleanly(final DisconnectReason reason) {
+  public SafeFuture<Void> disconnectCleanly(final DisconnectReason reason) {
     connected.set(false);
     disconnectReason = Optional.of(reason);
     disconnectLocallyInitiated = true;

@@ -42,12 +42,17 @@ import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
+  private final KeystoreLocker keystoreLocker;
+
+  public KeystoresValidatorKeyProvider(KeystoreLocker keystoreLocker) {
+    this.keystoreLocker = keystoreLocker;
+  }
 
   @Override
-  public List<BLSKeyPair> loadValidatorKeys(final TekuConfiguration config) {
+  public List<BLSKeyPair> loadValidatorKeys(final GlobalConfiguration config) {
     final List<Pair<Path, Path>> keystorePasswordFilePairs =
         config.getValidatorKeystorePasswordFilePairs();
     checkNotNull(keystorePasswordFilePairs, "validator keystore and password pairs cannot be null");
@@ -98,6 +103,7 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
 
   private Bytes32 loadBLSPrivateKey(final Path keystoreFile, final String password) {
     try {
+      keystoreLocker.lockKeystore(keystoreFile);
       final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(keystoreFile);
       if (!KeyStore.validatePassword(password, keyStoreData)) {
         throw new IllegalArgumentException("Invalid keystore password: " + keystoreFile);

@@ -97,8 +97,8 @@ import tech.pegasys.teku.sync.multipeer.MultipeerSyncService;
 import tech.pegasys.teku.sync.noop.NoopSyncService;
 import tech.pegasys.teku.sync.singlepeer.SinglePeerSyncServiceFactory;
 import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
-import tech.pegasys.teku.util.config.TekuConfiguration;
 import tech.pegasys.teku.util.time.TimeProvider;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.util.time.channels.TimeTickChannel;
@@ -120,7 +120,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
-  private final TekuConfiguration config;
+  private final GlobalConfiguration config;
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
   private final EventBus eventBus;
@@ -560,7 +560,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
           MultipeerSyncService.create(
               asyncRunnerFactory,
               asyncRunner,
+              timeProvider,
               eventBus,
+              eventChannels,
               recentChainData,
               p2pNetwork,
               blockImporter);

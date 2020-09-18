@@ -31,6 +31,8 @@ import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 
@@ -40,6 +42,8 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   public static final String DUTIES_REQUESTS_COUNTER_NAME = "beacon_node_duties_requests_total";
   public static final String ATTESTATION_DUTIES_REQUESTS_COUNTER_NAME =
       "beacon_node_attestation_duties_requests_total";
+  public static final String PROPOSER_DUTIES_REQUESTS_COUNTER_NAME =
+      "beacon_node_proposer_duties_requests_total";
   public static final String UNSIGNED_BLOCK_REQUESTS_COUNTER_NAME =
       "beacon_node_unsigned_block_requests_total";
   public static final String UNSIGNED_ATTESTATION_REQUEST_COUNTER_NAME =
@@ -59,6 +63,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   private final BeaconChainRequestCounter forkInfoRequestCounter;
   private final BeaconChainRequestCounter dutiesRequestCounter;
   private final BeaconChainRequestCounter attestationDutiesRequestCounter;
+  private final BeaconChainRequestCounter proposerDutiesRequestCounter;
   private final BeaconChainRequestCounter unsignedBlockRequestsCounter;
   private final BeaconChainRequestCounter unsignedAttestationRequestsCounter;
   private final BeaconChainRequestCounter aggregateRequestsCounter;
@@ -87,6 +92,11 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             metricsSystem,
             ATTESTATION_DUTIES_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for validator attestation duties");
+    proposerDutiesRequestCounter =
+        BeaconChainRequestCounter.create(
+            metricsSystem,
+            PROPOSER_DUTIES_REQUESTS_COUNTER_NAME,
+            "Counter recording the number of requests for validator proposer duties");
     unsignedBlockRequestsCounter =
         BeaconChainRequestCounter.create(
             metricsSystem,
@@ -141,10 +151,15 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<ValidatorDuties>>> getAttestationDuties(
+  public SafeFuture<Optional<List<AttesterDuties>>> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes) {
     return countRequest(
         delegate.getAttestationDuties(epoch, validatorIndexes), attestationDutiesRequestCounter);
+  }
+
+  @Override
+  public SafeFuture<Optional<List<ProposerDuties>>> getProposerDuties(final UInt64 epoch) {
+    return countRequest(delegate.getProposerDuties(epoch), proposerDutiesRequestCounter);
   }
 
   @Override

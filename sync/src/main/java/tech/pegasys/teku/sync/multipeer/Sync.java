@@ -25,5 +25,5 @@ public interface Sync {
    * @param targetChain the chain to sync to
    * @return a future that completes when the sync is complete
    */
-  SafeFuture<Void> syncToChain(TargetChain targetChain);
+  SafeFuture<SyncResult> syncToChain(TargetChain targetChain);
 }

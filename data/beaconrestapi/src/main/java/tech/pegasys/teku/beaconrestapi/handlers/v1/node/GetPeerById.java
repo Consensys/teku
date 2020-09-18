@@ -54,7 +54,7 @@ public class GetPeerById implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get peer",
+      summary = "Get node peer",
       tags = {TAG_V1_NODE},
       description = "Retrieves data about the given peer.",
       responses = {

@@ -63,6 +63,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttesterDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAggregate;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetNewBlock;
@@ -75,8 +76,8 @@ import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToPersist
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.util.cli.VersionProvider;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
-import tech.pegasys.teku.util.config.TekuConfiguration;
 
 public class BeaconRestApi {
 
@@ -85,7 +86,8 @@ public class BeaconRestApi {
   private static final Logger LOG = LogManager.getLogger();
   public static final String FILE_NOT_FOUND_HTML = "404.html";
 
-  private void initialize(final DataProvider dataProvider, final TekuConfiguration configuration) {
+  private void initialize(
+      final DataProvider dataProvider, final GlobalConfiguration configuration) {
     app.server().setServerHost(configuration.getRestApiInterface());
     app.server().setServerPort(configuration.getRestApiPort());
 
@@ -104,7 +106,7 @@ public class BeaconRestApi {
     addV1ValidatorHandlers(dataProvider);
   }
 
-  private void addHostAllowlistHandler(final TekuConfiguration configuration) {
+  private void addHostAllowlistHandler(final GlobalConfiguration configuration) {
     app.before(
         (ctx) -> {
           String header = ctx.host();
@@ -115,7 +117,7 @@ public class BeaconRestApi {
         });
   }
 
-  private void addCustomErrorPages(final TekuConfiguration configuration) {
+  private void addCustomErrorPages(final GlobalConfiguration configuration) {
     if (configuration.isRestApiDocsEnabled()) {
       try {
         String content = readResource(FILE_NOT_FOUND_HTML, Charsets.UTF_8);
@@ -149,7 +151,7 @@ public class BeaconRestApi {
         });
   }
 
-  public BeaconRestApi(final DataProvider dataProvider, final TekuConfiguration configuration) {
+  public BeaconRestApi(final DataProvider dataProvider, final GlobalConfiguration configuration) {
     this.app =
         Javalin.create(
             config -> {
@@ -163,7 +165,7 @@ public class BeaconRestApi {
   }
 
   BeaconRestApi(
-      final DataProvider dataProvider, final TekuConfiguration configuration, final Javalin app) {
+      final DataProvider dataProvider, final GlobalConfiguration configuration, final Javalin app) {
     this.app = app;
     initialize(dataProvider, configuration);
   }
@@ -187,7 +189,7 @@ public class BeaconRestApi {
   }
 
   private static OpenApiOptions getOpenApiOptions(
-      final JsonProvider jsonProvider, final TekuConfiguration config) {
+      final JsonProvider jsonProvider, final GlobalConfiguration config) {
     final JacksonModelConverterFactory factory =
         new JacksonModelConverterFactory(jsonProvider.getObjectMapper());
 
@@ -231,6 +233,7 @@ public class BeaconRestApi {
 
   private void addV1ValidatorHandlers(final DataProvider dataProvider) {
     app.get(GetAttesterDuties.ROUTE, new GetAttesterDuties(dataProvider, jsonProvider));
+    app.get(GetProposerDuties.ROUTE, new GetProposerDuties(dataProvider, jsonProvider));
   }
 
   private void addNodeHandlers(final DataProvider provider) {

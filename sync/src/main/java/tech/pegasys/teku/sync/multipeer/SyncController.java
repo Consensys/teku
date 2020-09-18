@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.sync.multipeer;
 
-import com.google.common.base.Throwables;
+import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,7 +27,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService.SyncSubscriber;
 import tech.pegasys.teku.sync.SyncingStatus;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
-import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
 
 public class SyncController {
   private static final Logger LOG = LogManager.getLogger();
@@ -38,7 +37,8 @@ public class SyncController {
   private final Executor subscriberExecutor;
   private final RecentChainData recentChainData;
   private final ChainSelector finalizedTargetChainSelector;
-  private final Sync finalizedSync;
+  private final ChainSelector nonfinalizedTargetChainSelector;
+  private final Sync sync;
 
   /**
    * The current sync. When empty, no sync has started, otherwise contains the details of the last
@@ -54,41 +54,75 @@ public class SyncController {
       final Executor subscriberExecutor,
       final RecentChainData recentChainData,
       final ChainSelector finalizedTargetChainSelector,
-      final Sync finalizedSync) {
+      final ChainSelector nonfinalizedTargetChainSelector,
+      final Sync sync) {
     this.eventThread = eventThread;
     this.subscriberExecutor = subscriberExecutor;
     this.recentChainData = recentChainData;
     this.finalizedTargetChainSelector = finalizedTargetChainSelector;
-    this.finalizedSync = finalizedSync;
+    this.nonfinalizedTargetChainSelector = nonfinalizedTargetChainSelector;
+    this.sync = sync;
   }
 
   /**
-   * Notify Must be called on the sync event thread.
+   * Notify that chains have been updated.
    *
-   * @param finalizedChains the currently known finalized chains to consider
+   * <p>Must be called on the sync event thread.
    */
-  public void onTargetChainsUpdated(final TargetChains finalizedChains) {
+  public void onTargetChainsUpdated() {
     eventThread.checkOnEventThread();
-    final Optional<InProgressSync> newFinalizedSync =
-        finalizedTargetChainSelector
-            .selectTargetChain(finalizedChains)
-            .map(this::startFinalizedSync);
-    if (newFinalizedSync.isEmpty() && isSyncActive()) {
+    final boolean currentlySyncing = isSyncActive();
+    final Optional<InProgressSync> newSync = selectNewSyncTarget(currentlySyncing);
+    if (newSync.isEmpty() && currentlySyncing) {
       return;
     }
-    if (!isSyncActive() && newFinalizedSync.isPresent()) {
+    if (!currentlySyncing && newSync.isPresent()) {
       notifySubscribers(true);
     }
-    currentSync = newFinalizedSync;
+    currentSync = newSync;
   }
 
-  private void onSyncComplete() {
+  private Optional<InProgressSync> selectNewSyncTarget(final boolean currentlySyncing) {
+    final Optional<TargetChain> bestFinalizedChain =
+        finalizedTargetChainSelector.selectTargetChain(currentlySyncing);
+    // We may not have run fork choice to update our chain head, so check if the best finalized
+    // chain is the one we just finished syncing and move on to non-finalized if it is.
+    if (bestFinalizedChain.isPresent() && !isCompletedSync(bestFinalizedChain.get())) {
+      return bestFinalizedChain.map(chain -> startSync(chain, true));
+    } else if (!isSyncingFinalizedChain()) {
+      final Optional<TargetChain> targetChain =
+          nonfinalizedTargetChainSelector.selectTargetChain(currentlySyncing);
+      return targetChain.map(chain -> startSync(chain, false));
+    }
+    return Optional.empty();
+  }
+
+  private boolean isCompletedSync(final TargetChain targetChain) {
+    return currentSync
+        .map(sync -> !sync.isActive() && sync.hasSameTarget(targetChain))
+        .orElse(false);
+  }
+
+  private Boolean isSyncingFinalizedChain() {
+    return currentSync.map(current -> current.isActive() && current.isFinalizedChain).orElse(false);
+  }
+
+  private void onSyncComplete(final SyncResult result) {
     eventThread.checkOnEventThread();
-    if (isSyncActive()) {
+    if (isSyncActive() || result == SyncResult.TARGET_CHANGED) {
       // A different sync is now running so ignore this change.
       return;
     }
-    notifySubscribers(false);
+    LOG.debug(
+        "Completed sync to chain {} with result {}",
+        currentSync.map(Objects::toString).orElse("<unknown>"),
+        result);
+    // See if there's a new sync we should start (possibly switching to non-finalized sync)
+    currentSync = selectNewSyncTarget(true);
+    if (!isSyncActive()) {
+      currentSync = Optional.empty();
+      notifySubscribers(false);
+    }
   }
 
   public boolean isSyncActive() {
@@ -115,36 +149,37 @@ public class SyncController {
     subscriberExecutor.execute(() -> subscribers.deliver(SyncSubscriber::onSyncingChange, syncing));
   }
 
-  private InProgressSync startFinalizedSync(final TargetChain chain) {
+  private InProgressSync startSync(final TargetChain chain, final boolean isFinalized) {
     eventThread.checkOnEventThread();
     if (currentSync.map(current -> current.hasSameTarget(chain)).orElse(false)) {
       return currentSync.get();
     }
     final UInt64 startSlot = recentChainData.getHeadSlot();
-    final SafeFuture<Void> syncResult = finalizedSync.syncToChain(chain);
+    final SafeFuture<SyncResult> syncResult = sync.syncToChain(chain);
     syncResult.finishAsync(
         this::onSyncComplete,
         error -> {
-          if (!(Throwables.getRootCause(error) instanceof CancellationException)) {
-            LOG.error("Error encountered during sync", error);
-          } else {
-            LOG.trace("Sync cancelled");
-          }
-          onSyncComplete();
+          LOG.error("Error encountered during sync", error);
+          onSyncComplete(SyncResult.FAILED);
         },
         eventThread);
-    return new InProgressSync(startSlot, chain, syncResult);
+    return new InProgressSync(startSlot, chain, isFinalized, syncResult);
   }
 
   private class InProgressSync {
     private final UInt64 startSlot;
     private final TargetChain targetChain;
-    private final SafeFuture<Void> result;
+    private final boolean isFinalizedChain;
+    private final SafeFuture<SyncResult> result;
 
     private InProgressSync(
-        final UInt64 startSlot, final TargetChain targetChain, final SafeFuture<Void> result) {
+        final UInt64 startSlot,
+        final TargetChain targetChain,
+        final boolean isFinalizedChain,
+        final SafeFuture<SyncResult> result) {
       this.startSlot = startSlot;
       this.targetChain = targetChain;
+      this.isFinalizedChain = isFinalizedChain;
       this.result = result;
     }
 
@@ -161,6 +196,15 @@ public class SyncController {
 
     public boolean hasSameTarget(final TargetChain chain) {
       return targetChain.equals(chain);
+    }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+          .add("startSlot", startSlot)
+          .add("targetChain", targetChain.getChainHead())
+          .add("isFinalizedChain", isFinalizedChain)
+          .toString();
     }
   }
 }

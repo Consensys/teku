@@ -32,13 +32,14 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttesterDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class BeaconRestApiV1Test {
   private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(new EventBus());
@@ -53,8 +54,8 @@ public class BeaconRestApiV1Test {
 
   @BeforeEach
   public void setup() {
-    TekuConfiguration config =
-        TekuConfiguration.builder().setRestApiPort(THE_PORT).setRestApiDocsEnabled(false).build();
+    GlobalConfiguration config =
+        GlobalConfiguration.builder().setRestApiPort(THE_PORT).setRestApiDocsEnabled(false).build();
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
         new DataProvider(
@@ -102,5 +103,10 @@ public class BeaconRestApiV1Test {
   @Test
   public void shouldHaveGetAttesterDutiesEndpoint() {
     verify(app).get(eq(GetAttesterDuties.ROUTE), any(GetAttesterDuties.class));
+  }
+
+  @Test
+  public void shouldHaveGetProposerDutiesEndpoint() {
+    verify(app).get(eq(GetProposerDuties.ROUTE), any(GetProposerDuties.class));
   }
 }

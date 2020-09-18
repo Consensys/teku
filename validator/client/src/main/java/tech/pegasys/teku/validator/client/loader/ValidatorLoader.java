@@ -32,7 +32,7 @@ import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.core.signatures.SlashingProtectedSigner;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.signer.ExternalSigner;
 
@@ -46,7 +46,7 @@ public class ValidatorLoader {
     this.asyncRunner = asyncRunner;
   }
 
-  public Map<BLSPublicKey, Validator> initializeValidators(TekuConfiguration config) {
+  public Map<BLSPublicKey, Validator> initializeValidators(GlobalConfiguration config) {
     // Get validator connection info and create a new Validator object and put it into the
     // Validators map
 
@@ -62,7 +62,8 @@ public class ValidatorLoader {
     return validators;
   }
 
-  private Map<BLSPublicKey, Validator> createLocalSignerValidator(final TekuConfiguration config) {
+  private Map<BLSPublicKey, Validator> createLocalSignerValidator(
+      final GlobalConfiguration config) {
     return loadValidatorKeys(config).stream()
         .map(
             blsKeyPair ->
@@ -75,7 +76,7 @@ public class ValidatorLoader {
   }
 
   private Map<BLSPublicKey, Validator> createExternalSignerValidator(
-      final TekuConfiguration config) {
+      final GlobalConfiguration config) {
     final Duration timeout = Duration.ofMillis(config.getValidatorExternalSignerTimeout());
     return config.getValidatorExternalSignerPublicKeys().stream()
         .map(
@@ -94,7 +95,7 @@ public class ValidatorLoader {
     return new SlashingProtectedSigner(publicKey, slashingProtector, signer);
   }
 
-  private static Collection<BLSKeyPair> loadValidatorKeys(final TekuConfiguration config) {
+  private static Collection<BLSKeyPair> loadValidatorKeys(final GlobalConfiguration config) {
     final Set<ValidatorKeyProvider> keyProviders = new LinkedHashSet<>();
     if (config.isInteropEnabled()) {
       keyProviders.add(new MockStartValidatorKeyProvider());
@@ -105,7 +106,7 @@ public class ValidatorLoader {
       }
 
       if (config.getValidatorKeystorePasswordFilePairs() != null) {
-        keyProviders.add(new KeystoresValidatorKeyProvider());
+        keyProviders.add(new KeystoresValidatorKeyProvider(new KeystoreLocker()));
       }
     }
     return keyProviders.stream()

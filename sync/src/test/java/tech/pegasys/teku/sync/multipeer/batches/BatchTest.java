@@ -11,19 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.data.slashinginterchange;
+package tech.pegasys.teku.sync.multipeer.batches;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import java.util.List;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-public class MinimalSlashingProtectionInterchangeFormat {
-  public final Metadata metadata;
-  public final List<MinimalSigningHistory> data;
-
-  @JsonCreator
-  public MinimalSlashingProtectionInterchangeFormat(
-      final Metadata metadata, final List<MinimalSigningHistory> data) {
-    this.metadata = metadata;
-    this.data = data;
+class BatchTest {
+  @Test
+  @Disabled
+  void shouldFailWhenBlocksDoNotFormAConsistentChain() {
+    Assertions.fail("Not implemented");
   }
+
+  @Test
+  @Disabled
+  void shouldMarkAsCompletedWhenRequestReturnsNoBlocks() {}
+
+  @Test
+  @Disabled
+  void shouldMarkAsCompleteWhenRequestReturnsBlockInLastSlot() {}
 }

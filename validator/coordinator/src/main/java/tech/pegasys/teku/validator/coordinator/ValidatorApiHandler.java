@@ -29,7 +29,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +69,9 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.SyncState;
 import tech.pegasys.teku.sync.SyncStateTracker;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
+import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
@@ -138,13 +139,21 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<ValidatorDuties>>> getAttestationDuties(
+  public SafeFuture<Optional<List<AttesterDuties>>> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes) {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
     if (validatorIndexes.isEmpty()) {
       return SafeFuture.completedFuture(Optional.of(emptyList()));
+    }
+    if (epoch.isGreaterThan(
+        combinedChainDataClient.getCurrentEpoch().plus(Constants.MIN_SEED_LOOKAHEAD))) {
+      return SafeFuture.failedFuture(
+          new IllegalArgumentException(
+              String.format(
+                  "Attestation duties were requested %s epochs ahead, only 1 epoch in future is supported.",
+                  epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
     }
     final UInt64 slot = CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
     LOG.trace("Retrieving attestation duties from epoch {} using state at slot {}", epoch, slot);
@@ -154,7 +163,32 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             optionalState ->
                 optionalState
                     .map(state -> processSlots(state, slot))
-                    .map(state -> getValidatorDutiesFromIndexes(state, epoch, validatorIndexes)));
+                    .map(
+                        state ->
+                            getAttesterDutiesFromIndexesAndState(state, epoch, validatorIndexes)));
+  }
+
+  @Override
+  public SafeFuture<Optional<List<ProposerDuties>>> getProposerDuties(final UInt64 epoch) {
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
+    if (epoch.isGreaterThan(combinedChainDataClient.getCurrentEpoch())) {
+      return SafeFuture.failedFuture(
+          new IllegalArgumentException(
+              String.format(
+                  "Proposer duties were requested for a future epoch (current: %s, requested: %s).",
+                  combinedChainDataClient.getCurrentEpoch().toString(), epoch.toString())));
+    }
+    final UInt64 slot = CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
+    LOG.trace("Retrieving proposer duties from epoch {} using state at slot {}", epoch, slot);
+    return combinedChainDataClient
+        .getLatestStateAtSlot(slot)
+        .thenApply(
+            optionalState ->
+                optionalState
+                    .map(state -> processSlots(state, slot))
+                    .map(state -> getProposerDutiesFromIndexesAndState(state, epoch)));
   }
 
   private BeaconState processSlots(final BeaconState startingState, final UInt64 targetSlot) {
@@ -373,21 +407,50 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .orElseGet(() -> ValidatorDuties.noDuties(key));
   }
 
-  private List<ValidatorDuties> getValidatorDutiesFromIndexes(
+  private List<ProposerDuties> getProposerDutiesFromIndexesAndState(
+      final BeaconState state, final UInt64 epoch) {
+    final List<ProposerDuties> result = new ArrayList<>();
+    getProposalSlotsForEpoch(state, epoch)
+        .forEach(
+            (slot, publicKey) -> {
+              Optional<Integer> maybeIndex = ValidatorsUtil.getValidatorIndex(state, publicKey);
+              if (maybeIndex.isEmpty()) {
+                throw new IllegalStateException(
+                    String.format(
+                        "Assigned public key %s could not be found at epoch %s",
+                        publicKey.toString(), epoch.toString()));
+              }
+              result.add(new ProposerDuties(publicKey, maybeIndex.get(), slot));
+            });
+    return result;
+  }
+
+  private List<AttesterDuties> getAttesterDutiesFromIndexesAndState(
       final BeaconState state, final UInt64 epoch, final Collection<Integer> validatorIndexes) {
     return validatorIndexes.stream()
-        .map(index -> createValidatorDuties(state, epoch, index))
+        .map(index -> createAttesterDuties(state, epoch, index))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
         .collect(toList());
   }
 
-  private ValidatorDuties createValidatorDuties(
+  private Optional<AttesterDuties> createAttesterDuties(
       final BeaconState state, final UInt64 epoch, final Integer validatorIndex) {
     try {
-      BLSPublicKey pkey = state.getValidators().get(validatorIndex).getPubkey();
-      return createValidatorDuties(Collections.emptyMap(), pkey, state, epoch, validatorIndex);
+      final BLSPublicKey pkey = state.getValidators().get(validatorIndex).getPubkey();
+      return CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex)
+          .map(
+              committeeAssignment ->
+                  new AttesterDuties(
+                      pkey,
+                      validatorIndex,
+                      committeeAssignment.getCommittee().size(),
+                      committeeAssignment.getCommitteeIndex().intValue(),
+                      committeeAssignment.getCommittee().indexOf(validatorIndex),
+                      committeeAssignment.getSlot()));
     } catch (IndexOutOfBoundsException ex) {
       LOG.debug(ex);
-      return ValidatorDuties.withDuties(null, validatorIndex, 0, 0, 0, List.of(), null);
+      return Optional.empty();
     }
   }
 
@@ -425,5 +488,19 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       proposalSlotsByValidatorIndex.computeIfAbsent(proposer, key -> new ArrayList<>()).add(slot);
     }
     return proposalSlotsByValidatorIndex;
+  }
+
+  private Map<UInt64, BLSPublicKey> getProposalSlotsForEpoch(
+      final BeaconState state, final UInt64 epoch) {
+    final UInt64 epochStartSlot = compute_start_slot_at_epoch(epoch);
+    final UInt64 startSlot = epochStartSlot.max(UInt64.valueOf(GENESIS_SLOT + 1));
+    final UInt64 endSlot = epochStartSlot.plus(Constants.SLOTS_PER_EPOCH);
+    final Map<UInt64, BLSPublicKey> proposerSlots = new HashMap<>();
+    for (UInt64 slot = startSlot; slot.compareTo(endSlot) < 0; slot = slot.plus(UInt64.ONE)) {
+      final Integer proposerIndex = get_beacon_proposer_index(state, slot);
+      final BLSPublicKey publicKey = state.getValidators().get(proposerIndex).getPubkey();
+      proposerSlots.put(slot, publicKey);
+    }
+    return proposerSlots;
   }
 }

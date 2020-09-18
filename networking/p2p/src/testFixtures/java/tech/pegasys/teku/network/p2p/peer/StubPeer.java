@@ -68,7 +68,7 @@ public class StubPeer implements Peer {
   }
 
   @Override
-  public SafeFuture<?> disconnectCleanly(final DisconnectReason reason) {
+  public SafeFuture<Void> disconnectCleanly(final DisconnectReason reason) {
     disconnectReason = Optional.of(reason);
     disconnectedSubscribers.forEach(
         subscriber -> subscriber.onDisconnected(Optional.of(reason), true));

@@ -40,15 +40,15 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 /** @deprecated - use {@link AbstractDataBackedRestAPIIntegrationTest} */
 @Deprecated
 public abstract class AbstractBeaconRestAPIIntegrationTest {
   static final okhttp3.MediaType JSON = okhttp3.MediaType.parse("application/json; charset=utf-8");
-  static final TekuConfiguration config =
-      TekuConfiguration.builder()
+  static final GlobalConfiguration config =
+      GlobalConfiguration.builder()
           .setRestApiPort(0)
           .setRestApiEnabled(true)
           .setRestApiDocsEnabled(false)

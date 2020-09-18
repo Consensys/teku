@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class StoreOptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -26,14 +26,14 @@ public class StoreOptionsTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {
       "--Xhot-state-persistence-frequency", "99",
     };
-    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(args);
-    assertThat(tekuConfiguration.getHotStatePersistenceFrequencyInEpochs()).isEqualTo(99);
+    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments(args);
+    assertThat(globalConfiguration.getHotStatePersistenceFrequencyInEpochs()).isEqualTo(99);
   }
 
   @Test
   public void hotStatePersistenceFrequency_shouldSetDefaultValue() {
-    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
-    assertThat(tekuConfiguration.getHotStatePersistenceFrequencyInEpochs()).isEqualTo(1);
+    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments();
+    assertThat(globalConfiguration.getHotStatePersistenceFrequencyInEpochs()).isEqualTo(1);
   }
 
   @Test
@@ -65,8 +65,8 @@ public class StoreOptionsTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {
       "--Xdisable-block-processing-at-startup", "true",
     };
-    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(args);
-    assertThat(tekuConfiguration.isBlockProcessingAtStartupDisabled()).isTrue();
+    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments(args);
+    assertThat(globalConfiguration.isBlockProcessingAtStartupDisabled()).isTrue();
   }
 
   @Test
@@ -74,8 +74,8 @@ public class StoreOptionsTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {
       "--Xdisable-block-processing-at-startup", "false",
     };
-    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(args);
-    assertThat(tekuConfiguration.isBlockProcessingAtStartupDisabled()).isFalse();
+    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments(args);
+    assertThat(globalConfiguration.isBlockProcessingAtStartupDisabled()).isFalse();
   }
 
   @Test
@@ -83,13 +83,13 @@ public class StoreOptionsTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {
       "--Xdisable-block-processing-at-startup",
     };
-    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(args);
-    assertThat(tekuConfiguration.isBlockProcessingAtStartupDisabled()).isTrue();
+    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments(args);
+    assertThat(globalConfiguration.isBlockProcessingAtStartupDisabled()).isTrue();
   }
 
   @Test
   public void disableBlockProcessingAtStartup_default() {
-    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
-    assertThat(tekuConfiguration.isBlockProcessingAtStartupDisabled()).isTrue();
+    final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments();
+    assertThat(globalConfiguration.isBlockProcessingAtStartupDisabled()).isTrue();
   }
 }

@@ -28,12 +28,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.data.signingrecord.ValidatorSigningRecord;
-import tech.pegasys.teku.data.slashinginterchange.CompleteSigningHistory;
-import tech.pegasys.teku.data.slashinginterchange.InterchangeFormat;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
-import tech.pegasys.teku.data.slashinginterchange.MinimalSigningHistory;
 import tech.pegasys.teku.data.slashinginterchange.SignedAttestation;
 import tech.pegasys.teku.data.slashinginterchange.SignedBlock;
+import tech.pegasys.teku.data.slashinginterchange.SigningHistory;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -42,7 +40,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 public class SlashingProtectionImporter {
   private final JsonProvider jsonProvider = new JsonProvider();
   private Path slashingProtectionPath;
-  private List<MinimalSigningHistory> data = new ArrayList<>();
+  private List<SigningHistory> data = new ArrayList<>();
   private Metadata metadata;
   private final SubCommandLogger log;
   private final SyncDataAccessor syncDataAccessor = new SyncDataAccessor();
@@ -77,16 +75,10 @@ public class SlashingProtectionImporter {
         return; // Testing mocks log.exit
       }
 
-      if (metadata.interchangeFormat.equals(InterchangeFormat.minimal)) {
-        data =
-            Arrays.asList(
-                jsonMapper.treeToValue(jsonNode.get("data"), MinimalSigningHistory[].class));
-      } else {
-        data =
-            summariseCompleteInterchangeFormat(
-                Arrays.asList(
-                    jsonMapper.treeToValue(jsonNode.get("data"), CompleteSigningHistory[].class)));
-      }
+      data =
+          summariseCompleteInterchangeFormat(
+              Arrays.asList(jsonMapper.treeToValue(jsonNode.get("data"), SigningHistory[].class)));
+
     } catch (JsonMappingException e) {
       String cause = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
       log.exit(1, "Failed to load data from " + inputFile.getName() + ". " + cause);
@@ -96,25 +88,22 @@ public class SlashingProtectionImporter {
     }
   }
 
-  private List<MinimalSigningHistory> summariseCompleteInterchangeFormat(
-      final List<CompleteSigningHistory> completeSigningData) {
+  private List<SigningHistory> summariseCompleteInterchangeFormat(
+      final List<SigningHistory> completeSigningData) {
     return completeSigningData.stream()
-        .map(this::minimalSigningHistoryConverter)
+        .map(this::signingHistoryConverter)
         .collect(Collectors.toList());
   }
 
-  private MinimalSigningHistory minimalSigningHistoryConverter(
-      final CompleteSigningHistory completeSigningHistory) {
+  private SigningHistory signingHistoryConverter(final SigningHistory signingHistory) {
     final Optional<UInt64> lastSlot =
-        completeSigningHistory.signedBlocks.stream()
-            .map(SignedBlock::getSlot)
-            .max(UInt64::compareTo);
+        signingHistory.signedBlocks.stream().map(SignedBlock::getSlot).max(UInt64::compareTo);
     final Optional<UInt64> sourceEpoch =
-        completeSigningHistory.signedAttestations.stream()
+        signingHistory.signedAttestations.stream()
             .map(SignedAttestation::getSourceEpoch)
             .max(UInt64::compareTo);
     final Optional<UInt64> targetEpoch =
-        completeSigningHistory.signedAttestations.stream()
+        signingHistory.signedAttestations.stream()
             .map(SignedAttestation::getTargetEpoch)
             .max(UInt64::compareTo);
     final ValidatorSigningRecord record =
@@ -123,7 +112,7 @@ public class SlashingProtectionImporter {
             lastSlot.orElse(UInt64.ZERO),
             sourceEpoch.orElse(ValidatorSigningRecord.NEVER_SIGNED),
             targetEpoch.orElse(ValidatorSigningRecord.NEVER_SIGNED));
-    return new MinimalSigningHistory(completeSigningHistory.pubkey, record);
+    return new SigningHistory(signingHistory.pubkey, record);
   }
 
   public void updateLocalRecords(final Path slashingProtectionPath) {
@@ -132,9 +121,8 @@ public class SlashingProtectionImporter {
     log.display("Updated " + data.size() + " validator slashing protection records");
   }
 
-  private void updateLocalRecord(final MinimalSigningHistory minimalSigningHistory) {
-    String validatorString =
-        minimalSigningHistory.pubkey.toBytes().toUnprefixedHexString().toLowerCase();
+  private void updateLocalRecord(final SigningHistory signingHistory) {
+    String validatorString = signingHistory.pubkey.toBytes().toUnprefixedHexString().toLowerCase();
 
     log.display("Importing " + validatorString);
     Path outputFile = slashingProtectionPath.resolve(validatorString + ".yml");
@@ -152,18 +140,18 @@ public class SlashingProtectionImporter {
       log.exit(
           1,
           "Validator "
-              + minimalSigningHistory.pubkey.toHexString()
+              + signingHistory.pubkey.toHexString()
               + " has a different validators signing root to the data being imported");
     }
 
     try {
       syncDataAccessor.syncedWrite(
           outputFile,
-          minimalSigningHistory
+          signingHistory
               .toValidatorSigningRecord(existingRecord, metadata.genesisValidatorsRoot)
               .toBytes());
     } catch (IOException e) {
-      log.exit(1, "Validator " + minimalSigningHistory.pubkey.toHexString() + " was not updated.");
+      log.exit(1, "Validator " + signingHistory.pubkey.toHexString() + " was not updated.");
     }
   }
 }

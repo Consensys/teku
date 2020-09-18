@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
+import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -40,6 +41,8 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
@@ -98,27 +101,46 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<ValidatorDuties>>> getAttestationDuties(
+  public SafeFuture<Optional<List<AttesterDuties>>> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes) {
     return asyncRunner.runAsync(
         () -> {
-          final List<ValidatorDuties> validatorDuties =
+          final List<AttesterDuties> duties =
               apiClient.getAttestationDuties(epoch, validatorIndexes).stream()
-                  .map(this::mapToApiValidatorDuties)
+                  .map(this::mapToApiAttesterDuties)
                   .collect(Collectors.toList());
 
-          return Optional.of(validatorDuties);
+          return Optional.of(duties);
         });
   }
 
-  private ValidatorDuties mapToApiValidatorDuties(final AttesterDuty attesterDuty) {
-    return ValidatorDuties.withDuties(
+  @Override
+  public SafeFuture<Optional<List<ProposerDuties>>> getProposerDuties(final UInt64 epoch) {
+    return asyncRunner.runAsync(
+        () -> {
+          final List<ProposerDuties> duties =
+              apiClient.getProposerDuties(epoch).stream()
+                  .map(this::mapToProposerDuties)
+                  .collect(Collectors.toList());
+
+          return Optional.of(duties);
+        });
+  }
+
+  private ProposerDuties mapToProposerDuties(final ProposerDuty proposerDuty) {
+    return new ProposerDuties(
+        proposerDuty.pubkey.asBLSPublicKey(),
+        proposerDuty.validatorIndex.intValue(),
+        proposerDuty.slot);
+  }
+
+  private AttesterDuties mapToApiAttesterDuties(final AttesterDuty attesterDuty) {
+    return new AttesterDuties(
         attesterDuty.pubkey.asBLSPublicKey(),
         attesterDuty.validatorIndex.intValue(),
-        attesterDuty.committeeIndex.intValue(),
-        attesterDuty.validatorCommitteeIndex.intValue(),
         attesterDuty.committeeLength.intValue(),
-        List.of(),
+        attesterDuty.committeeLength.intValue(),
+        attesterDuty.validatorCommitteeIndex.intValue(),
         attesterDuty.slot);
   }
 
