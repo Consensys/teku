@@ -338,6 +338,7 @@ public class FinalizedSync implements Sync {
       return;
     }
     if (targetChain.getPeers().isEmpty()) {
+      activeBatches.removeAll();
       syncResult.complete(SyncResult.FAILED);
       return;
     }
