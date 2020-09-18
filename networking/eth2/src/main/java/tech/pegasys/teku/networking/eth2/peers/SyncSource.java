@@ -30,5 +30,5 @@ public interface SyncSource {
       UInt64 step,
       ResponseStreamListener<SignedBeaconBlock> listener);
 
-  SafeFuture<?> disconnectCleanly(DisconnectReason reason);
+  SafeFuture<Void> disconnectCleanly(DisconnectReason reason);
 }

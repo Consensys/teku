@@ -37,7 +37,11 @@ import tech.pegasys.teku.sync.SyncingStatus;
 import tech.pegasys.teku.sync.gossip.BlockManager;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
 import tech.pegasys.teku.sync.multipeer.batches.BatchFactory;
+import tech.pegasys.teku.sync.multipeer.chains.PeerChainTracker;
+import tech.pegasys.teku.sync.multipeer.chains.SyncSourceFactory;
+import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.time.TimeProvider;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class MultipeerSyncService extends Service implements SyncService {
@@ -64,6 +68,7 @@ public class MultipeerSyncService extends Service implements SyncService {
   public static MultipeerSyncService create(
       final AsyncRunnerFactory asyncRunnerFactory,
       final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
       final EventBus eventBus,
       final EventChannels eventChannels,
       final RecentChainData recentChainData,
@@ -86,8 +91,10 @@ public class MultipeerSyncService extends Service implements SyncService {
             recentChainData,
             blockImporter);
 
-    final FinalizedSync finalizedSync =
-        FinalizedSync.create(
+    final TargetChains finalizedTargetChains = new TargetChains();
+    final TargetChains nonfinalizedTargetChains = new TargetChains();
+    final BatchSync batchSync =
+        BatchSync.create(
             eventThread,
             recentChainData,
             new BatchImporter(blockImporter, asyncRunner),
@@ -98,10 +105,18 @@ public class MultipeerSyncService extends Service implements SyncService {
             eventThread,
             new OrderedAsyncRunner(asyncRunner),
             recentChainData,
-            ChainSelector.createFinalizedChainSelector(recentChainData),
-            finalizedSync);
+            ChainSelector.createFinalizedChainSelector(recentChainData, finalizedTargetChains),
+            ChainSelector.createNonfinalizedChainSelector(
+                recentChainData, nonfinalizedTargetChains),
+            batchSync);
     final PeerChainTracker peerChainTracker =
-        new PeerChainTracker(eventThread, p2pNetwork, syncController);
+        new PeerChainTracker(
+            eventThread,
+            p2pNetwork,
+            new SyncSourceFactory(asyncRunner, timeProvider),
+            finalizedTargetChains,
+            nonfinalizedTargetChains);
+    peerChainTracker.subscribeToTargetChainUpdates(syncController::onTargetChainsUpdated);
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);

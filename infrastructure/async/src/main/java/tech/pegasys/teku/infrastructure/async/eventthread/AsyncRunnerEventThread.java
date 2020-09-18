@@ -60,6 +60,11 @@ public class AsyncRunnerEventThread implements EventThread {
   }
 
   @Override
+  public void executeLater(final Runnable task) {
+    thread.runAsync(() -> recordEventThreadIdAndExecute(task)).reportExceptions();
+  }
+
+  @Override
   public void execute(final Runnable task) {
     // Note: started is only set to true after thread has been initialized so if it is true, thread
     // must be initialized.
@@ -70,7 +75,7 @@ public class AsyncRunnerEventThread implements EventThread {
     if (isEventThread()) {
       task.run();
     } else {
-      thread.runAsync(() -> recordEventThreadIdAndExecute(task)).reportExceptions();
+      executeLater(task);
     }
   }
 

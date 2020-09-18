@@ -59,7 +59,7 @@ public class StubSyncSource implements SyncSource {
   }
 
   @Override
-  public SafeFuture<?> disconnectCleanly(final DisconnectReason reason) {
+  public SafeFuture<Void> disconnectCleanly(final DisconnectReason reason) {
     return SafeFuture.COMPLETE;
   }
 
