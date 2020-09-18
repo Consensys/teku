@@ -106,7 +106,7 @@ public class ValidatorLoader {
       }
 
       if (config.getValidatorKeystorePasswordFilePairs() != null) {
-        keyProviders.add(new KeystoresValidatorKeyProvider());
+        keyProviders.add(new KeystoresValidatorKeyProvider(new KeystoreLocker()));
       }
     }
     return keyProviders.stream()
