@@ -29,7 +29,7 @@ import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
-public class CompleteSigningHistoryTest {
+public class SigningHistoryTest {
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ObjectMapper mapper = jsonProvider.getObjectMapper();
   private final BLSPubKey blsPubKey =
@@ -49,13 +49,12 @@ public class CompleteSigningHistoryTest {
     assertThat(metadata)
         .isEqualTo(new Metadata(InterchangeFormat.complete, INTERCHANGE_VERSION, GENESIS_ROOT));
 
-    List<CompleteSigningHistory> completeSigningHistories =
-        Arrays.asList(
-            mapper.readValue(jsonNode.get("data").toString(), CompleteSigningHistory[].class));
+    List<SigningHistory> completeSigningHistories =
+        Arrays.asList(mapper.readValue(jsonNode.get("data").toString(), SigningHistory[].class));
 
     assertThat(completeSigningHistories)
         .containsExactly(
-            new CompleteSigningHistory(
+            new SigningHistory(
                 blsPubKey,
                 List.of(
                     new SignedBlock(
