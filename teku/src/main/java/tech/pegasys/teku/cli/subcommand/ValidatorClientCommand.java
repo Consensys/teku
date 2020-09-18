@@ -14,6 +14,8 @@
 package tech.pegasys.teku.cli.subcommand;
 
 import com.google.common.base.Throwables;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionException;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.ParentCommand;
@@ -31,9 +33,6 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.NetworkDefinition;
-
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionException;
 
 @Command(
     name = "validator-client",

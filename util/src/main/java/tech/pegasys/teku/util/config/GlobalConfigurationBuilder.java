@@ -13,15 +13,14 @@
 
 package tech.pegasys.teku.util.config;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
-
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
 /**
  * @deprecated - Use TekuConfigurationBuilder where possible. Global application configuration
@@ -236,7 +235,8 @@ public class GlobalConfigurationBuilder {
     return this;
   }
 
-  public GlobalConfigurationBuilder setValidatorKeystoreLockingEnabled(final boolean keystoreLockingEnabled) {
+  public GlobalConfigurationBuilder setValidatorKeystoreLockingEnabled(
+      final boolean keystoreLockingEnabled) {
     this.validatorKeystoreLockingEnabled = keystoreLockingEnabled;
     return this;
   }
