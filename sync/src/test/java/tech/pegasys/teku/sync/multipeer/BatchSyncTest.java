@@ -48,7 +48,7 @@ import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
-class FinalizedSyncTest {
+class BatchSyncTest {
   private final UInt64 BATCH_SIZE = UInt64.valueOf(25);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final InlineEventThread eventThread = new InlineEventThread();
@@ -67,8 +67,8 @@ class FinalizedSyncTest {
           new SlotAndBlockRoot(UInt64.valueOf(1000), dataStructureUtil.randomBytes32()),
           syncSource);
 
-  private final FinalizedSync sync =
-      FinalizedSync.create(eventThread, recentChainData, batchImporter, batches, BATCH_SIZE);
+  private final BatchSync sync =
+      BatchSync.create(eventThread, recentChainData, batchImporter, batches, BATCH_SIZE);
 
   @BeforeEach
   void setUp() {

@@ -90,8 +90,8 @@ public class MultipeerSyncService extends Service implements SyncService {
 
     final TargetChains finalizedTargetChains = new TargetChains();
     final TargetChains nonfinalizedTargetChains = new TargetChains();
-    final FinalizedSync finalizedSync =
-        FinalizedSync.create(
+    final BatchSync batchSync =
+        BatchSync.create(
             eventThread,
             recentChainData,
             new BatchImporter(blockImporter, asyncRunner),
@@ -105,7 +105,7 @@ public class MultipeerSyncService extends Service implements SyncService {
             ChainSelector.createFinalizedChainSelector(recentChainData, finalizedTargetChains),
             ChainSelector.createNonfinalizedChainSelector(
                 recentChainData, nonfinalizedTargetChains),
-            finalizedSync);
+            batchSync);
     final PeerChainTracker peerChainTracker =
         new PeerChainTracker(
             eventThread, p2pNetwork, finalizedTargetChains, nonfinalizedTargetChains);
