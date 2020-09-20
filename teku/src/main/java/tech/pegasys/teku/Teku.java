@@ -19,9 +19,10 @@ import java.io.PrintWriter;
 import java.security.Security;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.config.TekuConfiguration;
 
 public final class Teku {
+
   public static void main(final String... args) {
     Thread.setDefaultUncaughtExceptionHandler(new TekuDefaultExceptionHandler());
     Security.addProvider(new BouncyCastleProvider());
@@ -35,7 +36,13 @@ public final class Teku {
   }
 
   private static void start(final TekuConfiguration config) {
-    final BeaconNode node = new BeaconNode(config);
+    final Node node;
+    if (config.global().isValidatorClient()) {
+      node = new ValidatorNode(config);
+    } else {
+      node = new BeaconNode(config);
+    }
+
     node.start();
     // Detect SIGTERM
     Runtime.getRuntime()

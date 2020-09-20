@@ -32,7 +32,7 @@ public class SyncStateTracker extends Service {
   private final Duration startupTimeout;
   private final int startupTargetPeerCount;
 
-  private boolean startingUp = true;
+  private boolean startingUp;
   private boolean syncActive = false;
   private long peerConnectedSubscriptionId;
   private long syncSubscriptionId;
@@ -50,10 +50,13 @@ public class SyncStateTracker extends Service {
     this.network = network;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeout = startupTimeout;
-    currentState =
-        startupTargetPeerCount == 0 || startupTimeout.toMillis() == 0
-            ? SyncState.IN_SYNC
-            : SyncState.START_UP;
+    if (startupTargetPeerCount == 0 || startupTimeout.toMillis() == 0) {
+      startingUp = false;
+      currentState = SyncState.IN_SYNC;
+    } else {
+      startingUp = true;
+      currentState = SyncState.START_UP;
+    }
   }
 
   public SyncState getCurrentSyncState() {

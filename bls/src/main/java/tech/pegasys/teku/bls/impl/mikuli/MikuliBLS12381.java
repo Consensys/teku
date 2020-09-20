@@ -78,7 +78,7 @@ public class MikuliBLS12381 implements BLS12381 {
   }
 
   @Override
-  public PublicKey publicKeyFromCompressed(Bytes compressedPublicKeyBytes) {
+  public PublicKey publicKeyFromCompressed(Bytes48 compressedPublicKeyBytes) {
     return MikuliPublicKey.fromBytesCompressed(compressedPublicKeyBytes);
   }
 
@@ -113,6 +113,19 @@ public class MikuliBLS12381 implements BLS12381 {
    */
   public static MikuliSignature sign(MikuliSecretKey secretKey, Bytes message) {
     G2Point hashInGroup2 = new G2Point(hashToG2(message));
+    return new MikuliSignature(secretKey.sign(hashInGroup2));
+  }
+
+  /**
+   * Generates a Signature from a private key, message and DST.
+   *
+   * @param secretKey The secret key, not null
+   * @param message The message to sign, not null
+   * @param dst Domain Seperation Tag (DST), not null
+   * @return The Signature, not null
+   */
+  public static MikuliSignature sign(MikuliSecretKey secretKey, Bytes message, Bytes dst) {
+    G2Point hashInGroup2 = new G2Point(hashToG2(message, dst));
     return new MikuliSignature(secretKey.sign(hashInGroup2));
   }
 
@@ -193,6 +206,22 @@ public class MikuliBLS12381 implements BLS12381 {
   public static boolean coreVerify(
       MikuliPublicKey publicKey, Bytes message, MikuliSignature signature) {
     G2Point hashInGroup2 = new G2Point(hashToG2(message));
+    return signature.verify(publicKey, hashInGroup2);
+  }
+
+  /**
+   * The CoreVerify algorithm checks that a signature is valid for the octet string message under
+   * the public key publicKey and given DST.
+   *
+   * @param publicKey The public key, not null
+   * @param message The message data to verify, not null
+   * @param signature The aggregate signature, not null
+   * @param dst the domain separation tag (DST)
+   * @return True if the verification is successful, false otherwise
+   */
+  public static boolean coreVerify(
+      MikuliPublicKey publicKey, Bytes message, MikuliSignature signature, Bytes dst) {
+    G2Point hashInGroup2 = new G2Point(hashToG2(message, dst));
     return signature.verify(publicKey, hashInGroup2);
   }
 

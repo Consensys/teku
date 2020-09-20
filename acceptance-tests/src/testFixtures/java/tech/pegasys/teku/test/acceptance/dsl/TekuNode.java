@@ -21,7 +21,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.primitives.UnsignedLong;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
@@ -41,13 +40,13 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.api.schema.BeaconChainHead;
 import tech.pegasys.teku.api.schema.BeaconHead;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
@@ -126,16 +125,16 @@ public class TekuNode extends Node {
     waitFor(this::fetchGenesisTime);
   }
 
-  public void waitForGenesisTime(final UnsignedLong expectedGenesisTime) {
+  public void waitForGenesisTime(final UInt64 expectedGenesisTime) {
     waitFor(() -> assertThat(fetchGenesisTime()).isEqualTo(expectedGenesisTime));
   }
 
-  private UnsignedLong fetchGenesisTime() throws IOException {
+  private UInt64 fetchGenesisTime() throws IOException {
     String genesisTime = httpClient.get(getRestApiUrl(), "/node/genesis_time");
-    return jsonProvider.jsonToObject(genesisTime, UnsignedLong.class);
+    return jsonProvider.jsonToObject(genesisTime, UInt64.class);
   }
 
-  public UnsignedLong getGenesisTime() throws IOException {
+  public UInt64 getGenesisTime() throws IOException {
     waitForGenesis();
     return fetchGenesisTime();
   }
@@ -146,7 +145,7 @@ public class TekuNode extends Node {
   }
 
   public void waitForNewFinalization() {
-    UnsignedLong startingFinalizedEpoch = waitForChainHead().finalized_epoch;
+    UInt64 startingFinalizedEpoch = waitForChainHead().finalized_epoch;
     LOG.debug("Wait for finalized block");
     waitFor(
         () ->
@@ -214,7 +213,7 @@ public class TekuNode extends Node {
 
     return Optional.of(
         jsonProvider.jsonToObject(
-            httpClient.get(getRestApiUrl(), "/beacon/head"), BeaconChainHead.class));
+            httpClient.get(getRestApiUrl(), "/beacon/chainhead"), BeaconChainHead.class));
   }
 
   /**
@@ -283,7 +282,6 @@ public class TekuNode extends Node {
     private final PrivKey privateKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
     private final PeerId peerId = PeerId.fromPubKey(privateKey.publicKey());
     private static final String VALIDATORS_FILE_PATH = "/validators.yml";
-    private static final String P2P_PRIVATE_KEY_FILE_PATH = "/p2p-private-key.key";
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 
     private Map<String, Object> configMap = new HashMap<>();
@@ -292,7 +290,7 @@ public class TekuNode extends Node {
     private Optional<GenesisStateConfig> genesisStateConfig = Optional.empty();
 
     public Config() {
-      configMap.put("network", "minimal");
+      configMap.put("network", "swift");
       configMap.put("p2p-enabled", false);
       configMap.put("p2p-discovery-enabled", false);
       configMap.put("p2p-port", P2P_PORT);
@@ -328,6 +326,11 @@ public class TekuNode extends Node {
     public Config withInteropValidators(final int startIndex, final int validatorCount) {
       configMap.put("Xinterop-owned-validator-start-index", startIndex);
       configMap.put("Xinterop-owned-validator-count", validatorCount);
+      return this;
+    }
+
+    public Config withGenesisTime(int time) {
+      configMap.put("Xinterop-genesis-time", time);
       return this;
     }
 
@@ -377,15 +380,6 @@ public class TekuNode extends Node {
         validatorsFile.deleteOnExit();
         Files.writeString(validatorsFile.toPath(), validatorKeys.get());
         configFiles.put(validatorsFile, VALIDATORS_FILE_PATH);
-        configMap.put("validators-unencrypted-key-file", VALIDATORS_FILE_PATH);
-      }
-
-      if ((boolean) configMap.get("p2p-enabled")) {
-        final File p2pPrivateKeyFile = Files.createTempFile("p2p-private-key", ".key").toFile();
-        p2pPrivateKeyFile.deleteOnExit();
-        Files.writeString(p2pPrivateKeyFile.toPath(), Bytes.wrap(privateKey.bytes()).toHexString());
-        configFiles.put(p2pPrivateKeyFile, P2P_PRIVATE_KEY_FILE_PATH);
-        configMap.put("p2p-private-key-file", P2P_PRIVATE_KEY_FILE_PATH);
       }
 
       final File configFile = File.createTempFile("config", ".yaml");

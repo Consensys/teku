@@ -16,20 +16,20 @@ package tech.pegasys.teku.storage.server.rocksdb.schema;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.BYTES32_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.SIGNED_BLOCK_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.STATE_SERIALIZER;
-import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.UNSIGNED_LONG_SERIALIZER;
+import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.UINT64_SERIALIZER;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface V4SchemaFinalized extends Schema {
-  RocksDbColumn<Bytes32, UnsignedLong> SLOTS_BY_FINALIZED_ROOT =
-      RocksDbColumn.create(1, BYTES32_SERIALIZER, UNSIGNED_LONG_SERIALIZER);
-  RocksDbColumn<UnsignedLong, SignedBeaconBlock> FINALIZED_BLOCKS_BY_SLOT =
-      RocksDbColumn.create(2, UNSIGNED_LONG_SERIALIZER, SIGNED_BLOCK_SERIALIZER);
-  RocksDbColumn<UnsignedLong, BeaconState> FINALIZED_STATES_BY_SLOT =
-      RocksDbColumn.create(3, UNSIGNED_LONG_SERIALIZER, STATE_SERIALIZER);
-  RocksDbColumn<Bytes32, UnsignedLong> SLOTS_BY_FINALIZED_STATE_ROOT =
-      RocksDbColumn.create(4, BYTES32_SERIALIZER, UNSIGNED_LONG_SERIALIZER);
+  RocksDbColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_ROOT =
+      RocksDbColumn.create(1, BYTES32_SERIALIZER, UINT64_SERIALIZER);
+  RocksDbColumn<UInt64, SignedBeaconBlock> FINALIZED_BLOCKS_BY_SLOT =
+      RocksDbColumn.create(2, UINT64_SERIALIZER, SIGNED_BLOCK_SERIALIZER);
+  RocksDbColumn<UInt64, BeaconState> FINALIZED_STATES_BY_SLOT =
+      RocksDbColumn.create(3, UINT64_SERIALIZER, STATE_SERIALIZER);
+  RocksDbColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_STATE_ROOT =
+      RocksDbColumn.create(4, BYTES32_SERIALIZER, UINT64_SERIALIZER);
 }

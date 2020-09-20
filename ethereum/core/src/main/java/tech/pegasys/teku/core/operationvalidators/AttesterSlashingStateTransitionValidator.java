@@ -21,13 +21,13 @@ import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_ind
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.is_slashable_validator;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class AttesterSlashingStateTransitionValidator
     implements OperationStateTransitionValidator<AttesterSlashing> {
@@ -35,7 +35,7 @@ public class AttesterSlashingStateTransitionValidator
   public Optional<OperationInvalidReason> validate(
       final BeaconState state,
       final AttesterSlashing attesterSlashing,
-      final List<UnsignedLong> indicesToSlash) {
+      final List<UInt64> indicesToSlash) {
     return validate(state, attesterSlashing, Optional.of(indicesToSlash));
   }
 
@@ -48,7 +48,7 @@ public class AttesterSlashingStateTransitionValidator
   private Optional<OperationInvalidReason> validate(
       final BeaconState state,
       final AttesterSlashing attesterSlashing,
-      final Optional<List<UnsignedLong>> maybeIndicesToSlash) {
+      final Optional<List<UInt64>> maybeIndicesToSlash) {
     IndexedAttestation attestation_1 = attesterSlashing.getAttestation_1();
     IndexedAttestation attestation_2 = attesterSlashing.getAttestation_2();
     return firstOf(
@@ -67,10 +67,9 @@ public class AttesterSlashingStateTransitionValidator
         () -> {
           boolean slashed_any = false;
 
-          Set<UnsignedLong> intersectingIndices =
-              attesterSlashing.getIntersectingValidatorIndices();
+          Set<UInt64> intersectingIndices = attesterSlashing.getIntersectingValidatorIndices();
 
-          for (UnsignedLong index : intersectingIndices) {
+          for (UInt64 index : intersectingIndices) {
             if (is_slashable_validator(
                 state.getValidators().get(toIntExact(index.longValue())),
                 get_current_epoch(state))) {

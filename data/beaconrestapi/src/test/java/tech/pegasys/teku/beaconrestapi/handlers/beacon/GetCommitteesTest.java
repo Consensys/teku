@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.beacon;
 
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_GONE;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
@@ -25,9 +24,9 @@ import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_FINALIZED;
 import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import java.util.List;
@@ -39,17 +38,19 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class GetCommitteesTest {
   private final StorageSystem storageSystem =
-      InMemoryStorageSystem.createEmptyLatestStorageSystem(StateStorageMode.ARCHIVE);
-  private UnsignedLong slot;
-  private UnsignedLong epoch;
+      InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
+  private UInt64 slot;
+  private UInt64 epoch;
   private CombinedChainDataClient combinedChainDataClient;
 
   private final JsonProvider jsonProvider = new JsonProvider();
@@ -61,13 +62,13 @@ public class GetCommitteesTest {
 
   @BeforeEach
   public void setup() {
-    slot = UnsignedLong.valueOf(SLOTS_PER_EPOCH * 3);
+    slot = UInt64.valueOf(SLOTS_PER_EPOCH * 3);
     storageSystem.chainUpdater().initializeGenesis();
     SignedBlockAndState bestBlock = storageSystem.chainUpdater().advanceChain(slot);
     storageSystem.chainUpdater().updateBestBlock(bestBlock);
 
     combinedChainDataClient = storageSystem.combinedChainDataClient();
-    epoch = slot.dividedBy(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
+    epoch = slot.dividedBy(SLOTS_PER_EPOCH);
   }
 
   @Test
@@ -80,11 +81,22 @@ public class GetCommitteesTest {
   }
 
   @Test
+  public void shouldReturnBadRequestWhenEpochIsTooLarge() throws Exception {
+    when(context.queryParamMap())
+        .thenReturn(Map.of(EPOCH, List.of(Constants.FAR_FUTURE_EPOCH.toString())));
+    ChainDataProvider provider = new ChainDataProvider(null, combinedChainDataClient);
+    final GetCommittees handler = new GetCommittees(provider, jsonProvider);
+
+    handler.handle(context);
+    verify(context).status(SC_BAD_REQUEST);
+  }
+
+  @Test
   public void shouldHandleFutureEpoch() throws Exception {
     final GetCommittees handler = new GetCommittees(provider, jsonProvider);
 
-    final UnsignedLong futureEpoch = epoch.plus(UnsignedLong.ONE);
-    final UnsignedLong epochSlot = compute_start_slot_at_epoch(futureEpoch);
+    final UInt64 futureEpoch = epoch.plus(UInt64.ONE);
+    final UInt64 epochSlot = compute_start_slot_at_epoch(futureEpoch);
     when(context.queryParamMap()).thenReturn(Map.of(EPOCH, List.of(futureEpoch.toString())));
     when(provider.isStoreAvailable()).thenReturn(true);
     when(provider.isFinalized(epochSlot)).thenReturn(false);

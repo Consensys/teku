@@ -21,9 +21,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
@@ -31,6 +31,7 @@ import org.mockito.Mockito;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.Eth1HeadTracker.HeadUpdatedSubscriber;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
@@ -53,6 +54,11 @@ public class DepositProcessingControllerTest {
           depositFetcher,
           eth1BlockFetcher,
           headTracker);
+
+  @AfterEach
+  void tearDown() {
+    Constants.setConstants("minimal");
+  }
 
   @Test
   void doesAnotherRequestWhenTheLatestCanonicalBlockGetsUpdatedDuringCurrentRequest() {
@@ -100,11 +106,11 @@ public class DepositProcessingControllerTest {
   @Test
   void fetchDepositsBlockOneBlockAtATime() {
 
-    Constants.GENESIS_DELAY = UnsignedLong.valueOf(2);
+    Constants.GENESIS_DELAY = UInt64.valueOf(2);
     // calculateCandidateGenesisTimestamp will return
     // blockTime + 2
 
-    Constants.MIN_GENESIS_TIME = UnsignedLong.valueOf(100);
+    Constants.MIN_GENESIS_TIME = UInt64.valueOf(100);
 
     depositProcessingController.switchToBlockByBlockMode();
     depositProcessingController.startSubscription(BigInteger.ONE);
@@ -162,7 +168,7 @@ public class DepositProcessingControllerTest {
 
     // Second request brings us up to date with the latest block so we notify the block fetcher
     secondDepositsRequest.complete(null);
-    verify(eth1BlockFetcher).onInSync(UnsignedLong.valueOf(1010));
+    verify(eth1BlockFetcher).onInSync(UInt64.valueOf(1010));
   }
 
   private void mockBlockForEth1Provider(String blockHash, long blockNumber, long timestamp) {
@@ -170,7 +176,7 @@ public class DepositProcessingControllerTest {
     when(block.getTimestamp()).thenReturn(BigInteger.valueOf(timestamp));
     when(block.getNumber()).thenReturn(BigInteger.valueOf(blockNumber));
     when(block.getHash()).thenReturn(blockHash);
-    when(eth1Provider.getGuaranteedEth1Block(UnsignedLong.valueOf(blockNumber)))
+    when(eth1Provider.getGuaranteedEth1Block(UInt64.valueOf(blockNumber)))
         .thenReturn(SafeFuture.completedFuture(block));
   }
 
@@ -179,7 +185,7 @@ public class DepositProcessingControllerTest {
         ArgumentCaptor.forClass(HeadUpdatedSubscriber.class);
     verify(headTracker).subscribe(captor.capture());
     final HeadUpdatedSubscriber subscriber = captor.getValue();
-    subscriber.onHeadUpdated(UnsignedLong.valueOf(latestBlockNumber));
+    subscriber.onHeadUpdated(UInt64.valueOf(latestBlockNumber));
   }
 
   private ArgumentMatcher<MinGenesisTimeBlockEvent> isEvent(

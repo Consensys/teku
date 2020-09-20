@@ -13,20 +13,22 @@
 
 package tech.pegasys.teku.services.powchain;
 
-import com.google.common.primitives.UnsignedLong;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.math.BigInteger;
 import java.util.function.Consumer;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.FastRawTransactionManager;
-import org.web3j.tx.gas.DefaultGasProvider;
+import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.response.PollingTransactionReceiptProcessor;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.operations.DepositData;
 import tech.pegasys.teku.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.contract.DepositContract;
 import tech.pegasys.teku.util.config.Eth1Address;
 
@@ -50,13 +52,13 @@ public class DepositTransactionSender {
                 eth1Credentials,
                 new PollingTransactionReceiptProcessor(
                     web3j, POLL_INTERVAL_MILLIS, MAX_POLL_ATTEMPTS)),
-            new DefaultGasProvider());
+            new DepositContractGasProvider(web3j));
   }
 
   public SafeFuture<TransactionReceipt> sendDepositTransaction(
       BLSKeyPair validatorKeyPair,
       final BLSPublicKey withdrawalPublicKey,
-      final UnsignedLong amountInGwei,
+      final UInt64 amountInGwei,
       final Consumer<String> commandStdOutput,
       final Consumer<String> commandErrorOutput) {
     commandStdOutput.accept(
@@ -91,9 +93,42 @@ public class DepositTransactionSender {
             .deposit(
                 depositData.getPubkey().toBytesCompressed().toArray(),
                 depositData.getWithdrawal_credentials().toArray(),
-                depositData.getSignature().getSignature().toBytesCompressed().toArray(),
+                depositData.getSignature().toSSZBytes().toArray(),
                 depositData.hash_tree_root().toArray(),
                 new BigInteger(depositData.getAmount() + "000000000"))
             .sendAsync());
+  }
+
+  private static class DepositContractGasProvider implements ContractGasProvider {
+
+    private final Web3j web3j;
+
+    public DepositContractGasProvider(final Web3j web3j) {
+      this.web3j = web3j;
+    }
+
+    @Override
+    public BigInteger getGasPrice(final String contractFunc) {
+      return getGasPrice();
+    }
+
+    @Override
+    public BigInteger getGasPrice() {
+      try {
+        return web3j.ethGasPrice().send().getGasPrice();
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+    }
+
+    @Override
+    public BigInteger getGasLimit(final String contractFunc) {
+      return getGasLimit();
+    }
+
+    @Override
+    public BigInteger getGasLimit() {
+      return BigInteger.valueOf(200_000L);
+    }
   }
 }

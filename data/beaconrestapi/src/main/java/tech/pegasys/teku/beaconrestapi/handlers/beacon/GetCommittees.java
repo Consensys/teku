@@ -23,9 +23,8 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERRO
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUnsignedLong;
+import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsEpoch;
 
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -42,6 +41,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetCommittees extends AbstractHandler implements Handler {
@@ -75,9 +75,9 @@ public class GetCommittees extends AbstractHandler implements Handler {
   @Override
   public void handle(Context ctx) throws Exception {
     try {
-      UnsignedLong epoch = getParameterValueAsUnsignedLong(ctx.queryParamMap(), EPOCH);
+      UInt64 epoch = getParameterValueAsEpoch(ctx.queryParamMap(), EPOCH);
       final SafeFuture<Optional<List<Committee>>> future = provider.getCommitteesAtEpoch(epoch);
-      UnsignedLong slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
+      UInt64 slot = BeaconStateUtil.compute_start_slot_at_epoch(epoch);
       ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(provider, slot));
       if (provider.isFinalized(slot)) {
         handlePossiblyGoneResult(ctx, future);

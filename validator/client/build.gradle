@@ -1,16 +1,20 @@
 dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
   implementation project(':bls')
-  implementation project(':data:metrics')
+  implementation project(':infrastructure:io')
+  implementation project(':infrastructure:metrics')
   implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
-  implementation project(':events')
+  implementation project(':infrastructure:events')
   implementation project(':infrastructure:async')
-  implementation project(':logging')
+  implementation project(':infrastructure:logging')
   implementation project(':services:serviceutils')
-  implementation project(':validator:anticorruption')
+  implementation project(':storage:api')
   implementation project(':validator:api')
+  implementation project(':validator:eventadapter')
+  implementation project(':validator:remote')
   implementation project(':util')
+  implementation project(':data:serializer')
 
   implementation 'org.apache.tuweni:tuweni-bytes'
 
@@ -20,7 +24,7 @@ dependencies {
 
   integrationTestImplementation 'org.mock-server:mockserver-junit-jupiter'
 
-  testImplementation testFixtures(project(':data:metrics'))
+  testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':util'))

@@ -20,7 +20,6 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_NODE;
 
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -29,6 +28,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetGenesisTime implements Handler {
@@ -54,7 +54,7 @@ public class GetGenesisTime implements Handler {
       })
   @Override
   public void handle(Context ctx) throws Exception {
-    UnsignedLong genesisTime = provider.getGenesisTime();
+    UInt64 genesisTime = provider.getGenesisTime();
     ctx.header(Header.CACHE_CONTROL, CACHE_FINALIZED);
     ctx.result(jsonProvider.objectToJSON(genesisTime));
   }

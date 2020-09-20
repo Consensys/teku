@@ -15,7 +15,6 @@ package tech.pegasys.teku.reference.phase0;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -27,6 +26,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class TestDataUtils {
 
@@ -51,9 +51,9 @@ public class TestDataUtils {
     return Bytes32.wrap(Files.readAllBytes(path));
   }
 
-  public static UnsignedLong loadUnsignedLongFromYaml(
+  public static UInt64 loadUInt64FromYaml(
       final TestDefinition testDefinition, final String fileName) throws IOException {
-    return UnsignedLong.fromLongBits(loadYaml(testDefinition, fileName, Long.class));
+    return UInt64.fromLongBits(loadYaml(testDefinition, fileName, Long.class));
   }
 
   public static <T> T loadYaml(

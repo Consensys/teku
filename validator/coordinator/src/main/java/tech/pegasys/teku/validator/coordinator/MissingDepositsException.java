@@ -13,16 +13,21 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import com.google.common.primitives.UnsignedLong;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class MissingDepositsException extends IllegalStateException {
 
-  public MissingDepositsException(
-      final UnsignedLong maxAvailableDeposit, final UnsignedLong requiredDepositIndex) {
-    super(
+  private MissingDepositsException(final String message) {
+    super(message);
+  }
+
+  public static MissingDepositsException missingRange(
+      final UInt64 fromIndex, final UInt64 toIndex) {
+    final String errorMessage =
         "Unable to create block because ETH1 deposits are not available. Missing deposits "
-            + maxAvailableDeposit.plus(UnsignedLong.ONE)
+            + fromIndex
             + " to "
-            + requiredDepositIndex);
+            + toIndex;
+    return new MissingDepositsException(errorMessage);
   }
 }

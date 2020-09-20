@@ -30,6 +30,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.ProposerSlashingValidator;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
@@ -45,6 +47,7 @@ public class ProposerSlashingTopicHandlerTest {
   private final GossipedOperationConsumer<ProposerSlashing> consumer =
       mock(GossipedOperationConsumer.class);
 
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(eventBus);
   private final BeaconChainUtil beaconChainUtil = BeaconChainUtil.create(5, recentChainData);
@@ -53,7 +56,7 @@ public class ProposerSlashingTopicHandlerTest {
 
   private ProposerSlashingTopicHandler topicHandler =
       new ProposerSlashingTopicHandler(
-          gossipEncoding, dataStructureUtil.randomForkInfo(), validator, consumer);
+          asyncRunner, gossipEncoding, dataStructureUtil.randomForkInfo(), validator, consumer);
 
   @BeforeEach
   public void setup() {
@@ -65,8 +68,9 @@ public class ProposerSlashingTopicHandlerTest {
     final ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(validator.validate(slashing)).thenReturn(ACCEPT);
     Bytes serialized = gossipEncoding.encode(slashing);
-    final ValidationResult result = topicHandler.handleMessage(serialized).join();
-    assertThat(result).isEqualTo(ValidationResult.Valid);
+    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    asyncRunner.executeQueuedActions();
+    assertThat(result).isCompletedWithValue(ValidationResult.Valid);
     verify(consumer).forward(slashing);
   }
 
@@ -75,8 +79,9 @@ public class ProposerSlashingTopicHandlerTest {
     final ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(validator.validate(slashing)).thenReturn(IGNORE);
     Bytes serialized = gossipEncoding.encode(slashing);
-    final ValidationResult result = topicHandler.handleMessage(serialized).join();
-    assertThat(result).isEqualTo(ValidationResult.Ignore);
+    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    asyncRunner.executeQueuedActions();
+    assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
     verifyNoInteractions(consumer);
   }
 
@@ -85,8 +90,9 @@ public class ProposerSlashingTopicHandlerTest {
     final ProposerSlashing slashing = dataStructureUtil.randomProposerSlashing();
     when(validator.validate(slashing)).thenReturn(REJECT);
     Bytes serialized = gossipEncoding.encode(slashing);
-    final ValidationResult result = topicHandler.handleMessage(serialized).join();
-    assertThat(result).isEqualTo(ValidationResult.Invalid);
+    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    asyncRunner.executeQueuedActions();
+    assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
     verifyNoInteractions(consumer);
   }
 
@@ -94,8 +100,9 @@ public class ProposerSlashingTopicHandlerTest {
   public void handleMessage_invalidSSZ() {
     Bytes serialized = Bytes.fromHexString("0x1234");
 
-    final ValidationResult result = topicHandler.handleMessage(serialized).join();
-    assertThat(result).isEqualTo(ValidationResult.Invalid);
+    final SafeFuture<ValidationResult> result = topicHandler.handleMessage(serialized);
+    asyncRunner.executeQueuedActions();
+    assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
     verifyNoInteractions(consumer);
   }
 
@@ -105,7 +112,8 @@ public class ProposerSlashingTopicHandlerTest {
     final ForkInfo forkInfo = mock(ForkInfo.class);
     when(forkInfo.getForkDigest()).thenReturn(forkDigest);
     final ProposerSlashingTopicHandler topicHandler =
-        new ProposerSlashingTopicHandler(gossipEncoding, forkInfo, validator, consumer);
+        new ProposerSlashingTopicHandler(
+            asyncRunner, gossipEncoding, forkInfo, validator, consumer);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/proposer_slashing/ssz_snappy");
   }
 }

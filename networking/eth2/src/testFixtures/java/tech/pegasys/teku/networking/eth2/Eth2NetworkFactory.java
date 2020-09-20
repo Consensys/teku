@@ -32,10 +32,12 @@ import java.util.OptionalInt;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
@@ -45,7 +47,9 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -71,8 +75,9 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.KeyValueStore;
+import tech.pegasys.teku.storage.store.MemKeyValueStore;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.events.Subscribers;
 import tech.pegasys.teku.util.time.StubTimeProvider;
 
 public class Eth2NetworkFactory {
@@ -88,8 +93,9 @@ public class Eth2NetworkFactory {
     return new Eth2P2PNetworkBuilder();
   }
 
-  public void stopAll() {
-    networks.forEach(P2PNetwork::stop);
+  public void stopAll() throws InterruptedException, ExecutionException, TimeoutException {
+    Waiter.waitFor(
+        SafeFuture.allOf(networks.stream().map(P2PNetwork::stop).toArray(SafeFuture[]::new)));
   }
 
   public class Eth2P2PNetworkBuilder {
@@ -139,7 +145,7 @@ public class Eth2NetworkFactory {
                 "Port conflict detected, retrying with a new port. Original message: {}",
                 e.getMessage());
             attempt++;
-            network.stop();
+            Waiter.waitFor(network.stop());
           } else {
             throw e;
           }
@@ -162,7 +168,10 @@ public class Eth2NetworkFactory {
                 rpcEncoding,
                 eth2RpcPingInterval,
                 eth2RpcOutstandingPingThreshold,
-                eth2StatusUpdateInterval);
+                eth2StatusUpdateInterval,
+                StubTimeProvider.withTimeInSeconds(1000),
+                500,
+                50);
 
         List<RpcMethod> rpcMethods =
             eth2PeerManager.getBeaconChainMethods().all().stream()
@@ -179,10 +188,12 @@ public class Eth2NetworkFactory {
                 Constants.REPUTATION_MANAGER_CAPACITY);
         final AttestationSubnetTopicProvider subnetTopicProvider =
             new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
+        final KeyValueStore<String, Bytes> keyValueStore = new MemKeyValueStore<>();
         final DiscoveryNetwork<?> network =
             DiscoveryNetwork.create(
                 metricsSystem,
                 asyncRunner,
+                keyValueStore,
                 new LibP2PNetwork(
                     asyncRunner,
                     config,
@@ -193,12 +204,16 @@ public class Eth2NetworkFactory {
                 new Eth2PeerSelectionStrategy(
                     config.getTargetPeerRange(),
                     gossipNetwork ->
-                        PeerSubnetSubscriptions.create(gossipNetwork, subnetTopicProvider),
+                        PeerSubnetSubscriptions.create(
+                            gossipNetwork,
+                            subnetTopicProvider,
+                            config.getTargetSubnetSubscriberCount()),
                     reputationManager,
                     Collections::shuffle),
                 config);
 
         return new ActiveEth2Network(
+            asyncRunner,
             metricsSystem,
             network,
             eth2PeerManager,
@@ -232,6 +247,7 @@ public class Eth2NetworkFactory {
           false,
           emptyList(),
           new TargetPeerRange(20, 30, 0),
+          2,
           GossipConfig.DEFAULT_CONFIG,
           new WireLogsConfig(false, false, true, false));
     }

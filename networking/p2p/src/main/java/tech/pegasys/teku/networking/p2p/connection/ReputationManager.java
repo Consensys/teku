@@ -16,22 +16,21 @@ package tech.pegasys.teku.networking.p2p.connection;
 import static tech.pegasys.teku.networking.p2p.peer.DisconnectReason.TOO_MANY_PEERS;
 import static tech.pegasys.teku.networking.p2p.peer.DisconnectReason.UNRESPONSIVE;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.collections.cache.Cache;
+import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.util.cache.Cache;
-import tech.pegasys.teku.util.cache.LRUCache;
 import tech.pegasys.teku.util.time.TimeProvider;
 
 public class ReputationManager {
-  static final UnsignedLong FAILURE_BAN_PERIOD =
-      UnsignedLong.valueOf(TimeUnit.MINUTES.toSeconds(2));
+  static final UInt64 FAILURE_BAN_PERIOD = UInt64.valueOf(TimeUnit.MINUTES.toSeconds(2));
   private final TimeProvider timeProvider;
   private final Cache<NodeId, Reputation> peerReputations;
 
@@ -85,14 +84,14 @@ public class ReputationManager {
             // network once our internet access is restored.
             UNRESPONSIVE);
 
-    private volatile Optional<UnsignedLong> lastInitiationFailure = Optional.empty();
+    private volatile Optional<UInt64> lastInitiationFailure = Optional.empty();
     private volatile boolean unsuitable = false;
 
-    public void reportInitiatedConnectionFailed(final UnsignedLong failureTime) {
+    public void reportInitiatedConnectionFailed(final UInt64 failureTime) {
       lastInitiationFailure = Optional.of(failureTime);
     }
 
-    public boolean shouldInitiateConnection(final UnsignedLong currentTime) {
+    public boolean shouldInitiateConnection(final UInt64 currentTime) {
       return !unsuitable
           && lastInitiationFailure
               .map(
@@ -106,7 +105,7 @@ public class ReputationManager {
     }
 
     public void reportDisconnection(
-        final UnsignedLong disconnectTime,
+        final UInt64 disconnectTime,
         final Optional<DisconnectReason> reason,
         final boolean locallyInitiated) {
       if (isLocallyConsideredUnsuitable(reason, locallyInitiated)

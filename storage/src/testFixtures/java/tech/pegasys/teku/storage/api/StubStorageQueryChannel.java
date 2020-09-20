@@ -13,16 +13,17 @@
 
 package tech.pegasys.teku.storage.api;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 
 public class StubStorageQueryChannel implements StorageQueryChannel {
@@ -33,17 +34,23 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(UnsignedLong slot) {
+  public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(UInt64 slot) {
     return SafeFuture.completedFuture(Optional.empty());
   }
 
   @Override
-  public SafeFuture<Optional<SignedBeaconBlock>> getLatestFinalizedBlockAtSlot(UnsignedLong slot) {
+  public SafeFuture<Optional<SignedBeaconBlock>> getLatestFinalizedBlockAtSlot(UInt64 slot) {
     return SafeFuture.completedFuture(Optional.empty());
   }
 
   @Override
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(Bytes32 blockRoot) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedBlockAndState>> getHotBlockAndStateByBlockRoot(
+      final Bytes32 blockRoot) {
     return SafeFuture.completedFuture(Optional.empty());
   }
 
@@ -60,12 +67,17 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(UnsignedLong slot) {
+  public SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(UInt64 slot) {
     return SafeFuture.completedFuture(Optional.empty());
   }
 
   @Override
   public SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(Bytes32 blockRoot) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getFinalizedSlotByStateRoot(final Bytes32 stateRoot) {
     return SafeFuture.completedFuture(Optional.empty());
   }
 }

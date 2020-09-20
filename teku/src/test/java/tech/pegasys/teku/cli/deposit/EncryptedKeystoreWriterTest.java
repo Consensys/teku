@@ -25,7 +25,7 @@ import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSecretKey;
-import tech.pegasys.teku.util.crypto.SecureRandomProvider;
+import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
 
 class EncryptedKeystoreWriterTest {
   private static final BLSSecretKey validator1SecretKey =

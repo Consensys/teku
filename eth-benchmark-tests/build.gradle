@@ -2,11 +2,18 @@ plugins {
   id 'me.champeau.gradle.jmh'
 }
 
+idea {
+  module {
+    testSourceDirs += sourceSets.main.java.srcDirs
+  }
+}
+
 dependencies {
   implementation project(':bls')
   implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
+  implementation project(':ethereum:weaksubjectivity')
   implementation project(':eth-tests')
   implementation project(':infrastructure:async')
   implementation project(':storage')

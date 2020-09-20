@@ -24,10 +24,13 @@ import java.util.OptionalInt;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
@@ -35,6 +38,7 @@ import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.storage.store.MemKeyValueStore;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.time.StubTimeProvider;
 
@@ -51,8 +55,9 @@ public class DiscoveryNetworkFactory {
     return new DiscoveryNetworkBuilder();
   }
 
-  public void stopAll() {
-    networks.forEach(DiscoveryNetwork::stop);
+  public void stopAll() throws InterruptedException, ExecutionException, TimeoutException {
+    Waiter.waitFor(
+        SafeFuture.allOf(networks.stream().map(DiscoveryNetwork::stop).toArray(SafeFuture[]::new)));
   }
 
   public class DiscoveryNetworkBuilder {
@@ -87,7 +92,8 @@ public class DiscoveryNetworkFactory {
                 staticPeers,
                 true,
                 bootnodes,
-                new TargetPeerRange(20, 30, 0));
+                new TargetPeerRange(20, 30, 0),
+                2);
         final NoOpMetricsSystem metricsSystem = new NoOpMetricsSystem();
         final ReputationManager reputationManager =
             new ReputationManager(
@@ -98,6 +104,7 @@ public class DiscoveryNetworkFactory {
             DiscoveryNetwork.create(
                 metricsSystem,
                 DelayedExecutorAsyncRunner.create(),
+                new MemKeyValueStore<>(),
                 new LibP2PNetwork(
                     DelayedExecutorAsyncRunner.create(),
                     config,
@@ -120,7 +127,7 @@ public class DiscoveryNetworkFactory {
                 "Port conflict detected, retrying with a new port. Original message: {}",
                 e.getMessage());
             attempt++;
-            network.stop();
+            Waiter.waitFor(network.stop());
           } else {
             throw e;
           }

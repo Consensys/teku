@@ -18,7 +18,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
 
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import java.util.Optional;
@@ -28,6 +27,7 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.schema.BeaconHead;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetHeadTest {
@@ -36,7 +36,7 @@ public class GetHeadTest {
   private final Context context = mock(Context.class);
   private final JsonProvider jsonProvider = new JsonProvider();
   private BeaconState rootState = dataStructureUtil.randomBeaconState();
-  private final UnsignedLong bestSlot = UnsignedLong.valueOf(51234);
+  private final UInt64 bestSlot = UInt64.valueOf(51234);
 
   @Test
   public void shouldReturnBeaconHead() throws Exception {

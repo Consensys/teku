@@ -19,7 +19,7 @@ import static tech.pegasys.teku.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
 import static tech.pegasys.teku.cli.options.LoggingOptions.DEFAULT_LOG_FILE;
 import static tech.pegasys.teku.cli.options.LoggingOptions.DEFAULT_LOG_FILE_NAME_PATTERN;
 import static tech.pegasys.teku.cli.options.MetricsOptions.DEFAULT_METRICS_CATEGORIES;
-import static tech.pegasys.teku.util.config.LoggingDestination.DEFAULT_BOTH;
+import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 import static tech.pegasys.teku.util.config.StateStorageMode.PRUNE;
 
 import com.google.common.io.Resources;
@@ -36,13 +36,14 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 import tech.pegasys.teku.util.config.Eth1Address;
-import tech.pegasys.teku.util.config.LoggingDestination;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.NetworkDefinition;
-import tech.pegasys.teku.util.config.TekuConfiguration;
-import tech.pegasys.teku.util.config.TekuConfigurationBuilder;
 
 public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
@@ -92,6 +93,19 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  void ignoreVersionAndHelpEnvVars() {
+    beaconNodeCommand =
+        new BeaconNodeCommand(
+            outputWriter,
+            errorWriter,
+            Map.of("TEKU_VERSION", "1.2.3", "TEKU_HELP", "what?"),
+            startAction);
+
+    // No error from invalid --version or --help arg.
+    assertThat(beaconNodeCommand.parse(new String[0])).isZero();
+  }
+
+  @Test
   public void overrideEnvironmentValuesIfKeyIsPresentInCLIOptions() {
     final String[] args = createCliArgs();
     args[5] = "1.2.3.5";
@@ -104,7 +118,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    assertTekuConfiguration(expectedConfigurationBuilder().setP2pInterface("1.2.3.5").build());
+    TekuConfiguration expected =
+        expectedConfigurationBuilder()
+            .globalConfig(
+                b -> {
+                  b.setP2pInterface("1.2.3.5");
+                })
+            .build();
+    assertTekuConfiguration(expected);
   }
 
   @Test
@@ -120,8 +141,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    assertTekuConfiguration(
-        expectedCompleteConfigInFileBuilder().setP2pInterface("1.2.3.5").build());
+    final TekuConfiguration expected =
+        expectedCompleteConfigInFileBuilder()
+            .globalConfig(
+                b -> {
+                  b.setP2pInterface("1.2.3.5");
+                })
+            .build();
+    assertTekuConfiguration(expected);
   }
 
   @Test
@@ -133,8 +160,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    assertTekuConfiguration(
-        expectedCompleteConfigInFileBuilder().setP2pInterface("1.2.3.5").build());
+    final TekuConfiguration expected =
+        expectedCompleteConfigInFileBuilder()
+            .globalConfig(
+                b -> {
+                  b.setP2pInterface("1.2.3.5");
+                })
+            .build();
+    assertTekuConfiguration(expected);
   }
 
   @Test
@@ -172,21 +205,25 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void interopEnabled_shouldNotRequireAValue() {
-    final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--Xinterop-enabled");
-    assertThat(tekuConfiguration.isInteropEnabled()).isTrue();
+    final GlobalConfiguration globalConfiguration =
+        getGlobalConfigurationFromArguments("--Xinterop-enabled");
+    assertThat(globalConfiguration.isInteropEnabled()).isTrue();
   }
 
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"OFF", "FATAL", "WARN", "INFO", "DEBUG", "TRACE", "ALL"})
+  @ValueSource(
+      strings = {
+        "OFF", "FATAL", "ERROR", "WARN", "INFO", "DEBUG", "TRACE", "ALL", "off", "fatal", "error",
+        "warn", "info", "debug", "trace", "all"
+      })
   public void loglevel_shouldAcceptValues(String level) {
     final String[] args = {"--logging", level};
     beaconNodeCommand.parse(args);
-    assertThat(beaconNodeCommand.getLogLevel().toString()).isEqualTo(level);
+    assertThat(beaconNodeCommand.getLogLevel().toString()).isEqualToIgnoringCase(level);
   }
 
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"Off", "Fatal", "WaRN", "InfO", "DebUG", "trACE", "all"})
+  @ValueSource(strings = {"Off", "Fatal", "eRRoR", "WaRN", "InfO", "DebUG", "trACE", "All"})
   public void loglevel_shouldAcceptValuesMixedCase(String level) {
     final String[] args = {"--logging", level};
     beaconNodeCommand.parse(args);
@@ -237,43 +274,67 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       "--rest-api-port", "5051",
       "--rest-api-docs-enabled", "false",
       "--rest-api-enabled", "false",
-      "--rest-api-interface", "127.0.0.1"
+      "--rest-api-interface", "127.0.0.1",
+      "--Xremote-validator-api-interface", "127.0.0.1",
+      "--Xremote-validator-api-port", "9999",
+      "--Xremote-validator-api-max-subscribers", "1000",
+      "--Xremote-validator-api-enabled", "false",
+      "--Xpeer-rate-limit", "500",
+      "--Xpeer-request-limit", "50"
     };
   }
 
-  private TekuConfigurationBuilder expectedDefaultConfigurationBuilder() {
+  private TekuConfiguration.Builder expectedDefaultConfigurationBuilder() {
     return expectedConfigurationBuilder()
-        .setNetwork(NetworkDefinition.fromCliArg("altona"))
-        .setEth1DepositContractAddress(null)
-        .setEth1Endpoint(null)
-        .setMetricsCategories(
-            DEFAULT_METRICS_CATEGORIES.stream().map(Object::toString).collect(Collectors.toList()))
-        .setP2pAdvertisedPort(OptionalInt.empty())
-        .setP2pDiscoveryEnabled(true)
-        .setP2pInterface("0.0.0.0")
-        .setP2pPort(9000)
-        .setP2pPrivateKeyFile(null)
-        .setInteropEnabled(false)
-        .setInteropGenesisTime(0)
-        .setInteropOwnedValidatorCount(0)
-        .setLogDestination(DEFAULT_BOTH)
-        .setLogFile(DEFAULT_LOG_FILE)
-        .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN);
+        .globalConfig(
+            b -> {
+              b.setNetwork(NetworkDefinition.fromCliArg("medalla"))
+                  .setEth1DepositContractAddress(null)
+                  .setEth1Endpoint(null)
+                  .setMetricsCategories(
+                      DEFAULT_METRICS_CATEGORIES.stream()
+                          .map(Object::toString)
+                          .collect(Collectors.toList()))
+                  .setP2pAdvertisedPort(OptionalInt.empty())
+                  .setP2pDiscoveryEnabled(true)
+                  .setP2pInterface("0.0.0.0")
+                  .setP2pPort(9000)
+                  .setP2pPrivateKeyFile(null)
+                  .setInteropEnabled(false)
+                  .setValidatorKeystoreLockingEnabled(true)
+                  .setPeerRateLimit(500)
+                  .setPeerRequestLimit(50)
+                  .setInteropGenesisTime(0)
+                  .setInteropOwnedValidatorCount(0)
+                  .setLogDestination(DEFAULT_BOTH)
+                  .setLogFile(DEFAULT_LOG_FILE)
+                  .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN);
+            });
   }
 
-  private TekuConfigurationBuilder expectedCompleteConfigInFileBuilder() {
+  private TekuConfiguration.Builder expectedCompleteConfigInFileBuilder() {
     return expectedConfigurationBuilder()
-        .setLogFile("teku.log")
-        .setLogDestination(LoggingDestination.BOTH)
-        .setLogFileNamePattern("teku_%d{yyyy-MM-dd}.log");
+        .globalConfig(
+            builder -> {
+              builder
+                  .setLogFile("teku.log")
+                  .setLogDestination(LoggingDestination.BOTH)
+                  .setLogFileNamePattern("teku_%d{yyyy-MM-dd}.log");
+            });
   }
 
-  private TekuConfigurationBuilder expectedConfigurationBuilder() {
+  private TekuConfiguration.Builder expectedConfigurationBuilder() {
+    return TekuConfiguration.builder().globalConfig(this::buildExpectedGlobalConfiguration);
+  }
+
+  private void buildExpectedGlobalConfiguration(final GlobalConfigurationBuilder builder) {
     Eth1Address address = Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
-    return TekuConfiguration.builder()
+    builder
         .setNetwork(NetworkDefinition.fromCliArg("minimal"))
         .setP2pEnabled(false)
         .setP2pInterface("1.2.3.4")
+        .setPeerRateLimit(500)
+        .setPeerRequestLimit(50)
         .setP2pPort(1234)
         .setP2pDiscoveryEnabled(false)
         .setP2pAdvertisedPort(OptionalInt.of(9000))
@@ -281,12 +342,14 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setP2pPrivateKeyFile("path/to/file")
         .setP2pPeerLowerBound(64)
         .setP2pPeerUpperBound(74)
+        .setTargetSubnetSubscriberCount(2)
         .setP2pStaticPeers(Collections.emptyList())
         .setInteropGenesisTime(1)
         .setInteropOwnedValidatorStartIndex(0)
         .setInteropOwnedValidatorCount(64)
         .setInteropNumberOfValidators(64)
         .setInteropEnabled(true)
+        .setValidatorKeystoreLockingEnabled(true)
         .setEth1DepositContractAddress(address)
         .setEth1Endpoint("http://localhost:8545")
         .setEth1DepositsFromStorageEnabled(true)
@@ -301,18 +364,25 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setLogFile(DEFAULT_LOG_FILE)
         .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN)
         .setLogIncludeEventsEnabled(true)
-        .setValidatorKeystoreFiles(Collections.emptyList())
-        .setValidatorKeystorePasswordFiles(Collections.emptyList())
+        .setLogIncludeValidatorDutiesEnabled(true)
         .setValidatorExternalSignerTimeout(1000)
         .setDataPath(dataPath.toString())
         .setDataStorageMode(PRUNE)
         .setDataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
         .setDataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION.getValue())
+        .setHotStatePersistenceFrequencyInEpochs(1)
+        .setIsBlockProcessingAtStartupDisabled(true)
         .setRestApiPort(5051)
         .setRestApiDocsEnabled(false)
         .setRestApiEnabled(false)
         .setRestApiInterface("127.0.0.1")
-        .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"));
+        .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"))
+        .setRemoteValidatorApiInterface("127.0.0.1")
+        .setRemoteValidatorApiMaxSubscribers(1000)
+        .setRemoteValidatorApiPort(9999)
+        .setRemoteValidatorApiEnabled(false)
+        .setBeaconNodeApiEndpoint("http://127.0.0.1:5051")
+        .setBeaconNodeEventsWsEndpoint("ws://127.0.0.1:9999");
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {

@@ -15,7 +15,6 @@ package tech.pegasys.teku.datastructures.operations;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.Sets;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,14 +24,15 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.datastructures.util.HashTreeUtil;
+import tech.pegasys.teku.datastructures.util.HashTreeUtil.SSZTypes;
+import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.hashtree.HashTreeUtil;
-import tech.pegasys.teku.util.hashtree.HashTreeUtil.SSZTypes;
-import tech.pegasys.teku.util.hashtree.Merkleizable;
 
 public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
@@ -60,7 +60,7 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
         new Bitlist(Constants.MAX_VALIDATORS_PER_COMMITTEE, Constants.MAX_VALIDATORS_PER_COMMITTEE);
   }
 
-  public UnsignedLong getEarliestSlotForForkChoiceProcessing() {
+  public UInt64 getEarliestSlotForForkChoiceProcessing() {
     return data.getEarliestSlotForForkChoice();
   }
 
@@ -85,20 +85,8 @@ public class Attestation implements Merkleizable, SimpleOffsetSerializable, SSZC
   @Override
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
-    // TODO (#2396): The below lines are a hack while Tuweni SSZ/SOS is being upgraded. To be
-    // uncommented
-    // once we shift from Bitlist to a real bitlist type.
-    // Bitlist serialized_aggregation_bits =
-    // Bitlist.fromHexString("0x01").shiftLeft(aggregation_bits.bitLength()).or(aggregation_bits);
-    // variablePartsList.addAll(List.of(serialized_aggregation_bits));
     variablePartsList.addAll(List.of(aggregation_bits.serialize()));
     variablePartsList.addAll(Collections.nCopies(data.getSSZFieldCount(), Bytes.EMPTY));
-    // TODO (#2396): The below lines are a hack while Tuweni SSZ/SOS is being upgraded. To be
-    // uncommented
-    // once we shift from Bitlist to a real bitlist type.
-    // Bitlist serialized_custody_bitfield =
-    // Bitlist.fromHexString("0x01").shiftLeft(aggregation_bits.bitLength()).or(custody_bitfield);
-    // variablePartsList.addAll(List.of(serialized_custody_bitfield));
     variablePartsList.addAll(Collections.nCopies(signature.getSSZFieldCount(), Bytes.EMPTY));
     return variablePartsList;
   }

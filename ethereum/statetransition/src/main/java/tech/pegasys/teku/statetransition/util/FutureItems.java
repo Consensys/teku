@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.util;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -23,18 +22,17 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
-import tech.pegasys.teku.util.collections.LimitStrategy;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /** Holds items with slots that are in the future relative to our node's current slot */
 public class FutureItems<T> {
   private static final Logger LOG = LogManager.getLogger();
   private static final int MAX_ITEMS_PER_SLOT = 500;
-  private final NavigableMap<UnsignedLong, Set<T>> queuedFutureItems =
-      new ConcurrentSkipListMap<>();
-  private final Function<T, UnsignedLong> slotFunction;
+  private final NavigableMap<UInt64, Set<T>> queuedFutureItems = new ConcurrentSkipListMap<>();
+  private final Function<T, UInt64> slotFunction;
 
-  public FutureItems(final Function<T, UnsignedLong> slotFunction) {
+  public FutureItems(final Function<T, UInt64> slotFunction) {
     this.slotFunction = slotFunction;
   }
 
@@ -44,7 +42,7 @@ public class FutureItems<T> {
    * @param item The item to add
    */
   public void add(final T item) {
-    final UnsignedLong slot = slotFunction.apply(item);
+    final UInt64 slot = slotFunction.apply(item);
     LOG.trace("Save future item at slot {} for later import: {}", slot, item);
     queuedFutureItems.computeIfAbsent(slot, key -> createNewSet()).add(item);
   }
@@ -55,7 +53,7 @@ public class FutureItems<T> {
    * @param currentSlot The slot to be considered current
    * @return The set of items that are no longer in the future
    */
-  public List<T> prune(final UnsignedLong currentSlot) {
+  public List<T> prune(final UInt64 currentSlot) {
     final List<T> dequeued = new ArrayList<>();
     queuedFutureItems
         .headMap(currentSlot, true)
@@ -75,7 +73,6 @@ public class FutureItems<T> {
   }
 
   private Set<T> createNewSet() {
-    return ConcurrentLimitedSet.create(
-        MAX_ITEMS_PER_SLOT, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+    return LimitedSet.create(MAX_ITEMS_PER_SLOT);
   }
 }

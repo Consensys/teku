@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -34,17 +34,17 @@ public class PeerStatusFactory {
   public PeerStatus random() {
     final Bytes4 fork = Constants.GENESIS_FORK_VERSION;
     final Bytes32 finalizedRoot = randomBytes32();
-    final UnsignedLong finalizedEpoch = randomLong(0, 10);
+    final UInt64 finalizedEpoch = randomLong(0, 10);
     final Bytes32 headRoot = randomBytes32();
     final long minHeadSlot = (finalizedEpoch.longValue() + 2) * Constants.SLOTS_PER_EPOCH;
-    final UnsignedLong headSlot = randomLong(minHeadSlot, minHeadSlot + 5);
+    final UInt64 headSlot = randomLong(minHeadSlot, minHeadSlot + 5);
     return new PeerStatus(fork, finalizedRoot, finalizedEpoch, headRoot, headSlot);
   }
 
-  private final UnsignedLong randomLong(final long min, final long max) {
+  private final UInt64 randomLong(final long min, final long max) {
     final int range = Math.toIntExact(max - min);
     final long randomLong = random.nextInt(range) + min;
-    return UnsignedLong.valueOf(randomLong);
+    return UInt64.valueOf(randomLong);
   }
 
   private final Bytes32 randomBytes32() {

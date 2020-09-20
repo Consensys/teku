@@ -28,6 +28,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.provider.JsonProvider;
 
@@ -59,7 +60,7 @@ public class GetFork implements Handler {
   @Override
   public void handle(Context ctx) throws Exception {
     ctx.header(CACHE_CONTROL, CACHE_NONE);
-    Fork result = provider.getFork();
+    GetForkResponse result = provider.getForkInfo();
     ctx.result(jsonProvider.objectToJSON(result));
   }
 }

@@ -27,11 +27,11 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 class YamlValidatorKeyProviderTest {
   private final YamlValidatorKeyProvider provider = new YamlValidatorKeyProvider();
-  private final TekuConfiguration config = mock(TekuConfiguration.class);
+  private final GlobalConfiguration config = mock(GlobalConfiguration.class);
 
   @Test
   public void shouldLoadExampleFile(@TempDir Path tempDirectory) throws Exception {
@@ -47,16 +47,16 @@ class YamlValidatorKeyProviderTest {
 
     final List<String> EXPECTED_PRIVATE_KEYS =
         asList(
-            "0x0000000000000000000000000000000025295f0d1d592a90b333e26e85149708208e9f8e8bc18f6c77bd62f8ad7a6866",
-            "0x0000000000000000000000000000000051d0b65185db6989ab0b560d6deed19c7ead0e24b9b6372cbecb1f26bdfad000",
-            "0x00000000000000000000000000000000315ed405fafe339603932eebe8dbfd650ce5dafa561f6928664c75db85f97857");
+            "0x25295f0d1d592a90b333e26e85149708208e9f8e8bc18f6c77bd62f8ad7a6866",
+            "0x51d0b65185db6989ab0b560d6deed19c7ead0e24b9b6372cbecb1f26bdfad000",
+            "0x315ed405fafe339603932eebe8dbfd650ce5dafa561f6928664c75db85f97857");
 
     when(config.getValidatorsKeyFile()).thenReturn(tempFile.toAbsolutePath().toString());
 
     final List<BLSKeyPair> keys = provider.loadValidatorKeys(config);
     final List<String> actualPrivateKeys =
         keys.stream()
-            .map(keypair -> keypair.getSecretKey().getSecretKey().toBytes().toHexString())
+            .map(keypair -> keypair.getSecretKey().toBytes().toHexString())
             .collect(Collectors.toList());
 
     assertEquals(EXPECTED_PRIVATE_KEYS, actualPrivateKeys);

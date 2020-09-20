@@ -25,7 +25,6 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.EPOCH;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import java.util.Collections;
 import java.util.List;
@@ -40,18 +39,19 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class GetStateTest {
   private final StorageSystem storageSystem =
-      InMemoryStorageSystem.createEmptyLatestStorageSystem(StateStorageMode.ARCHIVE);
+      InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private tech.pegasys.teku.datastructures.state.BeaconState beaconStateInternal;
   private BeaconState beaconState;
   private Bytes32 blockRoot;
-  private UnsignedLong slot;
+  private UInt64 slot;
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final Context context = mock(Context.class);
@@ -60,7 +60,7 @@ public class GetStateTest {
 
   @BeforeEach
   public void setup() {
-    slot = UnsignedLong.valueOf(10);
+    slot = UInt64.valueOf(10);
     storageSystem.chainUpdater().initializeGenesis();
     SignedBlockAndState bestBlock = storageSystem.chainUpdater().advanceChain(slot);
     storageSystem.chainUpdater().updateBestBlock(bestBlock);
@@ -194,7 +194,7 @@ public class GetStateTest {
   @Test
   public void shouldHandleMissingStateAtFinalizedSlot() throws Exception {
     final GetState handler = new GetState(dataProvider, jsonProvider);
-    final UnsignedLong slot = UnsignedLong.valueOf(11223344L);
+    final UInt64 slot = UInt64.valueOf(11223344L);
 
     when(dataProvider.isStoreAvailable()).thenReturn(true);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of(slot.toString())));
@@ -210,7 +210,7 @@ public class GetStateTest {
   @Test
   public void shouldHandleMissingStateAtNonFinalSlot() throws Exception {
     final GetState handler = new GetState(dataProvider, jsonProvider);
-    final UnsignedLong slot = UnsignedLong.valueOf(11223344L);
+    final UInt64 slot = UInt64.valueOf(11223344L);
 
     when(dataProvider.isStoreAvailable()).thenReturn(true);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of(slot.toString())));

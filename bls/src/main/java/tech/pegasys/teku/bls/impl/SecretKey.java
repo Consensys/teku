@@ -14,6 +14,7 @@
 package tech.pegasys.teku.bls.impl;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 
 /** This class represents a BLS12-381 private key. */
 public interface SecretKey {
@@ -21,9 +22,9 @@ public interface SecretKey {
   /**
    * Returns byte secret key representation
    *
-   * @return 48 bytes
+   * @return 32 bytes
    */
-  Bytes toBytes();
+  Bytes32 toBytes();
 
   /** Creates a public key corresponding to this secret key */
   PublicKey derivePublicKey();
@@ -35,6 +36,15 @@ public interface SecretKey {
    * @return The Signature, not null
    */
   Signature sign(Bytes message);
+
+  /**
+   * Generates a Signature from this private key and message using a custom DST.
+   *
+   * @param message The message to sign, not null
+   * @param dst Domain seperation tag/cipher suite to use
+   * @return The Signature, not null
+   */
+  Signature sign(Bytes message, Bytes dst);
 
   /** Overwrites the key with zeros so that it is no longer in memory */
   void destroy();

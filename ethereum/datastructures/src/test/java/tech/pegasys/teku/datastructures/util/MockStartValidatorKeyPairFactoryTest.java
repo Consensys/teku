@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.datastructures.interop.MockStartValidatorKeyPairFactory;
 
 class MockStartValidatorKeyPairFactoryTest {
   private static final String[] EXPECTED_PRIVATE_KEYS = {
@@ -58,7 +59,7 @@ class MockStartValidatorKeyPairFactoryTest {
     final List<BLSKeyPair> keyPairs = factory.generateKeyPairs(0, 10);
     final List<BigInteger> actualPrivateKeys =
         keyPairs.stream()
-            .map(keyPair -> keyPair.getSecretKey().getSecretKey().toBytes().toBigInteger())
+            .map(keyPair -> keyPair.getSecretKey().toBytes().toBigInteger())
             .collect(toList());
 
     final List<BigInteger> expectedPrivateKeys =
@@ -67,7 +68,7 @@ class MockStartValidatorKeyPairFactoryTest {
 
     final List<String> actualPublicKeys =
         keyPairs.stream()
-            .map(keyPair -> keyPair.getPublicKey().toBytes().toHexString())
+            .map(keyPair -> keyPair.getPublicKey().toSSZBytes().toHexString())
             .collect(toList());
 
     final List<String> expectedPublicKeys =

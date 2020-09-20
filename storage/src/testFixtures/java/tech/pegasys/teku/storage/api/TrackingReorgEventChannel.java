@@ -13,17 +13,23 @@
 
 package tech.pegasys.teku.storage.api;
 
-import com.google.common.primitives.UnsignedLong;
+import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class TrackingReorgEventChannel implements ReorgEventChannel {
   private final List<ReorgEvent> reorgEvents = new ArrayList<>();
 
   @Override
-  public void reorgOccurred(final Bytes32 bestBlockRoot, final UnsignedLong bestSlot) {
-    reorgEvents.add(new ReorgEvent(bestBlockRoot, bestSlot));
+  public void reorgOccurred(
+      final Bytes32 bestBlockRoot,
+      final UInt64 bestSlot,
+      final Bytes32 oldBestBlockRoot,
+      final UInt64 commonAncestorSlot) {
+    reorgEvents.add(new ReorgEvent(bestBlockRoot, bestSlot, oldBestBlockRoot, commonAncestorSlot));
   }
 
   public List<ReorgEvent> getReorgEvents() {
@@ -31,20 +37,64 @@ public class TrackingReorgEventChannel implements ReorgEventChannel {
   }
 
   public static class ReorgEvent {
-    private final Bytes32 bestBlockRoot;
-    private final UnsignedLong bestSlot;
+    private final Bytes32 newBestBlockRoot;
+    private final UInt64 bestSlot;
+    private final Bytes32 oldBestBlockRoot;
+    private final UInt64 commonAncestorSlot;
 
-    public ReorgEvent(final Bytes32 bestBlockRoot, final UnsignedLong bestSlot) {
-      this.bestBlockRoot = bestBlockRoot;
+    public ReorgEvent(
+        final Bytes32 newBestBlockRoot,
+        final UInt64 bestSlot,
+        final Bytes32 oldBestBlockRoot,
+        final UInt64 commonAncestorSlot) {
+      this.newBestBlockRoot = newBestBlockRoot;
       this.bestSlot = bestSlot;
+      this.oldBestBlockRoot = oldBestBlockRoot;
+      this.commonAncestorSlot = commonAncestorSlot;
     }
 
-    public Bytes32 getBestBlockRoot() {
-      return bestBlockRoot;
+    public Bytes32 getNewBestBlockRoot() {
+      return newBestBlockRoot;
     }
 
-    public UnsignedLong getBestSlot() {
+    public UInt64 getBestSlot() {
       return bestSlot;
+    }
+
+    public UInt64 getCommonAncestorSlot() {
+      return commonAncestorSlot;
+    }
+
+    public Bytes32 getOldBestBlockRoot() {
+      return oldBestBlockRoot;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final ReorgEvent that = (ReorgEvent) o;
+      return Objects.equals(newBestBlockRoot, that.newBestBlockRoot)
+          && Objects.equals(bestSlot, that.bestSlot)
+          && Objects.equals(commonAncestorSlot, that.commonAncestorSlot);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(newBestBlockRoot, bestSlot, commonAncestorSlot);
+    }
+
+    @Override
+    public String toString() {
+      return MoreObjects.toStringHelper(this)
+          .add("bestBlockRoot", newBestBlockRoot)
+          .add("bestSlot", bestSlot)
+          .add("commonAncestorSlot", commonAncestorSlot)
+          .toString();
     }
   }
 }

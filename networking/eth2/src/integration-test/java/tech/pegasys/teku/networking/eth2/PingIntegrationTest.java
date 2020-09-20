@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.eth2;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
-import com.google.common.primitives.UnsignedLong;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +24,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManagerAccess;
@@ -47,7 +47,7 @@ public class PingIntegrationTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  public void tearDown() throws Exception {
     networkFactory.stopAll();
   }
 
@@ -72,21 +72,21 @@ public class PingIntegrationTest {
     MetadataMessage md1 = peer1.requestMetadata().get(10, TimeUnit.SECONDS);
     MetadataMessage md2 = peer1.requestMetadata().get(10, TimeUnit.SECONDS);
 
-    UnsignedLong ping1_0 = peer1.sendPing().get(10, TimeUnit.SECONDS);
-    UnsignedLong ping2_0 = peer2.sendPing().get(10, TimeUnit.SECONDS);
+    UInt64 ping1_0 = peer1.sendPing().get(10, TimeUnit.SECONDS);
+    UInt64 ping2_0 = peer2.sendPing().get(10, TimeUnit.SECONDS);
 
     assertThat(ping1_0).isEqualTo(md1.getSeqNumber());
     assertThat(ping2_0).isEqualTo(md2.getSeqNumber());
 
-    UnsignedLong ping1_1 = peer1.sendPing().get(10, TimeUnit.SECONDS);
-    UnsignedLong ping2_1 = peer2.sendPing().get(10, TimeUnit.SECONDS);
+    UInt64 ping1_1 = peer1.sendPing().get(10, TimeUnit.SECONDS);
+    UInt64 ping2_1 = peer2.sendPing().get(10, TimeUnit.SECONDS);
 
     assertThat(ping1_1).isEqualTo(md1.getSeqNumber());
     assertThat(ping2_1).isEqualTo(md2.getSeqNumber());
 
     network1.setLongTermAttestationSubnetSubscriptions(List.of(0, 1, 8));
     Thread.sleep(100);
-    UnsignedLong ping1_2 = peer1.sendPing().get(10, TimeUnit.SECONDS);
+    UInt64 ping1_2 = peer1.sendPing().get(10, TimeUnit.SECONDS);
     assertThat(ping1_2).isGreaterThan(ping1_1);
 
     Bitvector expectedBitvector1 = new Bitvector(Constants.ATTESTATION_SUBNET_COUNT);
@@ -97,7 +97,7 @@ public class PingIntegrationTest {
 
     network1.setLongTermAttestationSubnetSubscriptions(List.of(2, 4));
     Thread.sleep(100);
-    UnsignedLong ping2_2 = peer2.sendPing().get(10, TimeUnit.SECONDS);
+    UInt64 ping2_2 = peer2.sendPing().get(10, TimeUnit.SECONDS);
     assertThat(ping2_2).isEqualTo(ping2_1);
 
     Bitvector expectedBitvector2 = new Bitvector(Constants.ATTESTATION_SUBNET_COUNT);

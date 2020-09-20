@@ -71,4 +71,13 @@ public interface BlockImportResult {
    *     empty.
    */
   Optional<Throwable> getFailureCause();
+
+  default boolean isBlockOnCanonicalChain() {
+    return false;
+  }
+
+  default void markAsCanonical() {
+    throw new UnsupportedOperationException(
+        "Only successful block imports can be marked as canonical");
+  }
 }

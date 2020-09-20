@@ -14,18 +14,18 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.util.config.LoggingDestination.DEFAULT_BOTH;
+import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.util.config.LoggingDestination;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void loggingOptions_shouldReadFromConfigurationFile() {
-    final TekuConfiguration config = getTekuConfigurationFromFile("loggingOptions_config.yaml");
+    final GlobalConfiguration config = getGlobalConfigurationFromFile("loggingOptions_config.yaml");
 
     assertThat(config.getLogDestination()).isEqualTo(LoggingDestination.FILE);
     assertThat(config.isLogColorEnabled()).isFalse();
@@ -44,35 +44,35 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
     // If it defaults to "both" or some other value custom log4j configs get overwritten
     beaconNodeCommand.parse(new String[0]);
 
-    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
-    assertThat(tekuConfiguration.getLogDestination()).isEqualTo(DEFAULT_BOTH);
+    final GlobalConfiguration globalConfiguration = getResultingGlobalConfiguration();
+    assertThat(globalConfiguration.getLogDestination()).isEqualTo(DEFAULT_BOTH);
   }
 
   @Test
   public void logDestination_shouldAcceptFileAsDestination() {
-    final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--log-destination", "file");
-    assertThat(tekuConfiguration.getLogDestination()).isEqualTo(LoggingDestination.FILE);
+    final GlobalConfiguration globalConfiguration =
+        getGlobalConfigurationFromArguments("--log-destination", "file");
+    assertThat(globalConfiguration.getLogDestination()).isEqualTo(LoggingDestination.FILE);
   }
 
   @Test
   public void includeEvents_shouldNotRequireAValue() {
-    final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--log-include-events-enabled");
-    assertThat(tekuConfiguration.isLogIncludeEventsEnabled()).isTrue();
+    final GlobalConfiguration globalConfiguration =
+        getGlobalConfigurationFromArguments("--log-include-events-enabled");
+    assertThat(globalConfiguration.isLogIncludeEventsEnabled()).isTrue();
   }
 
   @Test
   public void logDestination_shouldAcceptConsoleAsDestination() {
-    final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--log-destination", "console");
-    assertThat(tekuConfiguration.getLogDestination()).isEqualTo(LoggingDestination.CONSOLE);
+    final GlobalConfiguration globalConfiguration =
+        getGlobalConfigurationFromArguments("--log-destination", "console");
+    assertThat(globalConfiguration.getLogDestination()).isEqualTo(LoggingDestination.CONSOLE);
   }
 
   @Test
   public void logDestination_shouldAcceptBothAsDestination() {
-    final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--log-destination", "both");
-    assertThat(tekuConfiguration.getLogDestination()).isEqualTo(LoggingDestination.BOTH);
+    final GlobalConfiguration globalConfiguration =
+        getGlobalConfigurationFromArguments("--log-destination", "both");
+    assertThat(globalConfiguration.getLogDestination()).isEqualTo(LoggingDestination.BOTH);
   }
 }

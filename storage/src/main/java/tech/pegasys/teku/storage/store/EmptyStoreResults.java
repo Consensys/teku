@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.store;
 
 import java.util.Optional;
+import tech.pegasys.teku.core.stategenerator.StateGenerationTask;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -32,5 +33,8 @@ public abstract class EmptyStoreResults {
       SafeFuture.completedFuture(Optional.empty());
 
   public static SafeFuture<Optional<SignedBlockAndState>> EMPTY_BLOCK_AND_STATE_FUTURE =
+      SafeFuture.completedFuture(Optional.empty());
+
+  public static SafeFuture<Optional<StateGenerationTask>> EMPTY_STATE_GENERATION_TASK =
       SafeFuture.completedFuture(Optional.empty());
 }

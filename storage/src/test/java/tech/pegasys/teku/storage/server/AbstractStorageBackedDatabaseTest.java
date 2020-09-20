@@ -17,7 +17,8 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import static tech.pegasys.teku.storage.store.StoreAssertions.assertStoresMatch;
 
 import com.google.common.io.Files;
-import com.google.common.primitives.UnsignedLong;
+import com.google.common.io.MoreFiles;
+import com.google.common.io.RecursiveDeleteOption;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -28,23 +29,25 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.StateStorageMode;
-import tech.pegasys.teku.util.file.FileUtil;
 
 public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabaseTest {
   private final List<File> tmpDirectories = new ArrayList<>();
 
   protected abstract StorageSystem createStorageSystem(
-      final File tempDir, final StateStorageMode storageMode);
+      final File tempDir, final StateStorageMode storageMode, final StoreConfig storeConfig);
 
   @Override
-  protected StorageSystem createStorageSystemInternal(final StateStorageMode storageMode) {
+  protected StorageSystem createStorageSystemInternal(
+      final StateStorageMode storageMode, final StoreConfig storeConfig) {
     final File tmpDir = Files.createTempDir();
     tmpDirectories.add(tmpDir);
-    return createStorageSystem(tmpDir, storageMode);
+    return createStorageSystem(tmpDir, storageMode, storeConfig);
   }
 
   @Override
@@ -52,13 +55,16 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
   public void tearDown() throws Exception {
     super.tearDown();
     // Clean up tmp directories
-    FileUtil.recursivelyDeleteDirectories(tmpDirectories);
+    for (File tmpDirectory : tmpDirectories) {
+      MoreFiles.deleteRecursively(tmpDirectory.toPath(), RecursiveDeleteOption.ALLOW_INSECURE);
+    }
     tmpDirectories.clear();
   }
 
   protected StorageSystem createStorage(final File tempDir, final StateStorageMode storageMode) {
     this.storageMode = storageMode;
-    final StorageSystem storage = createStorageSystem(tempDir, storageMode);
+    final StorageSystem storage =
+        createStorageSystem(tempDir, storageMode, StoreConfig.createDefault());
     setDefaultStorage(storage);
     return storage;
   }
@@ -109,19 +115,17 @@ public abstract class AbstractStorageBackedDatabaseTest extends AbstractDatabase
     initGenesis();
 
     // Create finalized block at slot prior to epoch boundary
-    final UnsignedLong finalizedEpoch = UnsignedLong.valueOf(2);
-    final UnsignedLong finalizedSlot =
-        compute_start_slot_at_epoch(finalizedEpoch).minus(UnsignedLong.ONE);
+    final UInt64 finalizedEpoch = UInt64.valueOf(2);
+    final UInt64 finalizedSlot = compute_start_slot_at_epoch(finalizedEpoch).minus(UInt64.ONE);
     chainBuilder.generateBlocksUpToSlot(finalizedSlot);
     final SignedBlockAndState finalizedBlock = chainBuilder.getBlockAndStateAtSlot(finalizedSlot);
     final Checkpoint finalizedCheckpoint =
         chainBuilder.getCurrentCheckpointForEpoch(finalizedEpoch);
 
     // Add some more blocks
-    final UnsignedLong firstHotBlockSlot =
-        finalizedCheckpoint.getEpochStartSlot().plus(UnsignedLong.ONE);
+    final UInt64 firstHotBlockSlot = finalizedCheckpoint.getEpochStartSlot().plus(UInt64.ONE);
     chainBuilder.generateBlockAtSlot(firstHotBlockSlot);
-    chainBuilder.generateBlocksUpToSlot(firstHotBlockSlot.plus(UnsignedLong.valueOf(10)));
+    chainBuilder.generateBlocksUpToSlot(firstHotBlockSlot.plus(10));
 
     // Save new blocks and finalized checkpoint
     final StoreTransaction tx = recentChainData.startStoreTransaction();

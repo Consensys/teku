@@ -70,7 +70,7 @@ public class PostValidatorsWithDataIntegrationTest
       throws IOException {
     final List<String> publicKeyStrings =
         publicKeys.stream()
-            .map(k -> k.getPublicKey().toBytes().toHexString())
+            .map(k -> k.getPublicKey().toSSZBytes().toHexString())
             .collect(Collectors.toList());
 
     final Map<String, Object> params =

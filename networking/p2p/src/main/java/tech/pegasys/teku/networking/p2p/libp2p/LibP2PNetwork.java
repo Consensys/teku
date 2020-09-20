@@ -14,8 +14,7 @@
 package tech.pegasys.teku.networking.p2p.libp2p;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
-import static tech.pegasys.teku.infrastructure.async.SafeFuture.reportExceptions;
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import identify.pb.IdentifyOuterClass;
 import io.libp2p.core.Host;
@@ -36,21 +35,22 @@ import io.libp2p.pubsub.gossip.Gossip;
 import io.libp2p.pubsub.gossip.GossipParams;
 import io.libp2p.pubsub.gossip.GossipRouter;
 import io.libp2p.security.noise.NoiseXXSecureChannel;
-import io.libp2p.security.secio.SecIoSecureChannel;
 import io.libp2p.transport.tcp.TcpTransport;
 import io.netty.channel.ChannelHandler;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import java.net.InetSocketAddress;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
+import kotlin.jvm.functions.Function0;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -78,6 +78,7 @@ import tech.pegasys.teku.util.cli.VersionProvider;
 public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static Function0<Long> NULL_SEQNO_GENERATOR = () -> null;
 
   private final PrivKey privKey;
   private final NodeId nodeId;
@@ -111,7 +112,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
 
     // Setup gossip
     gossip = createGossip();
-    final PubsubPublisherApi publisher = gossip.createPublisher(privKey, new Random().nextLong());
+    final PubsubPublisherApi publisher = gossip.createPublisher(null, NULL_SEQNO_GENERATOR);
     gossipNetwork = new LibP2PGossipNetwork(gossip, publisher);
 
     // Setup rpc methods
@@ -120,11 +121,6 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
     // Setup peers
     peerManager = new PeerManager(metricsSystem, reputationManager, peerHandlers, rpcHandlers);
 
-    // temporary flag
-    // set true for Lighthouse compatibility
-    // set false for Prysm compatibility
-    // TODO (#2402):remove when all clients adjust the same Noise spec
-    NoiseXXSecureChannel.setRustInteroperability(false);
     final Multiaddr listenAddr =
         MultiaddrUtil.fromInetSocketAddress(
             new InetSocketAddress(config.getNetworkInterface(), config.getListenPort()));
@@ -135,7 +131,6 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
               b.getIdentity().setFactory(() -> privKey);
               b.getTransports().add(TcpTransport::new);
               b.getSecureChannels().add(NoiseXXSecureChannel::new);
-              b.getSecureChannels().add(SecIoSecureChannel::new); // to be removed later
               b.getMuxers().add(MplexStreamMuxer::new);
 
               b.getNetwork().listen(listenAddr.toString());
@@ -143,9 +138,13 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
               b.getProtocols().addAll(getDefaultProtocols());
               b.getProtocols().addAll(rpcHandlers.values());
 
+              List<ChannelHandler> beforeSecureLogHandler = new ArrayList<>();
               if (config.getWireLogsConfig().isLogWireCipher()) {
-                b.getDebug().getBeforeSecureHandler().setLogger(LogLevel.DEBUG, "wire.ciphered");
+                beforeSecureLogHandler.add(new LoggingHandler("wire.ciphered", LogLevel.DEBUG));
               }
+              Firewall firewall = new Firewall(Duration.ofSeconds(30), beforeSecureLogHandler);
+              b.getDebug().getBeforeSecureHandler().setHandler(firewall);
+
               if (config.getWireLogsConfig().isLogWirePlain()) {
                 b.getDebug().getAfterSecureHandler().setLogger(LogLevel.DEBUG, "wire.plain");
               }
@@ -168,6 +167,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
             .gossipSize(config.getGossipConfig().getAdvertise())
             .gossipHistoryLength(config.getGossipConfig().getHistory())
             .heartbeatInterval(config.getGossipConfig().getHeartbeatInterval())
+            .floodPublish(true)
             .build();
 
     GossipRouter router = new GossipRouter(gossipParams);
@@ -194,9 +194,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
             .setAgentVersion(VersionProvider.CLIENT_IDENTITY + "/" + VersionProvider.VERSION)
             .setPublicKey(ByteArrayExtKt.toProtobuf(privKey.publicKey().bytes()))
             .addListenAddrs(ByteArrayExtKt.toProtobuf(advertisedAddr.getBytes()))
-            .setObservedAddr(
-                ByteArrayExtKt.toProtobuf( // TODO (#1854): Report external IP?
-                    advertisedAddr.getBytes()))
+            .setObservedAddr(ByteArrayExtKt.toProtobuf(advertisedAddr.getBytes()))
             .addAllProtocols(ping.getProtocolDescriptor().getAnnounceProtocols())
             .addAllProtocols(gossip.getProtocolDescriptor().getAnnounceProtocols())
             .build();
@@ -269,6 +267,11 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
+  public NodeId parseNodeId(final String nodeId) {
+    return new LibP2PNodeId(PeerId.fromBase58(nodeId));
+  }
+
+  @Override
   public int getPeerCount() {
     return peerManager.getPeerCount();
   }
@@ -279,12 +282,12 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public void stop() {
+  public SafeFuture<?> stop() {
     if (!state.compareAndSet(State.RUNNING, State.STOPPED)) {
-      return;
+      return SafeFuture.COMPLETE;
     }
     LOG.debug("JvmLibP2PNetwork.stop()");
-    reportExceptions(host.stop());
+    return SafeFuture.of(host.stop());
   }
 
   @Override

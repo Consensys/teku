@@ -22,11 +22,22 @@ public class SuccessfulBlockImportResult implements BlockImportResult {
 
   private final SignedBeaconBlock block;
   private final Optional<BlockProcessingRecord> record;
+  private boolean blockOnCanonicalChain = false;
 
   public SuccessfulBlockImportResult(
       final SignedBeaconBlock block, final Optional<BlockProcessingRecord> record) {
     this.block = block;
     this.record = record;
+  }
+
+  @Override
+  public void markAsCanonical() {
+    this.blockOnCanonicalChain = true;
+  }
+
+  @Override
+  public boolean isBlockOnCanonicalChain() {
+    return blockOnCanonicalChain;
   }
 
   @Override

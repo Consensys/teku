@@ -14,15 +14,21 @@
 package tech.pegasys.teku.storage.server.rocksdb;
 
 import java.io.File;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.server.DatabaseVersion;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class InMemoryV3RocksDbDatabaseTest extends V3RocksDbDatabaseTest {
 
   @Override
   protected StorageSystem createStorageSystem(
-      final File tempDir, final StateStorageMode storageMode) {
-    return InMemoryStorageSystem.createEmptyV3StorageSystem(storageMode);
+      final File tempDir, final StateStorageMode storageMode, final StoreConfig storeConfig) {
+    return InMemoryStorageSystemBuilder.create()
+        .version(DatabaseVersion.V3)
+        .storageMode(storageMode)
+        .storeConfig(storeConfig)
+        .build();
   }
 }

@@ -23,7 +23,6 @@ import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.ROOT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import java.util.List;
@@ -37,17 +36,18 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystem;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class GetStateRootTest {
   private final StorageSystem storageSystem =
-      InMemoryStorageSystem.createEmptyLatestStorageSystem(StateStorageMode.ARCHIVE);
+      InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   public BeaconState beaconStateInternal;
   private Bytes32 blockRoot;
-  private UnsignedLong slot;
+  private UInt64 slot;
   private ChainDataProvider provider = mock(ChainDataProvider.class);
 
   private final JsonProvider jsonProvider = new JsonProvider();
@@ -58,7 +58,7 @@ public class GetStateRootTest {
 
   @BeforeEach
   public void setup() {
-    slot = UnsignedLong.valueOf(10);
+    slot = UInt64.valueOf(10);
     storageSystem.chainUpdater().initializeGenesis();
     SignedBlockAndState bestBlock = storageSystem.chainUpdater().advanceChain(slot);
     storageSystem.chainUpdater().updateBestBlock(bestBlock);
@@ -131,7 +131,7 @@ public class GetStateRootTest {
   @Test
   public void shouldReturnNotFoundWhenQueryByMissingSlot() throws Exception {
     GetStateRoot handler = new GetStateRoot(provider, jsonProvider);
-    UnsignedLong nonExistentSlot = UnsignedLong.valueOf(11223344);
+    UInt64 nonExistentSlot = UInt64.valueOf(11223344);
     when(context.queryParamMap()).thenReturn(Map.of(SLOT, List.of("11223344")));
     when(provider.getBestBlockRoot()).thenReturn(Optional.of(blockRoot));
     when(provider.getStateRootAtSlot(nonExistentSlot))

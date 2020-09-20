@@ -160,6 +160,7 @@ public class RocksDbInstance implements RocksDbAccessor {
       for (Transaction openTransaction : openTransactions) {
         openTransaction.closeViaDatabase();
       }
+      db.syncWal();
       for (final AutoCloseable resource : resources) {
         resource.close();
       }
@@ -249,6 +250,18 @@ public class RocksDbInstance implements RocksDbAccessor {
               rocksDbTx.delete(handle, column.getKeySerializer().serialize(key));
             } catch (RocksDBException e) {
               throw new DatabaseStorageException("Failed to delete key", e);
+            }
+          });
+    }
+
+    @Override
+    public <T> void delete(RocksDbVariable<T> variable) {
+      applyUpdate(
+          () -> {
+            try {
+              rocksDbTx.delete(defaultHandle, variable.getId().toArrayUnsafe());
+            } catch (RocksDBException e) {
+              throw new DatabaseStorageException("Failed to delete variable", e);
             }
           });
     }

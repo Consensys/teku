@@ -1,8 +1,8 @@
 dependencies {
-  implementation project(":data:metrics")
+  implementation project(":infrastructure:metrics")
   implementation 'com.google.guava:guava'
 
-  testImplementation testFixtures(project(":data:metrics"))
+  testImplementation testFixtures(project(":infrastructure:metrics"))
   testImplementation 'org.apache.logging.log4j:log4j-core'
 
   testFixturesApi 'com.google.guava:guava'

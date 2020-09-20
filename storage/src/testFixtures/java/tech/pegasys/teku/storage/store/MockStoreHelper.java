@@ -15,12 +15,12 @@ package tech.pegasys.teku.storage.store;
 
 import static org.mockito.Mockito.when;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 
 public class MockStoreHelper {
@@ -43,7 +43,7 @@ public class MockStoreHelper {
   public static void mockGenesis(final UpdatableStore store, final SignedBlockAndState genesis) {
     mockChainData(store, List.of(genesis));
     final Checkpoint genesisCheckpoint =
-        new Checkpoint(UnsignedLong.valueOf(Constants.GENESIS_EPOCH), genesis.getRoot());
+        new Checkpoint(UInt64.valueOf(Constants.GENESIS_EPOCH), genesis.getRoot());
     when(store.getJustifiedCheckpoint()).thenReturn(genesisCheckpoint);
     when(store.getFinalizedCheckpoint()).thenReturn(genesisCheckpoint);
     when(store.getBestJustifiedCheckpoint()).thenReturn(genesisCheckpoint);

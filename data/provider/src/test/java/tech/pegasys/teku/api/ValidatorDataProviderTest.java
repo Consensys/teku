@@ -13,21 +13,21 @@
 
 package tech.pegasys.teku.api;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
@@ -52,11 +53,13 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorDataProviderTest {
@@ -94,7 +97,7 @@ public class ValidatorDataProviderTest {
 
   @Test
   void getUnsignedBeaconBlockAtSlot_shouldThrowIfHistoricSlotRequested() {
-    when(combinedChainDataClient.getBestSlot()).thenReturn(ONE);
+    when(combinedChainDataClient.getHeadSlot()).thenReturn(ONE);
 
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(ZERO, signature, Optional.empty()));
@@ -102,18 +105,18 @@ public class ValidatorDataProviderTest {
 
   @Test
   void getUnsignedBeaconBlockAtSlot_shouldThrowIfFarFutureSlotRequested() {
-    when(combinedChainDataClient.getBestSlot()).thenReturn(ONE);
+    when(combinedChainDataClient.getHeadSlot()).thenReturn(ONE);
 
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(
             () ->
                 provider.getUnsignedBeaconBlockAtSlot(
-                    UnsignedLong.valueOf(10L), signature, Optional.empty()));
+                    UInt64.valueOf(10L), signature, Optional.empty()));
   }
 
   @Test
   void getUnsignedBeaconBlockAtSlot_shouldCreateAnUnsignedBlock() {
-    when(combinedChainDataClient.getBestSlot()).thenReturn(ZERO);
+    when(combinedChainDataClient.getHeadSlot()).thenReturn(ZERO);
     when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockInternal)));
 
@@ -160,7 +163,7 @@ public class ValidatorDataProviderTest {
     Attestation attestation = result.join().orElseThrow();
     assertThat(attestation.data.index).isEqualTo(internalAttestation.getData().getIndex());
     assertThat(attestation.signature.toHexString())
-        .isEqualTo(internalAttestation.getAggregate_signature().toBytes().toHexString());
+        .isEqualTo(internalAttestation.getAggregate_signature().toSSZBytes().toHexString());
     assertThat(attestation.data.slot).isEqualTo(internalAttestation.getData().getSlot());
     assertThat(attestation.data.beacon_block_root)
         .isEqualTo(internalAttestation.getData().getBeacon_block_root());
@@ -216,9 +219,8 @@ public class ValidatorDataProviderTest {
     final int attestationCommitteeIndex = 2;
     final int attestationCommitteePosition = 5;
     final int aggregatorModulo = 12;
-    final List<UnsignedLong> blockProposalSlots =
-        List.of(UnsignedLong.valueOf(66), UnsignedLong.valueOf(77));
-    final UnsignedLong attestationSlot = UnsignedLong.valueOf(50);
+    final List<UInt64> blockProposalSlots = List.of(UInt64.valueOf(66), UInt64.valueOf(77));
+    final UInt64 attestationSlot = UInt64.valueOf(50);
     when(validatorApiChannel.getDuties(smallRequest.epoch, List.of(publicKey)))
         .thenReturn(
             SafeFuture.completedFuture(
@@ -362,6 +364,42 @@ public class ValidatorDataProviderTest {
         provider.submitSignedBlock(signedBeaconBlock);
 
     assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(500);
+  }
+
+  @Test
+  public void getAttesterDuties_shouldHandleEmptyIndexesList() {
+    final SafeFuture<Optional<List<AttesterDuty>>> future =
+        provider.getAttesterDuties(UInt64.ONE, List.of());
+    assertThat(future).isCompleted();
+    Optional<List<AttesterDuty>> maybeData = future.join();
+    assertThat(maybeData.isPresent()).isTrue();
+    assertThat(maybeData.get()).isEmpty();
+  }
+
+  @Test
+  public void getAttesterDuties_shouldReturnDutiesForKnownValidator() {
+    AttesterDuties v1 = new AttesterDuties(BLSPublicKey.random(0), 1, 2, 3, 4, ONE);
+    AttesterDuties v2 = new AttesterDuties(BLSPublicKey.random(1), 11, 12, 13, 14, ZERO);
+    when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(v1, v2))));
+
+    final SafeFuture<Optional<List<AttesterDuty>>> future =
+        provider.getAttesterDuties(ONE, List.of(1, 11));
+    assertThat(future).isCompleted();
+    final Optional<List<AttesterDuty>> maybeList = future.join();
+    final List<AttesterDuty> list = maybeList.get();
+    assertThat(list).containsExactlyInAnyOrder(asAttesterDuty(v1), asAttesterDuty(v2));
+  }
+
+  private AttesterDuty asAttesterDuty(final tech.pegasys.teku.validator.api.AttesterDuties duties) {
+
+    return new AttesterDuty(
+        new BLSPubKey(duties.getPublicKey()),
+        UInt64.valueOf(duties.getValidatorIndex()),
+        UInt64.valueOf(duties.getCommitteeIndex()),
+        UInt64.valueOf(duties.getCommitteeLength()),
+        UInt64.valueOf(duties.getValidatorCommitteeIndex()),
+        duties.getSlot());
   }
 
   private List<BLSPubKey> generatePublicKeys(final int count) {

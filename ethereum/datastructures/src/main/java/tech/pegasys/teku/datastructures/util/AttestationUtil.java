@@ -25,7 +25,6 @@ import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.getValidatorP
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_ATTESTER;
 import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -43,6 +42,7 @@ import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
@@ -91,9 +91,9 @@ public class AttestationUtil {
 
     return new IndexedAttestation(
         SSZList.createMutable(
-            attesting_indices.stream().sorted().map(UnsignedLong::valueOf).collect(toList()),
+            attesting_indices.stream().sorted().map(UInt64::valueOf).collect(toList()),
             MAX_VALIDATORS_PER_COMMITTEE,
-            UnsignedLong.class),
+            UInt64.class),
         attestation.getData(),
         attestation.getAggregate_signature());
   }
@@ -144,10 +144,9 @@ public class AttestationUtil {
       BeaconState state,
       IndexedAttestation indexed_attestation,
       BLSSignatureVerifier signatureVerifier) {
-    SSZList<UnsignedLong> indices = indexed_attestation.getAttesting_indices();
+    SSZList<UInt64> indices = indexed_attestation.getAttesting_indices();
 
-    List<UnsignedLong> bit_0_indices_sorted =
-        indices.stream().sorted().distinct().collect(toList());
+    List<UInt64> bit_0_indices_sorted = indices.stream().sorted().distinct().collect(toList());
     if (indices.isEmpty() || !indices.equals(bit_0_indices_sorted)) {
       return AttestationProcessingResult.invalid("Attesting indices are not sorted");
     }
@@ -160,7 +159,7 @@ public class AttestationUtil {
     }
 
     BLSSignature signature = indexed_attestation.getSignature();
-    Bytes domain =
+    Bytes32 domain =
         get_domain(
             state, DOMAIN_BEACON_ATTESTER, indexed_attestation.getData().getTarget().getEpoch());
     Bytes signing_root = compute_signing_root(indexed_attestation.getData(), domain);
@@ -212,11 +211,11 @@ public class AttestationUtil {
 
   // Get attestation data that does not include attester specific shard or crosslink information
   public static AttestationData getGenericAttestationData(
-      UnsignedLong slot, BeaconState state, BeaconBlock block, final UnsignedLong committeeIndex) {
-    UnsignedLong epoch = compute_epoch_at_slot(slot);
+      UInt64 slot, BeaconState state, BeaconBlock block, final UInt64 committeeIndex) {
+    UInt64 epoch = compute_epoch_at_slot(slot);
     // Get variables necessary that can be shared among Attestations of all validators
     Bytes32 beacon_block_root = block.hash_tree_root();
-    UnsignedLong start_slot = compute_start_slot_at_epoch(epoch);
+    UInt64 start_slot = compute_start_slot_at_epoch(epoch);
     Bytes32 epoch_boundary_block_root =
         start_slot.compareTo(slot) == 0 || state.getSlot().compareTo(start_slot) <= 0
             ? block.hash_tree_root()

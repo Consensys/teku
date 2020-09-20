@@ -29,6 +29,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.impl.BLS12381;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
+import tech.pegasys.teku.bls.impl.blst.BlstBLS12381;
 import tech.pegasys.teku.bls.impl.mikuli.MikuliBLS12381;
 
 /**
@@ -43,7 +44,25 @@ public class BLS {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static BLS12381 BlsImpl = MikuliBLS12381.INSTANCE;
+  private static BLS12381 BLS_IMPL;
+
+  static {
+    resetBlsImplementation();
+  }
+
+  public static void setBlsImplementation(BLS12381 blsImpl) {
+    BLS_IMPL = blsImpl;
+  }
+
+  public static void resetBlsImplementation() {
+    if (BlstBLS12381.INSTANCE.isPresent()) {
+      BLS_IMPL = BlstBLS12381.INSTANCE.get();
+      LOG.info("BLS: loaded BLST library");
+    } else {
+      BLS_IMPL = MikuliBLS12381.INSTANCE;
+      LOG.info("BLS: loaded Mikuli library");
+    }
+  }
 
   /*
    * The following are the methods used directly in the Ethereum 2.0 specifications. These strictly adhere to the standard.
@@ -91,8 +110,10 @@ public class BLS {
    *
    * @param signatures the list of signatures to be aggregated
    * @return the aggregated signature
+   * @throws IllegalArgumentException if any of supplied signatures is invalid
    */
-  public static BLSSignature aggregate(List<BLSSignature> signatures) {
+  public static BLSSignature aggregate(List<BLSSignature> signatures)
+      throws IllegalArgumentException {
     checkArgument(signatures.size() > 0, "Aggregating zero signatures is invalid.");
     return new BLSSignature(
         getBlsImpl()
@@ -342,7 +363,41 @@ public class BLS {
     return getBlsImpl().completeBatchVerify(preparedSignatures);
   }
 
+  /*
+   * The following methods implement BLS sign and verify with arbitrary domain separation tag (DST).
+   */
+
+  /**
+   * Generates a BLSSignature from a private key, message and a custom DST.
+   *
+   * @param secretKey The secret key, not null
+   * @param message The message to sign, not null
+   * @param dst domain separation tag (DST), not null
+   * @return The Signature, not null
+   */
+  public static BLSSignature sign(BLSSecretKey secretKey, Bytes message, Bytes dst) {
+    return new BLSSignature(secretKey.getSecretKey().sign(message, dst));
+  }
+
+  /**
+   * Verifies the given BLS signature against the message bytes using the public key.
+   *
+   * @param publicKey The public key, not null
+   * @param message The message data to verify, not null
+   * @param signature The signature, not null
+   * @param dst the domain separation tag (DST), not null
+   * @return True if the verification is successful, false otherwise.
+   */
+  public static boolean verify(
+      BLSPublicKey publicKey, Bytes message, BLSSignature signature, Bytes dst) {
+    if (BLSConstants.VERIFICATION_DISABLED) {
+      LOG.warn("Skipping bls verification.");
+      return true;
+    }
+    return signature.getSignature().verify(publicKey.getPublicKey(), message, dst);
+  }
+
   static BLS12381 getBlsImpl() {
-    return BlsImpl;
+    return BLS_IMPL;
   }
 }

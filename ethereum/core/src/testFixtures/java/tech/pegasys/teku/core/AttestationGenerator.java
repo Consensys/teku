@@ -14,9 +14,9 @@
 package tech.pegasys.teku.core;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import com.google.common.base.Preconditions;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,8 +33,9 @@ import java.util.stream.StreamSupport;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.core.signatures.LocalMessageSignerService;
-import tech.pegasys.teku.core.signatures.Signer;
+import tech.pegasys.teku.core.exceptions.EpochProcessingException;
+import tech.pegasys.teku.core.exceptions.SlotProcessingException;
+import tech.pegasys.teku.core.signatures.LocalSigner;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -43,6 +44,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Committee;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.util.config.Constants;
 
@@ -58,7 +60,7 @@ public class AttestationGenerator {
     return attestation.getAggregation_bits().streamAllSetBits().findFirst().orElse(-1);
   }
 
-  public static AttestationData diffSlotAttestationData(UnsignedLong slot, AttestationData data) {
+  public static AttestationData diffSlotAttestationData(UInt64 slot, AttestationData data) {
     return new AttestationData(
         slot, data.getIndex(), data.getBeacon_block_root(), data.getSource(), data.getTarget());
   }
@@ -127,8 +129,7 @@ public class AttestationGenerator {
     return validAttestation(blockAndState, blockAndState.getSlot());
   }
 
-  public Attestation validAttestation(
-      final BeaconBlockAndState blockAndState, final UnsignedLong slot) {
+  public Attestation validAttestation(final BeaconBlockAndState blockAndState, final UInt64 slot) {
     return createAttestation(blockAndState, true, slot);
   }
 
@@ -139,8 +140,8 @@ public class AttestationGenerator {
   private Attestation createAttestation(
       final BeaconBlockAndState blockAndState,
       final boolean withValidSignature,
-      final UnsignedLong slot) {
-    UnsignedLong assignedSlot = slot;
+      final UInt64 slot) {
+    UInt64 assignedSlot = slot;
 
     Optional<Attestation> attestation = Optional.empty();
     while (attestation.isEmpty()) {
@@ -149,7 +150,7 @@ public class AttestationGenerator {
               ? streamAttestations(blockAndState, assignedSlot)
               : streamInvalidAttestations(blockAndState, assignedSlot);
       attestation = attestations.findFirst();
-      assignedSlot = assignedSlot.plus(UnsignedLong.ONE);
+      assignedSlot = assignedSlot.plus(UInt64.ONE);
     }
 
     return attestation.orElseThrow();
@@ -161,7 +162,7 @@ public class AttestationGenerator {
   }
 
   public List<Attestation> getAttestationsForSlot(
-      final BeaconState state, final BeaconBlock block, final UnsignedLong slot) {
+      final BeaconState state, final BeaconBlock block, final UInt64 slot) {
 
     return streamAttestations(new BeaconBlockAndState(block, state), slot)
         .collect(Collectors.toList());
@@ -176,7 +177,7 @@ public class AttestationGenerator {
    * @return A stream of valid attestations to produce at the assigned slot
    */
   public Stream<Attestation> streamAttestations(
-      final BeaconBlockAndState headBlockAndState, final UnsignedLong assignedSlot) {
+      final BeaconBlockAndState headBlockAndState, final UInt64 assignedSlot) {
     return AttestationIterator.create(headBlockAndState, assignedSlot, validatorKeys).toStream();
   }
 
@@ -189,7 +190,7 @@ public class AttestationGenerator {
    * @return A stream of invalid attestations produced at the assigned slot
    */
   private Stream<Attestation> streamInvalidAttestations(
-      final BeaconBlockAndState headBlockAndState, final UnsignedLong assignedSlot) {
+      final BeaconBlockAndState headBlockAndState, final UInt64 assignedSlot) {
     return AttestationIterator.createWithInvalidSignatures(
             headBlockAndState, assignedSlot, validatorKeys, randomKeyPair)
         .toStream();
@@ -200,12 +201,14 @@ public class AttestationGenerator {
    * assigned slot.
    */
   private static class AttestationIterator implements Iterator<Attestation> {
-    // The head block to attest to with its corresponding state
-    private final BeaconBlockAndState headBlockAndState;
+    // The latest block being attested to
+    private final BeaconBlock headBlock;
+    // The latest state processed through to the current slot
+    private final BeaconState headState;
     // The assigned slot to generate attestations for
-    private final UnsignedLong assignedSlot;
+    private final UInt64 assignedSlot;
     // The epoch containing the assigned slot
-    private final UnsignedLong assignedSlotEpoch;
+    private final UInt64 assignedSlotEpoch;
     // Validator keys
     private final List<BLSKeyPair> validatorKeys;
     private final Function<Integer, BLSKeyPair> validatorKeySupplier;
@@ -215,10 +218,11 @@ public class AttestationGenerator {
 
     private AttestationIterator(
         final BeaconBlockAndState headBlockAndState,
-        final UnsignedLong assignedSlot,
+        final UInt64 assignedSlot,
         final List<BLSKeyPair> validatorKeys,
         final Function<Integer, BLSKeyPair> validatorKeySupplier) {
-      this.headBlockAndState = headBlockAndState;
+      this.headBlock = headBlockAndState.getBlock();
+      this.headState = generateHeadState(headBlockAndState.getState(), assignedSlot);
       this.validatorKeys = validatorKeys;
       this.assignedSlot = assignedSlot;
       this.assignedSlotEpoch = compute_epoch_at_slot(assignedSlot);
@@ -226,9 +230,22 @@ public class AttestationGenerator {
       generateNextAttestation();
     }
 
+    private BeaconState generateHeadState(final BeaconState state, final UInt64 slot) {
+      if (state.getSlot().equals(slot)) {
+        return state;
+      }
+
+      StateTransition stateTransition = new StateTransition();
+      try {
+        return stateTransition.process_slots(state, slot);
+      } catch (EpochProcessingException | SlotProcessingException e) {
+        throw new IllegalStateException(e);
+      }
+    }
+
     public static AttestationIterator create(
         final BeaconBlockAndState headBlockAndState,
-        final UnsignedLong assignedSlot,
+        final UInt64 assignedSlot,
         final List<BLSKeyPair> validatorKeys) {
       return new AttestationIterator(
           headBlockAndState, assignedSlot, validatorKeys, validatorKeys::get);
@@ -236,7 +253,7 @@ public class AttestationGenerator {
 
     public static AttestationIterator createWithInvalidSignatures(
         final BeaconBlockAndState headBlockAndState,
-        final UnsignedLong assignedSlot,
+        final UInt64 assignedSlot,
         final List<BLSKeyPair> validatorKeys,
         final BLSKeyPair invalidKeyPair) {
       return new AttestationIterator(
@@ -269,8 +286,6 @@ public class AttestationGenerator {
     private void generateNextAttestation() {
       nextAttestation = Optional.empty();
 
-      final BeaconState headState = headBlockAndState.getState();
-      final BeaconBlock headBlock = headBlockAndState.getBlock();
       int lastProcessedValidatorIndex = currentValidatorIndex;
       for (int validatorIndex = currentValidatorIndex;
           validatorIndex < validatorKeys.size();
@@ -290,7 +305,7 @@ public class AttestationGenerator {
         }
 
         List<Integer> committeeIndices = assignment.getCommittee();
-        UnsignedLong committeeIndex = assignment.getCommitteeIndex();
+        UInt64 committeeIndex = assignment.getCommitteeIndex();
         Committee committee = new Committee(committeeIndex, committeeIndices);
         int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);
         AttestationData genericAttestationData =
@@ -322,7 +337,7 @@ public class AttestationGenerator {
           AttestationUtil.getAggregationBits(committeSize, indexIntoCommittee);
 
       BLSSignature signature =
-          new Signer(new LocalMessageSignerService(attesterKeyPair))
+          new LocalSigner(attesterKeyPair, SYNC_RUNNER)
               .signAttestationData(attestationData, state.getForkInfo())
               .join();
       return new Attestation(aggregationBitfield, attestationData, signature);

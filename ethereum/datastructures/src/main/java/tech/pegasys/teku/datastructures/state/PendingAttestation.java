@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.state;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -22,6 +21,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.datastructures.Copyable;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
+import tech.pegasys.teku.datastructures.util.Merkleizable;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
@@ -34,7 +35,6 @@ import tech.pegasys.teku.ssz.backing.view.BasicViews.UInt64View;
 import tech.pegasys.teku.ssz.backing.view.ViewUtils;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.hashtree.Merkleizable;
 
 public class PendingAttestation extends AbstractImmutableContainer
     implements Copyable<PendingAttestation>, Merkleizable, SimpleOffsetSerializable, SSZContainer {
@@ -63,10 +63,10 @@ public class PendingAttestation extends AbstractImmutableContainer
   private final AttestationData data = null;
 
   @SuppressWarnings("unused")
-  private final UnsignedLong inclusion_delay = null;
+  private final UInt64 inclusion_delay = null;
 
   @SuppressWarnings("unused")
-  private final UnsignedLong proposer_index = null;
+  private final UInt64 proposer_index = null;
 
   private PendingAttestation(ContainerViewType<PendingAttestation> type, TreeNode backingNode) {
     super(type, backingNode);
@@ -75,8 +75,8 @@ public class PendingAttestation extends AbstractImmutableContainer
   public PendingAttestation(
       Bitlist aggregation_bitfield,
       AttestationData data,
-      UnsignedLong inclusion_delay,
-      UnsignedLong proposer_index) {
+      UInt64 inclusion_delay,
+      UInt64 proposer_index) {
     super(
         TYPE,
         ViewUtils.createBitlistView(aggregation_bitfield),
@@ -106,27 +106,20 @@ public class PendingAttestation extends AbstractImmutableContainer
   @Override
   public List<Bytes> get_fixed_parts() {
     List<Bytes> fixedPartsList = new ArrayList<>();
-    fixedPartsList.addAll(List.of(Bytes.EMPTY));
+    fixedPartsList.add(Bytes.EMPTY);
     fixedPartsList.addAll(getData().get_fixed_parts());
-    fixedPartsList.addAll(
-        List.of(
-            SSZ.encodeUInt64(getInclusion_delay().longValue()),
-            SSZ.encodeUInt64(getProposer_index().longValue())));
+    fixedPartsList.add(SSZ.encodeUInt64(getInclusion_delay().longValue()));
+    fixedPartsList.add(SSZ.encodeUInt64(getProposer_index().longValue()));
     return fixedPartsList;
   }
 
   @Override
   public List<Bytes> get_variable_parts() {
     List<Bytes> variablePartsList = new ArrayList<>();
-    // TODO (#2396): The below lines are a hack while Tuweni SSZ/SOS is being upgraded. To be
-    // uncommented
-    // once we shift from Bytes to a real bitlist type.
-    // Bytes serialized_aggregation_bits =
-    // Bytes.fromHexString("0x01").shiftLeft(aggregation_bits.bitLength()).or(aggregation_bits);
-    // variablePartsList.addAll(List.of(serialized_aggregation_bits));
-    variablePartsList.addAll(List.of(getAggregation_bits().serialize()));
+    variablePartsList.add(getAggregation_bits().serialize());
     variablePartsList.addAll(Collections.nCopies(getData().getSSZFieldCount(), Bytes.EMPTY));
-    variablePartsList.addAll(List.of(Bytes.EMPTY, Bytes.EMPTY));
+    variablePartsList.add(Bytes.EMPTY);
+    variablePartsList.add(Bytes.EMPTY);
     return variablePartsList;
   }
 
@@ -153,11 +146,11 @@ public class PendingAttestation extends AbstractImmutableContainer
     return getAny(1);
   }
 
-  public UnsignedLong getInclusion_delay() {
+  public UInt64 getInclusion_delay() {
     return ((UInt64View) get(2)).get();
   }
 
-  public UnsignedLong getProposer_index() {
+  public UInt64 getProposer_index() {
     return ((UInt64View) get(3)).get();
   }
 

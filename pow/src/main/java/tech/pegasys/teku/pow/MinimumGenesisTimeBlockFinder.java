@@ -13,16 +13,16 @@
 
 package tech.pegasys.teku.pow;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static com.google.common.primitives.UnsignedLong.ZERO;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import com.google.common.primitives.UnsignedLong;
 import java.math.BigInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.util.config.Constants;
@@ -31,7 +31,7 @@ public class MinimumGenesisTimeBlockFinder {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final UnsignedLong TWO = UnsignedLong.valueOf(2);
+  private static final UInt64 TWO = UInt64.valueOf(2);
 
   private final Eth1Provider eth1Provider;
 
@@ -52,7 +52,7 @@ public class MinimumGenesisTimeBlockFinder {
 
   private SafeFuture<EthBlock.Block> binarySearchLoop(final SearchContext searchContext) {
     if (searchContext.low.compareTo(searchContext.high) <= 0) {
-      final UnsignedLong mid = searchContext.low.plus(searchContext.high).dividedBy(TWO);
+      final UInt64 mid = searchContext.low.plus(searchContext.high).dividedBy(TWO);
       return eth1Provider
           .getEth1Block(mid)
           .thenCompose(
@@ -79,8 +79,8 @@ public class MinimumGenesisTimeBlockFinder {
     }
   }
 
-  static UnsignedLong calculateCandidateGenesisTimestamp(BigInteger eth1Timestamp) {
-    return UnsignedLong.valueOf(eth1Timestamp).plus(Constants.GENESIS_DELAY);
+  static UInt64 calculateCandidateGenesisTimestamp(BigInteger eth1Timestamp) {
+    return UInt64.valueOf(eth1Timestamp).plus(Constants.GENESIS_DELAY);
   }
 
   static int compareBlockTimestampToMinGenesisTime(EthBlock.Block block) {
@@ -99,19 +99,19 @@ public class MinimumGenesisTimeBlockFinder {
       Eth1EventsChannel eth1EventsChannel, EthBlock.Block block) {
     MinGenesisTimeBlockEvent event =
         new MinGenesisTimeBlockEvent(
-            UnsignedLong.valueOf(block.getTimestamp()),
-            UnsignedLong.valueOf(block.getNumber()),
+            UInt64.valueOf(block.getTimestamp()),
+            UInt64.valueOf(block.getNumber()),
             Bytes32.fromHexString(block.getHash()));
     eth1EventsChannel.onMinGenesisTimeBlock(event);
     LOG.debug("Notifying BeaconChainService of MinGenesisTimeBlock: {}", event);
   }
 
   private static class SearchContext {
-    private UnsignedLong low = UnsignedLong.ZERO;
-    private UnsignedLong high;
+    private UInt64 low = UInt64.ZERO;
+    private UInt64 high;
 
     public SearchContext(final BigInteger headBlockNumber) {
-      this.high = UnsignedLong.valueOf(headBlockNumber);
+      this.high = UInt64.valueOf(headBlockNumber);
     }
   }
 }

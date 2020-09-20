@@ -27,89 +27,119 @@ import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.LogFormatter;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.events.Subscribers;
+import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 public class BlockImporter {
   private static final Logger LOG = LogManager.getLogger();
   private final RecentChainData recentChainData;
   private final ForkChoice forkChoice;
+  private final WeakSubjectivityValidator weakSubjectivityValidator;
   private final EventBus eventBus;
 
-  private Subscribers<VerifiedBlockOperationsListener<Attestation>> attestationSubscribers =
+  private final Subscribers<VerifiedBlockOperationsListener<Attestation>> attestationSubscribers =
       Subscribers.create(true);
-  private Subscribers<VerifiedBlockOperationsListener<AttesterSlashing>>
+  private final Subscribers<VerifiedBlockOperationsListener<AttesterSlashing>>
       attesterSlashingSubscribers = Subscribers.create(true);
-  private Subscribers<VerifiedBlockOperationsListener<ProposerSlashing>>
+  private final Subscribers<VerifiedBlockOperationsListener<ProposerSlashing>>
       proposerSlashingSubscribers = Subscribers.create(true);
-  private Subscribers<VerifiedBlockOperationsListener<SignedVoluntaryExit>>
+  private final Subscribers<VerifiedBlockOperationsListener<SignedVoluntaryExit>>
       voluntaryExitSubscribers = Subscribers.create(true);
 
   public BlockImporter(
-      final RecentChainData recentChainData, final ForkChoice forkChoice, final EventBus eventBus) {
+      final RecentChainData recentChainData,
+      final ForkChoice forkChoice,
+      final WeakSubjectivityValidator weakSubjectivityValidator,
+      final EventBus eventBus) {
     this.recentChainData = recentChainData;
     this.forkChoice = forkChoice;
+    this.weakSubjectivityValidator = weakSubjectivityValidator;
     this.eventBus = eventBus;
     eventBus.register(this);
   }
 
   @CheckReturnValue
   public SafeFuture<BlockImportResult> importBlock(SignedBeaconBlock block) {
-    LOG.trace("Import block at slot {}: {}", block.getMessage().getSlot(), block);
     if (recentChainData.containsBlock(block.getMessage().hash_tree_root())) {
       LOG.trace(
           "Importing known block {}.  Return successful result without re-processing.",
-          block.getMessage().hash_tree_root());
+          () -> formatBlock(block));
       return SafeFuture.completedFuture(BlockImportResult.knownBlock(block));
     }
 
-    return recentChainData
-        .retrieveBlockState(block.getParent_root())
+    return validateFinalizedCheckpointIsWithinWeakSubjectivityPeriod()
+        .thenCompose(__ -> recentChainData.retrieveBlockState(block.getParent_root()))
+        .thenCompose(preState -> forkChoice.onBlock(block, preState))
         .thenApply(
-            preState -> {
-              BlockImportResult result = forkChoice.onBlock(block, preState);
+            result -> {
               if (!result.isSuccessful()) {
                 LOG.trace(
                     "Failed to import block for reason {}: {}",
-                    result.getFailureReason(),
-                    block.getMessage());
+                    result::getFailureReason,
+                    () -> formatBlock(block));
                 return result;
               }
-              LOG.trace("Successfully imported block {}", block.getMessage().hash_tree_root());
+              LOG.trace("Successfully imported block {}", () -> formatBlock(block));
 
               final Optional<BlockProcessingRecord> record = result.getBlockProcessingRecord();
               eventBus.post(new ImportedBlockEvent(block));
-              notifyBlockOperationSubscribers(block);
+
+              // Notify operation pools to remove operations only
+              // if the block is on our canonical chain
+              if (result.isBlockOnCanonicalChain()) {
+                notifyBlockOperationSubscribers(block);
+              }
+
               record.ifPresent(eventBus::post);
 
               return result;
             })
         .exceptionally(
             (e) -> {
-              LOG.error("Internal error while importing block: " + block.getMessage(), e);
+              LOG.error("Internal error while importing block: {}", formatBlock(block), e);
               return BlockImportResult.internalError(e);
+            });
+  }
+
+  private SafeFuture<?> validateFinalizedCheckpointIsWithinWeakSubjectivityPeriod() {
+    return SafeFuture.of(() -> recentChainData.getStore().retrieveFinalizedCheckpointAndState())
+        .thenCombine(
+            SafeFuture.of(() -> recentChainData.getCurrentSlot().orElseThrow()),
+            (finalizedCheckpointState, currentSlot) -> {
+              weakSubjectivityValidator.validateLatestFinalizedCheckpoint(
+                  finalizedCheckpointState, currentSlot);
+              return null;
+            })
+        .exceptionally(
+            err -> {
+              weakSubjectivityValidator.handleValidationFailure(
+                  "Encountered an error while trying to validate latest finalized checkpoint", err);
+              throw new RuntimeException(err);
             });
   }
 
   @Subscribe
   @SuppressWarnings("unused")
   private void onBlockProposed(final ProposedBlockEvent blockProposedEvent) {
-    LOG.trace("Preparing to import proposed block: {}", blockProposedEvent.getBlock());
+    LOG.trace("Preparing to import proposed block: {}", formatBlock(blockProposedEvent.getBlock()));
     importBlock(blockProposedEvent.getBlock())
         .thenAccept(
             (result) -> {
               if (result.isSuccessful()) {
                 LOG.trace(
-                    "Successfully imported proposed block: {}", blockProposedEvent.getBlock());
+                    "Successfully imported proposed block: {}",
+                    formatBlock(blockProposedEvent.getBlock()));
               } else {
                 LOG.error(
-                    "Failed to import proposed block for reason + "
+                    "Failed to import proposed block for reason "
                         + result.getFailureReason()
                         + ": "
-                        + blockProposedEvent,
+                        + formatBlock(blockProposedEvent.getBlock()),
                     result.getFailureCause().orElse(null));
               }
             })
@@ -149,5 +179,9 @@ public class BlockImporter {
   public void subscribeToVerifiedBlockVoluntaryExits(
       VerifiedBlockOperationsListener<SignedVoluntaryExit> verifiedBlockVoluntaryExitsListener) {
     voluntaryExitSubscribers.subscribe(verifiedBlockVoluntaryExitsListener);
+  }
+
+  private String formatBlock(final SignedBeaconBlock block) {
+    return LogFormatter.formatBlock(block.getSlot(), block.getRoot());
   }
 }

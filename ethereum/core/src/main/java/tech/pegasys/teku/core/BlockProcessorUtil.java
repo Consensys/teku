@@ -15,7 +15,6 @@ package tech.pegasys.teku.core;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.Math.toIntExact;
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.is_valid_indexed_attestation;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
@@ -33,7 +32,6 @@ import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_HISTORICAL_VECT
 import static tech.pegasys.teku.util.config.Constants.MAX_DEPOSITS;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -45,6 +43,7 @@ import org.apache.tuweni.crypto.Hash;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSSignatureVerifier.InvalidSignatureException;
 import tech.pegasys.teku.core.exceptions.BlockProcessingException;
+import tech.pegasys.teku.core.lookup.IndexedAttestationProvider;
 import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
@@ -67,6 +66,7 @@ import tech.pegasys.teku.datastructures.state.MutableBeaconState;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.datastructures.state.Validator;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
 public final class BlockProcessorUtil {
@@ -121,11 +121,11 @@ public final class BlockProcessorUtil {
   public static void process_randao_no_validation(MutableBeaconState state, BeaconBlockBody body)
       throws BlockProcessingException {
     try {
-      UnsignedLong epoch = get_current_epoch(state);
+      UInt64 epoch = get_current_epoch(state);
 
       Bytes32 mix =
-          get_randao_mix(state, epoch).xor(Hash.sha2_256(body.getRandao_reveal().toBytes()));
-      int index = epoch.mod(UnsignedLong.valueOf(EPOCHS_PER_HISTORICAL_VECTOR)).intValue();
+          get_randao_mix(state, epoch).xor(Hash.sha2_256(body.getRandao_reveal().toSSZBytes()));
+      int index = epoch.mod(EPOCHS_PER_HISTORICAL_VECTOR).intValue();
       state.getRandao_mixes().set(index, mix);
     } catch (IllegalArgumentException e) {
       LOG.warn(e.getMessage());
@@ -135,7 +135,7 @@ public final class BlockProcessorUtil {
 
   public static void verify_randao(BeaconState state, BeaconBlock block, BLSSignatureVerifier bls)
       throws InvalidSignatureException {
-    UnsignedLong epoch = compute_epoch_at_slot(block.getSlot());
+    UInt64 epoch = compute_epoch_at_slot(block.getSlot());
     // Verify RANDAO reveal
     Validator proposer =
         state.getValidators().get(toIntExact(block.getProposer_index().longValue()));
@@ -294,7 +294,7 @@ public final class BlockProcessorUtil {
 
       // For each attester_slashing in block.body.attester_slashings:
       for (AttesterSlashing attesterSlashing : attesterSlashings) {
-        List<UnsignedLong> indicesToSlash = new ArrayList<>();
+        List<UInt64> indicesToSlash = new ArrayList<>();
         final Optional<OperationInvalidReason> invalidReason =
             validator.validate(state, attesterSlashing, indicesToSlash);
 
@@ -322,9 +322,13 @@ public final class BlockProcessorUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#attestations</a>
    */
   public static void process_attestations(
-      MutableBeaconState state, SSZList<Attestation> attestations) throws BlockProcessingException {
+      MutableBeaconState state,
+      SSZList<Attestation> attestations,
+      IndexedAttestationProvider indexedAttestationProvider)
+      throws BlockProcessingException {
     process_attestations_no_validation(state, attestations);
-    verify_attestations(state, attestations, BLSSignatureVerifier.SIMPLE);
+    verify_attestations(
+        state, attestations, BLSSignatureVerifier.SIMPLE, indexedAttestationProvider);
   }
 
   public static void process_attestations_no_validation(
@@ -351,7 +355,7 @@ public final class BlockProcessorUtil {
                 attestation.getAggregation_bits(),
                 data,
                 state.getSlot().minus(data.getSlot()),
-                UnsignedLong.valueOf(get_beacon_proposer_index(state)));
+                UInt64.valueOf(get_beacon_proposer_index(state)));
 
         if (data.getTarget().getEpoch().equals(get_current_epoch(state))) {
           state.getCurrent_epoch_attestations().add(pendingAttestation);
@@ -366,12 +370,15 @@ public final class BlockProcessorUtil {
   }
 
   public static void verify_attestations(
-      BeaconState state, SSZList<Attestation> attestations, BLSSignatureVerifier signatureVerifier)
+      BeaconState state,
+      SSZList<Attestation> attestations,
+      BLSSignatureVerifier signatureVerifier,
+      IndexedAttestationProvider indexedAttestationProvider)
       throws BlockProcessingException {
 
     Optional<AttestationProcessingResult> processResult =
         attestations.stream()
-            .map(attesation -> get_indexed_attestation(state, attesation))
+            .map(attesation -> indexedAttestationProvider.getIndexedAttestation(state, attesation))
             .map(attestation -> is_valid_indexed_attestation(state, attestation, signatureVerifier))
             .filter(result -> !result.isSuccessful())
             .findAny();

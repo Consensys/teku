@@ -18,8 +18,8 @@ import static org.apache.milagro.amcl.BLS381.BIG.MODBYTES;
 import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.SecretKey;
 import tech.pegasys.teku.bls.impl.Signature;
 
@@ -57,20 +57,25 @@ public class MikuliSecretKey implements SecretKey {
   }
 
   @Override
-  public Bytes toBytes() {
+  public Bytes32 toBytes() {
     byte[] bytea = new byte[MODBYTES];
     scalarValue.value().toBytes(bytea);
-    return Bytes.wrap(bytea);
+    return Bytes32.wrap(bytea, 16);
   }
 
   @Override
-  public PublicKey derivePublicKey() {
+  public MikuliPublicKey derivePublicKey() {
     return new MikuliPublicKey(this);
   }
 
   @Override
   public Signature sign(Bytes message) {
     return MikuliBLS12381.sign(this, message);
+  }
+
+  @Override
+  public Signature sign(Bytes message, Bytes dst) {
+    return MikuliBLS12381.sign(this, message, dst);
   }
 
   public Scalar getScalarValue() {
@@ -81,11 +86,6 @@ public class MikuliSecretKey implements SecretKey {
   @Override
   public void destroy() {
     scalarValue.destroy();
-  }
-
-  @Override
-  public String toString() {
-    return toBytes().toHexString();
   }
 
   @Override

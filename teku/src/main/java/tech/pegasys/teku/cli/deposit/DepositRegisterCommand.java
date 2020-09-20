@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.cli.deposit;
 
-import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
+import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
@@ -21,6 +21,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
+import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -35,7 +37,8 @@ import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSecretKey;
-import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
+import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
+import tech.pegasys.teku.cli.options.WithdrawalPublicKeyOptions;
 
 @Command(
     name = "register",
@@ -57,14 +60,10 @@ public class DepositRegisterCommand implements Runnable {
   @Mixin private RegisterParams registerParams;
 
   @ArgGroup(exclusive = true, multiplicity = "1")
-  private ValidatorKeyOptions validatorKeyOptions;
+  private WithdrawalPublicKeyOptions withdrawalKeyOptions;
 
-  @Option(
-      names = {"--withdrawal-public-key"},
-      paramLabel = "<PUBLIC_KEY>",
-      required = true,
-      description = "Public withdrawal key for the validator")
-  private String withdrawalKey;
+  @ArgGroup(exclusive = true, multiplicity = "1")
+  private ValidatorKeyOptions validatorKeyOptions;
 
   @Mixin private VerboseOutputParam verboseOutputParam;
 
@@ -81,14 +80,39 @@ public class DepositRegisterCommand implements Runnable {
       final CommandSpec spec,
       final RegisterParams registerParams,
       final ValidatorKeyOptions validatorKeyOptions,
-      final String withdrawalKey) {
+      final WithdrawalPublicKeyOptions withdrawalPublicKeyOptions) {
     this.shutdownFunction = shutdownFunction;
     this.envSupplier = envSupplier;
     this.spec = spec;
     this.registerParams = registerParams;
     this.validatorKeyOptions = validatorKeyOptions;
-    this.withdrawalKey = withdrawalKey;
+    this.withdrawalKeyOptions = withdrawalPublicKeyOptions;
     this.verboseOutputParam = new VerboseOutputParam(true);
+  }
+
+  public BLSPublicKey getWithdrawalPublicKey() {
+    if (withdrawalKeyOptions.getWithdrawalKey() != null) {
+      return BLSPublicKey.fromBytesCompressed(
+          Bytes48.fromHexString(withdrawalKeyOptions.getWithdrawalKey()));
+    } else if (withdrawalKeyOptions.getWithdrawalKeystoreFile() != null) {
+      return getWithdrawalKeyFromKeystore();
+    } else {
+      // not meant to happen
+      throw new IllegalStateException("Withdrawal Key Options are not initialized");
+    }
+  }
+
+  private BLSPublicKey getWithdrawalKeyFromKeystore() {
+    try {
+      final KeyStoreData keyStoreData =
+          KeyStoreLoader.loadFromFile(withdrawalKeyOptions.getWithdrawalKeystoreFile().toPath());
+      return BLSPublicKey.fromBytesCompressed(Bytes48.wrap(keyStoreData.getPubkey()));
+    } catch (final KeyStoreValidationException e) {
+      throw new CommandLine.ParameterException(
+          spec.commandLine(),
+          "Error: Unable to get withdrawal key from keystore: " + e.getMessage(),
+          e);
+    }
   }
 
   @Override
@@ -97,10 +121,8 @@ public class DepositRegisterCommand implements Runnable {
 
     try (final RegisterAction registerAction =
         registerParams.createRegisterAction(verboseOutputParam.isVerboseOutputEnabled())) {
-      final BLSPublicKey withdrawalPublicKey =
-          BLSPublicKey.fromBytesCompressed(Bytes.fromHexString(this.withdrawalKey));
       registerAction.displayConfirmation(1);
-      registerAction.sendDeposit(validatorKey, withdrawalPublicKey).get();
+      registerAction.sendDeposit(validatorKey, getWithdrawalPublicKey()).get();
     } catch (final Throwable t) {
       SUB_COMMAND_LOG.sendDepositFailure(t);
       shutdownFunction.accept(1);

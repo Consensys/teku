@@ -13,20 +13,21 @@
 
 package tech.pegasys.teku.datastructures.blocks;
 
-import com.google.common.primitives.UnsignedLong;
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SlotAndBlockRoot {
-  private final UnsignedLong slot;
+  private final UInt64 slot;
   private final Bytes32 blockRoot;
 
-  public SlotAndBlockRoot(final UnsignedLong slot, final Bytes32 blockRoot) {
+  public SlotAndBlockRoot(final UInt64 slot, final Bytes32 blockRoot) {
     this.slot = slot;
     this.blockRoot = blockRoot;
   }
 
-  public UnsignedLong getSlot() {
+  public UInt64 getSlot() {
     return slot;
   }
 
@@ -45,5 +46,13 @@ public class SlotAndBlockRoot {
   @Override
   public int hashCode() {
     return Objects.hash(slot, blockRoot);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("slot", slot)
+        .add("blockRoot", blockRoot)
+        .toString();
   }
 }

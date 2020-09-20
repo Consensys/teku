@@ -13,25 +13,33 @@
 
 package tech.pegasys.teku.cli.subcommand.debug;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Optional;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.DataOptions;
+import tech.pegasys.teku.cli.options.DataStorageOptions;
 import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
+import tech.pegasys.teku.infrastructure.async.ScheduledExecutorAsyncRunner;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
-import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 
@@ -65,9 +73,13 @@ public class DebugDbCommand implements Runnable {
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
-  public int getDeposits(@Mixin final DataOptions dataOptions) throws Exception {
+  public int getDeposits(
+      @Mixin final DataOptions dataOptions,
+      @Mixin final DataStorageOptions dataStorageOptions,
+      @Mixin final NetworkOptions networkOptions)
+      throws Exception {
     try (final YamlEth1EventsChannel eth1EventsChannel = new YamlEth1EventsChannel(System.out);
-        final Database database = createDatabase(dataOptions)) {
+        final Database database = createDatabase(dataOptions, dataStorageOptions, networkOptions)) {
       final DepositStorage depositStorage =
           DepositStorage.create(eth1EventsChannel, database, true);
       depositStorage.replayDepositEvents().join();
@@ -89,6 +101,7 @@ public class DebugDbCommand implements Runnable {
       footer = "Teku is licensed under the Apache License 2.0")
   public int getFinalizedState(
       @Mixin final DataOptions dataOptions,
+      @Mixin final DataStorageOptions dataStorageOptions,
       @Mixin final NetworkOptions networkOptions,
       @Option(
               required = true,
@@ -103,9 +116,10 @@ public class DebugDbCommand implements Runnable {
           final long slot)
       throws Exception {
     setConstants(networkOptions);
-    try (final Database database = createDatabase(dataOptions)) {
+    try (final Database database =
+        createDatabase(dataOptions, dataStorageOptions, networkOptions)) {
       return writeState(
-          outputFile, database.getLatestAvailableFinalizedState(UnsignedLong.valueOf(slot)));
+          outputFile, database.getLatestAvailableFinalizedState(UInt64.valueOf(slot)));
     }
   }
 
@@ -123,6 +137,7 @@ public class DebugDbCommand implements Runnable {
       footer = "Teku is licensed under the Apache License 2.0")
   public int getLatestFinalizedState(
       @Mixin final DataOptions dataOptions,
+      @Mixin final DataStorageOptions dataStorageOptions,
       @Mixin final NetworkOptions networkOptions,
       @Option(
               required = true,
@@ -131,13 +146,65 @@ public class DebugDbCommand implements Runnable {
           final Path outputFile)
       throws Exception {
     setConstants(networkOptions);
-    try (final Database database = createDatabase(dataOptions)) {
+    final AsyncRunner asyncRunner =
+        ScheduledExecutorAsyncRunner.create(
+            "async", 1, new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
+    try (final Database database =
+        createDatabase(dataOptions, dataStorageOptions, networkOptions)) {
       final Optional<BeaconState> state =
           database
               .createMemoryStore()
-              .map(builder -> builder.blockProvider(BlockProvider.NOOP).build())
+              .map(
+                  builder ->
+                      builder
+                          .blockProvider(BlockProvider.NOOP)
+                          .asyncRunner(asyncRunner)
+                          .build()
+                          .join())
               .map(store -> store.getLatestFinalizedBlockAndState().getState());
       return writeState(outputFile, state);
+    } finally {
+      asyncRunner.shutdown();
+    }
+  }
+
+  @Command(
+      name = "get-forkchoice-snapshot",
+      description = "Get the stored fork choice data",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int getForkChoiceSnapshot(
+      @Mixin final DataOptions dataOptions,
+      @Mixin final DataStorageOptions dataStorageOptions,
+      @Mixin final NetworkOptions networkOptions,
+      @Option(
+              names = {"--output", "-o"},
+              description = "File to write output to")
+          final Path outputFile)
+      throws Exception {
+    setConstants(networkOptions);
+    try (final Database database =
+        createDatabase(dataOptions, dataStorageOptions, networkOptions)) {
+      final Optional<ProtoArraySnapshot> snapshot = database.getProtoArraySnapshot();
+      if (snapshot.isEmpty()) {
+        System.err.println("No fork choice snapshot available.");
+        return 2;
+      }
+      final Map<UInt64, VoteTracker> votes = database.getVotes();
+      final String report = ForkChoiceDataWriter.writeForkChoiceData(snapshot.get(), votes);
+      if (outputFile != null) {
+        Files.writeString(outputFile, report, StandardCharsets.UTF_8);
+      } else {
+        System.out.println(report);
+      }
+      return 0;
     }
   }
 
@@ -146,10 +213,18 @@ public class DebugDbCommand implements Runnable {
         NetworkDefinition.fromCliArg(networkOptions.getNetwork()).getConstants());
   }
 
-  private Database createDatabase(final DataOptions dataOptions) {
+  private Database createDatabase(
+      final DataOptions dataOptions,
+      final DataStorageOptions dataStorageOptions,
+      final NetworkOptions networkOptions) {
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
-            new NoOpMetricsSystem(), dataOptions.getDataPath(), dataOptions.getDataStorageMode());
+            new NoOpMetricsSystem(),
+            dataOptions.getDataPath(),
+            dataStorageOptions.getDataStorageMode(),
+            NetworkDefinition.fromCliArg(networkOptions.getNetwork())
+                .getEth1DepositContractAddress()
+                .orElse(null));
     return databaseFactory.createDatabase();
   }
 

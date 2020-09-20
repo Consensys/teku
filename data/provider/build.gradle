@@ -1,9 +1,7 @@
 dependencies {
-    api 'com.fasterxml.jackson.core:jackson-databind'
-    api 'io.swagger.core.v3:swagger-annotations'
-
     implementation project(':bls')
     implementation project(':data')
+    implementation project(':data:serializer')
     implementation project(':ethereum:core')
     implementation project(':ethereum:datastructures')
     implementation project(':ethereum:statetransition')
@@ -20,6 +18,7 @@ dependencies {
     implementation 'com.google.code.gson:gson'
     implementation 'org.apache.tuweni:tuweni-units'
 
+    testImplementation testFixtures(project(':ethereum:core'))
     testImplementation testFixtures(project(':ethereum:datastructures'))
     testImplementation testFixtures(project(':storage'))
 }

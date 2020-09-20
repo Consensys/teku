@@ -41,11 +41,14 @@ public class GetListenPort implements Handler {
   }
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get the TCP listening port of the client's libp2p service.",
       tags = {TAG_NETWORK},
-      description = "Returns the TCP listening port of the client's libp2p service.",
+      description =
+          "Returns the TCP listening port of the client's libp2p service."
+              + " Replaced by standard api endpoint `/eth/v1/node/identity`.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,

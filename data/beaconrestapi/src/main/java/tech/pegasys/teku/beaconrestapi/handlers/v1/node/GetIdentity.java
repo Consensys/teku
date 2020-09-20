@@ -14,9 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.CACHE_NONE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_NODE;
 
@@ -35,7 +33,7 @@ import tech.pegasys.teku.api.response.v1.node.IdentityResponse;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetIdentity implements Handler {
-  public static final String ROUTE = "/v1/node/identity";
+  public static final String ROUTE = "/eth/v1/node/identity";
   private final JsonProvider jsonProvider;
   private final NetworkDataProvider network;
 
@@ -52,14 +50,14 @@ public class GetIdentity implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Retrieves data about the node's network identity.",
+      summary = "Get node identity",
+      description = "Retrieves data about the node's network presence.",
       tags = {TAG_V1_NODE},
       responses = {
         @OpenApiResponse(
             status = RES_OK,
             content = @OpenApiContent(from = IdentityResponse.class),
             description = "The identifying information of the node."),
-        @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override

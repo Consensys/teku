@@ -1,0 +1,13 @@
+dependencies {
+    api 'org.hyperledger.besu:plugin-api'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'io.prometheus:simpleclient'
+    implementation 'io.vertx:vertx-core'
+    implementation 'io.vertx:vertx-web'
+    implementation 'org.apache.tuweni:tuweni-crypto'
+    implementation 'org.apache.tuweni:tuweni-units'
+    implementation 'org.hdrhistogram:HdrHistogram'
+    implementation 'org.hyperledger.besu.internal:metrics-core'
+
+    testFixturesApi 'org.hyperledger.besu:plugin-api'
+}

@@ -5,8 +5,164 @@ we recommend most users use the latest `master` branch of Teku.
 
 ## Upcoming Breaking Changes
 
-- Anyone using `/node/version` should switch to use
-   the new `/v1/node/version` endpoint, as `/node/version` will be removed in a future release.
+- REST API endpoints will be updated to match emerging standards in a future release.
+- `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments still work but will be removed in a future release.
+
+## 0.12.6
+
+### Additions and Improvements
+- Added support for the slashing protection interchange format via the `teku slashing-protection import` and `teku slashing-protection export` subcommands
+- New REST APIs
+  - `/eth/v1/node/peers` - lists information about the currently connected peers
+  - `/eth/v1/node/peers/:peer_id` - list information about a specific peer
+  - `/eth/v1/node/health` - return the node health status via HTTP status codes. Useful for load balancers
+  - `/eth/v1/node/syncing` - describe the node's current sync status
+  - `/v1/node/version` has been moved to `/eth/v1/node/version` and `/v1/node/identity` to `/eth/v1/node/identity` matching changes in the standard API spec
+- Gossip messages produced by Teku no longer set the `from`, `signature` or `seqNo` fields
+- Enabled Gossipsub flood publishing to reduce propagation times for attestations and blocks produced locally
+- Generated P2P private keys and Discovery v5 sequence numbers are now persisted across restarts
+- Implemented unicode normalization process for validator keystore passwords
+- Progress messages are now logged when loading large number of validator keys at startup
+- The default network is now Medalla instead of Altona
+- Avoid recalculating validator duties for reorgs that are not long enough to change the scheduling
+- Validator duties are now calculated as soon as the genesis state is known instead of waiting for the actual genesis time.
+- Added additional validation for deposit events received from the ETH1 node to flag when the ETH1 node has malfunctioned and missed some deposit log events
+- Exit with a clear message when the ETH1 service is unable to start. Note that this only applies when the existing deposit data is invalid. Teku will continue retrying if the ETH1 node is not currently available.
+- Operations (e.g. attestations, slashings etc) included in blocks are now readded to the pending pool if a reorg causes them to no longer be in the canonical chain
+- Removed support for generating unencrypted keystores
+- Discv5 now caches the hash of the local node to reduce load caused by significant numbers of incoming discovery messages
+- Early access support for running the validator node independently of the beacon node (see [#2683](https://github.com/PegaSysEng/teku/pull/2683) for details). Please note this is not yet a recommended configuration and the CLI options and APIs used are subject to change.
+
+### Bug Fixes
+- Gossip messages with null `from`, `signature` or `seqNo` fields are now rebroadcast with the fields still null instead of replaced by default values
+- Added validation to ensure that the uncompressed length of Gossip messages is within the possible ranges for a valid message for each gossip message type
+- Fixed validation of compressed gossip message length which may incorrectly reject messages
+- Fixed unhandled exception reported when an attestation received over gossip had an invalid checkpoint, specifying a block root from after the specified epoch.
+- Improved validation of remote peer status
+- Fix "AbstractRouter internal error on message control" errors when messages are received from peers before the outbound connection has been fully established
+- Fixed errors logged when the ETH1 chain is shorter than the configured follow distance
+- Explicitly fsync the RocksDB write ahead log files to disk on shutdown
+- Fixed issue where environment variables named `TEKU_VERSION` or `TEKU_HELP` would be incorrectly interpreted as specifying the `--version` and `--help` arguments, preventing Teku from starting
+- Avoid performing duplicate tasks to regenerate states in a particular corner case when the task can be rebased to start from the output of an already scheduled task
+- Improve performance of cacheable task queue used for state regeneration
+- Suppressed `ClosedChannelException` errors in logs
+
+## 0.12.5
+
+### Bug Fixes
+
+- Fix race condition when a block and its parents are received at around the same time which could cause the node to fall out of sync until it reverted to syncing mode to catch up
+- Fix issue where attestations from blocks could be processed prior to the block they target being available resulting in `ProtoNode: Delta to be subtracted is greater than node weight` errors
+- Return a non-zero exit code from `validator register` subcommand when the user does not confirm the transaction
+
+## 0.12.4
+
+### Additions and Improvements
+
+- Includes a significant number of bug fixes and performance improvements as a result of the recent issues on the Medalla testnet. See https://github.com/PegaSysEng/teku/issues/2596 for a full list of related issues.
+- Support loading an entire directory of validator keys using `--validator-keys=<keyDir>:<passDir>`. Individual keystore and password files can also be specified using this new argument. 
+- Major reduction in CPU and memory usage during periods of non-finalization by intelligently queuing and combining requests for beacon states and checkpoint states
+- Fixed slow startup times during long periods of non-finalization.  Non-finalized states are now periodically persisted to disk to avoid needing to replay large numbers of blocks to regenerate state.
+- Reduced sync times during long periods of non-finalization by searching for a more recent common ancestor than the finalized checkpoint 
+- Added explicit UInt64 overflow and underflow protection
+- Local signing is now multithreaded to better utilise CPU when running large numbers of validators
+- Improved sync performance by continuing to update the target peer's status during the sync process
+- Removed support for SecIO. Only the NOISE handshake is now supported.
+- Provide a more userfriendly error message and exit if the P2P network port is already in use
+- Added new metrics 
+  - `validator_attestation_publication_delay` reports a histogram showing real time between when validations were due and when they were published to the network
+
+### Bug Fixes
+
+- Fixed issue where attestations were created for the wrong head because fork choice had not yet been run. Results in a significant improvement in attestation inclusion rate.
+- Fixed issue where invalid blocks were produced because they included attestations from forks that had different attestation committees
+- Fixed issue where block production may be scheduled for the wrong slot due to calculating duties one epoch ahead
+- Fixed issue where sync could appear to stall because fork choice data wasn't being updated during sync
+- Fixed race condition when updating fork choice votes which could lead to `ProtoNode: Delta to be subtracted is greater than node weight` errors
+- Reduce `RejectedExecutionException` noise in logs when Teku is unable to keep up with incoming gossip messages. Other performance improvements should also improve the ability to keep up. 
+- Fixed cases where states were regenerated without first checking if a cached version was available
+- Fixed excessive memory usage in discovery when parsing an invalid RLP message
+- Fixed issue where maximum cache sizes could be exceeded resulting in excessive memory usage
+- Be more lenient in detecting peers that excessively throttle requests for blocks to better handle long stretches of empty slots
+- Fixed error when validating gossiped attestations that point to old blocks
+- Fixed netty thread blocked error messages from metrics by avoiding contention on key locks while retrieving metrics
+- Fixed issue where sockets were left open when using an external signer
+
+
+## 0.12.3
+
+### Breaking Changes
+
+- Removed `--validators-unencrypted-key-files` option. This was only intended for early interop testing. Keys should be loaded from encrypted keystores.
+
+### Additions and Improvements
+
+- Add basic built-in slashing protection. Note that this only a last line of defence against bugs in the beacon node and will not prevent slashing if validator keys are run in multiple processes simultaneously.
+- Validator duty logging is now enabled by default. It can be disabled with `--log-include-validator-duties-enabled=false`
+- Add updated Medalla bootnodes
+- Updated to be compliant with beacon chain spec 0.12.2
+- Prioritise more recent attestations when creating blocks as they pay higher rewards
+- Refuse to start if the existing database is from a different network to the current configuration
+- Added rate limiting for remote peers based on both number of blocks requested and total number of requests made
+- Discovery now requires confirmation from multiple peers before updating the external IP reported by the node
+- Improved interoperability with other clients: seqno field is now optional for libp2p messages
+- REST API updates:
+    - Added genesis validator root to the `/node/fork` REST API
+    - Added `/validator/aggregate_attestation`
+    - Added `/validator/persistent_subnets_subscription`
+    - Added `/validator/beacon_committee_subscription`
+    - Added `/validator/aggregate_and_proofs`
+    - Added `/node/pending_attestation_count`
+- Report the current peer count in "time to genesis" 
+- Added UInt64 overflow and underflow detection
+- Improved performance of list shuffling operations
+- Snappy compression is now enabled by default for custom networks. It can be disabled with `--p2p-snappy-enabled=false`
+
+
+### Bug Fixes
+
+- Fixed vector for DOS attack caused by not throttling libp2p response rate. (See https://github.com/libp2p/jvm-libp2p/pull/127 and https://github.com/ethereum/public-attacknets/issues/7 for futher details)
+- Fixed issue that delayed publication of created attestations by a slot
+- Fixed "Invalid attestation: Signature is invalid" errors caused by incorrect caching of committee selections (see https://github.com/PegaSysEng/teku/pull/2501 for further details)
+- Fixed issues where validators failed to perform duties because the node incorrectly returned to syncing state
+- Fixed `--logging` option to accept lowercase `debug` option. Renamed the `debug` subcommand to avoid the naming conflict
+- Avoid lock contention when reading in-memory storage metrics
+- Reduced memory usage when loading large numbers of scrypt encoded keystores
+- Increased read timeout for ETH1 requests to avoid repeatedly timing out when the ETH1 node is slow
+- Reduced noise in logs from `ClosedChannelException` when a peer unexpected disconnects 
+- Fixed `IllegalArgumentException` when RPC response code was greater than 127
+- Fixed `IllegalArgumentException` when unexpectedly short discovery messages were received
+- Fixed very frequenet `InternalErrorException` when a peer disconnected during initial libp2p handshake
+- Fixed crash during shutdown caused by metrics accessing RocksDB after it was closed
+- Restricted the maximum epoch value accepted by REST API to ensure it can be converted to a slot without overflowing uint64
+- Fixed help text for `--p2p-discovery-bootnodes`
+
+## 0.12.2
+
+### Additions and Improvements
+
+- Added `medalla` network definition. As the genesis state is not yet known, an ETH1 endpoint must be specified when connecting to the `medalla` testnet
+- Attestations are now created and published immediately after the block for the slot is imported, instead of waiting until 1/3rd of the way through the slot
+- The Teku docker image has been upgraded to run Java 14
+- `/beacon/state` REST API now supports a `stateRoot` parameter to request states by state root. This includes retrieving states for empty slots
+- Reduced gas limit and used current gas price reported by the ETH1 node when sending deposit transactions with the `validator` subcommands 
+- Validator keys are now loaded in parallel to improve start up time
+- Added a docker-compose configuration to quickly launch a 4-node local testnet
+- Exposed additional metrics to report on RocksDB memory usage:
+  - storage_hot_estimated_table_readers_memory
+  - storage_finalized_estimated_table_readers_memory
+  - storage_hot_current_size_all_mem_tables
+  - storage_finalized_current_size_all_mem_tables
+- Stricter req/resp message lengths are now enforced based on message content type
+
+### Bug Fixes
+
+- Significant reductions in process resident memory. As this involved a configuration change for RocksDB the most significant reduction is achieved with a new database
+- Fixed issue where Teku did not reconnect to peers after a network interruption
+- Fixed issue where Teku may stop attempting to create new outbound peer connections
+- Fixed incompatibility with deposits with public keys that could not be resolved to a G1 point
+- Avoid disconnecting peers that do not return all requested blocks for a block by range request
+- Reduced log level for a noisy message about duplicate peer connections
 
 ## 0.12.1
 

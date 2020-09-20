@@ -15,11 +15,10 @@ package tech.pegasys.teku.storage.server.rocksdb;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.teku.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
-import static tech.pegasys.teku.metrics.TekuMetricCategory.STORAGE_HOT_DB;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
 import java.util.HashMap;
@@ -42,11 +41,13 @@ import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
+import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbInstanceFactory;
@@ -63,6 +64,7 @@ import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V4HotRocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
+import tech.pegasys.teku.storage.server.state.StateRootRecorder;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -173,24 +175,39 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
+  public void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate) {
+    try (final HotUpdater updater = hotDao.hotUpdater()) {
+      Optional<Checkpoint> checkpoint = weakSubjectivityUpdate.getWeakSubjectivityCheckpoint();
+      checkpoint.ifPresentOrElse(
+          updater::setWeakSubjectivityCheckpoint, updater::clearWeakSubjectivityCheckpoint);
+      updater.commit();
+    }
+  }
+
+  @Override
   public Optional<StoreBuilder> createMemoryStore() {
-    Optional<UnsignedLong> maybeGenesisTime = hotDao.getGenesisTime();
+    Optional<UInt64> maybeGenesisTime = hotDao.getGenesisTime();
     if (maybeGenesisTime.isEmpty()) {
       // If genesis time hasn't been set, genesis hasn't happened and we have no data
       return Optional.empty();
     }
-    final UnsignedLong genesisTime = maybeGenesisTime.get();
+    final UInt64 genesisTime = maybeGenesisTime.get();
     final Checkpoint justifiedCheckpoint = hotDao.getJustifiedCheckpoint().orElseThrow();
     final Checkpoint finalizedCheckpoint = hotDao.getFinalizedCheckpoint().orElseThrow();
     final Checkpoint bestJustifiedCheckpoint = hotDao.getBestJustifiedCheckpoint().orElseThrow();
     final BeaconState finalizedState = hotDao.getLatestFinalizedState().orElseThrow();
 
-    final Map<UnsignedLong, VoteTracker> votes = hotDao.getVotes();
+    final Map<UInt64, VoteTracker> votes = hotDao.getVotes();
 
-    // Build child-parent lookup
+    // Build maps with block information
     final Map<Bytes32, Bytes32> childToParentLookup = new HashMap<>();
+    final Map<Bytes32, UInt64> rootToSlot = new HashMap<>();
     try (final Stream<SignedBeaconBlock> hotBlocks = hotDao.streamHotBlocks()) {
-      hotBlocks.forEach(b -> childToParentLookup.put(b.getRoot(), b.getParent_root()));
+      hotBlocks.forEach(
+          b -> {
+            childToParentLookup.put(b.getRoot(), b.getParent_root());
+            rootToSlot.put(b.getRoot(), b.getSlot());
+          });
     }
 
     // Validate finalized data is consistent and available
@@ -206,39 +223,60 @@ public class RocksDbDatabase implements Database {
     return Optional.of(
         StoreBuilder.create()
             .metricsSystem(metricsSystem)
-            .time(UnsignedLong.valueOf(Instant.now().getEpochSecond()))
+            .time(UInt64.valueOf(Instant.now().getEpochSecond()))
             .genesisTime(genesisTime)
             .finalizedCheckpoint(finalizedCheckpoint)
             .justifiedCheckpoint(justifiedCheckpoint)
             .bestJustifiedCheckpoint(bestJustifiedCheckpoint)
             .childToParentMap(childToParentLookup)
+            .rootToSlotMap(rootToSlot)
             .latestFinalized(latestFinalized)
             .votes(votes));
   }
 
   @Override
-  public Optional<UnsignedLong> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
+  public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
+    return hotDao.getWeakSubjectivityCheckpoint();
+  }
+
+  @Override
+  public Map<UInt64, VoteTracker> getVotes() {
+    return hotDao.getVotes();
+  }
+
+  @Override
+  public Optional<UInt64> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
     return finalizedDao.getSlotForFinalizedBlockRoot(blockRoot);
   }
 
   @Override
-  public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UnsignedLong slot) {
+  public Optional<UInt64> getSlotForFinalizedStateRoot(final Bytes32 stateRoot) {
+    return finalizedDao.getSlotForFinalizedStateRoot(stateRoot);
+  }
+
+  @Override
+  public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
     return finalizedDao.getFinalizedBlockAtSlot(slot);
   }
 
   @Override
-  public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UnsignedLong slot) {
+  public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     return finalizedDao.getLatestFinalizedBlockAtSlot(slot);
   }
 
   @Override
-  public Optional<BeaconState> getLatestAvailableFinalizedState(final UnsignedLong maxSlot) {
+  public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     return finalizedDao.getLatestAvailableFinalizedState(maxSlot);
   }
 
   @Override
   public Optional<SignedBeaconBlock> getSignedBlock(final Bytes32 root) {
     return hotDao.getHotBlock(root).or(() -> finalizedDao.getFinalizedBlock(root));
+  }
+
+  @Override
+  public Optional<BeaconState> getHotState(final Bytes32 root) {
+    return hotDao.getHotState(root);
   }
 
   @Override
@@ -249,14 +287,19 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
+  public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot) {
+    return hotDao.getHotBlock(blockRoot);
+  }
+
+  @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
-      final UnsignedLong startSlot, final UnsignedLong endSlot) {
+      final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamFinalizedBlocks(startSlot, endSlot);
   }
 
   @Override
-  public List<Bytes32> getStateRootsBeforeSlot(final UnsignedLong slot) {
+  public List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot) {
     return hotDao.getStateRootsBeforeSlot(slot);
   }
 
@@ -349,9 +392,9 @@ public class RocksDbDatabase implements Database {
           .ifPresent(
               checkpoint -> {
                 updater.setFinalizedCheckpoint(checkpoint);
-                UnsignedLong finalizedSlot =
-                    checkpoint.getEpochStartSlot().plus(UnsignedLong.valueOf(SLOTS_PER_EPOCH));
+                UInt64 finalizedSlot = checkpoint.getEpochStartSlot().plus(SLOTS_PER_EPOCH);
                 updater.pruneHotStateRoots(hotDao.getStateRootsBeforeSlot(finalizedSlot));
+                updater.deleteHotState(checkpoint.getRoot());
               });
 
       update.getJustifiedCheckpoint().ifPresent(updater::setJustifiedCheckpoint);
@@ -359,6 +402,7 @@ public class RocksDbDatabase implements Database {
       update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
 
       updater.addHotBlocks(update.getHotBlocks());
+      updater.addHotStates(update.getHotStates());
 
       if (update.getStateRoots().size() > 0) {
         updater.addHotStateRoots(update.getStateRoots());
@@ -397,6 +441,8 @@ public class RocksDbDatabase implements Database {
                   .childAndParentRoots(finalizedChildToParentMap)
                   .build();
 
+          final StateRootRecorder recorder =
+              new StateRootRecorder(baseBlock.getSlot(), updater::addFinalizedStateRoot);
           final StateGenerator stateGenerator =
               StateGenerator.create(blockTree, baseBlock, blockProvider, finalizedStates);
           // TODO (#2397) - don't join, create synchronous API for synchronous blockProvider
@@ -405,7 +451,7 @@ public class RocksDbDatabase implements Database {
                   (block, state) -> {
                     updater.addFinalizedBlock(block);
                     updater.addFinalizedState(block.getRoot(), state);
-                    updater.addFinalizedStateRoot(state.hash_tree_root(), state.getSlot());
+                    recorder.acceptNextState(state);
                   })
               .join();
           break;

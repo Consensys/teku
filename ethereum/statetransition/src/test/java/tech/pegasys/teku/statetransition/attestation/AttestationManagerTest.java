@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.attestation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -26,9 +25,10 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SAVED_FOR_FUTURE;
 import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
 import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.UNKNOWN_BLOCK;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.primitives.UnsignedLong;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,9 +43,10 @@ import tech.pegasys.teku.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
@@ -54,8 +55,7 @@ class AttestationManagerTest {
   private final EventBus eventBus = new EventBus();
 
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
-  private final ForkChoiceAttestationProcessor attestationProcessor =
-      mock(ForkChoiceAttestationProcessor.class);
+  private final ForkChoice forkChoice = mock(ForkChoice.class);
   private final PendingPool<ValidateableAttestation> pendingAttestations =
       PendingPool.createForAttestations();
   private final FutureItems<ValidateableAttestation> futureAttestations =
@@ -63,7 +63,7 @@ class AttestationManagerTest {
 
   private final AttestationManager attestationManager =
       new AttestationManager(
-          eventBus, attestationProcessor, pendingAttestations, futureAttestations, attestationPool);
+          eventBus, forkChoice, pendingAttestations, futureAttestations, attestationPool);
 
   @BeforeEach
   public void setup() {
@@ -79,8 +79,8 @@ class AttestationManagerTest {
   public void shouldProcessAttestationsThatAreReadyImmediately() {
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromAttestation(dataStructureUtil.randomAttestation());
-    when(attestationProcessor.processAttestation(any())).thenReturn(SUCCESSFUL);
-    attestationManager.onAttestation(attestation);
+    when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SUCCESSFUL));
+    attestationManager.onAttestation(attestation).reportExceptions();
 
     verifyAttestationProcessed(attestation);
     verify(attestationPool).add(attestation);
@@ -93,8 +93,8 @@ class AttestationManagerTest {
     final ValidateableAttestation aggregate =
         ValidateableAttestation.fromSignedAggregate(
             dataStructureUtil.randomSignedAggregateAndProof());
-    when(attestationProcessor.processAttestation(any())).thenReturn(SUCCESSFUL);
-    attestationManager.onAttestation(aggregate);
+    when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SUCCESSFUL));
+    attestationManager.onAttestation(aggregate).reportExceptions();
 
     verifyAttestationProcessed(aggregate);
     verify(attestationPool).add(aggregate);
@@ -107,24 +107,25 @@ class AttestationManagerTest {
     ValidateableAttestation attestation =
         ValidateableAttestation.fromAttestation(attestationFromSlot(100));
     IndexedAttestation randomIndexedAttestation = dataStructureUtil.randomIndexedAttestation();
-    when(attestationProcessor.processAttestation(any())).thenReturn(SAVED_FOR_FUTURE);
-    attestationManager.onAttestation(attestation);
+    when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SAVED_FOR_FUTURE));
+    attestationManager.onAttestation(attestation).reportExceptions();
 
     ArgumentCaptor<ValidateableAttestation> captor =
         ArgumentCaptor.forClass(ValidateableAttestation.class);
-    verify(attestationProcessor).processAttestation(captor.capture());
-    captor.getValue().setIndexedAttestation(randomIndexedAttestation);
+    verify(forkChoice).onAttestation(captor.capture());
+    final ValidateableAttestation validateableAttestation = captor.getValue();
+    attestation.setIndexedAttestation(randomIndexedAttestation);
     verify(attestationPool).add(attestation);
     assertThat(futureAttestations.contains(captor.getValue())).isTrue();
     assertThat(pendingAttestations.size()).isEqualTo(0);
 
     // Shouldn't try to process the attestation until after it's slot.
-    attestationManager.onSlot(UnsignedLong.valueOf(100));
+    attestationManager.onSlot(UInt64.valueOf(100));
     assertThat(futureAttestations.size()).isEqualTo(1);
-    verify(attestationProcessor, never()).applyIndexedAttestationToForkChoice(any());
+    verify(forkChoice, never()).applyIndexedAttestations(any());
 
-    attestationManager.onSlot(UnsignedLong.valueOf(101));
-    verify(attestationProcessor).applyIndexedAttestationToForkChoice(eq(randomIndexedAttestation));
+    attestationManager.onSlot(UInt64.valueOf(101));
+    verify(forkChoice).applyIndexedAttestations(List.of(validateableAttestation));
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
   }
@@ -135,28 +136,28 @@ class AttestationManagerTest {
     final Bytes32 requiredBlockRoot = block.getMessage().hash_tree_root();
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromAttestation(attestationFromSlot(1, requiredBlockRoot));
-    when(attestationProcessor.processAttestation(any()))
-        .thenReturn(UNKNOWN_BLOCK)
-        .thenReturn(SUCCESSFUL);
-    attestationManager.onAttestation(attestation);
+    when(forkChoice.onAttestation(any()))
+        .thenReturn(completedFuture(UNKNOWN_BLOCK))
+        .thenReturn(completedFuture(SUCCESSFUL));
+    attestationManager.onAttestation(attestation).reportExceptions();
 
     ArgumentCaptor<ValidateableAttestation> captor =
         ArgumentCaptor.forClass(ValidateableAttestation.class);
-    verify(attestationProcessor).processAttestation(captor.capture());
+    verify(forkChoice).onAttestation(captor.capture());
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.contains(captor.getValue())).isTrue();
     assertThat(pendingAttestations.size()).isEqualTo(1);
 
     // Slots progressing shouldn't cause the attestation to be processed
-    attestationManager.onSlot(UnsignedLong.valueOf(100));
-    verifyNoMoreInteractions(attestationProcessor);
+    attestationManager.onSlot(UInt64.valueOf(100));
+    verifyNoMoreInteractions(forkChoice);
 
     // Importing a different block shouldn't cause the attestation to be processed
     eventBus.post(new ImportedBlockEvent(dataStructureUtil.randomSignedBeaconBlock(2)));
-    verifyNoMoreInteractions(attestationProcessor);
+    verifyNoMoreInteractions(forkChoice);
 
     eventBus.post(new ImportedBlockEvent(block));
-    verify(attestationProcessor, times(2)).processAttestation(captor.getValue());
+    verify(forkChoice, times(2)).onAttestation(captor.getValue());
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
     verify(attestationPool).add(attestation);
@@ -166,9 +167,9 @@ class AttestationManagerTest {
   public void shouldNotPublishProcessedAttestationEventWhenAttestationIsInvalid() {
     final ValidateableAttestation attestation =
         ValidateableAttestation.fromAttestation(dataStructureUtil.randomAttestation());
-    when(attestationProcessor.processAttestation(any()))
-        .thenReturn(AttestationProcessingResult.invalid("Didn't like it"));
-    attestationManager.onAttestation(attestation);
+    when(forkChoice.onAttestation(any()))
+        .thenReturn(completedFuture(AttestationProcessingResult.invalid("Didn't like it")));
+    attestationManager.onAttestation(attestation).reportExceptions();
 
     verifyAttestationProcessed(attestation);
     assertThat(pendingAttestations.size()).isZero();
@@ -181,25 +182,14 @@ class AttestationManagerTest {
     final ValidateableAttestation aggregateAndProof =
         ValidateableAttestation.fromSignedAggregate(
             dataStructureUtil.randomSignedAggregateAndProof());
-    when(attestationProcessor.processAttestation(any()))
-        .thenReturn(AttestationProcessingResult.invalid("Don't wanna"));
-    attestationManager.onAttestation(aggregateAndProof);
+    when(forkChoice.onAttestation(any()))
+        .thenReturn(completedFuture(AttestationProcessingResult.invalid("Don't wanna")));
+    attestationManager.onAttestation(aggregateAndProof).reportExceptions();
 
     verifyAttestationProcessed(aggregateAndProof);
     assertThat(pendingAttestations.size()).isZero();
     assertThat(futureAttestations.size()).isZero();
     verifyNoInteractions(attestationPool);
-  }
-
-  @Test
-  void shouldRemoveAttestationsFromTheAggregationPoolWhenTheyAreIncludedInABlock() {
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
-    final SSZList<Attestation> attestations = block.getMessage().getBody().getAttestations();
-    assertThat(attestations.size()).isNotZero();
-
-    eventBus.post(new ImportedBlockEvent(block));
-
-    attestations.forEach(attestation -> verify(attestationPool).remove(attestation));
   }
 
   private Attestation attestationFromSlot(final long slot) {
@@ -210,18 +200,18 @@ class AttestationManagerTest {
     return new Attestation(
         new Bitlist(1, 1),
         new AttestationData(
-            UnsignedLong.valueOf(slot),
-            UnsignedLong.ZERO,
+            UInt64.valueOf(slot),
+            UInt64.ZERO,
             Bytes32.ZERO,
-            new Checkpoint(UnsignedLong.ZERO, Bytes32.ZERO),
-            new Checkpoint(UnsignedLong.ZERO, targetRoot)),
+            new Checkpoint(UInt64.ZERO, Bytes32.ZERO),
+            new Checkpoint(UInt64.ZERO, targetRoot)),
         BLSSignature.empty());
   }
 
   private void verifyAttestationProcessed(final ValidateableAttestation attestation) {
     ArgumentCaptor<ValidateableAttestation> captor =
         ArgumentCaptor.forClass(ValidateableAttestation.class);
-    verify(attestationProcessor).processAttestation(captor.capture());
+    verify(forkChoice).onAttestation(captor.capture());
     assertThat(captor.getValue().getAttestation()).isSameAs(attestation.getAttestation());
   }
 }

@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.async;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -239,6 +240,15 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     finish(res -> onFinished.run(), err -> onFinished.run());
   }
 
+  public SafeFuture<T> alwaysRun(final Runnable action) {
+    return exceptionallyCompose(
+            error -> {
+              action.run();
+              return failedFuture(error);
+            })
+        .thenPeek(value -> action.run());
+  }
+
   public void finish(final Consumer<T> onSuccess, final Consumer<Throwable> onError) {
     handle(
             (result, error) -> {
@@ -249,6 +259,41 @@ public class SafeFuture<T> extends CompletableFuture<T> {
               }
               return null;
             })
+        .reportExceptions();
+  }
+
+  public void finish(final Consumer<Throwable> onError) {
+    handle(
+            (result, error) -> {
+              if (error != null) {
+                onError.accept(error);
+              }
+              return null;
+            })
+        .reportExceptions();
+  }
+
+  public void finishAsync(final Consumer<Throwable> onError, final Executor executor) {
+    finishAsync(__ -> {}, onError, executor);
+  }
+
+  public void finishAsync(
+      final Runnable onSuccess, final Consumer<Throwable> onError, final Executor executor) {
+    finishAsync(__ -> onSuccess.run(), onError, executor);
+  }
+
+  public void finishAsync(
+      final Consumer<T> onSuccess, final Consumer<Throwable> onError, final Executor executor) {
+    handleAsync(
+            (result, error) -> {
+              if (error != null) {
+                onError.accept(error);
+              } else {
+                onSuccess.accept(result);
+              }
+              return null;
+            },
+            executor)
         .reportExceptions();
   }
 
@@ -336,8 +381,19 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   @Override
+  public SafeFuture<Void> thenRunAsync(final Runnable action, final Executor executor) {
+    return (SafeFuture<Void>) super.thenRunAsync(action, executor);
+  }
+
+  @Override
   public SafeFuture<Void> thenAccept(final Consumer<? super T> action) {
     return (SafeFuture<Void>) super.thenAccept(action);
+  }
+
+  @Override
+  public SafeFuture<Void> thenAcceptAsync(
+      final Consumer<? super T> action, final Executor executor) {
+    return (SafeFuture<Void>) super.thenAcceptAsync(action, executor);
   }
 
   @SuppressWarnings("unchecked")
@@ -354,6 +410,12 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   @Override
+  public <U> SafeFuture<U> thenComposeAsync(
+      final Function<? super T, ? extends CompletionStage<U>> fn, final Executor executor) {
+    return (SafeFuture<U>) super.thenComposeAsync(fn, executor);
+  }
+
+  @Override
   public SafeFuture<T> exceptionally(final Function<Throwable, ? extends T> fn) {
     return (SafeFuture<T>) super.exceptionally(fn);
   }
@@ -362,6 +424,41 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   @Override
   public <U> SafeFuture<U> handle(final BiFunction<? super T, Throwable, ? extends U> fn) {
     return (SafeFuture<U>) super.handle(fn);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public <U> SafeFuture<U> handleAsync(
+      final BiFunction<? super T, Throwable, ? extends U> fn, final Executor executor) {
+    return (SafeFuture<U>) super.handleAsync(fn, executor);
+  }
+
+  /**
+   * Returns a new CompletionStage that, when this stage completes either normally or exceptionally,
+   * is executed with this stage's result and exception as arguments to the supplied function.
+   *
+   * <p>When this stage is complete, the given function is invoked with the result (or {@code null}
+   * if none) and the exception (or {@code null} if none) returning another `CompletionStage`. When
+   * that stage completes, the `SafeFuture` returned by this method is completed with the same value
+   * or exception.
+   *
+   * @param fn the function to use to compute another CompletionStage
+   * @param <U> the function's return type
+   * @return the new SafeFuture
+   */
+  @SuppressWarnings({"FutureReturnValueIgnored"})
+  public <U> SafeFuture<U> handleComposed(
+      final BiFunction<? super T, Throwable, CompletionStage<U>> fn) {
+    final SafeFuture<U> result = new SafeFuture<>();
+    whenComplete(
+        (value, error) -> {
+          try {
+            propagateResult(fn.apply(value, error), result);
+          } catch (final Throwable t) {
+            result.completeExceptionally(t);
+          }
+        });
+    return result;
   }
 
   @Override

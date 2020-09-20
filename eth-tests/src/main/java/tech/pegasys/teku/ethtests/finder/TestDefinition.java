@@ -27,8 +27,8 @@ public class TestDefinition {
       final String testName,
       final Path pathFromPhaseTestDir) {
     this.spec = spec;
-    this.testType = testType;
-    this.testName = testName;
+    this.testType = testType.replace("\\", "/");
+    this.testName = testName.replace("\\", "/");
     this.pathFromPhaseTestDir = pathFromPhaseTestDir;
   }
 

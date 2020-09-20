@@ -16,28 +16,29 @@ package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
 public final class GoodbyeMessage implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
 
-  private final UnsignedLong reason;
+  private final UInt64 reason;
 
-  public static final UnsignedLong REASON_CLIENT_SHUT_DOWN = UnsignedLong.valueOf(1);
-  public static final UnsignedLong REASON_IRRELEVANT_NETWORK = UnsignedLong.valueOf(2);
-  public static final UnsignedLong REASON_FAULT_ERROR = UnsignedLong.valueOf(3);
-  public static final UnsignedLong MIN_CUSTOM_REASON_CODE = UnsignedLong.valueOf(128);
+  public static final UInt64 REASON_CLIENT_SHUT_DOWN = UInt64.valueOf(1);
+  public static final UInt64 REASON_IRRELEVANT_NETWORK = UInt64.valueOf(2);
+  public static final UInt64 REASON_FAULT_ERROR = UInt64.valueOf(3);
+  public static final UInt64 MIN_CUSTOM_REASON_CODE = UInt64.valueOf(128);
 
   // Custom reasons
-  public static final UnsignedLong REASON_UNABLE_TO_VERIFY_NETWORK = UnsignedLong.valueOf(128);
-  public static final UnsignedLong REASON_TOO_MANY_PEERS = UnsignedLong.valueOf(129);
+  public static final UInt64 REASON_UNABLE_TO_VERIFY_NETWORK = UInt64.valueOf(128);
+  public static final UInt64 REASON_TOO_MANY_PEERS = UInt64.valueOf(129);
+  public static final UInt64 REASON_RATE_LIMITING = UInt64.valueOf(130);
 
-  public GoodbyeMessage(UnsignedLong reason) {
+  public GoodbyeMessage(UInt64 reason) {
     checkArgument(
         REASON_CLIENT_SHUT_DOWN.equals(reason)
             || REASON_FAULT_ERROR.equals(reason)
@@ -57,7 +58,7 @@ public final class GoodbyeMessage implements RpcRequest, SimpleOffsetSerializabl
     return List.of(SSZ.encodeUInt64(reason.longValue()));
   }
 
-  public UnsignedLong getReason() {
+  public UInt64 getReason() {
     return reason;
   }
 

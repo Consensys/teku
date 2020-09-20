@@ -15,6 +15,11 @@ package tech.pegasys.teku.infrastructure.async;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.io.IOException;
@@ -26,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture.Interruptor;
+import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 
 public class SafeFutureTest {
 
@@ -327,6 +333,60 @@ public class SafeFutureTest {
     safeFuture.completeExceptionally(new Exception("Original exception"));
 
     assertThat(caughtExceptions).hasSize(1);
+  }
+
+  @Test
+  public void finishAsync_shouldNotLogHandledExceptions() {
+    final InlineEventThread eventThread = new InlineEventThread();
+    final List<Throwable> caughtExceptions = collectUncaughtExceptions();
+
+    final SafeFuture<Object> safeFuture = new SafeFuture<>();
+    safeFuture.finishAsync(
+        __ -> fail("Should not have called success handler"),
+        onError -> eventThread.checkOnEventThread(),
+        eventThread);
+    safeFuture.completeExceptionally(new RuntimeException("Oh no!"));
+
+    assertThat(caughtExceptions).isEmpty();
+  }
+
+  @Test
+  public void finishAsync_shouldReportExceptionsThrowBySuccessHandler() {
+    final InlineEventThread eventThread = new InlineEventThread();
+    final List<Throwable> caughtExceptions = collectUncaughtExceptions();
+
+    final RuntimeException exception = new RuntimeException("Oh no!");
+    final SafeFuture<Object> safeFuture = new SafeFuture<>();
+    safeFuture.finishAsync(
+        __ -> {
+          eventThread.checkOnEventThread();
+          throw exception;
+        },
+        onError -> fail("Should not have invoked error handler"),
+        eventThread);
+    safeFuture.complete(null);
+
+    assertThat(caughtExceptions).hasSize(1);
+    assertThat(caughtExceptions.get(0)).hasRootCause(exception);
+  }
+
+  @Test
+  public void finishAsync_shouldReportExceptionsThrowByErrorHandler() {
+    final InlineEventThread eventThread = new InlineEventThread();
+    final List<Throwable> caughtExceptions = collectUncaughtExceptions();
+
+    final RuntimeException exception = new RuntimeException("Oh no!");
+    final SafeFuture<Object> safeFuture = new SafeFuture<>();
+    safeFuture.finishAsync(
+        __ -> fail("Should not have invoked success handler"),
+        onError -> {
+          throw exception;
+        },
+        eventThread);
+    safeFuture.completeExceptionally(new Exception("Original exception"));
+
+    assertThat(caughtExceptions).hasSize(1);
+    assertThat(caughtExceptions.get(0)).hasRootCause(exception);
   }
 
   @Test
@@ -734,6 +794,83 @@ public class SafeFutureTest {
     SafeFuture<String> future = SafeFuture.notInterrupted(interruptor).thenApply(__ -> "aaa");
 
     assertThatThrownBy(future::get).hasMessageContaining("test");
+  }
+
+  @Test
+  void alwaysRun_shouldRunWhenFutureCompletesSuccessfully() {
+    final Runnable action = mock(Runnable.class);
+    SafeFuture<String> source = new SafeFuture<>();
+
+    final SafeFuture<String> result = source.alwaysRun(action);
+
+    verifyNoInteractions(action);
+
+    source.complete("Yay");
+    verify(action).run();
+    assertThat(result).isCompletedWithValue("Yay");
+  }
+
+  @Test
+  void alwaysRun_shouldRunWhenFutureCompletesExceptionally() {
+    final Runnable action = mock(Runnable.class);
+    SafeFuture<String> source = new SafeFuture<>();
+
+    final SafeFuture<String> result = source.alwaysRun(action);
+
+    verifyNoInteractions(action);
+
+    final RuntimeException exception = new RuntimeException("Sigh");
+    source.completeExceptionally(exception);
+    verify(action).run();
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(exception);
+  }
+
+  @Test
+  void alwaysRun_shouldReturnFailedFutureWhenRunnableThrows() {
+    final Runnable action = mock(Runnable.class);
+    final RuntimeException exception = new RuntimeException("Oops");
+    doThrow(exception).when(action).run();
+    SafeFuture<String> source = new SafeFuture<>();
+
+    final SafeFuture<String> result = source.alwaysRun(action);
+
+    source.complete("Yay");
+    verify(action).run();
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(exception);
+  }
+
+  @Test
+  void handleComposed_shouldComposeTheNewFuture() {
+    SafeFuture<String> source = new SafeFuture<>();
+    SafeFuture<String> result =
+        source.handleComposed(
+            (string, err) -> {
+              if (err != null) {
+                throw new IllegalStateException();
+              }
+              return SafeFuture.completedFuture(string);
+            });
+
+    source.complete("yo");
+    assertThat(result).isCompleted();
+    assertThat(result).isCompletedWithValue("yo");
+  }
+
+  @Test
+  void handleComposed_shouldPassTheErrorToTheNextFunction() {
+    SafeFuture<String> source = new SafeFuture<>();
+    SafeFuture<String> result =
+        source.handleComposed(
+            (string, err) -> {
+              if (err != null) {
+                return SafeFuture.completedFuture("yo");
+              }
+              return SafeFuture.completedFuture(string);
+            });
+
+    source.completeExceptionally(new UnsupportedOperationException());
+    assertThat(result).isCompleted();
+    assertThat(result).isCompletedWithValue("yo");
   }
 
   private List<Throwable> collectUncaughtExceptions() {

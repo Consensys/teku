@@ -67,8 +67,8 @@ public class DelegatingPeer implements Peer {
   }
 
   @Override
-  public void disconnectCleanly(final DisconnectReason reason) {
-    peer.disconnectCleanly(reason);
+  public SafeFuture<Void> disconnectCleanly(final DisconnectReason reason) {
+    return peer.disconnectCleanly(reason);
   }
 
   @Override

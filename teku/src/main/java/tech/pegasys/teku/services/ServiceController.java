@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,27 +18,10 @@ import java.util.Iterator;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.services.beaconchain.BeaconChainService;
-import tech.pegasys.teku.services.chainstorage.StorageService;
-import tech.pegasys.teku.services.powchain.PowchainService;
-import tech.pegasys.teku.services.timer.TimerService;
-import tech.pegasys.teku.validator.client.ValidatorClientService;
 
-public class ServiceController extends Service {
+public abstract class ServiceController extends Service {
 
-  private final List<Service> services = new ArrayList<>();
-
-  public ServiceController(final ServiceConfig config) {
-    // Note services will be started in the order they are added here.
-    services.add(new StorageService(config));
-    services.add(new BeaconChainService(config));
-    services.add(ValidatorClientService.create(config));
-    services.add(new TimerService(config));
-    if (!config.getConfig().isInteropEnabled() && config.getConfig().isEth1Enabled()) {
-      services.add(new PowchainService(config));
-    }
-  }
+  protected final List<Service> services = new ArrayList<>();
 
   @Override
   protected SafeFuture<?> doStart() {

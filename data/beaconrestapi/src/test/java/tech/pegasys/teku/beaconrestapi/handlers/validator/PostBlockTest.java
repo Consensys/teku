@@ -23,7 +23,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.primitives.UnsignedLong;
 import io.javalin.http.Context;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -31,12 +30,13 @@ import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.SyncStatus;
+import tech.pegasys.teku.api.schema.SyncingStatus;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.sync.SyncStatus;
-import tech.pegasys.teku.sync.SyncingStatus;
 
 class PostBlockTest {
 
@@ -116,12 +116,11 @@ class PostBlockTest {
   }
 
   private SyncingStatus buildSyncStatus(final boolean isSyncing) {
-    return new SyncingStatus(
-        isSyncing, new SyncStatus(UnsignedLong.ZERO, UnsignedLong.ONE, UnsignedLong.MAX_VALUE));
+    return new SyncingStatus(isSyncing, new SyncStatus(UInt64.ZERO, UInt64.ONE, UInt64.MAX_VALUE));
   }
 
   private String buildSignedBeaconBlock() throws JsonProcessingException {
-    return jsonProvider.objectToJSON(
-        new SignedBeaconBlock(dataStructureUtil.randomSignedBeaconBlock(3)));
+    SignedBeaconBlock block = new SignedBeaconBlock(dataStructureUtil.randomSignedBeaconBlock(3));
+    return jsonProvider.objectToJSON(block);
   }
 }

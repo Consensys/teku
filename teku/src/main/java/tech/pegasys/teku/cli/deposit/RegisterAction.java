@@ -13,9 +13,8 @@
 
 package tech.pegasys.teku.cli.deposit;
 
-import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
+import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
-import com.google.common.primitives.UnsignedLong;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -32,6 +31,7 @@ import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.services.powchain.DepositTransactionSender;
 import tech.pegasys.teku.util.config.Eth1Address;
 
@@ -43,7 +43,7 @@ public class RegisterAction implements AutoCloseable {
   private final String eth1NodeUrl;
   private final Eth1Address contractAddress;
   private final boolean verboseOutputEnabled;
-  private final UnsignedLong amount;
+  private final UInt64 amount;
   private final DepositTransactionSender sender;
   private OkHttpClient httpClient;
   private ScheduledExecutorService executorService;
@@ -56,7 +56,7 @@ public class RegisterAction implements AutoCloseable {
       final Credentials eth1Credentials,
       final Eth1Address contractAddress,
       final boolean verboseOutputEnabled,
-      final UnsignedLong amount,
+      final UInt64 amount,
       final IntConsumer shutdownFunction,
       final ConsoleAdapter consoleAdapter) {
     this.eth1NodeUrl = eth1NodeUrl;
@@ -114,12 +114,12 @@ public class RegisterAction implements AutoCloseable {
       return;
     }
     System.out.println("Transaction cancelled.");
-    shutdownFunction.accept(0);
+    shutdownFunction.accept(1);
   }
 
   public SafeFuture<TransactionReceipt> sendDeposit(
-      final BLSKeyPair validatorKey, final BLSPublicKey withdrawalKey) {
+      final BLSKeyPair validatorKey, final BLSPublicKey withdrawalPublicKey) {
     return sender.sendDepositTransaction(
-        validatorKey, withdrawalKey, amount, commandStdOutput, commandErrorOutput);
+        validatorKey, withdrawalPublicKey, amount, commandStdOutput, commandErrorOutput);
   }
 }

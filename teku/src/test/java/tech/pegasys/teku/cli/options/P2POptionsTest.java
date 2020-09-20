@@ -19,13 +19,13 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldReadFromConfigurationFile() {
-    final TekuConfiguration config = getTekuConfigurationFromFile("P2POptions_config.yaml");
+    final GlobalConfiguration config = getGlobalConfigurationFromFile("P2POptions_config.yaml");
 
     assertThat(config.getP2pAdvertisedIp()).isEqualTo(Optional.of("127.200.0.1"));
     assertThat(config.getP2pInterface()).isEqualTo("127.100.0.1");
@@ -36,19 +36,21 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.getP2pStaticPeers()).isEqualTo(List.of("127.1.0.1", "127.1.1.1"));
     assertThat(config.getP2pPeerLowerBound()).isEqualTo(70);
     assertThat(config.getP2pPeerUpperBound()).isEqualTo(85);
+    assertThat(config.getTargetSubnetSubscriberCount()).isEqualTo(5);
   }
 
   @Test
   public void p2pEnabled_shouldNotRequireAValue() {
-    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments("--p2p-enabled");
-    assertThat(tekuConfiguration.isP2pEnabled()).isTrue();
+    final GlobalConfiguration globalConfiguration =
+        getGlobalConfigurationFromArguments("--p2p-enabled");
+    assertThat(globalConfiguration.isP2pEnabled()).isTrue();
   }
 
   @Test
   public void p2pDiscoveryEnabled_shouldNotRequireAValue() {
-    final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--p2p-discovery-enabled");
-    assertThat(tekuConfiguration.isP2pEnabled()).isTrue();
+    final GlobalConfiguration globalConfiguration =
+        getGlobalConfigurationFromArguments("--p2p-discovery-enabled");
+    assertThat(globalConfiguration.isP2pEnabled()).isTrue();
   }
 
   @Test
@@ -57,8 +59,18 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
-    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isTrue();
+    final GlobalConfiguration globalConfiguration = getResultingGlobalConfiguration();
+    assertThat(globalConfiguration.isP2pSnappyEnabled()).isTrue();
+  }
+
+  @Test
+  public void snappyCompressionDefaultsToTrueForCustomNetwork() {
+    final String[] args = {"--network=/tmp/foo.yaml"};
+
+    beaconNodeCommand.parse(args);
+
+    final GlobalConfiguration globalConfiguration = getResultingGlobalConfiguration();
+    assertThat(globalConfiguration.isP2pSnappyEnabled()).isTrue();
   }
 
   @Test
@@ -67,8 +79,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
-    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isTrue();
+    final GlobalConfiguration globalConfiguration = getResultingGlobalConfiguration();
+    assertThat(globalConfiguration.isP2pSnappyEnabled()).isTrue();
   }
 
   @Test
@@ -77,8 +89,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
-    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isFalse();
+    final GlobalConfiguration globalConfiguration = getResultingGlobalConfiguration();
+    assertThat(globalConfiguration.isP2pSnappyEnabled()).isFalse();
   }
 
   @Test
@@ -90,8 +102,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
-    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isFalse();
+    final GlobalConfiguration globalConfiguration = getResultingGlobalConfiguration();
+    assertThat(globalConfiguration.isP2pSnappyEnabled()).isFalse();
   }
 
   @Test
@@ -103,31 +115,31 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
 
-    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
-    assertThat(tekuConfiguration.isP2pSnappyEnabled()).isTrue();
+    final GlobalConfiguration globalConfiguration = getResultingGlobalConfiguration();
+    assertThat(globalConfiguration.isP2pSnappyEnabled()).isTrue();
   }
 
   @Test
   public void advertisedIp_shouldDefaultToEmpty() {
-    assertThat(getTekuConfigurationFromArguments().getP2pAdvertisedIp()).isEmpty();
+    assertThat(getGlobalConfigurationFromArguments().getP2pAdvertisedIp()).isEmpty();
   }
 
   @Test
   public void advertisedIp_shouldAcceptValue() {
     final String ip = "10.0.1.200";
-    assertThat(getTekuConfigurationFromArguments("--p2p-advertised-ip", ip).getP2pAdvertisedIp())
+    assertThat(getGlobalConfigurationFromArguments("--p2p-advertised-ip", ip).getP2pAdvertisedIp())
         .contains(ip);
   }
 
   @Test
   public void advertisedPort_shouldDefaultToEmpty() {
-    assertThat(getTekuConfigurationFromArguments().getP2pAdvertisedPort()).isEmpty();
+    assertThat(getGlobalConfigurationFromArguments().getP2pAdvertisedPort()).isEmpty();
   }
 
   @Test
   public void advertisedPort_shouldAcceptValue() {
     assertThat(
-            getTekuConfigurationFromArguments("--p2p-advertised-port", "8056")
+            getGlobalConfigurationFromArguments("--p2p-advertised-port", "8056")
                 .getP2pAdvertisedPort())
         .hasValue(8056);
   }

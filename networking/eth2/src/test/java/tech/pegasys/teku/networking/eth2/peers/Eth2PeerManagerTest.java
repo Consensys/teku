@@ -28,14 +28,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkBuilder;
-import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.InitialStatusSubscriber;
-import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager.PeerValidatorFactory;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.PeerStatusSubscriber;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -59,10 +57,6 @@ public class Eth2PeerManagerTest {
   private final StatusMessageFactory statusMessageFactory =
       new StatusMessageFactory(recentChainData);
 
-  private final PeerChainValidator peerChainValidator = mock(PeerChainValidator.class);
-  private final PeerValidatorFactory peerValidatorFactory = (peer, status) -> peerChainValidator;
-  private final SafeFuture<Boolean> peerValidationResult = new SafeFuture<>();
-
   private final Map<Peer, Eth2Peer> eth2Peers = new HashMap<>();
 
   private final RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
@@ -73,7 +67,6 @@ public class Eth2PeerManagerTest {
           recentChainData,
           new NoOpMetricsSystem(),
           eth2PeerFactory,
-          peerValidatorFactory,
           statusMessageFactory,
           new MetadataMessagesFactory(),
           rpcEncoding,
@@ -81,16 +74,8 @@ public class Eth2PeerManagerTest {
           Eth2NetworkBuilder.DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD,
           Eth2NetworkBuilder.DEFAULT_ETH2_STATUS_UPDATE_INTERVAL);
 
-  @BeforeEach
-  public void setup() {
-    when(peerChainValidator.run()).thenReturn(peerValidationResult);
-  }
-
   @Test
   public void subscribeConnect_singleListener() {
-    // Setup validation to succeed
-    peerValidationResult.complete(true);
-
     final List<Peer> connectedPeers = new ArrayList<>();
     peerManager.subscribeConnect(connectedPeers::add);
     // Sanity check
@@ -109,32 +94,7 @@ public class Eth2PeerManagerTest {
   }
 
   @Test
-  public void subscribeConnect_peerWithInvalidChain() {
-    // Setup validation to fail
-    peerValidationResult.complete(false);
-
-    final List<Peer> connectedPeers = new ArrayList<>();
-    peerManager.subscribeConnect(connectedPeers::add);
-    // Sanity check
-    assertThat(connectedPeers).isEmpty();
-
-    // Add a peer
-    final Peer peer = createPeer(1);
-    peerManager.onConnect(peer);
-
-    // Connect event should not broadcast until status is set
-    assertThat(connectedPeers).isEmpty();
-
-    // Set status, which should trigger peerValidation to fail
-    setInitialPeerStatus(peer);
-    assertThat(connectedPeers).isEmpty();
-  }
-
-  @Test
   public void subscribeConnect_singleListener_multiplePeers() {
-    // Setup validation to succeed
-    peerValidationResult.complete(true);
-
     final List<Peer> connectedPeers = new ArrayList<>();
     peerManager.subscribeConnect(connectedPeers::add);
     // Sanity check
@@ -155,9 +115,6 @@ public class Eth2PeerManagerTest {
 
   @Test
   public void subscribeConnect_multipleListeners() {
-    // Setup validation to succeed
-    peerValidationResult.complete(true);
-
     final List<Peer> connectedPeers = new ArrayList<>();
     final List<Peer> connectedPeersB = new ArrayList<>();
     peerManager.subscribeConnect(connectedPeers::add);
@@ -259,9 +216,9 @@ public class Eth2PeerManagerTest {
   }
 
   private void setInitialPeerStatus(final Peer peer) {
-    final ArgumentCaptor<InitialStatusSubscriber> subscriberArgumentCaptor =
-        ArgumentCaptor.forClass(InitialStatusSubscriber.class);
+    final ArgumentCaptor<PeerStatusSubscriber> subscriberArgumentCaptor =
+        ArgumentCaptor.forClass(PeerStatusSubscriber.class);
     verify(getEth2Peer(peer)).subscribeInitialStatus(subscriberArgumentCaptor.capture());
-    subscriberArgumentCaptor.getValue().onInitialStatus(statusFactory.random());
+    subscriberArgumentCaptor.getValue().onPeerStatus(statusFactory.random());
   }
 }

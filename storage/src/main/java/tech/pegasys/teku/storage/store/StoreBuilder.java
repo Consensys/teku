@@ -17,29 +17,37 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 
 public class StoreBuilder {
+  AsyncRunner asyncRunner;
   MetricsSystem metricsSystem;
   BlockProvider blockProvider;
+  StateAndBlockProvider stateAndBlockProvider;
+  StoreConfig storeConfig = StoreConfig.createDefault();
 
   final Map<Bytes32, Bytes32> childToParentRoot = new HashMap<>();
-  UnsignedLong time;
-  UnsignedLong genesisTime;
+  final Map<Bytes32, UInt64> rootToSlotMap = new HashMap<>();
+  UInt64 time;
+  UInt64 genesisTime;
   Checkpoint justifiedCheckpoint;
   Checkpoint finalizedCheckpoint;
   Checkpoint bestJustifiedCheckpoint;
   SignedBlockAndState latestFinalized;
-  Map<UnsignedLong, VoteTracker> votes;
+  Map<UInt64, VoteTracker> votes;
 
   private StoreBuilder() {}
 
@@ -47,69 +55,91 @@ public class StoreBuilder {
     return new StoreBuilder();
   }
 
-  public static UpdatableStore buildForkChoiceStore(
-      final MetricsSystem metricsSystem,
-      final BlockProvider blockProvider,
-      final AnchorPoint anchor) {
-    return forkChoiceStoreBuilder(metricsSystem, blockProvider, anchor).build();
-  }
-
   public static StoreBuilder forkChoiceStoreBuilder(
+      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
+      final StateAndBlockProvider stateAndBlockProvider,
       final AnchorPoint anchor) {
-    final UnsignedLong genesisTime = anchor.getState().getGenesis_time();
-    final UnsignedLong slot = anchor.getState().getSlot();
-    final UnsignedLong time = genesisTime.plus(UnsignedLong.valueOf(SECONDS_PER_SLOT).times(slot));
+    final UInt64 genesisTime = anchor.getState().getGenesis_time();
+    final UInt64 slot = anchor.getState().getSlot();
+    final UInt64 time = genesisTime.plus(slot.times(SECONDS_PER_SLOT));
 
     Map<Bytes32, Bytes32> childToParentMap = new HashMap<>();
     childToParentMap.put(anchor.getRoot(), anchor.getParentRoot());
 
+    Map<Bytes32, UInt64> rootToSlotMap = new HashMap<>();
+    rootToSlotMap.put(anchor.getRoot(), anchor.getState().getSlot());
+
     return create()
+        .asyncRunner(asyncRunner)
         .metricsSystem(metricsSystem)
         .blockProvider(blockProvider)
+        .stateProvider(stateAndBlockProvider)
         .time(time)
         .genesisTime(genesisTime)
         .finalizedCheckpoint(anchor.getCheckpoint())
         .justifiedCheckpoint(anchor.getCheckpoint())
         .bestJustifiedCheckpoint(anchor.getCheckpoint())
         .childToParentMap(childToParentMap)
+        .rootToSlotMap(rootToSlotMap)
         .latestFinalized(anchor.toSignedBlockAndState())
         .votes(new HashMap<>());
   }
 
-  public UpdatableStore build() {
+  public SafeFuture<UpdatableStore> build() {
     assertValid();
-    return new Store(
+
+    return Store.create(
+        asyncRunner,
         metricsSystem,
         blockProvider,
+        stateAndBlockProvider,
         time,
         genesisTime,
         justifiedCheckpoint,
         finalizedCheckpoint,
         bestJustifiedCheckpoint,
         childToParentRoot,
+        rootToSlotMap,
         latestFinalized,
         votes,
-        StorePruningOptions.createDefault());
+        storeConfig);
   }
 
   private void assertValid() {
+    checkState(asyncRunner != null, "Async runner must be defined");
     checkState(metricsSystem != null, "Metrics system must be defined");
     checkState(blockProvider != null, "Block provider must be defined");
+    checkState(stateAndBlockProvider != null, "StateAndBlockProvider must be defined");
     checkState(time != null, "Time must be defined");
     checkState(genesisTime != null, "Genesis time must be defined");
     checkState(justifiedCheckpoint != null, "Justified checkpoint must be defined");
     checkState(finalizedCheckpoint != null, "Finalized checkpoint must be defined");
     checkState(bestJustifiedCheckpoint != null, "Best justified checkpoint must be defined");
-    checkState(!childToParentRoot.isEmpty(), "Parent and child block data must be supplied");
     checkState(latestFinalized != null, "Latest finalized block state must be defined");
     checkState(votes != null, "Votes must be defined");
+    checkState(!childToParentRoot.isEmpty(), "Parent and child block data must be supplied");
+    checkState(!rootToSlotMap.isEmpty(), "Root to slot mapping must be supplied");
+    checkState(
+        Objects.equals(childToParentRoot.keySet(), rootToSlotMap.keySet()),
+        "Child-parent and root-slot mappings must be consistent");
+  }
+
+  public StoreBuilder asyncRunner(final AsyncRunner asyncRunner) {
+    this.asyncRunner = asyncRunner;
+    return this;
   }
 
   public StoreBuilder metricsSystem(final MetricsSystem metricsSystem) {
     checkNotNull(metricsSystem);
     this.metricsSystem = metricsSystem;
+    return this;
+  }
+
+  public StoreBuilder storeConfig(final StoreConfig storeConfig) {
+    checkNotNull(storeConfig);
+    this.storeConfig = storeConfig;
     return this;
   }
 
@@ -119,13 +149,19 @@ public class StoreBuilder {
     return this;
   }
 
-  public StoreBuilder time(final UnsignedLong time) {
+  public StoreBuilder stateProvider(final StateAndBlockProvider stateProvider) {
+    checkNotNull(stateProvider);
+    this.stateAndBlockProvider = stateProvider;
+    return this;
+  }
+
+  public StoreBuilder time(final UInt64 time) {
     checkNotNull(time);
     this.time = time;
     return this;
   }
 
-  public StoreBuilder genesisTime(final UnsignedLong genesisTime) {
+  public StoreBuilder genesisTime(final UInt64 genesisTime) {
     checkNotNull(genesisTime);
     this.genesisTime = genesisTime;
     return this;
@@ -155,13 +191,19 @@ public class StoreBuilder {
     return this;
   }
 
+  public StoreBuilder rootToSlotMap(final Map<Bytes32, UInt64> rootToSlotMap) {
+    checkNotNull(rootToSlotMap);
+    this.rootToSlotMap.putAll(rootToSlotMap);
+    return this;
+  }
+
   public StoreBuilder latestFinalized(final SignedBlockAndState latestFinalized) {
     checkNotNull(latestFinalized);
     this.latestFinalized = latestFinalized;
     return this;
   }
 
-  public StoreBuilder votes(final Map<UnsignedLong, VoteTracker> votes) {
+  public StoreBuilder votes(final Map<UInt64, VoteTracker> votes) {
     checkNotNull(votes);
     this.votes = votes;
     return this;

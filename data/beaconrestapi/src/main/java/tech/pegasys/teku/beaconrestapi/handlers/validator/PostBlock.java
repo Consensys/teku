@@ -84,7 +84,7 @@ public class PostBlock implements Handler {
   @Override
   public void handle(final Context ctx) throws Exception {
     try {
-      if (syncDataProvider.getSyncStatus().isSyncing()) {
+      if (syncDataProvider.getSyncStatus().is_syncing) {
         ctx.status(SC_SERVICE_UNAVAILABLE);
         return;
       }

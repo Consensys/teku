@@ -13,23 +13,23 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
-import static com.google.common.primitives.UnsignedLong.ONE;
-import static com.google.common.primitives.UnsignedLong.ZERO;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import com.google.common.primitives.UnsignedLong;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.Validator;
 
 class ScheduledDutiesTest {
 
-  public static final UnsignedLong TWO = UnsignedLong.valueOf(2);
+  public static final UInt64 TWO = UInt64.valueOf(2);
   private final Validator validator = mock(Validator.class);
   private final ValidatorDutyFactory dutyFactory = mock(ValidatorDutyFactory.class);
 

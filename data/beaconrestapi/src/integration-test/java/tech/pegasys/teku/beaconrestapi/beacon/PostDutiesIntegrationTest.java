@@ -16,7 +16,6 @@ package tech.pegasys.teku.beaconrestapi.beacon;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -30,6 +29,7 @@ import tech.pegasys.teku.beaconrestapi.RestApiConstants;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationTest {
@@ -38,7 +38,7 @@ public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationT
 
   @Test
   public void shouldReturnNoContentIfStoreNotDefined() throws Exception {
-    final UnsignedLong epoch = UnsignedLong.ONE;
+    final UInt64 epoch = UInt64.ONE;
     when(recentChainData.getStore()).thenReturn(null);
     when(recentChainData.getFinalizedEpoch()).thenReturn(epoch);
 
@@ -48,7 +48,7 @@ public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationT
 
   @Test
   public void shouldReturnNoContentWhenBestBlockRootMissing() throws Exception {
-    final UnsignedLong epoch = UnsignedLong.ONE;
+    final UInt64 epoch = UInt64.ONE;
 
     final UpdatableStore store = mock(UpdatableStore.class);
     when(recentChainData.getStore()).thenReturn(store);
@@ -61,7 +61,7 @@ public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationT
 
   @Test
   public void shouldReturnEmptyListWhenNoPubKeysSupplied() throws Exception {
-    final UnsignedLong epoch = UnsignedLong.ONE;
+    final UInt64 epoch = UInt64.ONE;
     when(recentChainData.getFinalizedEpoch()).thenReturn(epoch);
 
     final Response response = post(epoch.intValue(), Collections.emptyList());
@@ -71,7 +71,7 @@ public class PostDutiesIntegrationTest extends AbstractBeaconRestAPIIntegrationT
   private Response post(final int epoch, final List<BLSKeyPair> publicKeys) throws IOException {
     final List<String> publicKeyStrings =
         publicKeys.stream()
-            .map(k -> k.getPublicKey().toBytes().toHexString())
+            .map(k -> k.getPublicKey().toSSZBytes().toHexString())
             .collect(Collectors.toList());
 
     final Map<String, Object> params =

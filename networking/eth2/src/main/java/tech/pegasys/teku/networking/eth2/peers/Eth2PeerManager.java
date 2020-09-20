@@ -27,6 +27,8 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.RootCauseExceptionHandler;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.networking.eth2.AttestationSubnetService;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
@@ -42,7 +44,7 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.events.Subscribers;
+import tech.pegasys.teku.util.time.TimeProvider;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();
@@ -56,7 +58,6 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private final ConcurrentHashMap<NodeId, Eth2Peer> connectedPeerMap = new ConcurrentHashMap<>();
 
   private final BeaconChainMethods rpcMethods;
-  private final PeerValidatorFactory peerValidatorFactory;
 
   private final Duration eth2RpcPingInterval;
   private final int eth2RpcOutstandingPingThreshold;
@@ -69,16 +70,14 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final RecentChainData storageClient,
       final MetricsSystem metricsSystem,
       final Eth2PeerFactory eth2PeerFactory,
-      final PeerValidatorFactory peerValidatorFactory,
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
       final RpcEncoding rpcEncoding,
       final Duration eth2RpcPingInterval,
       final int eth2RpcOutstandingPingThreshold,
-      Duration eth2StatusUpdateInterval) {
+      final Duration eth2StatusUpdateInterval) {
     this.asyncRunner = asyncRunner;
     this.eth2PeerFactory = eth2PeerFactory;
-    this.peerValidatorFactory = peerValidatorFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
     this.rpcMethods =
         BeaconChainMethods.create(
@@ -104,22 +103,29 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final RpcEncoding rpcEncoding,
       final Duration eth2RpcPingInterval,
       final int eth2RpcOutstandingPingThreshold,
-      Duration eth2StatusUpdateInterval) {
+      final Duration eth2StatusUpdateInterval,
+      final TimeProvider timeProvider,
+      final int peerRateLimit,
+      final int peerRequestLimit) {
 
-    final PeerValidatorFactory peerValidatorFactory =
-        (peer, status) ->
-            PeerChainValidator.create(
-                metricsSystem, recentChainData, historicalChainData, peer, status);
     final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(recentChainData);
     final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
     attestationSubnetService.subscribeToUpdates(metadataMessagesFactory);
+    final CombinedChainDataClient combinedChainDataClient =
+        new CombinedChainDataClient(recentChainData, historicalChainData);
     return new Eth2PeerManager(
         asyncRunner,
-        new CombinedChainDataClient(recentChainData, historicalChainData),
+        combinedChainDataClient,
         recentChainData,
         metricsSystem,
-        new Eth2PeerFactory(statusMessageFactory, metadataMessagesFactory),
-        peerValidatorFactory,
+        new Eth2PeerFactory(
+            metricsSystem,
+            combinedChainDataClient,
+            statusMessageFactory,
+            metadataMessagesFactory,
+            timeProvider,
+            peerRateLimit,
+            peerRequestLimit),
         statusMessageFactory,
         metadataMessagesFactory,
         rpcEncoding,
@@ -195,18 +201,10 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     }
 
     eth2Peer.subscribeInitialStatus(
-        (status) ->
-            peerValidatorFactory
-                .create(eth2Peer, status)
-                .run()
-                .finish(
-                    peerIsValid -> {
-                      if (peerIsValid) {
-                        connectSubscribers.forEach(c -> c.onConnected(eth2Peer));
-                        setUpPeriodicTasksForPeer(eth2Peer);
-                      }
-                    },
-                    error -> LOG.debug("Error while validating peer", error)));
+        (status) -> {
+          connectSubscribers.forEach(c -> c.onConnected(eth2Peer));
+          setUpPeriodicTasksForPeer(eth2Peer);
+        });
   }
 
   private void ensureStatusReceived(final Eth2Peer peer) {
@@ -216,7 +214,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
               if (!peer.hasStatus()) {
                 LOG.trace(
                     "Disconnecting peer {} because initial status was not received", peer.getId());
-                peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT);
+                peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT).reportExceptions();
               }
             },
             Constants.RESP_TIMEOUT,
@@ -235,7 +233,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   void sendPeriodicPing(Eth2Peer peer) {
     if (peer.getOutstandingPings() >= eth2RpcOutstandingPingThreshold) {
       LOG.debug("Disconnecting the peer {} due to PING timeout.", peer.getId());
-      peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE);
+      peer.disconnectCleanly(DisconnectReason.UNRESPONSIVE).reportExceptions();
     } else {
       peer.sendPing()
           .finish(
@@ -288,10 +286,13 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
   }
 
   private boolean peerIsReady(Eth2Peer peer) {
-    return peer.isChainValidated();
+    return peer.hasStatus();
   }
 
-  interface PeerValidatorFactory {
-    PeerChainValidator create(final Eth2Peer peer, final PeerStatus status);
+  public SafeFuture<?> sendGoodbyeToPeers() {
+    return SafeFuture.allOf(
+        connectedPeerMap.values().stream()
+            .map(peer -> peer.disconnectCleanly(DisconnectReason.SHUTTING_DOWN))
+            .toArray(SafeFuture[]::new));
   }
 }

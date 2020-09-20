@@ -16,7 +16,6 @@ package tech.pegasys.teku.compatibility.multiclient;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import tech.pegasys.teku.compatibility.multiclient.clients.Prysm;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -45,7 +45,7 @@ class StatusMessageCompatibilityTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  public void tearDown() throws Exception {
     networkFactory.stopAll();
     Constants.setConstants("minimal");
   }
@@ -59,7 +59,7 @@ class StatusMessageCompatibilityTest {
     assertThat(status).isNotNull();
 
     // No validators so nothing should get finalized.
-    assertThat(status.getFinalizedEpoch()).isEqualTo(UnsignedLong.ZERO);
+    assertThat(status.getFinalizedEpoch()).isEqualTo(UInt64.ZERO);
     assertThat(status.getFinalizedRoot()).isEqualTo(Bytes32.ZERO);
     // But we can't verify anything about the slot details as they may have progressed.
   }

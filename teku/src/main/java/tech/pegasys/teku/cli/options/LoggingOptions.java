@@ -13,12 +13,12 @@
 
 package tech.pegasys.teku.cli.options;
 
-import static tech.pegasys.teku.util.config.LoggingDestination.DEFAULT_BOTH;
+import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 
 import org.apache.commons.lang3.StringUtils;
 import picocli.CommandLine;
+import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.util.cli.VersionProvider;
-import tech.pegasys.teku.util.config.LoggingDestination;
 
 public class LoggingOptions {
 
@@ -51,7 +51,7 @@ public class LoggingOptions {
       description = "Whether events are logged when validators perform duties",
       fallbackValue = "true",
       arity = "0..1")
-  private boolean logIncludeValidatorDutiesEnabled = false;
+  private boolean logIncludeValidatorDutiesEnabled = true;
 
   @CommandLine.Option(
       names = {"--log-destination"},

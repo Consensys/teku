@@ -13,11 +13,10 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
-import static tech.pegasys.teku.logging.SubCommandLogger.SUB_COMMAND_LOG;
+import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.io.ByteStreams;
-import com.google.common.primitives.UnsignedLong;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,6 +30,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.StateTransitionException;
@@ -40,7 +40,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
-import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 
@@ -110,7 +110,7 @@ public class TransitionCommand implements Runnable {
     return processStateTransition(
         params,
         (state, stateTransition) -> {
-          UnsignedLong targetSlot = UnsignedLong.valueOf(number);
+          UInt64 targetSlot = UInt64.valueOf(number);
           if (delta) {
             targetSlot = state.getSlot().plus(targetSlot);
           }

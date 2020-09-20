@@ -34,20 +34,21 @@ import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
+import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 /** @deprecated - use {@link AbstractDataBackedRestAPIIntegrationTest} */
 @Deprecated
 public abstract class AbstractBeaconRestAPIIntegrationTest {
   static final okhttp3.MediaType JSON = okhttp3.MediaType.parse("application/json; charset=utf-8");
-  static final TekuConfiguration config =
-      TekuConfiguration.builder()
+  static final GlobalConfiguration config =
+      GlobalConfiguration.builder()
           .setRestApiPort(0)
           .setRestApiEnabled(true)
           .setRestApiDocsEnabled(false)
@@ -63,6 +64,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   protected final SyncService syncService = mock(SyncService.class);
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final BlockImporter blockImporter = mock(BlockImporter.class);
+  private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
 
   protected CombinedChainDataClient combinedChainDataClient =
       new CombinedChainDataClient(recentChainData, historicalChainData);
@@ -79,7 +81,8 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
             eth2Network,
             syncService,
             validatorApiChannel,
-            blockImporter);
+            blockImporter,
+            attestationPool);
 
     beaconRestApi = new BeaconRestApi(dataProvider, config);
     beaconRestApi.start();

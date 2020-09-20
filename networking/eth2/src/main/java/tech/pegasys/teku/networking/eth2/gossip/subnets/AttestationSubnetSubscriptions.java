@@ -21,6 +21,7 @@ import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
@@ -32,6 +33,8 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationSubnetSubscriptions implements AutoCloseable {
+
+  private final AsyncRunner asyncRunner;
   private final GossipNetwork gossipNetwork;
   private final GossipEncoding gossipEncoding;
   private final AttestationValidator attestationValidator;
@@ -41,11 +44,13 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
   private final Map<Integer, TopicChannel> subnetIdToTopicChannel = new HashMap<>();
 
   public AttestationSubnetSubscriptions(
+      final AsyncRunner asyncRunner,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final AttestationValidator attestationValidator,
       final RecentChainData recentChainData,
       final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
+    this.asyncRunner = asyncRunner;
     this.gossipNetwork = gossipNetwork;
     this.gossipEncoding = gossipEncoding;
     this.recentChainData = recentChainData;
@@ -96,7 +101,12 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
     final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();
     final SingleAttestationTopicHandler topicHandler =
         new SingleAttestationTopicHandler(
-            gossipEncoding, forkInfo, subnetId, attestationValidator, gossipedAttestationConsumer);
+            asyncRunner,
+            gossipEncoding,
+            forkInfo,
+            subnetId,
+            attestationValidator,
+            gossipedAttestationConsumer);
     return gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
   }
 

@@ -17,7 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.function.Consumer;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
-import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
+import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 
 @Command(
     name = "generate",

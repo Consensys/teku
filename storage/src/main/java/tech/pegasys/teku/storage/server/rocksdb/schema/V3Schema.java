@@ -21,16 +21,16 @@ import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSeri
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.SIGNED_BLOCK_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.SLOT_AND_BLOCK_ROOT_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.STATE_SERIALIZER;
-import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.UNSIGNED_LONG_SERIALIZER;
+import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.UINT64_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.VOTES_SERIALIZER;
 
-import com.google.common.primitives.UnsignedLong;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
@@ -38,8 +38,8 @@ import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 public interface V3Schema extends Schema {
 
   // Columns
-  RocksDbColumn<UnsignedLong, Bytes32> FINALIZED_ROOTS_BY_SLOT =
-      RocksDbColumn.create(1, UNSIGNED_LONG_SERIALIZER, BYTES32_SERIALIZER);
+  RocksDbColumn<UInt64, Bytes32> FINALIZED_ROOTS_BY_SLOT =
+      RocksDbColumn.create(1, UINT64_SERIALIZER, BYTES32_SERIALIZER);
   RocksDbColumn<Bytes32, SignedBeaconBlock> FINALIZED_BLOCKS_BY_ROOT =
       RocksDbColumn.create(2, BYTES32_SERIALIZER, SIGNED_BLOCK_SERIALIZER);
   RocksDbColumn<Bytes32, BeaconState> FINALIZED_STATES_BY_ROOT =
@@ -49,17 +49,17 @@ public interface V3Schema extends Schema {
   // We no longer store checkpoint states, keeping only for backwards compatibility
   RocksDbColumn<Checkpoint, BeaconState> CHECKPOINT_STATES =
       RocksDbColumn.create(5, CHECKPOINT_SERIALIZER, STATE_SERIALIZER);
-  RocksDbColumn<UnsignedLong, VoteTracker> VOTES =
-      RocksDbColumn.create(6, UNSIGNED_LONG_SERIALIZER, VOTES_SERIALIZER);
-  RocksDbColumn<UnsignedLong, DepositsFromBlockEvent> DEPOSITS_FROM_BLOCK_EVENTS =
-      RocksDbColumn.create(7, UNSIGNED_LONG_SERIALIZER, DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER);
+  RocksDbColumn<UInt64, VoteTracker> VOTES =
+      RocksDbColumn.create(6, UINT64_SERIALIZER, VOTES_SERIALIZER);
+  RocksDbColumn<UInt64, DepositsFromBlockEvent> DEPOSITS_FROM_BLOCK_EVENTS =
+      RocksDbColumn.create(7, UINT64_SERIALIZER, DEPOSITS_FROM_BLOCK_EVENT_SERIALIZER);
   RocksDbColumn<Bytes32, SlotAndBlockRoot> STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT =
       RocksDbColumn.create(8, BYTES32_SERIALIZER, SLOT_AND_BLOCK_ROOT_SERIALIZER);
-  RocksDbColumn<Bytes32, UnsignedLong> SLOTS_BY_FINALIZED_STATE_ROOT =
-      RocksDbColumn.create(9, BYTES32_SERIALIZER, UNSIGNED_LONG_SERIALIZER);
+  RocksDbColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_STATE_ROOT =
+      RocksDbColumn.create(9, BYTES32_SERIALIZER, UINT64_SERIALIZER);
 
   // Variables
-  RocksDbVariable<UnsignedLong> GENESIS_TIME = RocksDbVariable.create(1, UNSIGNED_LONG_SERIALIZER);
+  RocksDbVariable<UInt64> GENESIS_TIME = RocksDbVariable.create(1, UINT64_SERIALIZER);
   RocksDbVariable<Checkpoint> JUSTIFIED_CHECKPOINT =
       RocksDbVariable.create(2, CHECKPOINT_SERIALIZER);
   RocksDbVariable<Checkpoint> BEST_JUSTIFIED_CHECKPOINT =
@@ -71,4 +71,6 @@ public interface V3Schema extends Schema {
       RocksDbVariable.create(6, MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER);
   RocksDbVariable<ProtoArraySnapshot> PROTO_ARRAY_SNAPSHOT =
       RocksDbVariable.create(7, PROTO_ARRAY_SNAPSHOT_SERIALIZER);
+  RocksDbVariable<Checkpoint> WEAK_SUBJECTIVITY_CHECKPOINT =
+      RocksDbVariable.create(8, CHECKPOINT_SERIALIZER);
 }

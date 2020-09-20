@@ -1,0 +1,10 @@
+dependencies {
+    api 'com.fasterxml.jackson.core:jackson-databind'
+    api 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+    implementation project(':infrastructure:io')
+    implementation project(':data:serializer')
+    implementation project(':data:yaml')
+    implementation project(':data:signingrecord')
+    implementation project(':ethereum:datastructures')
+    implementation project(':infrastructure:logging')
+}

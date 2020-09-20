@@ -14,6 +14,7 @@
 package tech.pegasys.teku.bls.impl;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 
 /** This class represents a BLS12-381 public key. */
 public interface PublicKey {
@@ -23,7 +24,7 @@ public interface PublicKey {
    *
    * @return byte array of length 48 representation of the public key
    */
-  Bytes toBytesCompressed();
+  Bytes48 toBytesCompressed();
 
   /**
    * Verifies the given BLS signature against the message bytes using this public key.
@@ -34,6 +35,18 @@ public interface PublicKey {
    */
   default boolean verifySignature(Signature signature, Bytes message) {
     return signature.verify(this, message);
+  }
+
+  /**
+   * Verifies the given BLS signature against the message bytes and DST using this public key.
+   *
+   * @param message The message data to verify, not null
+   * @param signature The signature, not null
+   * @param dst The domain separation tag, not null
+   * @return True if the verification is successful, false otherwise.
+   */
+  default boolean verifySignature(Signature signature, Bytes message, Bytes dst) {
+    return signature.verify(this, message, dst);
   }
 
   /**

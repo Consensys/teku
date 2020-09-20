@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -53,7 +55,7 @@ public class P2POptions {
 
   @Option(
       names = {"--p2p-discovery-bootnodes"},
-      paramLabel = "<enode://id@host:port>",
+      paramLabel = "<enr:-...>",
       description = "List of ENRs of the bootnodes",
       split = ",",
       arity = "0..*")
@@ -95,6 +97,14 @@ public class P2POptions {
   private int p2pUpperBound = 74;
 
   @Option(
+      names = {"--Xp2p-target-subnet-subscriber-count"},
+      paramLabel = "<INTEGER>",
+      description = "Target number of peers subscribed to each attestation subnet",
+      arity = "1",
+      hidden = true)
+  private int p2pTargetSubnetSubscriberCount = 2;
+
+  @Option(
       names = {"--p2p-static-peers"},
       paramLabel = "<PEER_ADDRESSES>",
       description = "Static peers",
@@ -108,6 +118,14 @@ public class P2POptions {
       description = "Enables snappy compression for P2P traffic",
       arity = "1")
   private Boolean p2pSnappyEnabled = null;
+
+  @Option(
+      names = {"--Xp2p-multipeer-sync-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enables experimental multipeer sync",
+      hidden = true,
+      arity = "1")
+  private boolean multiPeerSyncEnabled = false;
 
   public boolean isP2pEnabled() {
     return p2pEnabled;
@@ -142,11 +160,25 @@ public class P2POptions {
   }
 
   public int getP2pLowerBound() {
-    return p2pLowerBound;
+    if (p2pLowerBound > p2pUpperBound) {
+      STATUS_LOG.adjustingP2pLowerBoundToUpperBound(p2pUpperBound);
+      return p2pUpperBound;
+    } else {
+      return p2pLowerBound;
+    }
   }
 
   public int getP2pUpperBound() {
-    return p2pUpperBound;
+    if (p2pUpperBound < p2pLowerBound) {
+      STATUS_LOG.adjustingP2pUpperBoundToLowerBound(p2pLowerBound);
+      return p2pLowerBound;
+    } else {
+      return p2pUpperBound;
+    }
+  }
+
+  public int getP2pTargetSubnetSubscriberCount() {
+    return p2pTargetSubnetSubscriberCount;
   }
 
   public List<String> getP2pStaticPeers() {
@@ -155,5 +187,9 @@ public class P2POptions {
 
   public Boolean isP2pSnappyEnabled() {
     return p2pSnappyEnabled;
+  }
+
+  public boolean isMultiPeerSyncEnabled() {
+    return multiPeerSyncEnabled;
   }
 }

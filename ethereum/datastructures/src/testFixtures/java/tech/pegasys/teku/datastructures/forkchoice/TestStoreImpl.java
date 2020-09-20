@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.datastructures.forkchoice;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -26,29 +25,31 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-class TestStoreImpl implements MutablePrunableStore {
-  protected UnsignedLong time;
-  protected UnsignedLong genesis_time;
+class TestStoreImpl implements MutableStore {
+  protected UInt64 time;
+  protected UInt64 genesis_time;
   protected Checkpoint justified_checkpoint;
   protected Checkpoint finalized_checkpoint;
   protected Checkpoint best_justified_checkpoint;
   protected Map<Bytes32, SignedBeaconBlock> blocks;
   protected Map<Bytes32, BeaconState> block_states;
   protected Map<Checkpoint, BeaconState> checkpoint_states;
-  protected Map<UnsignedLong, VoteTracker> votes;
+  protected Map<UInt64, VoteTracker> votes;
 
   TestStoreImpl(
-      final UnsignedLong time,
-      final UnsignedLong genesis_time,
+      final UInt64 time,
+      final UInt64 genesis_time,
       final Checkpoint justified_checkpoint,
       final Checkpoint finalized_checkpoint,
       final Checkpoint best_justified_checkpoint,
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final Map<Bytes32, BeaconState> block_states,
       final Map<Checkpoint, BeaconState> checkpoint_states,
-      final Map<UnsignedLong, VoteTracker> votes) {
+      final Map<UInt64, VoteTracker> votes) {
     this.time = time;
     this.genesis_time = genesis_time;
     this.justified_checkpoint = justified_checkpoint;
@@ -62,12 +63,12 @@ class TestStoreImpl implements MutablePrunableStore {
 
   // Readonly methods
   @Override
-  public UnsignedLong getTime() {
+  public UInt64 getTime() {
     return time;
   }
 
   @Override
-  public UnsignedLong getGenesisTime() {
+  public UInt64 getGenesisTime() {
     return genesis_time;
   }
 
@@ -82,7 +83,7 @@ class TestStoreImpl implements MutablePrunableStore {
   }
 
   @Override
-  public UnsignedLong getLatestFinalizedBlockSlot() {
+  public UInt64 getLatestFinalizedBlockSlot() {
     return blocks.get(finalized_checkpoint.getRoot()).getSlot();
   }
 
@@ -133,13 +134,12 @@ class TestStoreImpl implements MutablePrunableStore {
     return block_states.get(blockRoot);
   }
 
-  @Override
-  public Optional<BeaconState> getCheckpointState(final Checkpoint checkpoint) {
+  private Optional<BeaconState> getCheckpointState(final Checkpoint checkpoint) {
     return Optional.ofNullable(checkpoint_states.get(checkpoint));
   }
 
   @Override
-  public Set<UnsignedLong> getVotedValidatorIndices() {
+  public Set<UInt64> getVotedValidatorIndices() {
     return votes.keySet();
   }
 
@@ -174,6 +174,22 @@ class TestStoreImpl implements MutablePrunableStore {
     return SafeFuture.completedFuture(getCheckpointState(checkpoint));
   }
 
+  @Override
+  public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
+    final BeaconState state = getCheckpointState(finalized_checkpoint).orElseThrow();
+    final SignedBeaconBlock block = getSignedBlock(finalized_checkpoint.getRoot());
+    return SafeFuture.completedFuture(new CheckpointState(finalized_checkpoint, block, state));
+  }
+
+  @Override
+  public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(
+      final Checkpoint checkpoint, final BeaconState latestStateAtEpoch) {
+    if (!latestStateAtEpoch.getSlot().equals(checkpoint.getEpochStartSlot())) {
+      throw new UnsupportedOperationException("Checkpoint state calculation not supported");
+    }
+    return SafeFuture.completedFuture(Optional.of(latestStateAtEpoch));
+  }
+
   // Mutable methods
   @Override
   public void putBlockAndState(final SignedBeaconBlock block, final BeaconState state) {
@@ -193,12 +209,12 @@ class TestStoreImpl implements MutablePrunableStore {
   }
 
   @Override
-  public void setTime(final UnsignedLong time) {
+  public void setTime(final UInt64 time) {
     this.time = time;
   }
 
   @Override
-  public void setGenesis_time(final UnsignedLong genesis_time) {
+  public void setGenesis_time(final UInt64 genesis_time) {
     this.genesis_time = genesis_time;
   }
 
@@ -218,7 +234,7 @@ class TestStoreImpl implements MutablePrunableStore {
   }
 
   @Override
-  public VoteTracker getVote(final UnsignedLong validatorIndex) {
+  public VoteTracker getVote(final UInt64 validatorIndex) {
     VoteTracker vote = votes.get(validatorIndex);
     if (vote == null) {
       vote = VoteTracker.Default();

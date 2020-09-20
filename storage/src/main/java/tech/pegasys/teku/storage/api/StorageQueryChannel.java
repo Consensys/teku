@@ -13,27 +13,30 @@
 
 package tech.pegasys.teku.storage.api;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.events.ChannelInterface;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.store.StoreBuilder;
-import tech.pegasys.teku.util.channels.ChannelInterface;
 
 public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<Optional<StoreBuilder>> onStoreRequest();
 
-  SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(final UnsignedLong slot);
+  SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(final UInt64 slot);
 
-  SafeFuture<Optional<SignedBeaconBlock>> getLatestFinalizedBlockAtSlot(final UnsignedLong slot);
+  SafeFuture<Optional<SignedBeaconBlock>> getLatestFinalizedBlockAtSlot(final UInt64 slot);
 
   SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot);
+
+  SafeFuture<Optional<SignedBlockAndState>> getHotBlockAndStateByBlockRoot(final Bytes32 blockRoot);
 
   /**
    * Returns "hot" blocks - the latest finalized block or blocks that descend from the latest
@@ -46,7 +49,9 @@ public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<Optional<SlotAndBlockRoot>> getSlotAndBlockRootByStateRoot(final Bytes32 stateRoot);
 
-  SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(final UnsignedLong slot);
+  SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(final UInt64 slot);
 
   SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(final Bytes32 blockRoot);
+
+  SafeFuture<Optional<UInt64>> getFinalizedSlotByStateRoot(final Bytes32 stateRoot);
 }

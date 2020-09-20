@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.client;
 
 import com.google.common.base.Throwables;
-import com.google.common.primitives.UnsignedLong;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +22,7 @@ import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
 class DutyQueue {
@@ -43,15 +43,15 @@ class DutyQueue {
         });
   }
 
-  public void onBlockProductionDue(final UnsignedLong slot) {
+  public void onBlockProductionDue(final UInt64 slot) {
     execute(duties -> duties.produceBlock(slot));
   }
 
-  public void onAttestationCreationDue(final UnsignedLong slot) {
+  public void onAttestationCreationDue(final UInt64 slot) {
     execute(duties -> duties.produceAttestations(slot));
   }
 
-  public void onAttestationAggregationDue(final UnsignedLong slot) {
+  public void onAttestationAggregationDue(final UInt64 slot) {
     execute(duties -> duties.performAggregation(slot));
   }
 

@@ -1,11 +1,14 @@
 dependencies {
   implementation project(':bls')
   implementation project(':data')
-  implementation project(':data:metrics')
   implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
+  implementation project(':ethereum:weaksubjectivity')
   implementation project(':infrastructure:async')
-  implementation project(':logging')
+  implementation project(':infrastructure:collections')
+  implementation project(':infrastructure:logging')
+  implementation project(':infrastructure:metrics')
+  implementation project(':infrastructure:subscribers')
   implementation project(':pow')
   implementation project(':protoarray')
   implementation project(':services:serviceutils')
@@ -23,6 +26,7 @@ dependencies {
   testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':util'))
   testImplementation testFixtures(project(':storage'))
 
@@ -31,6 +35,7 @@ dependencies {
 
   testFixturesImplementation project(':ethereum:core')
   testFixturesImplementation project(':infrastructure:async')
+  testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation testFixtures(project(':protoarray'))
   testFixturesImplementation testFixtures(project(':ethereum:core'))
   testFixturesImplementation testFixtures(project(':ethereum:datastructures'))

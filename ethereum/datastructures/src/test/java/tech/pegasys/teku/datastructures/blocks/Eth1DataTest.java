@@ -16,19 +16,19 @@ package tech.pegasys.teku.datastructures.blocks;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class Eth1DataTest {
 
   private Random random = new Random(100);
   private Bytes32 depositRoot = Bytes32.random(random);
   private Bytes32 blockHash = Bytes32.random(random);
-  private UnsignedLong depositCount = UnsignedLong.valueOf(100);
+  private UInt64 depositCount = UInt64.valueOf(100);
 
   private Eth1Data eth1Data = new Eth1Data(depositRoot, depositCount, blockHash);
 

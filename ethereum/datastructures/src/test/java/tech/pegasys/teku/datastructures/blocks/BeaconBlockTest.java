@@ -17,19 +17,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class BeaconBlockTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private UnsignedLong slot = dataStructureUtil.randomUnsignedLong();
-  private UnsignedLong proposer_index = dataStructureUtil.randomUnsignedLong();
+  private UInt64 slot = dataStructureUtil.randomUInt64();
+  private UInt64 proposer_index = dataStructureUtil.randomUInt64();
   private Bytes32 previous_root = dataStructureUtil.randomBytes32();
   private Bytes32 state_root = dataStructureUtil.randomBytes32();
   private BeaconBlockBody body = dataStructureUtil.randomBeaconBlockBody();
@@ -55,8 +55,7 @@ class BeaconBlockTest {
   @Test
   void equalsReturnsFalseWhenSlotsAreDifferent() {
     BeaconBlock testBeaconBlock =
-        new BeaconBlock(
-            slot.plus(UnsignedLong.ONE), proposer_index, previous_root, state_root, body);
+        new BeaconBlock(slot.plus(UInt64.ONE), proposer_index, previous_root, state_root, body);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }
@@ -64,8 +63,7 @@ class BeaconBlockTest {
   @Test
   void equalsReturnsFalseWhenProposersAreDifferent() {
     BeaconBlock testBeaconBlock =
-        new BeaconBlock(
-            slot, proposer_index.plus(UnsignedLong.ONE), previous_root, state_root, body);
+        new BeaconBlock(slot, proposer_index.plus(UInt64.ONE), previous_root, state_root, body);
 
     assertNotEquals(beaconBlock, testBeaconBlock);
   }

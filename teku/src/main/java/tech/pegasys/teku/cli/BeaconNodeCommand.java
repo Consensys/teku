@@ -30,9 +30,12 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Unmatched;
+import tech.pegasys.teku.cli.converter.LogTypeConverter;
 import tech.pegasys.teku.cli.converter.MetricCategoryConverter;
+import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.BeaconRestApiOptions;
 import tech.pegasys.teku.cli.options.DataOptions;
+import tech.pegasys.teku.cli.options.DataStorageOptions;
 import tech.pegasys.teku.cli.options.DepositOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
@@ -40,25 +43,30 @@ import tech.pegasys.teku.cli.options.MetricsOptions;
 import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.cli.options.OutputOptions;
 import tech.pegasys.teku.cli.options.P2POptions;
+import tech.pegasys.teku.cli.options.RemoteValidatorApiOptions;
+import tech.pegasys.teku.cli.options.StoreOptions;
+import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
+import tech.pegasys.teku.cli.options.WeakSubjectivityOptions;
 import tech.pegasys.teku.cli.subcommand.DepositCommand;
 import tech.pegasys.teku.cli.subcommand.GenesisCommand;
 import tech.pegasys.teku.cli.subcommand.PeerCommand;
+import tech.pegasys.teku.cli.subcommand.SlashingProtectionCommand;
 import tech.pegasys.teku.cli.subcommand.TransitionCommand;
 import tech.pegasys.teku.cli.subcommand.UnstableOptionsCommand;
-import tech.pegasys.teku.cli.subcommand.debug.DebugCommand;
+import tech.pegasys.teku.cli.subcommand.ValidatorClientCommand;
+import tech.pegasys.teku.cli.subcommand.debug.DebugToolsCommand;
 import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
 import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
-import tech.pegasys.teku.logging.LoggingConfigurator;
-import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
-import tech.pegasys.teku.util.cli.LogTypeConverter;
-import tech.pegasys.teku.util.cli.PicoCliVersionProvider;
 import tech.pegasys.teku.util.config.Eth1Address;
+import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.NetworkDefinition;
-import tech.pegasys.teku.util.config.TekuConfiguration;
 
 @SuppressWarnings("unused")
 @Command(
@@ -69,8 +77,10 @@ import tech.pegasys.teku.util.config.TekuConfiguration;
       PeerCommand.class,
       DepositCommand.class,
       GenesisCommand.class,
-      DebugCommand.class,
-      UnstableOptionsCommand.class
+      SlashingProtectionCommand.class,
+      DebugToolsCommand.class,
+      UnstableOptionsCommand.class,
+      ValidatorClientCommand.class
     },
     showDefaultValues = true,
     abbreviateSynopsis = true,
@@ -94,6 +104,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   // allows two pass approach to obtain optional config file
   private static class ConfigFileCommand {
+
     @Option(
         names = {"-c", CONFIG_FILE_OPTION_NAME},
         arity = "1")
@@ -109,7 +120,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       converter = LogTypeConverter.class,
       paramLabel = "<LOG VERBOSITY LEVEL>",
       description =
-          "Logging verbosity levels: OFF, FATAL, WARN, INFO, DEBUG, TRACE, ALL (default: INFO).",
+          "Logging verbosity levels: OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL (default: INFO).",
       arity = "1")
   private Level logLevel;
 
@@ -147,8 +158,23 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Mixin(name = "Data")
   private DataOptions dataOptions;
 
+  @Mixin(name = "Data Storage")
+  private DataStorageOptions dataStorageOptions;
+
+  @Mixin(name = "Store")
+  private StoreOptions storeOptions;
+
   @Mixin(name = "REST API")
   private BeaconRestApiOptions beaconRestApiOptions;
+
+  @Mixin(name = "Remote Validator API")
+  private RemoteValidatorApiOptions remoteValidatorApiOptions;
+
+  @Mixin(name = "Validator Client")
+  private ValidatorClientOptions validatorClientOptions;
+
+  @Mixin(name = "Weak Subjectivity")
+  private WeakSubjectivityOptions weakSubjectivityOptions;
 
   public BeaconNodeCommand(
       final PrintWriter outputWriter,
@@ -249,13 +275,14 @@ public class BeaconNodeCommand implements Callable<Integer> {
   public Integer call() {
     try {
       setLogLevels();
-      final TekuConfiguration tekuConfiguration = tekuConfiguration();
-      startAction.accept(tekuConfiguration);
+      final TekuConfiguration tekuConfig = tekuConfiguration();
+      startAction.accept(tekuConfig);
       return 0;
     } catch (InvalidConfigurationException | DatabaseStorageException ex) {
       reportUserError(ex);
     } catch (CompletionException e) {
-      if (Throwables.getRootCause(e) instanceof InvalidConfigurationException) {
+      if (Throwables.getRootCause(e) instanceof InvalidConfigurationException
+          || Throwables.getRootCause(e) instanceof DatabaseStorageException) {
         reportUserError(Throwables.getRootCause(e));
       } else {
         reportUnexpectedError(e);
@@ -267,7 +294,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return 1;
   }
 
-  private void reportUnexpectedError(final Throwable t) {
+  public void reportUnexpectedError(final Throwable t) {
     System.err.println("Teku failed to start.");
     t.printStackTrace();
 
@@ -275,12 +302,12 @@ public class BeaconNodeCommand implements Callable<Integer> {
     printUsage(errorWriter);
   }
 
-  private void reportUserError(final Throwable ex) {
+  public void reportUserError(final Throwable ex) {
     errorWriter.println(ex.getMessage());
     printUsage(errorWriter);
   }
 
-  private void setLogLevels() {
+  public void setLogLevels() {
     if (logLevel != null) {
       // set log level per CLI flags
       LoggingConfigurator.setAllLevels(logLevel);
@@ -291,12 +318,26 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return this.logLevel;
   }
 
-  private TekuConfiguration tekuConfiguration() {
-    // TODO (#2408): validate option dependencies
-    return TekuConfiguration.builder()
+  public Consumer<TekuConfiguration> getStartAction() {
+    return startAction;
+  }
+
+  protected TekuConfiguration tekuConfiguration() {
+    TekuConfiguration.Builder builder = TekuConfiguration.builder();
+
+    builder.globalConfig(this::buildGlobalConfiguration);
+    weakSubjectivityOptions.configure(builder);
+
+    return builder.build();
+  }
+
+  private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
+    builder
         .setNetwork(NetworkDefinition.fromCliArg(networkOptions.getNetwork()))
         .setStartupTargetPeerCount(networkOptions.getStartupTargetPeerCount())
         .setStartupTimeoutSeconds(networkOptions.getStartupTimeoutSeconds())
+        .setPeerRateLimit(networkOptions.getPeerRateLimit())
+        .setPeerRequestLimit(networkOptions.getPeerRequestLimit())
         .setP2pEnabled(p2POptions.isP2pEnabled())
         .setP2pInterface(p2POptions.getP2pInterface())
         .setP2pPort(p2POptions.getP2pPort())
@@ -307,17 +348,20 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setP2pPrivateKeyFile(p2POptions.getP2pPrivateKeyFile())
         .setP2pPeerLowerBound(p2POptions.getP2pLowerBound())
         .setP2pPeerUpperBound(p2POptions.getP2pUpperBound())
+        .setTargetSubnetSubscriberCount(p2POptions.getP2pTargetSubnetSubscriberCount())
         .setP2pStaticPeers(p2POptions.getP2pStaticPeers())
         .setP2pSnappyEnabled(p2POptions.isP2pSnappyEnabled())
+        .setMultiPeerSyncEnabled(p2POptions.isMultiPeerSyncEnabled())
         .setInteropGenesisTime(interopOptions.getInteropGenesisTime())
         .setInteropOwnedValidatorStartIndex(interopOptions.getInteropOwnerValidatorStartIndex())
         .setInteropOwnedValidatorCount(interopOptions.getInteropOwnerValidatorCount())
         .setInitialState(networkOptions.getInitialState())
         .setInteropNumberOfValidators(interopOptions.getInteropNumberOfValidators())
         .setInteropEnabled(interopOptions.isInteropEnabled())
-        .setValidatorKeyFile(validatorOptions.getValidatorKeyFile())
+        .setValidatorKeystoreLockingEnabled(validatorOptions.isValidatorKeystoreLockingEnabled())
         .setValidatorKeystoreFiles(validatorOptions.getValidatorKeystoreFiles())
         .setValidatorKeystorePasswordFiles(validatorOptions.getValidatorKeystorePasswordFiles())
+        .setValidatorKeys(validatorOptions.getValidatorKeys())
         .setValidatorExternalSignerPublicKeys(
             validatorOptions.getValidatorExternalSignerPublicKeys())
         .setValidatorExternalSignerUrl(validatorOptions.getValidatorExternalSignerUrl())
@@ -343,14 +387,23 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setMetricsCategories(metricsOptions.getMetricsCategories())
         .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist())
         .setDataPath(dataOptions.getDataPath())
-        .setDataStorageMode(dataOptions.getDataStorageMode())
-        .setDataStorageFrequency(dataOptions.getDataStorageFrequency())
-        .setDataStorageCreateDbVersion(dataOptions.getCreateDbVersion())
+        .setDataStorageMode(dataStorageOptions.getDataStorageMode())
+        .setDataStorageFrequency(dataStorageOptions.getDataStorageFrequency())
+        .setDataStorageCreateDbVersion(dataStorageOptions.getCreateDbVersion())
+        .setHotStatePersistenceFrequencyInEpochs(
+            storeOptions.getHotStatePersistenceFrequencyInEpochs())
+        .setIsBlockProcessingAtStartupDisabled(storeOptions.isBlockProcessingAtStartupDisabled())
         .setRestApiPort(beaconRestApiOptions.getRestApiPort())
         .setRestApiDocsEnabled(beaconRestApiOptions.isRestApiDocsEnabled())
         .setRestApiEnabled(beaconRestApiOptions.isRestApiEnabled())
         .setRestApiInterface(beaconRestApiOptions.getRestApiInterface())
         .setRestApiHostAllowlist(beaconRestApiOptions.getRestApiHostAllowlist())
-        .build();
+        .setRemoteValidatorApiInterface(remoteValidatorApiOptions.getApiInterface())
+        .setRemoteValidatorApiPort(remoteValidatorApiOptions.getApiPort())
+        .setRemoteValidatorApiMaxSubscribers(remoteValidatorApiOptions.getMaxSubscribers())
+        .setRemoteValidatorApiEnabled(remoteValidatorApiOptions.isApiEnabled())
+        .setValidatorClient(false)
+        .setBeaconNodeApiEndpoint(validatorClientOptions.getBeaconNodeApiEndpoint())
+        .setBeaconNodeEventsWsEndpoint(validatorClientOptions.getBeaconNodeEventsWsEndpoint());
   }
 }

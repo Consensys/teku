@@ -50,6 +50,6 @@ public class DefaultRpcPayloadEncoder<T> implements RpcPayloadEncoder<T> {
 
   @Override
   public boolean isLengthWithinBounds(final long length) {
-    return SimpleOffsetSerializer.getLengthBounds(clazz).isWithinBounds(length);
+    return SimpleOffsetSerializer.getLengthBounds(clazz).orElseThrow().isWithinBounds(length);
   }
 }

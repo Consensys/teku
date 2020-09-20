@@ -1,10 +1,11 @@
 dependencies {
     implementation project(':data')
     implementation project(':data:provider')
+    implementation project(':data:serializer')
     implementation project(':ethereum:datastructures')
     implementation project(':ethereum:statetransition')
     implementation project(':infrastructure:async')
-    implementation project(':logging')
+    implementation project(':infrastructure:logging')
     implementation project(':networking:eth2')
     implementation project(':services:serviceutils')
     implementation project(':storage')
@@ -14,6 +15,7 @@ dependencies {
     implementation project(':validator:coordinator')
 
     implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
+    implementation 'com.google.guava:guava'
     implementation 'io.swagger.core.v3:swagger-core'
     implementation 'io.swagger.core.v3:swagger-annotations'
     implementation 'io.github.classgraph:classgraph'
@@ -30,8 +32,10 @@ dependencies {
 
     integrationTestImplementation testFixtures(project(':bls'))
     integrationTestImplementation testFixtures(project(':ethereum:datastructures'))
+    integrationTestImplementation project(':ethereum:weaksubjectivity')
     integrationTestImplementation testFixtures(project(':ethereum:core'))
 
+    integrationTestImplementation project(':networking:p2p')
     integrationTestImplementation 'com.squareup.okhttp3:okhttp'
     integrationTestImplementation 'org.jsoup:jsoup'
     integrationTestImplementation testFixtures(project(':ethereum:statetransition'))

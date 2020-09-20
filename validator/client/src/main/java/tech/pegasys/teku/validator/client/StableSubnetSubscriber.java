@@ -19,7 +19,6 @@ import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_RANDOM_SUBNET_S
 import static tech.pegasys.teku.util.config.Constants.RANDOM_SUBNETS_PER_VALIDATOR;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -30,6 +29,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class StableSubnetSubscriber {
@@ -52,7 +52,7 @@ public class StableSubnetSubscriber {
     IntStream.range(0, ATTESTATION_SUBNET_COUNT).forEach(availableSubnetIndices::add);
   }
 
-  public void onSlot(UnsignedLong slot) {
+  public void onSlot(UInt64 slot) {
     // Iterate through current subscriptions to remove the ones that have expired
     final Iterator<SubnetSubscription> iterator = subnetSubscriptions.iterator();
     while (iterator.hasNext()) {
@@ -85,7 +85,7 @@ public class StableSubnetSubscriber {
    * unsubscriptions, it returns an empty set.
    */
   private Set<SubnetSubscription> adjustNumberOfSubscriptionsToNumberOfValidators(
-      UnsignedLong currentSlot, int validatorCount) {
+      UInt64 currentSlot, int validatorCount) {
 
     int totalNumberOfSubscriptions =
         min(ATTESTATION_SUBNET_COUNT, RANDOM_SUBNETS_PER_VALIDATOR * validatorCount);
@@ -108,7 +108,7 @@ public class StableSubnetSubscriber {
    *
    * @param currentSlot
    */
-  private SubnetSubscription subscribeToNewRandomSubnet(UnsignedLong currentSlot) {
+  private SubnetSubscription subscribeToNewRandomSubnet(UInt64 currentSlot) {
     int newSubnetId =
         getRandomAvailableSubnetId()
             .orElseThrow(() -> new IllegalStateException("No available subnetId found"));
@@ -140,12 +140,12 @@ public class StableSubnetSubscriber {
     return set.stream().skip(random.nextInt(set.size())).findFirst();
   }
 
-  private UnsignedLong getRandomUnsubscriptionSlot(UnsignedLong currentSlot) {
+  private UInt64 getRandomUnsubscriptionSlot(UInt64 currentSlot) {
     return currentSlot.plus(getRandomSubscriptionLength());
   }
 
-  private UnsignedLong getRandomSubscriptionLength() {
-    return UnsignedLong.valueOf(
+  private UInt64 getRandomSubscriptionLength() {
+    return UInt64.valueOf(
         (EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION
                 + random.nextInt(EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION))
             * SLOTS_PER_EPOCH);

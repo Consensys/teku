@@ -24,6 +24,8 @@ public class RestApiConstants {
   public static final String COMMITTEE_INDEX = "committee_index";
   public static final String RANDAO_REVEAL = "randao_reveal";
   public static final String GRAFFITI = "graffiti";
+  public static final String ATTESTATION_DATA_ROOT = "attestation_data_root";
+  public static final String INDEX = "index";
 
   public static final String TAG_ADMIN = "Admin";
   public static final String TAG_BEACON = "Beacon";
@@ -31,12 +33,15 @@ public class RestApiConstants {
   public static final String TAG_NETWORK = "Network";
   public static final String TAG_VALIDATOR = "Validator";
 
-  public static final String TAG_V1_NODE = "V1-Node";
+  public static final String TAG_V1_NODE = "Node V1";
+  public static final String TG_V1_VALIDATOR = "Validator V1";
 
   public static final String RES_OK = "200"; // SC_OK
   public static final String RES_ACCEPTED = "202"; // SC_ACCEPTED
   public static final String RES_NO_CONTENT = "204"; // SC_NO_CONTENT
+  public static final String RES_PARTIAL_CONTENT = "206"; // SC_PARTIAL_CONTENT
   public static final String RES_BAD_REQUEST = "400"; // SC_BAD_REQUEST
+  public static final String RES_FORBIDDEN = "403"; // SC_FORBIDDEN
   public static final String RES_NOT_FOUND = "404"; // SC_NOT_FOUND
   public static final String RES_CONFLICT = "406"; // SC_CONFLICT
   public static final String RES_INTERNAL_ERROR = "500"; // SC_INTERNAL_SERVER_ERROR
@@ -46,9 +51,9 @@ public class RestApiConstants {
       "No content may be returned if the genesis block has not been set, meaning that there is no head to query.";
   public static final String INVALID_BODY_SUPPLIED = "Invalid body supplied.";
 
-  public static final String EPOCH_QUERY_DESCRIPTION = "`UnsignedLong` Epoch number to query.";
+  public static final String EPOCH_QUERY_DESCRIPTION = "`uint64` Epoch number to query.";
   public static final String SLOT_QUERY_DESCRIPTION =
-      "`UnsignedLong` Slot to query in the canonical chain.";
+      "`UInt64` Slot to query in the canonical chain.";
   public static final String ROOT_QUERY_DESCRIPTION = "`Bytes32 Hex` Block root to query.";
   public static final String STATE_ROOT_QUERY_DESCRIPTION = "`Bytes32 Hex` Block root to query.";
 }

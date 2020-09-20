@@ -17,22 +17,27 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine.Option;
-import tech.pegasys.teku.util.cli.GraffitiConverter;
+import tech.pegasys.teku.cli.converter.GraffitiConverter;
 
 public class ValidatorOptions {
-
   @Option(
-      names = {"--validators-unencrypted-key-file"},
-      paramLabel = "<FILENAME>",
-      description = "The file to load unencrypted validator keys from",
-      arity = "1")
-  private String validatorKeyFile = null;
+      names = {"--validator-keys"},
+      paramLabel = "<KEY_DIR>:<PASS_DIR> | <KEY_FILE>:<PASS_FILE>",
+      description =
+          "<KEY_DIR>:<PASS_DIR> will find <KEY_DIR>/**.json, and expect to find <PASS_DIR>/**.txt.\n"
+              + "<KEY_FILE>:<PASS_FILE> will expect that the file <KEY_FILE> exists, "
+              + "and the file containing the password for it is <PASS_FILE>.\n"
+              + "The path separator is operating system dependent, and should be ';' in windows rather than ':'.",
+      split = ",",
+      arity = "1..*")
+  private List<String> validatorKeys = new ArrayList<>();
 
   @Option(
       names = {"--validators-key-files"},
       paramLabel = "<FILENAMES>",
       description = "The list of encrypted keystore files to load the validator keys from",
       split = ",",
+      hidden = true,
       arity = "0..*")
   private List<String> validatorKeystoreFiles = new ArrayList<>();
 
@@ -41,6 +46,7 @@ public class ValidatorOptions {
       paramLabel = "<FILENAMES>",
       description = "The list of password files to decrypt the validator keystore files",
       split = ",",
+      hidden = true,
       arity = "0..*")
   private List<String> validatorKeystorePasswordFiles = new ArrayList<>();
 
@@ -75,8 +81,15 @@ public class ValidatorOptions {
       arity = "1")
   private Bytes32 graffiti;
 
-  public String getValidatorKeyFile() {
-    return validatorKeyFile;
+  @Option(
+      names = {"--validators-keystore-locking-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable locking validator keystore files",
+      arity = "1")
+  private boolean validatorKeystoreLockingEnabled = true;
+
+  public boolean isValidatorKeystoreLockingEnabled() {
+    return validatorKeystoreLockingEnabled;
   }
 
   public List<String> getValidatorKeystoreFiles() {
@@ -101,5 +114,9 @@ public class ValidatorOptions {
 
   public Bytes32 getGraffiti() {
     return graffiti;
+  }
+
+  public List<String> getValidatorKeys() {
+    return validatorKeys;
   }
 }

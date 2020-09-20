@@ -26,7 +26,7 @@ import org.apache.logging.log4j.Logger;
 
 public class ScheduledExecutorAsyncRunner implements AsyncRunner {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int QUEUE_CAPACITY = 500;
+  private static final int QUEUE_CAPACITY = 5000;
   private final AtomicBoolean shutdown = new AtomicBoolean(false);
   private final ScheduledExecutorService scheduler;
   private final ExecutorService workerPool;

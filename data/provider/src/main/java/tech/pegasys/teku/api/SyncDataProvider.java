@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.api;
 
+import tech.pegasys.teku.api.response.v1.node.Syncing;
+import tech.pegasys.teku.api.schema.SyncStatus;
+import tech.pegasys.teku.api.schema.SyncingStatus;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.sync.SyncingStatus;
 
 public class SyncDataProvider {
+
   private final SyncService syncService;
 
   public SyncDataProvider(SyncService syncService) {
@@ -30,10 +34,31 @@ public class SyncDataProvider {
    *     slot, current slot and highest slot.
    */
   public SyncingStatus getSyncStatus() {
-    return syncService.getSyncStatus();
+    final tech.pegasys.teku.sync.SyncingStatus syncingStatus = syncService.getSyncStatus();
+
+    final SyncStatus schemaSyncStatus =
+        new SyncStatus(
+            syncingStatus.getStartingSlot().orElse(null),
+            syncingStatus.getCurrentSlot(),
+            syncingStatus.getHighestSlot().orElse(null));
+
+    return new SyncingStatus(syncingStatus.isSyncing(), schemaSyncStatus);
   }
 
-  SyncService getSyncService() {
-    return syncService;
+  public Syncing getSyncing() {
+    tech.pegasys.teku.sync.SyncingStatus syncStatus = syncService.getSyncStatus();
+    return new Syncing(syncStatus.getCurrentSlot(), getSlotsBehind(syncStatus));
+  }
+
+  public boolean isSyncing() {
+    return syncService.isSyncActive();
+  }
+
+  private UInt64 getSlotsBehind(final tech.pegasys.teku.sync.SyncingStatus syncingStatus) {
+    if (syncingStatus.isSyncing() && syncingStatus.getHighestSlot().isPresent()) {
+      final UInt64 highestSlot = syncingStatus.getHighestSlot().get();
+      return highestSlot.minus(syncingStatus.getCurrentSlot());
+    }
+    return UInt64.ZERO;
   }
 }

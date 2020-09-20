@@ -40,11 +40,14 @@ public class GetPeerCount implements Handler {
   }
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get the number of connected peers.",
       tags = {TAG_NETWORK},
-      description = "Returns the number of peers connected to the beacon node.",
+      description =
+          "Returns the number of peers connected to the beacon node."
+              + " Replaced by standard api endpoint `/eth/v1/node/peers`.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,

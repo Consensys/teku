@@ -30,6 +30,11 @@ public class MultiaddrPeerAddress extends PeerAddress {
     this.multiaddr = multiaddr;
   }
 
+  @Override
+  public String toExternalForm() {
+    return multiaddr.toString();
+  }
+
   public static MultiaddrPeerAddress fromAddress(final String address) {
     final Multiaddr multiaddr = Multiaddr.fromString(address);
     return fromMultiaddr(multiaddr);

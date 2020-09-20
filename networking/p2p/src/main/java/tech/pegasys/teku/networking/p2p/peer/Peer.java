@@ -34,7 +34,7 @@ public interface Peer {
 
   void disconnectImmediately(Optional<DisconnectReason> reason, boolean locallyInitiated);
 
-  void disconnectCleanly(DisconnectReason reason);
+  SafeFuture<Void> disconnectCleanly(DisconnectReason reason);
 
   void setDisconnectRequestHandler(DisconnectRequestHandler handler);
 

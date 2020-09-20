@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -27,7 +28,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public abstract class AbstractBeaconNodeCommandTest {
   private static final Logger LOG = LogManager.getLogger();
@@ -43,11 +45,16 @@ public abstract class AbstractBeaconNodeCommandTest {
 
   @TempDir Path dataPath;
 
+  public GlobalConfiguration getResultingGlobalConfiguration() {
+    return getResultingTekuConfiguration().global();
+  }
+
   public TekuConfiguration getResultingTekuConfiguration() {
     try {
       final ArgumentCaptor<TekuConfiguration> configCaptor =
           ArgumentCaptor.forClass(TekuConfiguration.class);
       verify(startAction).accept(configCaptor.capture());
+      assertThat(stringWriter.toString()).isEmpty();
 
       return configCaptor.getValue();
     } catch (Throwable t) {
@@ -58,9 +65,17 @@ public abstract class AbstractBeaconNodeCommandTest {
     }
   }
 
+  public GlobalConfiguration getGlobalConfigurationFromArguments(String... arguments) {
+    return getTekuConfigurationFromArguments(arguments).global();
+  }
+
   public TekuConfiguration getTekuConfigurationFromArguments(String... arguments) {
     beaconNodeCommand.parse(arguments);
     return getResultingTekuConfiguration();
+  }
+
+  public GlobalConfiguration getGlobalConfigurationFromFile(String resourceFilename) {
+    return getTekuConfigurationFromFile(resourceFilename).global();
   }
 
   public TekuConfiguration getTekuConfigurationFromFile(String resourceFilename) {

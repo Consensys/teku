@@ -25,7 +25,6 @@ import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.Interna
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_SELECTION_PROOF;
 import static tech.pegasys.teku.util.config.Constants.VALID_AGGREGATE_SET_SIZE;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -46,19 +45,17 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.collections.ConcurrentLimitedSet;
-import tech.pegasys.teku.util.collections.LimitStrategy;
 import tech.pegasys.teku.util.config.Constants;
 
 public class SignedAggregateAndProofValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Set<AggregatorIndexAndEpoch> receivedAggregatorIndexAndEpochs =
-      ConcurrentLimitedSet.create(
-          VALID_AGGREGATE_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+      LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
   private final Set<Bytes32> receivedValidAggregations =
-      ConcurrentLimitedSet.create(
-          VALID_AGGREGATE_SET_SIZE, LimitStrategy.DROP_LEAST_RECENTLY_ACCESSED);
+      LimitedSet.create(VALID_AGGREGATE_SET_SIZE);
   private final AttestationValidator attestationValidator;
   private final RecentChainData recentChainData;
 
@@ -77,7 +74,7 @@ public class SignedAggregateAndProofValidator {
     final AggregateAndProof aggregateAndProof = signedAggregate.getMessage();
     final Attestation aggregate = aggregateAndProof.getAggregate();
 
-    final UnsignedLong aggregateSlot = aggregate.getData().getSlot();
+    final UInt64 aggregateSlot = aggregate.getData().getSlot();
     final AggregatorIndexAndEpoch aggregatorIndexAndEpoch =
         new AggregatorIndexAndEpoch(
             aggregateAndProof.getIndex(), compute_epoch_at_slot(aggregateSlot));
@@ -92,7 +89,7 @@ public class SignedAggregateAndProofValidator {
     }
 
     return attestationValidator
-        .singleOrAggregateAttestationChecks(aggregate, OptionalInt.empty())
+        .singleOrAggregateAttestationChecks(attestation, OptionalInt.empty())
         .thenCompose(
             aggregateInternalValidationResult -> {
               if (aggregateInternalValidationResult == REJECT
@@ -103,12 +100,20 @@ public class SignedAggregateAndProofValidator {
 
               return recentChainData
                   .retrieveBlockState(aggregate.getData().getBeacon_block_root())
+                  .thenCompose(
+                      maybeState ->
+                          maybeState.isEmpty()
+                              ? SafeFuture.completedFuture(Optional.empty())
+                              : attestationValidator.resolveStateForAttestation(
+                                  aggregate, maybeState.get()))
                   .thenApply(
                       maybeState -> {
                         if (maybeState.isEmpty()) {
                           return SAVE_FOR_FUTURE;
                         }
+
                         final BeaconState state = maybeState.get();
+
                         final Optional<BLSPublicKey> aggregatorPublicKey =
                             ValidatorsUtil.getValidatorPubKey(state, aggregateAndProof.getIndex());
                         if (aggregatorPublicKey.isEmpty()) {
@@ -169,7 +174,7 @@ public class SignedAggregateAndProofValidator {
       final BeaconState state,
       final BLSPublicKey aggregatorPublicKey) {
     final AggregateAndProof aggregateAndProof = signedAggregate.getMessage();
-    final Bytes domain =
+    final Bytes32 domain =
         get_domain(
             Constants.DOMAIN_AGGREGATE_AND_PROOF,
             compute_epoch_at_slot(aggregateAndProof.getAggregate().getData().getSlot()),
@@ -180,11 +185,11 @@ public class SignedAggregateAndProofValidator {
   }
 
   private boolean isSelectionProofValid(
-      final UnsignedLong aggregateSlot,
+      final UInt64 aggregateSlot,
       final BeaconState state,
       final BLSPublicKey aggregatorPublicKey,
       final BLSSignature selectionProof) {
-    final Bytes domain =
+    final Bytes32 domain =
         get_domain(
             DOMAIN_SELECTION_PROOF,
             compute_epoch_at_slot(aggregateSlot),
@@ -195,10 +200,10 @@ public class SignedAggregateAndProofValidator {
   }
 
   private static class AggregatorIndexAndEpoch {
-    private final UnsignedLong aggregatorIndex;
-    private final UnsignedLong epoch;
+    private final UInt64 aggregatorIndex;
+    private final UInt64 epoch;
 
-    private AggregatorIndexAndEpoch(final UnsignedLong aggregatorIndex, final UnsignedLong epoch) {
+    private AggregatorIndexAndEpoch(final UInt64 aggregatorIndex, final UInt64 epoch) {
       this.aggregatorIndex = aggregatorIndex;
       this.epoch = epoch;
     }

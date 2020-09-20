@@ -13,23 +13,19 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import com.google.common.base.MoreObjects;
-import com.google.common.primitives.UnsignedLong;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class PeerStatus {
-  private static final PeerStatus PREGENESIS_STATUS = createPreGenesisStatus();
-
   private final Bytes4 forkDigest;
   private final Checkpoint finalizedCheckpoint;
   private final Bytes32 headRoot;
-  private final UnsignedLong headSlot;
+  private final UInt64 headSlot;
 
   public static PeerStatus fromStatusMessage(final StatusMessage message) {
     return new PeerStatus(
@@ -40,21 +36,12 @@ public class PeerStatus {
         message.getHeadSlot());
   }
 
-  public static PeerStatus createPreGenesisStatus() {
-    return fromStatusMessage(StatusMessage.createPreGenesisStatus());
-  }
-
-  public static boolean isPreGenesisStatus(final PeerStatus status) {
-    checkNotNull(status);
-    return Objects.equals(status, PREGENESIS_STATUS);
-  }
-
-  PeerStatus(
+  public PeerStatus(
       final Bytes4 forkDigest,
       final Bytes32 finalizedRoot,
-      final UnsignedLong finalizedEpoch,
+      final UInt64 finalizedEpoch,
       final Bytes32 headRoot,
-      final UnsignedLong headSlot) {
+      final UInt64 headSlot) {
     this.forkDigest = forkDigest;
     this.finalizedCheckpoint = new Checkpoint(finalizedEpoch, finalizedRoot);
     this.headRoot = headRoot;
@@ -73,7 +60,7 @@ public class PeerStatus {
     return finalizedCheckpoint;
   }
 
-  public UnsignedLong getFinalizedEpoch() {
+  public UInt64 getFinalizedEpoch() {
     return finalizedCheckpoint.getEpoch();
   }
 
@@ -81,7 +68,7 @@ public class PeerStatus {
     return headRoot;
   }
 
-  public UnsignedLong getHeadSlot() {
+  public UInt64 getHeadSlot() {
     return headSlot;
   }
 

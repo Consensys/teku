@@ -31,7 +31,6 @@ import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
 
 public class StorageService extends Service {
   private volatile ChainStorage chainStorage;
-  private volatile DepositStorage depositStorage;
   private volatile ProtoArrayStorage protoArrayStorage;
   private final ServiceConfig serviceConfig;
   private volatile Database database;
@@ -50,11 +49,12 @@ public class StorageService extends Service {
                   serviceConfig.getConfig().getDataPath(),
                   serviceConfig.getConfig().getDataStorageMode(),
                   serviceConfig.getConfig().getDataStorageCreateDbVersion(),
-                  serviceConfig.getConfig().getDataStorageFrequency());
+                  serviceConfig.getConfig().getDataStorageFrequency(),
+                  serviceConfig.getConfig().getEth1DepositContractAddress());
           database = dbFactory.createDatabase();
 
           chainStorage = ChainStorage.create(serviceConfig.getEventBus(), database);
-          depositStorage =
+          final DepositStorage depositStorage =
               DepositStorage.create(
                   serviceConfig.getEventChannels().getPublisher(Eth1EventsChannel.class),
                   database,
@@ -71,7 +71,6 @@ public class StorageService extends Service {
                   StorageQueryChannel.class, chainStorage, STORAGE_QUERY_CHANNEL_PARALLELISM);
 
           chainStorage.start();
-          depositStorage.start();
         });
   }
 
@@ -80,7 +79,6 @@ public class StorageService extends Service {
     return SafeFuture.fromRunnable(
         () -> {
           chainStorage.stop();
-          depositStorage.stop();
           database.close();
         });
   }

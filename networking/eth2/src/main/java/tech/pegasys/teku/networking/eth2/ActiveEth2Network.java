@@ -20,6 +20,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
@@ -33,6 +35,7 @@ import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.AttestationGossipManager;
@@ -61,7 +64,9 @@ import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements Eth2Network {
+  private static final Logger LOG = LogManager.getLogger();
 
+  private final AsyncRunner asyncRunner;
   private final MetricsSystem metricsSystem;
   private final DiscoveryNetwork<?> discoveryNetwork;
   private final Eth2PeerManager peerManager;
@@ -92,6 +97,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private final GossipedOperationConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
 
   public ActiveEth2Network(
+      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final DiscoveryNetwork<?> discoveryNetwork,
       final Eth2PeerManager peerManager,
@@ -107,6 +113,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
       final VerifiedBlockAttestationsSubscriptionProvider
           verifiedBlockAttestationsSubscriptionProvider) {
     super(discoveryNetwork);
+    this.asyncRunner = asyncRunner;
     this.metricsSystem = metricsSystem;
     this.discoveryNetwork = discoveryNetwork;
     this.peerManager = peerManager;
@@ -161,6 +168,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
+            asyncRunner,
             discoveryNetwork,
             gossipEncoding,
             attestationValidator,
@@ -169,13 +177,14 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
     blockGossipManager =
         new BlockGossipManager(
-            discoveryNetwork, gossipEncoding, forkInfo, blockValidator, eventBus);
+            asyncRunner, discoveryNetwork, gossipEncoding, forkInfo, blockValidator, eventBus);
 
     attestationGossipManager =
         new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
 
     aggregateGossipManager =
         new AggregateGossipManager(
+            asyncRunner,
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
@@ -184,6 +193,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
     voluntaryExitGossipManager =
         new VoluntaryExitGossipManager(
+            asyncRunner,
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
@@ -192,6 +202,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
     proposerSlashingGossipManager =
         new ProposerSlashingGossipManager(
+            asyncRunner,
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
@@ -200,6 +211,7 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
     attesterSlashingGossipManager =
         new AttesterSlashingGossipManager(
+            asyncRunner,
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
@@ -225,9 +237,9 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   }
 
   @Override
-  public synchronized void stop() {
+  public synchronized SafeFuture<?> stop() {
     if (!state.compareAndSet(State.RUNNING, State.STOPPED)) {
-      return;
+      return SafeFuture.COMPLETE;
     }
     blockGossipManager.shutdown();
     attestationGossipManager.shutdown();
@@ -236,7 +248,14 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
     proposerSlashingGossipManager.shutdown();
     attesterSlashingGossipManager.shutdown();
     attestationSubnetService.unsubscribe(discoveryNetworkAttestationSubnetsSubscription);
-    super.stop();
+    return peerManager
+        .sendGoodbyeToPeers()
+        .exceptionally(
+            error -> {
+              LOG.debug("Failed to send goodbye to peers on shutdown", error);
+              return null;
+            })
+        .thenCompose(__ -> super.stop());
   }
 
   @Override
@@ -251,8 +270,6 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
 
   @Override
   public int getPeerCount() {
-    // TODO (#2403): look into keep separate collections for pending peers / validated peers so
-    // we don't have to iterate over the peer list to get this count.
     return Math.toIntExact(streamPeers().count());
   }
 

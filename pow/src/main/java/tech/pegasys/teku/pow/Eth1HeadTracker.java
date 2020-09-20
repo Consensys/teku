@@ -13,10 +13,9 @@
 
 package tech.pegasys.teku.pow;
 
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.util.config.Constants.ETH1_FOLLOW_DISTANCE;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,15 +23,16 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.EthBlock.Block;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.events.Subscribers;
 
 public class Eth1HeadTracker {
   private static final Logger LOG = LogManager.getLogger();
   private final AtomicBoolean running = new AtomicBoolean(false);
   private final AsyncRunner asyncRunner;
   private final Eth1Provider eth1Provider;
-  private Optional<UnsignedLong> headAtFollowDistance = Optional.empty();
+  private Optional<UInt64> headAtFollowDistance = Optional.empty();
   private final AtomicBoolean reachedHead = new AtomicBoolean(false);
 
   private final Subscribers<HeadUpdatedSubscriber> subscribers = Subscribers.create(true);
@@ -75,12 +75,12 @@ public class Eth1HeadTracker {
   }
 
   private void onLatestBlockHead(final Block headBlock) {
-    final UnsignedLong headBlockNumber = UnsignedLong.valueOf(headBlock.getNumber());
+    final UInt64 headBlockNumber = UInt64.valueOf(headBlock.getNumber());
     if (headBlockNumber.compareTo(ETH1_FOLLOW_DISTANCE) < 0) {
       LOG.debug("Not processing Eth1 blocks because chain has not reached minimum follow distance");
       return;
     }
-    final UnsignedLong newHeadAtFollowDistance = headBlockNumber.minus(ETH1_FOLLOW_DISTANCE);
+    final UInt64 newHeadAtFollowDistance = headBlockNumber.minus(ETH1_FOLLOW_DISTANCE);
     if (headAtFollowDistance
         .map(current -> current.compareTo(newHeadAtFollowDistance) < 0)
         .orElse(true)) {
@@ -107,6 +107,6 @@ public class Eth1HeadTracker {
   }
 
   public interface HeadUpdatedSubscriber {
-    void onHeadUpdated(final UnsignedLong canonicalHead);
+    void onHeadUpdated(final UInt64 canonicalHead);
   }
 }

@@ -16,6 +16,11 @@ package tech.pegasys.teku.services.powchain;
 import static tech.pegasys.teku.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
 import static tech.pegasys.teku.util.config.Constants.MAXIMUM_CONCURRENT_ETH1_REQUESTS;
 
+import java.util.concurrent.TimeUnit;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.http.HttpService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -30,27 +35,28 @@ import tech.pegasys.teku.pow.Eth1HeadTracker;
 import tech.pegasys.teku.pow.Eth1Provider;
 import tech.pegasys.teku.pow.MinimumGenesisTimeBlockFinder;
 import tech.pegasys.teku.pow.ThrottlingEth1Provider;
+import tech.pegasys.teku.pow.ValidatingEth1EventsPublisher;
 import tech.pegasys.teku.pow.Web3jEth1Provider;
 import tech.pegasys.teku.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.util.cli.VersionProvider;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class PowchainService extends Service {
+
+  private static final Logger LOG = LogManager.getLogger();
 
   private final Eth1DepositManager eth1DepositManager;
   private final Eth1HeadTracker headTracker;
 
   public PowchainService(final ServiceConfig config) {
-    TekuConfiguration tekuConfig = config.getConfig();
+    GlobalConfiguration tekuConfig = config.getConfig();
 
     AsyncRunner asyncRunner = config.createAsyncRunner("powchain");
 
-    final HttpService web3jService = new HttpService(tekuConfig.getEth1Endpoint());
-    web3jService.addHeader("User-Agent", VersionProvider.VERSION);
-    Web3j web3j = Web3j.build(web3jService);
+    Web3j web3j = createWeb3j(tekuConfig);
 
     final Eth1Provider eth1Provider =
         new ThrottlingEth1Provider(
@@ -62,13 +68,14 @@ public class PowchainService extends Service {
         DepositContractAccessor.create(
             eth1Provider, web3j, config.getConfig().getEth1DepositContractAddress().toHexString());
 
-    final Eth1EventsChannel eth1EventsChannel =
-        config.getEventChannels().getPublisher(Eth1EventsChannel.class);
+    final ValidatingEth1EventsPublisher eth1EventsPublisher =
+        new ValidatingEth1EventsPublisher(
+            config.getEventChannels().getPublisher(Eth1EventsChannel.class));
     final Eth1DepositStorageChannel eth1DepositStorageChannel =
         config.getEventChannels().getPublisher(Eth1DepositStorageChannel.class, asyncRunner);
     final Eth1BlockFetcher eth1BlockFetcher =
         new Eth1BlockFetcher(
-            eth1EventsChannel,
+            eth1EventsPublisher,
             eth1Provider,
             config.getTimeProvider(),
             calculateEth1DataCacheDurationPriorToCurrentTime());
@@ -76,7 +83,7 @@ public class PowchainService extends Service {
     final DepositFetcher depositFetcher =
         new DepositFetcher(
             eth1Provider,
-            eth1EventsChannel,
+            eth1EventsPublisher,
             depositContractAccessor.getContract(),
             eth1BlockFetcher,
             asyncRunner);
@@ -85,7 +92,7 @@ public class PowchainService extends Service {
     final DepositProcessingController depositProcessingController =
         new DepositProcessingController(
             eth1Provider,
-            eth1EventsChannel,
+            eth1EventsPublisher,
             asyncRunner,
             depositFetcher,
             eth1BlockFetcher,
@@ -95,10 +102,30 @@ public class PowchainService extends Service {
         new Eth1DepositManager(
             eth1Provider,
             asyncRunner,
-            eth1EventsChannel,
+            eth1EventsPublisher,
             eth1DepositStorageChannel,
             depositProcessingController,
             new MinimumGenesisTimeBlockFinder(eth1Provider));
+  }
+
+  private Web3j createWeb3j(final GlobalConfiguration tekuConfig) {
+    final HttpService web3jService =
+        new HttpService(tekuConfig.getEth1Endpoint(), createOkHttpClient());
+    web3jService.addHeader("User-Agent", VersionProvider.VERSION);
+    return Web3j.build(web3jService);
+  }
+
+  private static OkHttpClient createOkHttpClient() {
+    final OkHttpClient.Builder builder =
+        new OkHttpClient.Builder()
+            // Increased read timeout allows ETH1 nodes time to process large log requests
+            .readTimeout(1, TimeUnit.MINUTES);
+    if (LOG.isTraceEnabled()) {
+      HttpLoggingInterceptor logging = new HttpLoggingInterceptor(LOG::trace);
+      logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+      builder.addInterceptor(logging);
+    }
+    return builder.build();
   }
 
   @Override

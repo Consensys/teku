@@ -13,7 +13,8 @@
 
 package tech.pegasys.teku.storage.client;
 
-import static tech.pegasys.teku.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
@@ -21,8 +22,12 @@ import com.google.common.eventbus.EventBus;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import java.util.concurrent.TimeoutException;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
@@ -31,14 +36,20 @@ import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.store.StoreBuilder;
+import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.util.config.Constants;
 
 public class StorageBackedRecentChainData extends RecentChainData {
+  private static final Logger LOG = LogManager.getLogger();
   private final BlockProvider blockProvider;
+  private final StateAndBlockProvider stateProvider;
   private final StorageQueryChannel storageQueryChannel;
+  private final StoreConfig storeConfig;
 
   public StorageBackedRecentChainData(
+      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
+      final StoreConfig storeConfig,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
@@ -46,20 +57,26 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final ReorgEventChannel reorgEventChannel,
       final EventBus eventBus) {
     super(
+        asyncRunner,
         metricsSystem,
+        storeConfig,
         storageQueryChannel::getHotBlocksByRoot,
+        storageQueryChannel::getHotBlockAndStateByBlockRoot,
         storageUpdateChannel,
         protoArrayStorageChannel,
         finalizedCheckpointChannel,
         reorgEventChannel,
         eventBus);
+    this.storeConfig = storeConfig;
     this.storageQueryChannel = storageQueryChannel;
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
+    this.stateProvider = storageQueryChannel::getHotBlockAndStateByBlockRoot;
     eventBus.register(this);
   }
 
   public static SafeFuture<RecentChainData> create(
       final MetricsSystem metricsSystem,
+      final StoreConfig storeConfig,
       final AsyncRunner asyncRunner,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
@@ -69,7 +86,9 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final EventBus eventBus) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
+            asyncRunner,
             metricsSystem,
+            storeConfig,
             storageQueryChannel,
             storageUpdateChannel,
             protoArrayStorageChannel,
@@ -82,7 +101,9 @@ public class StorageBackedRecentChainData extends RecentChainData {
 
   @VisibleForTesting
   public static RecentChainData createImmediately(
+      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
+      final StoreConfig storeConfig,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
@@ -91,7 +112,9 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final EventBus eventBus) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
+            asyncRunner,
             metricsSystem,
+            storeConfig,
             storageQueryChannel,
             storageUpdateChannel,
             protoArrayStorageChannel,
@@ -115,13 +138,25 @@ public class StorageBackedRecentChainData extends RecentChainData {
 
   private SafeFuture<RecentChainData> processStoreFuture(
       SafeFuture<Optional<StoreBuilder>> storeFuture) {
-    return storeFuture.thenApply(
-        maybeStore -> {
-          maybeStore
-              .map(builder -> builder.blockProvider(blockProvider).build())
-              .ifPresent(this::setStore);
-          STATUS_LOG.finishInitializingChainData();
-          return this;
+    return storeFuture.thenCompose(
+        maybeStoreBuilder -> {
+          if (maybeStoreBuilder.isEmpty()) {
+            STATUS_LOG.finishInitializingChainData();
+            return completedFuture(this);
+          }
+          return maybeStoreBuilder
+              .get()
+              .asyncRunner(asyncRunner)
+              .blockProvider(blockProvider)
+              .stateProvider(stateProvider)
+              .storeConfig(storeConfig)
+              .build()
+              .thenApply(
+                  store -> {
+                    setStore(store);
+                    STATUS_LOG.finishInitializingChainData();
+                    return this;
+                  });
         });
   }
 
@@ -135,13 +170,15 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final AsyncRunner asyncRunner) {
     return requestInitialStore()
         .exceptionallyCompose(
-            err -> {
+            (err) -> {
               if (Throwables.getRootCause(err) instanceof TimeoutException) {
+                LOG.trace("Storage initialization timed out, will retry.");
                 return asyncRunner.runAfterDelay(
                     () -> requestInitialStoreWithRetry(asyncRunner),
                     Constants.STORAGE_REQUEST_TIMEOUT,
                     TimeUnit.SECONDS);
               } else {
+                STATUS_LOG.fatalErrorInitialisingStorage(err);
                 return SafeFuture.failedFuture(err);
               }
             });

@@ -13,22 +13,22 @@
 
 package tech.pegasys.teku.datastructures.networking.libp2p.rpc;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.ssz.SSZ;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
 public final class BeaconBlocksByRangeRequestMessage
     implements RpcRequest, SimpleOffsetSerializable, SSZContainer {
-  private final UnsignedLong startSlot;
-  private final UnsignedLong count;
-  private final UnsignedLong step;
+  private final UInt64 startSlot;
+  private final UInt64 count;
+  private final UInt64 step;
 
   public BeaconBlocksByRangeRequestMessage(
-      final UnsignedLong startSlot, final UnsignedLong count, final UnsignedLong step) {
+      final UInt64 startSlot, final UInt64 count, final UInt64 step) {
     this.startSlot = startSlot;
     this.count = count;
     this.step = step;
@@ -47,15 +47,15 @@ public final class BeaconBlocksByRangeRequestMessage
         SSZ.encodeUInt64(step.longValue()));
   }
 
-  public UnsignedLong getStartSlot() {
+  public UInt64 getStartSlot() {
     return startSlot;
   }
 
-  public UnsignedLong getCount() {
+  public UInt64 getCount() {
     return count;
   }
 
-  public UnsignedLong getStep() {
+  public UInt64 getStep() {
     return step;
   }
 

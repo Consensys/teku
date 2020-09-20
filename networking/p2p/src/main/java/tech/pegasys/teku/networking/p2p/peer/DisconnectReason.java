@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.networking.p2p.peer;
 
-import com.google.common.primitives.UnsignedLong;
 import java.util.Optional;
 import java.util.stream.Stream;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.GoodbyeMessage;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public enum DisconnectReason {
   IRRELEVANT_NETWORK(GoodbyeMessage.REASON_IRRELEVANT_NETWORK, true),
@@ -24,23 +24,24 @@ public enum DisconnectReason {
   TOO_MANY_PEERS(GoodbyeMessage.REASON_TOO_MANY_PEERS, false),
   REMOTE_FAULT(GoodbyeMessage.REASON_FAULT_ERROR, false),
   UNRESPONSIVE(GoodbyeMessage.REASON_FAULT_ERROR, false),
-  SHUTTING_DOWN(GoodbyeMessage.REASON_CLIENT_SHUT_DOWN, false);
+  SHUTTING_DOWN(GoodbyeMessage.REASON_CLIENT_SHUT_DOWN, false),
+  RATE_LIMITING(GoodbyeMessage.REASON_RATE_LIMITING, false);
 
-  private final UnsignedLong reasonCode;
+  private final UInt64 reasonCode;
   private final boolean isPermanent;
 
-  DisconnectReason(final UnsignedLong reasonCode, final boolean isPermanent) {
+  DisconnectReason(final UInt64 reasonCode, final boolean isPermanent) {
     this.reasonCode = reasonCode;
     this.isPermanent = isPermanent;
   }
 
-  public static Optional<DisconnectReason> fromReasonCode(final UnsignedLong reasonCode) {
+  public static Optional<DisconnectReason> fromReasonCode(final UInt64 reasonCode) {
     return Stream.of(values())
         .filter(reason -> reason.getReasonCode().equals(reasonCode))
         .findAny();
   }
 
-  public UnsignedLong getReasonCode() {
+  public UInt64 getReasonCode() {
     return reasonCode;
   }
 

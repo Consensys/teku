@@ -16,8 +16,8 @@ package tech.pegasys.teku.validator.client.metrics;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.metrics.StubMetricsSystem;
-import tech.pegasys.teku.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.validator.client.metrics.BeaconChainRequestCounter.RequestOutcome;
 
 class BeaconChainRequestCounterTest {

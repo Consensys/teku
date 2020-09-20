@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Collections;
-import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 
 public abstract class PublicKeyTest {
@@ -34,7 +34,7 @@ public abstract class PublicKeyTest {
     final PublicKey key =
         getBls()
             .publicKeyFromCompressed(
-                Bytes.fromHexString(
+                Bytes48.fromHexString(
                     "0x81283b7a20e1ca460ebd9bbd77005d557370cabb1f9a44f530c4c4c66230f675f8df8b4c2818851aa7d77a80ca5a4a5e"));
     final PublicKey same = getBls().publicKeyFromCompressed(key.toBytesCompressed());
 

@@ -26,12 +26,13 @@ import io.javalin.core.JavalinServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.util.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class BeaconRestApiWithSwaggerTest {
   private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(new EventBus());
@@ -41,16 +42,23 @@ public class BeaconRestApiWithSwaggerTest {
   private final Javalin app = mock(Javalin.class);
   private final SyncService syncService = mock(SyncService.class);
   private final BlockImporter blockImporter = mock(BlockImporter.class);
+  private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private static final Integer THE_PORT = 12345;
 
   @BeforeEach
   public void setup() {
-    TekuConfiguration config =
-        TekuConfiguration.builder().setRestApiPort(THE_PORT).setRestApiDocsEnabled(true).build();
+    GlobalConfiguration config =
+        GlobalConfiguration.builder().setRestApiPort(THE_PORT).setRestApiDocsEnabled(true).build();
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
         new DataProvider(
-            storageClient, combinedChainDataClient, null, syncService, null, blockImporter),
+            storageClient,
+            combinedChainDataClient,
+            null,
+            syncService,
+            null,
+            blockImporter,
+            attestationPool),
         config,
         app);
   }

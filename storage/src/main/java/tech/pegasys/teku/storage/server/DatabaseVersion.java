@@ -17,8 +17,6 @@ import java.util.Optional;
 
 public enum DatabaseVersion {
   NOOP("noop"),
-  V1("1.0"),
-  V2("2.0"),
   V3("3.0"),
   V4("4"),
   V5("5"),
