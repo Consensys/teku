@@ -45,14 +45,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
-public class FsStorage implements AutoCloseable {
+public class SqlStorage implements AutoCloseable {
 
   private final PlatformTransactionManager transactionManager;
   private final HikariDataSource dataSource;
   private final JdbcOperations jdbc;
   private final boolean compress;
 
-  public FsStorage(
+  public SqlStorage(
       PlatformTransactionManager transactionManager,
       final HikariDataSource dataSource,
       final boolean compress) {

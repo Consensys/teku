@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
-public class FsDatabaseFactory {
+public class SqlDatabaseFactory {
 
   public static Database create(
       final Path dbDir,
@@ -42,9 +42,9 @@ public class FsDatabaseFactory {
         new DataSourceTransactionManager(dataSource);
 
     final boolean useSnappyCompression = false;
-    return new FsDatabase(
+    return new SqlDatabase(
         metricsSystem,
-        new FsStorage(transactionManager, dataSource, useSnappyCompression),
+        new SqlStorage(transactionManager, dataSource, useSnappyCompression),
         stateStorageMode,
         UInt64.valueOf(stateStorageFrequency));
   }

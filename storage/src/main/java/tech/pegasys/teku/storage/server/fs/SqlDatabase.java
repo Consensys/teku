@@ -50,15 +50,15 @@ import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
-public class FsDatabase implements Database {
+public class SqlDatabase implements Database {
   private final MetricsSystem metricsSystem;
-  private final FsStorage storage;
+  private final SqlStorage storage;
   private final StateStorageMode stateStorageMode;
   private final UInt64 stateStorageFrequency;
 
-  public FsDatabase(
+  public SqlDatabase(
       final MetricsSystem metricsSystem,
-      final FsStorage storage,
+      final SqlStorage storage,
       final StateStorageMode stateStorageMode,
       final UInt64 stateStorageFrequency) {
     this.metricsSystem = metricsSystem;
@@ -73,7 +73,7 @@ public class FsDatabase implements Database {
     final Checkpoint genesisCheckpoint = genesis.getCheckpoint();
     final BeaconState genesisState = genesis.getState();
     final SignedBeaconBlock genesisBlock = genesis.getBlock();
-    try (final FsStorage.Transaction transaction = storage.startTransaction()) {
+    try (final SqlStorage.Transaction transaction = storage.startTransaction()) {
       transaction.storeJustifiedCheckpoint(genesisCheckpoint);
       transaction.storeBestJustifiedCheckpoint(genesisCheckpoint);
       transaction.storeFinalizedCheckpoint(genesisCheckpoint);
@@ -91,7 +91,7 @@ public class FsDatabase implements Database {
       return;
     }
 
-    try (final FsStorage.Transaction transaction = storage.startTransaction()) {
+    try (final SqlStorage.Transaction transaction = storage.startTransaction()) {
       updateFinalizedData(
           update.getFinalizedChildToParentMap(),
           update.getFinalizedBlocks(),
@@ -131,7 +131,7 @@ public class FsDatabase implements Database {
       Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
       final Map<Bytes32, BeaconState> finalizedStates,
-      final FsStorage.Transaction updater) {
+      final SqlStorage.Transaction updater) {
     if (finalizedChildToParentMap.isEmpty()) {
       // Nothing to do
       return;

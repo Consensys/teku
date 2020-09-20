@@ -20,7 +20,7 @@ public enum DatabaseVersion {
   V3("3.0"),
   V4("4"),
   V5("5"),
-  FS1("fs1");
+  SQL1("sql1");
 
   public static final DatabaseVersion DEFAULT_VERSION = DatabaseVersion.V5;
   private String value;
