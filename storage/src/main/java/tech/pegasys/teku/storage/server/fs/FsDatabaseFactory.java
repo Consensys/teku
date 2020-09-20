@@ -31,13 +31,6 @@ public class FsDatabaseFactory {
       final long stateStorageFrequency,
       final MetricsSystem metricsSystem) {
     final HikariDataSource dataSource = new HikariDataSource();
-    //    dataSource.setJdbcUrl(
-    //        "jdbc:h2:file:" + dbDir.resolve("index").toAbsolutePath() + ";mode=MySQL");
-
-    //    dataSource.setJdbcUrl(
-    //        "jdbc:hsqldb:file:" + dbDir.resolve("index").toAbsolutePath() + ";sql.syntax_mys=true"
-    //    );
-
     dataSource.setJdbcUrl("jdbc:sqlite:" + dbDir.resolve("index").toAbsolutePath() + "");
 
     final Flyway flyway = Flyway.configure().dataSource(dataSource).load();

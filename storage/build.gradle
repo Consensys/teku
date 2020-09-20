@@ -22,12 +22,10 @@ dependencies {
   implementation 'org.hyperledger.besu.internal:metrics-core'
   implementation 'org.hyperledger.besu:plugin-api'
   implementation 'org.rocksdb:rocksdbjni'
-  implementation 'com.h2database:h2'
   implementation 'org.springframework:spring-jdbc'
   implementation 'org.flywaydb:flyway-core'
   implementation 'com.zaxxer:HikariCP'
   implementation 'org.xerial.snappy:snappy-java'
-  implementation 'org.hsqldb:hsqldb'
   implementation 'org.xerial:sqlite-jdbc'
 
   testImplementation testFixtures(project(':bls'))
