@@ -13,11 +13,8 @@
 
 package tech.pegasys.teku.storage.server.fs;
 
-import com.google.common.io.ByteStreams;
-import com.google.common.primitives.UnsignedLong;
 import com.zaxxer.hikari.HikariDataSource;
 import java.io.IOException;
-import java.sql.Blob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -44,6 +41,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
@@ -83,7 +81,7 @@ public class FsStorage implements AutoCloseable {
   private Optional<Checkpoint> getCheckpoint(final CheckpointType type) {
     return loadSingle(
         "SELECT * FROM checkpoint WHERE type = ?",
-        (rs, rowNum) -> new Checkpoint(getUnsignedLong(rs, "epoch"), getBytes32(rs, "blockRoot")),
+        (rs, rowNum) -> new Checkpoint(getUInt64(rs, "epoch"), getBytes32(rs, "blockRoot")),
         type.name());
   }
 
@@ -104,17 +102,16 @@ public class FsStorage implements AutoCloseable {
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot) {
     return loadSingle(
         "SELECT blockRoot, slot FROM state WHERE stateRoot = ?",
-        (rs, rowNum) ->
-            new SlotAndBlockRoot(getUnsignedLong(rs, "slot"), getBytes32(rs, "blockRoot")),
+        (rs, rowNum) -> new SlotAndBlockRoot(getUInt64(rs, "slot"), getBytes32(rs, "blockRoot")),
         (Object) stateRoot.toArrayUnsafe());
   }
 
   public Optional<BeaconState> getLatestFinalizedState() {
-    return loadSingle("SELECT ssz FROM finalized_state",
-        (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class));
+    return loadSingle(
+        "SELECT ssz FROM finalized_state", (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class));
   }
 
-  public Optional<BeaconState> getLatestAvailableFinalizedState(final UnsignedLong maxSlot) {
+  public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     return loadSingle(
         "SELECT ssz FROM state WHERE slot <= ? AND ssz IS NOT NULL ORDER BY slot DESC LIMIT 1",
         (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class),
@@ -128,31 +125,27 @@ public class FsStorage implements AutoCloseable {
         (Object) blockRoot.toArrayUnsafe());
   }
 
-  private <T> T getSsz(final ResultSet rs, final Class<? extends T> type)
-      throws SQLException {
-    final Blob blob = rs.getBlob("ssz");
-    if (blob == null) {
+  private <T> T getSsz(final ResultSet rs, final Class<? extends T> type) throws SQLException {
+    final byte[] rawData = rs.getBytes("ssz");
+    if (rawData == null) {
       return null;
     }
     try {
-      final byte[] rawData = ByteStreams.toByteArray(blob.getBinaryStream());
       final Bytes data = Bytes.wrap(compress ? Snappy.uncompress(rawData) : rawData);
       return SimpleOffsetSerializer.deserialize(data, type);
     } catch (IOException e) {
       throw new SQLException("Failed to read BLOB content", e);
-    } finally {
-      blob.free();
     }
   }
 
-  public Optional<SignedBeaconBlock> getFinalizedBlockBySlot(final UnsignedLong slot) {
+  public Optional<SignedBeaconBlock> getFinalizedBlockBySlot(final UInt64 slot) {
     return loadSingle(
         "SELECT blockRoot FROM block WHERE slot = ? AND finalized = true",
         (rs, rowNum) -> getSsz(rs, SignedBeaconBlock.class),
         slot.bigIntegerValue());
   }
 
-  public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UnsignedLong slot) {
+  public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     return loadSingle(
         "SELECT ssz FROM block WHERE slot <= ? AND finalized = true ORDER BY slot DESC LIMIT 1",
         (rs, rowNum) -> getSsz(rs, SignedBeaconBlock.class),
@@ -160,7 +153,7 @@ public class FsStorage implements AutoCloseable {
   }
 
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
-      final UnsignedLong startSlot, final UnsignedLong endSlot) {
+      final UInt64 startSlot, final UInt64 endSlot) {
     final List<Bytes32> blockRoots =
         jdbc.query(
             "SELECT blockRoot FROM block WHERE finalized = true AND slot >= ? AND slot <= endSlot ORDER BY slot",
@@ -178,17 +171,17 @@ public class FsStorage implements AutoCloseable {
     return childToParentLookup;
   }
 
-  public Map<UnsignedLong, VoteTracker> loadVotes() {
-    final Map<UnsignedLong, VoteTracker> votes = new HashMap<>();
+  public Map<UInt64, VoteTracker> loadVotes() {
+    final Map<UInt64, VoteTracker> votes = new HashMap<>();
     loadForEach(
         "SELECT validatorIndex, currentRoot, nextRoot, nextEpoch from vote",
         rs ->
             votes.put(
-                getUnsignedLong(rs, "validatorIndex"),
+                getUInt64(rs, "validatorIndex"),
                 new VoteTracker(
                     getBytes32(rs, "currentRoot"),
                     getBytes32(rs, "nextRoot"),
-                    getUnsignedLong(rs, "nextEpoch"))));
+                    getUInt64(rs, "nextEpoch"))));
     return votes;
   }
 
@@ -211,8 +204,8 @@ public class FsStorage implements AutoCloseable {
     jdbc.query(sql, rowHandler, params);
   }
 
-  private UnsignedLong getUnsignedLong(final ResultSet rs, final String field) throws SQLException {
-    return UnsignedLong.valueOf(rs.getBigDecimal(field).toBigIntegerExact());
+  private UInt64 getUInt64(final ResultSet rs, final String field) throws SQLException {
+    return UInt64.valueOf(rs.getBigDecimal(field).toBigIntegerExact());
   }
 
   private Bytes32 getBytes32(final ResultSet rs, final String field) throws SQLException {
@@ -243,7 +236,7 @@ public class FsStorage implements AutoCloseable {
     private void setCheckpoint(final CheckpointType type, final Checkpoint checkpoint) {
       execSql(
           "INSERT INTO checkpoint (type, blockRoot, epoch) VALUES (?, ?, ?)"
-              + " ON DUPLICATE KEY UPDATE blockRoot = VALUES(blockRoot), epoch = VALUES(epoch)",
+              + " ON CONFLICT(type) DO UPDATE SET blockRoot = excluded.blockRoot, epoch = excluded.epoch",
           type.name(),
           checkpoint.getRoot().toArrayUnsafe(),
           checkpoint.getEpoch().bigIntegerValue());
@@ -252,7 +245,7 @@ public class FsStorage implements AutoCloseable {
     public void storeBlock(final SignedBeaconBlock block, final boolean finalized) {
       execSql(
           "INSERT INTO block (blockRoot, slot, parentRoot, finalized, ssz) VALUES (?, ?, ?, ?, ?) "
-              + " ON DUPLICATE KEY UPDATE finalized = VALUES(finalized)",
+              + " ON CONFLICT(blockRoot) DO UPDATE SET finalized = excluded.finalized",
           block.getRoot().toArrayUnsafe(),
           block.getSlot().bigIntegerValue(),
           block.getParent_root().toArrayUnsafe(),
@@ -281,7 +274,7 @@ public class FsStorage implements AutoCloseable {
     public void storeState(final Bytes32 blockRoot, final BeaconState state) {
       execSql(
           "INSERT INTO state (stateRoot, blockRoot, slot, ssz) VALUES (?, ?, ?, ?)"
-              + " ON DUPLICATE KEY UPDATE ssz = VALUES(ssz)",
+              + " ON CONFLICT(stateRoot) DO UPDATE SET ssz = excluded.ssz",
           state.hash_tree_root().toArrayUnsafe(),
           blockRoot.toArrayUnsafe(),
           state.getSlot().bigIntegerValue(),
@@ -290,7 +283,8 @@ public class FsStorage implements AutoCloseable {
 
     public void storeLatestFinalizedState(final BeaconState state) {
       execSql(
-          "INSERT INTO finalized_state (id, ssz) VALUES (1, ?) ON DUPLICATE KEY UPDATE ssz = VALUES(ssz)",
+          "INSERT INTO finalized_state (id, ssz) VALUES (1, ?) "
+              + "ON CONFLICT(id) DO UPDATE SET ssz = excluded.ssz",
           serializeSsz(state));
     }
 
@@ -298,14 +292,15 @@ public class FsStorage implements AutoCloseable {
       execSql("DELETE FROM state WHERE blockRoot = ?", (Object) blockRoot.toArrayUnsafe());
     }
 
-    public void storeVotes(final Map<UnsignedLong, VoteTracker> votes) {
+    public void storeVotes(final Map<UInt64, VoteTracker> votes) {
       votes.forEach(
           (validatorIndex, voteTracker) ->
               execSql(
                   "INSERT INTO vote (validatorIndex, currentRoot, nextRoot, nextEpoch) VALUES (?, ?, ?, ?)"
-                      + " ON DUPLICATE KEY UPDATE currentRoot = VALUES(currentRoot),"
-                      + "                     nextRoot = VALUES(nextRoot),"
-                      + "                     nextEpoch = VALUES(nextEpoch)",
+                      + " ON CONFLICT(validatorIndex) DO UPDATE SET"
+                      + "                     currentRoot = excluded.currentRoot,"
+                      + "                     nextRoot = excluded.nextRoot,"
+                      + "                     nextEpoch = excluded.nextEpoch",
                   validatorIndex.bigIntegerValue(),
                   voteTracker.getCurrentRoot().toArrayUnsafe(),
                   voteTracker.getNextRoot().toArrayUnsafe(),

@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.storage.server.fs;
 
-import com.google.common.primitives.UnsignedLong;
 import com.zaxxer.hikari.HikariDataSource;
 import java.nio.file.Path;
 import org.flywaydb.core.Flyway;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -31,12 +31,14 @@ public class FsDatabaseFactory {
       final long stateStorageFrequency,
       final MetricsSystem metricsSystem) {
     final HikariDataSource dataSource = new HikariDataSource();
-//    dataSource.setJdbcUrl(
-//        "jdbc:h2:file:" + dbDir.resolve("index").toAbsolutePath() + ";mode=MySQL");
+    //    dataSource.setJdbcUrl(
+    //        "jdbc:h2:file:" + dbDir.resolve("index").toAbsolutePath() + ";mode=MySQL");
 
-    dataSource.setJdbcUrl(
-        "jdbc:hsqldb:file:" + dbDir.resolve("index").toAbsolutePath() + ";sql.syntax_mys=true"
-    );
+    //    dataSource.setJdbcUrl(
+    //        "jdbc:hsqldb:file:" + dbDir.resolve("index").toAbsolutePath() + ";sql.syntax_mys=true"
+    //    );
+
+    dataSource.setJdbcUrl("jdbc:sqlite:" + dbDir.resolve("index").toAbsolutePath() + "");
 
     final Flyway flyway = Flyway.configure().dataSource(dataSource).load();
 
@@ -51,6 +53,6 @@ public class FsDatabaseFactory {
         metricsSystem,
         new FsStorage(transactionManager, dataSource, useSnappyCompression),
         stateStorageMode,
-        UnsignedLong.valueOf(stateStorageFrequency));
+        UInt64.valueOf(stateStorageFrequency));
   }
 }

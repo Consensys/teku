@@ -28,6 +28,7 @@ dependencies {
   implementation 'com.zaxxer:HikariCP'
   implementation 'org.xerial.snappy:snappy-java'
   implementation 'org.hsqldb:hsqldb'
+  implementation 'org.xerial:sqlite-jdbc'
 
   testImplementation testFixtures(project(':bls'))
   testImplementation testFixtures(project(':infrastructure:metrics'))

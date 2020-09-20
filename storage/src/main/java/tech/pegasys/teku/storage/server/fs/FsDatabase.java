@@ -16,9 +16,9 @@ package tech.pegasys.teku.storage.server.fs;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-import com.google.common.primitives.UnsignedLong;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,11 +39,13 @@ import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
+import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -52,13 +54,13 @@ public class FsDatabase implements Database {
   private final MetricsSystem metricsSystem;
   private final FsStorage storage;
   private final StateStorageMode stateStorageMode;
-  private final UnsignedLong stateStorageFrequency;
+  private final UInt64 stateStorageFrequency;
 
   public FsDatabase(
       final MetricsSystem metricsSystem,
       final FsStorage storage,
       final StateStorageMode stateStorageMode,
-      final UnsignedLong stateStorageFrequency) {
+      final UInt64 stateStorageFrequency) {
     this.metricsSystem = metricsSystem;
     this.storage = storage;
     this.stateStorageMode = stateStorageMode;
@@ -120,6 +122,11 @@ public class FsDatabase implements Database {
     }
   }
 
+  @Override
+  public void updateWeakSubjectivityState(final WeakSubjectivityUpdate weakSubjectivityUpdate) {
+    // TODO: Implement this
+  }
+
   private void updateFinalizedData(
       Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
@@ -145,7 +152,7 @@ public class FsDatabase implements Database {
                 .childAndParentRoots(finalizedChildToParentMap)
                 .build();
 
-        final AtomicReference<UnsignedLong> lastStateStoredSlot =
+        final AtomicReference<UInt64> lastStateStoredSlot =
             new AtomicReference<>(baseBlock.getSlot());
 
         final StateGenerator stateGenerator =
@@ -156,8 +163,7 @@ public class FsDatabase implements Database {
                 (block, state) -> {
                   updater.finalizeBlock(block);
 
-                  UnsignedLong nextStorageSlot =
-                      lastStateStoredSlot.get().plus(stateStorageFrequency);
+                  UInt64 nextStorageSlot = lastStateStoredSlot.get().plus(stateStorageFrequency);
                   if (state.getSlot().compareTo(nextStorageSlot) >= 0) {
                     updater.storeState(block.getRoot(), state);
                     lastStateStoredSlot.set(state.getSlot());
@@ -207,12 +213,12 @@ public class FsDatabase implements Database {
     final Map<Bytes32, Bytes32> childToParentLookup = storage.getHotBlockChildToParentLookup();
     childToParentLookup.put(finalizedBlock.getRoot(), finalizedBlock.getParent_root());
 
-    final Map<UnsignedLong, VoteTracker> votes = storage.loadVotes();
+    final Map<UInt64, VoteTracker> votes = storage.loadVotes();
 
     return Optional.of(
         StoreBuilder.create()
             .metricsSystem(metricsSystem)
-            .time(UnsignedLong.valueOf(Instant.now().getEpochSecond()))
+            .time(UInt64.valueOf(Instant.now().getEpochSecond()))
             .genesisTime(finalizedState.getGenesis_time())
             .finalizedCheckpoint(finalizedCheckpoint)
             .justifiedCheckpoint(justifiedCheckpoint)
@@ -223,23 +229,47 @@ public class FsDatabase implements Database {
   }
 
   @Override
-  public Optional<UnsignedLong> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
+  public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
+    // TODO: Implement this
+    return Optional.empty();
+  }
+
+  @Override
+  public Map<UInt64, VoteTracker> getVotes() {
+    // TODO: Implement this
+    return null;
+  }
+
+  @Override
+  public Optional<UInt64> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
     return storage.getBlockByBlockRoot(blockRoot).map(SignedBeaconBlock::getSlot);
   }
 
   @Override
-  public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UnsignedLong slot) {
+  public Optional<UInt64> getSlotForFinalizedStateRoot(final Bytes32 stateRoot) {
+    // TODO: Implement this
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
     return storage.getFinalizedBlockBySlot(slot);
   }
 
   @Override
-  public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UnsignedLong slot) {
+  public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     return storage.getLatestFinalizedBlockAtSlot(slot);
   }
 
   @Override
   public Optional<SignedBeaconBlock> getSignedBlock(final Bytes32 root) {
     return storage.getBlockByBlockRoot(root);
+  }
+
+  @Override
+  public Optional<BeaconState> getHotState(final Bytes32 root) {
+    // TODO: Implement this
+    return Optional.empty();
   }
 
   @Override
@@ -250,16 +280,22 @@ public class FsDatabase implements Database {
   }
 
   @Override
+  public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot) {
+    // TODO: Implement this
+    return Optional.empty();
+  }
+
+  @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
-      final UnsignedLong startSlot, final UnsignedLong endSlot) {
+      final UInt64 startSlot, final UInt64 endSlot) {
     return storage.streamFinalizedBlocks(startSlot, endSlot);
   }
 
   @Override
-  public List<Bytes32> getStateRootsBeforeSlot(final UnsignedLong slot) {
+  public List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot) {
     // TODO: Work out if we really need this.
-    return null;
+    return Collections.emptyList();
   }
 
   @Override
@@ -279,7 +315,7 @@ public class FsDatabase implements Database {
   }
 
   @Override
-  public Optional<BeaconState> getLatestAvailableFinalizedState(final UnsignedLong maxSlot) {
+  public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     return storage.getLatestAvailableFinalizedState(maxSlot);
   }
 
