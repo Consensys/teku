@@ -59,6 +59,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.node.GetFork;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
@@ -104,6 +105,7 @@ public class BeaconRestApi {
     // standard api endpoint inclusion
     addV1NodeHandlers(dataProvider);
     addV1ValidatorHandlers(dataProvider);
+    addV1BeaconHandlers(dataProvider);
   }
 
   private void addHostAllowlistHandler(final GlobalConfiguration configuration) {
@@ -234,6 +236,10 @@ public class BeaconRestApi {
   private void addV1ValidatorHandlers(final DataProvider dataProvider) {
     app.get(GetAttesterDuties.ROUTE, new GetAttesterDuties(dataProvider, jsonProvider));
     app.get(GetProposerDuties.ROUTE, new GetProposerDuties(dataProvider, jsonProvider));
+  }
+
+  private void addV1BeaconHandlers(final DataProvider dataProvider) {
+    app.get(GetGenesis.ROUTE, new GetGenesis(dataProvider, jsonProvider));
   }
 
   private void addNodeHandlers(final DataProvider provider) {
