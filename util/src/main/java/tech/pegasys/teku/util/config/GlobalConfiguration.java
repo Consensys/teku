@@ -66,8 +66,8 @@ public class GlobalConfiguration implements MetricsConfig {
   private final boolean interopEnabled;
 
   // Validator
-  private final boolean validatorPerformanceTrackingEnabled;
   private final boolean validatorKeystoreLockingEnabled;
+  private final boolean validatorPerformanceTrackingEnabled;
   private final String validatorsKeyFile;
   private final List<String> validatorKeystoreFiles;
   private final List<String> validatorKeystorePasswordFiles;

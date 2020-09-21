@@ -55,8 +55,8 @@ public class GlobalConfigurationBuilder {
   private String initialState;
   private int interopNumberOfValidators;
   private boolean interopEnabled;
-  private boolean validatorPerformanceTrackingEnabled;
   private boolean validatorKeystoreLockingEnabled;
+  private boolean validatorPerformanceTrackingEnabled;
   private String validatorsKeyFile;
   private List<String> validatorKeystoreFiles = new ArrayList<>();
   private List<String> validatorKeystorePasswordFiles = new ArrayList<>();
