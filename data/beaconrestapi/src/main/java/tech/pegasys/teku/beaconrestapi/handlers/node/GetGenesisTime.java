@@ -42,11 +42,14 @@ public class GetGenesisTime implements Handler {
   }
 
   @OpenApi(
+      deprecated = true,
       path = GetGenesisTime.ROUTE,
       method = HttpMethod.GET,
       summary = "Get genesis time.",
       tags = {TAG_NODE},
-      description = "Returns the genesis time from the beacon node.",
+      description =
+          "Returns the genesis time from the beacon node. "
+              + "Replaced by standard api endpoint /eth/v1/beacon/genesis",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = String.class)),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
