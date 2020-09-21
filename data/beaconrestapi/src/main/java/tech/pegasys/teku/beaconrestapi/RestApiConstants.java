@@ -58,4 +58,18 @@ public class RestApiConstants {
       "`UInt64` Slot to query in the canonical chain.";
   public static final String ROOT_QUERY_DESCRIPTION = "`Bytes32 Hex` Block root to query.";
   public static final String STATE_ROOT_QUERY_DESCRIPTION = "`Bytes32 Hex` Block root to query.";
+
+  public static final String PARAM_STATE_ID = "state_id";
+  public static final String PARAM_STATE_ID_DESCRIPTION =
+      "State identifier. Can be one of: "
+          + "\"head\" (canonical head in node's view), "
+          + "\"genesis\", "
+          + "\"finalized\", "
+          + "\"justified\", "
+          + "&lt;slot&gt;, "
+          + "&lt;hex encoded stateRoot with 0x prefix&gt;.";
+
+  public static final String PARAM_VALIDATOR_ID = "validator_id";
+  public static final String PARAM_VALIDATOR_DESCRIPTION =
+      "Either hex encoded public key (with 0x prefix) or validator index";
 }

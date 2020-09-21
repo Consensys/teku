@@ -415,6 +415,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store == null ? Optional.empty() : Optional.of(store.getFinalizedCheckpoint());
   }
 
+  public Optional<Checkpoint> getJustifiedCheckpoint() {
+    return store == null ? Optional.empty() : Optional.of(store.getJustifiedCheckpoint());
+  }
+
   @Override
   public void onNewFinalizedCheckpoint(Checkpoint finalizedCheckpoint) {
     finalizedCheckpointChannel.onNewFinalizedCheckpoint(finalizedCheckpoint);
