@@ -342,6 +342,30 @@ public class BlockImporterTest {
     assertImportFailed(result, FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS);
   }
 
+  @Test
+  public void importBlock_weakSubjectivityChecksPass() throws Exception {
+    final UInt64 wsEpoch = UInt64.valueOf(10);
+    final UInt64 wsEpochSlot = compute_start_slot_at_epoch(wsEpoch);
+    final SignedBeaconBlock wsBlock = localChain.createBlockAtSlot(wsEpochSlot);
+    final SignedBeaconBlock nextBlock = localChain.createAndImportBlockAtSlot(wsEpochSlot.plus(1));
+    localChain.setSlot(wsEpochSlot.plus(1));
+
+    final Checkpoint wsCheckpoint = new Checkpoint(wsEpoch, wsBlock.getRoot());
+    final WeakSubjectivityConfig wsConfig =
+        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+    final WeakSubjectivityValidator weakSubjectivityValidator =
+        WeakSubjectivityValidator.lenient(wsConfig);
+    final BlockImporter blockImporter =
+        new BlockImporter(recentChainData, forkChoice, weakSubjectivityValidator, localEventBus);
+
+    // Import wsBlock
+    final BlockImportResult result = blockImporter.importBlock(wsBlock).get();
+    assertSuccessfulResult(result);
+    // Import next valid block
+    final BlockImportResult result2 = blockImporter.importBlock(nextBlock).get();
+    assertSuccessfulResult(result2);
+  }
+
   private void assertImportFailed(
       final BlockImportResult result, final BlockImportResult.FailureReason expectedReason) {
     assertThat(result.isSuccessful()).isFalse();
