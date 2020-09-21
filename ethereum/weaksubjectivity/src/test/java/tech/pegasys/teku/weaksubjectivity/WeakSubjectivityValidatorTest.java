@@ -21,6 +21,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
@@ -40,9 +41,6 @@ public class WeakSubjectivityValidatorTest {
   private final CheckpointState checkpointState = mock(CheckpointState.class);
   private final UInt64 currentSlot = UInt64.valueOf(10_000);
 
-  private final WeakSubjectivityValidator validator =
-      new WeakSubjectivityValidator(calculator, policies);
-
   @BeforeEach
   public void setup() {
     when(checkpointState.getState()).thenReturn(mock(BeaconState.class));
@@ -50,6 +48,9 @@ public class WeakSubjectivityValidatorTest {
 
   @Test
   public void validateLatestFinalizedCheckpoint_validationShouldFail() {
+    final WeakSubjectivityValidator validator =
+        new WeakSubjectivityValidator(calculator, policies, Optional.empty());
+
     final int validatorCount = 101;
     when(calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)).thenReturn(false);
     when(calculator.getActiveValidators(checkpointState.getState())).thenReturn(validatorCount);
@@ -70,6 +71,9 @@ public class WeakSubjectivityValidatorTest {
 
   @Test
   public void validateLatestFinalizedCheckpoint_validationShouldPass() {
+    final WeakSubjectivityValidator validator =
+        new WeakSubjectivityValidator(calculator, policies, Optional.empty());
+
     when(calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)).thenReturn(true);
 
     validator.validateLatestFinalizedCheckpoint(checkpointState, currentSlot);
@@ -85,6 +89,9 @@ public class WeakSubjectivityValidatorTest {
 
   @Test
   public void handleValidationFailure() {
+    final WeakSubjectivityValidator validator =
+        new WeakSubjectivityValidator(calculator, policies, Optional.empty());
+
     final String message = "Oops";
     validator.handleValidationFailure(message);
 
@@ -96,6 +103,9 @@ public class WeakSubjectivityValidatorTest {
 
   @Test
   public void handleValidationFailure_withThrowable() {
+    final WeakSubjectivityValidator validator =
+        new WeakSubjectivityValidator(calculator, policies, Optional.empty());
+
     final String message = "Oops";
     final Throwable error = new RuntimeException("fail");
     validator.handleValidationFailure(message, error);
