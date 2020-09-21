@@ -16,6 +16,9 @@ package tech.pegasys.teku.weaksubjectivity;
 import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -25,11 +28,12 @@ import tech.pegasys.teku.weaksubjectivity.policies.StrictWeakSubjectivityViolati
 import tech.pegasys.teku.weaksubjectivity.policies.WeakSubjectivityViolationPolicy;
 
 public class WeakSubjectivityValidator {
+  private static final Logger LOG = LogManager.getLogger();
+
   private final WeakSubjectivityCalculator calculator;
   private final List<WeakSubjectivityViolationPolicy> violationPolicies;
 
-  @SuppressWarnings("unused")
-  private final Optional<Checkpoint> wsCheckpoint;
+  private final Optional<Checkpoint> maybeWsCheckpoint;
 
   WeakSubjectivityValidator(
       WeakSubjectivityCalculator calculator,
@@ -37,7 +41,7 @@ public class WeakSubjectivityValidator {
       Optional<Checkpoint> wsCheckpoint) {
     this.calculator = calculator;
     this.violationPolicies = violationPolicies;
-    this.wsCheckpoint = wsCheckpoint;
+    this.maybeWsCheckpoint = wsCheckpoint;
   }
 
   public static WeakSubjectivityValidator strict(final WeakSubjectivityConfig config) {
@@ -72,7 +76,25 @@ public class WeakSubjectivityValidator {
    */
   public void validateLatestFinalizedCheckpoint(
       final CheckpointState latestFinalizedCheckpoint, final UInt64 currentSlot) {
-    if (!calculator.isWithinWeakSubjectivityPeriod(latestFinalizedCheckpoint, currentSlot)) {
+    if (isPriorToWSCheckpoint(latestFinalizedCheckpoint)) {
+      // Defer validation until we reach the weakSubjectivity checkpoint
+      LOG.debug(
+          "Latest finalized checkpoint at epoch {} is prior to weak subjectivity checkpoint at epoch {}. Defer validation.",
+          latestFinalizedCheckpoint.getEpoch(),
+          maybeWsCheckpoint.orElseThrow().getEpoch());
+      return;
+    }
+
+    // Determine validity
+    boolean isValid = true;
+    if (isAtWSCheckpoint(latestFinalizedCheckpoint)) {
+      // Roots must match
+      isValid = isWSCheckpointRoot(latestFinalizedCheckpoint.getRoot());
+    }
+    isValid = isValid && isWithinWSPeriod(latestFinalizedCheckpoint, currentSlot);
+
+    // Handle invalid checkpoint
+    if (!isValid) {
       final int activeValidators =
           calculator.getActiveValidators(latestFinalizedCheckpoint.getState());
       for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
@@ -103,5 +125,21 @@ public class WeakSubjectivityValidator {
     for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
       policy.onFailedToPerformValidation(message, error);
     }
+  }
+
+  private boolean isWithinWSPeriod(CheckpointState checkpointState, UInt64 currentSlot) {
+    return calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot);
+  }
+
+  private boolean isWSCheckpointRoot(final Bytes32 blockRoot) {
+    return maybeWsCheckpoint.map(c -> c.getRoot().equals(blockRoot)).orElse(false);
+  }
+
+  private boolean isPriorToWSCheckpoint(final CheckpointState checkpoint) {
+    return maybeWsCheckpoint.map(c -> checkpoint.getEpoch().isLessThan(c.getEpoch())).orElse(false);
+  }
+
+  private boolean isAtWSCheckpoint(final CheckpointState checkpoint) {
+    return maybeWsCheckpoint.map(c -> checkpoint.getEpoch().equals(c.getEpoch())).orElse(false);
   }
 }
