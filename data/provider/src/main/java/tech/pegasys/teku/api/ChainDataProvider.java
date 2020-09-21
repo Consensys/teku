@@ -22,6 +22,8 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.response.GetForkResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BeaconChainHead;
 import tech.pegasys.teku.api.schema.BeaconHead;
 import tech.pegasys.teku.api.schema.BeaconState;
@@ -34,6 +36,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
+import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -257,5 +260,48 @@ public class ChainDataProvider {
     }
 
     return Optional.of(new Fork(maybeState.get().getFork()));
+  }
+
+  public Optional<Integer> validatorParameterToIndex(final String validatorParameter) {
+    if (!isStoreAvailable()) {
+      throw new ChainDataUnavailableException();
+    }
+    final Optional<tech.pegasys.teku.datastructures.state.BeaconState> maybeState =
+        recentChainData.getBestState();
+    if (maybeState.isEmpty()) {
+      return Optional.empty();
+    }
+    final tech.pegasys.teku.datastructures.state.BeaconState state = maybeState.get();
+
+    if (validatorParameter.toLowerCase().startsWith("0x")) {
+      BLSPubKey publicKey = BLSPubKey.fromHexString(validatorParameter);
+      return ValidatorsUtil.getValidatorIndex(state, publicKey.asBLSPublicKey());
+    } else {
+      return Optional.of(Integer.parseUnsignedInt(validatorParameter));
+    }
+  }
+
+  public SafeFuture<Optional<ValidatorResponse>> getValidatorDetails(
+      final Optional<UInt64> maybeSlot, final Optional<Integer> maybeIndex) {
+    if (!isStoreAvailable()) {
+      throw new ChainDataUnavailableException();
+    }
+
+    if (maybeSlot.isEmpty() || maybeIndex.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+
+    return combinedChainDataClient
+        .getStateAtSlotExact(maybeSlot.get())
+        .thenApply(maybeState -> getValidatorDetailsFromState(maybeState, maybeIndex.get()));
+  }
+
+  private Optional<ValidatorResponse> getValidatorDetailsFromState(
+      final Optional<tech.pegasys.teku.datastructures.state.BeaconState> maybeState,
+      final Integer validatorIndex) {
+    if (maybeState.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(ValidatorResponse.fromState(maybeState.get(), validatorIndex));
   }
 }

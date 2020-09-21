@@ -19,7 +19,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
@@ -55,6 +57,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
+import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class BlockImporterTest {
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
@@ -91,6 +94,7 @@ public class BlockImporterTest {
   public void setup() {
     otherChain.initializeStorage();
     localChain.initializeStorage();
+    when(weakSubjectivityValidator.isBlockValid(any(), any())).thenReturn(true);
   }
 
   @Test
@@ -317,6 +321,49 @@ public class BlockImporterTest {
 
     final BlockImportResult result = blockImporter.importBlock(block).get();
     assertImportFailed(result, FailureReason.FAILED_STATE_TRANSITION);
+  }
+
+  @Test
+  public void importBlock_weakSubjectivityFailure_wrongAncestor() throws Exception {
+    final UInt64 wsEpoch = UInt64.valueOf(10);
+    final UInt64 wsEpochSlot = compute_start_slot_at_epoch(wsEpoch);
+    final SignedBeaconBlock wsBlock = localChain.createBlockAtSlot(wsEpochSlot);
+    final SignedBeaconBlock otherBlock = otherChain.createBlockAtSlot(wsEpochSlot.plus(1));
+
+    final Checkpoint wsCheckpoint = new Checkpoint(wsEpoch, wsBlock.getRoot());
+    final WeakSubjectivityConfig wsConfig =
+        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+    final WeakSubjectivityValidator weakSubjectivityValidator =
+        WeakSubjectivityValidator.lenient(wsConfig);
+    final BlockImporter blockImporter =
+        new BlockImporter(recentChainData, forkChoice, weakSubjectivityValidator, localEventBus);
+
+    final BlockImportResult result = blockImporter.importBlock(otherBlock).get();
+    assertImportFailed(result, FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS);
+  }
+
+  @Test
+  public void importBlock_weakSubjectivityChecksPass() throws Exception {
+    final UInt64 wsEpoch = UInt64.valueOf(10);
+    final UInt64 wsEpochSlot = compute_start_slot_at_epoch(wsEpoch);
+    final SignedBeaconBlock wsBlock = localChain.createBlockAtSlot(wsEpochSlot);
+    final SignedBeaconBlock nextBlock = localChain.createAndImportBlockAtSlot(wsEpochSlot.plus(1));
+    localChain.setSlot(wsEpochSlot.plus(1));
+
+    final Checkpoint wsCheckpoint = new Checkpoint(wsEpoch, wsBlock.getRoot());
+    final WeakSubjectivityConfig wsConfig =
+        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+    final WeakSubjectivityValidator weakSubjectivityValidator =
+        WeakSubjectivityValidator.lenient(wsConfig);
+    final BlockImporter blockImporter =
+        new BlockImporter(recentChainData, forkChoice, weakSubjectivityValidator, localEventBus);
+
+    // Import wsBlock
+    final BlockImportResult result = blockImporter.importBlock(wsBlock).get();
+    assertSuccessfulResult(result);
+    // Import next valid block
+    final BlockImportResult result2 = blockImporter.importBlock(nextBlock).get();
+    assertSuccessfulResult(result2);
   }
 
   private void assertImportFailed(

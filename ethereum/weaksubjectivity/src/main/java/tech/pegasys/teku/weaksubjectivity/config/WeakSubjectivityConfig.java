@@ -17,34 +17,48 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class WeakSubjectivityConfig {
+  public static UInt64 DEFAULT_SAFETY_DECAY = UInt64.valueOf(10);
 
+  private final UInt64 safetyDecay;
   private final Optional<Checkpoint> weakSubjectivityCheckpoint;
 
-  private WeakSubjectivityConfig(Optional<Checkpoint> weakSubjectivityCheckpoint) {
+  private WeakSubjectivityConfig(
+      UInt64 safetyDecay, Optional<Checkpoint> weakSubjectivityCheckpoint) {
+    this.safetyDecay = safetyDecay;
     checkNotNull(weakSubjectivityCheckpoint);
 
     this.weakSubjectivityCheckpoint = weakSubjectivityCheckpoint;
   }
 
-  public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
-    return weakSubjectivityCheckpoint;
+  public static WeakSubjectivityConfig defaultConfig() {
+    return builder().build();
   }
 
   public static Builder builder() {
     return new Builder();
   }
 
+  public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
+    return weakSubjectivityCheckpoint;
+  }
+
+  public UInt64 getSafetyDecay() {
+    return safetyDecay;
+  }
+
   public static class Builder {
     private WeakSubjectivityParameterParser parser = new WeakSubjectivityParameterParser();
 
+    private UInt64 safetyDecay = DEFAULT_SAFETY_DECAY;
     private Optional<Checkpoint> weakSubjectivityCheckpoint = Optional.empty();
 
     private Builder() {}
 
     public WeakSubjectivityConfig build() {
-      return new WeakSubjectivityConfig(weakSubjectivityCheckpoint);
+      return new WeakSubjectivityConfig(safetyDecay, weakSubjectivityCheckpoint);
     }
 
     public Builder weakSubjectivityCheckpoint(Checkpoint weakSubjectivityCheckpoint) {
@@ -57,6 +71,11 @@ public class WeakSubjectivityConfig {
       checkNotNull(weakSubjectivityCheckpoint);
       final Checkpoint checkpoint = parser.parseCheckpoint(weakSubjectivityCheckpoint);
       return weakSubjectivityCheckpoint(checkpoint);
+    }
+
+    public Builder safetyDecay(UInt64 safetyDecay) {
+      this.safetyDecay = safetyDecay;
+      return this;
     }
   }
 }

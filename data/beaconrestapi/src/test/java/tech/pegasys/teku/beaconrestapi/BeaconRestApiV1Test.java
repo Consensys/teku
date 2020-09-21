@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
@@ -113,12 +114,17 @@ public class BeaconRestApiV1Test {
   }
 
   @Test
-  public void shouldHaveGetGenesisEndpoint() {
-    verify(app).get(eq(GetGenesis.ROUTE), any(GetGenesis.class));
+  public void shouldHaveGetStateForkEndpoint() {
+    verify(app).get(eq(GetStateFork.ROUTE), any(GetStateFork.class));
   }
 
   @Test
-  public void shouldHaveGetStateForkEndpoint() {
-    verify(app).get(eq(GetStateFork.ROUTE), any(GetStateFork.class));
+  public void shouldHaveGetStateValidatorEndpoint() {
+    verify(app).get(eq(GetStateValidator.ROUTE), any(GetStateValidator.class));
+  }
+
+  @Test
+  public void shouldHaveGetGenesisEndpoint() {
+    verify(app).get(eq(GetGenesis.ROUTE), any(GetGenesis.class));
   }
 }
