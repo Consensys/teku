@@ -29,6 +29,7 @@ import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -70,6 +71,10 @@ public class BlockImporter {
           "Importing known block {}.  Return successful result without re-processing.",
           () -> formatBlock(block));
       return SafeFuture.completedFuture(BlockImportResult.knownBlock(block));
+    }
+
+    if (!weakSubjectivityValidator.isBlockValid(block, getForkChoiceStrategy())) {
+      return SafeFuture.completedFuture(BlockImportResult.FAILED_WEAK_SUBJECTIVITY_CHECKS);
     }
 
     return validateFinalizedCheckpointIsWithinWeakSubjectivityPeriod()
@@ -183,5 +188,14 @@ public class BlockImporter {
 
   private String formatBlock(final SignedBeaconBlock block) {
     return LogFormatter.formatBlock(block.getSlot(), block.getRoot());
+  }
+
+  private ForkChoiceStrategy getForkChoiceStrategy() {
+    return recentChainData
+        .getForkChoiceStrategy()
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Attempting to perform fork choice operations before store has been initialized"));
   }
 }

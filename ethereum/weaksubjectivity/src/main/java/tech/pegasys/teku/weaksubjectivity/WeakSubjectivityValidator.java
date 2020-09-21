@@ -13,15 +13,21 @@
 
 package tech.pegasys.teku.weaksubjectivity;
 
+import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+
 import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 import tech.pegasys.teku.weaksubjectivity.policies.LoggingWeakSubjectivityViolationPolicy;
 import tech.pegasys.teku.weaksubjectivity.policies.StrictWeakSubjectivityViolationPolicy;
@@ -104,6 +110,35 @@ public class WeakSubjectivityValidator {
     }
   }
 
+  public boolean isBlockValid(
+      final SignedBeaconBlock block, ForkChoiceStrategy forkChoiceStrategy) {
+    if (maybeWsCheckpoint.isEmpty()) {
+      return true;
+    }
+    final Checkpoint wsCheckpoint = maybeWsCheckpoint.get();
+
+    UInt64 blockEpoch = compute_epoch_at_slot(block.getSlot());
+    boolean blockAtEpochBoundary = compute_start_slot_at_epoch(blockEpoch).equals(block.getSlot());
+    if (isWSCheckpointEpoch(blockEpoch) && blockAtEpochBoundary) {
+      // Block is at ws checkpoint slot - so it must match the ws checkpoint block
+      return isWSCheckpointBlock(block);
+    } else if (isWSCheckpointBlock(block)) {
+      // The block is the checkpoint
+      return true;
+    } else if (blockEpoch.isGreaterThanOrEqualTo(wsCheckpoint.getEpoch())) {
+      // If the block is at or past the checkpoint, the wsCheckpoint must be an ancestor
+      final Optional<Bytes32> ancestor =
+          get_ancestor(
+              forkChoiceStrategy, block.getParent_root(), wsCheckpoint.getEpochStartSlot());
+      // If ancestor is not present, the chain must have moved passed the wsCheckpoint
+      return ancestor.map(a -> a.equals(wsCheckpoint.getRoot())).orElse(true);
+    }
+
+    // If block is prior to the checkpoint, we can't yet validate
+    // TODO(#2779) If we have the ws state, we can look up the block in the state's history
+    return true;
+  }
+
   /**
    * A catch-all handler for managing problems encountered while executing other validations
    *
@@ -129,6 +164,14 @@ public class WeakSubjectivityValidator {
 
   private boolean isWithinWSPeriod(CheckpointState checkpointState, UInt64 currentSlot) {
     return calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot);
+  }
+
+  private boolean isWSCheckpointEpoch(final UInt64 epoch) {
+    return maybeWsCheckpoint.map(c -> c.getEpoch().equals(epoch)).orElse(false);
+  }
+
+  private boolean isWSCheckpointBlock(final SignedBeaconBlock block) {
+    return isWSCheckpointRoot(block.getRoot());
   }
 
   private boolean isWSCheckpointRoot(final Bytes32 blockRoot) {
