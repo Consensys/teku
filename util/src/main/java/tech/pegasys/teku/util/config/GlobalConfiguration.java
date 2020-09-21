@@ -13,6 +13,15 @@
 
 package tech.pegasys.teku.util.config;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.status.StatusLogger;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
+import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
+
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -22,14 +31,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.status.StatusLogger;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
-import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 
 /** @deprecated - Use TekuConfiguration where possible. Global application configuration. */
 @Deprecated
@@ -163,8 +164,8 @@ public class GlobalConfiguration implements MetricsConfig {
       final String initialState,
       final int interopNumberOfValidators,
       final boolean interopEnabled,
-      final boolean validatorPerformanceTrackingEnabled,
       final boolean validatorKeystoreLockingEnabled,
+      final boolean validatorPerformanceTrackingEnabled,
       final String validatorsKeyFile,
       final List<String> validatorKeystoreFiles,
       final List<String> validatorKeystorePasswordFiles,
