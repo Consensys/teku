@@ -385,4 +385,9 @@ public class CombinedChainDataClient {
     final UInt64 finalizedSlot = recentChainData.getStore().getLatestFinalizedBlockSlot();
     return slot.compareTo(finalizedSlot) >= 0;
   }
+
+  public SafeFuture<Optional<UInt64>> getSlotByStateRoot(final Bytes32 stateRoot) {
+    return getStateByStateRoot(stateRoot)
+        .thenApply(maybeState -> maybeState.map(BeaconState::getSlot));
+  }
 }

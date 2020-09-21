@@ -25,6 +25,7 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
@@ -69,6 +70,14 @@ public abstract class AbstractBeaconHandlerTest {
     assertThat(future).isCompleted();
     String data = future.join();
     return jsonProvider.jsonToObject(data, clazz);
+  }
+
+  protected BadRequest getBadRequestFromFuture() throws JsonProcessingException {
+    verify(context).result(args.capture());
+    SafeFuture<String> future = args.getValue();
+    assertThat(future).isCompleted();
+    String data = future.join();
+    return jsonProvider.jsonToObject(data, BadRequest.class);
   }
 
   protected tech.pegasys.teku.sync.SyncingStatus getSyncStatus(
