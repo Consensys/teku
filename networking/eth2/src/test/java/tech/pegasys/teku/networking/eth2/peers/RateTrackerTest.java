@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.util.time.StubTimeProvider;
 
@@ -24,8 +23,14 @@ public class RateTrackerTest {
   StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
 
   @Test
-  public void shouldAllowAddingItemsWithinLimit() throws ExecutionException {
+  public void shouldAllowAddingItemsWithinLimit() {
     final RateTracker tracker = new RateTracker(1, 1, timeProvider);
+    assertThat(tracker.wantToRequestObjects(1)).isEqualTo(1);
+  }
+
+  @Test
+  public void shouldNotUnderflowWhenTimeWindowGreaterThanCurrentTime() {
+    final RateTracker tracker = new RateTracker(1, 15000, timeProvider);
     assertThat(tracker.wantToRequestObjects(1)).isEqualTo(1);
   }
 

@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.weaksubjectivity.WeakSubjectivityCalculator.WITHDRAWAL_DELAY;
 
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -31,34 +30,35 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class WeakSubjectivityCalculatorTest {
 
   @ParameterizedTest(name = "validatorCount: {0}, safetyDecay: {1}")
-  @MethodSource("calculateSafeEpochsParams")
-  public void calculateSafeEpochs(
-      final int validatorCount, final float safetyDecay, final int expectedResult) {
+  @MethodSource("computeWeakSubjectivityParams")
+  public void computeWeakSubjectivity(
+      final int validatorCount, final UInt64 safetyDecay, final int expectedResult) {
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(safetyDecay);
-    UInt64 result = calculator.calculateSafeEpochs(validatorCount);
+    UInt64 result = calculator.computeWeakSubjectivityPeriod(validatorCount);
     assertThat(result).isEqualTo(UInt64.valueOf(expectedResult));
   }
 
   @ParameterizedTest(name = "validatorCount: {0}, safetyDecay: {1}")
   @MethodSource("getWeakSubjectivityModParams")
   public void getWeakSubjectivityMod(
-      final int validatorCount, final float safetyDecay, final int expectedResult) {
+      final int validatorCount, final UInt64 safetyDecay, final int expectedResult) {
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(safetyDecay);
     UInt64 result = calculator.getWeakSubjectivityMod(validatorCount);
     assertThat(result).isEqualTo(UInt64.valueOf(expectedResult));
   }
 
   @ParameterizedTest(name = "validatorCount: {0}, safetyDecay: {1}")
-  @MethodSource("calculateSafeEpochsParams")
+  @MethodSource("computeWeakSubjectivityParams")
   public void isWithinWeakSubjectivityPeriod(
-      final int validatorCount, final float safetyDecay, final int expectedSafetyMargin) {
+      final int validatorCount,
+      final UInt64 safetyDecay,
+      final int expectedWeakSubjectivityPeriod) {
     final WeakSubjectivityCalculator calculator =
         new WeakSubjectivityCalculator(safetyDecay, __ -> validatorCount);
 
     final UInt64 finalizedEpoch = UInt64.valueOf(10_000);
     final CheckpointState finalizedCheckpoint = createMockCheckpointState(finalizedEpoch);
-    final UInt64 expectedSafeEpochs = WITHDRAWAL_DELAY.plus(expectedSafetyMargin);
-    final UInt64 minSafeEpoch = expectedSafeEpochs.plus(finalizedEpoch);
+    final UInt64 minSafeEpoch = finalizedEpoch.plus(expectedWeakSubjectivityPeriod);
 
     // Check the minimum safe epoch
     final UInt64 minEpochStartSlot = compute_start_slot_at_epoch(minSafeEpoch);
@@ -100,41 +100,31 @@ public class WeakSubjectivityCalculatorTest {
   }
 
   // Parameters from the table here:
-  // https://notes.ethereum.org/@adiasg/weak-subjectvity-eth2#Calculating-the-Weak-Subjectivity-Period-Quick-Version
-  public static Stream<Arguments> calculateSafeEpochsParams() {
-    // TODO(#2779) - why are the results off by one from the table?
-    //        return Stream.of(
-    //                Arguments.of(1024, .1f, 13),
-    //                Arguments.of(4096, .1f, 52),
-    //                Arguments.of(16384, .1f, 205),
-    //                Arguments.of(65536, .1f, 820),
-    //                Arguments.of(1024, 1f/3, 43),
-    //                Arguments.of(4096, 1f/3, 171),
-    //                Arguments.of(16384, 1f/3, 683),
-    //                Arguments.of(65536, 1f/3, 2731)
-    //        );
-
+  // https://github.com/ethereum/eth2.0-specs/blob/weak-subjectivity-guide/specs/phase0/weak-subjectivity.md#calculating-the-weak-subjectivity-period
+  public static Stream<Arguments> computeWeakSubjectivityParams() {
     return Stream.of(
-        Arguments.of(1024, .1f, 12),
-        Arguments.of(4096, .1f, 51),
-        Arguments.of(16384, .1f, 204),
-        Arguments.of(65536, .1f, 819),
-        Arguments.of(1024, 1f / 3, 42),
-        Arguments.of(4096, 1f / 3, 170),
-        Arguments.of(16384, 1f / 3, 682),
-        Arguments.of(65536, 1f / 3, 2730));
+        Arguments.of(1024, UInt64.valueOf(10), 268),
+        Arguments.of(2048, UInt64.valueOf(10), 281),
+        Arguments.of(4096, UInt64.valueOf(10), 307),
+        Arguments.of(8192, UInt64.valueOf(10), 358),
+        Arguments.of(16384, UInt64.valueOf(10), 460),
+        Arguments.of(32768, UInt64.valueOf(10), 665),
+        Arguments.of(65536, UInt64.valueOf(10), 1075),
+        Arguments.of(131072, UInt64.valueOf(10), 1894),
+        Arguments.of(262144, UInt64.valueOf(10), 3532),
+        Arguments.of(524288, UInt64.valueOf(10), 3532));
   }
 
   // Parameters from the table here:
   // https://notes.ethereum.org/@adiasg/weak-subjectvity-eth2#Updating-Weak-Subjectivity-Checkpoint-States
   public static Stream<Arguments> getWeakSubjectivityModParams() {
     return Stream.of(
-        Arguments.of(8191, .1f, 256),
-        Arguments.of(16384, .1f, 256),
-        Arguments.of(32768, .1f, 512),
-        Arguments.of(65536, .1f, 1024),
-        Arguments.of(131072, .1f, 1792),
-        Arguments.of(262144, .1f, 3328));
+        Arguments.of(8191, UInt64.valueOf(10), 256),
+        Arguments.of(16384, UInt64.valueOf(10), 256),
+        Arguments.of(32768, UInt64.valueOf(10), 512),
+        Arguments.of(65536, UInt64.valueOf(10), 1024),
+        Arguments.of(131072, UInt64.valueOf(10), 1792),
+        Arguments.of(262144, UInt64.valueOf(10), 3328));
   }
 
   private CheckpointState createMockCheckpointState(final UInt64 finalizedEpoch) {

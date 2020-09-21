@@ -77,7 +77,7 @@ public class Eth2NetworkBuilder {
   private Duration eth2RpcPingInterval = DEFAULT_ETH2_RPC_PING_INTERVAL;
   private int eth2RpcOutstandingPingThreshold = DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD;
   private Duration eth2StatusUpdateInterval = DEFAULT_ETH2_STATUS_UPDATE_INTERVAL;
-  private int peerRateLimit = 500;
+  private int peerRateLimit = Constants.MAX_BLOCKS_PER_MINUTE;
   private int peerRequestLimit = 50;
 
   private Eth2NetworkBuilder() {}

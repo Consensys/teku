@@ -14,11 +14,14 @@
 package tech.pegasys.teku.data.slashinginterchange;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class SignedBlock {
   public final UInt64 slot;
   public final Bytes32 signingRoot;
@@ -29,6 +32,14 @@ public class SignedBlock {
       @JsonProperty("signing_root") final Bytes32 signingRoot) {
     this.slot = slot;
     this.signingRoot = signingRoot;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("slot", slot)
+        .add("signingRoot", signingRoot)
+        .toString();
   }
 
   @Override

@@ -14,13 +14,17 @@
 package tech.pegasys.teku.infrastructure.async.eventthread;
 
 import com.google.common.base.Preconditions;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * An EventThread implementation that immediately executes commands given to it. Useful for tests
  * which are already single threaded.
  */
 public class InlineEventThread implements EventThread {
+
   private final ThreadLocal<Boolean> isEventThread = ThreadLocal.withInitial(() -> Boolean.FALSE);
+  private final Queue<Runnable> pendingTasks = new ConcurrentLinkedQueue<>();
 
   @Override
   public void checkOnEventThread() {
@@ -36,12 +40,42 @@ public class InlineEventThread implements EventThread {
 
   @Override
   public void execute(final Runnable command) {
-    // While we always stay on the event thread, we want to track that access actually went through
-    // this class so mark the current thread as the event thread in a re-entrant safe way to make
-    // checkOnEventThread work
+    withEventThreadMarkerSet(command);
+
+    // Execute any tasks run with executeLater before returning.
+    executePendingTasks();
+  }
+
+  @Override
+  public void executeLater(final Runnable task) {
+    pendingTasks.add(task);
+  }
+
+  public void executePendingTasks() {
+    withEventThreadMarkerSet(
+        () -> {
+          while (!pendingTasks.isEmpty()) {
+            pendingTasks.remove().run();
+          }
+        });
+  }
+
+  /**
+   * Executes the specified command with a flag set to identify the current thread as the event
+   * thread.
+   *
+   * <p>While we always stay on the event thread, we want to track that access actually went through
+   * this class so mark the current thread as the event thread in a re-entrant safe way to make
+   * checkOnEventThread work
+   *
+   * @param command the command to execute
+   */
+  private void withEventThreadMarkerSet(final Runnable command) {
+
     final Boolean originalEventThread = isEventThread.get();
     isEventThread.set(Boolean.TRUE);
     command.run();
+
     isEventThread.set(originalEventThread);
   }
 }

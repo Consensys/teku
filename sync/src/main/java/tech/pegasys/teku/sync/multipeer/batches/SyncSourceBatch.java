@@ -168,7 +168,7 @@ public class SyncSourceBatch implements Batch {
     if (currentSyncSource.isEmpty()) {
       currentSyncSource = syncSourceProvider.selectSource();
       if (currentSyncSource.isEmpty()) {
-        callback.run();
+        eventThread.executeLater(callback);
         return;
       }
     }
@@ -184,7 +184,9 @@ public class SyncSourceBatch implements Batch {
               if (error != null) {
                 handleRequestErrors(error);
               }
-              callback.run();
+              // Ensure there is time for other events to be processed before the callback completes
+              // Allows external events like peers disconnecting to be processed before retrying
+              eventThread.executeLater(callback);
               return null;
             },
             eventThread)

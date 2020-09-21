@@ -81,6 +81,17 @@ public class ValidatorOptions {
       arity = "1")
   private Bytes32 graffiti;
 
+  @Option(
+      names = {"--validators-keystore-locking-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable locking validator keystore files",
+      arity = "1")
+  private boolean validatorKeystoreLockingEnabled = true;
+
+  public boolean isValidatorKeystoreLockingEnabled() {
+    return validatorKeystoreLockingEnabled;
+  }
+
   public List<String> getValidatorKeystoreFiles() {
     return validatorKeystoreFiles;
   }

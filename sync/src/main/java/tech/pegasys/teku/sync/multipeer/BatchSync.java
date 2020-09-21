@@ -34,7 +34,7 @@ import tech.pegasys.teku.sync.multipeer.batches.BatchFactory;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 
 /** Manages the sync process to reach a finalized chain. */
-public class FinalizedSync implements Sync {
+public class BatchSync implements Sync {
   private static final Logger LOG = LogManager.getLogger();
   private static final int MAX_PENDING_BATCHES = 5;
 
@@ -52,7 +52,7 @@ public class FinalizedSync implements Sync {
   private TargetChain targetChain;
   private SafeFuture<SyncResult> syncResult = SafeFuture.completedFuture(SyncResult.COMPLETE);
 
-  private FinalizedSync(
+  private BatchSync(
       final EventThread eventThread,
       final RecentChainData recentChainData,
       final BatchChain activeBatches,
@@ -65,7 +65,7 @@ public class FinalizedSync implements Sync {
     this.batchDataRequester = batchDataRequester;
   }
 
-  public static FinalizedSync create(
+  public static BatchSync create(
       final EventThread eventThread,
       final RecentChainData recentChainData,
       final BatchImporter batchImporter,
@@ -75,7 +75,7 @@ public class FinalizedSync implements Sync {
     final BatchDataRequester batchDataRequester =
         new BatchDataRequester(
             eventThread, activeBatches, batchFactory, batchSize, MAX_PENDING_BATCHES);
-    return new FinalizedSync(
+    return new BatchSync(
         eventThread, recentChainData, activeBatches, batchImporter, batchDataRequester);
   }
 
@@ -338,6 +338,7 @@ public class FinalizedSync implements Sync {
       return;
     }
     if (targetChain.getPeers().isEmpty()) {
+      activeBatches.removeAll();
       syncResult.complete(SyncResult.FAILED);
       return;
     }
