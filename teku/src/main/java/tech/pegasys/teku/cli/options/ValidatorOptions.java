@@ -84,12 +84,23 @@ public class ValidatorOptions {
   @Option(
       names = {"--validator-performance-tracking-enabled"},
       paramLabel = "<BOOLEAN>",
-      description = "Activate validator performance tracking and logging",
+      description = "Enable validator performance tracking and logging",
       arity = "1")
   private boolean validatorPerformanceTrackingEnabled = false;
 
   public boolean isValidatorPerformanceTrackingEnabled() {
     return validatorPerformanceTrackingEnabled;
+  }
+
+  @Option(
+      names = {"--validators-keystore-locking-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable locking validator keystore files",
+      arity = "1")
+  private boolean validatorKeystoreLockingEnabled = true;
+
+  public boolean isValidatorKeystoreLockingEnabled() {
+    return validatorKeystoreLockingEnabled;
   }
 
   public List<String> getValidatorKeystoreFiles() {
