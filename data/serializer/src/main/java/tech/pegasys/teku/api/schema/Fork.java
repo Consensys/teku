@@ -14,21 +14,23 @@
 package tech.pegasys.teku.api.schema;
 
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES4;
+import static tech.pegasys.teku.api.schema.SchemaConstants.PATTERN_BYTES4;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class Fork {
-  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES4)
+  @Schema(type = "string", pattern = PATTERN_BYTES4, description = DESCRIPTION_BYTES4)
   public Bytes4 previous_version;
 
-  @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES4)
+  @Schema(type = "string", pattern = PATTERN_BYTES4, description = DESCRIPTION_BYTES4)
   public Bytes4 current_version;
 
-  @Schema(type = "string", format = "uint64")
+  @Schema(type = "string")
   public UInt64 epoch;
 
   @JsonCreator
@@ -50,5 +52,20 @@ public class Fork {
   public tech.pegasys.teku.datastructures.state.Fork asInternalFork() {
     return new tech.pegasys.teku.datastructures.state.Fork(
         previous_version, current_version, epoch);
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final Fork fork = (Fork) o;
+    return Objects.equals(previous_version, fork.previous_version)
+        && Objects.equals(current_version, fork.current_version)
+        && Objects.equals(epoch, fork.epoch);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(previous_version, current_version, epoch);
   }
 }

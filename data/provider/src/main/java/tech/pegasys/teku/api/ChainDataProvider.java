@@ -27,8 +27,10 @@ import tech.pegasys.teku.api.schema.BeaconHead;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.BeaconValidators;
 import tech.pegasys.teku.api.schema.Committee;
+import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
@@ -217,5 +219,43 @@ public class ChainDataProvider {
       throw new ChainDataUnavailableException();
     }
     return recentChainData.getHeadBlockAndState().map(BeaconChainHead::new);
+  }
+
+  public Optional<UInt64> stateParameterToSlot(final String pathParam) {
+    if (!isStoreAvailable()) {
+      throw new ChainDataUnavailableException();
+    }
+    switch (pathParam) {
+      case ("head"):
+        return recentChainData.getCurrentSlot();
+      case ("genesis"):
+        return Optional.of(UInt64.ZERO);
+      case ("finalized"):
+        return recentChainData.getFinalizedCheckpoint().map(Checkpoint::getEpochStartSlot);
+      case ("justified"):
+        return recentChainData.getJustifiedCheckpoint().map(Checkpoint::getEpochStartSlot);
+    }
+    if (pathParam.toLowerCase().startsWith("0x")) {
+      // state root
+      Bytes32 stateRoot = Bytes32.fromHexString(pathParam);
+      return combinedChainDataClient.getSlotByStateRoot(stateRoot).join();
+    } else {
+      return Optional.of(UInt64.valueOf(pathParam));
+    }
+  }
+
+  public SafeFuture<Optional<Fork>> getForkAtSlot(final UInt64 slot) {
+    final SafeFuture<Optional<tech.pegasys.teku.datastructures.state.BeaconState>> state =
+        combinedChainDataClient.getStateAtSlotExact(slot);
+    return state.thenApply(this::getForkFromState);
+  }
+
+  private Optional<Fork> getForkFromState(
+      final Optional<tech.pegasys.teku.datastructures.state.BeaconState> maybeState) {
+    if (maybeState.isEmpty()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(new Fork(maybeState.get().getFork()));
   }
 }
