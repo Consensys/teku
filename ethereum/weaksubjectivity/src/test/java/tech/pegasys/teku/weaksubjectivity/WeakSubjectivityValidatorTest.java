@@ -178,7 +178,7 @@ public class WeakSubjectivityValidatorTest {
         new Checkpoint(UInt64.valueOf(100), Bytes32.fromHexStringLenient("0x01"));
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(calculator, policies, Optional.of(wsCheckpoint));
-    // Checkpoint is at the ws epoch, with the same root different root
+    // Checkpoint is at the ws epoch, with the same root
     when(checkpointState.getEpoch()).thenReturn(wsCheckpoint.getEpoch());
     when(checkpointState.getRoot()).thenReturn(wsCheckpoint.getRoot());
     when(calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)).thenReturn(true);
