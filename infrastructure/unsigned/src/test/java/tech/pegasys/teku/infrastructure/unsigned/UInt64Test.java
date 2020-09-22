@@ -13,18 +13,19 @@
 
 package tech.pegasys.teku.infrastructure.unsigned;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
-import java.math.BigInteger;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+
+import java.math.BigInteger;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UInt64Test {
 
@@ -237,6 +238,17 @@ class UInt64Test {
   @Test
   void increment_shouldThrowArithmeticExceptionWhenResultOverflows() {
     assertThatThrownBy(UInt64.MAX_VALUE::increment).isInstanceOf(ArithmeticException.class);
+  }
+
+  @Test
+  void decrement() {
+    assertThat(UInt64.ONE.decrement()).isEqualTo(UInt64.ZERO);
+    assertThat(UInt64.valueOf(3).decrement().decrement()).isEqualTo(UInt64.ONE);
+  }
+
+  @Test
+  void decrement_shouldThrowArithmeticExceptionWhenResultOverflows() {
+    assertThatThrownBy(UInt64.ZERO::decrement).isInstanceOf(ArithmeticException.class);
   }
 
   @ParameterizedTest
