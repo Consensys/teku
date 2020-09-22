@@ -13,15 +13,15 @@
 
 package tech.pegasys.teku.storage.client;
 
-import static com.google.common.base.Preconditions.checkState;
-import static org.assertj.core.api.Assertions.assertThat;
-
 import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
+
+import static com.google.common.base.Preconditions.checkState;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ChainUpdater {
 
@@ -100,11 +100,11 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState advanceChainUntil(final long slot) {
-    long currSlot = chainBuilder.getLatestSlot().longValue();
+    long currentSlot = chainBuilder.getLatestSlot().longValue();
     SignedBlockAndState latestSigneBlockAndState = chainBuilder.getLatestBlockAndState();
-    while (currSlot < slot) {
-      currSlot++;
-      latestSigneBlockAndState = advanceChain(currSlot);
+    while (currentSlot < slot) {
+      currentSlot++;
+      latestSigneBlockAndState = advanceChain(currentSlot);
     }
     return latestSigneBlockAndState;
   }
