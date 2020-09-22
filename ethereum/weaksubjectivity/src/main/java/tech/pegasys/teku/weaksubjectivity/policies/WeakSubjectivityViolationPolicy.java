@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.weaksubjectivity.policies;
 
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -22,6 +24,9 @@ public interface WeakSubjectivityViolationPolicy {
       final CheckpointState latestFinalizedCheckpoint,
       final int activeValidatorCount,
       final UInt64 currentSlot);
+
+  void onChainInconsistentWithWeakSubjectivityCheckpoint(
+      Checkpoint wsCheckpoint, SignedBeaconBlock block);
 
   void onFailedToPerformValidation(final String message);
 
