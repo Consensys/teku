@@ -41,7 +41,7 @@ import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class RecentChainDataPerformanceTracker implements PerformanceTracker {
+public class DefaultPerformanceTracker implements PerformanceTracker {
 
   @VisibleForTesting
   final NavigableMap<UInt64, Set<SignedBeaconBlock>> sentBlocksByEpoch = new TreeMap<>();
@@ -56,7 +56,7 @@ public class RecentChainDataPerformanceTracker implements PerformanceTracker {
   private final StatusLogger statusLogger;
   private Optional<UInt64> nodeStartEpoch = Optional.empty();
 
-  public RecentChainDataPerformanceTracker(
+  public DefaultPerformanceTracker(
       RecentChainData recentChainData, StatusLogger statusLogger) {
     this.recentChainData = recentChainData;
     this.statusLogger = statusLogger;
