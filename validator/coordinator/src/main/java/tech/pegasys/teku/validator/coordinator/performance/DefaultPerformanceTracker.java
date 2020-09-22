@@ -22,6 +22,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.util.config.Constants;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -74,11 +75,11 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       return;
     }
 
-    UInt64 currentEpoch = compute_epoch_at_slot(slot);
-    if (!compute_start_slot_at_epoch(currentEpoch).equals(slot)) {
+    if (slot.mod(Constants.SLOTS_PER_EPOCH).isGreaterThan(UInt64.ZERO)) {
       return;
     }
 
+    UInt64 currentEpoch = compute_epoch_at_slot(slot);
     // Output attestation performance information for current epoch - 2 since attestations can be
     // included in both the epoch they were produced in or in the one following.
     if (currentEpoch.isGreaterThanOrEqualTo(nodeStartEpoch.get().plus(ATTESTATION_INCLUSION_RANGE))) {

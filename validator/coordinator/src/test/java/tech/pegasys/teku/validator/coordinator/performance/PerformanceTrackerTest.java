@@ -89,16 +89,7 @@ public class PerformanceTrackerTest {
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(1));
 
     ChainBuilder.BlockOptions block1Options = ChainBuilder.BlockOptions.create();
-    Attestation attestation1 =
-        chainBuilder
-            .streamValidAttestationsForBlockAtSlot(2)
-            .filter(
-                a ->
-                    a.getData()
-                        .getBeacon_block_root()
-                        .equals(chainBuilder.getBlockAtSlot(1).getRoot()))
-            .findFirst()
-            .get();
+    Attestation attestation1 = createAttestation(2, 1);
     block1Options.addAttestation(attestation1);
     SignedBlockAndState latestBlockAndState = chainBuilder.generateBlockAtSlot(2, block1Options);
     chainUpdater.saveBlock(latestBlockAndState);
@@ -116,32 +107,14 @@ public class PerformanceTrackerTest {
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(1));
 
     ChainBuilder.BlockOptions block1Options = ChainBuilder.BlockOptions.create();
-    Attestation attestation1 =
-        chainBuilder
-            .streamValidAttestationsForBlockAtSlot(2)
-            .filter(
-                a ->
-                    a.getData()
-                        .getBeacon_block_root()
-                        .equals(chainBuilder.getBlockAtSlot(1).getRoot()))
-            .findFirst()
-            .get();
+    Attestation attestation1 = createAttestation(2, 1);
     block1Options.addAttestation(attestation1);
     SignedBlockAndState blockAndState1 = chainBuilder.generateBlockAtSlot(2, block1Options);
     chainUpdater.saveBlock(blockAndState1);
     chainUpdater.updateBestBlock(blockAndState1);
 
     ChainBuilder.BlockOptions block2Options = ChainBuilder.BlockOptions.create();
-    Attestation attestation2 =
-        chainBuilder
-            .streamValidAttestationsForBlockAtSlot(4)
-            .filter(
-                a ->
-                    a.getData()
-                        .getBeacon_block_root()
-                        .equals(chainBuilder.getBlockAtSlot(2).getRoot()))
-            .findFirst()
-            .get();
+    Attestation attestation2 = createAttestation(4, 2);
     block2Options.addAttestation(attestation2);
     SignedBlockAndState blockAndState2 = chainBuilder.generateBlockAtSlot(4, block2Options);
     chainUpdater.saveBlock(blockAndState2);
@@ -164,16 +137,7 @@ public class PerformanceTrackerTest {
 
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(8));
     ChainBuilder.BlockOptions block1Options = ChainBuilder.BlockOptions.create();
-    Attestation attestation1 =
-        chainBuilder
-            .streamValidAttestationsForBlockAtSlot(9)
-            .filter(
-                a ->
-                    a.getData()
-                        .getBeacon_block_root()
-                        .equals(chainBuilder.getBlockAtSlot(8).getRoot()))
-            .findFirst()
-            .get();
+    Attestation attestation1 = createAttestation(9, 8);
     block1Options.addAttestation(attestation1);
     SignedBlockAndState blockAndState1 = chainBuilder.generateBlockAtSlot(9, block1Options);
     chainUpdater.saveBlock(blockAndState1);
@@ -182,16 +146,7 @@ public class PerformanceTrackerTest {
     chainUpdaterFork.advanceChain(6);
     chainUpdaterFork.advanceChainUntil(9);
     ChainBuilder.BlockOptions block2Options = ChainBuilder.BlockOptions.create();
-    Attestation attestation2 =
-        chainBuilderFork
-            .streamValidAttestationsForBlockAtSlot(10)
-            .filter(
-                a ->
-                    a.getData()
-                        .getBeacon_block_root()
-                        .equals(chainBuilderFork.getBlockAtSlot(9).getRoot()))
-            .findFirst()
-            .get();
+    Attestation attestation2 = createAttestation(chainBuilderFork, 10, 9);
     block2Options.addAttestation(attestation2);
     SignedBlockAndState blockAndState2 = chainBuilder.generateBlockAtSlot(10, block2Options);
     chainUpdater.saveBlock(blockAndState2);
@@ -214,16 +169,7 @@ public class PerformanceTrackerTest {
 
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(9));
     ChainBuilder.BlockOptions block1Options = ChainBuilder.BlockOptions.create();
-    Attestation attestation1 =
-        chainBuilder
-            .streamValidAttestationsForBlockAtSlot(10)
-            .filter(
-                a ->
-                    a.getData()
-                        .getBeacon_block_root()
-                        .equals(chainBuilder.getBlockAtSlot(9).getRoot()))
-            .findFirst()
-            .get();
+    Attestation attestation1 = createAttestation(10, 9);
     block1Options.addAttestation(attestation1);
     SignedBlockAndState blockAndState1 = chainBuilder.generateBlockAtSlot(10, block1Options);
     chainUpdater.saveBlock(blockAndState1);
@@ -256,5 +202,21 @@ public class PerformanceTrackerTest {
     performanceTracker.onSlot(compute_start_slot_at_epoch(BLOCK_PERFORMANCE_EVALUATION_INTERVAL));
     assertThat(performanceTracker.sentAttestationsByEpoch).isEmpty();
     assertThat(performanceTracker.sentBlocksByEpoch).isEmpty();
+  }
+
+  private Attestation createAttestation(ChainBuilder chainBuilder, int validForBlockAtSlot, int vouchingForBlockAtSlot) {
+    return chainBuilder
+            .streamValidAttestationsForBlockAtSlot(validForBlockAtSlot)
+            .filter(
+                    a ->
+                            a.getData()
+                                    .getBeacon_block_root()
+                                    .equals(chainBuilder.getBlockAtSlot(vouchingForBlockAtSlot).getRoot()))
+            .findFirst()
+            .get();
+  }
+
+  private Attestation createAttestation(int validForBlockAtSlot, int vouchingForBlockAtSlot) {
+    return createAttestation(chainBuilder, validForBlockAtSlot, vouchingForBlockAtSlot);
   }
 }
