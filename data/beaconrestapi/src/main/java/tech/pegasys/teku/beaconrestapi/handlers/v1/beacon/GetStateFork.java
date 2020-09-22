@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -22,6 +23,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERRO
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
@@ -47,6 +49,7 @@ import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 public class GetStateFork extends AbstractHandler implements Handler {
   private static final Logger LOG = LogManager.getLogger();
@@ -80,10 +83,7 @@ public class GetStateFork extends AbstractHandler implements Handler {
         @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_NOT_FOUND),
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
-        @OpenApiResponse(
-            status = RES_SERVICE_UNAVAILABLE,
-            description =
-                "Beacon node is currently syncing and not serving request on that endpoint")
+        @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
@@ -97,15 +97,13 @@ public class GetStateFork extends AbstractHandler implements Handler {
       }
       SafeFuture<Optional<Fork>> future = chainDataProvider.getForkAtSlot(maybeSlot.get());
       handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
-    } catch (NumberFormatException ex) {
+    } catch (ChainDataUnavailableException ex) {
       LOG.trace(ex);
-      ctx.result(
-          jsonProvider.objectToJSON(
-              new BadRequest(
-                  String.format(
-                      "Invalid state id: %s ",
-                      pathParams.get(PARAM_STATE_ID)))));
+      ctx.status(SC_SERVICE_UNAVAILABLE);
+    } catch (IllegalArgumentException ex) {
+      LOG.trace(ex);
       ctx.status(SC_BAD_REQUEST);
+      ctx.result(jsonProvider.objectToJSON(new BadRequest(ex.getMessage())));
     }
   }
 
