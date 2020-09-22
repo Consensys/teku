@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import com.google.common.base.Objects;
-
 import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.getPercentage;
+
+import com.google.common.base.Objects;
 
 public class AttestationPerformance {
   private final int numberOfSentAttestations;

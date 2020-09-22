@@ -13,17 +13,13 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.infrastructure.logging.StatusLogger;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.util.config.Constants;
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -35,12 +31,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.util.config.Constants;
 
 public class DefaultPerformanceTracker implements PerformanceTracker {
 
@@ -52,6 +51,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
   @VisibleForTesting
   static final UInt64 BLOCK_PERFORMANCE_EVALUATION_INTERVAL = UInt64.valueOf(2); // epochs
+
   static final UInt64 ATTESTATION_INCLUSION_RANGE = UInt64.valueOf(2);
 
   private final CombinedChainDataClient combinedChainDataClient;
@@ -82,9 +82,11 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     UInt64 currentEpoch = compute_epoch_at_slot(slot);
     // Output attestation performance information for current epoch - 2 since attestations can be
     // included in both the epoch they were produced in or in the one following.
-    if (currentEpoch.isGreaterThanOrEqualTo(nodeStartEpoch.get().plus(ATTESTATION_INCLUSION_RANGE))) {
+    if (currentEpoch.isGreaterThanOrEqualTo(
+        nodeStartEpoch.get().plus(ATTESTATION_INCLUSION_RANGE))) {
       statusLogger.performance(
-          getAttestationPerformanceForEpoch(currentEpoch, currentEpoch.minus(ATTESTATION_INCLUSION_RANGE))
+          getAttestationPerformanceForEpoch(
+                  currentEpoch, currentEpoch.minus(ATTESTATION_INCLUSION_RANGE))
               .toString());
     }
 
@@ -108,18 +110,20 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   private BlockPerformance getBlockPerformanceForEpochs(
       UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
     List<SignedBeaconBlock> sentBlocks =
-            sentBlocksByEpoch.subMap(startEpochInclusive, true, endEpochExclusive, false).values()
-                    .stream()
-                    .flatMap(Collection::stream)
-                    .collect(Collectors.toList());
+        sentBlocksByEpoch.subMap(startEpochInclusive, true, endEpochExclusive, false).values()
+            .stream()
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
 
-    long numberOfIncludedBlocks = sentBlocks.stream()
-            .filter(sentBlock ->
-                    combinedChainDataClient.getBlockAtSlotExact(sentBlock.getSlot())
-                    .join()
-                    .map(block -> block.equals(sentBlock))
-                    .orElse(false)
-            )
+    long numberOfIncludedBlocks =
+        sentBlocks.stream()
+            .filter(
+                sentBlock ->
+                    combinedChainDataClient
+                        .getBlockAtSlotExact(sentBlock.getSlot())
+                        .join()
+                        .map(block -> block.equals(sentBlock))
+                        .orElse(false))
             .count();
 
     return new BlockPerformance((int) numberOfIncludedBlocks, sentBlocks.size());
@@ -220,7 +224,10 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     for (UInt64 currSlot = epochStartSlot;
         currSlot.isLessThan(endEpochStartSlot);
         currSlot = currSlot.increment()) {
-      combinedChainDataClient.getBlockAtSlotExact(currSlot).join().ifPresent(signedBlock -> blockRootsInEpoch.add(signedBlock.getMessage()));
+      combinedChainDataClient
+          .getBlockAtSlotExact(currSlot)
+          .join()
+          .ifPresent(signedBlock -> blockRootsInEpoch.add(signedBlock.getMessage()));
     }
 
     return blockRootsInEpoch;

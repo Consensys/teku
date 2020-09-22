@@ -13,6 +13,13 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.BLOCK_PERFORMANCE_EVALUATION_INTERVAL;
+
+import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,21 +37,14 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.Constants;
 
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.BLOCK_PERFORMANCE_EVALUATION_INTERVAL;
-
 public class PerformanceTrackerTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(64);
 
   protected StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
   protected ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
-  protected ChainUpdater chainUpdater = new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
+  protected ChainUpdater chainUpdater =
+      new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final StatusLogger log = mock(StatusLogger.class);
@@ -133,7 +133,8 @@ public class PerformanceTrackerTest {
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(1));
 
     ChainBuilder chainBuilderFork = chainBuilder.fork();
-    ChainUpdater chainUpdaterFork = new ChainUpdater(storageSystem.recentChainData(), chainBuilderFork);
+    ChainUpdater chainUpdaterFork =
+        new ChainUpdater(storageSystem.recentChainData(), chainBuilderFork);
 
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(8));
     ChainBuilder.BlockOptions block1Options = ChainBuilder.BlockOptions.create();
@@ -165,7 +166,8 @@ public class PerformanceTrackerTest {
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(1));
 
     ChainBuilder chainBuilderFork = chainBuilder.fork();
-    ChainUpdater chainUpdaterFork = new ChainUpdater(storageSystem.recentChainData(), chainBuilderFork);
+    ChainUpdater chainUpdaterFork =
+        new ChainUpdater(storageSystem.recentChainData(), chainBuilderFork);
 
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(9));
     ChainBuilder.BlockOptions block1Options = ChainBuilder.BlockOptions.create();
@@ -204,16 +206,17 @@ public class PerformanceTrackerTest {
     assertThat(performanceTracker.sentBlocksByEpoch).isEmpty();
   }
 
-  private Attestation createAttestation(ChainBuilder chainBuilder, int validForBlockAtSlot, int vouchingForBlockAtSlot) {
+  private Attestation createAttestation(
+      ChainBuilder chainBuilder, int validForBlockAtSlot, int vouchingForBlockAtSlot) {
     return chainBuilder
-            .streamValidAttestationsForBlockAtSlot(validForBlockAtSlot)
-            .filter(
-                    a ->
-                            a.getData()
-                                    .getBeacon_block_root()
-                                    .equals(chainBuilder.getBlockAtSlot(vouchingForBlockAtSlot).getRoot()))
-            .findFirst()
-            .get();
+        .streamValidAttestationsForBlockAtSlot(validForBlockAtSlot)
+        .filter(
+            a ->
+                a.getData()
+                    .getBeacon_block_root()
+                    .equals(chainBuilder.getBlockAtSlot(vouchingForBlockAtSlot).getRoot()))
+        .findFirst()
+        .get();
   }
 
   private Attestation createAttestation(int validForBlockAtSlot, int vouchingForBlockAtSlot) {
