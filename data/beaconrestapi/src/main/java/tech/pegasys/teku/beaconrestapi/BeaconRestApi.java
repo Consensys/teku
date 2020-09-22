@@ -109,7 +109,6 @@ public class BeaconRestApi {
     addNodeHandlers(dataProvider);
     addValidatorHandlers(dataProvider);
     addCustomErrorPages(configuration);
-
   }
 
   private void addHostAllowlistHandler(final GlobalConfiguration configuration) {
