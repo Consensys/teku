@@ -116,7 +116,7 @@ public class BlockImporter {
         .thenCombine(
             SafeFuture.of(() -> recentChainData.getCurrentSlot().orElseThrow()),
             (finalizedCheckpointState, currentSlot) -> {
-              weakSubjectivityValidator.validateIsWithinWeakSubjectivityPeriod(
+              weakSubjectivityValidator.validateLatestFinalizedCheckpoint(
                   finalizedCheckpointState, currentSlot);
               return null;
             })

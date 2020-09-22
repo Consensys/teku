@@ -638,7 +638,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         .thenAccept(
             finalizedCheckpointState -> {
               final UInt64 slot = currentSlot.max(recentChainData.getCurrentSlot().orElse(ZERO));
-              weakSubjectivityValidator.validateIsWithinWeakSubjectivityPeriod(
+              weakSubjectivityValidator.validateLatestFinalizedCheckpoint(
                   finalizedCheckpointState, slot);
             })
         .finish(

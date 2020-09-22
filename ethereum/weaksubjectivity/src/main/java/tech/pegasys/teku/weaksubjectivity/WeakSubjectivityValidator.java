@@ -109,7 +109,7 @@ public class WeakSubjectivityValidator {
    * @param latestFinalizedCheckpoint The latest finalized checkpoint
    * @param currentSlot The current slot based on clock time
    */
-  public void validateIsWithinWeakSubjectivityPeriod(
+  public void validateLatestFinalizedCheckpoint(
       final CheckpointState latestFinalizedCheckpoint, final UInt64 currentSlot) {
     if (isPriorToWSCheckpoint(latestFinalizedCheckpoint)) {
       // Defer validation until we reach the weakSubjectivity checkpoint

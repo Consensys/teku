@@ -113,7 +113,7 @@ public class BlockImporterTest {
     localChain.setSlot(block.getSlot());
     doThrow(new RuntimeException("oops"))
         .when(weakSubjectivityValidator)
-        .validateIsWithinWeakSubjectivityPeriod(any(), any());
+        .validateLatestFinalizedCheckpoint(any(), any());
 
     final BlockImportResult result = blockImporter.importBlock(block).get();
     assertWeakSubjectivityWasChecked();
@@ -378,6 +378,6 @@ public class BlockImporterTest {
     assertThat(finalizedCheckpoint).isCompleted();
     UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     verify(weakSubjectivityValidator)
-        .validateIsWithinWeakSubjectivityPeriod(finalizedCheckpoint.join(), currentSlot);
+        .validateLatestFinalizedCheckpoint(finalizedCheckpoint.join(), currentSlot);
   }
 }
