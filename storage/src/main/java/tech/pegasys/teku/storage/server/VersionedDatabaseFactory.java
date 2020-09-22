@@ -22,7 +22,7 @@ import java.nio.file.StandardOpenOption;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.storage.server.fs.SqlDatabaseFactory;
+import tech.pegasys.teku.storage.server.sql.SqlDatabaseFactory;
 import tech.pegasys.teku.storage.server.metadata.DatabaseMetadata;
 import tech.pegasys.teku.storage.server.network.DatabaseNetwork;
 import tech.pegasys.teku.storage.server.noop.NoOpDatabase;

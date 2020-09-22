@@ -14,7 +14,6 @@
 package tech.pegasys.teku.storage.server.noop;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -108,21 +107,9 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot) {
-    return Collections.emptyList();
-  }
-
-  @Override
-  public void addHotStateRoots(
-      final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap) {}
-
-  @Override
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot) {
     return Optional.empty();
   }
-
-  @Override
-  public void pruneHotStateRoots(final List<Bytes32> stateRoots) {}
 
   @Override
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {

@@ -22,6 +22,7 @@ import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
+import tech.pegasys.teku.storage.server.sql.SqlDatabaseFactory;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -54,6 +55,9 @@ public class FileBackedStorageSystemBuilder {
         break;
       case V3:
         database = createV3Database();
+        break;
+      case SQL1:
+        database = createSql1Database();
         break;
       default:
         throw new UnsupportedOperationException("Unsupported database version: " + version);
@@ -109,6 +113,11 @@ public class FileBackedStorageSystemBuilder {
 
   private StorageSystem.RestartedStorageSupplier createRestartSupplier() {
     return (mode) -> copy().storageMode(mode).build();
+  }
+
+  private Database createSql1Database() {
+    return SqlDatabaseFactory.create(
+        hotDir, storageMode, stateStorageFrequency, new StubMetricsSystem());
   }
 
   private Database createV5Database() {

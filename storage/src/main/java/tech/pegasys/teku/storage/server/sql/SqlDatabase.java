@@ -11,15 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.fs;
+package tech.pegasys.teku.storage.server.sql;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -114,17 +112,29 @@ public class SqlDatabase implements Database {
               });
       transaction.storeVotes(update.getVotes());
       update.getStateRoots().forEach(transaction::storeStateRoot);
+      update
+          .getHotStates()
+          .forEach(
+              (blockRoot, state) -> {
+                if (!update.getFinalizedBlocks().containsKey(blockRoot)) {
+                  transaction.storeState(blockRoot, state);
+                }
+              });
+
       // Ensure the latest finalized block and state is always stored
       update.getLatestFinalizedState().ifPresent(transaction::storeLatestFinalizedState);
-
-      // TODO: Periodically store finalized states
       transaction.commit();
     }
   }
 
   @Override
   public void updateWeakSubjectivityState(final WeakSubjectivityUpdate weakSubjectivityUpdate) {
-    // TODO: Implement this
+    try (final SqlStorage.Transaction updater = storage.startTransaction()) {
+      Optional<Checkpoint> checkpoint = weakSubjectivityUpdate.getWeakSubjectivityCheckpoint();
+      checkpoint.ifPresentOrElse(
+          updater::storeWeakSubjectivityCheckpoint, updater::clearWeakSubjectivityCheckpoint);
+      updater.commit();
+    }
   }
 
   private void updateFinalizedData(
@@ -179,6 +189,7 @@ public class SqlDatabase implements Database {
                   .join()
                   .orElseThrow(() -> new IllegalStateException("Missing finalized block"));
           updater.storeBlock(block, true);
+          updater.deleteStateByBlockRoot(root);
         }
         break;
       default:
@@ -202,8 +213,7 @@ public class SqlDatabase implements Database {
     final Checkpoint justifiedCheckpoint = storage.getJustifiedCheckpoint().orElseThrow();
     final Checkpoint bestJustifiedCheckpoint = storage.getBestJustifiedCheckpoint().orElseThrow();
     final Checkpoint finalizedCheckpoint = maybeFinalizedCheckpoint.get();
-    final BeaconState finalizedState =
-        storage.getStateByBlockRoot(finalizedCheckpoint.getRoot()).orElseThrow();
+    final BeaconState finalizedState = storage.getLatestFinalizedState().orElseThrow();
     final SignedBeaconBlock finalizedBlock =
         storage.getBlockByBlockRoot(finalizedCheckpoint.getRoot()).orElse(null);
     checkNotNull(finalizedBlock);
@@ -212,6 +222,9 @@ public class SqlDatabase implements Database {
         "Latest finalized state does not match latest finalized block");
     final Map<Bytes32, Bytes32> childToParentLookup = storage.getHotBlockChildToParentLookup();
     childToParentLookup.put(finalizedBlock.getRoot(), finalizedBlock.getParent_root());
+
+    final Map<Bytes32, UInt64> rootToSlotMap = storage.getBlockRootToSlotLookup();
+    rootToSlotMap.put(finalizedBlock.getRoot(), finalizedBlock.getSlot());
 
     final Map<UInt64, VoteTracker> votes = storage.loadVotes();
 
@@ -224,20 +237,19 @@ public class SqlDatabase implements Database {
             .justifiedCheckpoint(justifiedCheckpoint)
             .bestJustifiedCheckpoint(bestJustifiedCheckpoint)
             .childToParentMap(childToParentLookup)
+            .rootToSlotMap(rootToSlotMap)
             .latestFinalized(new SignedBlockAndState(finalizedBlock, finalizedState))
             .votes(votes));
   }
 
   @Override
   public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
-    // TODO: Implement this
-    return Optional.empty();
+    return storage.getWeakSubjectivityCheckpoint();
   }
 
   @Override
   public Map<UInt64, VoteTracker> getVotes() {
-    // TODO: Implement this
-    return null;
+    return storage.loadVotes();
   }
 
   @Override
@@ -268,21 +280,19 @@ public class SqlDatabase implements Database {
 
   @Override
   public Optional<BeaconState> getHotState(final Bytes32 root) {
-    // TODO: Implement this
-    return Optional.empty();
+    return storage.getStateByBlockRoot(root, true);
   }
 
   @Override
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots) {
     return blockRoots.stream()
-        .flatMap(blockRoot -> getSignedBlock(blockRoot).stream())
+        .flatMap(blockRoot -> getHotBlock(blockRoot).stream())
         .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
   }
 
   @Override
   public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot) {
-    // TODO: Implement this
-    return Optional.empty();
+    return storage.getBlockByBlockRoot(blockRoot, true);
   }
 
   @Override
@@ -293,25 +303,8 @@ public class SqlDatabase implements Database {
   }
 
   @Override
-  public List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot) {
-    // TODO: Work out if we really need this.
-    return Collections.emptyList();
-  }
-
-  @Override
-  public void addHotStateRoots(
-      final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap) {
-    // TODO: This shouldn't be needed - updates should come through StorageUpdate events
-  }
-
-  @Override
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot) {
     return storage.getSlotAndBlockRootFromStateRoot(stateRoot);
-  }
-
-  @Override
-  public void pruneHotStateRoots(final List<Bytes32> stateRoots) {
-    // TODO: Should tie state pruning into finalization updates
   }
 
   @Override
@@ -321,12 +314,12 @@ public class SqlDatabase implements Database {
 
   @Override
   public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
-    return Optional.empty();
+    return storage.getMinGenesisTimeBlock();
   }
 
   @Override
   public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks() {
-    return Stream.empty();
+    return storage.streamDepositsFromBlocks();
   }
 
   @Override
@@ -335,10 +328,20 @@ public class SqlDatabase implements Database {
   }
 
   @Override
-  public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {}
+  public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
+    try (final SqlStorage.Transaction updater = storage.startTransaction()) {
+      updater.addMinGenesisTimeBlock(event);
+      updater.commit();
+    }
+  }
 
   @Override
-  public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {}
+  public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
+    try (final SqlStorage.Transaction updater = storage.startTransaction()) {
+      updater.addDepositsFromBlockEvent(event);
+      updater.commit();
+    }
+  }
 
   @Override
   public void putProtoArraySnapshot(final ProtoArraySnapshot protoArray) {}

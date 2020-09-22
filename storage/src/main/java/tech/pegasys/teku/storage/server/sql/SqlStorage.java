@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.fs;
+package tech.pegasys.teku.storage.server.sql;
 
 import com.zaxxer.hikari.HikariDataSource;
 import java.io.IOException;
@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -34,6 +35,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.xerial.snappy.Snappy;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
@@ -42,6 +45,9 @@ import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.pow.event.Deposit;
+import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
+import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
@@ -78,6 +84,10 @@ public class SqlStorage implements AutoCloseable {
     return getCheckpoint(CheckpointType.FINALIZED);
   }
 
+  public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
+    return getCheckpoint(CheckpointType.WEAK_SUBJECTIVITY);
+  }
+
   private Optional<Checkpoint> getCheckpoint(final CheckpointType type) {
     return loadSingle(
         "SELECT * FROM checkpoint WHERE type = ?",
@@ -93,10 +103,24 @@ public class SqlStorage implements AutoCloseable {
   }
 
   public Optional<BeaconState> getStateByBlockRoot(final Bytes32 blockRoot) {
+    return getStateByBlockRoot(blockRoot, false);
+  }
+
+  public Optional<BeaconState> getStateByBlockRoot(
+      final Bytes32 blockRoot, final boolean onlyNonfinalized) {
+    final String sql;
+    if (onlyNonfinalized) {
+      sql =
+          "   SELECT s.ssz FROM state s "
+              + "     JOIN block b ON b.blockRoot = s.blockRoot "
+              + "    WHERE s.blockRoot = ? "
+              + "      AND b.finalized = 0 "
+              + " ORDER BY s.slot LIMIT 1";
+    } else {
+      sql = "SELECT ssz FROM state WHERE blockRoot = ? ORDER BY slot LIMIT 1";
+    }
     return loadSingle(
-        "SELECT ssz FROM state WHERE blockRoot = ? ORDER BY slot LIMIT 1",
-        (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class),
-        (Object) blockRoot.toArrayUnsafe());
+        sql, (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class), (Object) blockRoot.toArrayUnsafe());
   }
 
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot) {
@@ -119,8 +143,17 @@ public class SqlStorage implements AutoCloseable {
   }
 
   public Optional<SignedBeaconBlock> getBlockByBlockRoot(final Bytes32 blockRoot) {
+    return getBlockByBlockRoot(blockRoot, false);
+  }
+
+  public Optional<SignedBeaconBlock> getBlockByBlockRoot(
+      final Bytes32 blockRoot, final boolean onlyNonFinalized) {
+    String sql = "SELECT ssz FROM block WHERE blockRoot = ?";
+    if (onlyNonFinalized) {
+      sql += " AND finalized == 0";
+    }
     return loadSingle(
-        "SELECT ssz FROM block WHERE blockRoot = ?",
+        sql,
         (rs, rowNum) -> getSsz(rs, SignedBeaconBlock.class),
         (Object) blockRoot.toArrayUnsafe());
   }
@@ -140,7 +173,7 @@ public class SqlStorage implements AutoCloseable {
 
   public Optional<SignedBeaconBlock> getFinalizedBlockBySlot(final UInt64 slot) {
     return loadSingle(
-        "SELECT blockRoot FROM block WHERE slot = ? AND finalized = true",
+        "SELECT ssz FROM block WHERE slot = ? AND finalized = true",
         (rs, rowNum) -> getSsz(rs, SignedBeaconBlock.class),
         slot.bigIntegerValue());
   }
@@ -156,7 +189,7 @@ public class SqlStorage implements AutoCloseable {
       final UInt64 startSlot, final UInt64 endSlot) {
     final List<Bytes32> blockRoots =
         jdbc.query(
-            "SELECT blockRoot FROM block WHERE finalized = true AND slot >= ? AND slot <= endSlot ORDER BY slot",
+            "SELECT blockRoot FROM block WHERE finalized = true AND slot >= ? AND slot <= ? ORDER BY slot",
             (rs, rowNum) -> getBytes32(rs, "blockRoot"),
             startSlot.bigIntegerValue(),
             endSlot.bigIntegerValue());
@@ -169,6 +202,14 @@ public class SqlStorage implements AutoCloseable {
         "SELECT blockRoot, parentRoot FROM block WHERE finalized = false",
         rs -> childToParentLookup.put(getBytes32(rs, "blockRoot"), getBytes32(rs, "parentRoot")));
     return childToParentLookup;
+  }
+
+  public Map<Bytes32, UInt64> getBlockRootToSlotLookup() {
+    final Map<Bytes32, UInt64> rootToSlotLookup = new HashMap<>();
+    loadForEach(
+        "SELECT blockRoot, slot FROM block WHERE finalized = false",
+        rs -> rootToSlotLookup.put(getBytes32(rs, "blockRoot"), getUInt64(rs, "slot")));
+    return rootToSlotLookup;
   }
 
   public Map<UInt64, VoteTracker> loadVotes() {
@@ -212,6 +253,66 @@ public class SqlStorage implements AutoCloseable {
     return Bytes32.wrap(rs.getBytes(field));
   }
 
+  private Bytes getBytes(final ResultSet rs, final String field) throws SQLException {
+    return Bytes.wrap(rs.getBytes(field));
+  }
+
+  public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
+    return loadSingle(
+        "SELECT block_timestamp, block_number, block_hash FROM eth1_min_genesis",
+        (rs, rowNum) ->
+            new MinGenesisTimeBlockEvent(
+                getUInt64(rs, "block_timestamp"),
+                getUInt64(rs, "block_number"),
+                getBytes32(rs, "block_hash")));
+  }
+
+  public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks() {
+    // TODO: Should load these in pages
+    final List<BlockInfo> blocks =
+        jdbc.query(
+            "SELECT block_number, block_timestamp, block_hash FROM eth1_deposit_block",
+            (rs, rowNum) ->
+                new BlockInfo(
+                    getUInt64(rs, "block_number"),
+                    getUInt64(rs, "block_timestamp"),
+                    getBytes32(rs, "block_hash")));
+    return blocks.stream()
+        .map(
+            block ->
+                DepositsFromBlockEvent.create(
+                    block.blockNumber,
+                    block.blockHash,
+                    block.blockTimestamp,
+                    loadDeposits(block).stream()));
+  }
+
+  private List<Deposit> loadDeposits(final BlockInfo block) {
+    return jdbc.query(
+        "SELECT * FROM eth1_deposit WHERE block_number = ? ORDER BY merkle_tree_index",
+        (rs, rowNum) ->
+            new Deposit(
+                BLSPublicKey.fromBytesCompressed(Bytes48.wrap(getBytes(rs, "public_key"))),
+                getBytes32(rs, "withdrawal_credentials"),
+                BLSSignature.fromBytesCompressed(getBytes(rs, "signature")),
+                getUInt64(rs, "amount"),
+                getUInt64(rs, "merkle_tree_index")),
+        block.blockNumber);
+  }
+
+  private static class BlockInfo {
+    private final UInt64 blockNumber;
+    private final UInt64 blockTimestamp;
+    private final Bytes32 blockHash;
+
+    private BlockInfo(
+        final UInt64 blockNumber, final UInt64 blockTimestamp, final Bytes32 blockHash) {
+      this.blockNumber = blockNumber;
+      this.blockTimestamp = blockTimestamp;
+      this.blockHash = blockHash;
+    }
+  }
+
   public class Transaction implements AutoCloseable {
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -231,6 +332,14 @@ public class SqlStorage implements AutoCloseable {
 
     public void storeFinalizedCheckpoint(final Checkpoint checkpoint) {
       setCheckpoint(CheckpointType.FINALIZED, checkpoint);
+    }
+
+    public void storeWeakSubjectivityCheckpoint(final Checkpoint checkpoint) {
+      setCheckpoint(CheckpointType.WEAK_SUBJECTIVITY, checkpoint);
+    }
+
+    public void clearWeakSubjectivityCheckpoint() {
+      execSql("DELETE FROM checkpoint WHERE type = ?", CheckpointType.WEAK_SUBJECTIVITY.name());
     }
 
     private void setCheckpoint(final CheckpointType type, final Checkpoint checkpoint) {
@@ -265,7 +374,8 @@ public class SqlStorage implements AutoCloseable {
 
     public void storeStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
       execSql(
-          "INSERT INTO state (stateRoot, blockRoot, slot) VALUES (?, ?, ?)",
+          "INSERT INTO state (stateRoot, blockRoot, slot) VALUES (?, ?, ?)"
+              + " ON CONFLICT(stateRoot) DO NOTHING",
           stateRoot.toArrayUnsafe(),
           slotAndBlockRoot.getBlockRoot().toArrayUnsafe(),
           slotAndBlockRoot.getSlot().bigIntegerValue());
@@ -305,6 +415,41 @@ public class SqlStorage implements AutoCloseable {
                   voteTracker.getCurrentRoot().toArrayUnsafe(),
                   voteTracker.getNextRoot().toArrayUnsafe(),
                   voteTracker.getNextEpoch().bigIntegerValue()));
+    }
+
+    public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
+      execSql(
+          "INSERT INTO eth1_min_genesis (id, block_timestamp, block_number, block_hash) "
+              + " VALUES (1, ?, ?, ?)"
+              + " ON CONFLICT(id) DO UPDATE SET block_timestamp = excluded.block_timestamp,"
+              + "                               block_number = excluded.block_number,"
+              + "                               block_hash = excluded.block_hash",
+          event.getTimestamp().bigIntegerValue(),
+          event.getBlockNumber().bigIntegerValue(),
+          event.getBlockHash().toArrayUnsafe());
+    }
+
+    public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
+      execSql(
+          "INSERT INTO eth1_deposit_block (block_number, block_timestamp, block_hash) "
+              + "   VALUES (?, ?, ?) ",
+          event.getBlockNumber().bigIntegerValue(),
+          event.getBlockTimestamp().bigIntegerValue(),
+          event.getBlockHash().toArrayUnsafe());
+      event
+          .getDeposits()
+          .forEach(
+              deposit ->
+                  execSql(
+                      "INSERT INTO eth1_deposit "
+                          + "(merkle_tree_index, block_number, public_key, withdrawal_credentials, signature, amount) "
+                          + "VALUES (?, ?, ?, ?, ?, ?)",
+                      deposit.getMerkle_tree_index().bigIntegerValue(),
+                      event.getBlockNumber().bigIntegerValue(),
+                      deposit.getPubkey().toBytesCompressed().toArrayUnsafe(),
+                      deposit.getWithdrawal_credentials().toArrayUnsafe(),
+                      deposit.getSignature().toBytesCompressed().toArrayUnsafe(),
+                      deposit.getAmount().bigIntegerValue()));
     }
 
     private Object serializeSsz(final SimpleOffsetSerializable obj) {

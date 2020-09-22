@@ -11,10 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.fs;
+package tech.pegasys.teku.storage.server.sql;
 
 public enum CheckpointType {
   FINALIZED,
   JUSTIFIED,
-  BEST_JUSTIFIED
+  BEST_JUSTIFIED,
+  WEAK_SUBJECTIVITY
 }

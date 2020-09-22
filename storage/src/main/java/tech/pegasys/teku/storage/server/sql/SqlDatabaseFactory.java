@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server.fs;
+package tech.pegasys.teku.storage.server.sql;
 
 import com.zaxxer.hikari.HikariDataSource;
 import java.nio.file.Path;
@@ -30,6 +30,7 @@ public class SqlDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final MetricsSystem metricsSystem) {
+    dbDir.toFile().mkdir();
     final HikariDataSource dataSource = new HikariDataSource();
     dataSource.setJdbcUrl("jdbc:sqlite:" + dbDir.resolve("index").toAbsolutePath() + "");
 

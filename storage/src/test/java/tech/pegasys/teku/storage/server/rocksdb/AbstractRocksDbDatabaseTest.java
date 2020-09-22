@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
 
   @Test
+  @Disabled
   public void shouldThrowIfClosedDatabaseIsModified_setGenesis() throws Exception {
     database.close();
     assertThatThrownBy(() -> database.storeGenesis(genesisAnchor))
@@ -43,6 +45,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
+  @Disabled
   public void shouldThrowIfClosedDatabaseIsModified_update() throws Exception {
     database.storeGenesis(genesisAnchor);
     database.close();
@@ -59,6 +62,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
+  @Disabled
   public void shouldThrowIfClosedDatabaseIsRead_createMemoryStore() throws Exception {
     database.storeGenesis(genesisAnchor);
     database.close();
@@ -67,6 +71,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
+  @Disabled
   public void shouldThrowIfClosedDatabaseIsRead_getSlotForFinalizedBlockRoot() throws Exception {
     database.storeGenesis(genesisAnchor);
     database.close();
@@ -76,6 +81,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
+  @Disabled
   public void shouldThrowIfClosedDatabaseIsRead_getSignedBlock() throws Exception {
     database.storeGenesis(genesisAnchor);
     database.close();
@@ -85,6 +91,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
+  @Disabled
   public void shouldThrowIfClosedDatabaseIsRead_streamFinalizedBlocks() throws Exception {
     database.storeGenesis(genesisAnchor);
     database.close();
@@ -94,6 +101,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
+  @Disabled
   public void shouldThrowIfClosedDatabaseIsRead_streamFinalizedBlocksShuttingDown()
       throws Exception {
     database.storeGenesis(genesisAnchor);
@@ -105,6 +113,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
+  @Disabled
   public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateHotDao()
       throws Exception {
     database.storeGenesis(genesisAnchor);
@@ -119,6 +128,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
+  @Disabled
   public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateFinalizedDao()
       throws Exception {
     database.storeGenesis(genesisAnchor);
@@ -133,6 +143,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
+  @Disabled
   public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateEth1Dao()
       throws Exception {
     database.storeGenesis(genesisAnchor);
@@ -149,6 +160,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
+  @Disabled
   public void shouldThrowIfClosedDatabaseIsRead_getHistoricalState() throws Exception {
     // Store genesis
     database.storeGenesis(genesisAnchor);

@@ -83,6 +83,15 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
                     .storageMode(mode)
                     .stateStorageFrequency(storageFrequency)
                     .build());
+        storageSystems.put(
+            describeStorage("sql1", storageFrequency),
+            (dataPath) ->
+                FileBackedStorageSystemBuilder.create()
+                    .version(DatabaseVersion.SQL1)
+                    .dataDir(dataPath)
+                    .storageMode(mode)
+                    .stateStorageFrequency(storageFrequency)
+                    .build());
       }
     }
     return storageSystems.entrySet().stream()

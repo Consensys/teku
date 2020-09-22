@@ -14,7 +14,6 @@
 package tech.pegasys.teku.storage.server;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -92,13 +91,7 @@ public interface Database extends AutoCloseable {
   @MustBeClosed
   Stream<SignedBeaconBlock> streamFinalizedBlocks(UInt64 startSlot, UInt64 endSlot);
 
-  List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot);
-
-  void addHotStateRoots(final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap);
-
   Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot);
-
-  void pruneHotStateRoots(final List<Bytes32> stateRoots);
 
   Optional<BeaconState> getLatestAvailableFinalizedState(UInt64 maxSlot);
 

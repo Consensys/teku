@@ -22,7 +22,6 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -299,20 +298,6 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot) {
-    return hotDao.getStateRootsBeforeSlot(slot);
-  }
-
-  @Override
-  public void addHotStateRoots(
-      final Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap) {
-    try (final HotUpdater updater = hotDao.hotUpdater()) {
-      updater.addHotStateRoots(stateRootToSlotAndBlockRootMap);
-      updater.commit();
-    }
-  }
-
-  @Override
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot) {
     Optional<SlotAndBlockRoot> maybeSlotAndBlockRoot =
         hotDao.getSlotAndBlockRootFromStateRoot(stateRoot);
@@ -320,14 +305,6 @@ public class RocksDbDatabase implements Database {
       return maybeSlotAndBlockRoot;
     }
     return finalizedDao.getSlotAndBlockRootForFinalizedStateRoot(stateRoot);
-  }
-
-  @Override
-  public void pruneHotStateRoots(final List<Bytes32> stateRoots) {
-    try (final HotUpdater updater = hotDao.hotUpdater()) {
-      updater.pruneHotStateRoots(stateRoots);
-      updater.commit();
-    }
   }
 
   @Override
