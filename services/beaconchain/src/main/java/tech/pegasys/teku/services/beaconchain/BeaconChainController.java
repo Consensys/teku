@@ -98,7 +98,7 @@ import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
 import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
-import tech.pegasys.teku.validator.coordinator.performance.RecentChainDataPerformanceTracker;
+import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 import java.io.IOException;
@@ -282,7 +282,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void initPerformanceTracker() {
     LOG.debug("BeaconChainController.initPerformanceTracker()");
     if (config.isValidatorPerformanceTrackingEnabled()) {
-      performanceTracker = new RecentChainDataPerformanceTracker(recentChainData, STATUS_LOG);
+      performanceTracker = new DefaultPerformanceTracker(combinedChainDataClient, STATUS_LOG);
       eventChannels.subscribe(SlotEventsChannel.class, performanceTracker);
     } else {
       performanceTracker = new NoOpPerformanceTracker();
