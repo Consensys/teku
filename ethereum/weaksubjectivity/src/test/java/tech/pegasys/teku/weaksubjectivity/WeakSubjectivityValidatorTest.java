@@ -277,6 +277,27 @@ public class WeakSubjectivityValidatorTest {
   }
 
   @Test
+  public void validateIsConsistentWithWSCheckpoint_checkpointFinalizedWithMissingBlock() {
+    final UInt64 checkpointEpoch = UInt64.valueOf(100);
+    final UInt64 checkpointSlot = compute_start_slot_at_epoch(checkpointEpoch);
+    final SignedBeaconBlock checkpointBlock =
+        dataStructureUtil.randomSignedBeaconBlock(checkpointSlot);
+    final Checkpoint wsCheckpoint = new Checkpoint(checkpointEpoch, checkpointBlock.getRoot());
+    final WeakSubjectivityValidator validator =
+        new WeakSubjectivityValidator(calculator, policies, Optional.of(wsCheckpoint));
+    final CombinedChainDataClient chainData =
+        mockChainDataClientAfterCheckpoint(wsCheckpoint, Optional.empty());
+
+    SafeFuture<Void> result = validator.validateIsConsistentWithWSCheckpoint(chainData);
+
+    assertThat(result).isCompletedExceptionally();
+    verify(chainData).isFinalizedEpoch(wsCheckpoint.getEpoch());
+    verify(chainData).getBlockInEffectAtSlot(wsCheckpoint.getEpochStartSlot());
+
+    orderedPolicyMocks.verifyNoMoreInteractions();
+  }
+
+  @Test
   public void isBlockValid_noWSCheckpoint() {
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(calculator, policies, Optional.empty());
@@ -434,10 +455,15 @@ public class WeakSubjectivityValidatorTest {
 
   private CombinedChainDataClient mockChainDataClientAfterCheckpoint(
       final Checkpoint wsCheckpoint, final SignedBeaconBlock block) {
+    return mockChainDataClientAfterCheckpoint(wsCheckpoint, Optional.of(block));
+  }
+
+  private CombinedChainDataClient mockChainDataClientAfterCheckpoint(
+      final Checkpoint wsCheckpoint, final Optional<SignedBeaconBlock> block) {
     final CombinedChainDataClient client = mock(CombinedChainDataClient.class);
     when(client.isFinalizedEpoch(any())).thenReturn(true);
     when(client.getBlockInEffectAtSlot(wsCheckpoint.getEpochStartSlot()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
+        .thenReturn(SafeFuture.completedFuture(block));
 
     return client;
   }
