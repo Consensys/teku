@@ -22,12 +22,14 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
+import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.state.FinalizedStateCache;
 import tech.pegasys.teku.storage.store.StoreBuilder;
@@ -85,6 +87,15 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
     }
 
     return SafeFuture.completedFuture(getStore());
+  }
+
+  @Override
+  public SafeFuture<WeakSubjectivityState> getWeakSubjectivityState() {
+    return SafeFuture.of(
+        () -> {
+          Optional<Checkpoint> checkpoint = database.getWeakSubjectivityCheckpoint();
+          return WeakSubjectivityState.create(checkpoint);
+        });
   }
 
   @Override
