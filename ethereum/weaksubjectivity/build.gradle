@@ -1,5 +1,7 @@
 dependencies {
+    implementation project(':ethereum:core')
     implementation project(':ethereum:datastructures')
+    implementation project(':protoarray')
     implementation 'com.google.guava:guava'
 
     testImplementation testFixtures(project(':ethereum:datastructures'))

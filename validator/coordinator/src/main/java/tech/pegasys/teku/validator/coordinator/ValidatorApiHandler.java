@@ -29,6 +29,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -407,6 +408,32 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .orElseGet(() -> ValidatorDuties.noDuties(key));
   }
 
+  private ValidatorDuties createValidatorDuties(
+      final Map<Integer, List<UInt64>> proposalSlotsByValidatorIndex,
+      final BLSPublicKey key,
+      final BeaconState state,
+      final UInt64 epoch,
+      final Integer index) {
+    return createAttesterDuties(state, epoch, index)
+        .map(duties -> createValidatorDuties(key, duties, proposalSlotsByValidatorIndex))
+        .orElse(ValidatorDuties.noDuties(key));
+  }
+
+  private ValidatorDuties createValidatorDuties(
+      final BLSPublicKey key,
+      final AttesterDuties duties,
+      final Map<Integer, List<UInt64>> proposalSlotsByValidatorIndex) {
+    return ValidatorDuties.withDuties(
+        key,
+        duties.getValidatorIndex(),
+        duties.getCommitteeIndex(),
+        duties.getValidatorCommitteeIndex(),
+        getAggregatorModulo(duties.getCommitteeLength()),
+        proposalSlotsByValidatorIndex.getOrDefault(
+            duties.getValidatorIndex(), Collections.emptyList()),
+        duties.getSlot());
+  }
+
   private List<ProposerDuties> getProposerDutiesFromIndexesAndState(
       final BeaconState state, final UInt64 epoch) {
     final List<ProposerDuties> result = new ArrayList<>();
@@ -452,28 +479,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       LOG.debug(ex);
       return Optional.empty();
     }
-  }
-
-  private ValidatorDuties createValidatorDuties(
-      final Map<Integer, List<UInt64>> proposalSlotsByValidatorIndex,
-      final BLSPublicKey key,
-      final BeaconState state,
-      final UInt64 epoch,
-      final Integer validatorIndex) {
-    final List<UInt64> proposerSlots =
-        proposalSlotsByValidatorIndex.getOrDefault(validatorIndex, emptyList());
-    return CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex)
-        .map(
-            committeeAssignment ->
-                ValidatorDuties.withDuties(
-                    key,
-                    validatorIndex,
-                    Math.toIntExact(committeeAssignment.getCommitteeIndex().longValue()),
-                    committeeAssignment.getCommittee().indexOf(validatorIndex),
-                    getAggregatorModulo(committeeAssignment.getCommittee().size()),
-                    proposerSlots,
-                    committeeAssignment.getSlot()))
-        .orElseGet(() -> ValidatorDuties.noDuties(key));
   }
 
   private Map<Integer, List<UInt64>> getBeaconProposalSlotsByValidatorIndex(

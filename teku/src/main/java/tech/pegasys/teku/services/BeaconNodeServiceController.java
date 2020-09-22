@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.services;
 
+import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainService;
 import tech.pegasys.teku.services.chainstorage.StorageService;
@@ -23,18 +24,20 @@ import tech.pegasys.teku.validator.client.ValidatorClientService;
 
 public class BeaconNodeServiceController extends ServiceController {
 
-  public BeaconNodeServiceController(final ServiceConfig config) {
+  public BeaconNodeServiceController(
+      TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
     // Note services will be started in the order they are added here.
-    services.add(new StorageService(config));
-    services.add(new BeaconChainService(config));
-    if (config.getConfig().isRemoteValidatorApiEnabled()) {
-      services.add(new RemoteValidatorService(config));
+    services.add(new StorageService(serviceConfig));
+    services.add(new BeaconChainService(tekuConfig.beaconChain(), serviceConfig));
+    if (serviceConfig.getConfig().isRemoteValidatorApiEnabled()) {
+      services.add(new RemoteValidatorService(serviceConfig));
     } else {
-      services.add(ValidatorClientService.create(config));
+      services.add(ValidatorClientService.create(serviceConfig));
     }
-    services.add(new TimerService(config));
-    if (!config.getConfig().isInteropEnabled() && config.getConfig().isEth1Enabled()) {
-      services.add(new PowchainService(config));
+    services.add(new TimerService(serviceConfig));
+    if (!serviceConfig.getConfig().isInteropEnabled()
+        && serviceConfig.getConfig().isEth1Enabled()) {
+      services.add(new PowchainService(serviceConfig));
     }
   }
 }

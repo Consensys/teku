@@ -26,6 +26,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class WeakSubjectivityCalculatorTest {
 
@@ -33,7 +34,9 @@ public class WeakSubjectivityCalculatorTest {
   @MethodSource("computeWeakSubjectivityParams")
   public void computeWeakSubjectivity(
       final int validatorCount, final UInt64 safetyDecay, final int expectedResult) {
-    final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(safetyDecay);
+    final WeakSubjectivityConfig config =
+        WeakSubjectivityConfig.builder().safetyDecay(safetyDecay).build();
+    final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     UInt64 result = calculator.computeWeakSubjectivityPeriod(validatorCount);
     assertThat(result).isEqualTo(UInt64.valueOf(expectedResult));
   }
@@ -42,7 +45,9 @@ public class WeakSubjectivityCalculatorTest {
   @MethodSource("getWeakSubjectivityModParams")
   public void getWeakSubjectivityMod(
       final int validatorCount, final UInt64 safetyDecay, final int expectedResult) {
-    final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(safetyDecay);
+    final WeakSubjectivityConfig config =
+        WeakSubjectivityConfig.builder().safetyDecay(safetyDecay).build();
+    final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     UInt64 result = calculator.getWeakSubjectivityMod(validatorCount);
     assertThat(result).isEqualTo(UInt64.valueOf(expectedResult));
   }
