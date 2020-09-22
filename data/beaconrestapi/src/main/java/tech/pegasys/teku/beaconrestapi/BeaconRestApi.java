@@ -97,6 +97,12 @@ public class BeaconRestApi {
     addHostAllowlistHandler(configuration);
 
     addExceptionHandlers();
+    // standard api endpoint inclusion
+    addV1BeaconHandlers(dataProvider);
+    addV1NodeHandlers(dataProvider);
+    addV1ValidatorHandlers(dataProvider);
+
+    // Endpoints from before standard API
     addAdminHandlers();
     addBeaconHandlers(dataProvider);
     addNetworkHandlers(dataProvider.getNetworkDataProvider());
@@ -104,10 +110,6 @@ public class BeaconRestApi {
     addValidatorHandlers(dataProvider);
     addCustomErrorPages(configuration);
 
-    // standard api endpoint inclusion
-    addV1NodeHandlers(dataProvider);
-    addV1ValidatorHandlers(dataProvider);
-    addV1BeaconHandlers(dataProvider);
   }
 
   private void addHostAllowlistHandler(final GlobalConfiguration configuration) {
