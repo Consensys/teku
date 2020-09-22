@@ -51,6 +51,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
   @VisibleForTesting
   static final UInt64 BLOCK_PERFORMANCE_EVALUATION_INTERVAL = UInt64.valueOf(2); // epochs
+  static final UInt64 ATTESTATION_INCLUSION_RANGE = UInt64.valueOf(2);
 
   private final CombinedChainDataClient combinedChainDataClient;
   private final StatusLogger statusLogger;
@@ -80,9 +81,9 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
     // Output attestation performance information for current epoch - 2 since attestations can be
     // included in both the epoch they were produced in or in the one following.
-    if (currentEpoch.isGreaterThanOrEqualTo(nodeStartEpoch.get().plus(2))) {
+    if (currentEpoch.isGreaterThanOrEqualTo(nodeStartEpoch.get().plus(ATTESTATION_INCLUSION_RANGE))) {
       statusLogger.performance(
-          getAttestationPerformanceForEpoch(currentEpoch, currentEpoch.minus(2))
+          getAttestationPerformanceForEpoch(currentEpoch, currentEpoch.minus(ATTESTATION_INCLUSION_RANGE))
               .toString());
     }
 
@@ -99,7 +100,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     UInt64 epoch =
         currentEpoch
             .minus(BLOCK_PERFORMANCE_EVALUATION_INTERVAL)
-            .min(currentEpoch.minus(UInt64.valueOf(2)));
+            .min(currentEpoch.minus(ATTESTATION_INCLUSION_RANGE));
     clearReduntantSavedSentObjects(epoch);
   }
 
@@ -126,12 +127,12 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   private AttestationPerformance getAttestationPerformanceForEpoch(
       UInt64 currentEpoch, UInt64 analyzedEpoch) {
     checkArgument(
-        analyzedEpoch.isLessThanOrEqualTo(currentEpoch.minus(UInt64.valueOf(2))),
+        analyzedEpoch.isLessThanOrEqualTo(currentEpoch.minus(ATTESTATION_INCLUSION_RANGE)),
         "Epoch to analyze attestation performance must be at least 2 epochs less than the current epoch");
     // Attestations can be included in either the epoch they were produced in or in
     // the following epoch. Thus, the most recent epoch for which we can evaluate attestation
     // performance is current epoch - 2.
-    UInt64 analysisRangeEndEpoch = analyzedEpoch.plus(UInt64.valueOf(2));
+    UInt64 analysisRangeEndEpoch = analyzedEpoch.plus(ATTESTATION_INCLUSION_RANGE);
 
     // Get included attestations for the given epochs in a map from slot to attestations
     // included in block.
