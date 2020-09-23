@@ -309,7 +309,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             stateTransition);
   }
 
-  private SafeFuture<Void> initWeakSubjectivityValidator() {
+  @VisibleForTesting
+  SafeFuture<Void> initWeakSubjectivityValidator() {
     StorageQueryChannel storageQueryChannel =
         eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner);
     StorageUpdateChannel storageUpdateChannel =
@@ -552,6 +553,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     }
 
     return privateKey;
+  }
+
+  @VisibleForTesting
+  WeakSubjectivityValidator getWeakSubjectivityValidator() {
+    return weakSubjectivityValidator;
   }
 
   public void initAttestationPool() {

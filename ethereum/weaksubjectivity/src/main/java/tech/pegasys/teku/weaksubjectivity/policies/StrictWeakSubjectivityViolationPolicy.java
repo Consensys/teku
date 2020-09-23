@@ -45,4 +45,15 @@ public class StrictWeakSubjectivityViolationPolicy implements WeakSubjectivityVi
   private void exitClient() {
     System.exit(2);
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    return o != null && getClass() == o.getClass();
+  }
+
+  @Override
+  public int hashCode() {
+    return getClass().hashCode();
+  }
 }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.events;
 
+import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 
@@ -34,5 +35,18 @@ public class WeakSubjectivityUpdate {
 
   public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
     return weakSubjectivityCheckpoint;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    WeakSubjectivityUpdate that = (WeakSubjectivityUpdate) o;
+    return weakSubjectivityCheckpoint.equals(that.weakSubjectivityCheckpoint);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(weakSubjectivityCheckpoint);
   }
 }

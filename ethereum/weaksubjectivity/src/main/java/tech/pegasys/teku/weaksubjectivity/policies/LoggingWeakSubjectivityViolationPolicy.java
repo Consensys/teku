@@ -15,6 +15,7 @@ package tech.pegasys.teku.weaksubjectivity.policies;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
+import java.util.Objects;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -66,5 +67,18 @@ public class LoggingWeakSubjectivityViolationPolicy implements WeakSubjectivityV
   @Override
   public void onFailedToPerformValidation(final String message, final Throwable error) {
     LOG.log(level, "Failed to perform weak subjectivity validation: " + message, error);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    LoggingWeakSubjectivityViolationPolicy that = (LoggingWeakSubjectivityViolationPolicy) o;
+    return level.equals(that.level);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(level);
   }
 }
