@@ -15,19 +15,12 @@ package tech.pegasys.teku.storage.server.sql;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import com.zaxxer.hikari.HikariDataSource;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcOperations;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
@@ -38,48 +31,19 @@ import tech.pegasys.teku.pow.event.Deposit;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 
-public class SqlStorage implements AutoCloseable {
+public class SqlEth1Storage extends AbstractSqlStorage {
 
-  private final PlatformTransactionManager transactionManager;
-  private final HikariDataSource dataSource;
-  private final JdbcOperations jdbc;
-
-  public SqlStorage(
-      PlatformTransactionManager transactionManager, final HikariDataSource dataSource) {
-    this.transactionManager = transactionManager;
-    this.dataSource = dataSource;
-    this.jdbc = new JdbcTemplate(dataSource);
+  protected SqlEth1Storage(
+      final PlatformTransactionManager transactionManager, final HikariDataSource dataSource) {
+    super(transactionManager, dataSource);
   }
 
   @MustBeClosed
-  public Transaction startTransaction() {
-    return new Transaction(transactionManager.getTransaction(TransactionDefinition.withDefaults()));
-  }
-
-  @Override
-  public void close() {
-    dataSource.close();
-  }
-
-  private <T> Optional<T> loadSingle(
-      final String sql, final RowMapper<T> mapper, final Object... params) {
-    try {
-      return Optional.ofNullable(jdbc.queryForObject(sql, mapper, params));
-    } catch (final EmptyResultDataAccessException e) {
-      return Optional.empty();
-    }
-  }
-
-  private UInt64 getUInt64(final ResultSet rs, final String field) throws SQLException {
-    return UInt64.valueOf(rs.getBigDecimal(field).toBigIntegerExact());
-  }
-
-  private Bytes32 getBytes32(final ResultSet rs, final String field) throws SQLException {
-    return Bytes32.wrap(rs.getBytes(field));
-  }
-
-  private Bytes getBytes(final ResultSet rs, final String field) throws SQLException {
-    return Bytes.wrap(rs.getBytes(field));
+  public SqlEth1Storage.Transaction startTransaction() {
+    return new SqlEth1Storage.Transaction(
+        transactionManager.getTransaction(TransactionDefinition.withDefaults()),
+        transactionManager,
+        jdbc);
   }
 
   public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
@@ -138,13 +102,13 @@ public class SqlStorage implements AutoCloseable {
     }
   }
 
-  public class Transaction implements AutoCloseable {
-    private final AtomicBoolean closed = new AtomicBoolean(false);
+  public static class Transaction extends AbstractSqlTransaction {
 
-    private final TransactionStatus transaction;
-
-    public Transaction(final TransactionStatus transaction) {
-      this.transaction = transaction;
+    protected Transaction(
+        final TransactionStatus transaction,
+        final PlatformTransactionManager transactionManager,
+        final JdbcOperations jdbc) {
+      super(transaction, transactionManager, jdbc);
     }
 
     public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
@@ -154,18 +118,18 @@ public class SqlStorage implements AutoCloseable {
               + " ON CONFLICT(id) DO UPDATE SET block_timestamp = excluded.block_timestamp,"
               + "                               block_number = excluded.block_number,"
               + "                               block_hash = excluded.block_hash",
-          event.getTimestamp().bigIntegerValue(),
-          event.getBlockNumber().bigIntegerValue(),
-          event.getBlockHash().toArrayUnsafe());
+          event.getTimestamp(),
+          event.getBlockNumber(),
+          event.getBlockHash());
     }
 
     public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
       execSql(
           "INSERT INTO eth1_deposit_block (block_number, block_timestamp, block_hash) "
               + "   VALUES (?, ?, ?) ",
-          event.getBlockNumber().bigIntegerValue(),
-          event.getBlockTimestamp().bigIntegerValue(),
-          event.getBlockHash().toArrayUnsafe());
+          event.getBlockNumber(),
+          event.getBlockTimestamp(),
+          event.getBlockHash());
       event
           .getDeposits()
           .forEach(
@@ -174,31 +138,12 @@ public class SqlStorage implements AutoCloseable {
                       "INSERT INTO eth1_deposit "
                           + "(merkle_tree_index, block_number, public_key, withdrawal_credentials, signature, amount) "
                           + "VALUES (?, ?, ?, ?, ?, ?)",
-                      deposit.getMerkle_tree_index().bigIntegerValue(),
-                      event.getBlockNumber().bigIntegerValue(),
-                      deposit.getPubkey().toBytesCompressed().toArrayUnsafe(),
-                      deposit.getWithdrawal_credentials().toArrayUnsafe(),
-                      deposit.getSignature().toBytesCompressed().toArrayUnsafe(),
-                      deposit.getAmount().bigIntegerValue()));
-    }
-
-    // Returns number of affected rows.
-
-    private int execSql(final String sql, final Object... params) {
-      return jdbc.update(sql, params);
-    }
-
-    public void commit() {
-      if (closed.compareAndSet(false, true)) {
-        transactionManager.commit(transaction);
-      }
-    }
-
-    @Override
-    public void close() {
-      if (closed.compareAndSet(false, true)) {
-        transactionManager.rollback(transaction);
-      }
+                      deposit.getMerkle_tree_index(),
+                      event.getBlockNumber(),
+                      deposit.getPubkey().toBytesCompressed(),
+                      deposit.getWithdrawal_credentials(),
+                      deposit.getSignature().toBytesCompressed(),
+                      deposit.getAmount()));
     }
   }
 }

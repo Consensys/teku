@@ -47,19 +47,19 @@ import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class SqlDatabase implements Database {
   private final MetricsSystem metricsSystem;
-  private final SqlStorage storage;
   private final SqlChainStorage chainStorage;
+  private final SqlEth1Storage eth1Storage;
   private final StateStorageMode stateStorageMode;
   private final UInt64 stateStorageFrequency;
 
   public SqlDatabase(
       final MetricsSystem metricsSystem,
-      final SqlStorage storage,
       final SqlChainStorage chainStorage,
+      final SqlEth1Storage eth1Storage,
       final StateStorageMode stateStorageMode,
       final UInt64 stateStorageFrequency) {
     this.metricsSystem = metricsSystem;
-    this.storage = storage;
+    this.eth1Storage = eth1Storage;
     this.chainStorage = chainStorage;
     this.stateStorageMode = stateStorageMode;
     this.stateStorageFrequency = stateStorageFrequency;
@@ -262,12 +262,12 @@ public class SqlDatabase implements Database {
 
   @Override
   public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
-    return storage.getMinGenesisTimeBlock();
+    return eth1Storage.getMinGenesisTimeBlock();
   }
 
   @Override
   public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks() {
-    return storage.streamDepositsFromBlocks();
+    return eth1Storage.streamDepositsFromBlocks();
   }
 
   @Override
@@ -277,7 +277,7 @@ public class SqlDatabase implements Database {
 
   @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
-    try (final SqlStorage.Transaction updater = storage.startTransaction()) {
+    try (final SqlEth1Storage.Transaction updater = eth1Storage.startTransaction()) {
       updater.addMinGenesisTimeBlock(event);
       updater.commit();
     }
@@ -285,7 +285,7 @@ public class SqlDatabase implements Database {
 
   @Override
   public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
-    try (final SqlStorage.Transaction updater = storage.startTransaction()) {
+    try (final SqlEth1Storage.Transaction updater = eth1Storage.startTransaction()) {
       updater.addDepositsFromBlockEvent(event);
       updater.commit();
     }
@@ -296,6 +296,6 @@ public class SqlDatabase implements Database {
 
   @Override
   public void close() {
-    storage.close();
+    eth1Storage.close();
   }
 }

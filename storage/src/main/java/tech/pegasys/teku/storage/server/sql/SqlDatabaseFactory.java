@@ -39,11 +39,10 @@ public class SqlDatabaseFactory {
     final PlatformTransactionManager transactionManager =
         new DataSourceTransactionManager(dataSource);
 
-    final boolean useSnappyCompression = false;
     return new SqlDatabase(
         metricsSystem,
-        new SqlStorage(transactionManager, dataSource),
         new SqlChainStorage(transactionManager, dataSource),
+        new SqlEth1Storage(transactionManager, dataSource),
         stateStorageMode,
         UInt64.valueOf(stateStorageFrequency));
   }
