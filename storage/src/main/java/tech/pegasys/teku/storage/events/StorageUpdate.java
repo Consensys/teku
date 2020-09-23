@@ -33,7 +33,7 @@ public class StorageUpdate {
   private final Optional<Checkpoint> justifiedCheckpoint;
   private final Optional<Checkpoint> bestJustifiedCheckpoint;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
-  private final Map<Bytes32, SignedBeaconBlock> hotBlocks;
+  private final Map<Bytes32, SignedBlockAndState> hotBlocksAndStates;
   private final Map<Bytes32, BeaconState> hotStates;
   private final Map<UInt64, VoteTracker> votes;
   private final Set<Bytes32> deletedHotBlocks;
@@ -43,7 +43,7 @@ public class StorageUpdate {
       final Optional<FinalizedChainData> finalizedChainData,
       final Optional<Checkpoint> justifiedCheckpoint,
       final Optional<Checkpoint> bestJustifiedCheckpoint,
-      final Map<Bytes32, SignedBeaconBlock> hotBlocks,
+      final Map<Bytes32, SignedBlockAndState> hotBlocksAndStates,
       final Map<Bytes32, BeaconState> hotStates,
       final Set<Bytes32> deletedHotBlocks,
       final Map<UInt64, VoteTracker> votes,
@@ -52,7 +52,7 @@ public class StorageUpdate {
     this.finalizedChainData = finalizedChainData;
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
-    this.hotBlocks = hotBlocks;
+    this.hotBlocksAndStates = hotBlocksAndStates;
     this.hotStates = hotStates;
     this.deletedHotBlocks = deletedHotBlocks;
     this.votes = votes;
@@ -64,7 +64,7 @@ public class StorageUpdate {
         && justifiedCheckpoint.isEmpty()
         && finalizedChainData.isEmpty()
         && bestJustifiedCheckpoint.isEmpty()
-        && hotBlocks.isEmpty()
+        && hotBlocksAndStates.isEmpty()
         && deletedHotBlocks.isEmpty()
         && votes.isEmpty()
         && stateRoots.isEmpty();
@@ -86,8 +86,8 @@ public class StorageUpdate {
     return bestJustifiedCheckpoint;
   }
 
-  public Map<Bytes32, SignedBeaconBlock> getHotBlocks() {
-    return hotBlocks;
+  public Map<Bytes32, SignedBlockAndState> getHotBlocksAndStates() {
+    return hotBlocksAndStates;
   }
 
   public Map<Bytes32, BeaconState> getHotStates() {

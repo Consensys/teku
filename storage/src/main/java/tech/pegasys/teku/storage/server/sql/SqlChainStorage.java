@@ -16,8 +16,10 @@ package tech.pegasys.teku.storage.server.sql;
 import com.google.errorprone.annotations.MustBeClosed;
 import com.zaxxer.hikari.HikariDataSource;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -80,6 +82,31 @@ public class SqlChainStorage extends AbstractSqlStorage {
         slot.bigIntegerValue());
   }
 
+  public Map<Bytes32, Bytes32> getHotBlockChildToParentLookup() {
+    return loadMap(
+        "SELECT blockRoot, parentRoot FROM block WHERE finalized = false",
+        rs -> getBytes32(rs, "blockRoot"),
+        rs -> getBytes32(rs, "parentRoot"));
+  }
+
+  public Map<Bytes32, UInt64> getBlockRootToSlotLookup() {
+    return loadMap(
+        "SELECT blockRoot, slot FROM block WHERE finalized = false",
+        rs -> getBytes32(rs, "blockRoot"),
+        rs -> getUInt64(rs, "slot"));
+  }
+
+  public Stream<SignedBeaconBlock> streamFinalizedBlocks(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    final List<Bytes32> blockRoots =
+        jdbc.query(
+            "SELECT blockRoot FROM block WHERE finalized = true AND slot >= ? AND slot <= ? ORDER BY slot",
+            (rs, rowNum) -> getBytes32(rs, "blockRoot"),
+            startSlot.bigIntegerValue(),
+            endSlot.bigIntegerValue());
+    return blockRoots.stream().map(blockRoot -> getBlockByBlockRoot(blockRoot).orElseThrow());
+  }
+
   public Optional<BeaconState> getStateByBlockRoot(final Bytes32 blockRoot) {
     return getStateByBlockRoot(blockRoot, false);
   }
@@ -106,7 +133,13 @@ public class SqlChainStorage extends AbstractSqlStorage {
 
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     return loadSingle(
-        "SELECT ssz FROM state WHERE slot <= ? AND ssz IS NOT NULL ORDER BY slot DESC LIMIT 1",
+        "        SELECT s.ssz FROM state s "
+            + "    JOIN block b ON s.blockRoot = b.blockRoot"
+            + "   WHERE s.slot <= ? "
+            + "     AND s.ssz IS NOT NULL "
+            + "     AND b.finalized "
+            + "ORDER BY s.slot DESC "
+            + "   LIMIT 1",
         (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class),
         maxSlot);
   }
@@ -151,7 +184,7 @@ public class SqlChainStorage extends AbstractSqlStorage {
     public void storeBlock(final SignedBeaconBlock block, final boolean finalized) {
       execSql(
           "INSERT INTO block (blockRoot, slot, parentRoot, finalized, ssz) VALUES (?, ?, ?, ?, ?) "
-              + " ON CONFLICT(blockRoot) DO UPDATE SET finalized = excluded.finalized",
+              + " ON CONFLICT(blockRoot) DO UPDATE SET finalized = IIF(excluded.finalized, TRUE, finalized)",
           block.getRoot(),
           block.getSlot(),
           block.getParent_root(),
@@ -159,8 +192,8 @@ public class SqlChainStorage extends AbstractSqlStorage {
           serializeSsz(block));
     }
 
-    public void finalizeBlock(final SignedBeaconBlock block) {
-      execSql("UPDATE block SET finalized = true WHERE blockRoot = ?", block.getRoot());
+    public void finalizeBlock(final Bytes32 blockRoot) {
+      execSql("UPDATE block SET finalized = true WHERE blockRoot = ?", blockRoot);
     }
 
     public void deleteHotBlockByBlockRoot(final Bytes32 blockRoot) {
@@ -186,8 +219,14 @@ public class SqlChainStorage extends AbstractSqlStorage {
           serializeSsz(state));
     }
 
-    public void deleteStateByBlockRoot(final Bytes32 blockRoot) {
-      execSql("DELETE FROM state WHERE blockRoot = ?", blockRoot);
+    public void deleteOrphanedStates() {
+      execSql(
+          " DELETE FROM state "
+              + " WHERE blockRoot IN ("
+              + "        SELECT s2.blockRoot "
+              + "          FROM state s2 "
+              + "    LEFT JOIN block b ON s2.blockRoot = b.blockRoot "
+              + "         WHERE b.blockRoot IS NULL)");
     }
 
     public void pruneFinalizedStates() {

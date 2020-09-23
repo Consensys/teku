@@ -18,6 +18,8 @@ import static tech.pegasys.teku.storage.server.sql.ParamConverter.convertParams;
 import com.zaxxer.hikari.HikariDataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -52,6 +54,16 @@ public class AbstractSqlStorage implements AutoCloseable {
     }
   }
 
+  protected <K, V> Map<K, V> loadMap(
+      final String sql,
+      final SqlFunction<K> keyExtractor,
+      final SqlFunction<V> valueExtractor,
+      final Object... params) {
+    final Map<K, V> result = new HashMap<>();
+    loadForEach(sql, rs -> result.put(keyExtractor.apply(rs), valueExtractor.apply(rs)), params);
+    return result;
+  }
+
   protected void loadForEach(
       final String sql, final RowCallbackHandler rowHandler, final Object... params) {
     jdbc.query(sql, rowHandler, convertParams(params));
@@ -84,5 +96,10 @@ public class AbstractSqlStorage implements AutoCloseable {
   @Override
   public void close() {
     dataSource.close();
+  }
+
+  @FunctionalInterface
+  protected interface SqlFunction<O> {
+    O apply(ResultSet rs) throws SQLException;
   }
 }

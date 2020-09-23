@@ -72,7 +72,7 @@ class StoreTransactionUpdates {
         finalizedChainData,
         tx.justified_checkpoint,
         tx.best_justified_checkpoint,
-        hotBlocks,
+        hotBlockAndStates,
         hotStatesToPersist,
         prunedHotBlockRoots,
         tx.votes,

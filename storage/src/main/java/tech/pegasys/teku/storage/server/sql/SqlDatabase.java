@@ -23,22 +23,17 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.stategenerator.StateGenerator;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
@@ -94,44 +89,32 @@ public class SqlDatabase implements Database {
     }
 
     try (final SqlChainStorage.Transaction transaction = chainStorage.startTransaction()) {
-      updateFinalizedData(
-          update.getFinalizedChildToParentMap(),
-          update.getFinalizedBlocks(),
-          update.getFinalizedStates(),
-          transaction);
+      updateCheckpoints(update, transaction);
 
-      update
-          .getFinalizedCheckpoint()
-          .ifPresent(checkpoint -> transaction.storeCheckpoint(FINALIZED, checkpoint));
-      update
-          .getJustifiedCheckpoint()
-          .ifPresent(
-              checkpoint -> transaction.storeCheckpoint(CheckpointType.JUSTIFIED, checkpoint));
-      update
-          .getBestJustifiedCheckpoint()
-          .ifPresent(
-              checkpoint -> transaction.storeCheckpoint(CheckpointType.BEST_JUSTIFIED, checkpoint));
-
-      update.getHotBlocks().values().forEach(block -> transaction.storeBlock(block, false));
-      update
-          .getDeletedHotBlocks()
-          .forEach(
-              blockRoot -> {
-                if (!update.getFinalizedBlocks().containsKey(blockRoot)) {
-                  transaction.deleteHotBlockByBlockRoot(blockRoot);
-                  transaction.deleteStateByBlockRoot(blockRoot);
-                }
-              });
+      update.getFinalizedBlocks().values().forEach(block -> transaction.storeBlock(block, true));
+      update.getHotBlocksAndStates().values().stream()
+          .map(SignedBlockAndState::getBlock)
+          .forEach(block -> transaction.storeBlock(block, false));
+      update.getFinalizedChildToParentMap().keySet().forEach(transaction::finalizeBlock);
+      update.getDeletedHotBlocks().forEach(transaction::deleteHotBlockByBlockRoot);
       transaction.storeVotes(update.getVotes());
       update.getStateRoots().forEach(transaction::storeStateRoot);
-      update
-          .getHotStates()
-          .forEach(
-              (blockRoot, state) -> {
-                if (!update.getFinalizedBlocks().containsKey(blockRoot)) {
-                  transaction.storeState(blockRoot, state);
-                }
-              });
+      transaction.deleteOrphanedStates();
+
+      // Store the periodic hot states (likely to be higher frequency than finalized states)
+      update.getHotStates().forEach(transaction::storeState);
+      if (stateStorageMode == StateStorageMode.PRUNE) {
+        transaction.pruneFinalizedStates();
+      } else {
+        // Store any additional states that will be required when finalized to avoid regenerating
+        // TODO: Only store states required by stateStorageFrequency
+        update.getFinalizedStates().forEach(transaction::storeState);
+        update
+            .getHotBlocksAndStates()
+            .forEach(
+                (blockRoot, blockAndState) ->
+                    transaction.storeState(blockRoot, blockAndState.getState()));
+      }
 
       // Ensure the latest finalized block and state is always stored
       update
@@ -141,6 +124,20 @@ public class SqlDatabase implements Database {
                   transaction.storeState(blockAndState.getRoot(), blockAndState.getState()));
       transaction.commit();
     }
+  }
+
+  private void updateCheckpoints(
+      final StorageUpdate update, final SqlChainStorage.Transaction transaction) {
+    update
+        .getFinalizedCheckpoint()
+        .ifPresent(checkpoint -> transaction.storeCheckpoint(FINALIZED, checkpoint));
+    update
+        .getJustifiedCheckpoint()
+        .ifPresent(checkpoint -> transaction.storeCheckpoint(CheckpointType.JUSTIFIED, checkpoint));
+    update
+        .getBestJustifiedCheckpoint()
+        .ifPresent(
+            checkpoint -> transaction.storeCheckpoint(CheckpointType.BEST_JUSTIFIED, checkpoint));
   }
 
   @Override
@@ -153,74 +150,6 @@ public class SqlDatabase implements Database {
               () -> updater.clearCheckpoint(CheckpointType.WEAK_SUBJECTIVITY));
       updater.commit();
     }
-  }
-
-  private void updateFinalizedData(
-      Map<Bytes32, Bytes32> finalizedChildToParentMap,
-      final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
-      final Map<Bytes32, BeaconState> finalizedStates,
-      final SqlChainStorage.Transaction updater) {
-    if (finalizedChildToParentMap.isEmpty()) {
-      // Nothing to do
-      return;
-    }
-
-    final BlockProvider blockProvider =
-        BlockProvider.withKnownBlocks(
-            roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
-
-    switch (stateStorageMode) {
-      case ARCHIVE:
-        // Get previously finalized block to build on top of
-        final SignedBlockAndState baseBlock = getFinalizedBlockAndState();
-
-        final HashTree blockTree =
-            HashTree.builder()
-                .rootHash(baseBlock.getRoot())
-                .childAndParentRoots(finalizedChildToParentMap)
-                .build();
-
-        final AtomicReference<UInt64> lastStateStoredSlot =
-            new AtomicReference<>(baseBlock.getSlot());
-
-        final StateGenerator stateGenerator =
-            StateGenerator.create(blockTree, baseBlock, blockProvider, finalizedStates);
-        // TODO (#2397) - don't join, create synchronous API for synchronous blockProvider
-        stateGenerator
-            .regenerateAllStates(
-                (block, state) -> {
-                  updater.finalizeBlock(block);
-
-                  UInt64 nextStorageSlot = lastStateStoredSlot.get().plus(stateStorageFrequency);
-                  if (state.getSlot().compareTo(nextStorageSlot) >= 0) {
-                    updater.storeState(block.getRoot(), state);
-                    lastStateStoredSlot.set(state.getSlot());
-                  }
-                })
-            .join();
-        break;
-      case PRUNE:
-        for (Bytes32 root : finalizedChildToParentMap.keySet()) {
-          SignedBeaconBlock block =
-              blockProvider
-                  .getBlock(root)
-                  .join()
-                  .orElseThrow(() -> new IllegalStateException("Missing finalized block"));
-          updater.storeBlock(block, true);
-          updater.deleteStateByBlockRoot(root);
-        }
-        break;
-      default:
-        throw new UnsupportedOperationException("Unhandled storage mode: " + stateStorageMode);
-    }
-  }
-
-  private SignedBlockAndState getFinalizedBlockAndState() {
-    final Bytes32 baseBlockRoot = chainStorage.getCheckpoint(FINALIZED).orElseThrow().getRoot();
-    // TODO: Could introduce a getBlockAndStateByBlockRoot
-    final SignedBeaconBlock baseBlock = storage.getBlockByBlockRoot(baseBlockRoot).orElseThrow();
-    final BeaconState baseState = chainStorage.getStateByBlockRoot(baseBlockRoot).orElseThrow();
-    return new SignedBlockAndState(baseBlock, baseState);
   }
 
   @Override
@@ -237,12 +166,12 @@ public class SqlDatabase implements Database {
     final BeaconState finalizedState =
         chainStorage.getStateByBlockRoot(finalizedBlockRoot).orElseThrow();
     final SignedBeaconBlock finalizedBlock =
-        storage.getBlockByBlockRoot(finalizedBlockRoot).orElseThrow();
+        chainStorage.getBlockByBlockRoot(finalizedBlockRoot).orElseThrow();
 
-    final Map<Bytes32, Bytes32> childToParentLookup = storage.getHotBlockChildToParentLookup();
+    final Map<Bytes32, Bytes32> childToParentLookup = chainStorage.getHotBlockChildToParentLookup();
     childToParentLookup.put(finalizedBlock.getRoot(), finalizedBlock.getParent_root());
 
-    final Map<Bytes32, UInt64> rootToSlotMap = storage.getBlockRootToSlotLookup();
+    final Map<Bytes32, UInt64> rootToSlotMap = chainStorage.getBlockRootToSlotLookup();
     rootToSlotMap.put(finalizedBlock.getRoot(), finalizedBlock.getSlot());
 
     final Map<UInt64, VoteTracker> votes = chainStorage.getVotes();
@@ -273,7 +202,7 @@ public class SqlDatabase implements Database {
 
   @Override
   public Optional<UInt64> getSlotForFinalizedBlockRoot(final Bytes32 blockRoot) {
-    return storage.getBlockByBlockRoot(blockRoot).map(SignedBeaconBlock::getSlot);
+    return chainStorage.getBlockByBlockRoot(blockRoot).map(SignedBeaconBlock::getSlot);
   }
 
   @Override
@@ -294,7 +223,7 @@ public class SqlDatabase implements Database {
 
   @Override
   public Optional<SignedBeaconBlock> getSignedBlock(final Bytes32 root) {
-    return storage.getBlockByBlockRoot(root);
+    return chainStorage.getBlockByBlockRoot(root);
   }
 
   @Override
@@ -311,14 +240,14 @@ public class SqlDatabase implements Database {
 
   @Override
   public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 blockRoot) {
-    return storage.getBlockByBlockRoot(blockRoot, true);
+    return chainStorage.getBlockByBlockRoot(blockRoot, true);
   }
 
   @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
-    return storage.streamFinalizedBlocks(startSlot, endSlot);
+    return chainStorage.streamFinalizedBlocks(startSlot, endSlot);
   }
 
   @Override

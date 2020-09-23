@@ -15,12 +15,9 @@ package tech.pegasys.teku.storage.server.sql;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import com.zaxxer.hikari.HikariDataSource;
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
@@ -30,16 +27,12 @@ import org.apache.tuweni.bytes.Bytes48;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
-import org.xerial.snappy.Snappy;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.Deposit;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
@@ -50,81 +43,17 @@ public class SqlStorage implements AutoCloseable {
   private final PlatformTransactionManager transactionManager;
   private final HikariDataSource dataSource;
   private final JdbcOperations jdbc;
-  private final boolean compress;
 
   public SqlStorage(
-      PlatformTransactionManager transactionManager,
-      final HikariDataSource dataSource,
-      final boolean compress) {
+      PlatformTransactionManager transactionManager, final HikariDataSource dataSource) {
     this.transactionManager = transactionManager;
     this.dataSource = dataSource;
     this.jdbc = new JdbcTemplate(dataSource);
-    this.compress = compress;
   }
 
   @MustBeClosed
   public Transaction startTransaction() {
     return new Transaction(transactionManager.getTransaction(TransactionDefinition.withDefaults()));
-  }
-
-  public Optional<SignedBeaconBlock> getBlockByBlockRoot(final Bytes32 blockRoot) {
-    return getBlockByBlockRoot(blockRoot, false);
-  }
-
-  public Optional<SignedBeaconBlock> getHotBlockByBlockRoot(final Bytes32 blockRoot) {
-    return getBlockByBlockRoot(blockRoot, true);
-  }
-
-  public Optional<SignedBeaconBlock> getBlockByBlockRoot(
-      final Bytes32 blockRoot, final boolean onlyNonFinalized) {
-    String sql = "SELECT ssz FROM block WHERE blockRoot = ?";
-    if (onlyNonFinalized) {
-      sql += " AND finalized == 0";
-    }
-    return loadSingle(
-        sql,
-        (rs, rowNum) -> getSsz(rs, SignedBeaconBlock.class),
-        (Object) blockRoot.toArrayUnsafe());
-  }
-
-  private <T> T getSsz(final ResultSet rs, final Class<? extends T> type) throws SQLException {
-    final byte[] rawData = rs.getBytes("ssz");
-    if (rawData == null) {
-      return null;
-    }
-    try {
-      final Bytes data = Bytes.wrap(compress ? Snappy.uncompress(rawData) : rawData);
-      return SimpleOffsetSerializer.deserialize(data, type);
-    } catch (IOException e) {
-      throw new SQLException("Failed to read BLOB content", e);
-    }
-  }
-
-  public Stream<SignedBeaconBlock> streamFinalizedBlocks(
-      final UInt64 startSlot, final UInt64 endSlot) {
-    final List<Bytes32> blockRoots =
-        jdbc.query(
-            "SELECT blockRoot FROM block WHERE finalized = true AND slot >= ? AND slot <= ? ORDER BY slot",
-            (rs, rowNum) -> getBytes32(rs, "blockRoot"),
-            startSlot.bigIntegerValue(),
-            endSlot.bigIntegerValue());
-    return blockRoots.stream().map(blockRoot -> getBlockByBlockRoot(blockRoot).orElseThrow());
-  }
-
-  public Map<Bytes32, Bytes32> getHotBlockChildToParentLookup() {
-    final Map<Bytes32, Bytes32> childToParentLookup = new HashMap<>();
-    loadForEach(
-        "SELECT blockRoot, parentRoot FROM block WHERE finalized = false",
-        rs -> childToParentLookup.put(getBytes32(rs, "blockRoot"), getBytes32(rs, "parentRoot")));
-    return childToParentLookup;
-  }
-
-  public Map<Bytes32, UInt64> getBlockRootToSlotLookup() {
-    final Map<Bytes32, UInt64> rootToSlotLookup = new HashMap<>();
-    loadForEach(
-        "SELECT blockRoot, slot FROM block WHERE finalized = false",
-        rs -> rootToSlotLookup.put(getBytes32(rs, "blockRoot"), getUInt64(rs, "slot")));
-    return rootToSlotLookup;
   }
 
   @Override
@@ -139,11 +68,6 @@ public class SqlStorage implements AutoCloseable {
     } catch (final EmptyResultDataAccessException e) {
       return Optional.empty();
     }
-  }
-
-  private void loadForEach(
-      final String sql, final RowCallbackHandler rowHandler, final Object... params) {
-    jdbc.query(sql, rowHandler, params);
   }
 
   private UInt64 getUInt64(final ResultSet rs, final String field) throws SQLException {

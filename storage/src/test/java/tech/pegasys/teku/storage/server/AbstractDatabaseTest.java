@@ -611,7 +611,10 @@ public abstract class AbstractDatabaseTest {
       case PRUNE:
         // Check pruned states
         final List<UInt64> unavailableSlots =
-            allBlocksAndStates.stream().map(SignedBlockAndState::getSlot).collect(toList());
+            allBlocksAndStates.stream()
+                .map(SignedBlockAndState::getSlot)
+                .filter(slot -> !slot.equals(UInt64.valueOf(7))) // Ignore the last finalized slot
+                .collect(toList());
         assertStatesUnavailable(unavailableSlots);
         break;
     }
@@ -744,7 +747,7 @@ public abstract class AbstractDatabaseTest {
           database
               .getLatestAvailableFinalizedState(slot)
               .filter(state -> state.getSlot().equals(slot));
-      assertThat(bs).isEmpty();
+      assertThat(bs).describedAs("state for slot %s", slot).isEmpty();
     }
   }
 

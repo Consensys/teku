@@ -378,7 +378,9 @@ public class RocksDbDatabase implements Database {
       update.getBestJustifiedCheckpoint().ifPresent(updater::setBestJustifiedCheckpoint);
       update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
 
-      updater.addHotBlocks(update.getHotBlocks());
+      update.getHotBlocksAndStates().values().stream()
+          .map(SignedBlockAndState::getBlock)
+          .forEach(updater::addHotBlock);
       updater.addHotStates(update.getHotStates());
 
       if (update.getStateRoots().size() > 0) {

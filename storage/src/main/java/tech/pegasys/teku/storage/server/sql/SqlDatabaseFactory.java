@@ -42,7 +42,7 @@ public class SqlDatabaseFactory {
     final boolean useSnappyCompression = false;
     return new SqlDatabase(
         metricsSystem,
-        new SqlStorage(transactionManager, dataSource, useSnappyCompression),
+        new SqlStorage(transactionManager, dataSource),
         new SqlChainStorage(transactionManager, dataSource),
         stateStorageMode,
         UInt64.valueOf(stateStorageFrequency));
