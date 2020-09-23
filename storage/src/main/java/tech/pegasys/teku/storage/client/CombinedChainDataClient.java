@@ -202,6 +202,13 @@ public class CombinedChainDataClient {
     return finalizedEpoch.compareTo(epoch) >= 0;
   }
 
+  public SafeFuture<Optional<CheckpointState>> retrieveFinalizedCheckpointAndState() {
+    if (recentChainData.getStore() == null) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    return recentChainData.getStore().retrieveFinalizedCheckpointAndState().thenApply(Optional::of);
+  }
+
   /**
    * Returns the latest state at the given slot on the current chain.
    *
