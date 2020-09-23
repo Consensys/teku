@@ -86,7 +86,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     if (currentEpoch.isGreaterThanOrEqualTo(nodeStartEpoch.get().plus(ATTESTATION_INCLUSION_RANGE))) {
       UInt64 analyzedEpoch = currentEpoch.minus(ATTESTATION_INCLUSION_RANGE);
       statusLogger.performance(getAttestationPerformanceForEpoch(currentEpoch, analyzedEpoch).toString());
-      sentAttestationsByEpoch.headMap(analyzedEpoch, false).clear();
+      sentAttestationsByEpoch.headMap(analyzedEpoch, true).clear();
     }
 
     // Output block performance information for the past BLOCK_PERFORMANCE_INTERVAL epochs
@@ -94,7 +94,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       if (currentEpoch.mod(BLOCK_PERFORMANCE_EVALUATION_INTERVAL).equals(UInt64.ZERO)) {
         UInt64 oldestAnalyzedEpoch = currentEpoch.minus(BLOCK_PERFORMANCE_EVALUATION_INTERVAL);
         statusLogger.performance(getBlockPerformanceForEpochs(oldestAnalyzedEpoch, currentEpoch).toString());
-        sentBlocksByEpoch.headMap(oldestAnalyzedEpoch, false).clear();
+        sentBlocksByEpoch.headMap(oldestAnalyzedEpoch, true).clear();
       }
     }
   }
