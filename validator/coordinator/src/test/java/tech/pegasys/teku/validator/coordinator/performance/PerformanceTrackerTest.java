@@ -13,6 +13,13 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.BLOCK_PERFORMANCE_EVALUATION_INTERVAL;
+
+import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,14 +37,6 @@ import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.Constants;
-
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.BLOCK_PERFORMANCE_EVALUATION_INTERVAL;
 
 public class PerformanceTrackerTest {
 
@@ -203,11 +202,11 @@ public class PerformanceTrackerTest {
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(10));
     performanceTracker.saveSentBlock(chainUpdater.chainBuilder.getBlockAtSlot(1));
     performanceTracker.saveSentBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
-    performanceTracker.saveSentAttestation(new Attestation(
+    performanceTracker.saveSentAttestation(
+        new Attestation(
             dataStructureUtil.randomBitlist(),
             dataStructureUtil.randomAttestationData(UInt64.ONE),
-            BLSSignature.random(0))
-    );
+            BLSSignature.random(0)));
     performanceTracker.onSlot(compute_start_slot_at_epoch(BLOCK_PERFORMANCE_EVALUATION_INTERVAL));
     assertThat(performanceTracker.sentAttestationsByEpoch).isEmpty();
     assertThat(performanceTracker.sentBlocksByEpoch).isEmpty();
@@ -233,7 +232,7 @@ public class PerformanceTrackerTest {
     performanceTracker.saveSentAttestation(attestation1);
     performanceTracker.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(2)));
     AttestationPerformance expectedAttestationPerformance =
-            new AttestationPerformance(1, 1, 1, 1, 1, 1, 1);
+        new AttestationPerformance(1, 1, 1, 1, 1, 1, 1);
     verify(log).performance(expectedAttestationPerformance.toString());
   }
 
