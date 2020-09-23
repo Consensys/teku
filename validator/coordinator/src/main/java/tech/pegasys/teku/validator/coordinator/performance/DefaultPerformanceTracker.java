@@ -157,6 +157,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
         if (attestations.containsKey(currSlot)) {
           if (checkIfAttestationIsIncludedInList(sentAttestation, attestations.get(currSlot))) {
             inclusionDistances.add(currSlot.minus(attestationSlot).intValue());
+            break;
           }
         }
       }
