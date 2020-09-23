@@ -80,7 +80,9 @@ class RemoteValidatorBeaconChainEventsAdapter implements SlotEventsChannel, Reor
   public void reorgOccurred(
       final Bytes32 bestBlockRoot,
       final UInt64 bestSlot,
+      final Bytes32 bestStateRoot,
       final Bytes32 oldBestBlockRoot,
+      final Bytes32 oldBestStateRoot,
       final UInt64 commonAncestorSlot) {
     final BeaconChainReorgEvent beaconChainEvent =
         new BeaconChainReorgEvent(BeaconChainEvent.REORG_OCCURRED, bestSlot, commonAncestorSlot);

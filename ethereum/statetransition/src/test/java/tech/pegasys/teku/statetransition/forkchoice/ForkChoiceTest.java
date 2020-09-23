@@ -133,7 +133,9 @@ class ForkChoiceTest {
             new ReorgEvent(
                 blockAndState.getRoot(),
                 blockAndState.getSlot(),
+                blockAndState.getStateRoot(),
                 genesis.getRoot(),
+                genesis.getStateRoot(),
                 blockAndState.getSlot().minus(1)));
   }
 

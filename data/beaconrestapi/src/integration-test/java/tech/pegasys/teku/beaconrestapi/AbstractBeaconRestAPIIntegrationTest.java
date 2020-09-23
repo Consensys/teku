@@ -33,6 +33,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
@@ -65,6 +66,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final BlockImporter blockImporter = mock(BlockImporter.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
+  protected final EventChannels eventChannels = mock(EventChannels.class);
 
   protected CombinedChainDataClient combinedChainDataClient =
       new CombinedChainDataClient(recentChainData, historicalChainData);
@@ -84,7 +86,7 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
             blockImporter,
             attestationPool);
 
-    beaconRestApi = new BeaconRestApi(dataProvider, config);
+    beaconRestApi = new BeaconRestApi(dataProvider, config, eventChannels);
     beaconRestApi.start();
     client = new OkHttpClient();
   }
