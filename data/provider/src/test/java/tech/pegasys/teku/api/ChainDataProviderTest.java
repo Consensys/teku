@@ -45,7 +45,7 @@ import tech.pegasys.teku.api.schema.BeaconHead;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.BeaconValidators;
 import tech.pegasys.teku.api.schema.Committee;
-import tech.pegasys.teku.api.schema.PublicKeyException;
+import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.ValidatorWithIndex;
@@ -58,6 +58,7 @@ import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -348,6 +349,27 @@ public class ChainDataProviderTest {
   }
 
   @Test
+  public void stateParameterToSlot_shouldThrowWhenStoreNotFound() {
+    final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
+    assertThrows(ChainDataUnavailableException.class, () -> provider.stateParameterToSlot("1"));
+  }
+
+  @Test
+  public void validatorParameterToIndex_shouldThrowWhenStoreNotFound() {
+    final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
+    assertThrows(
+        ChainDataUnavailableException.class, () -> provider.validatorParameterToIndex("1"));
+  }
+
+  @Test
+  public void getValidatorDetails_shouldThrowWhenStoreNotFound() {
+    final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
+    assertThrows(
+        ChainDataUnavailableException.class,
+        () -> provider.getValidatorDetails(Optional.empty(), Optional.empty()));
+  }
+
+  @Test
   public void getStateByStateRoot_shouldReturnEmptyWhenNotFound()
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
@@ -472,7 +494,15 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
 
-    assertThrows(NumberFormatException.class, () -> provider.stateParameterToSlot("hea"));
+    assertThrows(IllegalArgumentException.class, () -> provider.stateParameterToSlot("hea"));
+  }
+
+  @Test
+  public void stateParameterToSlot_shouldDetectStatesInFuture() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    assertThrows(IllegalArgumentException.class, () -> provider.stateParameterToSlot("12345678"));
   }
 
   @Test
@@ -522,7 +552,7 @@ public class ChainDataProviderTest {
 
   @Test
   public void stateParameterToSlot_shouldParseSlotNumber() {
-    final UInt64 slot = UInt64.valueOf(123456);
+    final UInt64 slot = UInt64.valueOf(1);
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
 
@@ -552,20 +582,41 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void validatorParameterToIndex_shouldThrowNumberFormatException() {
+  public void validatorParameterToIndex_shouldThrowException() {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
 
-    assertThrows(NumberFormatException.class, () -> provider.validatorParameterToIndex("2a"));
+    assertThrows(IllegalArgumentException.class, () -> provider.validatorParameterToIndex("2a"));
   }
 
   @Test
-  public void validatorParameterToIndex_shouldThrowPublicKeyException() {
+  public void validatorParameterToIndex_shouldDetectIndexOutOfBounds() {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
 
     assertThrows(
-        PublicKeyException.class,
+        IllegalArgumentException.class, () -> provider.validatorParameterToIndex("1234567"));
+  }
+
+  @Test
+  public void validatorParameterToIndex_shouldDetectAboveMaxInt() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            provider.validatorParameterToIndex(
+                UInt64.valueOf(Integer.MAX_VALUE).increment().toString()));
+  }
+
+  @Test
+  public void validatorParameterToIndex_shouldThrowExceptionWithInvalidPublicKey() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    assertThrows(
+        IllegalArgumentException.class,
         () -> provider.validatorParameterToIndex(Bytes32.EMPTY.toHexString()));
   }
 
@@ -576,6 +627,29 @@ public class ChainDataProviderTest {
     Optional<ValidatorResponse> response =
         provider.getValidatorDetails(Optional.of(UInt64.valueOf(12345678)), Optional.of(1)).join();
     assertThat(response).isEmpty();
+  }
+
+  @Test
+  public void getValidatorDetails_shouldReturnEmptyFromEmptyState() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    assertThat(provider.getValidatorDetails(Optional.empty(), Optional.of(1)).join()).isEmpty();
+  }
+
+  @Test
+  public void getValidatorDetails_shouldReturnEmptyFromEmptyValidatorIndex() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    assertThat(provider.getValidatorDetails(Optional.of(ONE), Optional.empty()).join()).isEmpty();
+  }
+
+  @Test
+  public void getForkAtSlot_shouldGetCurrentFork() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    final Bytes4 FORK_ONE = Bytes4.fromHexString("0x00000001");
+    final Optional<Fork> expectedResult = Optional.of(new Fork(FORK_ONE, FORK_ONE, ZERO));
+    assertThat(provider.getForkAtSlot(ONE).join()).isEqualTo(expectedResult);
   }
 
   @Test
