@@ -599,6 +599,18 @@ public class ChainDataProviderTest {
   }
 
   @Test
+  public void validatorParameterToIndex_shouldDetectAboveMaxInt() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            provider.validatorParameterToIndex(
+                UInt64.valueOf(Integer.MAX_VALUE).increment().toString()));
+  }
+
+  @Test
   public void validatorParameterToIndex_shouldThrowExceptionWithInvalidPublicKey() {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);

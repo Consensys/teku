@@ -18,6 +18,8 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -43,6 +45,17 @@ public class LoggingWeakSubjectivityViolationPolicy implements WeakSubjectivityV
         currentEpoch,
         latestFinalizedCheckpoint.getEpoch(),
         activeValidatorCount);
+  }
+
+  @Override
+  public void onChainInconsistentWithWeakSubjectivityCheckpoint(
+      Checkpoint wsCheckpoint, SignedBeaconBlock block) {
+    LOG.log(
+        level,
+        "Block {} at slot {} is inconsistent with weak subjectivity checkpoint {}",
+        block.getRoot(),
+        block.getSlot(),
+        wsCheckpoint);
   }
 
   @Override

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.weaksubjectivity.policies;
 
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -21,6 +23,12 @@ public class StrictWeakSubjectivityViolationPolicy implements WeakSubjectivityVi
   @Override
   public void onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
       CheckpointState latestFinalizedCheckpoint, int activeValidatorCount, UInt64 currentSlot) {
+    exitClient();
+  }
+
+  @Override
+  public void onChainInconsistentWithWeakSubjectivityCheckpoint(
+      Checkpoint wsCheckpoint, SignedBeaconBlock block) {
     exitClient();
   }
 

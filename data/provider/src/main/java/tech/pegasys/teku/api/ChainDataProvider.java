@@ -296,9 +296,14 @@ public class ChainDataProvider {
       }
     } else {
       try {
-        final int validatorIndex = Integer.parseUnsignedInt(validatorParameter);
+        final UInt64 numericValidator = UInt64.valueOf(validatorParameter);
+        if (numericValidator.isGreaterThan(UInt64.valueOf(Integer.MAX_VALUE))) {
+          throw new IllegalArgumentException(
+              String.format("Validator Index is too high to use: %s", validatorParameter));
+        }
+        final int validatorIndex = numericValidator.intValue();
         final int validatorCount = state.getValidators().size();
-        if (validatorIndex > state.getValidators().size()) {
+        if (validatorIndex > validatorCount) {
           throw new IllegalArgumentException(
               String.format(
                   "Invalid validator index: %d, exceeds validator count: %d",
