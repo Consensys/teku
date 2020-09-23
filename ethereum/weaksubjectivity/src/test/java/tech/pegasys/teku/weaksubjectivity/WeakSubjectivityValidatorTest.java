@@ -201,12 +201,12 @@ public class WeakSubjectivityValidatorTest {
   }
 
   @Test
-  public void validateIsConsistentWithWSCheckpoint_noCheckpointSet() {
+  public void validateChainIsConsistentWithWSCheckpoint_noCheckpointSet() {
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(calculator, policies, Optional.empty());
     final CombinedChainDataClient chainData = mockChainDataClientPriorToCheckpoint();
 
-    SafeFuture<Void> result = validator.validateIsConsistentWithWSCheckpoint(chainData);
+    SafeFuture<Void> result = validator.validateChainIsConsistentWithWSCheckpoint(chainData);
 
     assertThat(result).isCompleted();
     orderedPolicyMocks.verifyNoMoreInteractions();
@@ -214,14 +214,14 @@ public class WeakSubjectivityValidatorTest {
   }
 
   @Test
-  public void validateIsConsistentWithWSCheckpoint_checkpointNotFinalized() {
+  public void validateChainIsConsistentWithWSCheckpoint_checkpointNotFinalized() {
     final Checkpoint wsCheckpoint =
         new Checkpoint(UInt64.valueOf(100), Bytes32.fromHexStringLenient("0x01"));
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(calculator, policies, Optional.of(wsCheckpoint));
     final CombinedChainDataClient chainData = mockChainDataClientPriorToCheckpoint();
 
-    SafeFuture<Void> result = validator.validateIsConsistentWithWSCheckpoint(chainData);
+    SafeFuture<Void> result = validator.validateChainIsConsistentWithWSCheckpoint(chainData);
 
     assertThat(result).isCompleted();
     orderedPolicyMocks.verifyNoMoreInteractions();
@@ -229,7 +229,7 @@ public class WeakSubjectivityValidatorTest {
   }
 
   @Test
-  public void validateIsConsistentWithWSCheckpoint_checkpointFinalizedWithMatchingBlock() {
+  public void validateChainIsConsistentWithWSCheckpoint_checkpointFinalizedWithMatchingBlock() {
     final UInt64 checkpointEpoch = UInt64.valueOf(100);
     final UInt64 checkpointSlot = compute_start_slot_at_epoch(checkpointEpoch);
     final SignedBeaconBlock checkpointBlock =
@@ -240,7 +240,7 @@ public class WeakSubjectivityValidatorTest {
     final CombinedChainDataClient chainData =
         mockChainDataClientAfterCheckpoint(wsCheckpoint, checkpointBlock);
 
-    SafeFuture<Void> result = validator.validateIsConsistentWithWSCheckpoint(chainData);
+    SafeFuture<Void> result = validator.validateChainIsConsistentWithWSCheckpoint(chainData);
 
     assertThat(result).isCompleted();
     orderedPolicyMocks.verifyNoMoreInteractions();
@@ -249,7 +249,7 @@ public class WeakSubjectivityValidatorTest {
   }
 
   @Test
-  public void validateIsConsistentWithWSCheckpoint_checkpointFinalizedWithNonMatchingBlock() {
+  public void validateChainIsConsistentWithWSCheckpoint_checkpointFinalizedWithNonMatchingBlock() {
     final UInt64 checkpointEpoch = UInt64.valueOf(100);
     final UInt64 checkpointSlot = compute_start_slot_at_epoch(checkpointEpoch);
     final SignedBeaconBlock checkpointBlock =
@@ -261,7 +261,7 @@ public class WeakSubjectivityValidatorTest {
     final CombinedChainDataClient chainData =
         mockChainDataClientAfterCheckpoint(wsCheckpoint, otherBlock);
 
-    SafeFuture<Void> result = validator.validateIsConsistentWithWSCheckpoint(chainData);
+    SafeFuture<Void> result = validator.validateChainIsConsistentWithWSCheckpoint(chainData);
 
     assertThat(result).isCompleted();
     verify(chainData).isFinalizedEpoch(wsCheckpoint.getEpoch());
@@ -277,7 +277,7 @@ public class WeakSubjectivityValidatorTest {
   }
 
   @Test
-  public void validateIsConsistentWithWSCheckpoint_checkpointFinalizedWithMissingBlock() {
+  public void validateChainIsConsistentWithWSCheckpoint_checkpointFinalizedWithMissingBlock() {
     final UInt64 checkpointEpoch = UInt64.valueOf(100);
     final UInt64 checkpointSlot = compute_start_slot_at_epoch(checkpointEpoch);
     final SignedBeaconBlock checkpointBlock =
@@ -288,7 +288,7 @@ public class WeakSubjectivityValidatorTest {
     final CombinedChainDataClient chainData =
         mockChainDataClientAfterCheckpoint(wsCheckpoint, Optional.empty());
 
-    SafeFuture<Void> result = validator.validateIsConsistentWithWSCheckpoint(chainData);
+    SafeFuture<Void> result = validator.validateChainIsConsistentWithWSCheckpoint(chainData);
 
     assertThat(result).isCompletedExceptionally();
     verify(chainData).isFinalizedEpoch(wsCheckpoint.getEpoch());

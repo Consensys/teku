@@ -630,7 +630,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void validateChain(final UInt64 currentSlot) {
     weakSubjectivityValidator
-        .validateIsConsistentWithWSCheckpoint(combinedChainDataClient)
+        .validateChainIsConsistentWithWSCheckpoint(combinedChainDataClient)
         .thenCompose(
             __ ->
                 SafeFuture.of(

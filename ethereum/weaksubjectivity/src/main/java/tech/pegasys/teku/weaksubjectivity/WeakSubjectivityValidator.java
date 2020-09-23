@@ -75,7 +75,8 @@ public class WeakSubjectivityValidator {
   }
 
   /** Check whether the chain matches any configured weak subjectivity checkpoint or state */
-  public SafeFuture<Void> validateIsConsistentWithWSCheckpoint(CombinedChainDataClient chainData) {
+  public SafeFuture<Void> validateChainIsConsistentWithWSCheckpoint(
+      CombinedChainDataClient chainData) {
     if (maybeWsCheckpoint.isEmpty()) {
       // Nothing to validate against
       return SafeFuture.COMPLETE;
