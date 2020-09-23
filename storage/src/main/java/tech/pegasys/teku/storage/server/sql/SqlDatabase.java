@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.storage.server.sql;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.storage.server.sql.CheckpointType.BEST_JUSTIFIED;
+import static tech.pegasys.teku.storage.server.sql.CheckpointType.FINALIZED;
+import static tech.pegasys.teku.storage.server.sql.CheckpointType.JUSTIFIED;
+import static tech.pegasys.teku.storage.server.sql.CheckpointType.WEAK_SUBJECTIVITY;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
@@ -51,16 +53,19 @@ import tech.pegasys.teku.util.config.StateStorageMode;
 public class SqlDatabase implements Database {
   private final MetricsSystem metricsSystem;
   private final SqlStorage storage;
+  private final SqlChainStorage chainStorage;
   private final StateStorageMode stateStorageMode;
   private final UInt64 stateStorageFrequency;
 
   public SqlDatabase(
       final MetricsSystem metricsSystem,
       final SqlStorage storage,
+      final SqlChainStorage chainStorage,
       final StateStorageMode stateStorageMode,
       final UInt64 stateStorageFrequency) {
     this.metricsSystem = metricsSystem;
     this.storage = storage;
+    this.chainStorage = chainStorage;
     this.stateStorageMode = stateStorageMode;
     this.stateStorageFrequency = stateStorageFrequency;
   }
@@ -71,14 +76,13 @@ public class SqlDatabase implements Database {
     final Checkpoint genesisCheckpoint = genesis.getCheckpoint();
     final BeaconState genesisState = genesis.getState();
     final SignedBeaconBlock genesisBlock = genesis.getBlock();
-    try (final SqlStorage.Transaction transaction = storage.startTransaction()) {
-      transaction.storeJustifiedCheckpoint(genesisCheckpoint);
-      transaction.storeBestJustifiedCheckpoint(genesisCheckpoint);
-      transaction.storeFinalizedCheckpoint(genesisCheckpoint);
+    try (final SqlChainStorage.Transaction transaction = chainStorage.startTransaction()) {
+      transaction.storeCheckpoint(CheckpointType.JUSTIFIED, genesisCheckpoint);
+      transaction.storeCheckpoint(CheckpointType.BEST_JUSTIFIED, genesisCheckpoint);
+      transaction.storeCheckpoint(FINALIZED, genesisCheckpoint);
 
       transaction.storeBlock(genesisBlock, true);
       transaction.storeState(genesisBlock.getRoot(), genesisState);
-      transaction.storeLatestFinalizedState(genesisState);
       transaction.commit();
     }
   }
@@ -89,16 +93,24 @@ public class SqlDatabase implements Database {
       return;
     }
 
-    try (final SqlStorage.Transaction transaction = storage.startTransaction()) {
+    try (final SqlChainStorage.Transaction transaction = chainStorage.startTransaction()) {
       updateFinalizedData(
           update.getFinalizedChildToParentMap(),
           update.getFinalizedBlocks(),
           update.getFinalizedStates(),
           transaction);
 
-      update.getFinalizedCheckpoint().ifPresent(transaction::storeFinalizedCheckpoint);
-      update.getJustifiedCheckpoint().ifPresent(transaction::storeJustifiedCheckpoint);
-      update.getBestJustifiedCheckpoint().ifPresent(transaction::storeBestJustifiedCheckpoint);
+      update
+          .getFinalizedCheckpoint()
+          .ifPresent(checkpoint -> transaction.storeCheckpoint(FINALIZED, checkpoint));
+      update
+          .getJustifiedCheckpoint()
+          .ifPresent(
+              checkpoint -> transaction.storeCheckpoint(CheckpointType.JUSTIFIED, checkpoint));
+      update
+          .getBestJustifiedCheckpoint()
+          .ifPresent(
+              checkpoint -> transaction.storeCheckpoint(CheckpointType.BEST_JUSTIFIED, checkpoint));
 
       update.getHotBlocks().values().forEach(block -> transaction.storeBlock(block, false));
       update
@@ -106,7 +118,7 @@ public class SqlDatabase implements Database {
           .forEach(
               blockRoot -> {
                 if (!update.getFinalizedBlocks().containsKey(blockRoot)) {
-                  transaction.deleteBlock(blockRoot);
+                  transaction.deleteHotBlockByBlockRoot(blockRoot);
                   transaction.deleteStateByBlockRoot(blockRoot);
                 }
               });
@@ -122,17 +134,23 @@ public class SqlDatabase implements Database {
               });
 
       // Ensure the latest finalized block and state is always stored
-      update.getLatestFinalizedState().ifPresent(transaction::storeLatestFinalizedState);
+      update
+          .getLatestFinalizedBlockAndState()
+          .ifPresent(
+              blockAndState ->
+                  transaction.storeState(blockAndState.getRoot(), blockAndState.getState()));
       transaction.commit();
     }
   }
 
   @Override
   public void updateWeakSubjectivityState(final WeakSubjectivityUpdate weakSubjectivityUpdate) {
-    try (final SqlStorage.Transaction updater = storage.startTransaction()) {
-      Optional<Checkpoint> checkpoint = weakSubjectivityUpdate.getWeakSubjectivityCheckpoint();
-      checkpoint.ifPresentOrElse(
-          updater::storeWeakSubjectivityCheckpoint, updater::clearWeakSubjectivityCheckpoint);
+    try (final SqlChainStorage.Transaction updater = chainStorage.startTransaction()) {
+      weakSubjectivityUpdate
+          .getWeakSubjectivityCheckpoint()
+          .ifPresentOrElse(
+              checkpoint -> updater.storeCheckpoint(CheckpointType.WEAK_SUBJECTIVITY, checkpoint),
+              () -> updater.clearCheckpoint(CheckpointType.WEAK_SUBJECTIVITY));
       updater.commit();
     }
   }
@@ -141,7 +159,7 @@ public class SqlDatabase implements Database {
       Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
       final Map<Bytes32, BeaconState> finalizedStates,
-      final SqlStorage.Transaction updater) {
+      final SqlChainStorage.Transaction updater) {
     if (finalizedChildToParentMap.isEmpty()) {
       // Nothing to do
       return;
@@ -198,35 +216,36 @@ public class SqlDatabase implements Database {
   }
 
   private SignedBlockAndState getFinalizedBlockAndState() {
-    final Bytes32 baseBlockRoot = storage.getFinalizedCheckpoint().orElseThrow().getRoot();
+    final Bytes32 baseBlockRoot = chainStorage.getCheckpoint(FINALIZED).orElseThrow().getRoot();
+    // TODO: Could introduce a getBlockAndStateByBlockRoot
     final SignedBeaconBlock baseBlock = storage.getBlockByBlockRoot(baseBlockRoot).orElseThrow();
-    final BeaconState baseState = storage.getLatestFinalizedState().orElseThrow();
+    final BeaconState baseState = chainStorage.getStateByBlockRoot(baseBlockRoot).orElseThrow();
     return new SignedBlockAndState(baseBlock, baseState);
   }
 
   @Override
   public Optional<StoreBuilder> createMemoryStore() {
-    final Optional<Checkpoint> maybeFinalizedCheckpoint = storage.getFinalizedCheckpoint();
+    final Optional<Checkpoint> maybeFinalizedCheckpoint = chainStorage.getCheckpoint(FINALIZED);
     if (maybeFinalizedCheckpoint.isEmpty()) {
       return Optional.empty();
     }
-    final Checkpoint justifiedCheckpoint = storage.getJustifiedCheckpoint().orElseThrow();
-    final Checkpoint bestJustifiedCheckpoint = storage.getBestJustifiedCheckpoint().orElseThrow();
+    final Checkpoint justifiedCheckpoint = chainStorage.getCheckpoint(JUSTIFIED).orElseThrow();
+    final Checkpoint bestJustifiedCheckpoint =
+        chainStorage.getCheckpoint(BEST_JUSTIFIED).orElseThrow();
     final Checkpoint finalizedCheckpoint = maybeFinalizedCheckpoint.get();
-    final BeaconState finalizedState = storage.getLatestFinalizedState().orElseThrow();
+    final Bytes32 finalizedBlockRoot = finalizedCheckpoint.getRoot();
+    final BeaconState finalizedState =
+        chainStorage.getStateByBlockRoot(finalizedBlockRoot).orElseThrow();
     final SignedBeaconBlock finalizedBlock =
-        storage.getBlockByBlockRoot(finalizedCheckpoint.getRoot()).orElse(null);
-    checkNotNull(finalizedBlock);
-    checkState(
-        finalizedBlock.getMessage().getState_root().equals(finalizedState.hash_tree_root()),
-        "Latest finalized state does not match latest finalized block");
+        storage.getBlockByBlockRoot(finalizedBlockRoot).orElseThrow();
+
     final Map<Bytes32, Bytes32> childToParentLookup = storage.getHotBlockChildToParentLookup();
     childToParentLookup.put(finalizedBlock.getRoot(), finalizedBlock.getParent_root());
 
     final Map<Bytes32, UInt64> rootToSlotMap = storage.getBlockRootToSlotLookup();
     rootToSlotMap.put(finalizedBlock.getRoot(), finalizedBlock.getSlot());
 
-    final Map<UInt64, VoteTracker> votes = storage.loadVotes();
+    final Map<UInt64, VoteTracker> votes = chainStorage.getVotes();
 
     return Optional.of(
         StoreBuilder.create()
@@ -244,12 +263,12 @@ public class SqlDatabase implements Database {
 
   @Override
   public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
-    return storage.getWeakSubjectivityCheckpoint();
+    return chainStorage.getCheckpoint(WEAK_SUBJECTIVITY);
   }
 
   @Override
   public Map<UInt64, VoteTracker> getVotes() {
-    return storage.loadVotes();
+    return chainStorage.getVotes();
   }
 
   @Override
@@ -265,12 +284,12 @@ public class SqlDatabase implements Database {
 
   @Override
   public Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(final UInt64 slot) {
-    return storage.getFinalizedBlockBySlot(slot);
+    return chainStorage.getFinalizedBlockBySlot(slot);
   }
 
   @Override
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
-    return storage.getLatestFinalizedBlockAtSlot(slot);
+    return chainStorage.getLatestFinalizedBlockAtSlot(slot);
   }
 
   @Override
@@ -280,7 +299,7 @@ public class SqlDatabase implements Database {
 
   @Override
   public Optional<BeaconState> getHotState(final Bytes32 root) {
-    return storage.getStateByBlockRoot(root, true);
+    return chainStorage.getHotStateByBlockRoot(root);
   }
 
   @Override
@@ -304,12 +323,12 @@ public class SqlDatabase implements Database {
 
   @Override
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot) {
-    return storage.getSlotAndBlockRootFromStateRoot(stateRoot);
+    return chainStorage.getSlotAndBlockRootByStateRoot(stateRoot);
   }
 
   @Override
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
-    return storage.getLatestAvailableFinalizedState(maxSlot);
+    return chainStorage.getLatestAvailableFinalizedState(maxSlot);
   }
 
   @Override

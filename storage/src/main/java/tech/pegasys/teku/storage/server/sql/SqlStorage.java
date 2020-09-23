@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.sql;
 
+import com.google.errorprone.annotations.MustBeClosed;
 import com.zaxxer.hikari.HikariDataSource;
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -38,18 +39,11 @@ import org.xerial.snappy.Snappy;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.Deposit;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
 public class SqlStorage implements AutoCloseable {
 
@@ -68,82 +62,17 @@ public class SqlStorage implements AutoCloseable {
     this.compress = compress;
   }
 
+  @MustBeClosed
   public Transaction startTransaction() {
     return new Transaction(transactionManager.getTransaction(TransactionDefinition.withDefaults()));
   }
 
-  public Optional<Checkpoint> getJustifiedCheckpoint() {
-    return getCheckpoint(CheckpointType.JUSTIFIED);
-  }
-
-  public Optional<Checkpoint> getBestJustifiedCheckpoint() {
-    return getCheckpoint(CheckpointType.BEST_JUSTIFIED);
-  }
-
-  public Optional<Checkpoint> getFinalizedCheckpoint() {
-    return getCheckpoint(CheckpointType.FINALIZED);
-  }
-
-  public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
-    return getCheckpoint(CheckpointType.WEAK_SUBJECTIVITY);
-  }
-
-  private Optional<Checkpoint> getCheckpoint(final CheckpointType type) {
-    return loadSingle(
-        "SELECT * FROM checkpoint WHERE type = ?",
-        (rs, rowNum) -> new Checkpoint(getUInt64(rs, "epoch"), getBytes32(rs, "blockRoot")),
-        type.name());
-  }
-
-  public Optional<BeaconState> getStateByStateRoot(final Bytes32 stateRoot) {
-    return loadSingle(
-        "SELECT ssz FROM state WHERE stateRoot = ?",
-        (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class),
-        (Object) stateRoot.toArrayUnsafe());
-  }
-
-  public Optional<BeaconState> getStateByBlockRoot(final Bytes32 blockRoot) {
-    return getStateByBlockRoot(blockRoot, false);
-  }
-
-  public Optional<BeaconState> getStateByBlockRoot(
-      final Bytes32 blockRoot, final boolean onlyNonfinalized) {
-    final String sql;
-    if (onlyNonfinalized) {
-      sql =
-          "   SELECT s.ssz FROM state s "
-              + "     JOIN block b ON b.blockRoot = s.blockRoot "
-              + "    WHERE s.blockRoot = ? "
-              + "      AND b.finalized = 0 "
-              + " ORDER BY s.slot LIMIT 1";
-    } else {
-      sql = "SELECT ssz FROM state WHERE blockRoot = ? ORDER BY slot LIMIT 1";
-    }
-    return loadSingle(
-        sql, (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class), (Object) blockRoot.toArrayUnsafe());
-  }
-
-  public Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot) {
-    return loadSingle(
-        "SELECT blockRoot, slot FROM state WHERE stateRoot = ?",
-        (rs, rowNum) -> new SlotAndBlockRoot(getUInt64(rs, "slot"), getBytes32(rs, "blockRoot")),
-        (Object) stateRoot.toArrayUnsafe());
-  }
-
-  public Optional<BeaconState> getLatestFinalizedState() {
-    return loadSingle(
-        "SELECT ssz FROM finalized_state", (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class));
-  }
-
-  public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
-    return loadSingle(
-        "SELECT ssz FROM state WHERE slot <= ? AND ssz IS NOT NULL ORDER BY slot DESC LIMIT 1",
-        (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class),
-        maxSlot.bigIntegerValue());
-  }
-
   public Optional<SignedBeaconBlock> getBlockByBlockRoot(final Bytes32 blockRoot) {
     return getBlockByBlockRoot(blockRoot, false);
+  }
+
+  public Optional<SignedBeaconBlock> getHotBlockByBlockRoot(final Bytes32 blockRoot) {
+    return getBlockByBlockRoot(blockRoot, true);
   }
 
   public Optional<SignedBeaconBlock> getBlockByBlockRoot(
@@ -171,20 +100,6 @@ public class SqlStorage implements AutoCloseable {
     }
   }
 
-  public Optional<SignedBeaconBlock> getFinalizedBlockBySlot(final UInt64 slot) {
-    return loadSingle(
-        "SELECT ssz FROM block WHERE slot = ? AND finalized = true",
-        (rs, rowNum) -> getSsz(rs, SignedBeaconBlock.class),
-        slot.bigIntegerValue());
-  }
-
-  public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
-    return loadSingle(
-        "SELECT ssz FROM block WHERE slot <= ? AND finalized = true ORDER BY slot DESC LIMIT 1",
-        (rs, rowNum) -> getSsz(rs, SignedBeaconBlock.class),
-        slot.bigIntegerValue());
-  }
-
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     final List<Bytes32> blockRoots =
@@ -210,20 +125,6 @@ public class SqlStorage implements AutoCloseable {
         "SELECT blockRoot, slot FROM block WHERE finalized = false",
         rs -> rootToSlotLookup.put(getBytes32(rs, "blockRoot"), getUInt64(rs, "slot")));
     return rootToSlotLookup;
-  }
-
-  public Map<UInt64, VoteTracker> loadVotes() {
-    final Map<UInt64, VoteTracker> votes = new HashMap<>();
-    loadForEach(
-        "SELECT validatorIndex, currentRoot, nextRoot, nextEpoch from vote",
-        rs ->
-            votes.put(
-                getUInt64(rs, "validatorIndex"),
-                new VoteTracker(
-                    getBytes32(rs, "currentRoot"),
-                    getBytes32(rs, "nextRoot"),
-                    getUInt64(rs, "nextEpoch"))));
-    return votes;
   }
 
   @Override
@@ -322,101 +223,6 @@ public class SqlStorage implements AutoCloseable {
       this.transaction = transaction;
     }
 
-    public void storeJustifiedCheckpoint(final Checkpoint checkpoint) {
-      setCheckpoint(CheckpointType.JUSTIFIED, checkpoint);
-    }
-
-    public void storeBestJustifiedCheckpoint(final Checkpoint checkpoint) {
-      setCheckpoint(CheckpointType.BEST_JUSTIFIED, checkpoint);
-    }
-
-    public void storeFinalizedCheckpoint(final Checkpoint checkpoint) {
-      setCheckpoint(CheckpointType.FINALIZED, checkpoint);
-    }
-
-    public void storeWeakSubjectivityCheckpoint(final Checkpoint checkpoint) {
-      setCheckpoint(CheckpointType.WEAK_SUBJECTIVITY, checkpoint);
-    }
-
-    public void clearWeakSubjectivityCheckpoint() {
-      execSql("DELETE FROM checkpoint WHERE type = ?", CheckpointType.WEAK_SUBJECTIVITY.name());
-    }
-
-    private void setCheckpoint(final CheckpointType type, final Checkpoint checkpoint) {
-      execSql(
-          "INSERT INTO checkpoint (type, blockRoot, epoch) VALUES (?, ?, ?)"
-              + " ON CONFLICT(type) DO UPDATE SET blockRoot = excluded.blockRoot, epoch = excluded.epoch",
-          type.name(),
-          checkpoint.getRoot().toArrayUnsafe(),
-          checkpoint.getEpoch().bigIntegerValue());
-    }
-
-    public void storeBlock(final SignedBeaconBlock block, final boolean finalized) {
-      execSql(
-          "INSERT INTO block (blockRoot, slot, parentRoot, finalized, ssz) VALUES (?, ?, ?, ?, ?) "
-              + " ON CONFLICT(blockRoot) DO UPDATE SET finalized = excluded.finalized",
-          block.getRoot().toArrayUnsafe(),
-          block.getSlot().bigIntegerValue(),
-          block.getParent_root().toArrayUnsafe(),
-          finalized,
-          serializeSsz(block));
-    }
-
-    public void finalizeBlock(final SignedBeaconBlock block) {
-      execSql(
-          "UPDATE block SET finalized = true WHERE blockRoot = ?",
-          (Object) block.getRoot().toArrayUnsafe());
-    }
-
-    public void deleteBlock(final Bytes32 blockRoot) {
-      execSql("DELETE FROM block WHERE blockRoot = ?", (Object) blockRoot.toArrayUnsafe());
-    }
-
-    public void storeStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
-      execSql(
-          "INSERT INTO state (stateRoot, blockRoot, slot) VALUES (?, ?, ?)"
-              + " ON CONFLICT(stateRoot) DO NOTHING",
-          stateRoot.toArrayUnsafe(),
-          slotAndBlockRoot.getBlockRoot().toArrayUnsafe(),
-          slotAndBlockRoot.getSlot().bigIntegerValue());
-    }
-
-    public void storeState(final Bytes32 blockRoot, final BeaconState state) {
-      execSql(
-          "INSERT INTO state (stateRoot, blockRoot, slot, ssz) VALUES (?, ?, ?, ?)"
-              + " ON CONFLICT(stateRoot) DO UPDATE SET ssz = excluded.ssz",
-          state.hash_tree_root().toArrayUnsafe(),
-          blockRoot.toArrayUnsafe(),
-          state.getSlot().bigIntegerValue(),
-          serializeSsz(state));
-    }
-
-    public void storeLatestFinalizedState(final BeaconState state) {
-      execSql(
-          "INSERT INTO finalized_state (id, ssz) VALUES (1, ?) "
-              + "ON CONFLICT(id) DO UPDATE SET ssz = excluded.ssz",
-          serializeSsz(state));
-    }
-
-    public void deleteStateByBlockRoot(final Bytes32 blockRoot) {
-      execSql("DELETE FROM state WHERE blockRoot = ?", (Object) blockRoot.toArrayUnsafe());
-    }
-
-    public void storeVotes(final Map<UInt64, VoteTracker> votes) {
-      votes.forEach(
-          (validatorIndex, voteTracker) ->
-              execSql(
-                  "INSERT INTO vote (validatorIndex, currentRoot, nextRoot, nextEpoch) VALUES (?, ?, ?, ?)"
-                      + " ON CONFLICT(validatorIndex) DO UPDATE SET"
-                      + "                     currentRoot = excluded.currentRoot,"
-                      + "                     nextRoot = excluded.nextRoot,"
-                      + "                     nextEpoch = excluded.nextEpoch",
-                  validatorIndex.bigIntegerValue(),
-                  voteTracker.getCurrentRoot().toArrayUnsafe(),
-                  voteTracker.getNextRoot().toArrayUnsafe(),
-                  voteTracker.getNextEpoch().bigIntegerValue()));
-    }
-
     public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
       execSql(
           "INSERT INTO eth1_min_genesis (id, block_timestamp, block_number, block_hash) "
@@ -452,14 +258,6 @@ public class SqlStorage implements AutoCloseable {
                       deposit.getAmount().bigIntegerValue()));
     }
 
-    private Object serializeSsz(final SimpleOffsetSerializable obj) {
-      try {
-        final byte[] uncompressed = SimpleOffsetSerializer.serialize(obj).toArrayUnsafe();
-        return compress ? Snappy.compress(uncompressed) : uncompressed;
-      } catch (final IOException e) {
-        throw new DatabaseStorageException("Compression failed", e);
-      }
-    }
     // Returns number of affected rows.
 
     private int execSql(final String sql, final Object... params) {

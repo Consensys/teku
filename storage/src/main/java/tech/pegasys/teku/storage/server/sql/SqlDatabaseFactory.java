@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.sql;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.zaxxer.hikari.HikariDataSource;
 import java.nio.file.Path;
 import org.flywaydb.core.Flyway;
@@ -21,23 +22,19 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class SqlDatabaseFactory {
+
+  static final String DB_FILENAME = "teku.db";
 
   public static Database create(
       final Path dbDir,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final MetricsSystem metricsSystem) {
-    dbDir.toFile().mkdir();
-    final HikariDataSource dataSource = new HikariDataSource();
-    dataSource.setJdbcUrl("jdbc:sqlite:" + dbDir.resolve("index").toAbsolutePath() + "");
-
-    final Flyway flyway = Flyway.configure().dataSource(dataSource).load();
-
-    // Start the migration
-    flyway.migrate();
+    final HikariDataSource dataSource = initDataSource(dbDir);
 
     final PlatformTransactionManager transactionManager =
         new DataSourceTransactionManager(dataSource);
@@ -46,7 +43,30 @@ public class SqlDatabaseFactory {
     return new SqlDatabase(
         metricsSystem,
         new SqlStorage(transactionManager, dataSource, useSnappyCompression),
+        new SqlChainStorage(transactionManager, dataSource),
         stateStorageMode,
         UInt64.valueOf(stateStorageFrequency));
+  }
+
+  @VisibleForTesting
+  static HikariDataSource initDataSource(final Path dbDir) {
+    if (!dbDir.toFile().mkdir() && !dbDir.toFile().isDirectory()) {
+      throw new InvalidConfigurationException(
+          "Unable to create database directory: " + dbDir.toAbsolutePath());
+    }
+    final HikariDataSource dataSource = createDataSource(dbDir);
+
+    final Flyway flyway = Flyway.configure().dataSource(dataSource).load();
+
+    // Start the migration
+    flyway.migrate();
+    return dataSource;
+  }
+
+  @VisibleForTesting
+  static HikariDataSource createDataSource(final Path dbDir) {
+    final HikariDataSource dataSource = new HikariDataSource();
+    dataSource.setJdbcUrl("jdbc:sqlite:" + dbDir.resolve(DB_FILENAME).toAbsolutePath() + "");
+    return dataSource;
   }
 }
