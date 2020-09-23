@@ -43,12 +43,14 @@ public class GetFork implements Handler {
   }
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get the fork of the current head.",
       tags = {TAG_NODE},
       description =
-          "Returns information about the fork of the beacon chain head from the node’s perspective.",
+          "Returns information about the fork of the beacon chain head from the node’s perspective."
+              + "Replaced by standard api endpoint /eth/v1/beacon/states/{state_id}/fork",
       responses = {
         @OpenApiResponse(
             status = RES_OK,

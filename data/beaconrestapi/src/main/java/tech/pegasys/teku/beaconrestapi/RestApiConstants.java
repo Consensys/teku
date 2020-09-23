@@ -53,6 +53,9 @@ public class RestApiConstants {
       "No content may be returned if the genesis block has not been set, meaning that there is no head to query.";
   public static final String INVALID_BODY_SUPPLIED = "Invalid body supplied.";
 
+  public static final String SERVICE_UNAVAILABLE =
+      "Beacon node is currently syncing and not serving requests";
+
   public static final String EPOCH_QUERY_DESCRIPTION = "`uint64` Epoch number to query.";
   public static final String SLOT_QUERY_DESCRIPTION =
       "`UInt64` Slot to query in the canonical chain.";

@@ -22,6 +22,7 @@ public class SchemaConstants {
 
   public static final String PATTERN_UINT64 = "^0-9+$";
   public static final String PATTERN_PUBKEY = "^0x[a-fA-F0-9]{96}$";
+  public static final String PATTERN_BYTES4 = "^0x[a-fA-F0-9]{8}$";
   public static final String PATTERN_BYTES32 = "^0x[a-fA-F0-9]{64}$";
 
   public static final String EXAMPLE_PUBKEY =
