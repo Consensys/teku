@@ -49,6 +49,7 @@ public class SqlDatabase implements Database {
   private final MetricsSystem metricsSystem;
   private final SqlChainStorage chainStorage;
   private final SqlEth1Storage eth1Storage;
+  private final SqlProtoArrayStorage protoArrayStorage;
   private final StateStorageMode stateStorageMode;
   private final UInt64 stateStorageFrequency;
 
@@ -56,11 +57,13 @@ public class SqlDatabase implements Database {
       final MetricsSystem metricsSystem,
       final SqlChainStorage chainStorage,
       final SqlEth1Storage eth1Storage,
+      final SqlProtoArrayStorage protoArrayStorage,
       final StateStorageMode stateStorageMode,
       final UInt64 stateStorageFrequency) {
     this.metricsSystem = metricsSystem;
     this.eth1Storage = eth1Storage;
     this.chainStorage = chainStorage;
+    this.protoArrayStorage = protoArrayStorage;
     this.stateStorageMode = stateStorageMode;
     this.stateStorageFrequency = stateStorageFrequency;
   }
@@ -272,7 +275,7 @@ public class SqlDatabase implements Database {
 
   @Override
   public Optional<ProtoArraySnapshot> getProtoArraySnapshot() {
-    return Optional.empty();
+    return protoArrayStorage.loadProtoArraySnapshot();
   }
 
   @Override
@@ -292,7 +295,13 @@ public class SqlDatabase implements Database {
   }
 
   @Override
-  public void putProtoArraySnapshot(final ProtoArraySnapshot protoArray) {}
+  public void putProtoArraySnapshot(final ProtoArraySnapshot protoArray) {
+    try (final SqlProtoArrayStorage.Transaction transaction =
+        protoArrayStorage.startTransaction()) {
+      transaction.storeProtoArraySnapshot(protoArray);
+      transaction.commit();
+    }
+  }
 
   @Override
   public void close() {

@@ -43,6 +43,7 @@ public class SqlDatabaseFactory {
         metricsSystem,
         new SqlChainStorage(transactionManager, dataSource),
         new SqlEth1Storage(transactionManager, dataSource),
+        new SqlProtoArrayStorage(transactionManager, dataSource),
         stateStorageMode,
         UInt64.valueOf(stateStorageFrequency));
   }
