@@ -24,6 +24,7 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.MetadataMessage;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.RootCauseExceptionHandler;
@@ -101,6 +102,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final MetricsSystem metricsSystem,
       final AttestationSubnetService attestationSubnetService,
       final RpcEncoding rpcEncoding,
+      final Optional<Checkpoint> requiredCheckpoint,
       final Duration eth2RpcPingInterval,
       final int eth2RpcOutstandingPingThreshold,
       final Duration eth2StatusUpdateInterval,
@@ -124,6 +126,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             statusMessageFactory,
             metadataMessagesFactory,
             timeProvider,
+            requiredCheckpoint,
             peerRateLimit,
             peerRequestLimit),
         statusMessageFactory,

@@ -35,14 +35,18 @@ public class PeerChainValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   private final CombinedChainDataClient chainDataClient;
+  private final Optional<Checkpoint> requiredCheckpoint;
   private final Counter validationStartedCounter;
   private final Counter chainValidCounter;
   private final Counter chainInvalidCounter;
   private final Counter validationErrorCounter;
 
   private PeerChainValidator(
-      final MetricsSystem metricsSystem, final CombinedChainDataClient chainDataClient) {
+      final MetricsSystem metricsSystem,
+      final CombinedChainDataClient chainDataClient,
+      final Optional<Checkpoint> requiredCheckpoint) {
     this.chainDataClient = chainDataClient;
+    this.requiredCheckpoint = requiredCheckpoint;
 
     final LabelledMetric<Counter> validationCounter =
         metricsSystem.createLabelledCounter(
@@ -57,8 +61,10 @@ public class PeerChainValidator {
   }
 
   public static PeerChainValidator create(
-      final MetricsSystem metricsSystem, final CombinedChainDataClient chainDataClient) {
-    return new PeerChainValidator(metricsSystem, chainDataClient);
+      final MetricsSystem metricsSystem,
+      final CombinedChainDataClient chainDataClient,
+      final Optional<Checkpoint> requiredCheckpoint) {
+    return new PeerChainValidator(metricsSystem, chainDataClient, requiredCheckpoint);
   }
 
   public SafeFuture<Boolean> validate(final Eth2Peer peer, final PeerStatus newStatus) {

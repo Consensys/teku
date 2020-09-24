@@ -347,6 +347,7 @@ public class PeerChainValidatorTest {
     when(peer.getStatus()).thenReturn(status);
 
     remoteStatus = status;
-    peerChainValidator = PeerChainValidator.create(new NoOpMetricsSystem(), combinedChainData);
+    peerChainValidator =
+        PeerChainValidator.create(new NoOpMetricsSystem(), combinedChainData, Optional.empty());
   }
 }
