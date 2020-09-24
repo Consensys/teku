@@ -23,10 +23,10 @@ public class NoOpPerformanceTracker implements PerformanceTracker {
   public void start(UInt64 nodeStartSlot) {}
 
   @Override
-  public void saveSentAttestation(Attestation attestation) {}
+  public void saveProducedAttestation(Attestation attestation) {}
 
   @Override
-  public void saveSentBlock(SignedBeaconBlock block) {}
+  public void saveProducedBlock(SignedBeaconBlock block) {}
 
   @Override
   public void onSlot(UInt64 slot) {}

@@ -28,6 +28,7 @@ dependencies {
   testImplementation testFixtures(project(':ethereum:core'))
   testImplementation testFixtures(project(':util'))
   testImplementation testFixtures(project(':storage'))
+  testImplementation testFixtures(project(':infrastructure:metrics'))
 
   integrationTestImplementation testFixtures(project(':ethereum:core'))
   integrationTestImplementation testFixtures(project(':infrastructure:async'))

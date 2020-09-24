@@ -14,16 +14,16 @@
 package tech.pegasys.teku.services.remotevalidator;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
+import tech.pegasys.teku.infrastructure.metrics.SettableDoubleGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 class RemoteValidatorMetrics {
 
-  private final SettableGauge connectedValidatorsGauge;
+  private final SettableDoubleGauge connectedValidatorsGauge;
 
   RemoteValidatorMetrics(final MetricsSystem metricsSystem) {
     connectedValidatorsGauge =
-        SettableGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem,
             TekuMetricCategory.REMOTE_VALIDATOR,
             "connected_validator_nodes",

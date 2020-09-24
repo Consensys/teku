@@ -13,28 +13,28 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.getPercentage;
-
 import com.google.common.base.Objects;
 
+import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.getPercentage;
+
 public class AttestationPerformance {
-  private final int numberOfSentAttestations;
-  private final int numberOfIncludedAttestations;
-  private final int inclusionDistanceMax;
-  private final int inclusionDistanceMin;
-  private final double inclusionDistanceAverage;
-  private final double correctTargetCount;
-  private final double correctHeadBlockCount;
+  final int numberOfProducedAttestations;
+  final int numberOfIncludedAttestations;
+  final int inclusionDistanceMax;
+  final int inclusionDistanceMin;
+  final double inclusionDistanceAverage;
+  final int correctTargetCount;
+  final int correctHeadBlockCount;
 
   public AttestationPerformance(
-      int numberOfSentAttestations,
+      int numberOfProducedAttestations,
       int numberOfIncludedAttestations,
       int inclusionDistanceMax,
       int inclusionDistanceMin,
       double inclusionDistanceAverage,
-      double correctTargetCount,
-      double correctHeadBlockCount) {
-    this.numberOfSentAttestations = numberOfSentAttestations;
+      int correctTargetCount,
+      int correctHeadBlockCount) {
+    this.numberOfProducedAttestations = numberOfProducedAttestations;
     this.numberOfIncludedAttestations = numberOfIncludedAttestations;
     this.inclusionDistanceMax = inclusionDistanceMax;
     this.inclusionDistanceMin = inclusionDistanceMin;
@@ -52,7 +52,7 @@ public class AttestationPerformance {
     if (this == o) return true;
     if (!(o instanceof AttestationPerformance)) return false;
     AttestationPerformance that = (AttestationPerformance) o;
-    return numberOfSentAttestations == that.numberOfSentAttestations
+    return numberOfProducedAttestations == that.numberOfProducedAttestations
         && numberOfIncludedAttestations == that.numberOfIncludedAttestations
         && inclusionDistanceMax == that.inclusionDistanceMax
         && inclusionDistanceMin == that.inclusionDistanceMin
@@ -64,7 +64,7 @@ public class AttestationPerformance {
   @Override
   public int hashCode() {
     return Objects.hashCode(
-        numberOfSentAttestations,
+            numberOfProducedAttestations,
         numberOfIncludedAttestations,
         inclusionDistanceMax,
         inclusionDistanceMin,
@@ -75,21 +75,19 @@ public class AttestationPerformance {
 
   @Override
   public String toString() {
-    return String.format(
-        "\n ===== Attestation Performance Information ===== \n"
-            + " - Number of sent attestations: %d\n"
-            + " - Number of sent attestations included on chain: %d\n"
-            + " - Percentage of sent attestations included on chain: %d%%\n"
-            + " - Inclusion distances: average: %f, min: %d, max: %d\n"
-            + " - Percentage of sent attestations with correct target at: %d%%\n"
-            + " - Percentage of sent attestations with correct head block root at: %d%%",
-        numberOfSentAttestations,
+    return String.format("Attestation performance: " +
+                "produced %d, included %d (%d%%), " +
+                "distance %d / %.2f / %d, " +
+                "correct target %d (%d%%), correct head %d (%d%%)",
+            numberOfProducedAttestations,
         numberOfIncludedAttestations,
-        getPercentage(numberOfIncludedAttestations, numberOfSentAttestations),
-        inclusionDistanceAverage,
+        getPercentage(numberOfIncludedAttestations, numberOfProducedAttestations),
         inclusionDistanceMin,
+        inclusionDistanceAverage,
         inclusionDistanceMax,
-        getPercentage((long) correctTargetCount, numberOfSentAttestations),
-        getPercentage((long) correctHeadBlockCount, numberOfSentAttestations));
+        correctTargetCount,
+        getPercentage(correctTargetCount, numberOfProducedAttestations),
+        correctHeadBlockCount,
+        getPercentage(correctHeadBlockCount, numberOfProducedAttestations));
   }
 }

@@ -47,7 +47,7 @@ import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
-import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
+import tech.pegasys.teku.infrastructure.metrics.SettableDoubleGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -62,7 +62,7 @@ class Store implements UpdatableStore {
   private final MetricsSystem metricsSystem;
   private final StateAndBlockProvider stateAndBlockProvider;
 
-  private Optional<SettableGauge> blockCountGauge = Optional.empty();
+  private Optional<SettableDoubleGauge> blockCountGauge = Optional.empty();
 
   private final BlockProvider blockProvider;
 
@@ -202,7 +202,7 @@ class Store implements UpdatableStore {
     try {
       blockCountGauge =
           Optional.of(
-              SettableGauge.create(
+              SettableDoubleGauge.create(
                   metricsSystem,
                   TekuMetricCategory.STORAGE,
                   "memory_block_count",

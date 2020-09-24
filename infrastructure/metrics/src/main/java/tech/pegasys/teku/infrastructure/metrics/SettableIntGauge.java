@@ -13,26 +13,27 @@
 
 package tech.pegasys.teku.infrastructure.metrics;
 
-import com.google.common.util.concurrent.AtomicDouble;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
-public class SettableGauge {
+import java.util.concurrent.atomic.AtomicInteger;
 
-  private final AtomicDouble valueHolder;
+public class SettableIntGauge {
 
-  private SettableGauge(AtomicDouble valueHolder) {
+  private final AtomicInteger valueHolder;
+
+  private SettableIntGauge(AtomicInteger valueHolder) {
     this.valueHolder = valueHolder;
   }
 
-  public static SettableGauge create(
-      MetricsSystem metricsSystem, MetricCategory category, String name, String help) {
-    AtomicDouble valueHolder = new AtomicDouble();
+  public static SettableIntGauge create(
+          MetricsSystem metricsSystem, MetricCategory category, String name, String help) {
+    AtomicInteger valueHolder = new AtomicInteger();
     metricsSystem.createGauge(category, name, help, valueHolder::get);
-    return new SettableGauge(valueHolder);
+    return new SettableIntGauge(valueHolder);
   }
 
-  public void set(double value) {
+  public void set(int value) {
     valueHolder.set(value);
   }
 }

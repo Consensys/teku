@@ -22,7 +22,7 @@ public interface PerformanceTracker extends SlotEventsChannel {
 
   void start(UInt64 nodeStartSlot);
 
-  void saveSentAttestation(Attestation attestation);
+  void saveProducedAttestation(Attestation attestation);
 
-  void saveSentBlock(SignedBeaconBlock block);
+  void saveProducedBlock(SignedBeaconBlock block);
 }

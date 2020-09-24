@@ -13,22 +13,13 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
-import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
-
-import java.nio.ByteOrder;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.blocks.NodeSlot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
+import tech.pegasys.teku.infrastructure.metrics.SettableDoubleGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
@@ -37,21 +28,31 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
+import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_previous_epoch;
+import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
+
 public class BeaconChainMetrics implements SlotEventsChannel {
   private static final long NOT_SET = 0L;
   private final RecentChainData recentChainData;
   private final NodeSlot nodeSlot;
 
-  private final SettableGauge previousLiveValidators;
-  private final SettableGauge currentActiveValidators;
-  private final SettableGauge previousActiveValidators;
-  private final SettableGauge currentLiveValidators;
-  private final SettableGauge finalizedEpoch;
-  private final SettableGauge finalizedRoot;
-  private final SettableGauge currentJustifiedEpoch;
-  private final SettableGauge currentJustifiedRoot;
-  private final SettableGauge previousJustifiedEpoch;
-  private final SettableGauge previousJustifiedRoot;
+  private final SettableDoubleGauge previousLiveValidators;
+  private final SettableDoubleGauge currentActiveValidators;
+  private final SettableDoubleGauge previousActiveValidators;
+  private final SettableDoubleGauge currentLiveValidators;
+  private final SettableDoubleGauge finalizedEpoch;
+  private final SettableDoubleGauge finalizedRoot;
+  private final SettableDoubleGauge currentJustifiedEpoch;
+  private final SettableDoubleGauge currentJustifiedRoot;
+  private final SettableDoubleGauge previousJustifiedEpoch;
+  private final SettableDoubleGauge previousJustifiedRoot;
 
   public BeaconChainMetrics(
       final RecentChainData recentChainData,
@@ -88,58 +89,58 @@ public class BeaconChainMetrics implements SlotEventsChannel {
         p2pNetwork::getPeerCount);
 
     finalizedEpoch =
-        SettableGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem, TekuMetricCategory.BEACON, "finalized_epoch", "Current finalized epoch");
     finalizedRoot =
-        SettableGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem, TekuMetricCategory.BEACON, "finalized_root", "Current finalized root");
 
     currentJustifiedEpoch =
-        SettableGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem,
             TekuMetricCategory.BEACON,
             "current_justified_epoch",
             "Current justified epoch");
     currentJustifiedRoot =
-        SettableGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem,
             TekuMetricCategory.BEACON,
             "current_justified_root",
             "Current justified root");
 
     previousJustifiedEpoch =
-        SettableGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem,
             TekuMetricCategory.BEACON,
             "previous_justified_epoch",
             "Current previously justified epoch");
     previousJustifiedRoot =
-        SettableGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem,
             TekuMetricCategory.BEACON,
             "previous_justified_root",
             "Current previously justified root");
 
     previousLiveValidators =
-        SettableGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem,
             TekuMetricCategory.BEACON,
             "previous_live_validators",
             "Number of active validators that successfully included attestation on chain for previous epoch");
     currentLiveValidators =
-        SettableGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem,
             TekuMetricCategory.BEACON,
             "current_live_validators",
             "Number of active validators that successfully included attestation on chain for current epoch");
     currentActiveValidators =
-        SettableGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem,
             TekuMetricCategory.BEACON,
             "current_active_validators",
             "Number of active validators in the current epoch");
     previousActiveValidators =
-        SettableGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem,
             TekuMetricCategory.BEACON,
             "previous_active_validators",

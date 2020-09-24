@@ -13,13 +13,6 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.BLOCK_PERFORMANCE_EVALUATION_INTERVAL;
-
-import java.util.List;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +31,14 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.Constants;
 
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.BLOCK_PERFORMANCE_EVALUATION_INTERVAL;
+
 public class PerformanceTrackerTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(64);
@@ -50,8 +51,8 @@ public class PerformanceTrackerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final StatusLogger log = mock(StatusLogger.class);
 
-  private DefaultPerformanceTracker performanceTracker =
-      new DefaultPerformanceTracker(storageSystem.combinedChainDataClient(), log);
+  private final DefaultPerformanceTracker performanceTracker =
+      new DefaultPerformanceTracker(storageSystem.combinedChainDataClient(), log, mock(ValidatorPerformanceMetrics.class));
 
   @BeforeAll
   static void setUp() {
@@ -67,8 +68,8 @@ public class PerformanceTrackerTest {
   @Test
   void shouldDisplayPerfectBlockInclusion() {
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(10));
-    performanceTracker.saveSentBlock(chainUpdater.chainBuilder.getBlockAtSlot(1));
-    performanceTracker.saveSentBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
+    performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(1));
+    performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
     performanceTracker.onSlot(compute_start_slot_at_epoch(BLOCK_PERFORMANCE_EVALUATION_INTERVAL));
     BlockPerformance expectedBlockPerformance = new BlockPerformance(2, 2);
     verify(log).performance(expectedBlockPerformance.toString());
@@ -77,9 +78,9 @@ public class PerformanceTrackerTest {
   @Test
   void shouldDisplayOneMissedBlock() {
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(10));
-    performanceTracker.saveSentBlock(chainUpdater.chainBuilder.getBlockAtSlot(1));
-    performanceTracker.saveSentBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
-    performanceTracker.saveSentBlock(dataStructureUtil.randomSignedBeaconBlock(3));
+    performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(1));
+    performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
+    performanceTracker.saveProducedBlock(dataStructureUtil.randomSignedBeaconBlock(3));
     performanceTracker.onSlot(compute_start_slot_at_epoch(BLOCK_PERFORMANCE_EVALUATION_INTERVAL));
     BlockPerformance expectedBlockPerformance = new BlockPerformance(2, 3);
     verify(log).performance(expectedBlockPerformance.toString());
@@ -96,7 +97,7 @@ public class PerformanceTrackerTest {
     chainUpdater.saveBlock(latestBlockAndState);
     chainUpdater.updateBestBlock(latestBlockAndState);
 
-    performanceTracker.saveSentAttestation(attestation1);
+    performanceTracker.saveProducedAttestation(attestation1);
     performanceTracker.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(2)));
     AttestationPerformance expectedAttestationPerformance =
         new AttestationPerformance(1, 1, 1, 1, 1, 1, 1);
@@ -121,8 +122,8 @@ public class PerformanceTrackerTest {
     chainUpdater.saveBlock(blockAndState2);
     chainUpdater.updateBestBlock(blockAndState2);
 
-    performanceTracker.saveSentAttestation(attestation1);
-    performanceTracker.saveSentAttestation(attestation2);
+    performanceTracker.saveProducedAttestation(attestation1);
+    performanceTracker.saveProducedAttestation(attestation2);
     performanceTracker.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(2)));
     AttestationPerformance expectedAttestationPerformance =
         new AttestationPerformance(2, 2, 2, 1, 1.5, 2, 2);
@@ -154,8 +155,8 @@ public class PerformanceTrackerTest {
     chainUpdater.saveBlock(blockAndState2);
     chainUpdater.updateBestBlock(blockAndState2);
 
-    performanceTracker.saveSentAttestation(attestation1);
-    performanceTracker.saveSentAttestation(attestation2);
+    performanceTracker.saveProducedAttestation(attestation1);
+    performanceTracker.saveProducedAttestation(attestation2);
     performanceTracker.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(4)));
     AttestationPerformance expectedAttestationPerformance =
         new AttestationPerformance(2, 2, 1, 1, 1, 1, 1);
@@ -189,8 +190,8 @@ public class PerformanceTrackerTest {
     chainUpdater.saveBlock(blockAndState2);
     chainUpdater.updateBestBlock(blockAndState2);
 
-    performanceTracker.saveSentAttestation(attestation1);
-    performanceTracker.saveSentAttestation(attestation2);
+    performanceTracker.saveProducedAttestation(attestation1);
+    performanceTracker.saveProducedAttestation(attestation2);
     performanceTracker.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(4)));
     AttestationPerformance expectedAttestationPerformance =
         new AttestationPerformance(2, 2, 2, 1, 1.5, 2, 1);
@@ -200,16 +201,16 @@ public class PerformanceTrackerTest {
   @Test
   void shouldClearOldSentObjects() {
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(10));
-    performanceTracker.saveSentBlock(chainUpdater.chainBuilder.getBlockAtSlot(1));
-    performanceTracker.saveSentBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
-    performanceTracker.saveSentAttestation(
+    performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(1));
+    performanceTracker.saveProducedBlock(chainUpdater.chainBuilder.getBlockAtSlot(2));
+    performanceTracker.saveProducedAttestation(
         new Attestation(
             dataStructureUtil.randomBitlist(),
             dataStructureUtil.randomAttestationData(UInt64.ONE),
             BLSSignature.random(0)));
     performanceTracker.onSlot(compute_start_slot_at_epoch(BLOCK_PERFORMANCE_EVALUATION_INTERVAL));
-    assertThat(performanceTracker.sentAttestationsByEpoch).isEmpty();
-    assertThat(performanceTracker.sentBlocksByEpoch).isEmpty();
+    assertThat(performanceTracker.producedAttestationsByEpoch).isEmpty();
+    assertThat(performanceTracker.producedBlocksByEpoch).isEmpty();
   }
 
   @Test
@@ -229,7 +230,7 @@ public class PerformanceTrackerTest {
     chainUpdater.saveBlock(blockAndState2);
     chainUpdater.updateBestBlock(blockAndState2);
 
-    performanceTracker.saveSentAttestation(attestation1);
+    performanceTracker.saveProducedAttestation(attestation1);
     performanceTracker.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(2)));
     AttestationPerformance expectedAttestationPerformance =
         new AttestationPerformance(1, 1, 1, 1, 1, 1, 1);

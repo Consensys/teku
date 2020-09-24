@@ -13,17 +13,17 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.getPercentage;
-
 import com.google.common.base.Objects;
 
-public class BlockPerformance {
-  private final int numberOfIncludedBlocks;
-  private final int numberOfSentBlocks;
+import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.getPercentage;
 
-  public BlockPerformance(int numberOfIncludedBlocks, int numberOfSentBlocks) {
+public class BlockPerformance {
+  final int numberOfIncludedBlocks;
+  final int numberOfProducedBlocks;
+
+  public BlockPerformance(int numberOfIncludedBlocks, int numberOfProducedBlocks) {
     this.numberOfIncludedBlocks = numberOfIncludedBlocks;
-    this.numberOfSentBlocks = numberOfSentBlocks;
+    this.numberOfProducedBlocks = numberOfProducedBlocks;
   }
 
   @Override
@@ -32,23 +32,20 @@ public class BlockPerformance {
     if (!(o instanceof BlockPerformance)) return false;
     BlockPerformance that = (BlockPerformance) o;
     return numberOfIncludedBlocks == that.numberOfIncludedBlocks
-        && numberOfSentBlocks == that.numberOfSentBlocks;
+        && numberOfProducedBlocks == that.numberOfProducedBlocks;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(numberOfIncludedBlocks, numberOfSentBlocks);
+    return Objects.hashCode(numberOfIncludedBlocks, numberOfProducedBlocks);
   }
 
   @Override
   public String toString() {
     return String.format(
-        "\n ===== Block Performance Information ===== \n"
-            + " - Number of sent blocks: %d\n"
-            + " - Number of sent blocks included on chain: %d\n"
-            + " - Percentage of sent blocks included on chain: %d%%",
-        numberOfSentBlocks,
-        numberOfIncludedBlocks,
-        getPercentage(numberOfIncludedBlocks, numberOfSentBlocks));
+            "Block performance: produced %d, included %d (%d%%)",
+            numberOfProducedBlocks,
+            numberOfIncludedBlocks,
+            getPercentage(numberOfIncludedBlocks, numberOfProducedBlocks));
   }
 }

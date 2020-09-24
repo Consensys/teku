@@ -13,36 +13,26 @@
 
 package tech.pegasys.teku.infrastructure.metrics;
 
+import com.google.common.util.concurrent.AtomicDouble;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
-import java.util.Optional;
+public class SettableDoubleGauge {
 
-public enum TekuMetricCategory implements MetricCategory {
-  BEACON("beacon"),
-  EVENTBUS("eventbus"),
-  EXECUTOR("executor"),
-  LIBP2P("libp2p"),
-  NETWORK("network"),
-  STORAGE("storage"),
-  STORAGE_HOT_DB("storage_hot"),
-  STORAGE_FINALIZED_DB("storage_finalized"),
-  REMOTE_VALIDATOR("remote_validator"),
-  VALIDATOR("validator"),
-  VALIDATOR_PERFORMANCE("validator_performance");
+  private final AtomicDouble valueHolder;
 
-  private final String name;
-
-  TekuMetricCategory(final String name) {
-    this.name = name;
+  private SettableDoubleGauge(AtomicDouble valueHolder) {
+    this.valueHolder = valueHolder;
   }
 
-  @Override
-  public String getName() {
-    return name;
+  public static SettableDoubleGauge create(
+      MetricsSystem metricsSystem, MetricCategory category, String name, String help) {
+    AtomicDouble valueHolder = new AtomicDouble();
+    metricsSystem.createGauge(category, name, help, valueHolder::get);
+    return new SettableDoubleGauge(valueHolder);
   }
 
-  @Override
-  public Optional<String> getApplicationPrefix() {
-    return Optional.empty();
+  public void set(double value) {
+    valueHolder.set(value);
   }
 }
