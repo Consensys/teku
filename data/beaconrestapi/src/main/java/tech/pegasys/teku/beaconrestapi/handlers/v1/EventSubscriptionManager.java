@@ -19,49 +19,54 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.sse.SseClient;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
+import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgEventChannel;
-import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
-public class EventSubscriptionService implements ReorgEventChannel, SlotEventsChannel {
+public class EventSubscriptionManager implements ReorgEventChannel, FinalizedCheckpointChannel {
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final String SLOT = "slot";
   private static final String CHAIN_REORG = "chain_reorg";
+  private static final String HEAD = "head";
+  private static final String BLOCK = "block";
+  private static final String ATTESTATION = "attestation";
+  private static final String VOLUNTARY_EXIT = "voluntary_exit";
+  private static final String FINALIZED_CHECKPOINT = "finalized_checkpoint";
   private final JsonProvider jsonProvider;
+  private final ChainDataProvider provider;
   private final ConcurrentLinkedQueue<SseClient> clients = new ConcurrentLinkedQueue<>();
 
-  public EventSubscriptionService(
-      final JsonProvider jsonProvider, final EventChannels eventChannels) {
+  public EventSubscriptionManager(
+      final ChainDataProvider provider,
+      final JsonProvider jsonProvider,
+      final EventChannels eventChannels) {
+    this.provider = provider;
     this.jsonProvider = jsonProvider;
     eventChannels.subscribe(ReorgEventChannel.class, this);
-    eventChannels.subscribe(SlotEventsChannel.class, this);
+    eventChannels.subscribe(FinalizedCheckpointChannel.class, this);
   }
-  // FIXME remove slot
+
   public static final List<String> VALID_EVENT_TYPES =
-      List.of(
-          SLOT,
-          CHAIN_REORG,
-          "head",
-          "block",
-          "attestation",
-          "voluntary_exit",
-          "finalized_checkpoint");
+      List.of(CHAIN_REORG, HEAD, BLOCK, ATTESTATION, VOLUNTARY_EXIT, FINALIZED_CHECKPOINT);
 
   public void registerClient(final SseClient sseClient) {
-    LOG.info("connected " + sseClient.hashCode());
+    LOG.trace("connected " + sseClient.hashCode());
     sseClient.onClose(
         () -> {
           clients.remove(sseClient);
-          LOG.info("disconnected " + sseClient.hashCode());
+          LOG.trace("disconnected " + sseClient.hashCode());
         });
     clients.add(sseClient);
   }
@@ -94,13 +99,21 @@ public class EventSubscriptionService implements ReorgEventChannel, SlotEventsCh
   }
 
   @Override
-  public void onSlot(final UInt64 slot) {
-    sendEventToClients(SLOT, slot.toString());
+  public void onNewFinalizedCheckpoint(final Checkpoint checkpoint) {
+    try {
+      Optional<Bytes32> stateRoot = provider.getStateRootFromBlockRoot(checkpoint.getRoot());
+      final String checkpointString =
+          jsonProvider.objectToJSON(
+              new FinalizedCheckpointEvent(
+                  checkpoint.getRoot(), stateRoot.orElse(Bytes32.ZERO), checkpoint.getEpoch()));
+      sendEventToClients(FINALIZED_CHECKPOINT, checkpointString);
+    } catch (JsonProcessingException ex) {
+      LOG.trace(ex);
+    }
   }
 
   public void stop() {
     clients.forEach(client -> client.sendEvent("bye", "bye", "-1"));
-    LOG.info("Disconnected clients from GetEvents");
     clients.clear();
   }
 

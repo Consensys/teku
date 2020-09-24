@@ -22,7 +22,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILAB
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_EVENTS;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TOPICS;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.EventSubscriptionService.VALID_EVENT_TYPES;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.EventSubscriptionManager.VALID_EVENT_TYPES;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -49,7 +49,7 @@ public class GetEvents implements Handler {
   private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/eth/v1/events";
   private final JsonProvider jsonProvider;
-  private final EventSubscriptionService eventService;
+  private final EventSubscriptionManager eventService;
 
   public GetEvents(
       final DataProvider dataProvider,
@@ -63,7 +63,7 @@ public class GetEvents implements Handler {
       final JsonProvider jsonProvider,
       final EventChannels eventChannels) {
     this.jsonProvider = jsonProvider;
-    eventService = new EventSubscriptionService(jsonProvider, eventChannels);
+    eventService = new EventSubscriptionManager(provider, jsonProvider, eventChannels);
   }
 
   @OpenApi(
