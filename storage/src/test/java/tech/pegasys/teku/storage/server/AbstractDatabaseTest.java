@@ -37,7 +37,6 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -147,6 +146,122 @@ public abstract class AbstractDatabaseTest {
   public void shouldRecreateOriginalGenesisStore() {
     final UpdatableStore memoryStore = recreateStore();
     assertStoresMatch(memoryStore, store);
+  }
+
+  @Test
+  public void shouldPersistHotStates_everyEpoch() {
+    final int storageFrequency = 1;
+    StoreConfig storeConfig =
+        StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
+    createStorage(StateStorageMode.PRUNE, storeConfig);
+    initGenesis();
+
+    final UInt64 latestEpoch = UInt64.valueOf(3);
+    final UInt64 targetSlot = compute_start_slot_at_epoch(latestEpoch);
+    chainBuilder.generateBlocksUpToSlot(targetSlot);
+
+    // Add blocks
+    addBlocks(chainBuilder.streamBlocksAndStates().collect(toList()));
+
+    // We should only be able to pull states at epoch boundaries
+    final Set<UInt64> epochBoundarySlots = getEpochBoundarySlots(1, latestEpoch.intValue());
+    for (int i = 0; i <= targetSlot.intValue(); i++) {
+      final SignedBlockAndState blockAndState = chainBuilder.getBlockAndStateAtSlot(i);
+      final Optional<BeaconState> actual = database.getHotState(blockAndState.getRoot());
+
+      if (epochBoundarySlots.contains(UInt64.valueOf(i))) {
+        assertThat(actual).contains(blockAndState.getState());
+      } else {
+        assertThat(actual).isEmpty();
+      }
+    }
+  }
+
+  @Test
+  public void shouldPersistHotStates_never() {
+    final int storageFrequency = 0;
+    StoreConfig storeConfig =
+        StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
+    createStorage(StateStorageMode.PRUNE, storeConfig);
+    initGenesis();
+
+    final UInt64 latestEpoch = UInt64.valueOf(3);
+    final UInt64 targetSlot = compute_start_slot_at_epoch(latestEpoch);
+    chainBuilder.generateBlocksUpToSlot(targetSlot);
+
+    // Add blocks
+    addBlocks(chainBuilder.streamBlocksAndStates().collect(toList()));
+
+    for (int i = 0; i <= targetSlot.intValue(); i++) {
+      final SignedBlockAndState blockAndState = chainBuilder.getBlockAndStateAtSlot(i);
+      final Optional<BeaconState> actual = database.getHotState(blockAndState.getRoot());
+      assertThat(actual).isEmpty();
+    }
+  }
+
+  @Test
+  public void shouldPersistHotStates_everyThirdEpoch() {
+    final int storageFrequency = 3;
+    StoreConfig storeConfig =
+        StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
+    createStorage(StateStorageMode.PRUNE, storeConfig);
+    initGenesis();
+
+    final UInt64 latestEpoch = UInt64.valueOf(3 * storageFrequency);
+    final UInt64 targetSlot = compute_start_slot_at_epoch(latestEpoch);
+    chainBuilder.generateBlocksUpToSlot(targetSlot);
+
+    // Add blocks
+    addBlocks(chainBuilder.streamBlocksAndStates().collect(toList()));
+
+    // We should only be able to pull states at epoch boundaries
+    final Set<UInt64> epochBoundarySlots = getEpochBoundarySlots(1, latestEpoch.intValue());
+    for (int i = 0; i <= targetSlot.intValue(); i++) {
+      final SignedBlockAndState blockAndState = chainBuilder.getBlockAndStateAtSlot(i);
+      final Optional<BeaconState> actual = database.getHotState(blockAndState.getRoot());
+
+      final UInt64 currentSlot = UInt64.valueOf(i);
+      final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
+      final boolean shouldPersistThisEpoch = currentEpoch.mod(storageFrequency).equals(UInt64.ZERO);
+      if (epochBoundarySlots.contains(currentSlot) && shouldPersistThisEpoch) {
+        assertThat(actual).contains(blockAndState.getState());
+      } else {
+        assertThat(actual).isEmpty();
+      }
+    }
+  }
+
+  @Test
+  public void shouldClearStaleHotStates() {
+    final int storageFrequency = 1;
+    StoreConfig storeConfig =
+        StoreConfig.builder().hotStatePersistenceFrequencyInEpochs(storageFrequency).build();
+    createStorage(StateStorageMode.ARCHIVE, storeConfig);
+    initGenesis();
+
+    final UInt64 latestEpoch = UInt64.valueOf(3);
+    final UInt64 targetSlot = compute_start_slot_at_epoch(latestEpoch);
+    chainBuilder.generateBlocksUpToSlot(targetSlot);
+
+    // Add blocks
+    addBlocks(chainBuilder.streamBlocksAndStates().collect(toList()));
+    justifyAndFinalizeEpoch(latestEpoch, chainBuilder.getLatestBlockAndState());
+
+    // Hot states should be cleared out
+    for (int i = 0; i <= targetSlot.intValue(); i++) {
+      final SignedBlockAndState blockAndState = chainBuilder.getBlockAndStateAtSlot(i);
+      final Optional<BeaconState> actual = database.getHotState(blockAndState.getRoot());
+      assertThat(actual).isEmpty();
+    }
+  }
+
+  private Set<UInt64> getEpochBoundarySlots(final int fromEpoch, final int toEpoch) {
+    final Set<UInt64> epochBoundarySlots = new HashSet<>();
+    for (int i = fromEpoch; i <= toEpoch; i++) {
+      final UInt64 epochSlot = compute_start_slot_at_epoch(UInt64.valueOf(i));
+      epochBoundarySlots.add(epochSlot);
+    }
+    return epochBoundarySlots;
   }
 
   @Test
@@ -277,49 +392,6 @@ public abstract class AbstractDatabaseTest {
         .contains(block2.getState());
     assertThat(database.getLatestAvailableFinalizedState(block1.getSlot()))
         .contains(block1.getState());
-  }
-
-  @Test
-  @Disabled
-  public void shouldStoreSingleValueFields() {
-    generateCheckpoints();
-
-    final List<SignedBlockAndState> allBlocks =
-        chainBuilder
-            .streamBlocksAndStates(0, checkpoint3BlockAndState.getSlot().longValue())
-            .collect(toList());
-    addBlocks(allBlocks);
-
-    final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    transaction.setGenesis_time(UInt64.valueOf(3));
-    transaction.setFinalizedCheckpoint(checkpoint1);
-    transaction.setJustifiedCheckpoint(checkpoint2);
-    transaction.setBestJustifiedCheckpoint(checkpoint3);
-
-    commit(transaction);
-
-    final UpdatableStore result = recreateStore();
-
-    assertThat(result.getGenesisTime()).isEqualTo(transaction.getGenesisTime());
-    assertThat(result.getFinalizedCheckpoint()).isEqualTo(transaction.getFinalizedCheckpoint());
-    assertThat(result.getJustifiedCheckpoint()).isEqualTo(transaction.getJustifiedCheckpoint());
-    assertThat(result.getBestJustifiedCheckpoint())
-        .isEqualTo(transaction.getBestJustifiedCheckpoint());
-  }
-
-  @Test
-  @Disabled
-  public void shouldStoreSingleValue_genesisTime() {
-    final UInt64 newGenesisTime = UInt64.valueOf(3);
-    // Sanity check
-    assertThat(store.getGenesisTime()).isNotEqualTo(newGenesisTime);
-
-    final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    transaction.setGenesis_time(newGenesisTime);
-    commit(transaction);
-
-    final UpdatableStore result = recreateStore();
-    assertThat(result.getGenesisTime()).isEqualTo(transaction.getGenesisTime());
   }
 
   @Test

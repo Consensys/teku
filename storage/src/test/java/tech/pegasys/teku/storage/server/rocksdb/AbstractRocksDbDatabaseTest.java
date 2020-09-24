@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.storage.server.rocksdb;
 
+import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
+import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -32,12 +34,53 @@ import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbEth1Dao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbFinalizedDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbHotDao;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
 
   @Test
-  @Disabled
+  public void shouldStoreSingleValueFields() {
+    generateCheckpoints();
+
+    final List<SignedBlockAndState> allBlocks =
+        chainBuilder
+            .streamBlocksAndStates(0, checkpoint3BlockAndState.getSlot().longValue())
+            .collect(toList());
+    addBlocks(allBlocks);
+
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    transaction.setGenesis_time(UInt64.valueOf(3));
+    transaction.setFinalizedCheckpoint(checkpoint1);
+    transaction.setJustifiedCheckpoint(checkpoint2);
+    transaction.setBestJustifiedCheckpoint(checkpoint3);
+
+    commit(transaction);
+
+    final UpdatableStore result = recreateStore();
+
+    assertThat(result.getGenesisTime()).isEqualTo(transaction.getGenesisTime());
+    assertThat(result.getFinalizedCheckpoint()).isEqualTo(transaction.getFinalizedCheckpoint());
+    assertThat(result.getJustifiedCheckpoint()).isEqualTo(transaction.getJustifiedCheckpoint());
+    assertThat(result.getBestJustifiedCheckpoint())
+        .isEqualTo(transaction.getBestJustifiedCheckpoint());
+  }
+
+  @Test
+  public void shouldStoreSingleValue_genesisTime() {
+    final UInt64 newGenesisTime = UInt64.valueOf(3);
+    // Sanity check
+    assertThat(store.getGenesisTime()).isNotEqualTo(newGenesisTime);
+
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    transaction.setGenesis_time(newGenesisTime);
+    commit(transaction);
+
+    final UpdatableStore result = recreateStore();
+    assertThat(result.getGenesisTime()).isEqualTo(transaction.getGenesisTime());
+  }
+
+  @Test
   public void shouldThrowIfClosedDatabaseIsModified_setGenesis() throws Exception {
     database.close();
     assertThatThrownBy(() -> database.storeGenesis(genesisAnchor))
@@ -45,7 +88,6 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
-  @Disabled
   public void shouldThrowIfClosedDatabaseIsModified_update() throws Exception {
     database.storeGenesis(genesisAnchor);
     database.close();
@@ -62,7 +104,6 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
-  @Disabled
   public void shouldThrowIfClosedDatabaseIsRead_createMemoryStore() throws Exception {
     database.storeGenesis(genesisAnchor);
     database.close();
@@ -71,7 +112,6 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
-  @Disabled
   public void shouldThrowIfClosedDatabaseIsRead_getSlotForFinalizedBlockRoot() throws Exception {
     database.storeGenesis(genesisAnchor);
     database.close();
@@ -81,7 +121,6 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
-  @Disabled
   public void shouldThrowIfClosedDatabaseIsRead_getSignedBlock() throws Exception {
     database.storeGenesis(genesisAnchor);
     database.close();
@@ -91,7 +130,6 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
-  @Disabled
   public void shouldThrowIfClosedDatabaseIsRead_streamFinalizedBlocks() throws Exception {
     database.storeGenesis(genesisAnchor);
     database.close();
@@ -101,7 +139,6 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
-  @Disabled
   public void shouldThrowIfClosedDatabaseIsRead_streamFinalizedBlocksShuttingDown()
       throws Exception {
     database.storeGenesis(genesisAnchor);
@@ -113,7 +150,6 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
-  @Disabled
   public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateHotDao()
       throws Exception {
     database.storeGenesis(genesisAnchor);
@@ -128,7 +164,6 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
-  @Disabled
   public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateFinalizedDao()
       throws Exception {
     database.storeGenesis(genesisAnchor);
@@ -143,7 +178,6 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
-  @Disabled
   public void shouldThrowIfTransactionModifiedAfterDatabaseIsClosed_updateEth1Dao()
       throws Exception {
     database.storeGenesis(genesisAnchor);
@@ -160,7 +194,6 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
   }
 
   @Test
-  @Disabled
   public void shouldThrowIfClosedDatabaseIsRead_getHistoricalState() throws Exception {
     // Store genesis
     database.storeGenesis(genesisAnchor);

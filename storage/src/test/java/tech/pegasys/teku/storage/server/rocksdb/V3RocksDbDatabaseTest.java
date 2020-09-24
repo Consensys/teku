@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.core.ChainBuilder;
@@ -72,6 +73,22 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
       @TempDir final Path tempDir) throws Exception {
     testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(tempDir, StateStorageMode.PRUNE);
   }
+
+  @Test
+  @Disabled("Not implemented in v3")
+  public void shouldPersistHotStates_everyEpoch() {}
+
+  @Test
+  @Disabled("Not implemented in v3")
+  public void shouldPersistHotStates_never() {}
+
+  @Test
+  @Disabled("Not implemented in v3")
+  public void shouldPersistHotStates_everyThirdEpoch() {}
+
+  @Test
+  @Disabled("Not implemented in v3")
+  public void shouldClearStaleHotStates() {}
 
   private void testShouldHandleRestartWithUnrecoverableForkBlocks(
       @TempDir final Path tempDir, final StateStorageMode storageMode) throws Exception {

@@ -14,14 +14,14 @@
 package tech.pegasys.teku.storage.server.sql;
 
 import java.io.File;
+import tech.pegasys.teku.storage.server.AbstractStorageBackedDatabaseTest;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
-import tech.pegasys.teku.storage.server.rocksdb.AbstractRocksDbDatabaseWithHotStatesTest;
 import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
-public class SqlDatabaseTest extends AbstractRocksDbDatabaseWithHotStatesTest {
+public class SqlDatabaseTest extends AbstractStorageBackedDatabaseTest {
 
   @Override
   protected StorageSystem createStorageSystem(

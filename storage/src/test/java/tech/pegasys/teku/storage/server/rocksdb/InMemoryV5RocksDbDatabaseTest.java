@@ -20,7 +20,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
-public class InMemoryV5RocksDbDatabaseTest extends AbstractRocksDbDatabaseWithHotStatesTest {
+public class InMemoryV5RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
 
   @Override
   protected StorageSystem createStorageSystem(
