@@ -105,9 +105,11 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
         UInt64 oldestAnalyzedEpoch = currentEpoch.minus(BLOCK_PERFORMANCE_EVALUATION_INTERVAL);
         BlockPerformance blockPerformance =
             getBlockPerformanceForEpochs(oldestAnalyzedEpoch, currentEpoch);
-        statusLogger.performance(blockPerformance.toString());
-        producedBlocksByEpoch.headMap(oldestAnalyzedEpoch, true).clear();
-        validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
+        if (blockPerformance.numberOfProducedBlocks > 0) {
+          statusLogger.performance(blockPerformance.toString());
+          producedBlocksByEpoch.headMap(oldestAnalyzedEpoch, true).clear();
+          validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
+        }
       }
     }
   }
