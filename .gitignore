@@ -6,8 +6,6 @@
 *.launch
 *.swp
 *.log
-db/
-db.version
 .classpath
 .DS_Store
 .gradletasknamecache
@@ -54,7 +52,6 @@ eth-reference-tests/src/referenceTest/generated/
 eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/
 
 
-/teku.db
 node_modules
 
 /test-network/grafana/data
