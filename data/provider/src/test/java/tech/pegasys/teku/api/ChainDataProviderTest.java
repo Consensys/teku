@@ -16,6 +16,7 @@ package tech.pegasys.teku.api;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -26,6 +27,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.List;
@@ -36,12 +38,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.response.GetForkResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BeaconHead;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.BeaconValidators;
 import tech.pegasys.teku.api.schema.Committee;
+import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.ValidatorWithIndex;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
 import tech.pegasys.teku.core.stategenerator.CheckpointStateGenerator;
@@ -52,6 +58,7 @@ import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -342,6 +349,27 @@ public class ChainDataProviderTest {
   }
 
   @Test
+  public void stateParameterToSlot_shouldThrowWhenStoreNotFound() {
+    final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
+    assertThrows(ChainDataUnavailableException.class, () -> provider.stateParameterToSlot("1"));
+  }
+
+  @Test
+  public void validatorParameterToIndex_shouldThrowWhenStoreNotFound() {
+    final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
+    assertThrows(
+        ChainDataUnavailableException.class, () -> provider.validatorParameterToIndex("1"));
+  }
+
+  @Test
+  public void getValidatorDetails_shouldThrowWhenStoreNotFound() {
+    final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
+    assertThrows(
+        ChainDataUnavailableException.class,
+        () -> provider.getValidatorDetails(Optional.empty(), Optional.empty()));
+  }
+
+  @Test
   public void getStateByStateRoot_shouldReturnEmptyWhenNotFound()
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
@@ -449,5 +477,210 @@ public class ChainDataProviderTest {
     assertThat(result.current_version).isEqualTo(beaconState.fork.current_version);
     assertThat(result.epoch).isEqualTo(beaconState.fork.epoch);
     assertThat(result.genesis_validators_root).isEqualTo(beaconState.genesis_validators_root);
+  }
+
+  @Test
+  public void stateParameterToSlot_shouldParseHead() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    Optional<UInt64> result = provider.stateParameterToSlot("head");
+    assertThat(result.isPresent()).isTrue();
+    assertThat(result).isEqualTo(recentChainData.getCurrentSlot());
+  }
+
+  @Test
+  public void stateParameterToSlot_shouldDetectInvalidValues() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    assertThrows(IllegalArgumentException.class, () -> provider.stateParameterToSlot("hea"));
+  }
+
+  @Test
+  public void stateParameterToSlot_shouldDetectStatesInFuture() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    assertThrows(IllegalArgumentException.class, () -> provider.stateParameterToSlot("12345678"));
+  }
+
+  @Test
+  public void stateParameterToSlot_shouldParseGenesis() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    Optional<UInt64> result = provider.stateParameterToSlot("genesis");
+    assertThat(result.isPresent()).isTrue();
+    assertThat(result.get()).isEqualTo(ZERO);
+  }
+
+  @Test
+  public void stateParameterToSlot_shouldParseFinalized() {
+    final Checkpoint finalizedCheckpoint = recentChainData.getFinalizedCheckpoint().get();
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    Optional<UInt64> result = provider.stateParameterToSlot("finalized");
+    assertThat(result.isPresent()).isTrue();
+    assertThat(result.get()).isEqualTo(finalizedCheckpoint.getEpochStartSlot());
+  }
+
+  @Test
+  public void stateParameterToSlot_shouldParseJustified() {
+    final Checkpoint justifiedCheckpoint = recentChainData.getJustifiedCheckpoint().get();
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    Optional<UInt64> result = provider.stateParameterToSlot("justified");
+    assertThat(result.isPresent()).isTrue();
+    assertThat(result.get()).isEqualTo(justifiedCheckpoint.getEpochStartSlot());
+  }
+
+  @Test
+  public void stateParameterToSlot_shouldParseStateRoot() {
+    final tech.pegasys.teku.datastructures.state.BeaconState beaconState =
+        recentChainData.getBestState().get();
+    final Bytes32 stateRoot = beaconState.hashTreeRoot().or(Bytes32.ZERO);
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    Optional<UInt64> result = provider.stateParameterToSlot(stateRoot.toHexString());
+    assertThat(result.isPresent()).isTrue();
+    assertThat(result.get()).isEqualTo(beaconState.getSlot());
+  }
+
+  @Test
+  public void stateParameterToSlot_shouldParseSlotNumber() {
+    final UInt64 slot = UInt64.valueOf(1);
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    Optional<UInt64> result = provider.stateParameterToSlot(slot.toString());
+    assertThat(result.isPresent()).isTrue();
+    assertThat(result.get()).isEqualTo(slot);
+  }
+
+  @Test
+  public void validatorParameterToIndex_shouldAcceptValidatorRoot() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    Validator validator =
+        new Validator(recentChainData.getBestState().get().getValidators().get(1));
+
+    assertThat(provider.validatorParameterToIndex(validator.pubkey.toHexString()))
+        .isEqualTo(Optional.of(1));
+  }
+
+  @Test
+  public void validatorParameterToIndex_shouldAcceptValidatorId() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    assertThat(provider.validatorParameterToIndex("2")).isEqualTo(Optional.of(2));
+  }
+
+  @Test
+  public void validatorParameterToIndex_shouldThrowException() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    assertThrows(IllegalArgumentException.class, () -> provider.validatorParameterToIndex("2a"));
+  }
+
+  @Test
+  public void validatorParameterToIndex_shouldDetectIndexOutOfBounds() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    assertThrows(
+        IllegalArgumentException.class, () -> provider.validatorParameterToIndex("1234567"));
+  }
+
+  @Test
+  public void validatorParameterToIndex_shouldDetectAboveMaxInt() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            provider.validatorParameterToIndex(
+                UInt64.valueOf(Integer.MAX_VALUE).increment().toString()));
+  }
+
+  @Test
+  public void validatorParameterToIndex_shouldThrowExceptionWithInvalidPublicKey() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> provider.validatorParameterToIndex(Bytes32.EMPTY.toHexString()));
+  }
+
+  @Test
+  public void validatorDetails_shouldReturnEmptyForFutureState() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    Optional<ValidatorResponse> response =
+        provider.getValidatorDetails(Optional.of(UInt64.valueOf(12345678)), Optional.of(1)).join();
+    assertThat(response).isEmpty();
+  }
+
+  @Test
+  public void getValidatorDetails_shouldReturnEmptyFromEmptyState() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    assertThat(provider.getValidatorDetails(Optional.empty(), Optional.of(1)).join()).isEmpty();
+  }
+
+  @Test
+  public void getValidatorDetails_shouldReturnEmptyFromEmptyValidatorIndex() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    assertThat(provider.getValidatorDetails(Optional.of(ONE), Optional.empty()).join()).isEmpty();
+  }
+
+  @Test
+  public void getForkAtSlot_shouldGetCurrentFork() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    final Bytes4 FORK_ONE = Bytes4.fromHexString("0x00000001");
+    final Optional<Fork> expectedResult = Optional.of(new Fork(FORK_ONE, FORK_ONE, ZERO));
+    assertThat(provider.getForkAtSlot(ONE).join()).isEqualTo(expectedResult);
+  }
+
+  @Test
+  public void validatorDetails_shouldGetResponse() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    Validator validator =
+        new Validator(recentChainData.getBestState().get().getValidators().get(1));
+    assertValidatorRespondsWithCorrectValidatorAtHead(provider, validator, 1);
+  }
+
+  private void assertValidatorRespondsWithCorrectValidatorAtHead(
+      final ChainDataProvider provider, final Validator validator, final Integer validatorId) {
+    SafeFuture<Optional<ValidatorResponse>> response =
+        provider.getValidatorDetails(Optional.of(ZERO), Optional.of(validatorId));
+    Optional<ValidatorResponse> maybeValidator = response.join();
+    assertThat(maybeValidator.isPresent()).isTrue();
+    assertThat(maybeValidator.get())
+        .isEqualTo(
+            new ValidatorResponse(
+                ONE,
+                UInt64.valueOf("32000000000"),
+                ValidatorStatus.active_ongoing,
+                new Validator(
+                    validator.pubkey,
+                    validator.withdrawal_credentials,
+                    UInt64.valueOf("32000000000"),
+                    false,
+                    ZERO,
+                    ZERO,
+                    FAR_FUTURE_EPOCH,
+                    FAR_FUTURE_EPOCH)));
   }
 }

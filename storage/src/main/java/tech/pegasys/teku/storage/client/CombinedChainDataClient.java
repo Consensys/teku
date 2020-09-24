@@ -202,6 +202,13 @@ public class CombinedChainDataClient {
     return finalizedEpoch.compareTo(epoch) >= 0;
   }
 
+  public SafeFuture<Optional<CheckpointState>> retrieveFinalizedCheckpointAndState() {
+    if (recentChainData.getStore() == null) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    return recentChainData.getStore().retrieveFinalizedCheckpointAndState().thenApply(Optional::of);
+  }
+
   /**
    * Returns the latest state at the given slot on the current chain.
    *
@@ -384,5 +391,10 @@ public class CombinedChainDataClient {
     }
     final UInt64 finalizedSlot = recentChainData.getStore().getLatestFinalizedBlockSlot();
     return slot.compareTo(finalizedSlot) >= 0;
+  }
+
+  public SafeFuture<Optional<UInt64>> getSlotByStateRoot(final Bytes32 stateRoot) {
+    return getStateByStateRoot(stateRoot)
+        .thenApply(maybeState -> maybeState.map(BeaconState::getSlot));
   }
 }

@@ -21,8 +21,9 @@ public class BeaconChainService extends Service {
 
   private final BeaconChainController controller;
 
-  public BeaconChainService(final ServiceConfig config) {
-    this.controller = new BeaconChainController(config);
+  public BeaconChainService(
+      BeaconChainConfiguration beaconConfig, final ServiceConfig serviceConfig) {
+    this.controller = new BeaconChainController(beaconConfig, serviceConfig);
   }
 
   @Override

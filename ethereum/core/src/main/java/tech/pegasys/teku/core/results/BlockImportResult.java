@@ -25,6 +25,8 @@ public interface BlockImportResult {
   BlockImportResult FAILED_INVALID_ANCESTRY =
       new FailedBlockImportResult(
           FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED, Optional.empty());
+  BlockImportResult FAILED_WEAK_SUBJECTIVITY_CHECKS =
+      new FailedBlockImportResult(FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS, Optional.empty());
 
   static BlockImportResult failedStateTransition(final Exception cause) {
     return new FailedBlockImportResult(FailureReason.FAILED_STATE_TRANSITION, Optional.of(cause));
@@ -47,6 +49,7 @@ public interface BlockImportResult {
     BLOCK_IS_FROM_FUTURE,
     DOES_NOT_DESCEND_FROM_LATEST_FINALIZED,
     FAILED_STATE_TRANSITION,
+    FAILED_WEAK_SUBJECTIVITY_CHECKS,
     INTERNAL_ERROR // A catch-all category for unexpected errors (bugs)
   }
 
