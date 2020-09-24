@@ -26,8 +26,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 import tech.pegasys.teku.weaksubjectivity.policies.LoggingWeakSubjectivityViolationPolicy;
 import tech.pegasys.teku.weaksubjectivity.policies.StrictWeakSubjectivityViolationPolicy;
@@ -70,6 +72,34 @@ public class WeakSubjectivityValidator {
         List.of(new LoggingWeakSubjectivityViolationPolicy(Level.TRACE));
     return new WeakSubjectivityValidator(
         calculator, policies, config.getWeakSubjectivityCheckpoint());
+  }
+
+  /** Check whether the chain matches any configured weak subjectivity checkpoint or state */
+  public SafeFuture<Void> validateChainIsConsistentWithWSCheckpoint(
+      CombinedChainDataClient chainData) {
+    if (maybeWsCheckpoint.isEmpty()) {
+      // Nothing to validate against
+      return SafeFuture.COMPLETE;
+    }
+    final Checkpoint wsCheckpoint = maybeWsCheckpoint.get();
+    if (!chainData.isFinalizedEpoch(wsCheckpoint.getEpoch())) {
+      // Checkpoint is in the future - nothing to validate yet
+      return SafeFuture.COMPLETE;
+    }
+
+    return chainData
+        .getBlockInEffectAtSlot(wsCheckpoint.getEpochStartSlot())
+        .thenAccept(
+            maybeBlock -> {
+              // We must have a block at this slot because we know this epoch is finalized
+              SignedBeaconBlock blockAtCheckpointSlot = maybeBlock.orElseThrow();
+              if (!blockAtCheckpointSlot.getRoot().equals(wsCheckpoint.getRoot())) {
+                for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
+                  policy.onChainInconsistentWithWeakSubjectivityCheckpoint(
+                      wsCheckpoint, blockAtCheckpointSlot);
+                }
+              }
+            });
   }
 
   /**

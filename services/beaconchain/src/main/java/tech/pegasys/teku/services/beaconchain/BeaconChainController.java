@@ -637,7 +637,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       UInt64 deltaTime = currentTime.minus(genesisTime);
       currentSlot = deltaTime.dividedBy(SECONDS_PER_SLOT);
       // Validate that we're running within the weak subjectivity period
-      validateLatestCheckpointIsWithinWeakSubjectivityPeriod(currentSlot);
+      validateChain(currentSlot);
     } else {
       currentSlot = ZERO;
       UInt64 timeUntilGenesis = genesisTime.minus(currentTime);
@@ -648,8 +648,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     performanceTracker.start(currentSlot);
   }
 
-  private void validateLatestCheckpointIsWithinWeakSubjectivityPeriod(final UInt64 currentSlot) {
-    SafeFuture.of(() -> recentChainData.getStore().retrieveFinalizedCheckpointAndState())
+  private void validateChain(final UInt64 currentSlot) {
+    weakSubjectivityValidator
+        .validateChainIsConsistentWithWSCheckpoint(combinedChainDataClient)
+        .thenCompose(
+            __ ->
+                SafeFuture.of(
+                    () -> recentChainData.getStore().retrieveFinalizedCheckpointAndState()))
         .thenAccept(
             finalizedCheckpointState -> {
               final UInt64 slot = currentSlot.max(recentChainData.getCurrentSlot().orElse(ZERO));
