@@ -26,6 +26,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -42,10 +44,13 @@ import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.server.sql.SqlChainStorage.Transaction;
 import tech.pegasys.teku.storage.store.StoreBuilder;
+import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class SqlDatabase implements Database {
+  private static final Logger LOG = LogManager.getLogger();
   private final MetricsSystem metricsSystem;
   private final SqlChainStorage chainStorage;
   private final SqlEth1Storage eth1Storage;
@@ -92,6 +97,8 @@ public class SqlDatabase implements Database {
     }
 
     try (final SqlChainStorage.Transaction transaction = chainStorage.startTransaction()) {
+      final Optional<Checkpoint> previousFinalizedCheckpoint =
+          chainStorage.getCheckpoint(FINALIZED);
       updateCheckpoints(update, transaction);
 
       update.getFinalizedBlocks().values().forEach(block -> transaction.storeBlock(block, true));
@@ -106,18 +113,7 @@ public class SqlDatabase implements Database {
 
       // Store the periodic hot states (likely to be higher frequency than finalized states)
       update.getHotStates().forEach(transaction::storeState);
-      if (stateStorageMode == StateStorageMode.PRUNE) {
-        transaction.pruneFinalizedStates();
-      } else {
-        // Store any additional states that will be required when finalized to avoid regenerating
-        // TODO: Only store states required by stateStorageFrequency
-        update.getFinalizedStates().forEach(transaction::storeState);
-        update
-            .getHotBlocksAndStates()
-            .forEach(
-                (blockRoot, blockAndState) ->
-                    transaction.storeState(blockRoot, blockAndState.getState()));
-      }
+      updateFinalizedStates(update, transaction, previousFinalizedCheckpoint);
 
       // Ensure the latest finalized block and state is always stored
       update
@@ -126,6 +122,45 @@ public class SqlDatabase implements Database {
               blockAndState ->
                   transaction.storeState(blockAndState.getRoot(), blockAndState.getState()));
       transaction.commit();
+    }
+  }
+
+  private void updateFinalizedStates(
+      final StorageUpdate update,
+      final Transaction transaction,
+      final Optional<Checkpoint> previousFinalizedCheckpoint) {
+    final Optional<Checkpoint> maybeNewFinalizedCheckpoint = update.getFinalizedCheckpoint();
+    if (maybeNewFinalizedCheckpoint.isEmpty()) {
+      // Nothing to do
+      return;
+    }
+    if (stateStorageMode == StateStorageMode.PRUNE) {
+      transaction.pruneFinalizedStates();
+    } else {
+      if (stateStorageFrequency.isLessThan(UInt64.valueOf(Constants.SLOTS_PER_EPOCH))) {
+        // If we need states more often than once per epoch, we must store every hot state
+        // so we have the ones we need available
+        update
+            .getHotBlocksAndStates()
+            .forEach(
+                (blockRoot, blockAndState) ->
+                    transaction.storeState(blockRoot, blockAndState.getState()));
+        update.getFinalizedStates().forEach(transaction::storeState);
+      }
+      final UInt64 previousFinalizedSlot =
+          previousFinalizedCheckpoint.map(Checkpoint::getEpochStartSlot).orElse(UInt64.ZERO);
+      final UInt64 newFinalizedSlot = maybeNewFinalizedCheckpoint.get().getEpochStartSlot();
+      final UInt64 trailingPruneDistance = stateStorageFrequency.plus(Constants.SLOTS_PER_EPOCH);
+      final UInt64 trimStartSlot =
+          previousFinalizedSlot.isGreaterThan(trailingPruneDistance)
+              ? previousFinalizedSlot.minus(trailingPruneDistance)
+              : UInt64.ZERO;
+      LOG.trace(
+          "Trimming between {} and {} with storage frequency {}",
+          trimStartSlot,
+          newFinalizedSlot,
+          stateStorageFrequency);
+      transaction.trimFinalizedStates(trimStartSlot, newFinalizedSlot, stateStorageFrequency);
     }
   }
 

@@ -240,6 +240,22 @@ public class SqlChainStorage extends AbstractSqlStorage {
               + "       AND s2.ssz IS NOT NULL)");
     }
 
+    public void trimFinalizedStates(
+        final UInt64 afterSlot,
+        final UInt64 latestFinalizedSlot,
+        final UInt64 stateStorageFrequency) {
+      execSql(
+          " DELETE FROM state AS s1"
+              + " WHERE slot > ? "
+              + "   AND slot <= ?  "
+              + "   AND slot < ? + (SELECT MAX(s2.slot) "
+              + "                       FROM state s2 "
+              + "                      WHERE s2.slot < s1.slot)",
+          afterSlot,
+          latestFinalizedSlot,
+          stateStorageFrequency);
+    }
+
     public void storeCheckpoint(final CheckpointType type, final Checkpoint checkpoint) {
       execSql(
           "INSERT INTO checkpoint (type, blockRoot, epoch) VALUES (?, ?, ?)"

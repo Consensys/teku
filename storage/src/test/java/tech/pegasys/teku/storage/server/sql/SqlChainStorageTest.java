@@ -20,6 +20,7 @@ import static tech.pegasys.teku.storage.server.sql.SqlDatabaseFactory.DB_FILENAM
 import com.zaxxer.hikari.HikariDataSource;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -245,6 +246,52 @@ class SqlChainStorageTest {
     // Latest finalized state must always be available.
     assertThat(storage.getStateByBlockRoot(blockAndState3.getRoot()))
         .contains(blockAndState3.getState());
+  }
+
+  @Test
+  void shouldTrimFinalizedStates() {
+    final SignedBlockAndState blockAndState1 =
+        dataStructureUtil.randomSignedBlockAndState(UInt64.valueOf(1));
+    final SignedBlockAndState blockAndState2 =
+        dataStructureUtil.randomSignedBlockAndState(UInt64.valueOf(2));
+    final SignedBlockAndState blockAndState3 =
+        dataStructureUtil.randomSignedBlockAndState(UInt64.valueOf(3));
+    final SignedBlockAndState blockAndState6 =
+        dataStructureUtil.randomSignedBlockAndState(UInt64.valueOf(6));
+    final SignedBlockAndState blockAndState10 =
+        dataStructureUtil.randomSignedBlockAndState(UInt64.valueOf(10));
+    final SignedBlockAndState blockAndState11 =
+        dataStructureUtil.randomSignedBlockAndState(UInt64.valueOf(11));
+    final SignedBlockAndState blockAndState13 =
+        dataStructureUtil.randomSignedBlockAndState(UInt64.valueOf(13));
+    try (final SqlChainStorage.Transaction transaction = storage.startTransaction()) {
+      for (SignedBlockAndState blockAndState :
+          List.of(
+              blockAndState1,
+              blockAndState2,
+              blockAndState3,
+              blockAndState6,
+              blockAndState10,
+              blockAndState11,
+              blockAndState13)) {
+        transaction.storeBlock(blockAndState.getBlock(), true);
+        transaction.storeState(blockAndState.getRoot(), blockAndState.getState());
+      }
+      transaction.trimFinalizedStates(UInt64.valueOf(2), UInt64.valueOf(12), UInt64.valueOf(3));
+      transaction.commit();
+    }
+
+    assertThat(storage.getStateByBlockRoot(blockAndState1.getRoot())).isPresent();
+    assertThat(storage.getStateByBlockRoot(blockAndState2.getRoot())).isPresent();
+    assertThat(storage.getStateByBlockRoot(blockAndState3.getRoot())).isEmpty();
+    assertThat(storage.getStateByBlockRoot(blockAndState6.getRoot())).isPresent();
+    assertThat(storage.getStateByBlockRoot(blockAndState10.getRoot())).isPresent();
+    assertThat(storage.getStateByBlockRoot(blockAndState11.getRoot())).isEmpty();
+    assertThat(storage.getStateByBlockRoot(blockAndState13.getRoot())).isPresent();
+
+    // Latest finalized state must always be available.
+    assertThat(storage.getStateByBlockRoot(blockAndState13.getRoot()))
+        .contains(blockAndState13.getState());
   }
 
   @Test
