@@ -245,8 +245,7 @@ public class SqlDatabase implements Database {
 
   @Override
   public Optional<UInt64> getSlotForFinalizedStateRoot(final Bytes32 stateRoot) {
-    // TODO: Implement this
-    return Optional.empty();
+    return chainStorage.getSlotAndBlockRootByStateRoot(stateRoot).map(SlotAndBlockRoot::getSlot);
   }
 
   @Override
