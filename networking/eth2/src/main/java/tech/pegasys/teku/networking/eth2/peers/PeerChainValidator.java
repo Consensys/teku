@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,11 +36,13 @@ public class PeerChainValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   private final CombinedChainDataClient chainDataClient;
-  private final Optional<Checkpoint> requiredCheckpoint;
   private final Counter validationStartedCounter;
   private final Counter chainValidCounter;
   private final Counter chainInvalidCounter;
   private final Counter validationErrorCounter;
+
+  private final Optional<Checkpoint> requiredCheckpoint;
+  private final AtomicBoolean requiredCheckpointVerified = new AtomicBoolean(false);
 
   private PeerChainValidator(
       final MetricsSystem metricsSystem,
@@ -70,7 +73,7 @@ public class PeerChainValidator {
   public SafeFuture<Boolean> validate(final Eth2Peer peer, final PeerStatus newStatus) {
     LOG.trace("Validate chain of peer: {}", peer.getId());
     validationStartedCounter.inc();
-    return checkRemoteChain(peer, newStatus)
+    return isRemoteChainValid(peer, newStatus)
         .thenApply(
             isValid -> {
               if (!isValid) {
@@ -93,8 +96,31 @@ public class PeerChainValidator {
             });
   }
 
-  private SafeFuture<Boolean> checkRemoteChain(final Eth2Peer peer, final PeerStatus status) {
-    // Check fork compatibility
+  private SafeFuture<Boolean> isRemoteChainValid(final Eth2Peer peer, final PeerStatus status) {
+    if (!validateFork(peer, status)) {
+      return SafeFuture.completedFuture(false);
+    }
+
+    // Skip remaining checks if only genesis is finalized
+    if (status.getFinalizedEpoch().equals(UInt64.ZERO)) {
+      return SafeFuture.completedFuture(true);
+    }
+
+    return validateRequiredCheckpoint(peer, status)
+        .thenCompose(
+            isValid -> {
+              if (!isValid) {
+                // Short-circuit if we know the chain is invalid
+                LOG.trace(
+                    "Failed to validate peer against required checkpoint {}", requiredCheckpoint);
+                return SafeFuture.completedFuture(isValid);
+              }
+
+              return validateFinalizedCheckpoint(peer, status);
+            });
+  }
+
+  private boolean validateFork(final Eth2Peer peer, final PeerStatus status) {
     Bytes4 expectedForkDigest = chainDataClient.getHeadForkInfo().orElseThrow().getForkDigest();
     if (!Objects.equals(expectedForkDigest, status.getForkDigest())) {
       LOG.trace(
@@ -102,15 +128,53 @@ public class PeerChainValidator {
           status.getForkDigest(),
           expectedForkDigest,
           peer.getId());
-      return SafeFuture.completedFuture(false);
+      return false;
     }
-    final UInt64 remoteFinalizedEpoch = status.getFinalizedEpoch();
-    // Only require fork digest to match if only genesis is finalized
-    if (remoteFinalizedEpoch.equals(UInt64.ZERO)) {
+
+    return true;
+  }
+
+  private SafeFuture<Boolean> validateRequiredCheckpoint(
+      final Eth2Peer peer, final PeerStatus status) {
+    if (requiredCheckpointVerified.get()) {
+      return SafeFuture.completedFuture(true);
+    }
+    if (requiredCheckpoint.isEmpty()) {
+      requiredCheckpointVerified.set(true);
       return SafeFuture.completedFuture(true);
     }
 
-    // Check finalized checkpoint compatibility
+    final Checkpoint checkpointToVerify = requiredCheckpoint.get();
+    if (status.getFinalizedCheckpoint().getEpoch().isLessThan(checkpointToVerify.getEpoch())) {
+      // Peer hasn't finalized the required checkpoint, so defer check
+      return SafeFuture.completedFuture(true);
+    } else if (status.getFinalizedCheckpoint().getEpoch().equals(checkpointToVerify.getEpoch())) {
+      // Peer is at the required checkpoint, check for consistency
+      final boolean blockMatches = status.getFinalizedCheckpoint().equals(checkpointToVerify);
+      requiredCheckpointVerified.set(blockMatches);
+      return SafeFuture.completedFuture(blockMatches);
+    } else {
+      // Peer has finalized the required checkpoint in the past, request this block to check
+      // consistency
+      return peer.requestBlockByRoot(checkpointToVerify.getRoot())
+          // When requesting block by root, there is no explicit guarantee that the block is
+          // canonical.
+          // So, double-check by requesting the block by slot to make sure the peer considers this
+          // block canonical.
+          .thenCompose(block -> peer.requestBlockBySlot(block.getSlot()))
+          .thenApply(
+              blockBySlot -> {
+                final boolean blockMatches =
+                    blockBySlot.getRoot().equals(checkpointToVerify.getRoot());
+                requiredCheckpointVerified.set(blockMatches);
+                return blockMatches;
+              });
+    }
+  }
+
+  private SafeFuture<Boolean> validateFinalizedCheckpoint(
+      final Eth2Peer peer, final PeerStatus status) {
+    final UInt64 remoteFinalizedEpoch = status.getFinalizedEpoch();
     final Checkpoint finalizedCheckpoint =
         chainDataClient.getBestState().orElseThrow().getFinalized_checkpoint();
     final UInt64 finalizedEpoch = finalizedCheckpoint.getEpoch();

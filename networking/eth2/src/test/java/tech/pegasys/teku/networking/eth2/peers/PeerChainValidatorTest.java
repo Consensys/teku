@@ -211,6 +211,92 @@ public class PeerChainValidatorTest {
     verify(combinedChainData, never()).getBestState();
   }
 
+  @Test
+  public void validateRequiredCheckpoint_peerFinalizedBlockMatchesRequiredCheckpoint() {
+    setupRemoteStatusAndValidator(
+        remoteFinalizedCheckpoint, Optional.of(remoteFinalizedCheckpoint));
+    // Setup mocks
+    forksMatch();
+    finalizedCheckpointsMatch();
+
+    final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
+    assertPeerChainVerified(result);
+  }
+
+  @Test
+  public void validateRequiredCheckpoint_peerFinalizedBlockDoesNotMatchRequiredCheckpoint() {
+    final Checkpoint requiredCheckpoint =
+        new Checkpoint(remoteFinalizedEpoch, dataStructureUtil.randomBytes32());
+    setupRemoteStatusAndValidator(remoteFinalizedCheckpoint, Optional.of(requiredCheckpoint));
+    // Setup mocks
+    forksMatch();
+    finalizedCheckpointsMatch();
+
+    final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
+    assertPeerChainRejected(result, DisconnectReason.IRRELEVANT_NETWORK);
+  }
+
+  @Test
+  public void validateRequiredCheckpoint_peerHistoricalBlockMatchesRequiredCheckpoint() {
+    final Checkpoint requiredCheckpoint = earlierCheckpoint;
+    setupRemoteStatusAndValidator(remoteFinalizedCheckpoint, Optional.of(earlierCheckpoint));
+    // Setup mocks
+    forksMatch();
+    finalizedCheckpointsMatch();
+    when(peer.requestBlockByRoot(requiredCheckpoint.getRoot()))
+        .thenReturn(SafeFuture.completedFuture(earlierBlock));
+    when(peer.requestBlockBySlot(earlierBlock.getSlot()))
+        .thenReturn(SafeFuture.completedFuture(earlierBlock));
+
+    final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
+    assertPeerChainVerified(result);
+  }
+
+  @Test
+  public void validateRequiredCheckpoint_peerHistoricalBlockDoesNotMatchRequiredCheckpoint() {
+    final Checkpoint requiredCheckpoint =
+        new Checkpoint(earlierEpoch, dataStructureUtil.randomBytes32());
+    setupRemoteStatusAndValidator(remoteFinalizedCheckpoint, Optional.of(requiredCheckpoint));
+    // Setup mocks
+    forksMatch();
+    finalizedCheckpointsMatch();
+    final SignedBeaconBlock nonMatchingBlock =
+        dataStructureUtil.randomSignedBeaconBlock(earlierCheckpoint.getEpochStartSlot());
+    when(peer.requestBlockByRoot(requiredCheckpoint.getRoot()))
+        .thenReturn(SafeFuture.completedFuture(earlierBlock));
+    when(peer.requestBlockBySlot(earlierBlock.getSlot()))
+        .thenReturn(SafeFuture.completedFuture(nonMatchingBlock));
+
+    final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
+    assertPeerChainRejected(result, DisconnectReason.IRRELEVANT_NETWORK);
+  }
+
+  @Test
+  public void validateRequiredCheckpoint_noResultReturned() {
+    final Checkpoint requiredCheckpoint =
+        new Checkpoint(earlierEpoch, dataStructureUtil.randomBytes32());
+    setupRemoteStatusAndValidator(remoteFinalizedCheckpoint, Optional.of(requiredCheckpoint));
+    // Setup mocks
+    forksMatch();
+    finalizedCheckpointsMatch();
+    when(peer.requestBlockByRoot(requiredCheckpoint.getRoot()))
+        .thenReturn(SafeFuture.failedFuture(new NullPointerException()));
+
+    final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
+    assertPeerChainRejected(result, DisconnectReason.UNABLE_TO_VERIFY_NETWORK);
+  }
+
+  @Test
+  public void validateRequiredCheckpoint_requiredCheckpointNotFinal() {
+    setupRemoteStatusAndValidator(remoteFinalizedCheckpoint, Optional.of(laterCheckpoint));
+    // Setup mocks
+    forksMatch();
+    finalizedCheckpointsMatch();
+
+    final SafeFuture<Boolean> result = peerChainValidator.validate(peer, remoteStatus);
+    assertPeerChainVerified(result);
+  }
+
   private void assertPeerChainRejected(
       final SafeFuture<Boolean> result, DisconnectReason goodbyeReason) {
     assertThat(result).isCompletedWithValue(false);
@@ -331,6 +417,11 @@ public class PeerChainValidatorTest {
   }
 
   private void setupRemoteStatusAndValidator(final Checkpoint remoteFinalizedCheckpoint) {
+    setupRemoteStatusAndValidator(remoteFinalizedCheckpoint, Optional.empty());
+  }
+
+  private void setupRemoteStatusAndValidator(
+      final Checkpoint remoteFinalizedCheckpoint, final Optional<Checkpoint> requiredCheckpoint) {
 
     final Bytes32 headRoot = Bytes32.fromHexString("0xeeee");
     // Set a head slot some distance beyond the finalized epoch
@@ -348,6 +439,6 @@ public class PeerChainValidatorTest {
 
     remoteStatus = status;
     peerChainValidator =
-        PeerChainValidator.create(new NoOpMetricsSystem(), combinedChainData, Optional.empty());
+        PeerChainValidator.create(new NoOpMetricsSystem(), combinedChainData, requiredCheckpoint);
   }
 }
