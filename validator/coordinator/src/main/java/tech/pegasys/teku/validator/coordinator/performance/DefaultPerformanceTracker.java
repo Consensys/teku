@@ -166,10 +166,10 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       Bytes32 sentAttestationDataHash = sentAttestation.getData().hash_tree_root();
       UInt64 sentAttestationSlot = sentAttestation.getData().getSlot();
       if (!slotAndBitlistsByAttestationDataHash.containsKey(sentAttestationDataHash)) continue;
-      List<SlotAndBitlist> slotAndBitlists = slotAndBitlistsByAttestationDataHash.get(sentAttestationDataHash);
-      for (SlotAndBitlist slotAndBitlist : slotAndBitlists) {
-        if (slotAndBitlist.bitlist.isSuperSetOf(sentAttestation.getAggregation_bits())) {
-          inclusionDistances.add(slotAndBitlist.slot.minus(sentAttestationSlot).intValue());
+      NavigableMap<UInt64, Bitlist> slotAndBitlists = slotAndBitlistsByAttestationDataHash.get(sentAttestationDataHash);
+      for (UInt64 slot : slotAndBitlists.keySet()) {
+        if (slotAndBitlists.get(slot).isSuperSetOf(sentAttestation.getAggregation_bits())) {
+          inclusionDistances.add(slot.minus(sentAttestationSlot).intValue());
           break;
         }
       }
@@ -246,15 +246,5 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
   static long getPercentage(final long numerator, final long denominator) {
     return (long) (numerator * 100.0 / denominator + 0.5);
-  }
-
-  private static class SlotAndBitlist {
-    protected final UInt64 slot;
-    protected final Bitlist bitlist;
-
-    public SlotAndBitlist(UInt64 slot, Bitlist bitlist) {
-      this.slot = slot;
-      this.bitlist = bitlist;
-    }
   }
 }
