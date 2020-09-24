@@ -208,24 +208,37 @@ class SqlChainStorageTest {
   }
 
   @Test
-  void shouldDeleteOrphanedState() {
+  void shouldDeleteStatesWhenBlockIsDeleted() {
     final SignedBlockAndState blockAndState =
         dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
     final BeaconState state = blockAndState.getState();
     final Bytes32 blockRoot = blockAndState.getRoot();
-    final SignedBlockAndState orphanedBlockAndState =
-        dataStructureUtil.randomSignedBlockAndState(UInt64.valueOf(6));
+
+    try (final SqlChainStorage.Transaction transaction = storage.startTransaction()) {
+      transaction.storeBlock(blockAndState.getBlock(), false);
+      transaction.storeState(blockRoot, state);
+      transaction.deleteHotBlockByBlockRoot(blockAndState.getRoot());
+      transaction.commit();
+    }
+
+    assertThat(storage.getStateByBlockRoot(blockRoot)).isEmpty();
+  }
+
+  @Test
+  void shouldNotDeleteStateWhenBlockIsNotDeletedBecauseItIsFinalised() {
+    final SignedBlockAndState blockAndState =
+        dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
+    final BeaconState state = blockAndState.getState();
+    final Bytes32 blockRoot = blockAndState.getRoot();
 
     try (final SqlChainStorage.Transaction transaction = storage.startTransaction()) {
       transaction.storeBlock(blockAndState.getBlock(), true);
       transaction.storeState(blockRoot, state);
-      transaction.storeState(orphanedBlockAndState.getRoot(), orphanedBlockAndState.getState());
-      transaction.deleteOrphanedStates();
+      transaction.deleteHotBlockByBlockRoot(blockAndState.getRoot());
       transaction.commit();
     }
 
     assertThat(storage.getStateByBlockRoot(blockRoot)).contains(state);
-    assertThat(storage.getStateByBlockRoot(orphanedBlockAndState.getRoot())).isEmpty();
   }
 
   @Test

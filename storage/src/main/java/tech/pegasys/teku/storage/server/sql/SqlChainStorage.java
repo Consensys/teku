@@ -192,7 +192,12 @@ public class SqlChainStorage extends AbstractSqlStorage {
     }
 
     public void deleteHotBlockByBlockRoot(final Bytes32 blockRoot) {
-      execSql("DELETE FROM block WHERE blockRoot = ? AND NOT finalized", blockRoot);
+      final int deletedRows =
+          execSql("DELETE FROM block WHERE blockRoot = ? AND NOT finalized", blockRoot);
+      if (deletedRows > 0) {
+        // Delete any associated states as well.
+        execSql("DELETE FROM state WHERE blockRoot = ?", blockRoot);
+      }
     }
 
     public void storeStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
@@ -212,17 +217,6 @@ public class SqlChainStorage extends AbstractSqlStorage {
           blockRoot,
           state.getSlot(),
           serializeSsz(state));
-    }
-
-    /** Deletes states where there is no longer a matching block */
-    public void deleteOrphanedStates() {
-      execSql(
-          " DELETE FROM state "
-              + " WHERE blockRoot IN ("
-              + "        SELECT s2.blockRoot "
-              + "          FROM state s2 "
-              + "    LEFT JOIN block b ON s2.blockRoot = b.blockRoot "
-              + "         WHERE b.blockRoot IS NULL)");
     }
 
     /** Deletes the SSZ for any states prior to the most recent finalized state. */

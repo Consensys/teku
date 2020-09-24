@@ -106,10 +106,9 @@ public class SqlDatabase implements Database {
           .map(SignedBlockAndState::getBlock)
           .forEach(block -> transaction.storeBlock(block, false));
       update.getFinalizedChildToParentMap().keySet().forEach(transaction::finalizeBlock);
+      update.getStateRoots().forEach(transaction::storeStateRoot);
       update.getDeletedHotBlocks().forEach(transaction::deleteHotBlockByBlockRoot);
       transaction.storeVotes(update.getVotes());
-      update.getStateRoots().forEach(transaction::storeStateRoot);
-      transaction.deleteOrphanedStates();
 
       // Store the periodic hot states (likely to be higher frequency than finalized states)
       update.getHotStates().forEach(transaction::storeState);
