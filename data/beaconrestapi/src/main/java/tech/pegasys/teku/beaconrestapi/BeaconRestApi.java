@@ -35,6 +35,9 @@ import kotlin.text.Charsets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.Server;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
@@ -91,6 +94,22 @@ public class BeaconRestApi {
 
   private void initialize(
       final DataProvider dataProvider, final GlobalConfiguration configuration) {
+    // standard request header size is 8K, which only allows for a
+    // small number of validators to be requested in the attestation
+    // duties endpoint. increased to 32k to allow more validators per request.
+    if (app.config != null) {
+      // the beaconRestApi test mocks the app object, and will skip this
+      app.config.server(
+          () -> {
+            final Server server = new Server(configuration.getRestApiPort());
+            for (Connector c : server.getConnectors()) {
+              c.getConnectionFactory(HttpConnectionFactory.class)
+                  .getHttpConfiguration()
+                  .setRequestHeaderSize(32768);
+            }
+            return server;
+          });
+    }
     app.server().setServerHost(configuration.getRestApiInterface());
     app.server().setServerPort(configuration.getRestApiPort());
 
