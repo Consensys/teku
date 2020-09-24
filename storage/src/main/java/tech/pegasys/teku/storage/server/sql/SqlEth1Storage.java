@@ -57,16 +57,16 @@ public class SqlEth1Storage extends AbstractSqlStorage {
   }
 
   public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks() {
-    // TODO: Should load these in pages
-    final List<BlockInfo> blocks =
-        jdbc.query(
-            "SELECT block_number, block_timestamp, block_hash FROM eth1_deposit_block",
+
+    return SqlStream.stream(
+            jdbc,
+            50,
+            "SELECT block_number, block_timestamp, block_hash FROM eth1_deposit_block ORDER BY block_number",
             (rs, rowNum) ->
                 new BlockInfo(
                     getUInt64(rs, "block_number"),
                     getUInt64(rs, "block_timestamp"),
-                    getBytes32(rs, "block_hash")));
-    return blocks.stream()
+                    getBytes32(rs, "block_hash")))
         .map(
             block ->
                 DepositsFromBlockEvent.create(
@@ -126,24 +126,24 @@ public class SqlEth1Storage extends AbstractSqlStorage {
     public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
       execSql(
           "INSERT INTO eth1_deposit_block (block_number, block_timestamp, block_hash) "
-              + "   VALUES (?, ?, ?) ",
+              + "VALUES (?, ?, ?) ",
           event.getBlockNumber(),
           event.getBlockTimestamp(),
           event.getBlockHash());
-      event
-          .getDeposits()
-          .forEach(
-              deposit ->
-                  execSql(
-                      "INSERT INTO eth1_deposit "
-                          + "(merkle_tree_index, block_number, public_key, withdrawal_credentials, signature, amount) "
-                          + "VALUES (?, ?, ?, ?, ?, ?)",
-                      deposit.getMerkle_tree_index(),
-                      event.getBlockNumber(),
-                      deposit.getPubkey().toBytesCompressed(),
-                      deposit.getWithdrawal_credentials(),
-                      deposit.getSignature().toBytesCompressed(),
-                      deposit.getAmount()));
+      event.getDeposits().forEach(deposit -> storeDeposit(event, deposit));
+    }
+
+    private void storeDeposit(final DepositsFromBlockEvent event, final Deposit deposit) {
+      execSql(
+          "INSERT INTO eth1_deposit "
+              + "(merkle_tree_index, block_number, public_key, withdrawal_credentials, signature, amount) "
+              + "VALUES (?, ?, ?, ?, ?, ?)",
+          deposit.getMerkle_tree_index(),
+          event.getBlockNumber(),
+          deposit.getPubkey().toBytesCompressed(),
+          deposit.getWithdrawal_credentials(),
+          deposit.getSignature().toBytesCompressed(),
+          deposit.getAmount());
     }
   }
 }

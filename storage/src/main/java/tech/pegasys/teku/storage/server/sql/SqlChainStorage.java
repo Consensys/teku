@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.server.sql;
 import com.google.errorprone.annotations.MustBeClosed;
 import com.zaxxer.hikari.HikariDataSource;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -98,13 +97,13 @@ public class SqlChainStorage extends AbstractSqlStorage {
 
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
-    final List<Bytes32> blockRoots =
-        jdbc.query(
-            "SELECT blockRoot FROM block WHERE finalized = true AND slot >= ? AND slot <= ? ORDER BY slot",
-            (rs, rowNum) -> getBytes32(rs, "blockRoot"),
-            startSlot.bigIntegerValue(),
-            endSlot.bigIntegerValue());
-    return blockRoots.stream().map(blockRoot -> getBlockByBlockRoot(blockRoot).orElseThrow());
+    return SqlStream.stream(
+        jdbc,
+        20,
+        "SELECT ssz FROM block WHERE finalized = true AND slot >= ? AND slot <= ? ORDER BY slot",
+        (rs, rowNum) -> getSsz(rs, SignedBeaconBlock.class),
+        startSlot.bigIntegerValue(),
+        endSlot.bigIntegerValue());
   }
 
   public Optional<BeaconState> getStateByBlockRoot(final Bytes32 blockRoot) {
