@@ -14,12 +14,14 @@
 package tech.pegasys.teku.storage.server.sql;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.zaxxer.hikari.HikariDataSource;
 import java.nio.file.Path;
+import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.sqlite.SQLiteDataSource;
+import org.sqlite.javax.SQLiteConnectionPoolDataSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
@@ -34,7 +36,7 @@ public class SqlDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final MetricsSystem metricsSystem) {
-    final HikariDataSource dataSource = initDataSource(dbDir);
+    final DataSource dataSource = initDataSource(dbDir);
 
     final PlatformTransactionManager transactionManager =
         new DataSourceTransactionManager(dataSource);
@@ -49,12 +51,12 @@ public class SqlDatabaseFactory {
   }
 
   @VisibleForTesting
-  static HikariDataSource initDataSource(final Path dbDir) {
+  static SQLiteDataSource initDataSource(final Path dbDir) {
     if (!dbDir.toFile().mkdir() && !dbDir.toFile().isDirectory()) {
       throw new InvalidConfigurationException(
           "Unable to create database directory: " + dbDir.toAbsolutePath());
     }
-    final HikariDataSource dataSource = createDataSource(dbDir);
+    final SQLiteDataSource dataSource = createDataSource(dbDir);
 
     final Flyway flyway = Flyway.configure().dataSource(dataSource).load();
 
@@ -64,9 +66,10 @@ public class SqlDatabaseFactory {
   }
 
   @VisibleForTesting
-  static HikariDataSource createDataSource(final Path dbDir) {
-    final HikariDataSource dataSource = new HikariDataSource();
-    dataSource.setJdbcUrl("jdbc:sqlite:" + dbDir.resolve(DB_FILENAME).toAbsolutePath() + "");
+  static SQLiteDataSource createDataSource(final Path dbDir) {
+    final SQLiteDataSource dataSource = new SQLiteConnectionPoolDataSource();
+    dataSource.setUrl("jdbc:sqlite:" + dbDir.resolve(DB_FILENAME).toAbsolutePath() + "");
+    dataSource.setSharedCache(true);
     return dataSource;
   }
 }

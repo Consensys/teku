@@ -345,7 +345,5 @@ public class SqlDatabase implements Database {
   }
 
   @Override
-  public void close() {
-    eth1Storage.close();
-  }
+  public void close() {}
 }

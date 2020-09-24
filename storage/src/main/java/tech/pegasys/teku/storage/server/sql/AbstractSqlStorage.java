@@ -15,12 +15,12 @@ package tech.pegasys.teku.storage.server.sql;
 
 import static tech.pegasys.teku.storage.server.sql.ParamConverter.convertParams;
 
-import com.zaxxer.hikari.HikariDataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import javax.sql.DataSource;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -32,16 +32,14 @@ import org.springframework.transaction.PlatformTransactionManager;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class AbstractSqlStorage implements AutoCloseable {
+public class AbstractSqlStorage {
 
   protected final PlatformTransactionManager transactionManager;
   protected final JdbcOperations jdbc;
-  private final HikariDataSource dataSource;
 
   protected AbstractSqlStorage(
-      PlatformTransactionManager transactionManager, final HikariDataSource dataSource) {
+      PlatformTransactionManager transactionManager, final DataSource dataSource) {
     this.transactionManager = transactionManager;
-    this.dataSource = dataSource;
     this.jdbc = new JdbcTemplate(dataSource);
   }
 
@@ -91,11 +89,6 @@ public class AbstractSqlStorage implements AutoCloseable {
 
   protected Object writeBytes(final Bytes value) {
     return value.toArrayUnsafe();
-  }
-
-  @Override
-  public void close() {
-    dataSource.close();
   }
 
   @FunctionalInterface

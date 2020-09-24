@@ -18,11 +18,11 @@ import static tech.pegasys.teku.storage.server.sql.SqlDatabaseFactory.DB_FILENAM
 
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
-import com.zaxxer.hikari.HikariDataSource;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import javax.sql.DataSource;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -48,15 +48,14 @@ class SqlChainStorageTest {
 
   Path dbDir;
 
-  private HikariDataSource dataSource;
+  private DataSource dataSource;
   private SqlChainStorage storage;
 
   @BeforeAll
   static void createTemplate() {
     // Nice thing about sqlite DBs, you can just copy them and save rerunning the init code...
     // Create the template to be copied here, and copy it to a test-specific dir in setUp
-    final HikariDataSource db = SqlDatabaseFactory.initDataSource(templateDir);
-    db.close();
+    SqlDatabaseFactory.initDataSource(templateDir);
   }
 
   @BeforeEach
@@ -74,8 +73,6 @@ class SqlChainStorageTest {
 
   @AfterEach
   void tearDown() throws Exception {
-    storage.close();
-    dataSource.close();
     MoreFiles.deleteRecursively(dbDir, RecursiveDeleteOption.ALLOW_INSECURE);
   }
 

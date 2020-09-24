@@ -14,11 +14,11 @@
 package tech.pegasys.teku.storage.server.sql;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import com.zaxxer.hikari.HikariDataSource;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import javax.sql.DataSource;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -38,7 +38,7 @@ import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 public class SqlChainStorage extends AbstractSqlStorage {
 
   public SqlChainStorage(
-      PlatformTransactionManager transactionManager, final HikariDataSource dataSource) {
+      PlatformTransactionManager transactionManager, final DataSource dataSource) {
     super(transactionManager, dataSource);
   }
 
