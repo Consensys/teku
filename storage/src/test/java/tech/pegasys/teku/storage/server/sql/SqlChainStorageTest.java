@@ -14,13 +14,15 @@
 package tech.pegasys.teku.storage.server.sql;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 import static tech.pegasys.teku.storage.server.sql.SqlDatabaseFactory.DB_FILENAME;
 
+import com.google.common.io.MoreFiles;
+import com.google.common.io.RecursiveDeleteOption;
 import com.zaxxer.hikari.HikariDataSource;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,6 +34,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -43,7 +46,7 @@ class SqlChainStorageTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
-  @TempDir Path dbDir;
+  Path dbDir;
 
   private HikariDataSource dataSource;
   private SqlChainStorage storage;
@@ -58,6 +61,9 @@ class SqlChainStorageTest {
 
   @BeforeEach
   void setUp() throws Exception {
+    // Using two @TempDir annotations gives the same directory for both so we have to manually
+    // create a test specific temp dir
+    dbDir = Files.createTempDirectory(templateDir, "test");
     Files.copy(templateDir.resolve(DB_FILENAME), dbDir.resolve(DB_FILENAME));
     dataSource = SqlDatabaseFactory.createDataSource(dbDir);
 
@@ -67,9 +73,10 @@ class SqlChainStorageTest {
   }
 
   @AfterEach
-  void tearDown() {
+  void tearDown() throws Exception {
     storage.close();
     dataSource.close();
+    MoreFiles.deleteRecursively(dbDir, RecursiveDeleteOption.ALLOW_INSECURE);
   }
 
   @Test
@@ -296,6 +303,17 @@ class SqlChainStorageTest {
 
   @Test
   void shouldRoundTripVotes() {
-    fail("Not implemented");
+    final Map<UInt64, VoteTracker> votes =
+        Map.of(
+            UInt64.valueOf(10), dataStructureUtil.randomVoteTracker(),
+            UInt64.valueOf(15), dataStructureUtil.randomVoteTracker(),
+            UInt64.valueOf(232), dataStructureUtil.randomVoteTracker(),
+            UInt64.valueOf(23234), dataStructureUtil.randomVoteTracker());
+    try (final SqlChainStorage.Transaction transaction = storage.startTransaction()) {
+      transaction.storeVotes(votes);
+      transaction.commit();
+    }
+
+    assertThat(storage.getVotes()).isEqualTo(votes);
   }
 }

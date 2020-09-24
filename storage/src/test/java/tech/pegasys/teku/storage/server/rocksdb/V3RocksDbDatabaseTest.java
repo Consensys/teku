@@ -76,18 +76,22 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
 
   @Test
   @Disabled("Not implemented in v3")
+  @Override
   public void shouldPersistHotStates_everyEpoch() {}
 
   @Test
   @Disabled("Not implemented in v3")
+  @Override
   public void shouldPersistHotStates_never() {}
 
   @Test
   @Disabled("Not implemented in v3")
+  @Override
   public void shouldPersistHotStates_everyThirdEpoch() {}
 
   @Test
   @Disabled("Not implemented in v3")
+  @Override
   public void shouldClearStaleHotStates() {}
 
   private void testShouldHandleRestartWithUnrecoverableForkBlocks(

@@ -108,27 +108,22 @@ public class SqlChainStorage extends AbstractSqlStorage {
   }
 
   public Optional<BeaconState> getStateByBlockRoot(final Bytes32 blockRoot) {
-    return getStateByBlockRoot(blockRoot, false);
+    return loadSingle(
+        "SELECT ssz FROM state WHERE blockRoot = ? ORDER BY slot LIMIT 1",
+        (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class),
+        blockRoot);
   }
 
   public Optional<BeaconState> getHotStateByBlockRoot(final Bytes32 blockRoot) {
-    return getStateByBlockRoot(blockRoot, true);
-  }
-
-  private Optional<BeaconState> getStateByBlockRoot(
-      final Bytes32 blockRoot, final boolean onlyNonfinalized) {
-    final String sql;
-    if (onlyNonfinalized) {
-      sql =
-          "   SELECT s.ssz FROM state s "
-              + "     JOIN block b ON b.blockRoot = s.blockRoot "
-              + "    WHERE s.blockRoot = ? "
-              + "      AND b.finalized = 0 "
-              + " ORDER BY s.slot LIMIT 1";
-    } else {
-      sql = "SELECT ssz FROM state WHERE blockRoot = ? ORDER BY slot LIMIT 1";
-    }
-    return loadSingle(sql, (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class), blockRoot);
+    return loadSingle(
+        "         SELECT s.ssz "
+            + "     FROM state s "
+            + "     JOIN block b ON b.blockRoot = s.blockRoot "
+            + "    WHERE s.blockRoot = ? "
+            + "      AND b.finalized = 0 "
+            + " ORDER BY s.slot LIMIT 1",
+        (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class),
+        blockRoot);
   }
 
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
