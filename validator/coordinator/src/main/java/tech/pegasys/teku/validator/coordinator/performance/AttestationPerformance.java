@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import com.google.common.base.Objects;
-
 import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.getPercentage;
+
+import com.google.common.base.Objects;
 
 public class AttestationPerformance {
   final int numberOfProducedAttestations;
@@ -64,7 +64,7 @@ public class AttestationPerformance {
   @Override
   public int hashCode() {
     return Objects.hashCode(
-            numberOfProducedAttestations,
+        numberOfProducedAttestations,
         numberOfIncludedAttestations,
         inclusionDistanceMax,
         inclusionDistanceMin,
@@ -75,11 +75,12 @@ public class AttestationPerformance {
 
   @Override
   public String toString() {
-    return String.format("Attestation performance: " +
-                "produced %d, included %d (%d%%), " +
-                "distance %d / %.2f / %d, " +
-                "correct target %d (%d%%), correct head %d (%d%%)",
-            numberOfProducedAttestations,
+    return String.format(
+        "Attestation performance: "
+            + "produced %d, included %d (%d%%), "
+            + "distance %d / %.2f / %d, "
+            + "correct target %d (%d%%), correct head %d (%d%%)",
+        numberOfProducedAttestations,
         numberOfIncludedAttestations,
         getPercentage(numberOfIncludedAttestations, numberOfProducedAttestations),
         inclusionDistanceMin,

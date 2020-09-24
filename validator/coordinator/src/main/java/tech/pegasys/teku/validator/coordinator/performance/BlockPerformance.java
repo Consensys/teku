@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import com.google.common.base.Objects;
-
 import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.getPercentage;
+
+import com.google.common.base.Objects;
 
 public class BlockPerformance {
   final int numberOfIncludedBlocks;
@@ -43,9 +43,9 @@ public class BlockPerformance {
   @Override
   public String toString() {
     return String.format(
-            "Block performance: produced %d, included %d (%d%%)",
-            numberOfProducedBlocks,
-            numberOfIncludedBlocks,
-            getPercentage(numberOfIncludedBlocks, numberOfProducedBlocks));
+        "Block performance: produced %d, included %d (%d%%)",
+        numberOfProducedBlocks,
+        numberOfIncludedBlocks,
+        getPercentage(numberOfIncludedBlocks, numberOfProducedBlocks));
   }
 }

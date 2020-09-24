@@ -13,10 +13,9 @@
 
 package tech.pegasys.teku.infrastructure.metrics;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
-
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class SettableIntGauge {
 
@@ -27,7 +26,7 @@ public class SettableIntGauge {
   }
 
   public static SettableIntGauge create(
-          MetricsSystem metricsSystem, MetricCategory category, String name, String help) {
+      MetricsSystem metricsSystem, MetricCategory category, String name, String help) {
     AtomicInteger valueHolder = new AtomicInteger();
     metricsSystem.createGauge(category, name, help, valueHolder::get);
     return new SettableIntGauge(valueHolder);

@@ -13,9 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.metrics;
 
-import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
-
 import java.util.Optional;
+import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
 public enum TekuMetricCategory implements MetricCategory {
   BEACON("beacon"),
