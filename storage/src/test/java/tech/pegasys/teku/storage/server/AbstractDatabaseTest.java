@@ -45,6 +45,7 @@ import tech.pegasys.teku.core.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.core.ChainProperties;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -586,7 +587,65 @@ public abstract class AbstractDatabaseTest {
     testShouldRecordFinalizedBlocksAndStates(StateStorageMode.ARCHIVE, true);
   }
 
-  // TODO: Need to add tests for getSlotAndBlockRootFromStateRoot which add state roots via update
+  @Test
+  void shouldRecordHotStateRoots() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    createStorage(StateStorageMode.PRUNE);
+    initGenesis();
+    final SignedBlockAndState block4 = chainBuilder.generateBlockAtSlot(4);
+    final Bytes32 genesisBlockRoot = genesisBlockAndState.getRoot();
+    final Bytes32 stateRoot1 = dataStructureUtil.randomBytes32();
+    final Bytes32 stateRoot2 = dataStructureUtil.randomBytes32();
+    final Bytes32 stateRoot3 = dataStructureUtil.randomBytes32();
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    final SlotAndBlockRoot slotAndBlockRoot1 =
+        new SlotAndBlockRoot(UInt64.valueOf(1), genesisBlockRoot);
+    transaction.putStateRoot(stateRoot1, slotAndBlockRoot1);
+    final SlotAndBlockRoot slotAndBlockRoot2 =
+        new SlotAndBlockRoot(UInt64.valueOf(2), genesisBlockRoot);
+    transaction.putStateRoot(stateRoot2, slotAndBlockRoot2);
+    final SlotAndBlockRoot slotAndBlockRoot3 =
+        new SlotAndBlockRoot(UInt64.valueOf(3), genesisBlockRoot);
+    transaction.putStateRoot(stateRoot3, slotAndBlockRoot3);
+    final SlotAndBlockRoot slotAndBlockRoot4 =
+        new SlotAndBlockRoot(UInt64.valueOf(4), block4.getRoot());
+    transaction.putStateRoot(block4.getStateRoot(), slotAndBlockRoot4);
+    add(transaction, List.of(block4));
+    commit(transaction);
+
+    assertThat(database.getSlotAndBlockRootFromStateRoot(stateRoot1)).contains(slotAndBlockRoot1);
+    assertThat(database.getSlotAndBlockRootFromStateRoot(stateRoot2)).contains(slotAndBlockRoot2);
+    assertThat(database.getSlotAndBlockRootFromStateRoot(stateRoot3)).contains(slotAndBlockRoot3);
+    assertThat(database.getSlotAndBlockRootFromStateRoot(block4.getStateRoot()))
+        .contains(slotAndBlockRoot4);
+  }
+
+  @Test
+  void shouldPruneHotStateRoots() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    createStorage(StateStorageMode.PRUNE);
+    initGenesis();
+    final SignedBlockAndState block4 = chainBuilder.generateBlockAtSlot(4);
+    final SignedBlockAndState block16 = chainBuilder.generateBlockAtSlot(16);
+    final Bytes32 genesisBlockRoot = genesisBlockAndState.getRoot();
+    final Bytes32 stateRoot1 = dataStructureUtil.randomBytes32();
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    final SlotAndBlockRoot slotAndBlockRoot1 =
+        new SlotAndBlockRoot(UInt64.valueOf(1), genesisBlockRoot);
+    transaction.putStateRoot(stateRoot1, slotAndBlockRoot1);
+    final SlotAndBlockRoot slotAndBlockRoot4 =
+        new SlotAndBlockRoot(UInt64.valueOf(4), block4.getRoot());
+    transaction.putStateRoot(block4.getStateRoot(), slotAndBlockRoot4);
+    add(transaction, List.of(block4, block16));
+    commit(transaction);
+
+    final StoreTransaction finalizeTransaction = recentChainData.startStoreTransaction();
+    finalizeEpoch(ONE, block16, finalizeTransaction);
+    commit(finalizeTransaction);
+
+    assertThat(database.getSlotAndBlockRootFromStateRoot(stateRoot1)).isEmpty();
+    assertThat(database.getSlotAndBlockRootFromStateRoot(block4.getStateRoot())).isEmpty();
+  }
 
   public void testShouldRecordFinalizedBlocksAndStates(
       final StateStorageMode storageMode, final boolean batchUpdate) {

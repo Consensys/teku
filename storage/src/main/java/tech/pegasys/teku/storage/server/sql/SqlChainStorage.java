@@ -218,11 +218,10 @@ public class SqlChainStorage extends AbstractSqlStorage {
           serializeSsz(state));
     }
 
-    /** Deletes the SSZ for any states prior to the most recent finalized state. */
+    /** Deletes any states prior to the most recent finalized state. */
     public void pruneFinalizedStates() {
       execSql(
-          "      UPDATE state "
-              + "   SET ssz = NULL "
+          " DELETE FROM state "
               + " WHERE slot < "
               + "    (SELECT MAX(s2.slot) "
               + "      FROM state s2 "
