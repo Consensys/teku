@@ -13,18 +13,13 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.infrastructure.logging.StatusLogger;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.util.config.Constants;
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -37,12 +32,16 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.util.config.Constants;
 
 public class DefaultPerformanceTracker implements PerformanceTracker {
 
@@ -129,8 +128,8 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   private AttestationPerformance getAttestationPerformanceForEpoch(
       UInt64 currentEpoch, UInt64 analyzedEpoch) {
     checkArgument(
-            analyzedEpoch.isLessThanOrEqualTo(currentEpoch.minus(ATTESTATION_INCLUSION_RANGE)),
-            "Epoch to analyze attestation performance must be at least 2 epochs less than the current epoch");
+        analyzedEpoch.isLessThanOrEqualTo(currentEpoch.minus(ATTESTATION_INCLUSION_RANGE)),
+        "Epoch to analyze attestation performance must be at least 2 epochs less than the current epoch");
     // Attestations can be included in either the epoch they were produced in or in
     // the following epoch. Thus, the most recent epoch for which we can evaluate attestation
     // performance is current epoch - 2.
@@ -139,11 +138,11 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     // Get included attestations for the given epochs in a map from slot to attestations
     // included in block.
     Map<UInt64, List<Attestation>> attestationsIncludedOnChain =
-            getAttestationsIncludedInEpochs(analyzedEpoch, analysisRangeEndEpoch);
+        getAttestationsIncludedInEpochs(analyzedEpoch, analysisRangeEndEpoch);
 
     // Get sent attestations in range
     Set<Attestation> sentAttestations =
-            sentAttestationsByEpoch.getOrDefault(analyzedEpoch, new HashSet<>());
+        sentAttestationsByEpoch.getOrDefault(analyzedEpoch, new HashSet<>());
     BeaconState state = combinedChainDataClient.getBestState().orElseThrow();
 
     int correctTargetCount = 0;
@@ -152,12 +151,14 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
     // Pre-process attestations included on chain to group them by
     // data hash to inclusion slot to aggregation bitlist
-    Map<Bytes32, NavigableMap<UInt64, Bitlist>> slotAndBitlistsByAttestationDataHash = new HashMap<>();
+    Map<Bytes32, NavigableMap<UInt64, Bitlist>> slotAndBitlistsByAttestationDataHash =
+        new HashMap<>();
     for (UInt64 slot : attestationsIncludedOnChain.keySet()) {
       for (Attestation attestation : attestationsIncludedOnChain.get(slot)) {
         Bytes32 attestationDataHash = attestation.getData().hash_tree_root();
-        NavigableMap<UInt64, Bitlist> slotToBitlists = slotAndBitlistsByAttestationDataHash
-                .computeIfAbsent(attestationDataHash, __ -> new TreeMap<>());
+        NavigableMap<UInt64, Bitlist> slotToBitlists =
+            slotAndBitlistsByAttestationDataHash.computeIfAbsent(
+                attestationDataHash, __ -> new TreeMap<>());
         slotToBitlists.put(slot, attestation.getAggregation_bits());
       }
     }
@@ -166,7 +167,8 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       Bytes32 sentAttestationDataHash = sentAttestation.getData().hash_tree_root();
       UInt64 sentAttestationSlot = sentAttestation.getData().getSlot();
       if (!slotAndBitlistsByAttestationDataHash.containsKey(sentAttestationDataHash)) continue;
-      NavigableMap<UInt64, Bitlist> slotAndBitlists = slotAndBitlistsByAttestationDataHash.get(sentAttestationDataHash);
+      NavigableMap<UInt64, Bitlist> slotAndBitlists =
+          slotAndBitlistsByAttestationDataHash.get(sentAttestationDataHash);
       for (UInt64 slot : slotAndBitlists.keySet()) {
         if (slotAndBitlists.get(slot).isSuperSetOf(sentAttestation.getAggregation_bits())) {
           inclusionDistances.add(slot.minus(sentAttestationSlot).intValue());
@@ -188,11 +190,11 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     }
 
     IntSummaryStatistics inclusionDistanceStatistics =
-            inclusionDistances.stream().collect(Collectors.summarizingInt(Integer::intValue));
+        inclusionDistances.stream().collect(Collectors.summarizingInt(Integer::intValue));
 
     // IntSummaryStatistics returns Integer.MIN and MAX when the summarizend integer list is empty.
     return sentAttestations.size() > 0
-            ? new AttestationPerformance(
+        ? new AttestationPerformance(
             sentAttestations.size(),
             (int) inclusionDistanceStatistics.getCount(),
             inclusionDistanceStatistics.getMax(),
@@ -200,7 +202,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
             inclusionDistanceStatistics.getAverage(),
             correctTargetCount,
             correctHeadBlockCount)
-            : AttestationPerformance.empty();
+        : AttestationPerformance.empty();
   }
 
   private Set<BeaconBlock> getBlocksInEpochs(UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
