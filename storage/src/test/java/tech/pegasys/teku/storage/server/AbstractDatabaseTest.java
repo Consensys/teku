@@ -737,7 +737,9 @@ public abstract class AbstractDatabaseTest {
 
   protected void assertFinalizedStatesAvailable(final Map<Bytes32, BeaconState> states) {
     for (BeaconState state : states.values()) {
-      assertThat(database.getLatestAvailableFinalizedState(state.getSlot())).contains(state);
+      assertThat(database.getLatestAvailableFinalizedState(state.getSlot()))
+          .describedAs("state for slot %s", state.getSlot())
+          .contains(state);
     }
   }
 

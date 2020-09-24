@@ -219,6 +219,7 @@ public class SqlChainStorage extends AbstractSqlStorage {
           serializeSsz(state));
     }
 
+    /** Deletes states where there is no longer a matching block */
     public void deleteOrphanedStates() {
       execSql(
           " DELETE FROM state "
@@ -229,9 +230,11 @@ public class SqlChainStorage extends AbstractSqlStorage {
               + "         WHERE b.blockRoot IS NULL)");
     }
 
+    /** Deletes the SSZ for any states prior to the most recent finalized state. */
     public void pruneFinalizedStates() {
       execSql(
-          " DELETE FROM state "
+          "      UPDATE state "
+              + "   SET ssz = NULL "
               + " WHERE slot < "
               + "    (SELECT MAX(s2.slot) "
               + "      FROM state s2 "
@@ -240,17 +243,23 @@ public class SqlChainStorage extends AbstractSqlStorage {
               + "       AND s2.ssz IS NOT NULL)");
     }
 
+    /**
+     * Deletes the SSZ for states to reduce the number of retained states to match the specified
+     * state storage frequency.
+     */
     public void trimFinalizedStates(
         final UInt64 afterSlot,
         final UInt64 latestFinalizedSlot,
         final UInt64 stateStorageFrequency) {
       execSql(
-          " DELETE FROM state AS s1"
+          " UPDATE state AS s1"
+              + "   SET ssz = null "
               + " WHERE slot > ? "
               + "   AND slot <= ?  "
               + "   AND slot < ? + (SELECT MAX(s2.slot) "
               + "                       FROM state s2 "
-              + "                      WHERE s2.slot < s1.slot)",
+              + "                      WHERE s2.slot < s1.slot"
+              + "                        AND s2.ssz IS NOT NULL)",
           afterSlot,
           latestFinalizedSlot,
           stateStorageFrequency);

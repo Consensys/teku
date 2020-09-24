@@ -129,11 +129,7 @@ public class SqlDatabase implements Database {
       final StorageUpdate update,
       final Transaction transaction,
       final Optional<Checkpoint> previousFinalizedCheckpoint) {
-    final Optional<Checkpoint> maybeNewFinalizedCheckpoint = update.getFinalizedCheckpoint();
-    if (maybeNewFinalizedCheckpoint.isEmpty()) {
-      // Nothing to do
-      return;
-    }
+
     if (stateStorageMode == StateStorageMode.PRUNE) {
       transaction.pruneFinalizedStates();
     } else {
@@ -147,21 +143,33 @@ public class SqlDatabase implements Database {
                     transaction.storeState(blockRoot, blockAndState.getState()));
         update.getFinalizedStates().forEach(transaction::storeState);
       }
-      final UInt64 previousFinalizedSlot =
-          previousFinalizedCheckpoint.map(Checkpoint::getEpochStartSlot).orElse(UInt64.ZERO);
-      final UInt64 newFinalizedSlot = maybeNewFinalizedCheckpoint.get().getEpochStartSlot();
-      final UInt64 trailingPruneDistance = stateStorageFrequency.plus(Constants.SLOTS_PER_EPOCH);
-      final UInt64 trimStartSlot =
-          previousFinalizedSlot.isGreaterThan(trailingPruneDistance)
-              ? previousFinalizedSlot.minus(trailingPruneDistance)
-              : UInt64.ZERO;
-      LOG.trace(
-          "Trimming between {} and {} with storage frequency {}",
-          trimStartSlot,
-          newFinalizedSlot,
-          stateStorageFrequency);
-      transaction.trimFinalizedStates(trimStartSlot, newFinalizedSlot, stateStorageFrequency);
+      update
+          .getFinalizedCheckpoint()
+          .ifPresent(
+              newFinalizedCheckpoint ->
+                  trimFinalizedStates(
+                      transaction, previousFinalizedCheckpoint, newFinalizedCheckpoint));
     }
+  }
+
+  private void trimFinalizedStates(
+      final Transaction transaction,
+      final Optional<Checkpoint> previousFinalizedCheckpoint,
+      final Checkpoint newFinalizedCheckpoint) {
+    final UInt64 previousFinalizedSlot =
+        previousFinalizedCheckpoint.map(Checkpoint::getEpochStartSlot).orElse(UInt64.ZERO);
+    final UInt64 newFinalizedSlot = newFinalizedCheckpoint.getEpochStartSlot();
+    final UInt64 trailingPruneDistance = stateStorageFrequency.plus(Constants.SLOTS_PER_EPOCH);
+    final UInt64 trimStartSlot =
+        previousFinalizedSlot.isGreaterThan(trailingPruneDistance)
+            ? previousFinalizedSlot.minus(trailingPruneDistance)
+            : UInt64.ZERO;
+    LOG.trace(
+        "Trimming between {} and {} with storage frequency {}",
+        trimStartSlot,
+        newFinalizedSlot,
+        stateStorageFrequency);
+    transaction.trimFinalizedStates(trimStartSlot, newFinalizedSlot, stateStorageFrequency);
   }
 
   private void updateCheckpoints(
