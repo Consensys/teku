@@ -13,16 +13,17 @@
 
 package tech.pegasys.teku.cli.options;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.net.MalformedURLException;
-import java.net.URL;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -39,6 +40,7 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
         getGlobalConfigurationFromFile("validatorOptions_config.yaml");
 
     assertThat(config.getValidatorKeystoreFiles()).containsExactly("a.key", "b.key");
+    assertThat(config.isValidatorPerformanceTrackingEnabled()).isTrue();
     assertThat(config.getValidatorKeystorePasswordFiles())
         .containsExactly("a.password", "b.password");
     assertThat(config.getValidatorKeys())
