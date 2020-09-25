@@ -20,6 +20,7 @@ import org.flywaydb.core.Flyway;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.sqlite.SQLiteConfig.JournalMode;
 import org.sqlite.SQLiteDataSource;
 import org.sqlite.javax.SQLiteConnectionPoolDataSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -70,6 +71,7 @@ public class SqlDatabaseFactory {
     final SQLiteDataSource dataSource = new SQLiteConnectionPoolDataSource();
     dataSource.setUrl("jdbc:sqlite:" + dbDir.resolve(DB_FILENAME).toAbsolutePath() + "");
     dataSource.setSharedCache(true);
+    dataSource.setJournalMode(JournalMode.WAL.getValue());
     return dataSource;
   }
 }
