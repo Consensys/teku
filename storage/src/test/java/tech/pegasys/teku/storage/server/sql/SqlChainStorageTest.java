@@ -93,7 +93,7 @@ class SqlChainStorageTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
     try (final SqlChainStorage.Transaction transaction = storage.startTransaction()) {
       transaction.storeBlock(block, false);
-      transaction.finalizeBlock(block.getRoot());
+      transaction.finalizeBlocks(List.of(block.getRoot()));
       transaction.commit();
     }
 
@@ -161,7 +161,7 @@ class SqlChainStorageTest {
     final Bytes32 stateRoot = dataStructureUtil.randomBytes32();
     final SlotAndBlockRoot slotAndBlockRoot = dataStructureUtil.randomSlotAndBlockRoot();
     try (final SqlChainStorage.Transaction transaction = storage.startTransaction()) {
-      transaction.storeStateRoot(stateRoot, slotAndBlockRoot);
+      transaction.storeStateRoots(Map.of(stateRoot, slotAndBlockRoot));
       transaction.commit();
     }
 

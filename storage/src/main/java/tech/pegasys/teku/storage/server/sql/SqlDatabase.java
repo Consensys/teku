@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.sql;
 
+import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.storage.server.sql.CheckpointType.BEST_JUSTIFIED;
 import static tech.pegasys.teku.storage.server.sql.CheckpointType.FINALIZED;
 import static tech.pegasys.teku.storage.server.sql.CheckpointType.JUSTIFIED;
@@ -101,17 +102,20 @@ public class SqlDatabase implements Database {
           chainStorage.getCheckpoint(FINALIZED);
       updateCheckpoints(update, transaction);
 
-      update.getFinalizedBlocks().values().forEach(block -> transaction.storeBlock(block, true));
-      update.getHotBlocksAndStates().values().stream()
-          .map(SignedBlockAndState::getBlock)
-          .forEach(block -> transaction.storeBlock(block, false));
-      update.getFinalizedChildToParentMap().keySet().forEach(transaction::finalizeBlock);
-      update.getStateRoots().forEach(transaction::storeStateRoot);
+      transaction.storeBlocks(update.getFinalizedBlocks().values(), true);
+      transaction.storeBlocks(
+          update.getHotBlocksAndStates().values().stream()
+              .map(SignedBlockAndState::getBlock)
+              .collect(toList()),
+          false);
+      transaction.finalizeBlocks(update.getFinalizedChildToParentMap().keySet());
+      transaction.storeStateRoots(update.getStateRoots());
       update.getDeletedHotBlocks().forEach(transaction::deleteHotBlockByBlockRoot);
       transaction.storeVotes(update.getVotes());
 
       // Store the periodic hot states (likely to be higher frequency than finalized states)
       update.getHotStates().forEach(transaction::storeState);
+      //      System.out.println("Deleted hot blocks: " + update.getDeletedHotBlocks().size());
       updateFinalizedStates(update, transaction, previousFinalizedCheckpoint);
 
       // Ensure the latest finalized block and state is always stored

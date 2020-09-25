@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ParamConverter {
 
-  public static Object[] convertParams(final Object[] params) {
+  public static Object[] convertParams(final Object... params) {
     return Stream.of(params).map(ParamConverter::convertParam).toArray();
   }
 

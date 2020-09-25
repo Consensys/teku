@@ -14,7 +14,9 @@
 package tech.pegasys.teku.storage.server.sql;
 
 import com.google.errorprone.annotations.MustBeClosed;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -176,18 +178,27 @@ public class SqlChainStorage extends AbstractSqlStorage {
     }
 
     public void storeBlock(final SignedBeaconBlock block, final boolean finalized) {
-      execSql(
-          "INSERT INTO block (blockRoot, slot, parentRoot, finalized, ssz) VALUES (?, ?, ?, ?, ?) "
-              + " ON CONFLICT(blockRoot) DO UPDATE SET finalized = IIF(excluded.finalized, TRUE, finalized)",
-          block.getRoot(),
-          block.getSlot(),
-          block.getParent_root(),
-          finalized,
-          serializeSsz(block));
+      storeBlocks(List.of(block), finalized);
     }
 
-    public void finalizeBlock(final Bytes32 blockRoot) {
-      execSql("UPDATE block SET finalized = true WHERE blockRoot = ?", blockRoot);
+    public void storeBlocks(final Collection<SignedBeaconBlock> blocks, final boolean finalized) {
+      batchUpdate(
+          "INSERT INTO block (blockRoot, slot, parentRoot, finalized, ssz) VALUES (?, ?, ?, ?, ?) "
+              + " ON CONFLICT(blockRoot) DO UPDATE SET finalized = IIF(excluded.finalized, TRUE, finalized)",
+          blocks.stream()
+              .map(
+                  block ->
+                      new Object[] {
+                        block.getRoot(),
+                        block.getSlot(),
+                        block.getParent_root(),
+                        finalized,
+                        serializeSsz(block)
+                      }));
+    }
+
+    public void finalizeBlocks(final Collection<Bytes32> blockRoots) {
+      batchUpdate("UPDATE block SET finalized = true WHERE blockRoot = ?", blockRoots);
     }
 
     public void deleteHotBlockByBlockRoot(final Bytes32 blockRoot) {
@@ -199,13 +210,16 @@ public class SqlChainStorage extends AbstractSqlStorage {
       }
     }
 
-    public void storeStateRoot(final Bytes32 stateRoot, final SlotAndBlockRoot slotAndBlockRoot) {
-      execSql(
+    public void storeStateRoots(final Map<Bytes32, SlotAndBlockRoot> stateRoots) {
+      batchUpdate(
           "INSERT INTO state (stateRoot, blockRoot, slot) VALUES (?, ?, ?)"
               + " ON CONFLICT(stateRoot) DO NOTHING",
-          stateRoot,
-          slotAndBlockRoot.getBlockRoot(),
-          slotAndBlockRoot.getSlot());
+          stateRoots.entrySet().stream()
+              .map(
+                  entry ->
+                      new Object[] {
+                        entry.getKey(), entry.getValue().getBlockRoot(), entry.getValue().getSlot()
+                      }));
     }
 
     public void storeState(final Bytes32 blockRoot, final BeaconState state) {
@@ -266,18 +280,21 @@ public class SqlChainStorage extends AbstractSqlStorage {
     }
 
     public void storeVotes(final Map<UInt64, VoteTracker> votes) {
-      votes.forEach(
-          (validatorIndex, voteTracker) ->
-              execSql(
-                  "INSERT INTO vote (validatorIndex, currentRoot, nextRoot, nextEpoch) VALUES (?, ?, ?, ?)"
-                      + " ON CONFLICT(validatorIndex) DO UPDATE SET"
-                      + "                     currentRoot = excluded.currentRoot,"
-                      + "                     nextRoot = excluded.nextRoot,"
-                      + "                     nextEpoch = excluded.nextEpoch",
-                  validatorIndex,
-                  voteTracker.getCurrentRoot(),
-                  voteTracker.getNextRoot(),
-                  voteTracker.getNextEpoch()));
+      batchUpdate(
+          "INSERT INTO vote (validatorIndex, currentRoot, nextRoot, nextEpoch) VALUES (?, ?, ?, ?)"
+              + " ON CONFLICT(validatorIndex) DO UPDATE SET"
+              + "                     currentRoot = excluded.currentRoot,"
+              + "                     nextRoot = excluded.nextRoot,"
+              + "                     nextEpoch = excluded.nextEpoch",
+          votes.entrySet().stream()
+              .map(
+                  entry ->
+                      new Object[] {
+                        entry.getKey(),
+                        entry.getValue().getCurrentRoot(),
+                        entry.getValue().getNextRoot(),
+                        entry.getValue().getNextEpoch()
+                      }));
     }
 
     private Bytes serializeSsz(final SimpleOffsetSerializable obj) {
