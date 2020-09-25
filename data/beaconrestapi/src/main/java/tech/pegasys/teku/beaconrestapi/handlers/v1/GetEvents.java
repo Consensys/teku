@@ -20,7 +20,6 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_EVENTS;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TOPICS;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.EventSubscriptionManager.VALID_EVENT_TYPES;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -32,13 +31,11 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -47,7 +44,7 @@ public class GetEvents implements Handler {
   private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/eth/v1/events";
   private final JsonProvider jsonProvider;
-  private final EventSubscriptionManager eventService;
+  private final EventSubscriptionManager eventSubscriptionManager;
 
   public GetEvents(
       final DataProvider dataProvider,
@@ -61,7 +58,7 @@ public class GetEvents implements Handler {
       final JsonProvider jsonProvider,
       final EventChannels eventChannels) {
     this.jsonProvider = jsonProvider;
-    eventService = new EventSubscriptionManager(provider, jsonProvider, eventChannels);
+    eventSubscriptionManager = new EventSubscriptionManager(provider, jsonProvider, eventChannels);
   }
 
   @OpenApi(
@@ -79,7 +76,7 @@ public class GetEvents implements Handler {
             required = true,
             description =
                 "Event types to subscribe to."
-                    + "Available values : head, block, attestation, voluntary_exit, finalized_checkpoint, chain_reorg"),
+                    + "Available values: head, block, attestation, voluntary_exit, finalized_checkpoint, chain_reorg"),
       },
       responses = {
         @OpenApiResponse(
@@ -95,21 +92,22 @@ public class GetEvents implements Handler {
   }
 
   public void sseEventHandler(final SseClient sseClient) {
-    List<String> topics =
-        ListQueryParameterUtils.getParameterAsStringList(sseClient.ctx.queryParamMap(), TOPICS);
-    if (topics.stream().anyMatch(topic -> !VALID_EVENT_TYPES.contains(topic))) {
+    try {
+      eventSubscriptionManager.registerClient(sseClient);
+    } catch (IllegalArgumentException ex) {
+      LOG.trace(ex);
       sseClient.ctx.status(SC_BAD_REQUEST);
-      try {
-        sseClient.ctx.result(jsonProvider.objectToJSON(new BadRequest("Invalid topics requested")));
-      } catch (JsonProcessingException e) {
-        LOG.trace(e);
-      }
-      return;
+      sseClient.ctx.result(getBadRequestString(ex.getMessage()));
     }
-    eventService.registerClient(sseClient);
   }
 
-  public void stop() {
-    eventService.stop();
+  private String getBadRequestString(final String message) {
+    try {
+      return jsonProvider.objectToJSON(new BadRequest(message));
+    } catch (JsonProcessingException ex) {
+      LOG.error(ex);
+    }
+    // manually construct a very basic message
+    return "{\"message\": \"" + message + "\"}";
   }
 }

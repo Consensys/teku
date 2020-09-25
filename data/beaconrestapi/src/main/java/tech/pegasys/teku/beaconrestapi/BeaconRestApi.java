@@ -35,6 +35,7 @@ import kotlin.text.Charsets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jetty.server.Server;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
@@ -86,16 +87,24 @@ import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 public class BeaconRestApi {
 
+  private Server jettyServer;
   private final Javalin app;
   private final JsonProvider jsonProvider = new JsonProvider();
   private static final Logger LOG = LogManager.getLogger();
   public static final String FILE_NOT_FOUND_HTML = "404.html";
-  public volatile GetEvents getEventsHandler;
 
   private void initialize(
       final DataProvider dataProvider,
       final GlobalConfiguration configuration,
       final EventChannels eventChannels) {
+    if (app.config != null) {
+      // the beaconRestApi test mocks the app object, and will skip this
+      app.config.server(
+          () -> {
+            jettyServer = new Server(configuration.getRestApiPort());
+            return jettyServer;
+          });
+    }
     app.server().setServerHost(configuration.getRestApiInterface());
     app.server().setServerPort(configuration.getRestApiPort());
 
@@ -260,8 +269,7 @@ public class BeaconRestApi {
   }
 
   private void addEventHandler(final DataProvider dataProvider, final EventChannels eventChannels) {
-    getEventsHandler = new GetEvents(dataProvider, jsonProvider, eventChannels);
-    app.get(GetEvents.ROUTE, getEventsHandler);
+    app.get(GetEvents.ROUTE, new GetEvents(dataProvider, jsonProvider, eventChannels));
   }
 
   private void addNodeHandlers(final DataProvider provider) {
@@ -322,7 +330,13 @@ public class BeaconRestApi {
   }
 
   public void stop() {
-    getEventsHandler.stop();
+    try {
+      if (jettyServer != null) {
+        jettyServer.stop();
+      }
+    } catch (Exception ex) {
+      LOG.error(ex);
+    }
     app.stop();
   }
 }

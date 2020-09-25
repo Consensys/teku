@@ -47,4 +47,18 @@ public class ListQueryParameterUtilsTest {
     assertThat(ListQueryParameterUtils.getParameterAsIntegerList(data, "index"))
         .isEqualTo(List.of(1, 2, 3, 4, 5));
   }
+
+  @Test
+  public void stringList_shouldGetDistinct() {
+    final Map<String, List<String>> data = Map.of("index", List.of("a", "b", "a", "c"));
+    assertThat(ListQueryParameterUtils.getParameterAsStringList(data, "index"))
+        .isEqualTo(List.of("a", "b", "c"));
+  }
+
+  @Test
+  public void stringList_shouldTolerateMissingEntries() {
+    final Map<String, List<String>> data = Map.of("index", List.of("a , , b", "c", "b, d,,,"));
+    assertThat(ListQueryParameterUtils.getParameterAsStringList(data, "index"))
+        .isEqualTo(List.of("a", "b", "c", "d"));
+  }
 }

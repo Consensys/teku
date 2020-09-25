@@ -14,9 +14,11 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
@@ -25,6 +27,7 @@ import io.javalin.http.Context;
 import io.javalin.http.sse.SseClient;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletOutputStream;
@@ -72,6 +75,7 @@ public class EventSubscriptionManagerTest {
   private final ServletResponse srvResponse = mock(ServletResponse.class);
   private final ServletOutputStream outputStream = mock(ServletOutputStream.class);
   private final Context ctx = new Context(req, res, Collections.emptyMap());
+  private SseClient client1;
 
   private EventSubscriptionManager manager;
 
@@ -80,14 +84,14 @@ public class EventSubscriptionManagerTest {
     when(req.getAsyncContext()).thenReturn(async);
     when(async.getResponse()).thenReturn(srvResponse);
     when(srvResponse.getOutputStream()).thenReturn(outputStream);
-    final SseClient client1 = new SseClient(ctx);
     manager = new EventSubscriptionManager(chainDataProvider, jsonProvider, channels);
-    manager.registerClient(client1);
+    client1 = new SseClient(ctx);
   }
 
   @Test
   void shouldPropagateReorgMessages() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=chain_reorg");
+    manager.registerClient(client1);
 
     triggerReorgEvent();
     verify(outputStream).print(stringArgs.capture());
@@ -101,8 +105,20 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
+  void shouldPropagateMultipleMessagesIfSubscribed() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=chain_reorg,finalized_checkpoint");
+    manager.registerClient(client1);
+
+    triggerFinalizedCheckpointEvent();
+    triggerReorgEvent();
+    verify(outputStream, times(2)).print(stringArgs.capture());
+    assertThat(stringArgs.getAllValues().size()).isEqualTo(2);
+  }
+
+  @Test
   void shouldPropagateFinalizedCheckpointMessages() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=finalized_checkpoint");
+    manager.registerClient(client1);
     when(chainDataProvider.getStateRootFromBlockRoot(sampleCheckpointEvent.block))
         .thenReturn(Optional.of(sampleCheckpointEvent.state));
 
@@ -120,7 +136,7 @@ public class EventSubscriptionManagerTest {
   @Test
   void shouldNotGetFinalizedCheckpointIfNotSubscribed() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=head");
-
+    manager.registerClient(client1);
     triggerFinalizedCheckpointEvent();
     verify(outputStream, never()).print(anyString());
   }
@@ -128,9 +144,26 @@ public class EventSubscriptionManagerTest {
   @Test
   void shouldNotGetReorgIfNotSubscribed() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=head");
+    manager.registerClient(client1);
 
     triggerReorgEvent();
     verify(outputStream, never()).print(anyString());
+  }
+
+  @Test
+  void shouldParseEventTypes() {
+    List<EventSubscriptionManager.EventType> topics =
+        manager.getTopics(List.of("head", "chain_reorg", "finalized_checkpoint"));
+    assertThat(topics)
+        .containsExactlyInAnyOrder(
+            EventSubscriptionManager.EventType.head,
+            EventSubscriptionManager.EventType.chain_reorg,
+            EventSubscriptionManager.EventType.finalized_checkpoint);
+  }
+
+  @Test
+  void shouldFailToParseInvalidEvents() {
+    assertThrows(IllegalArgumentException.class, () -> manager.getTopics(List.of("head1")));
   }
 
   private void triggerFinalizedCheckpointEvent() {
