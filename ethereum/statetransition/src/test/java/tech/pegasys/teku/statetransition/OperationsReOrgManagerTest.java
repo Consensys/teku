@@ -103,7 +103,9 @@ public class OperationsReOrgManagerTest {
     operationsReOrgManager.reorgOccurred(
         fork2Block2.hash_tree_root(),
         UInt64.valueOf(13),
+        fork2Block2.getState_root(),
         fork1Block2.hash_tree_root(),
+        fork1Block2.getState_root(),
         commonAncestorSlot);
 
     verify(recentChainData).getAncestorsOnFork(commonAncestorSlot, fork1Block2.hash_tree_root());
@@ -168,7 +170,12 @@ public class OperationsReOrgManagerTest {
         .thenReturn(SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL));
 
     operationsReOrgManager.reorgOccurred(
-        block2.hash_tree_root(), UInt64.valueOf(13), Bytes32.ZERO, commonAncestorSlot);
+        block2.hash_tree_root(),
+        UInt64.valueOf(13),
+        block2.getState_root(),
+        Bytes32.ZERO,
+        Bytes32.ZERO,
+        commonAncestorSlot);
 
     verify(recentChainData).getAncestorsOnFork(commonAncestorSlot, block2.hash_tree_root());
 

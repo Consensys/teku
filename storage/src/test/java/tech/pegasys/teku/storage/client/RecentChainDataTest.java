@@ -240,7 +240,9 @@ class RecentChainDataTest {
             new ReorgEvent(
                 slot2Block.getRoot(),
                 slot2Block.getSlot(),
+                slot2Block.getStateRoot(),
                 slot1Block.getRoot(),
+                slot1Block.getStateRoot(),
                 slot1Block.getSlot()));
     assertThat(getReorgCountMetric(storageSystem)).isEqualTo(1);
   }
@@ -285,7 +287,9 @@ class RecentChainDataTest {
             new ReorgEvent(
                 latestForkBlockAndState.getRoot(),
                 latestForkBlockAndState.getSlot(),
+                latestForkBlockAndState.getStateRoot(),
                 latestBlockAndState.getRoot(),
+                latestBlockAndState.getStateRoot(),
                 ONE));
   }
 
@@ -332,7 +336,9 @@ class RecentChainDataTest {
             new ReorgEvent(
                 latestForkBlockAndState.getRoot(),
                 latestForkBlockAndState.getSlot(),
+                latestForkBlockAndState.getStateRoot(),
                 latestBlockAndState.getRoot(),
+                latestBlockAndState.getStateRoot(),
                 ONE));
   }
 
