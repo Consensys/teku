@@ -63,6 +63,7 @@ downloadLicenses {
   ext.cddl = license('Common Development and Distribution License 1.0', 'http://opensource.org/licenses/CDDL-1.0')
   ext.cddl1_1 = license('Common Development and Distribution License 1.0', 'http://oss.oracle.com/licenses/CDDL-1.1')
   ext.epl2_0 = license('Eclipse Public License - v 2.0', 'https://www.eclipse.org/legal/epl-2.0/')
+  ext.JSON = license('The JSON License', 'http://json.org/license.html')
   aliases = [
       (apache)    : [
           'Apache Software License - Version 2.0',
@@ -79,6 +80,10 @@ downloadLicenses {
           license('Apache License', 'http://www.apache.org/licenses/LICENSE-2.0'),
           license('Apache Software Licenses', 'http://www.apache.org/licenses/LICENSE-2.0.txt'),
           license('Apache', 'http://www.opensource.org/licenses/Apache-2.0')
+      ],
+      (JSON) : [
+         'The JSON License',
+         license('The JSON License', 'http://json.org/license.html')
       ],
       (mit)       : ['MIT','The MIT License'],
       (bsd)       : [
