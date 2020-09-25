@@ -17,36 +17,35 @@ import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 
-public class WeakSubjectivityUpdate {
-  private final Optional<Checkpoint> weakSubjectivityCheckpoint;
+public class WeakSubjectivityState {
+  private final Optional<Checkpoint> checkpoint;
 
-  private WeakSubjectivityUpdate(Optional<Checkpoint> weakSubjectivityCheckpoint) {
-    this.weakSubjectivityCheckpoint = weakSubjectivityCheckpoint;
+  private WeakSubjectivityState(Optional<Checkpoint> checkpoint) {
+    this.checkpoint = checkpoint;
   }
 
-  public static WeakSubjectivityUpdate clearWeakSubjectivityCheckpoint() {
-    return new WeakSubjectivityUpdate(Optional.empty());
+  public static WeakSubjectivityState create(Optional<Checkpoint> checkpoint) {
+    return new WeakSubjectivityState(checkpoint);
   }
 
-  public static WeakSubjectivityUpdate setWeakSubjectivityCheckpoint(
-      final Checkpoint newCheckpoint) {
-    return new WeakSubjectivityUpdate(Optional.of(newCheckpoint));
+  public static WeakSubjectivityState empty() {
+    return new WeakSubjectivityState(Optional.empty());
   }
 
-  public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
-    return weakSubjectivityCheckpoint;
+  public Optional<Checkpoint> getCheckpoint() {
+    return checkpoint;
   }
 
   @Override
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final WeakSubjectivityUpdate that = (WeakSubjectivityUpdate) o;
-    return Objects.equals(weakSubjectivityCheckpoint, that.weakSubjectivityCheckpoint);
+    final WeakSubjectivityState that = (WeakSubjectivityState) o;
+    return Objects.equals(checkpoint, that.checkpoint);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(weakSubjectivityCheckpoint);
+    return Objects.hash(checkpoint);
   }
 }
