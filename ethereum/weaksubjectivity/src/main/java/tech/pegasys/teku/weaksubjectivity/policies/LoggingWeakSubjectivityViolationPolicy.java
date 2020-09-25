@@ -70,11 +70,11 @@ public class LoggingWeakSubjectivityViolationPolicy implements WeakSubjectivityV
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    LoggingWeakSubjectivityViolationPolicy that = (LoggingWeakSubjectivityViolationPolicy) o;
-    return level.equals(that.level);
+    final LoggingWeakSubjectivityViolationPolicy that = (LoggingWeakSubjectivityViolationPolicy) o;
+    return Objects.equals(level, that.level);
   }
 
   @Override

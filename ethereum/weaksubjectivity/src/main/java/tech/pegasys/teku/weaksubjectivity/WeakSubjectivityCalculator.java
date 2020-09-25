@@ -115,12 +115,12 @@ public class WeakSubjectivityCalculator {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    WeakSubjectivityCalculator that = (WeakSubjectivityCalculator) o;
-    return safetyDecay.equals(that.safetyDecay)
-        && activeValidatorCalculator.equals(that.activeValidatorCalculator);
+    final WeakSubjectivityCalculator that = (WeakSubjectivityCalculator) o;
+    return Objects.equals(safetyDecay, that.safetyDecay)
+        && Objects.equals(activeValidatorCalculator, that.activeValidatorCalculator);
   }
 
   @Override

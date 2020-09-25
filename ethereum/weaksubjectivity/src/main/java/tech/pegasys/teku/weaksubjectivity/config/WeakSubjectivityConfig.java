@@ -15,7 +15,7 @@ package tech.pegasys.teku.weaksubjectivity.config;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.Objects;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -69,17 +69,17 @@ public class WeakSubjectivityConfig {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    WeakSubjectivityConfig that = (WeakSubjectivityConfig) o;
-    return Objects.equal(safetyDecay, that.safetyDecay)
-        && Objects.equal(weakSubjectivityCheckpoint, that.weakSubjectivityCheckpoint);
+    final WeakSubjectivityConfig that = (WeakSubjectivityConfig) o;
+    return Objects.equals(safetyDecay, that.safetyDecay)
+        && Objects.equals(weakSubjectivityCheckpoint, that.weakSubjectivityCheckpoint);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(safetyDecay, weakSubjectivityCheckpoint);
+    return Objects.hash(safetyDecay, weakSubjectivityCheckpoint);
   }
 
   @Override

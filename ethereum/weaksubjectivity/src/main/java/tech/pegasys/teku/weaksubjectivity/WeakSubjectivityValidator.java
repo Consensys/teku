@@ -218,13 +218,13 @@ public class WeakSubjectivityValidator {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    WeakSubjectivityValidator that = (WeakSubjectivityValidator) o;
-    return calculator.equals(that.calculator)
-        && violationPolicies.equals(that.violationPolicies)
-        && maybeWsCheckpoint.equals(that.maybeWsCheckpoint);
+    final WeakSubjectivityValidator that = (WeakSubjectivityValidator) o;
+    return Objects.equals(calculator, that.calculator)
+        && Objects.equals(violationPolicies, that.violationPolicies)
+        && Objects.equals(maybeWsCheckpoint, that.maybeWsCheckpoint);
   }
 
   @Override
