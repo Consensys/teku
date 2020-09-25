@@ -17,6 +17,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_current_epoch;
 import static tech.pegasys.teku.datastructures.util.ValidatorsUtil.get_active_validator_indices;
 
+import java.util.Objects;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -111,5 +112,19 @@ public class WeakSubjectivityCalculator {
         (state) -> get_active_validator_indices(state, get_current_epoch(state)).size();
 
     int getActiveValidators(final BeaconState state);
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final WeakSubjectivityCalculator that = (WeakSubjectivityCalculator) o;
+    return Objects.equals(safetyDecay, that.safetyDecay)
+        && Objects.equals(activeValidatorCalculator, that.activeValidatorCalculator);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(safetyDecay, activeValidatorCalculator);
   }
 }

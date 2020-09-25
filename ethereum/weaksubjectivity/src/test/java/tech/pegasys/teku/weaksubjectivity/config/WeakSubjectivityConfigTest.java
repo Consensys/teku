@@ -15,16 +15,17 @@ package tech.pegasys.teku.weaksubjectivity.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 
 public class WeakSubjectivityConfigTest {
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
 
   @Test
   public void build_withStringParameters() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-    final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
     final String checkpointString =
         checkpoint.getRoot().toHexString() + ":" + checkpoint.getEpoch();
 
@@ -36,9 +37,6 @@ public class WeakSubjectivityConfigTest {
 
   @Test
   public void build_withParsedParameters() {
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-    final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
-
     WeakSubjectivityConfig config =
         WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(checkpoint).build();
 
@@ -49,5 +47,41 @@ public class WeakSubjectivityConfigTest {
   public void build_withNoWeakSubjectivityCheckpoint() {
     WeakSubjectivityConfig config = WeakSubjectivityConfig.builder().build();
     assertThat(config.getWeakSubjectivityCheckpoint()).isEmpty();
+  }
+
+  @Test
+  public void updated_setNewCheckpoint() {
+    WeakSubjectivityConfig original = WeakSubjectivityConfig.defaultConfig();
+    assertThat(original.getWeakSubjectivityCheckpoint()).isEmpty();
+
+    WeakSubjectivityConfig updated =
+        original.updated(b -> b.weakSubjectivityCheckpoint(checkpoint));
+    assertThat(original.getWeakSubjectivityCheckpoint()).isEmpty();
+    assertThat(updated.getWeakSubjectivityCheckpoint()).contains(checkpoint);
+    assertThat(updated).isNotEqualTo(original);
+  }
+
+  @Test
+  public void updated_clearCheckpoint() {
+    WeakSubjectivityConfig original =
+        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(checkpoint).build();
+    assertThat(original.getWeakSubjectivityCheckpoint()).contains(checkpoint);
+
+    WeakSubjectivityConfig updated =
+        original.updated(b -> b.weakSubjectivityCheckpoint(Optional.empty()));
+    assertThat(original.getWeakSubjectivityCheckpoint()).contains(checkpoint);
+    assertThat(updated.getWeakSubjectivityCheckpoint()).isEmpty();
+    assertThat(updated).isNotEqualTo(original);
+  }
+
+  @Test
+  public void equals() {
+    WeakSubjectivityConfig configA = WeakSubjectivityConfig.defaultConfig();
+    WeakSubjectivityConfig configB =
+        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(checkpoint).build();
+
+    assertThat(configA).isEqualTo(configA);
+    assertThat(configB).isEqualTo(configB);
+    assertThat(configA).isNotEqualTo(configB);
   }
 }

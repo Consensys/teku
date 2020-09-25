@@ -24,6 +24,7 @@ import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 
 public class StubStorageQueryChannel implements StorageQueryChannel {
@@ -31,6 +32,11 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   @Override
   public SafeFuture<Optional<StoreBuilder>> onStoreRequest() {
     return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<WeakSubjectivityState> getWeakSubjectivityState() {
+    return SafeFuture.completedFuture(WeakSubjectivityState.empty());
   }
 
   @Override
