@@ -26,6 +26,7 @@ public class RestApiConstants {
   public static final String GRAFFITI = "graffiti";
   public static final String ATTESTATION_DATA_ROOT = "attestation_data_root";
   public static final String INDEX = "index";
+  public static final String TOPICS = "topics";
 
   public static final String TAG_ADMIN = "Admin";
   public static final String TAG_BEACON = "Beacon";
@@ -36,6 +37,7 @@ public class RestApiConstants {
   public static final String TAG_V1_NODE = "Node V1";
   public static final String TAG_V1_VALIDATOR = "Validator V1";
   public static final String TAG_V1_BEACON = "Beacon V1";
+  public static final String TAG_EVENTS = "Events";
   public static final String TAG_VALIDATOR_REQUIRED = "Validator Required Api";
 
   public static final String RES_OK = "200"; // SC_OK

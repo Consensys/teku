@@ -37,6 +37,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
+import tech.pegasys.teku.datastructures.util.Merkleizable;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -338,5 +339,12 @@ public class ChainDataProvider {
         .getStateAtSlotExact(maybeSlot.get())
         .thenApply(
             maybeState -> maybeState.map(state -> ValidatorResponse.fromState(state, index)));
+  }
+
+  public Optional<Bytes32> getStateRootFromBlockRoot(final Bytes32 blockRoot) {
+    return combinedChainDataClient
+        .getStateByBlockRoot(blockRoot)
+        .join()
+        .map(Merkleizable::hash_tree_root);
   }
 }

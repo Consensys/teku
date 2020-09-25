@@ -525,7 +525,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             blockImporter,
             attestationPool);
     if (config.isRestApiEnabled()) {
-      beaconRestAPI = Optional.of(new BeaconRestApi(dataProvider, config));
+      beaconRestAPI = Optional.of(new BeaconRestApi(dataProvider, config, eventChannels));
     } else {
       LOG.info("rest-api-enabled is false, not starting rest api.");
     }

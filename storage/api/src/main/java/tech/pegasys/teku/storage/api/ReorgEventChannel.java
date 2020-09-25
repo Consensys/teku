@@ -27,11 +27,16 @@ public interface ReorgEventChannel extends VoidReturningChannelInterface {
    *
    * @param bestBlockRoot the block root of the new chain head
    * @param bestSlot the slot of the new chain head
+   * @param bestStateRoot the state root of the state containing the new chain head
+   * @param oldBestBlockRoot the block root of the old chain head
+   * @param oldBestStateRoot the state root of the state containing the old chain head
    * @param commonAncestorSlot the last slot that both the old and new chains had a common block
    */
   void reorgOccurred(
       final Bytes32 bestBlockRoot,
       final UInt64 bestSlot,
+      final Bytes32 bestStateRoot,
       final Bytes32 oldBestBlockRoot,
+      final Bytes32 oldBestStateRoot,
       final UInt64 commonAncestorSlot);
 }
