@@ -17,10 +17,10 @@ New REST APIs
   - `/eth/v1/validator/duties/proposer/:epoch` - gets block proposer duties for the given epoch
   - Deprecated POST `/validator/duties`, as the new standard endpoints are now implemented
   - `eth/v1/beacon/genesis` - retrieves details of the chain's genesis
-  - Deprecated the previous genesis endpoint /node/genesis_time
+  - Deprecated the previous genesis endpoint `/node/genesis_time`
   - `/eth/v1/beacon/states/:state_id/validators/:validator_id` - gets validator from state by id
   - `/eth/v1/beacon/states/{state_id}/fork` - gets Fork object for requested state
-  - Deprecated the previous fork endpoint /node/fork
+  - Deprecated the previous fork endpoint `/node/fork`
   - `/eth/v1/events` - subscribes to beacon node events
 - Implemented validator keystore file locking to prohibit another process using the same keys and getting slashed
 - Updated slashing protection interchange format version to v.4
