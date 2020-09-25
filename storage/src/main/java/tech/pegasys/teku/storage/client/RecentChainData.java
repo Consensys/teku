@@ -264,7 +264,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         reorgEventChannel.reorgOccurred(
             newChainHead.getRoot(),
             newChainHead.getSlot(),
+            newChainHead.getStateRoot(),
             previousChainHead.getRoot(),
+            previousChainHead.getStateRoot(),
             commonAncestorSlot);
       }
     }

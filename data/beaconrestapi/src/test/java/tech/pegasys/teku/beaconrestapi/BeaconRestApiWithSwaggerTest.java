@@ -26,6 +26,7 @@ import io.javalin.core.JavalinServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -40,6 +41,7 @@ public class BeaconRestApiWithSwaggerTest {
       mock(CombinedChainDataClient.class);
   private final JavalinServer server = mock(JavalinServer.class);
   private final Javalin app = mock(Javalin.class);
+  private final EventChannels eventChannels = mock(EventChannels.class);
   private final SyncService syncService = mock(SyncService.class);
   private final BlockImporter blockImporter = mock(BlockImporter.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
@@ -60,6 +62,7 @@ public class BeaconRestApiWithSwaggerTest {
             blockImporter,
             attestationPool),
         config,
+        eventChannels,
         app);
   }
 

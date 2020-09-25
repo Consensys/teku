@@ -61,7 +61,12 @@ public class OperationsReOrgManager implements ReorgEventChannel {
 
   @Override
   public void reorgOccurred(
-      Bytes32 bestBlockRoot, UInt64 bestSlot, Bytes32 oldBestBlockRoot, UInt64 commonAncestorSlot) {
+      final Bytes32 bestBlockRoot,
+      final UInt64 bestSlot,
+      final Bytes32 bestStateRoot,
+      final Bytes32 oldBestBlockRoot,
+      final Bytes32 oldBestStateRoot,
+      final UInt64 commonAncestorSlot) {
 
     NavigableMap<UInt64, Bytes32> notCanonicalBlockRoots =
         recentChainData.getAncestorsOnFork(commonAncestorSlot, oldBestBlockRoot);
