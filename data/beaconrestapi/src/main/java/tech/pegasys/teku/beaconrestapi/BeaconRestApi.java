@@ -35,6 +35,7 @@ import kotlin.text.Charsets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jetty.server.Server;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
@@ -59,6 +60,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.node.GetFork;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.GetEvents;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
@@ -76,6 +78,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.validator.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToBeaconCommittee;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToPersistentSubnets;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.util.cli.VersionProvider;
@@ -84,13 +87,24 @@ import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 public class BeaconRestApi {
 
+  private Server jettyServer;
   private final Javalin app;
   private final JsonProvider jsonProvider = new JsonProvider();
   private static final Logger LOG = LogManager.getLogger();
   public static final String FILE_NOT_FOUND_HTML = "404.html";
 
   private void initialize(
-      final DataProvider dataProvider, final GlobalConfiguration configuration) {
+      final DataProvider dataProvider,
+      final GlobalConfiguration configuration,
+      final EventChannels eventChannels) {
+    if (app.config != null) {
+      // the beaconRestApi test mocks the app object, and will skip this
+      app.config.server(
+          () -> {
+            jettyServer = new Server(configuration.getRestApiPort());
+            return jettyServer;
+          });
+    }
     app.server().setServerHost(configuration.getRestApiInterface());
     app.server().setServerPort(configuration.getRestApiPort());
 
@@ -99,6 +113,7 @@ public class BeaconRestApi {
     addExceptionHandlers();
     // standard api endpoint inclusion
     addV1BeaconHandlers(dataProvider);
+    addEventHandler(dataProvider, eventChannels);
     addV1NodeHandlers(dataProvider);
     addV1ValidatorHandlers(dataProvider);
 
@@ -156,7 +171,10 @@ public class BeaconRestApi {
         });
   }
 
-  public BeaconRestApi(final DataProvider dataProvider, final GlobalConfiguration configuration) {
+  public BeaconRestApi(
+      final DataProvider dataProvider,
+      final GlobalConfiguration configuration,
+      final EventChannels eventChannels) {
     this.app =
         Javalin.create(
             config -> {
@@ -166,13 +184,16 @@ public class BeaconRestApi {
               config.logIfServerNotStarted = false;
               config.showJavalinBanner = false;
             });
-    initialize(dataProvider, configuration);
+    initialize(dataProvider, configuration, eventChannels);
   }
 
   BeaconRestApi(
-      final DataProvider dataProvider, final GlobalConfiguration configuration, final Javalin app) {
+      final DataProvider dataProvider,
+      final GlobalConfiguration configuration,
+      final EventChannels eventChannels,
+      final Javalin app) {
     this.app = app;
-    initialize(dataProvider, configuration);
+    initialize(dataProvider, configuration, eventChannels);
   }
 
   public void start() {
@@ -247,6 +268,10 @@ public class BeaconRestApi {
     app.get(GetStateValidator.ROUTE, new GetStateValidator(dataProvider, jsonProvider));
   }
 
+  private void addEventHandler(final DataProvider dataProvider, final EventChannels eventChannels) {
+    app.get(GetEvents.ROUTE, new GetEvents(dataProvider, jsonProvider, eventChannels));
+  }
+
   private void addNodeHandlers(final DataProvider provider) {
     app.get(GetFork.ROUTE, new GetFork(provider.getChainDataProvider(), jsonProvider));
     app.get(
@@ -305,6 +330,13 @@ public class BeaconRestApi {
   }
 
   public void stop() {
+    try {
+      if (jettyServer != null) {
+        jettyServer.stop();
+      }
+    } catch (Exception ex) {
+      LOG.error(ex);
+    }
     app.stop();
   }
 }

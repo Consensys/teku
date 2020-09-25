@@ -9,6 +9,7 @@ dependencies {
     implementation project(':networking:eth2')
     implementation project(':services:serviceutils')
     implementation project(':storage')
+    implementation project(':storage:api')
     implementation project(':sync')
     implementation project(':util')
     implementation project(':validator:api')
