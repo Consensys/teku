@@ -97,7 +97,7 @@ public class PeerChainValidator {
   }
 
   private SafeFuture<Boolean> isRemoteChainValid(final Eth2Peer peer, final PeerStatus status) {
-    if (!validateFork(peer, status)) {
+    if (!isForkValid(peer, status)) {
       return SafeFuture.completedFuture(false);
     }
 
@@ -106,7 +106,7 @@ public class PeerChainValidator {
       return SafeFuture.completedFuture(true);
     }
 
-    return validateRequiredCheckpoint(peer, status)
+    return isConsistentWithRequiredCheckpoint(peer, status)
         .thenCompose(
             isValid -> {
               if (!isValid) {
@@ -116,11 +116,11 @@ public class PeerChainValidator {
                 return SafeFuture.completedFuture(isValid);
               }
 
-              return validateFinalizedCheckpoint(peer, status);
+              return isFinalizedCheckpointValid(peer, status);
             });
   }
 
-  private boolean validateFork(final Eth2Peer peer, final PeerStatus status) {
+  private boolean isForkValid(final Eth2Peer peer, final PeerStatus status) {
     Bytes4 expectedForkDigest = chainDataClient.getHeadForkInfo().orElseThrow().getForkDigest();
     if (!Objects.equals(expectedForkDigest, status.getForkDigest())) {
       LOG.trace(
@@ -134,7 +134,7 @@ public class PeerChainValidator {
     return true;
   }
 
-  private SafeFuture<Boolean> validateRequiredCheckpoint(
+  private SafeFuture<Boolean> isConsistentWithRequiredCheckpoint(
       final Eth2Peer peer, final PeerStatus status) {
     if (requiredCheckpointVerified.get()) {
       return SafeFuture.completedFuture(true);
@@ -172,7 +172,7 @@ public class PeerChainValidator {
     }
   }
 
-  private SafeFuture<Boolean> validateFinalizedCheckpoint(
+  private SafeFuture<Boolean> isFinalizedCheckpointValid(
       final Eth2Peer peer, final PeerStatus status) {
     final UInt64 remoteFinalizedEpoch = status.getFinalizedEpoch();
     final Checkpoint finalizedCheckpoint =
