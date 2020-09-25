@@ -112,7 +112,9 @@ public class PeerChainValidator {
               if (!isValid) {
                 // Short-circuit if we know the chain is invalid
                 LOG.trace(
-                    "Failed to validate peer against required checkpoint {}", requiredCheckpoint);
+                    "Failed to validate peer {} against required checkpoint {}",
+                    peer.getId(),
+                    requiredCheckpoint);
                 return SafeFuture.completedFuture(isValid);
               }
 
@@ -149,6 +151,11 @@ public class PeerChainValidator {
       // Peer hasn't finalized the required checkpoint, so defer check
       return SafeFuture.completedFuture(true);
     } else if (status.getFinalizedCheckpoint().getEpoch().equals(checkpointToVerify.getEpoch())) {
+      LOG.trace(
+          "Validate peer's ({}) finalized checkpoint {} matches required checkpoint {}",
+          peer.getId(),
+          status.getFinalizedCheckpoint(),
+          checkpointToVerify);
       // Peer is at the required checkpoint, check for consistency
       final boolean blockMatches = status.getFinalizedCheckpoint().equals(checkpointToVerify);
       requiredCheckpointVerified.set(blockMatches);
@@ -156,6 +163,8 @@ public class PeerChainValidator {
     } else {
       // Peer has finalized the required checkpoint in the past, request this block to check
       // consistency
+      LOG.trace(
+          "Request required checkpoint block from peer {}: {}", peer.getId(), checkpointToVerify);
       return peer.requestBlockByRoot(checkpointToVerify.getRoot())
           // When requesting block by root, there is no explicit guarantee that the block is
           // canonical.
