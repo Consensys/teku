@@ -13,14 +13,15 @@
 
 package tech.pegasys.teku.util.config;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.Arrays.asList;
-
 import com.google.common.collect.ImmutableMap;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Arrays.asList;
 
 public class NetworkDefinition {
   private static final ImmutableMap<String, NetworkDefinition> NETWORKS =
@@ -100,7 +101,10 @@ public class NetworkDefinition {
                       "enr:-KG4QA-EcFfXQsL2dcneG8vp8HTWLrpwHQ5HhfyIytfpeKOISzROy2kYSsf_v-BZKnIx5XHDjqJ-ttz0hoz6qJA7tasEhGV0aDKQxKgkDQAAAAL__________4JpZIJ2NIJpcIQDFt-UiXNlY3AyNTZrMaECkR4C5DVO_9rB48eHTY4kdyOHsguTEDlvb7Ce0_mvghSDdGNwgiMog3VkcIIjKA",
 
                       // Prysmatic Prysm
-                      "enr:-Ku4QGQJf2bcDAwVGvbvtq3AB4KKwAvStTenY-i_QnW2ABNRRBncIU_5qR_e_um-9t3s9g-Y5ZfFATj1nhtzq6lvgc4Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDEqCQNAAAAAv__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQNoed9JnQh7ltcAacHEGOjwocL1BhMQbYTgaPX0kFuXtIN1ZHCCE4g")
+                      "enr:-Ku4QGQJf2bcDAwVGvbvtq3AB4KKwAvStTenY-i_QnW2ABNRRBncIU_5qR_e_um-9t3s9g-Y5ZfFATj1nhtzq6lvgc4Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDEqCQNAAAAAv__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQNoed9JnQh7ltcAacHEGOjwocL1BhMQbYTgaPX0kFuXtIN1ZHCCE4g",
+
+                      // Proto
+                      "enr:-Ku4QFW1SLbtzJ_ghQQC8-8xezvZ1Mx95J-zer9IPmDE2BKeD_SM7j4vH6xmroUFVuyK-54n2Ey2ueB-Lf-fkbcLwAQBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDEqCQNAAAAAv__________gmlkgnY0gmlwhGQZkSyJc2VjcDI1NmsxoQJMcbZhTCEKYSH5-qPQPgYfSHHUMLGBAKU-f-96yYKFMIN1ZHCCIyg")
                   .build())
           .build();
 
