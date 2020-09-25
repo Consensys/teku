@@ -70,7 +70,6 @@ public class SqlDatabaseFactory {
   static SQLiteDataSource createDataSource(final Path dbDir) {
     final SQLiteDataSource dataSource = new SQLiteConnectionPoolDataSource();
     dataSource.setUrl("jdbc:sqlite:" + dbDir.resolve(DB_FILENAME).toAbsolutePath() + "");
-    dataSource.setSharedCache(true);
     dataSource.setJournalMode(JournalMode.WAL.getValue());
     return dataSource;
   }
