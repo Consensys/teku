@@ -8,6 +8,32 @@ we recommend most users use the latest `master` branch of Teku.
 - REST API endpoints will be updated to match emerging standards in a future release.
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments still work but will be removed in a future release.
 
+## 0.12.7
+
+### Additions and Improvements
+- Added `spadina` network definition. As the genesis state is not yet known, an ETH1 endpoint must be specified when connecting to the `spadina` testnet
+New REST APIs
+  - `/eth/v1/validator/duties/attester/:epoch` - gets attester duties for the given epoch
+  - `/eth/v1/validator/duties/proposer/:epoch` - gets block proposer duties for the given epoch
+  - Deprecated POST `/validator/duties`, as the new standard endpoints are now implemented
+  - `eth/v1/beacon/genesis` - retrieves details of the chain's genesis
+  - Deprecated the previous genesis endpoint `/node/genesis_time`
+  - `/eth/v1/beacon/states/:state_id/validators/:validator_id` - gets validator from state by id
+  - `/eth/v1/beacon/states/{state_id}/fork` - gets Fork object for requested state
+  - Deprecated the previous fork endpoint `/node/fork`
+  - `/eth/v1/events` - subscribes to beacon node events
+- Implemented validator keystore file locking to prohibit another process using the same keys and getting slashed
+- Updated slashing protection interchange format version to v.4
+- Upgraded `Jblst` version to `0.2.0` which adds ARMv8 arch support
+- Implemented sending goodbye message to peers on shutdown
+- Reduced reorg noise during sync
+- Updated metrics library from Besu to latest version
+- Better handle P2P target peer bounds
+
+### Bug Fixes
+- Fixed debug-tools db subcommands to support writing UInt64 as YAML
+- Prevented fork choice head from going backwards when updating the chain
+
 ## 0.12.6
 
 ### Additions and Improvements
