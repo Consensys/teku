@@ -1,8 +1,8 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.11.1'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.11.1'
-    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.11.1'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.11.2'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.11.2'
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.11.2'
 
     dependency 'com.google.auto.service:auto-service:1.0-rc7'
 
@@ -25,8 +25,9 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.4.0'
 
-    dependencySet(group: 'io.javalin', version: '3.7.0') {
+    dependencySet(group: 'io.javalin', version: '3.10.1') {
       entry 'javalin'
+      entry 'javalin-openapi'
     }
     dependency 'io.protostuff:protostuff-core:1.6.2'
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
@@ -42,12 +43,12 @@ dependencyManagement {
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.11.0'
 
-    dependencySet(group: 'io.swagger.core.v3', version: '2.1.3') {
+    dependencySet(group: 'io.swagger.core.v3', version: '2.1.4') {
       entry 'swagger-core'
       entry 'swagger-models'
       entry 'swagger-annotations'
     }
-    dependency 'org.webjars:swagger-ui:3.24.3'
+    dependency 'org.webjars:swagger-ui:3.25.2'
     dependency 'io.github.classgraph:classgraph:4.8.87'
 
     dependencySet(group: 'io.netty', version: '4.1.51.Final') {
