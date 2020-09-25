@@ -75,6 +75,10 @@ public class WeakSubjectivityValidator {
         calculator, policies, config.getWeakSubjectivityCheckpoint());
   }
 
+  public Optional<Checkpoint> getWSCheckpoint() {
+    return maybeWsCheckpoint;
+  }
+
   /** Check whether the chain matches any configured weak subjectivity checkpoint or state */
   public SafeFuture<Void> validateChainIsConsistentWithWSCheckpoint(
       CombinedChainDataClient chainData) {

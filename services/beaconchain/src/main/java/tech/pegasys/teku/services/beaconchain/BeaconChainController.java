@@ -481,7 +481,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                   config.isLogWireGossip()));
 
       p2pConfig.validateListenPortAvailable();
-      final Eth2Config eth2Config = new Eth2Config(config.isP2pSnappyEnabled());
+      final Eth2Config eth2Config =
+          new Eth2Config(config.isP2pSnappyEnabled(), weakSubjectivityValidator.getWSCheckpoint());
 
       this.p2pNetwork =
           Eth2NetworkBuilder.create()
