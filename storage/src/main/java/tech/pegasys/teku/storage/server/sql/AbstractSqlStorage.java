@@ -15,7 +15,7 @@ package tech.pegasys.teku.storage.server.sql;
 
 import static tech.pegasys.teku.storage.server.sql.ParamConverter.convertParams;
 
-import com.zaxxer.hikari.HikariDataSource;
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -36,10 +36,10 @@ public class AbstractSqlStorage implements AutoCloseable {
 
   protected final PlatformTransactionManager transactionManager;
   protected final JdbcOperations jdbc;
-  private final HikariDataSource dataSource;
+  private final ComboPooledDataSource dataSource;
 
   protected AbstractSqlStorage(
-      PlatformTransactionManager transactionManager, final HikariDataSource dataSource) {
+      PlatformTransactionManager transactionManager, final ComboPooledDataSource dataSource) {
     this.transactionManager = transactionManager;
     this.dataSource = dataSource;
     this.jdbc = new JdbcTemplate(dataSource);

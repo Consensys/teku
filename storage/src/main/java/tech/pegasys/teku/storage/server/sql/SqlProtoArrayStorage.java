@@ -16,7 +16,7 @@ package tech.pegasys.teku.storage.server.sql;
 import static java.util.stream.Collectors.toList;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import com.zaxxer.hikari.HikariDataSource;
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -31,7 +31,7 @@ import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 public class SqlProtoArrayStorage extends AbstractSqlStorage {
 
   protected SqlProtoArrayStorage(
-      final PlatformTransactionManager transactionManager, final HikariDataSource dataSource) {
+      final PlatformTransactionManager transactionManager, final ComboPooledDataSource dataSource) {
     super(transactionManager, dataSource);
   }
 

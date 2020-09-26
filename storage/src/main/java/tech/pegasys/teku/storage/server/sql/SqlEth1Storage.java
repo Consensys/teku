@@ -14,7 +14,7 @@
 package tech.pegasys.teku.storage.server.sql;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import com.zaxxer.hikari.HikariDataSource;
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -34,7 +34,7 @@ import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 public class SqlEth1Storage extends AbstractSqlStorage {
 
   protected SqlEth1Storage(
-      final PlatformTransactionManager transactionManager, final HikariDataSource dataSource) {
+      final PlatformTransactionManager transactionManager, final ComboPooledDataSource dataSource) {
     super(transactionManager, dataSource);
   }
 

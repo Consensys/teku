@@ -115,7 +115,6 @@ public class SqlDatabase implements Database {
 
       // Store the periodic hot states (likely to be higher frequency than finalized states)
       update.getHotStates().forEach(transaction::storeState);
-      //      System.out.println("Deleted hot blocks: " + update.getDeletedHotBlocks().size());
       updateFinalizedStates(update, transaction, previousFinalizedCheckpoint);
 
       // Ensure the latest finalized block and state is always stored

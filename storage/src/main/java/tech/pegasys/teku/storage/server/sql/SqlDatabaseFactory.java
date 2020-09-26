@@ -14,13 +14,13 @@
 package tech.pegasys.teku.storage.server.sql;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 import java.nio.file.Path;
 import org.flywaydb.core.Flyway;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.sqlite.SQLiteDataSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
@@ -35,7 +35,7 @@ public class SqlDatabaseFactory {
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
       final MetricsSystem metricsSystem) {
-    final HikariDataSource dataSource = initDataSource(dbDir);
+    final ComboPooledDataSource dataSource = initDataSource(dbDir);
 
     final PlatformTransactionManager transactionManager =
         new DataSourceTransactionManager(dataSource);
@@ -50,12 +50,12 @@ public class SqlDatabaseFactory {
   }
 
   @VisibleForTesting
-  static HikariDataSource initDataSource(final Path dbDir) {
+  static ComboPooledDataSource initDataSource(final Path dbDir) {
     if (!dbDir.toFile().mkdir() && !dbDir.toFile().isDirectory()) {
       throw new InvalidConfigurationException(
           "Unable to create database directory: " + dbDir.toAbsolutePath());
     }
-    final HikariDataSource dataSource = createDataSource(dbDir);
+    final ComboPooledDataSource dataSource = createDataSource(dbDir);
 
     final Flyway flyway = Flyway.configure().dataSource(dataSource).load();
 
@@ -65,15 +65,11 @@ public class SqlDatabaseFactory {
   }
 
   @VisibleForTesting
-  static HikariDataSource createDataSource(final Path dbDir) {
-    final HikariConfig config = new HikariConfig();
-    config.setConnectionInitSql(
-        "PRAGMA journal_mode= WAL;"
-            + "PRAGMA wal_autocheckpoint=100000;"
-            + "PRAGMA busy_timeout=2000;"
-            + "PRAGMA synchronous=NORMAL;"
-            + "PRAGMA mmap_size=268435456");
-    config.setJdbcUrl("jdbc:sqlite:" + dbDir.resolve(DB_FILENAME).toAbsolutePath());
-    return new HikariDataSource(config);
+  static ComboPooledDataSource createDataSource(final Path dbDir) {
+    final ComboPooledDataSource dataSource = new ComboPooledDataSource();
+    dataSource.setDataSourceName(SQLiteDataSource.class.getName());
+    dataSource.setJdbcUrl("jdbc:sqlite:" + dbDir.resolve(DB_FILENAME).toAbsolutePath() + "?journal_mode=WAL&busy_timeout=2000&mmap_size=268435456");
+    dataSource.setMaxStatements(250);
+    return dataSource;
   }
 }
