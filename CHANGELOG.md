@@ -8,6 +8,14 @@ we recommend most users use the latest `master` branch of Teku.
 - REST API endpoints will be updated to match emerging standards in a future release.
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments still work but will be removed in a future release.
 
+## 0.12.8
+
+### Additions and Improvements
+- Added `spadina` network genesis state so an ETH1 endpoint is no longer required when connecting to Spadina.
+
+### Bug Fixes
+- Fixed issue where topped-up up deposits did not lead to activated validators.
+
 ## 0.12.7
 
 ### Additions and Improvements
