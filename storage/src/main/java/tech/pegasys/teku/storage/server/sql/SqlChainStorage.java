@@ -222,14 +222,19 @@ public class SqlChainStorage extends AbstractSqlStorage {
                       }));
     }
 
-    public void storeState(final Bytes32 blockRoot, final BeaconState state) {
-      execSql(
+    public void storeStates(final Map<Bytes32, BeaconState> states) {
+      batchUpdate(
           "INSERT INTO state (stateRoot, blockRoot, slot, ssz) VALUES (?, ?, ?, ?)"
               + " ON CONFLICT(stateRoot) DO UPDATE SET ssz = excluded.ssz",
-          state.hash_tree_root(),
-          blockRoot,
-          state.getSlot(),
-          serializeSsz(state));
+          states.entrySet().stream()
+              .map(
+                  entry -> {
+                    final Bytes32 blockRoot = entry.getKey();
+                    final BeaconState state = entry.getValue();
+                    return new Object[] {
+                      state.hash_tree_root(), blockRoot, state.getSlot(), serializeSsz(state)
+                    };
+                  }));
     }
 
     /** Deletes any states prior to the most recent finalized state. */

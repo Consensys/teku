@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.events;
 
+import com.google.common.base.MoreObjects;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -126,5 +127,20 @@ public class StorageUpdate {
 
   public Map<Bytes32, SlotAndBlockRoot> getStateRoots() {
     return stateRoots;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("genesisTime", genesisTime)
+        .add("finalizedChainData", finalizedChainData)
+        .add("justifiedCheckpoint", justifiedCheckpoint.isPresent())
+        .add("bestJustifiedCheckpoint", bestJustifiedCheckpoint.isPresent())
+        .add("stateRoots", stateRoots.size())
+        .add("hotBlocksAndStates", hotBlocksAndStates.size())
+        .add("hotStates", hotStates.size())
+        .add("votes", votes.size())
+        .add("deletedHotBlocks", deletedHotBlocks.size())
+        .toString();
   }
 }

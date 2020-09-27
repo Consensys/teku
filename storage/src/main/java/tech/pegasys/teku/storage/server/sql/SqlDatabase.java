@@ -21,9 +21,11 @@ import static tech.pegasys.teku.storage.server.sql.CheckpointType.WEAK_SUBJECTIV
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -86,7 +88,7 @@ public class SqlDatabase implements Database {
       transaction.storeCheckpoint(FINALIZED, genesisCheckpoint);
 
       transaction.storeBlock(genesisBlock, true);
-      transaction.storeState(genesisBlock.getRoot(), genesisState);
+      transaction.storeStates(Map.of(genesisBlock.getRoot(), genesisState));
       transaction.commit();
     }
   }
@@ -97,60 +99,104 @@ public class SqlDatabase implements Database {
       return;
     }
 
+    final long pre = System.nanoTime();
     try (final SqlChainStorage.Transaction transaction = chainStorage.startTransaction()) {
+      final long start = System.nanoTime();
       final Optional<Checkpoint> previousFinalizedCheckpoint =
           chainStorage.getCheckpoint(FINALIZED);
       updateCheckpoints(update, transaction);
+      final long checkpoints = System.nanoTime();
 
       transaction.storeBlocks(update.getFinalizedBlocks().values(), true);
+      final long storeFinalizedBlocks = System.nanoTime();
       transaction.storeBlocks(
           update.getHotBlocksAndStates().values().stream()
               .map(SignedBlockAndState::getBlock)
               .collect(toList()),
           false);
+      final long hotBlocks = System.nanoTime();
       transaction.finalizeBlocks(update.getFinalizedChildToParentMap().keySet());
+      final long finalizeBlocks = System.nanoTime();
       transaction.storeStateRoots(update.getStateRoots());
+      final long stateRoots = System.nanoTime();
       update.getDeletedHotBlocks().forEach(transaction::deleteHotBlockByBlockRoot);
+      final long deletedBlocks = System.nanoTime();
       transaction.storeVotes(update.getVotes());
+      final long votes = System.nanoTime();
 
       // Store the periodic hot states (likely to be higher frequency than finalized states)
-      update.getHotStates().forEach(transaction::storeState);
-      updateFinalizedStates(update, transaction, previousFinalizedCheckpoint);
+      final Map<Bytes32, BeaconState> statesToStore = new HashMap<>(update.getHotStates());
+      final long hotStates = System.nanoTime();
+
+      // UPDATE FINALIZED STATES
+
+      if (stateStorageMode == StateStorageMode.PRUNE) {
+        transaction.pruneFinalizedStates();
+      } else {
+        if (stateStorageFrequency.isLessThan(UInt64.valueOf(Constants.SLOTS_PER_EPOCH))) {
+          // If we need states more often than once per epoch, we must store every hot state
+          // so we have the ones we need available
+          update
+              .getHotBlocksAndStates()
+              .forEach((root, blockAndState) -> statesToStore.put(root, blockAndState.getState()));
+          statesToStore.putAll(update.getFinalizedStates());
+        }
+        update
+            .getFinalizedCheckpoint()
+            .ifPresent(
+                newFinalizedCheckpoint ->
+                    trimFinalizedStates(
+                        transaction, previousFinalizedCheckpoint, newFinalizedCheckpoint));
+      }
+      // END UPDATE FINALIZED STATES
 
       // Ensure the latest finalized block and state is always stored
       update
           .getLatestFinalizedBlockAndState()
           .ifPresent(
               blockAndState ->
-                  transaction.storeState(blockAndState.getRoot(), blockAndState.getState()));
+                  statesToStore.put(blockAndState.getRoot(), blockAndState.getState()));
+
+      final long updateFinalizedState = System.nanoTime();
+      transaction.storeStates(statesToStore);
+      final long storingStates = System.nanoTime();
       transaction.commit();
-    }
-  }
-
-  private void updateFinalizedStates(
-      final StorageUpdate update,
-      final Transaction transaction,
-      final Optional<Checkpoint> previousFinalizedCheckpoint) {
-
-    if (stateStorageMode == StateStorageMode.PRUNE) {
-      transaction.pruneFinalizedStates();
-    } else {
-      if (stateStorageFrequency.isLessThan(UInt64.valueOf(Constants.SLOTS_PER_EPOCH))) {
-        // If we need states more often than once per epoch, we must store every hot state
-        // so we have the ones we need available
-        update
-            .getHotBlocksAndStates()
-            .forEach(
-                (blockRoot, blockAndState) ->
-                    transaction.storeState(blockRoot, blockAndState.getState()));
-        update.getFinalizedStates().forEach(transaction::storeState);
+      final long end = System.nanoTime();
+      System.out.println(
+          "Timings: "
+              + " Total (ms): "
+              + TimeUnit.NANOSECONDS.toMillis(end - start)
+              + "  Finalized? "
+              + update.getFinalizedCheckpoint().isPresent()
+              + ", tx: "
+              + TimeUnit.NANOSECONDS.toMicros(start - pre)
+              + ", commit: "
+              + TimeUnit.NANOSECONDS.toMicros(end - storingStates)
+              + ", storingStates ("
+              + statesToStore.size()
+              + "): "
+              + TimeUnit.NANOSECONDS.toMicros(storingStates - updateFinalizedState)
+              + ", updateFinalizedState: "
+              + TimeUnit.NANOSECONDS.toMicros(updateFinalizedState - hotStates)
+              + ", hotStates: "
+              + TimeUnit.NANOSECONDS.toMicros(hotStates - votes)
+              + ", votes: "
+              + TimeUnit.NANOSECONDS.toMicros(votes - deletedBlocks)
+              + ", deletedBlocks: "
+              + TimeUnit.NANOSECONDS.toMicros(deletedBlocks - stateRoots)
+              + ", stateRoots: "
+              + TimeUnit.NANOSECONDS.toMicros(stateRoots - finalizeBlocks)
+              + ", finalizeBlocks: "
+              + TimeUnit.NANOSECONDS.toMicros(finalizeBlocks - hotBlocks)
+              + ", hotBlocks: "
+              + TimeUnit.NANOSECONDS.toMicros(hotBlocks - storeFinalizedBlocks)
+              + ", storeFinalizedBlocks: "
+              + TimeUnit.NANOSECONDS.toMicros(storeFinalizedBlocks - checkpoints)
+              + ", checkpoints: "
+              + TimeUnit.NANOSECONDS.toMicros(checkpoints - start));
+      if (TimeUnit.NANOSECONDS.toMillis(end - start) > 100) {
+        System.out.println("SLOW! " + update);
       }
-      update
-          .getFinalizedCheckpoint()
-          .ifPresent(
-              newFinalizedCheckpoint ->
-                  trimFinalizedStates(
-                      transaction, previousFinalizedCheckpoint, newFinalizedCheckpoint));
     }
   }
 
@@ -161,7 +207,7 @@ public class SqlDatabase implements Database {
     final UInt64 previousFinalizedSlot =
         previousFinalizedCheckpoint.map(Checkpoint::getEpochStartSlot).orElse(UInt64.ZERO);
     final UInt64 newFinalizedSlot = newFinalizedCheckpoint.getEpochStartSlot();
-    final UInt64 trailingPruneDistance = stateStorageFrequency.plus(Constants.SLOTS_PER_EPOCH);
+    final UInt64 trailingPruneDistance = UInt64.valueOf(Constants.SLOTS_PER_EPOCH * 2);
     final UInt64 trimStartSlot =
         previousFinalizedSlot.isGreaterThan(trailingPruneDistance)
             ? previousFinalizedSlot.minus(trailingPruneDistance)

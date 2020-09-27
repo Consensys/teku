@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.events;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.base.MoreObjects;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -160,5 +161,16 @@ public class FinalizedChainData {
       this.finalizedChildToParentMap.put(child, parent);
       return this;
     }
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("finalizedCheckpoint", finalizedCheckpoint)
+        .add("latestFinalizedBlockAndState", latestFinalizedBlockAndState)
+        .add("finalizedChildToParentMap", finalizedChildToParentMap.size())
+        .add("finalizedBlocks", finalizedBlocks.size())
+        .add("finalizedStates", finalizedStates.size())
+        .toString();
   }
 }
