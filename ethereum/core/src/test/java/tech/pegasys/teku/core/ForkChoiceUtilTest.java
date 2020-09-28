@@ -139,6 +139,12 @@ class ForkChoiceUtilTest {
   }
 
   @Test
+  public void getCurrentSlot_shouldGetZeroPriorToGenesis() {
+    assertThat(ForkChoiceUtil.getCurrentSlot(GENESIS_TIME.minus(1), GENESIS_TIME))
+        .isEqualTo(UInt64.ZERO);
+  }
+
+  @Test
   public void getSlotStartTime_shouldGetGenesisTimeForBlockZero() {
     assertThat(ForkChoiceUtil.getSlotStartTime(UInt64.ZERO, GENESIS_TIME)).isEqualTo(GENESIS_TIME);
   }
