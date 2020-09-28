@@ -93,6 +93,7 @@ public class NetworkDefinition {
               builder()
                   .constants("spadina")
                   .snappyCompressionEnabled(true)
+                  .initialStateFromClasspath("spadina-genesis.ssz")
                   .startupTimeoutSeconds(120)
                   .eth1DepositContractAddress("0x48B597F4b53C21B48AD95c7256B49D1779Bd5890")
                   .discoveryBootnodes(
