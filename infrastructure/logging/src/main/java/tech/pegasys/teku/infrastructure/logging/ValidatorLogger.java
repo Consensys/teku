@@ -14,7 +14,6 @@
 package tech.pegasys.teku.infrastructure.logging;
 
 import com.google.common.base.Strings;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -88,22 +87,13 @@ public class ValidatorLogger {
             Color.YELLOW));
   }
 
-  public void producedInvalidAttestation(
-      final UInt64 slot,
-      final int expectedValidatorIndex,
-      final Optional<Integer> actualValidatorIndex,
-      final String reason) {
-    final String actualDescription =
-        actualValidatorIndex.map(idx -> " and actual validator index: " + idx).orElse("");
+  public void producedInvalidAttestation(final UInt64 slot, final String reason) {
     log.error(
         ColorConsolePrinter.print(
             PREFIX
                 + "Produced invalid attestation for slot "
                 + slot
-                + " with expected validator index: "
-                + expectedValidatorIndex
-                + actualDescription
-                + " . Invalid reason: "
+                + ". Invalid reason: "
                 + reason,
             Color.RED));
   }
