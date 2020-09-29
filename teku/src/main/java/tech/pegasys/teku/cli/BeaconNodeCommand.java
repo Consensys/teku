@@ -279,7 +279,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       startAction.accept(tekuConfig);
       return 0;
     } catch (InvalidConfigurationException | DatabaseStorageException ex) {
-      reportUserError(Throwables.getRootCause(ex));
+      reportUserError(ex);
     } catch (CompletionException e) {
       if (Throwables.getRootCause(e) instanceof InvalidConfigurationException
           || Throwables.getRootCause(e) instanceof DatabaseStorageException) {
