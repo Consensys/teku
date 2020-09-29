@@ -14,7 +14,7 @@
 package tech.pegasys.teku.storage.server.sql;
 
 import com.google.errorprone.annotations.MustBeClosed;
-import com.mchange.v2.c3p0.ComboPooledDataSource;
+import com.zaxxer.hikari.HikariDataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
@@ -53,7 +53,7 @@ public class SqlChainStorage extends AbstractSqlStorage {
 
   public SqlChainStorage(
       PlatformTransactionManager transactionManager,
-      final ComboPooledDataSource dataSource,
+      final HikariDataSource dataSource,
       final BlobStorage blobStorage) {
     super(transactionManager, dataSource);
     this.blobStorage = blobStorage;

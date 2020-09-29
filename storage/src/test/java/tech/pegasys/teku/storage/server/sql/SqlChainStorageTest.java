@@ -18,7 +18,7 @@ import static tech.pegasys.teku.storage.server.sql.SqlDatabaseFactory.DB_FILENAM
 
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
-import com.mchange.v2.c3p0.ComboPooledDataSource;
+import com.zaxxer.hikari.HikariDataSource;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -50,14 +50,14 @@ class SqlChainStorageTest {
   Path dbDir;
 
   private final InMemoryBlobStorage blobStorage = new InMemoryBlobStorage();
-  private ComboPooledDataSource dataSource;
+  private HikariDataSource dataSource;
   private SqlChainStorage storage;
 
   @BeforeAll
   static void createTemplate() {
     // Nice thing about sqlite DBs, you can just copy them and save rerunning the init code...
     // Create the template to be copied here, and copy it to a test-specific dir in setUp
-    final ComboPooledDataSource db = SqlDatabaseFactory.initDataSource(templateDir);
+    final HikariDataSource db = SqlDatabaseFactory.initDataSource(templateDir);
     db.close();
   }
 

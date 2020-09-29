@@ -13,17 +13,17 @@
 
 package tech.pegasys.teku.storage.server.sql;
 
-import com.mchange.v2.c3p0.ComboPooledDataSource;
+import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
 public class AbstractSqlStorage extends SqlQueryUtils implements AutoCloseable {
 
   protected final PlatformTransactionManager transactionManager;
-  private final ComboPooledDataSource dataSource;
+  private final HikariDataSource dataSource;
 
   protected AbstractSqlStorage(
-      PlatformTransactionManager transactionManager, final ComboPooledDataSource dataSource) {
+      PlatformTransactionManager transactionManager, final HikariDataSource dataSource) {
     super(new JdbcTemplate(dataSource));
     this.transactionManager = transactionManager;
     this.dataSource = dataSource;

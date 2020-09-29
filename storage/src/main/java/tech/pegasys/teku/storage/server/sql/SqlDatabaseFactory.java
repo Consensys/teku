@@ -14,13 +14,13 @@
 package tech.pegasys.teku.storage.server.sql;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.mchange.v2.c3p0.ComboPooledDataSource;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import java.nio.file.Path;
 import org.flywaydb.core.Flyway;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.sqlite.SQLiteDataSource;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.Database;
@@ -42,7 +42,7 @@ public class SqlDatabaseFactory {
       final long stateStorageFrequency,
       final MetricsSystem metricsSystem,
       final RocksDbConfiguration rocksDbConfiguration) {
-    final ComboPooledDataSource dataSource = initDataSource(dbDir);
+    final HikariDataSource dataSource = initDataSource(dbDir);
 
     final PlatformTransactionManager transactionManager =
         new DataSourceTransactionManager(dataSource);
@@ -68,12 +68,12 @@ public class SqlDatabaseFactory {
   }
 
   @VisibleForTesting
-  static ComboPooledDataSource initDataSource(final Path dbDir) {
+  static HikariDataSource initDataSource(final Path dbDir) {
     if (!dbDir.toFile().mkdir() && !dbDir.toFile().isDirectory()) {
       throw new InvalidConfigurationException(
           "Unable to create database directory: " + dbDir.toAbsolutePath());
     }
-    final ComboPooledDataSource dataSource = createDataSource(dbDir);
+    final HikariDataSource dataSource = createDataSource(dbDir);
 
     final Flyway flyway = Flyway.configure().dataSource(dataSource).load();
 
@@ -83,14 +83,11 @@ public class SqlDatabaseFactory {
   }
 
   @VisibleForTesting
-  static ComboPooledDataSource createDataSource(final Path dbDir) {
-    final ComboPooledDataSource dataSource = new ComboPooledDataSource();
-    dataSource.setDataSourceName(SQLiteDataSource.class.getName());
-    dataSource.setJdbcUrl(
-        "jdbc:sqlite:"
-            + dbDir.resolve(DB_FILENAME).toAbsolutePath()
-            + "?journal_mode=WAL&busy_timeout=5000&mmap_size=268435456");
-    dataSource.setMaxStatements(250);
-    return dataSource;
+  static HikariDataSource createDataSource(final Path dbDir) {
+    final HikariConfig config = new HikariConfig();
+    config.setConnectionInitSql(
+        "PRAGMA journal_mode= WAL;PRAGMA busy_timeout=5000;PRAGMA mmap_size=268435456");
+    config.setJdbcUrl("jdbc:sqlite:" + dbDir.resolve(DB_FILENAME).toAbsolutePath());
+    return new HikariDataSource(config);
   }
 }
