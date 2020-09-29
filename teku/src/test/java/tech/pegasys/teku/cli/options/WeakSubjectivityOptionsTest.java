@@ -38,4 +38,21 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     assertThat(config.weakSubjectivity().getWeakSubjectivityCheckpoint()).isEmpty();
   }
+
+  @Test
+  public void weakSubjectivityCheckpoint_handleBadValue() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
+    final String checkpointParam = checkpoint.getRoot().toHexString() + ":";
+    final String[] args = {"--Xweak-subjectivity-checkpoint", checkpointParam};
+
+    final int result = beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+    assertThat(str)
+        .contains(
+            "Weak subjectivity checkpoint arguments should be formatted as: <blockRoot>:<epochNumber> where blockRoot is a hex-encoded 32 byte value and epochNumber is a number in decimal format");
+    assertThat(str).contains("To display full help:");
+    assertThat(str).contains("--help");
+    assertThat(result).isGreaterThan(0);
+  }
 }
