@@ -13,12 +13,6 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import tech.pegasys.teku.core.ForkChoiceUtil;
@@ -32,6 +26,13 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 public class SlotProcessor {
   private final RecentChainData recentChainData;
@@ -129,6 +130,7 @@ public class SlotProcessor {
     UInt64 slot = nodeSlot.getValue();
     this.forkChoice.processHead(slot, true);
     eventLog.syncEvent(slot, recentChainData.getHeadSlot(), p2pNetwork.getPeerCount());
+    STATUS_LOG.performance("process slot while syncing");
     slotEventsChannelPublisher.onSlot(slot);
   }
 
@@ -180,6 +182,7 @@ public class SlotProcessor {
                       finalizedCheckpoint.getEpoch(),
                       finalizedCheckpoint.getRoot()));
     }
+    STATUS_LOG.performance("process slot start");
     slotEventsChannelPublisher.onSlot(nodeSlot.getValue());
   }
 
