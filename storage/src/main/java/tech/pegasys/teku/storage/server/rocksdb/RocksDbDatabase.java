@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import com.google.errorprone.annotations.MustBeClosed;
@@ -220,10 +221,16 @@ public class RocksDbDatabase implements Database {
     final SignedBlockAndState latestFinalized =
         new SignedBlockAndState(finalizedBlock, finalizedState);
 
+    // Make sure time is set to a reasonable value in the case where we start up before genesis when
+    // the clock time would be prior to genesis
+    final long clockTime = Instant.now().getEpochSecond();
+    final UInt64 slotTime = genesisTime.plus(finalizedState.getSlot().times(SECONDS_PER_SLOT));
+    final UInt64 time = slotTime.max(clockTime);
+
     return Optional.of(
         StoreBuilder.create()
             .metricsSystem(metricsSystem)
-            .time(UInt64.valueOf(Instant.now().getEpochSecond()))
+            .time(time)
             .genesisTime(genesisTime)
             .finalizedCheckpoint(finalizedCheckpoint)
             .justifiedCheckpoint(justifiedCheckpoint)
