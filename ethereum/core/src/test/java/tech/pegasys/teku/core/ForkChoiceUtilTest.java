@@ -165,6 +165,16 @@ class ForkChoiceUtilTest {
     verify(store, never()).setTime(any());
   }
 
+  @Test
+  void on_tick_shouldExitImmediatelyWhenCurrentTimeIsBeforeStoreTime() {
+    final MutableStore store = mock(MutableStore.class);
+    when(store.getGenesisTime()).thenReturn(UInt64.valueOf(3000));
+    when(store.getTime()).thenReturn(UInt64.valueOf(5000));
+    ForkChoiceUtil.on_tick(store, UInt64.valueOf(4000));
+
+    verify(store, never()).setTime(any());
+  }
+
   private Map<UInt64, Bytes32> getRootsForBlocks(final int... blockNumbers) {
     return IntStream.of(blockNumbers)
         .mapToObj(chainBuilder::getBlockAtSlot)

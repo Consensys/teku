@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.store;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromDynamicMap;
 import static tech.pegasys.teku.core.lookup.BlockProvider.fromMap;
 import static tech.pegasys.teku.core.stategenerator.CheckpointStateTask.AsyncStateProvider.fromBlockAndState;
@@ -94,6 +95,9 @@ class Store implements UpdatableStore {
       final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final CachingTaskQueue<Checkpoint, BeaconState> checkpointStates) {
+    checkArgument(
+        time.isGreaterThanOrEqualTo(genesis_time),
+        "Time must be greater than or equal to genesisTime");
     this.stateAndBlockProvider = stateAndBlockProvider;
     LOG.trace(
         "Create store with hot state persistence configured to {}",
