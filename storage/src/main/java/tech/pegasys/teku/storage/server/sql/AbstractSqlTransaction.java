@@ -29,7 +29,6 @@ public class AbstractSqlTransaction extends SqlQueryUtils implements AutoCloseab
 
   private final TransactionStatus transaction;
   private final PlatformTransactionManager transactionManager;
-  private final JdbcOperations jdbc;
 
   protected AbstractSqlTransaction(
       final TransactionStatus transaction,
@@ -38,7 +37,6 @@ public class AbstractSqlTransaction extends SqlQueryUtils implements AutoCloseab
     super(jdbc);
     this.transaction = transaction;
     this.transactionManager = transactionManager;
-    this.jdbc = jdbc;
   }
 
   /** Execute the specified SQL and return the number of affected rows. */
