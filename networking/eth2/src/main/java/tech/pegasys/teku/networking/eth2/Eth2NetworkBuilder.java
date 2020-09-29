@@ -101,6 +101,7 @@ public class Eth2NetworkBuilder {
             metricsSystem,
             attestationSubnetService,
             rpcEncoding,
+            eth2Config.getRequiredCheckpoint(),
             eth2RpcPingInterval,
             eth2RpcOutstandingPingThreshold,
             eth2StatusUpdateInterval,

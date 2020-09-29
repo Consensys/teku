@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -28,6 +30,7 @@ public class Eth2PeerFactory {
   private final MetricsSystem metricsSystem;
   private final CombinedChainDataClient chainDataClient;
   private final TimeProvider timeProvider;
+  private final Optional<Checkpoint> requiredCheckpoint;
   private final int peerRateLimit;
   private final int peerRequestLimit;
 
@@ -37,6 +40,7 @@ public class Eth2PeerFactory {
       final StatusMessageFactory statusMessageFactory,
       final MetadataMessagesFactory metadataMessagesFactory,
       final TimeProvider timeProvider,
+      final Optional<Checkpoint> requiredCheckpoint,
       final int peerRateLimit,
       final int peerRequestLimit) {
     this.metricsSystem = metricsSystem;
@@ -44,6 +48,7 @@ public class Eth2PeerFactory {
     this.timeProvider = timeProvider;
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
+    this.requiredCheckpoint = requiredCheckpoint;
     this.peerRateLimit = peerRateLimit;
     this.peerRequestLimit = peerRequestLimit;
   }
@@ -54,7 +59,7 @@ public class Eth2PeerFactory {
         rpcMethods,
         statusMessageFactory,
         metadataMessagesFactory,
-        PeerChainValidator.create(metricsSystem, chainDataClient),
+        PeerChainValidator.create(metricsSystem, chainDataClient, requiredCheckpoint),
         new RateTracker(peerRateLimit, 60, timeProvider),
         new RateTracker(peerRequestLimit, 60, timeProvider));
   }

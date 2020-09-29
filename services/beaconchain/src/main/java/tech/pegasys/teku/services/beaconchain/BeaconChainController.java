@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,6 +51,7 @@ import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.StartupUtil;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -87,6 +89,7 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
+import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.store.FileKeyValueStore;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -114,6 +117,7 @@ import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracke
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.ValidatorPerformanceMetrics;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
+import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class BeaconChainController extends Service implements TimeTickChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -121,16 +125,16 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private static final String KEY_VALUE_STORE_SUBDIRECTORY = "kvstore";
   private static final String GENERATED_NODE_KEY_KEY = "generated-node-key";
 
+  private final BeaconChainConfiguration beaconConfig;
+  private final GlobalConfiguration config;
   private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
-  private final GlobalConfiguration config;
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
   private final EventBus eventBus;
   private final SlotEventsChannel slotEventsChannelPublisher;
   private final AsyncRunner networkAsyncRunner;
   private final AsyncRunnerFactory asyncRunnerFactory;
-  private final WeakSubjectivityValidator weakSubjectivityValidator;
 
   private volatile ForkChoice forkChoice;
   private volatile StateTransition stateTransition;
@@ -149,6 +153,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile OperationPool<ProposerSlashing> proposerSlashingPool;
   private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private volatile OperationsReOrgManager operationsReOrgManager;
+  private volatile WeakSubjectivityValidator weakSubjectivityValidator;
   private volatile PerformanceTracker performanceTracker;
 
   private SyncStateTracker syncStateTracker;
@@ -157,17 +162,16 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public BeaconChainController(
       BeaconChainConfiguration beaconConfig, final ServiceConfig serviceConfig) {
+    this.beaconConfig = beaconConfig;
+    this.config = serviceConfig.getConfig();
     asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
     this.asyncRunner = serviceConfig.createAsyncRunner("beaconchain");
     this.networkAsyncRunner = serviceConfig.createAsyncRunner("p2p", 10);
     this.timeProvider = serviceConfig.getTimeProvider();
     this.eventBus = serviceConfig.getEventBus();
     this.eventChannels = serviceConfig.getEventChannels();
-    this.config = serviceConfig.getConfig();
     this.metricsSystem = serviceConfig.getMetricsSystem();
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
-    // TODO(#2779) - make this validator strict when it is fully fleshed out
-    weakSubjectivityValidator = WeakSubjectivityValidator.lenient(beaconConfig.weakSubjectivity());
   }
 
   @Override
@@ -257,6 +261,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   public void initAll() {
+    initWeakSubjectivityValidator().join();
     initStateTransition();
     initForkChoice();
     initBlockImporter();
@@ -320,6 +325,50 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             recentChainData,
             eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner),
             stateTransition);
+  }
+
+  @VisibleForTesting
+  SafeFuture<Void> initWeakSubjectivityValidator() {
+    StorageQueryChannel storageQueryChannel =
+        eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner);
+    StorageUpdateChannel storageUpdateChannel =
+        eventChannels.getPublisher(StorageUpdateChannel.class, asyncRunner);
+    return storageQueryChannel
+        .getWeakSubjectivityState()
+        .thenApply(WeakSubjectivityConfig::from)
+        .thenApply(
+            storedConfig -> {
+              final WeakSubjectivityConfig updatedConfig =
+                  storedConfig.updated(
+                      b -> {
+                        beaconConfig
+                            .weakSubjectivity()
+                            .getWeakSubjectivityCheckpoint()
+                            .ifPresent(b::weakSubjectivityCheckpoint);
+                      });
+              Optional<WeakSubjectivityConfig> configToPersist = Optional.empty();
+              if (!Objects.equals(storedConfig, updatedConfig)) {
+                LOG.info(
+                    "Updated weak subjectivity config to {} from {}", updatedConfig, storedConfig);
+                configToPersist = Optional.of(updatedConfig);
+              }
+              // TODO(#2779) - make this validator strict when it is fully fleshed out
+              weakSubjectivityValidator = WeakSubjectivityValidator.lenient(updatedConfig);
+              return configToPersist;
+            })
+        .thenCompose(
+            maybeConfigToPersist -> {
+              // Persist weak subjectivity configuration
+              if (maybeConfigToPersist.isEmpty()) {
+                return SafeFuture.COMPLETE;
+              }
+              final WeakSubjectivityConfig config = maybeConfigToPersist.get();
+              final Checkpoint updatedCheckpoint =
+                  config.getWeakSubjectivityCheckpoint().orElseThrow();
+              WeakSubjectivityUpdate update =
+                  WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(updatedCheckpoint);
+              return storageUpdateChannel.onWeakSubjectivityUpdate(update);
+            });
   }
 
   private void initStateTransition() {
@@ -451,7 +500,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                   config.isLogWireGossip()));
 
       p2pConfig.validateListenPortAvailable();
-      final Eth2Config eth2Config = new Eth2Config(config.isP2pSnappyEnabled());
+      final Eth2Config eth2Config =
+          new Eth2Config(config.isP2pSnappyEnabled(), weakSubjectivityValidator.getWSCheckpoint());
 
       this.p2pNetwork =
           Eth2NetworkBuilder.create()
@@ -525,6 +575,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return privateKey;
   }
 
+  @VisibleForTesting
+  WeakSubjectivityValidator getWeakSubjectivityValidator() {
+    return weakSubjectivityValidator;
+  }
+
   public void initAttestationPool() {
     LOG.debug("BeaconChainController.initAttestationPool()");
     attestationPool = new AggregatingAttestationPool(new AttestationDataStateTransitionValidator());
@@ -544,7 +599,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             blockImporter,
             attestationPool);
     if (config.isRestApiEnabled()) {
-      beaconRestAPI = Optional.of(new BeaconRestApi(dataProvider, config));
+      beaconRestAPI = Optional.of(new BeaconRestApi(dataProvider, config, eventChannels));
     } else {
       LOG.info("rest-api-enabled is false, not starting rest api.");
     }

@@ -287,7 +287,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
       } else {
         reportUnexpectedError(e);
       }
-
     } catch (Throwable t) {
       reportUnexpectedError(t);
     }
@@ -323,12 +322,16 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   protected TekuConfiguration tekuConfiguration() {
-    TekuConfiguration.Builder builder = TekuConfiguration.builder();
+    try {
+      TekuConfiguration.Builder builder = TekuConfiguration.builder();
 
-    builder.globalConfig(this::buildGlobalConfiguration);
-    weakSubjectivityOptions.configure(builder);
+      builder.globalConfig(this::buildGlobalConfiguration);
+      weakSubjectivityOptions.configure(builder);
 
-    return builder.build();
+      return builder.build();
+    } catch (IllegalArgumentException e) {
+      throw new InvalidConfigurationException(e);
+    }
   }
 
   private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {

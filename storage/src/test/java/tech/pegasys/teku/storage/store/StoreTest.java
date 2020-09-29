@@ -17,12 +17,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -31,6 +35,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
@@ -38,6 +43,33 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
 
 class StoreTest extends AbstractStoreTest {
+
+  @Test
+  public void create_timeLessThanGenesisTime() {
+    final UInt64 genesisTime = UInt64.valueOf(100);
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis(genesisTime, false);
+    final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
+
+    assertThatThrownBy(
+            () ->
+                Store.create(
+                    SYNC_RUNNER,
+                    new StubMetricsSystem(),
+                    blockProviderFromChainBuilder(),
+                    StateAndBlockProvider.NOOP,
+                    genesisTime.minus(1),
+                    genesisTime,
+                    genesisCheckpoint,
+                    genesisCheckpoint,
+                    genesisCheckpoint,
+                    Map.of(genesis.getRoot(), genesis.getParentRoot()),
+                    Map.of(genesis.getRoot(), genesis.getSlot()),
+                    genesis,
+                    Collections.emptyMap(),
+                    StoreConfig.createDefault()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Time must be greater than or equal to genesisTime");
+  }
 
   @Test
   public void retrieveSignedBlock_withLimitedCache() {

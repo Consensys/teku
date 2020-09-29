@@ -18,6 +18,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -72,6 +73,10 @@ public class WeakSubjectivityValidator {
         List.of(new LoggingWeakSubjectivityViolationPolicy(Level.TRACE));
     return new WeakSubjectivityValidator(
         calculator, policies, config.getWeakSubjectivityCheckpoint());
+  }
+
+  public Optional<Checkpoint> getWSCheckpoint() {
+    return maybeWsCheckpoint;
   }
 
   /** Check whether the chain matches any configured weak subjectivity checkpoint or state */
@@ -214,5 +219,20 @@ public class WeakSubjectivityValidator {
 
   private boolean isAtWSCheckpoint(final CheckpointState checkpoint) {
     return maybeWsCheckpoint.map(c -> checkpoint.getEpoch().equals(c.getEpoch())).orElse(false);
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final WeakSubjectivityValidator that = (WeakSubjectivityValidator) o;
+    return Objects.equals(calculator, that.calculator)
+        && Objects.equals(violationPolicies, that.violationPolicies)
+        && Objects.equals(maybeWsCheckpoint, that.maybeWsCheckpoint);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(calculator, violationPolicies, maybeWsCheckpoint);
   }
 }

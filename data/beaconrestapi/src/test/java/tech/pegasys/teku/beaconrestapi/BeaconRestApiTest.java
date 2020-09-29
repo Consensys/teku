@@ -50,6 +50,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.validator.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToBeaconCommittee;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToPersistentSubnets;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -67,6 +68,7 @@ class BeaconRestApiTest {
   private final Javalin app = mock(Javalin.class);
   private final SyncService syncService = mock(SyncService.class);
   private final BlockImporter blockImporter = mock(BlockImporter.class);
+  private final EventChannels eventChannels = mock(EventChannels.class);
   private static final Integer THE_PORT = 12345;
   private AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
 
@@ -85,6 +87,7 @@ class BeaconRestApiTest {
             blockImporter,
             attestationPool),
         config,
+        eventChannels,
         app);
   }
 

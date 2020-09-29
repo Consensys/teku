@@ -45,6 +45,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -115,6 +116,7 @@ public class Eth2NetworkFactory {
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
     protected RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
     protected GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
+    private Optional<Checkpoint> requiredCheckpoint = Optional.empty();
     protected Duration eth2RpcPingInterval;
     protected Integer eth2RpcOutstandingPingThreshold;
     protected Duration eth2StatusUpdateInterval;
@@ -166,6 +168,7 @@ public class Eth2NetworkFactory {
                 METRICS_SYSTEM,
                 attestationSubnetService,
                 rpcEncoding,
+                requiredCheckpoint,
                 eth2RpcPingInterval,
                 eth2RpcOutstandingPingThreshold,
                 eth2StatusUpdateInterval,
@@ -305,6 +308,12 @@ public class Eth2NetworkFactory {
     public Eth2P2PNetworkBuilder gossipEncoding(final GossipEncoding gossipEncoding) {
       checkNotNull(gossipEncoding);
       this.gossipEncoding = gossipEncoding;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder setRequiredCheckpoint(
+        final Optional<Checkpoint> requiredCheckpoint) {
+      this.requiredCheckpoint = requiredCheckpoint;
       return this;
     }
 

@@ -81,7 +81,7 @@ class StoreTransactionUpdates {
 
   public void applyToStore(final Store store) {
     // Add new data
-    tx.time.ifPresent(value -> store.time = value);
+    tx.time.filter(t -> t.isGreaterThan(store.getTime())).ifPresent(value -> store.time = value);
     tx.genesis_time.ifPresent(value -> store.genesis_time = value);
     tx.justified_checkpoint.ifPresent(value -> store.justified_checkpoint = value);
     tx.best_justified_checkpoint.ifPresent(value -> store.best_justified_checkpoint = value);

@@ -78,7 +78,7 @@ public class V3RocksDbDatabaseTest extends AbstractRocksDbDatabaseTest {
     // Setup chains
     // Both chains share block up to slot 3
     final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
-    primaryChain.generateGenesis();
+    primaryChain.generateGenesis(genesisTime, true);
     primaryChain.generateBlocksUpToSlot(3);
     final ChainBuilder forkChain = primaryChain.fork();
     // Primary chain's next block is at 7
