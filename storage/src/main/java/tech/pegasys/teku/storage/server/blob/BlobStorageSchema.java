@@ -24,5 +24,5 @@ import tech.pegasys.teku.storage.server.rocksdb.schema.Schema;
 public interface BlobStorageSchema extends Schema {
 
   RocksDbColumn<Bytes32, Bytes> BLOBS =
-      RocksDbColumn.create(1, BYTES32_SERIALIZER, BYTES_SERIALIZER);
+      RocksDbColumn.createUnordered(1, BYTES32_SERIALIZER, BYTES_SERIALIZER);
 }

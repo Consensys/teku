@@ -23,11 +23,13 @@ import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 import org.rocksdb.BlockBasedTableConfig;
+import org.rocksdb.BloomFilter;
 import org.rocksdb.Cache;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.ColumnFamilyOptions;
 import org.rocksdb.DBOptions;
+import org.rocksdb.DataBlockIndexType;
 import org.rocksdb.Env;
 import org.rocksdb.LRUCache;
 import org.rocksdb.RocksDBException;
@@ -57,14 +59,12 @@ public class RocksDbInstanceFactory {
     final RocksDbStats rocksDbStats = new RocksDbStats(metricsSystem, metricCategory);
     final DBOptions dbOptions = createDBOptions(configuration, rocksDbStats.getStats());
     final LRUCache blockCache = new LRUCache(configuration.getCacheCapacity());
-    final ColumnFamilyOptions columnFamilyOptions =
-        createColumnFamilyOptions(configuration, blockCache);
     final List<AutoCloseable> resources =
-        new ArrayList<>(
-            List.of(txOptions, dbOptions, columnFamilyOptions, rocksDbStats, blockCache));
+        new ArrayList<>(List.of(txOptions, dbOptions, rocksDbStats, blockCache));
 
     List<ColumnFamilyDescriptor> columnDescriptors =
-        createColumnFamilyDescriptors(schema, columnFamilyOptions);
+        createColumnFamilyDescriptors(schema, configuration, blockCache);
+    columnDescriptors.stream().map(ColumnFamilyDescriptor::getOptions).forEach(resources::add);
     Map<Bytes, RocksDbColumn<?, ?>> columnsById =
         Schema.streamColumns(schema)
             .collect(Collectors.toMap(RocksDbColumn::getId, Function.identity()));
@@ -140,28 +140,56 @@ public class RocksDbInstanceFactory {
   }
 
   private static ColumnFamilyOptions createColumnFamilyOptions(
-      final RocksDbConfiguration configuration, final Cache cache) {
+      final RocksDbConfiguration configuration, final Cache cache, final boolean unordered) {
     return new ColumnFamilyOptions()
         .setCompressionType(configuration.getCompressionType())
         .setBottommostCompressionType(configuration.getBottomMostCompressionType())
-        .setTableFormatConfig(createBlockBasedTableConfig(cache));
+        .setTableFormatConfig(
+            unordered
+                ? createPointLookupBlockBasedTableConfig(cache)
+                : createBlockBasedTableConfig(cache));
   }
 
   private static List<ColumnFamilyDescriptor> createColumnFamilyDescriptors(
-      final Class<? extends Schema> schema, final ColumnFamilyOptions columnFamilyOptions) {
+      final Class<? extends Schema> schema,
+      final RocksDbConfiguration configuration,
+      final Cache cache) {
     List<ColumnFamilyDescriptor> columnDescriptors =
         Schema.streamColumns(schema)
             .map(
-                col -> new ColumnFamilyDescriptor(col.getId().toArrayUnsafe(), columnFamilyOptions))
+                col ->
+                    new ColumnFamilyDescriptor(
+                        col.getId().toArrayUnsafe(),
+                        createColumnFamilyOptions(configuration, cache, col.isUnordered())))
             .collect(Collectors.toList());
     columnDescriptors.add(
-        new ColumnFamilyDescriptor(Schema.DEFAULT_COLUMN_ID.toArrayUnsafe(), columnFamilyOptions));
+        new ColumnFamilyDescriptor(
+            Schema.DEFAULT_COLUMN_ID.toArrayUnsafe(),
+            createColumnFamilyOptions(configuration, cache, false)));
     return columnDescriptors;
   }
 
   private static BlockBasedTableConfig createBlockBasedTableConfig(final Cache cache) {
     return new BlockBasedTableConfig()
         .setBlockCache(cache)
+        .setCacheIndexAndFilterBlocks(true)
+        .setFormatVersion(4); // Use the latest format version (only applies to new tables)
+  }
+
+  /**
+   * Creates a table config with the same configuration as optimizeForPointLookup sets, but with a
+   * shared cache. See
+   * https://github.com/facebook/rocksdb/blob/7d472accdca996d7d83ae8ce78ad17f799696926/options/options.cc#L536
+   *
+   * @param cache the block cache to use
+   * @return table config suitable for data that only uses get/put and not iterators.
+   */
+  private static BlockBasedTableConfig createPointLookupBlockBasedTableConfig(final Cache cache) {
+    return new BlockBasedTableConfig()
+        .setBlockCache(cache)
+        .setDataBlockIndexType(DataBlockIndexType.kDataBlockBinaryAndHash)
+        .setDataBlockHashTableUtilRatio(0.75d)
+        .setFilterPolicy(new BloomFilter(10))
         .setCacheIndexAndFilterBlocks(true)
         .setFormatVersion(4); // Use the latest format version (only applies to new tables)
   }

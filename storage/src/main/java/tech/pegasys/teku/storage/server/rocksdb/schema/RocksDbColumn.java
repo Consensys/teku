@@ -22,12 +22,15 @@ public class RocksDbColumn<TKey, TValue> {
   private final Bytes id;
   private final RocksDbSerializer<TKey> keySerializer;
   private final RocksDbSerializer<TValue> valueSerializer;
+  private final boolean unordered;
 
   private RocksDbColumn(
       final byte[] id,
+      final boolean unordered,
       final RocksDbSerializer<TKey> keySerializer,
       final RocksDbSerializer<TValue> valueSerializer) {
     this.id = Bytes.wrap(id);
+    this.unordered = unordered;
     this.keySerializer = keySerializer;
     this.valueSerializer = valueSerializer;
   }
@@ -37,7 +40,15 @@ public class RocksDbColumn<TKey, TValue> {
       final RocksDbSerializer<K> keySerializer,
       final RocksDbSerializer<V> valueSerializer) {
     final byte byteId = toByteExact(id);
-    return new RocksDbColumn<>(new byte[] {byteId}, keySerializer, valueSerializer);
+    return new RocksDbColumn<>(new byte[] {byteId}, false, keySerializer, valueSerializer);
+  }
+
+  public static <K, V> RocksDbColumn<K, V> createUnordered(
+      final int id,
+      final RocksDbSerializer<K> keySerializer,
+      final RocksDbSerializer<V> valueSerializer) {
+    final byte byteId = toByteExact(id);
+    return new RocksDbColumn<>(new byte[] {byteId}, true, keySerializer, valueSerializer);
   }
 
   public Bytes getId() {
@@ -50,5 +61,9 @@ public class RocksDbColumn<TKey, TValue> {
 
   public RocksDbSerializer<TValue> getValueSerializer() {
     return valueSerializer;
+  }
+
+  public boolean isUnordered() {
+    return unordered;
   }
 }
