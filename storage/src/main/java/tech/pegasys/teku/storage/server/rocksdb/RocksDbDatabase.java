@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAG
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -187,6 +189,11 @@ public class RocksDbDatabase implements Database {
 
   @Override
   public Optional<StoreBuilder> createMemoryStore() {
+    return createMemoryStore(() -> Instant.now().getEpochSecond());
+  }
+
+  @VisibleForTesting
+  Optional<StoreBuilder> createMemoryStore(final Supplier<Long> timeSupplier) {
     Optional<UInt64> maybeGenesisTime = hotDao.getGenesisTime();
     if (maybeGenesisTime.isEmpty()) {
       // If genesis time hasn't been set, genesis hasn't happened and we have no data
@@ -223,7 +230,7 @@ public class RocksDbDatabase implements Database {
 
     // Make sure time is set to a reasonable value in the case where we start up before genesis when
     // the clock time would be prior to genesis
-    final long clockTime = Instant.now().getEpochSecond();
+    final long clockTime = timeSupplier.get();
     final UInt64 slotTime = genesisTime.plus(finalizedState.getSlot().times(SECONDS_PER_SLOT));
     final UInt64 time = slotTime.max(clockTime);
 
