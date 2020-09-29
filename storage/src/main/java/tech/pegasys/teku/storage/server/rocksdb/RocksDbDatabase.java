@@ -47,6 +47,7 @@ import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
+import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
@@ -235,8 +236,8 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
-    return hotDao.getWeakSubjectivityCheckpoint();
+  public WeakSubjectivityState getWeakSubjectivityState() {
+    return WeakSubjectivityState.create(hotDao.getWeakSubjectivityCheckpoint());
   }
 
   @Override

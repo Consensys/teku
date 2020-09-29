@@ -153,13 +153,13 @@ public abstract class AbstractDatabaseTest {
   public void updateWeakSubjectivityState_setValue() {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
-    assertThat(database.getWeakSubjectivityCheckpoint()).isEmpty();
+    assertThat(database.getWeakSubjectivityState().getCheckpoint()).isEmpty();
 
     final WeakSubjectivityUpdate update =
         WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(checkpoint);
     database.updateWeakSubjectivityState(update);
 
-    assertThat(database.getWeakSubjectivityCheckpoint()).contains(checkpoint);
+    assertThat(database.getWeakSubjectivityState().getCheckpoint()).contains(checkpoint);
   }
 
   @Test
@@ -171,13 +171,13 @@ public abstract class AbstractDatabaseTest {
     final WeakSubjectivityUpdate initUpdate =
         WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(checkpoint);
     database.updateWeakSubjectivityState(initUpdate);
-    assertThat(database.getWeakSubjectivityCheckpoint()).contains(checkpoint);
+    assertThat(database.getWeakSubjectivityState().getCheckpoint()).contains(checkpoint);
 
     // Clear the checkpoint
     final WeakSubjectivityUpdate update = WeakSubjectivityUpdate.clearWeakSubjectivityCheckpoint();
     database.updateWeakSubjectivityState(update);
 
-    assertThat(database.getWeakSubjectivityCheckpoint()).isEmpty();
+    assertThat(database.getWeakSubjectivityState().getCheckpoint()).isEmpty();
   }
 
   @Test
