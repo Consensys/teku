@@ -159,7 +159,7 @@ class ForkChoiceUtilTest {
   void on_tick_shouldExitImmediatelyWhenCurrentTimeIsBeforeGenesisTime() {
     final MutableStore store = mock(MutableStore.class);
     when(store.getGenesisTime()).thenReturn(UInt64.valueOf(3000));
-    when(store.getTime()).thenReturn(UInt64.valueOf(3000));
+    when(store.getTime()).thenReturn(UInt64.ZERO);
     ForkChoiceUtil.on_tick(store, UInt64.valueOf(2000));
 
     verify(store, never()).setTime(any());
