@@ -61,7 +61,7 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState initializeGenesis(final boolean signDeposits) {
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis(signDeposits);
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis(UInt64.ZERO, signDeposits);
     assertThat(recentChainData.initializeFromGenesis(genesis.getState())).isCompleted();
     return genesis;
   }
