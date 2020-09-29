@@ -4,7 +4,7 @@ CREATE TABLE block (
   slot INTEGER NOT NULL,
   parentRoot BINARY(32) NOT NULL,
   finalized BOOLEAN NOT NULL,
-  ssz LONGBLOB
+  blobId INTEGER
 );
 CREATE INDEX idxBlockSlot ON block(slot);
 
@@ -12,7 +12,7 @@ CREATE TABLE state (
   stateRoot BINARY(32) NOT NULL PRIMARY KEY,
   blockRoot BINARY(32) NOT NULL,
   slot INTEGER NOT NULL,
-  ssz LONGBLOB
+  blobId INTEGER
 );
 CREATE INDEX idxStateBlockRootSlot ON state(blockRoot, slot);
 CREATE INDEX idxStateSlot ON state(slot);

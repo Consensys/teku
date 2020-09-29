@@ -395,6 +395,8 @@ public class SqlDatabase implements Database {
 
   @Override
   public void close() {
+    chainStorage.close();
     eth1Storage.close();
+    protoArrayStorage.close();
   }
 }

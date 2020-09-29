@@ -128,9 +128,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
             archiveDirectory.getAbsolutePath());
         break;
       case SQL1:
-        database =
-            SqlDatabaseFactory.create(
-                dbDirectory.toPath(), stateStorageMode, stateStorageFrequency, metricsSystem);
+        database = createSql1Database();
         LOG.trace(
             "Created FileSystem database ({}) at {}",
             dbVersion.getValue(),
@@ -183,6 +181,22 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           metaData.getArchiveDbConfiguration().withDatabaseDir(archiveDirectory.toPath()),
           stateStorageMode,
           stateStorageFrequency);
+    } catch (final IOException e) {
+      throw new DatabaseStorageException("Failed to read metadata", e);
+    }
+  }
+
+  private Database createSql1Database() {
+    try {
+      final DatabaseMetadata metaData =
+          DatabaseMetadata.init(getMetadataFile(), DatabaseMetadata.v5Defaults());
+      DatabaseNetwork.init(getNetworkFile(), Constants.GENESIS_FORK_VERSION, eth1Address);
+      return SqlDatabaseFactory.create(
+          dbDirectory.toPath(),
+          stateStorageMode,
+          stateStorageFrequency,
+          metricsSystem,
+          metaData.getArchiveDbConfiguration().withDatabaseDir(archiveDirectory.toPath()));
     } catch (final IOException e) {
       throw new DatabaseStorageException("Failed to read metadata", e);
     }

@@ -23,7 +23,7 @@ import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 
-public class AbstractSqlTransaction implements AutoCloseable {
+public class AbstractSqlTransaction extends SqlQueryUtils implements AutoCloseable {
 
   private final AtomicBoolean closed = new AtomicBoolean(false);
 
@@ -35,6 +35,7 @@ public class AbstractSqlTransaction implements AutoCloseable {
       final TransactionStatus transaction,
       final PlatformTransactionManager transactionManager,
       final JdbcOperations jdbc) {
+    super(jdbc);
     this.transaction = transaction;
     this.transactionManager = transactionManager;
     this.jdbc = jdbc;
@@ -55,14 +56,22 @@ public class AbstractSqlTransaction implements AutoCloseable {
 
   public void commit() {
     if (closed.compareAndSet(false, true)) {
-      transactionManager.commit(transaction);
+      doCommit();
     }
+  }
+
+  protected void doCommit() {
+    transactionManager.commit(transaction);
   }
 
   @Override
   public void close() {
     if (closed.compareAndSet(false, true)) {
-      transactionManager.rollback(transaction);
+      doRollback();
     }
+  }
+
+  protected void doRollback() {
+    transactionManager.rollback(transaction);
   }
 }

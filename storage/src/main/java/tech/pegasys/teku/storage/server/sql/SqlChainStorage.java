@@ -15,13 +15,20 @@ package tech.pegasys.teku.storage.server.sql;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -36,12 +43,20 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.storage.server.blob.BlobStorage;
+import tech.pegasys.teku.storage.server.blob.BlobStorage.BlobTransaction;
 
 public class SqlChainStorage extends AbstractSqlStorage {
+  private static final Logger LOG = LogManager.getLogger();
+
+  private final BlobStorage blobStorage;
 
   public SqlChainStorage(
-      PlatformTransactionManager transactionManager, final ComboPooledDataSource dataSource) {
+      PlatformTransactionManager transactionManager,
+      final ComboPooledDataSource dataSource,
+      final BlobStorage blobStorage) {
     super(transactionManager, dataSource);
+    this.blobStorage = blobStorage;
   }
 
   @MustBeClosed
@@ -49,7 +64,8 @@ public class SqlChainStorage extends AbstractSqlStorage {
     return new Transaction(
         transactionManager.getTransaction(TransactionDefinition.withDefaults()),
         transactionManager,
-        jdbc);
+        jdbc,
+        blobStorage.startTransaction());
   }
 
   public Optional<SignedBeaconBlock> getBlockByBlockRoot(final Bytes32 blockRoot) {
@@ -62,24 +78,24 @@ public class SqlChainStorage extends AbstractSqlStorage {
 
   public Optional<SignedBeaconBlock> getBlockByBlockRoot(
       final Bytes32 blockRoot, final boolean onlyNonFinalized) {
-    String sql = "SELECT ssz FROM block WHERE blockRoot = ?";
+    String sql = "SELECT blobId FROM block WHERE blockRoot = ?";
     if (onlyNonFinalized) {
       sql += " AND finalized == 0";
     }
-    return loadSingle(sql, (rs, rowNum) -> getSsz(rs, SignedBeaconBlock.class), blockRoot);
+    return loadSingle(sql, (rs, rowNum) -> getBlob(rs, SignedBeaconBlock.class), blockRoot);
   }
 
   public Optional<SignedBeaconBlock> getFinalizedBlockBySlot(final UInt64 slot) {
     return loadSingle(
-        "SELECT ssz FROM block WHERE slot = ? AND finalized = true",
-        (rs, rowNum) -> getSsz(rs, SignedBeaconBlock.class),
+        "SELECT blobId FROM block WHERE slot = ? AND finalized = true",
+        (rs, rowNum) -> getBlob(rs, SignedBeaconBlock.class),
         slot.bigIntegerValue());
   }
 
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     return loadSingle(
-        "SELECT ssz FROM block WHERE slot <= ? AND finalized = true ORDER BY slot DESC LIMIT 1",
-        (rs, rowNum) -> getSsz(rs, SignedBeaconBlock.class),
+        "SELECT blobId FROM block WHERE slot <= ? AND finalized = true ORDER BY slot DESC LIMIT 1",
+        (rs, rowNum) -> getBlob(rs, SignedBeaconBlock.class),
         slot.bigIntegerValue());
   }
 
@@ -102,41 +118,41 @@ public class SqlChainStorage extends AbstractSqlStorage {
     return SqlStream.stream(
         jdbc,
         20,
-        "SELECT ssz FROM block WHERE finalized = true AND slot >= ? AND slot <= ? ORDER BY slot",
-        (rs, rowNum) -> getSsz(rs, SignedBeaconBlock.class),
+        "SELECT blobId FROM block WHERE finalized = true AND slot >= ? AND slot <= ? ORDER BY slot",
+        (rs, rowNum) -> getBlob(rs, SignedBeaconBlock.class),
         startSlot.bigIntegerValue(),
         endSlot.bigIntegerValue());
   }
 
   public Optional<BeaconState> getStateByBlockRoot(final Bytes32 blockRoot) {
     return loadSingle(
-        "SELECT ssz FROM state WHERE blockRoot = ? ORDER BY slot LIMIT 1",
-        (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class),
+        "SELECT blobId FROM state WHERE blockRoot = ? ORDER BY slot LIMIT 1",
+        (rs, rowNum) -> getBlob(rs, BeaconStateImpl.class),
         blockRoot);
   }
 
   public Optional<BeaconState> getHotStateByBlockRoot(final Bytes32 blockRoot) {
     return loadSingle(
-        "         SELECT s.ssz "
+        "         SELECT s.blobId "
             + "     FROM state s "
             + "     JOIN block b ON b.blockRoot = s.blockRoot "
             + "    WHERE s.blockRoot = ? "
             + "      AND b.finalized = 0 "
             + " ORDER BY s.slot LIMIT 1",
-        (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class),
+        (rs, rowNum) -> getBlob(rs, BeaconStateImpl.class),
         blockRoot);
   }
 
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
     return loadSingle(
-        "        SELECT s.ssz FROM state s "
+        "        SELECT s.blobId FROM state s "
             + "    JOIN block b ON s.blockRoot = b.blockRoot"
             + "   WHERE s.slot <= ? "
-            + "     AND s.ssz IS NOT NULL "
+            + "     AND s.blobId IS NOT NULL "
             + "     AND b.finalized "
             + "ORDER BY s.slot DESC "
             + "   LIMIT 1",
-        (rs, rowNum) -> getSsz(rs, BeaconStateImpl.class),
+        (rs, rowNum) -> getBlob(rs, BeaconStateImpl.class),
         maxSlot);
   }
 
@@ -168,13 +184,34 @@ public class SqlChainStorage extends AbstractSqlStorage {
     return votes;
   }
 
+  protected <T> T getBlob(final ResultSet rs, final Class<? extends T> type) throws SQLException {
+    final Bytes32 blobId = getBytes32(rs, "blobId");
+    if (blobId == null) {
+      return null;
+    }
+    return blobStorage
+        .load(blobId)
+        .map(data -> SimpleOffsetSerializer.deserialize(data, type))
+        .orElse(null);
+  }
+
+  @Override
+  public void close() {
+    super.close();
+    blobStorage.close();
+  }
+
   public static class Transaction extends AbstractSqlTransaction {
+
+    private final BlobTransaction blobStorageTransaction;
 
     protected Transaction(
         final TransactionStatus transaction,
         final PlatformTransactionManager transactionManager,
-        final JdbcOperations jdbc) {
+        final JdbcOperations jdbc,
+        final BlobTransaction blobStorageTransaction) {
       super(transaction, transactionManager, jdbc);
+      this.blobStorageTransaction = blobStorageTransaction;
     }
 
     public void storeBlock(final SignedBeaconBlock block, final boolean finalized) {
@@ -183,18 +220,20 @@ public class SqlChainStorage extends AbstractSqlStorage {
 
     public void storeBlocks(final Collection<SignedBeaconBlock> blocks, final boolean finalized) {
       batchUpdate(
-          "INSERT INTO block (blockRoot, slot, parentRoot, finalized, ssz) VALUES (?, ?, ?, ?, ?) "
+          "INSERT INTO block (blockRoot, slot, parentRoot, finalized, blobId) VALUES (?, ?, ?, ?, ?) "
               + " ON CONFLICT(blockRoot) DO UPDATE SET finalized = IIF(excluded.finalized, TRUE, finalized)",
           blocks.stream()
               .map(
-                  block ->
-                      new Object[] {
-                        block.getRoot(),
-                        block.getSlot(),
-                        block.getParent_root(),
-                        finalized,
-                        serializeSsz(block)
-                      }));
+                  block -> {
+                    final Bytes32 blockRoot = block.getRoot();
+                    return new Object[] {
+                      blockRoot,
+                      block.getSlot(),
+                      block.getParent_root(),
+                      finalized,
+                      storeBlob(blockRoot, block)
+                    };
+                  }));
     }
 
     public void finalizeBlocks(final Collection<Bytes32> blockRoots) {
@@ -205,9 +244,17 @@ public class SqlChainStorage extends AbstractSqlStorage {
       final int deletedRows =
           execSql("DELETE FROM block WHERE blockRoot = ? AND NOT finalized", blockRoot);
       if (deletedRows > 0) {
-        // Delete any associated states as well.
-        execSql("DELETE FROM state WHERE blockRoot = ?", blockRoot);
+        blobStorageTransaction.delete(blockRoot);
+        deleteStatesByBlockRoot(blockRoot);
       }
+    }
+
+    private void deleteStatesByBlockRoot(final Bytes32 blockRoot) {
+      loadForEach(
+          "SELECT stateRoot FROM state WHERE blockRoot = ?",
+          rs -> blobStorageTransaction.delete(getBytes32(rs, "stateRoot")),
+          blockRoot);
+      execSql("DELETE FROM state WHERE blockRoot = ?", blockRoot);
     }
 
     public void storeStateRoots(final Map<Bytes32, SlotAndBlockRoot> stateRoots) {
@@ -224,51 +271,88 @@ public class SqlChainStorage extends AbstractSqlStorage {
 
     public void storeStates(final Map<Bytes32, BeaconState> states) {
       batchUpdate(
-          "INSERT INTO state (stateRoot, blockRoot, slot, ssz) VALUES (?, ?, ?, ?)"
-              + " ON CONFLICT(stateRoot) DO UPDATE SET ssz = excluded.ssz",
+          "INSERT INTO state (stateRoot, blockRoot, slot, blobId) VALUES (?, ?, ?, ?)"
+              + " ON CONFLICT(stateRoot) DO UPDATE SET blobId = excluded.blobId",
           states.entrySet().stream()
               .map(
                   entry -> {
                     final Bytes32 blockRoot = entry.getKey();
                     final BeaconState state = entry.getValue();
+                    final Bytes32 stateRoot = state.hash_tree_root();
                     return new Object[] {
-                      state.hash_tree_root(), blockRoot, state.getSlot(), serializeSsz(state)
+                      stateRoot, blockRoot, state.getSlot(), storeBlob(stateRoot, state)
                     };
                   }));
     }
 
     /** Deletes any states prior to the most recent finalized state. */
     public void pruneFinalizedStates() {
-      execSql(
-          " DELETE FROM state "
-              + " WHERE slot < "
-              + "    (SELECT MAX(s2.slot) "
-              + "      FROM state s2 "
-              + "      JOIN block b ON s2.blockRoot = b.blockRoot "
-              + "     WHERE b.finalized"
-              + "       AND s2.ssz IS NOT NULL)");
+      final Optional<UInt64> latestFinalizedStateSlot =
+          loadSingle(
+              "     SELECT MAX(s.slot) AS latestFinalizedStateSlot"
+                  + " FROM state s "
+                  + " JOIN block b ON s.blockRoot = b.blockRoot "
+                  + "WHERE b.finalized "
+                  + "  AND s.blobId IS NOT NULL",
+              (rs, rowNum) -> getUInt64(rs, "latestFinalizedStateSlot"));
+      if (latestFinalizedStateSlot.isEmpty()) {
+        LOG.debug("Skipping pruning as no latest finalized state found.");
+        return;
+      }
+      loadForEach(
+          "SELECT stateRoot FROM state WHERE slot < ?",
+          rs -> blobStorageTransaction.delete(getBytes32(rs, "stateRoot")),
+          latestFinalizedStateSlot.get());
+      execSql(" DELETE FROM state " + " WHERE slot < ?", latestFinalizedStateSlot.get());
     }
 
     /**
-     * Deletes the SSZ for states to reduce the number of retained states to match the specified
-     * state storage frequency.
+     * Deletes the stored data for states to reduce the number of retained states to match the
+     * specified state storage frequency.
      */
     public void trimFinalizedStates(
         final UInt64 afterSlot,
         final UInt64 latestFinalizedSlot,
         final UInt64 stateStorageFrequency) {
-      execSql(
-          " UPDATE state AS s1"
-              + "   SET ssz = null "
-              + " WHERE slot > ? "
-              + "   AND slot <= ?  "
-              + "   AND slot < ? + (SELECT MAX(s2.slot) "
-              + "                       FROM state s2 "
-              + "                      WHERE s2.slot < s1.slot"
-              + "                        AND s2.ssz IS NOT NULL)",
-          afterSlot,
-          latestFinalizedSlot,
-          stateStorageFrequency);
+      final NavigableMap<UInt64, Bytes32> availableStateRootsBySlot =
+          loadMap(
+              new TreeMap<>(),
+              "     SELECT slot, stateRoot "
+                  + " FROM state "
+                  + "WHERE blobId IS NOT NULL "
+                  + "  AND slot > ? "
+                  + "  AND slot <= ?",
+              rs -> getUInt64(rs, "slot"),
+              rs -> getBytes32(rs, "stateRoot"),
+              afterSlot,
+              latestFinalizedSlot);
+      if (availableStateRootsBySlot.isEmpty()) {
+        return;
+      }
+      final Optional<UInt64> priorAvailableSlot =
+          loadSingle(
+              "     SELECT MAX(slot) AS priorAvailableSlot "
+                  + " FROM state "
+                  + "WHERE blobId IS NOT NULL "
+                  + "  AND slot <= ?",
+              (rs, rowNum) -> getUInt64(rs, "priorAvailableSlot"),
+              afterSlot);
+      final Set<Bytes32> rootsToDelete = new HashSet<>();
+      UInt64 lastAvailableSlot =
+          priorAvailableSlot.orElseGet(() -> availableStateRootsBySlot.pollFirstEntry().getKey());
+      while (!availableStateRootsBySlot.isEmpty()) {
+        final NavigableMap<UInt64, Bytes32> statesWithinFrequency =
+            availableStateRootsBySlot.headMap(lastAvailableSlot.plus(stateStorageFrequency), false);
+        rootsToDelete.addAll(statesWithinFrequency.values());
+        statesWithinFrequency.clear();
+        if (availableStateRootsBySlot.isEmpty()) {
+          break;
+        }
+        lastAvailableSlot = availableStateRootsBySlot.pollFirstEntry().getKey();
+      }
+
+      rootsToDelete.forEach(blobStorageTransaction::delete);
+      batchUpdate("DELETE FROM state WHERE stateRoot = ?", rootsToDelete);
     }
 
     public void storeCheckpoint(final CheckpointType type, final Checkpoint checkpoint) {
@@ -302,8 +386,20 @@ public class SqlChainStorage extends AbstractSqlStorage {
                       }));
     }
 
-    private Bytes serializeSsz(final SimpleOffsetSerializable obj) {
-      return SimpleOffsetSerializer.serialize(obj);
+    @Override
+    protected void doCommit() {
+      blobStorageTransaction.commit();
+      super.doCommit();
+    }
+
+    @Override
+    protected void doRollback() {
+      blobStorageTransaction.close();
+      super.doRollback();
+    }
+
+    private Bytes32 storeBlob(final Bytes32 id, final SimpleOffsetSerializable obj) {
+      return blobStorageTransaction.store(id, obj);
     }
   }
 }

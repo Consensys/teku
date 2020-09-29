@@ -39,6 +39,7 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.storage.server.blob.InMemoryBlobStorage;
 
 class SqlChainStorageTest {
 
@@ -48,6 +49,7 @@ class SqlChainStorageTest {
 
   Path dbDir;
 
+  private final InMemoryBlobStorage blobStorage = new InMemoryBlobStorage();
   private ComboPooledDataSource dataSource;
   private SqlChainStorage storage;
 
@@ -69,7 +71,7 @@ class SqlChainStorageTest {
 
     final PlatformTransactionManager transactionManager =
         new DataSourceTransactionManager(dataSource);
-    storage = new SqlChainStorage(transactionManager, dataSource);
+    storage = new SqlChainStorage(transactionManager, dataSource, blobStorage);
   }
 
   @AfterEach
@@ -179,7 +181,7 @@ class SqlChainStorageTest {
     final Bytes32 blockRoot = blockAndState.getRoot();
     try (final SqlChainStorage.Transaction transaction = storage.startTransaction()) {
       transaction.storeBlock(blockAndState.getBlock(), false);
-      transaction.storeState(blockRoot, state);
+      transaction.storeStates(Map.of(blockRoot, state));
       transaction.commit();
     }
 
@@ -197,7 +199,7 @@ class SqlChainStorageTest {
     final Bytes32 blockRoot = blockAndState.getRoot();
     try (final SqlChainStorage.Transaction transaction = storage.startTransaction()) {
       transaction.storeBlock(blockAndState.getBlock(), true);
-      transaction.storeState(blockRoot, state);
+      transaction.storeStates(Map.of(blockRoot, state));
       transaction.commit();
     }
 
@@ -216,7 +218,7 @@ class SqlChainStorageTest {
 
     try (final SqlChainStorage.Transaction transaction = storage.startTransaction()) {
       transaction.storeBlock(blockAndState.getBlock(), false);
-      transaction.storeState(blockRoot, state);
+      transaction.storeStates(Map.of(blockRoot, state));
       transaction.deleteHotBlockByBlockRoot(blockAndState.getRoot());
       transaction.commit();
     }
@@ -233,7 +235,7 @@ class SqlChainStorageTest {
 
     try (final SqlChainStorage.Transaction transaction = storage.startTransaction()) {
       transaction.storeBlock(blockAndState.getBlock(), true);
-      transaction.storeState(blockRoot, state);
+      transaction.storeStates(Map.of(blockRoot, state));
       transaction.deleteHotBlockByBlockRoot(blockAndState.getRoot());
       transaction.commit();
     }
@@ -253,9 +255,14 @@ class SqlChainStorageTest {
       transaction.storeBlock(blockAndState1.getBlock(), true);
       transaction.storeBlock(blockAndState2.getBlock(), true);
       transaction.storeBlock(blockAndState3.getBlock(), true);
-      transaction.storeState(blockAndState1.getRoot(), blockAndState1.getState());
-      transaction.storeState(blockAndState2.getRoot(), blockAndState2.getState());
-      transaction.storeState(blockAndState3.getRoot(), blockAndState3.getState());
+      transaction.storeStates(
+          Map.of(
+              blockAndState1.getRoot(),
+              blockAndState1.getState(),
+              blockAndState2.getRoot(),
+              blockAndState2.getState(),
+              blockAndState3.getRoot(),
+              blockAndState3.getState()));
       transaction.pruneFinalizedStates();
       transaction.commit();
     }
@@ -295,7 +302,7 @@ class SqlChainStorageTest {
               blockAndState11,
               blockAndState13)) {
         transaction.storeBlock(blockAndState.getBlock(), true);
-        transaction.storeState(blockAndState.getRoot(), blockAndState.getState());
+        transaction.storeStates(Map.of(blockAndState.getRoot(), blockAndState.getState()));
       }
       transaction.trimFinalizedStates(UInt64.valueOf(2), UInt64.valueOf(12), UInt64.valueOf(3));
       transaction.commit();

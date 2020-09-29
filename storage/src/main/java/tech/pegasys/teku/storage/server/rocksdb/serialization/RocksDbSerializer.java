@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.serialization;
 
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -28,6 +29,7 @@ import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 
 public interface RocksDbSerializer<T> {
   RocksDbSerializer<UInt64> UINT64_SERIALIZER = new UInt64Serializer();
+  RocksDbSerializer<Bytes> BYTES_SERIALIZER = new BytesSerializer<>(Bytes::wrap);
   RocksDbSerializer<Bytes32> BYTES32_SERIALIZER = new BytesSerializer<>(Bytes32::wrap);
   RocksDbSerializer<SignedBeaconBlock> SIGNED_BLOCK_SERIALIZER =
       new SszSerializer<>(SignedBeaconBlock.class);

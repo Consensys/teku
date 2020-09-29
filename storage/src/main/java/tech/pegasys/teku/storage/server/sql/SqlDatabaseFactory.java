@@ -21,8 +21,14 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.sqlite.SQLiteDataSource;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.Database;
+import tech.pegasys.teku.storage.server.blob.BlobStorage;
+import tech.pegasys.teku.storage.server.blob.BlobStorageSchema;
+import tech.pegasys.teku.storage.server.blob.RocksDbBlobStorage;
+import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
+import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbInstanceFactory;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -34,19 +40,31 @@ public class SqlDatabaseFactory {
       final Path dbDir,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final RocksDbConfiguration rocksDbConfiguration) {
     final ComboPooledDataSource dataSource = initDataSource(dbDir);
 
     final PlatformTransactionManager transactionManager =
         new DataSourceTransactionManager(dataSource);
 
+    final BlobStorage blobStorage = createBlobStorage(metricsSystem, rocksDbConfiguration);
     return new SqlDatabase(
         metricsSystem,
-        new SqlChainStorage(transactionManager, dataSource),
+        new SqlChainStorage(transactionManager, dataSource, blobStorage),
         new SqlEth1Storage(transactionManager, dataSource),
         new SqlProtoArrayStorage(transactionManager, dataSource),
         stateStorageMode,
         UInt64.valueOf(stateStorageFrequency));
+  }
+
+  private static RocksDbBlobStorage createBlobStorage(
+      final MetricsSystem metricsSystem, final RocksDbConfiguration hotDbConfiguration) {
+    return new RocksDbBlobStorage(
+        RocksDbInstanceFactory.create(
+            metricsSystem,
+            TekuMetricCategory.STORAGE,
+            hotDbConfiguration,
+            BlobStorageSchema.class));
   }
 
   @VisibleForTesting
@@ -68,7 +86,10 @@ public class SqlDatabaseFactory {
   static ComboPooledDataSource createDataSource(final Path dbDir) {
     final ComboPooledDataSource dataSource = new ComboPooledDataSource();
     dataSource.setDataSourceName(SQLiteDataSource.class.getName());
-    dataSource.setJdbcUrl("jdbc:sqlite:" + dbDir.resolve(DB_FILENAME).toAbsolutePath() + "?journal_mode=WAL&busy_timeout=2000&mmap_size=268435456");
+    dataSource.setJdbcUrl(
+        "jdbc:sqlite:"
+            + dbDir.resolve(DB_FILENAME).toAbsolutePath()
+            + "?journal_mode=WAL&busy_timeout=5000&mmap_size=268435456");
     dataSource.setMaxStatements(250);
     return dataSource;
   }

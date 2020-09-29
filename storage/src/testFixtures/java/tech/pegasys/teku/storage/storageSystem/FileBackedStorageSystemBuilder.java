@@ -117,7 +117,11 @@ public class FileBackedStorageSystemBuilder {
 
   private Database createSql1Database() {
     return SqlDatabaseFactory.create(
-        hotDir, storageMode, stateStorageFrequency, new StubMetricsSystem());
+        hotDir,
+        storageMode,
+        stateStorageFrequency,
+        new StubMetricsSystem(),
+        RocksDbConfiguration.v5ArchiveDefaults().withDatabaseDir(archiveDir));
   }
 
   private Database createV5Database() {
