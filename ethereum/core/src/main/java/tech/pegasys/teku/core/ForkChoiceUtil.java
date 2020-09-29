@@ -193,7 +193,7 @@ public class ForkChoiceUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_tick</a>
    */
   public static void on_tick(MutableStore store, UInt64 time) {
-    if (store.getGenesisTime().isGreaterThan(time)) {
+    if (store.getTime().isGreaterThan(time)) {
       return;
     }
     UInt64 previous_slot = get_current_slot(store);

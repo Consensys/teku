@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.store;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.core.stategenerator.CheckpointStateTask.AsyncStateProvider.fromBlockAndState;
 
 import com.google.common.collect.Sets;
@@ -90,6 +91,12 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
 
   @Override
   public void setTime(UInt64 time) {
+    final UInt64 storeTime = store.getTime();
+    checkArgument(
+        time.isGreaterThanOrEqualTo(storeTime),
+        "Cannot revert time from %s to %s",
+        storeTime,
+        time);
     this.time = Optional.of(time);
   }
 
