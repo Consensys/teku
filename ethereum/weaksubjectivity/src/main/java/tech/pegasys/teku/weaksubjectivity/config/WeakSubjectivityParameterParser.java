@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class WeakSubjectivityParameterParser {
   static final String CHECKPOINT_ERROR =
-      "Checkpoint arguments should be formatted as: <blockRoot>:<epochNumber> where blockRoot is a hex-encoded 32 byte value and epochNumber is a number in decimal format";
+      "Weak subjectivity checkpoint arguments should be formatted as: <blockRoot>:<epochNumber> where blockRoot is a hex-encoded 32 byte value and epochNumber is a number in decimal format";
 
   public Checkpoint parseCheckpoint(final String checkpointString) {
     checkNotNull(checkpointString);
