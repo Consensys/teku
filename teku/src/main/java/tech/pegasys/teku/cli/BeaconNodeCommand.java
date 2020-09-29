@@ -55,6 +55,7 @@ import tech.pegasys.teku.cli.subcommand.SlashingProtectionCommand;
 import tech.pegasys.teku.cli.subcommand.TransitionCommand;
 import tech.pegasys.teku.cli.subcommand.UnstableOptionsCommand;
 import tech.pegasys.teku.cli.subcommand.ValidatorClientCommand;
+import tech.pegasys.teku.cli.subcommand.admin.AdminCommand;
 import tech.pegasys.teku.cli.subcommand.debug.DebugToolsCommand;
 import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
@@ -73,6 +74,7 @@ import tech.pegasys.teku.util.config.NetworkDefinition;
     name = "teku",
     subcommands = {
       CommandLine.HelpCommand.class,
+      AdminCommand.class,
       TransitionCommand.class,
       PeerCommand.class,
       DepositCommand.class,

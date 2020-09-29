@@ -36,6 +36,10 @@ public class WeakSubjectivityState {
     return checkpoint;
   }
 
+  public boolean isEmpty() {
+    return checkpoint.isEmpty();
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) return true;
@@ -47,5 +51,10 @@ public class WeakSubjectivityState {
   @Override
   public int hashCode() {
     return Objects.hash(checkpoint);
+  }
+
+  @Override
+  public String toString() {
+    return "WeakSubjectivityState{" + "checkpoint=" + checkpoint + '}';
   }
 }
