@@ -13,16 +13,22 @@
 
 package tech.pegasys.teku.storage.server.rocksdb;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
@@ -31,6 +37,8 @@ import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbEth1Dao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbFinalizedDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbHotDao;
+import tech.pegasys.teku.storage.store.StoreBuilder;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
@@ -56,6 +64,26 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
 
     final SafeFuture<Void> result = transaction.commit();
     assertThatThrownBy(result::get).hasCauseInstanceOf(ShuttingDownException.class);
+  }
+
+  @Test
+  public void createMemoryStore_priorToGenesisTime() {
+    database.storeGenesis(genesisAnchor);
+
+    final Optional<StoreBuilder> storeBuilder =
+        ((RocksDbDatabase) database).createMemoryStore(() -> 0L);
+    assertThat(storeBuilder).isNotEmpty();
+
+    final SafeFuture<UpdatableStore> storeFuture =
+        storeBuilder
+            .get()
+            .asyncRunner(mock(AsyncRunner.class))
+            .blockProvider(mock(BlockProvider.class))
+            .stateProvider(mock(StateAndBlockProvider.class))
+            .build();
+
+    assertThat(storeFuture).isCompleted();
+    assertThat(storeFuture.join().getTime()).isEqualTo(genesisTime);
   }
 
   @Test

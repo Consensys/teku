@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import java.util.List;
@@ -34,6 +35,46 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
 
 public class StoreTransactionTest extends AbstractStoreTest {
+
+  @Test
+  public void setTime_failsWhenValueIsOlderThanCurrentTime() {
+    final UpdatableStore store = createGenesisStore();
+
+    // Make sure time is non-zero
+    setTime(store, store.getTime().plus(10));
+
+    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    final UInt64 invalidTime = store.getTime().minus(1);
+    assertThatThrownBy(() -> tx.setTime(invalidTime))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            String.format("Cannot revert time from %s to %s", store.getTime(), invalidTime));
+  }
+
+  @Test
+  public void setTime_doesNotOverwriteNewerValue() {
+    final UpdatableStore store = createGenesisStore();
+
+    // Make sure time is non-zero
+    setTime(store, store.getTime().plus(10));
+
+    final StoreTransaction txA = store.startTransaction(storageUpdateChannel);
+    final UInt64 timeA = store.getTime().plus(1);
+
+    final UInt64 timeB = timeA.plus(1);
+    setTime(store, timeB);
+    assertThat(store.getTime()).isEqualTo(timeB);
+
+    // Commit tx, time should not be updated
+    assertThat(txA.commit()).isCompleted();
+    assertThat(store.getTime()).isEqualTo(timeB);
+  }
+
+  private void setTime(UpdatableStore store, final UInt64 newTime) {
+    final StoreTransaction tx = store.startTransaction(storageUpdateChannel);
+    tx.setTime(newTime);
+    assertThat(tx.commit()).isCompleted();
+  }
 
   @Test
   public void getLatestFinalizedBlockAndState_fromUnderlyingStore() {
