@@ -21,6 +21,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,6 +49,8 @@ public class WeakSubjectivityValidator {
 
   private final WeakSubjectivityConfig config;
   private volatile Optional<UInt64> suppressWSPeriodErrorsUntilEpoch = Optional.empty();
+  private final AtomicReference<UInt64> lastSlotWithErrorLogged =
+      new AtomicReference<>(UInt64.ZERO);
 
   WeakSubjectivityValidator(
       final WeakSubjectivityConfig config,
@@ -144,7 +147,8 @@ public class WeakSubjectivityValidator {
     if (!withinWSPeriod && !shouldSuppressErrors) {
       handleFinalizedCheckpointOutsideWSPeriod(latestFinalizedCheckpoint, currentSlot);
     } else if (!withinWSPeriod
-        && currentSlot.mod(SUPPRESSION_WARNING_FREQUENCY_IN_SLOTS).equals(UInt64.ZERO)) {
+        && currentSlot.mod(SUPPRESSION_WARNING_FREQUENCY_IN_SLOTS).equals(UInt64.ZERO)
+        && lastSlotWithErrorLogged.getAndUpdate(__ -> currentSlot).isLessThan(currentSlot)) {
       LOG.warn(
           "Suppressing weak subjectivity errors until epoch {}", suppressionEpoch.orElseThrow());
     }
