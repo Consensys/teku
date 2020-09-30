@@ -42,15 +42,15 @@ public class WeakSubjectivityValidator {
   private final WeakSubjectivityCalculator calculator;
   private final List<WeakSubjectivityViolationPolicy> violationPolicies;
 
-  private final Optional<Checkpoint> maybeWsCheckpoint;
+  private final WeakSubjectivityConfig config;
 
   WeakSubjectivityValidator(
+      final WeakSubjectivityConfig config,
       WeakSubjectivityCalculator calculator,
-      List<WeakSubjectivityViolationPolicy> violationPolicies,
-      Optional<Checkpoint> wsCheckpoint) {
+      List<WeakSubjectivityViolationPolicy> violationPolicies) {
     this.calculator = calculator;
     this.violationPolicies = violationPolicies;
-    this.maybeWsCheckpoint = wsCheckpoint;
+    this.config = config;
   }
 
   public static WeakSubjectivityValidator strict(final WeakSubjectivityConfig config) {
@@ -59,8 +59,7 @@ public class WeakSubjectivityValidator {
         List.of(
             new LoggingWeakSubjectivityViolationPolicy(Level.FATAL),
             new StrictWeakSubjectivityViolationPolicy());
-    return new WeakSubjectivityValidator(
-        calculator, policies, config.getWeakSubjectivityCheckpoint());
+    return new WeakSubjectivityValidator(config, calculator, policies);
   }
 
   public static WeakSubjectivityValidator lenient() {
@@ -71,22 +70,21 @@ public class WeakSubjectivityValidator {
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     final List<WeakSubjectivityViolationPolicy> policies =
         List.of(new LoggingWeakSubjectivityViolationPolicy(Level.TRACE));
-    return new WeakSubjectivityValidator(
-        calculator, policies, config.getWeakSubjectivityCheckpoint());
+    return new WeakSubjectivityValidator(config, calculator, policies);
   }
 
   public Optional<Checkpoint> getWSCheckpoint() {
-    return maybeWsCheckpoint;
+    return config.getWeakSubjectivityCheckpoint();
   }
 
   /** Check whether the chain matches any configured weak subjectivity checkpoint or state */
   public SafeFuture<Void> validateChainIsConsistentWithWSCheckpoint(
       CombinedChainDataClient chainData) {
-    if (maybeWsCheckpoint.isEmpty()) {
+    if (config.getWeakSubjectivityCheckpoint().isEmpty()) {
       // Nothing to validate against
       return SafeFuture.COMPLETE;
     }
-    final Checkpoint wsCheckpoint = maybeWsCheckpoint.get();
+    final Checkpoint wsCheckpoint = config.getWeakSubjectivityCheckpoint().get();
     if (!chainData.isFinalizedEpoch(wsCheckpoint.getEpoch())) {
       // Checkpoint is in the future - nothing to validate yet
       return SafeFuture.COMPLETE;
@@ -122,7 +120,7 @@ public class WeakSubjectivityValidator {
       LOG.debug(
           "Latest finalized checkpoint at epoch {} is prior to weak subjectivity checkpoint at epoch {}. Defer validation.",
           latestFinalizedCheckpoint.getEpoch(),
-          maybeWsCheckpoint.orElseThrow().getEpoch());
+          config.getWeakSubjectivityCheckpoint().orElseThrow().getEpoch());
       return;
     }
 
@@ -147,10 +145,10 @@ public class WeakSubjectivityValidator {
 
   public boolean isBlockValid(
       final SignedBeaconBlock block, ForkChoiceStrategy forkChoiceStrategy) {
-    if (maybeWsCheckpoint.isEmpty()) {
+    if (config.getWeakSubjectivityCheckpoint().isEmpty()) {
       return true;
     }
-    final Checkpoint wsCheckpoint = maybeWsCheckpoint.get();
+    final Checkpoint wsCheckpoint = config.getWeakSubjectivityCheckpoint().get();
 
     UInt64 blockEpoch = compute_epoch_at_slot(block.getSlot());
     boolean blockAtEpochBoundary = compute_start_slot_at_epoch(blockEpoch).equals(block.getSlot());
@@ -202,7 +200,10 @@ public class WeakSubjectivityValidator {
   }
 
   private boolean isWSCheckpointEpoch(final UInt64 epoch) {
-    return maybeWsCheckpoint.map(c -> c.getEpoch().equals(epoch)).orElse(false);
+    return config
+        .getWeakSubjectivityCheckpoint()
+        .map(c -> c.getEpoch().equals(epoch))
+        .orElse(false);
   }
 
   private boolean isWSCheckpointBlock(final SignedBeaconBlock block) {
@@ -210,15 +211,24 @@ public class WeakSubjectivityValidator {
   }
 
   private boolean isWSCheckpointRoot(final Bytes32 blockRoot) {
-    return maybeWsCheckpoint.map(c -> c.getRoot().equals(blockRoot)).orElse(false);
+    return config
+        .getWeakSubjectivityCheckpoint()
+        .map(c -> c.getRoot().equals(blockRoot))
+        .orElse(false);
   }
 
   private boolean isPriorToWSCheckpoint(final CheckpointState checkpoint) {
-    return maybeWsCheckpoint.map(c -> checkpoint.getEpoch().isLessThan(c.getEpoch())).orElse(false);
+    return config
+        .getWeakSubjectivityCheckpoint()
+        .map(c -> checkpoint.getEpoch().isLessThan(c.getEpoch()))
+        .orElse(false);
   }
 
   private boolean isAtWSCheckpoint(final CheckpointState checkpoint) {
-    return maybeWsCheckpoint.map(c -> checkpoint.getEpoch().equals(c.getEpoch())).orElse(false);
+    return config
+        .getWeakSubjectivityCheckpoint()
+        .map(c -> checkpoint.getEpoch().equals(c.getEpoch()))
+        .orElse(false);
   }
 
   @Override
@@ -228,11 +238,11 @@ public class WeakSubjectivityValidator {
     final WeakSubjectivityValidator that = (WeakSubjectivityValidator) o;
     return Objects.equals(calculator, that.calculator)
         && Objects.equals(violationPolicies, that.violationPolicies)
-        && Objects.equals(maybeWsCheckpoint, that.maybeWsCheckpoint);
+        && Objects.equals(config, that.config);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(calculator, violationPolicies, maybeWsCheckpoint);
+    return Objects.hash(calculator, violationPolicies, config);
   }
 }
