@@ -59,9 +59,10 @@ public class WeakSubjectivityConfig {
   }
 
   private Builder copy() {
-    Builder builder = WeakSubjectivityConfig.builder().safetyDecay(safetyDecay);
-    weakSubjectivityCheckpoint.ifPresent(builder::weakSubjectivityCheckpoint);
-    return builder;
+    return WeakSubjectivityConfig.builder()
+        .safetyDecay(safetyDecay)
+        .weakSubjectivityCheckpoint(weakSubjectivityCheckpoint)
+        .suppressWSPeriodChecksUntilEpoch(suppressWSPeriodChecksUntilEpoch);
   }
 
   public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
@@ -82,12 +83,13 @@ public class WeakSubjectivityConfig {
     if (o == null || getClass() != o.getClass()) return false;
     final WeakSubjectivityConfig that = (WeakSubjectivityConfig) o;
     return Objects.equals(safetyDecay, that.safetyDecay)
-        && Objects.equals(weakSubjectivityCheckpoint, that.weakSubjectivityCheckpoint);
+        && Objects.equals(weakSubjectivityCheckpoint, that.weakSubjectivityCheckpoint)
+        && Objects.equals(suppressWSPeriodChecksUntilEpoch, that.suppressWSPeriodChecksUntilEpoch);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(safetyDecay, weakSubjectivityCheckpoint);
+    return Objects.hash(safetyDecay, weakSubjectivityCheckpoint, suppressWSPeriodChecksUntilEpoch);
   }
 
   @Override
@@ -131,7 +133,14 @@ public class WeakSubjectivityConfig {
     }
 
     public Builder suppressWSPeriodChecksUntilEpoch(final UInt64 suppressWSPeriodChecksUntilEpoch) {
-      this.suppressWSPeriodChecksUntilEpoch = Optional.of(suppressWSPeriodChecksUntilEpoch);
+      checkNotNull(weakSubjectivityCheckpoint);
+      return suppressWSPeriodChecksUntilEpoch(Optional.of(suppressWSPeriodChecksUntilEpoch));
+    }
+
+    public Builder suppressWSPeriodChecksUntilEpoch(
+        final Optional<UInt64> suppressWSPeriodChecksUntilEpoch) {
+      checkNotNull(weakSubjectivityCheckpoint);
+      this.suppressWSPeriodChecksUntilEpoch = suppressWSPeriodChecksUntilEpoch;
       return this;
     }
 

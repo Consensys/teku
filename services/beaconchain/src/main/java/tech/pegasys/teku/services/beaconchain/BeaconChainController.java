@@ -317,25 +317,26 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         eventChannels.getPublisher(StorageUpdateChannel.class, asyncRunner);
     return storageQueryChannel
         .getWeakSubjectivityState()
-        .thenApply(WeakSubjectivityConfig::from)
         .thenApply(
-            storedConfig -> {
-              final WeakSubjectivityConfig updatedConfig =
-                  storedConfig.updated(
-                      b -> {
-                        beaconConfig
-                            .weakSubjectivity()
-                            .getWeakSubjectivityCheckpoint()
-                            .ifPresent(b::weakSubjectivityCheckpoint);
-                      });
+            storedState -> {
+              // Reconcile supplied config with stored configuration
+              WeakSubjectivityConfig wsConfig = beaconConfig.weakSubjectivity();
+              final Optional<Checkpoint> newWsCheckpoint = wsConfig.getWeakSubjectivityCheckpoint();
+              final Optional<Checkpoint> storedWsCheckpoint = storedState.getCheckpoint();
               Optional<WeakSubjectivityConfig> configToPersist = Optional.empty();
-              if (!Objects.equals(storedConfig, updatedConfig)) {
-                LOG.info(
-                    "Updated weak subjectivity config to {} from {}", updatedConfig, storedConfig);
-                configToPersist = Optional.of(updatedConfig);
+              if (newWsCheckpoint.isPresent()
+                  && !Objects.equals(storedWsCheckpoint, newWsCheckpoint)) {
+                // We have a new ws checkpoint, so we need to persist it
+                configToPersist = Optional.of(wsConfig);
+              } else if (storedState.getCheckpoint().isPresent()) {
+                // We haven't supplied a new ws checkpoint, so use the stored value
+                wsConfig =
+                    wsConfig.updated(
+                        b -> b.weakSubjectivityCheckpoint(storedState.getCheckpoint()));
               }
+
               // TODO(#2779) - make this validator strict when it is fully fleshed out
-              weakSubjectivityValidator = WeakSubjectivityValidator.lenient(updatedConfig);
+              weakSubjectivityValidator = WeakSubjectivityValidator.lenient(wsConfig);
               return configToPersist;
             })
         .thenCompose(
@@ -347,6 +348,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               final WeakSubjectivityConfig config = maybeConfigToPersist.get();
               final Checkpoint updatedCheckpoint =
                   config.getWeakSubjectivityCheckpoint().orElseThrow();
+
+              // Persist changes
+              LOG.info("Update stored weak subjectivity checkpoint to: {}", updatedCheckpoint);
               WeakSubjectivityUpdate update =
                   WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(updatedCheckpoint);
               return storageUpdateChannel.onWeakSubjectivityUpdate(update);
