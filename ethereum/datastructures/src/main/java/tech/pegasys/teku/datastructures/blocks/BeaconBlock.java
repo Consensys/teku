@@ -15,6 +15,10 @@ package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Suppliers;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Supplier;
 import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -26,11 +30,6 @@ import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.function.Supplier;
 
 public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
@@ -62,9 +61,7 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
     this.body = body;
   }
 
-  public BeaconBlock(
-          BeaconBlock block,
-          Bytes32 stateRoot){
+  public BeaconBlock(BeaconBlock block, Bytes32 stateRoot) {
     this.slot = block.getSlot();
     this.proposer_index = block.getProposer_index();
     this.parent_root = block.getParent_root();
