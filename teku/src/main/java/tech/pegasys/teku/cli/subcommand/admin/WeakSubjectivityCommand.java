@@ -63,18 +63,20 @@ public class WeakSubjectivityCommand implements Runnable {
   public int clearWeakSubjectivityState(
       @CommandLine.Mixin final DataOptions dataOptions,
       @CommandLine.Mixin final DataStorageOptions dataStorageOptions,
-      @CommandLine.Mixin final NetworkOptions networkOptions) {
-    final Database db = createDatabase(dataOptions, dataStorageOptions, networkOptions);
-    // Pull value before updating
-    final WeakSubjectivityState original = db.getWeakSubjectivityState();
-    if (original.isEmpty()) {
-      SUB_COMMAND_LOG.display("Weak subjectivity state is already empty - nothing to clear.");
+      @CommandLine.Mixin final NetworkOptions networkOptions)
+      throws Exception {
+    try (final Database db = createDatabase(dataOptions, dataStorageOptions, networkOptions)) {
+      // Pull value before updating
+      final WeakSubjectivityState original = db.getWeakSubjectivityState();
+      if (original.isEmpty()) {
+        SUB_COMMAND_LOG.display("Weak subjectivity state is already empty - nothing to clear.");
+        return 0;
+      }
+      SUB_COMMAND_LOG.display("Clearing weak subjectivity state: " + stateToString(original));
+      db.updateWeakSubjectivityState(WeakSubjectivityUpdate.clearWeakSubjectivityCheckpoint());
+      SUB_COMMAND_LOG.display("Successfully cleared weak subjectivity state.");
       return 0;
     }
-    SUB_COMMAND_LOG.display("Clearing weak subjectivity state: " + stateToString(original));
-    db.updateWeakSubjectivityState(WeakSubjectivityUpdate.clearWeakSubjectivityCheckpoint());
-    SUB_COMMAND_LOG.display("Successfully cleared weak subjectivity state.");
-    return 0;
   }
 
   @CommandLine.Command(
@@ -92,11 +94,13 @@ public class WeakSubjectivityCommand implements Runnable {
   public int displayWeakSubjectivityState(
       @CommandLine.Mixin final DataOptions dataOptions,
       @CommandLine.Mixin final DataStorageOptions dataStorageOptions,
-      @CommandLine.Mixin final NetworkOptions networkOptions) {
-    final Database db = createDatabase(dataOptions, dataStorageOptions, networkOptions);
-    final WeakSubjectivityState wsState = db.getWeakSubjectivityState();
-    SUB_COMMAND_LOG.display("Stored weak subjectivity state: " + stateToString(wsState));
-    return 0;
+      @CommandLine.Mixin final NetworkOptions networkOptions)
+      throws Exception {
+    try (final Database db = createDatabase(dataOptions, dataStorageOptions, networkOptions)) {
+      final WeakSubjectivityState wsState = db.getWeakSubjectivityState();
+      SUB_COMMAND_LOG.display("Stored weak subjectivity state: " + stateToString(wsState));
+      return 0;
+    }
   }
 
   private Database createDatabase(
