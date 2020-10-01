@@ -178,7 +178,8 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
         NavigableMap<UInt64, Bitlist> slotToBitlists =
             slotAndBitlistsByAttestationDataHash.computeIfAbsent(
                 attestationDataHash, __ -> new TreeMap<>());
-        Bitlist bitlistToInsert = slotToBitlists.computeIfAbsent(slot, attestation.getAggregation_bits()::copy);
+        Bitlist bitlistToInsert =
+            slotToBitlists.computeIfAbsent(slot, __ -> attestation.getAggregation_bits().copy());
         bitlistToInsert.setAllBits(attestation.getAggregation_bits());
       }
     }
@@ -242,10 +243,10 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
               .orElseThrow()
               .getMessage();
       blocksInEpoch.add(block);
-      if (currSlot.equals(UInt64.ZERO)) {
+      if (block.getSlot().equals(UInt64.ZERO)) {
         break;
       }
-      currSlot = currSlot.decrement();
+      currSlot = block.getSlot().decrement();
     }
     return blocksInEpoch;
   }
