@@ -14,9 +14,12 @@
 package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Suppliers;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
+import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -34,13 +37,16 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
   public static final int SSZ_FIELD_COUNT = 4;
 
   // Header
-  private UInt64 slot;
-  private UInt64 proposer_index;
-  private Bytes32 parent_root;
-  private Bytes32 state_root;
+  private final UInt64 slot;
+  private final UInt64 proposer_index;
+  private final Bytes32 parent_root;
+  private final Bytes32 state_root;
 
   // Body
-  private BeaconBlockBody body;
+  private final BeaconBlockBody body;
+
+  @Label("sos-ignore")
+  private final Supplier<Bytes32> hashTreeRoot = Suppliers.memoize(this::calculateRoot);
 
   public BeaconBlock(
       UInt64 slot,
@@ -53,6 +59,14 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
     this.parent_root = parent_root;
     this.state_root = state_root;
     this.body = body;
+  }
+
+  public BeaconBlock(BeaconBlock block, Bytes32 stateRoot) {
+    this.slot = block.getSlot();
+    this.proposer_index = block.getProposer_index();
+    this.parent_root = block.getParent_root();
+    this.body = block.getBody();
+    this.state_root = stateRoot;
   }
 
   public BeaconBlock() {
@@ -128,10 +142,6 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
     return state_root;
   }
 
-  public void setState_root(Bytes32 state_root) {
-    this.state_root = state_root;
-  }
-
   public Bytes32 getParent_root() {
     return parent_root;
   }
@@ -146,6 +156,10 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
 
   @Override
   public Bytes32 hash_tree_root() {
+    return hashTreeRoot.get();
+  }
+
+  public Bytes32 calculateRoot() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
