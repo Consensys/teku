@@ -13,18 +13,13 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.infrastructure.logging.StatusLogger;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.util.config.Constants;
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -38,12 +33,16 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_block_root_at_slot;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.util.config.Constants;
 
 public class DefaultPerformanceTracker implements PerformanceTracker {
 
@@ -90,8 +89,9 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     }
 
     UInt64 currentEpoch = compute_epoch_at_slot(slot);
-    if (currentEpoch.isLessThanOrEqualTo(latestAnalyzedEpoch
-            .getAndUpdate(val -> val.isLessThan(currentEpoch) ? currentEpoch : val))) {
+    if (currentEpoch.isLessThanOrEqualTo(
+        latestAnalyzedEpoch.getAndUpdate(
+            val -> val.isLessThan(currentEpoch) ? currentEpoch : val))) {
       return;
     }
 
@@ -239,11 +239,12 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     UInt64 currSlot = inclusiveEndEpochEndSlot;
     while (currSlot.isGreaterThanOrEqualTo(epochStartSlot)) {
       // PerformanceTracker should not be running if chain data is not available.
-      BeaconBlock block = combinedChainDataClient
-          .getBlockInEffectAtSlot(currSlot)
-          .join()
-          .orElseThrow()
-          .getMessage();
+      BeaconBlock block =
+          combinedChainDataClient
+              .getBlockInEffectAtSlot(currSlot)
+              .join()
+              .orElseThrow()
+              .getMessage();
       blocksInEpoch.add(block);
       if (currSlot.equals(UInt64.ZERO)) {
         break;
