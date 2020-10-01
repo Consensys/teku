@@ -13,11 +13,8 @@
 
 package tech.pegasys.teku.datastructures.blocks;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import com.google.common.base.Suppliers;
+import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -35,6 +32,13 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Supplier;
+
 /** A Beacon block body */
 public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
 
@@ -51,6 +55,9 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer, 
   private final SSZList<Attestation> attestations; // List bounded by MAX_ATTESTATIONS
   private final SSZList<Deposit> deposits; // List bounded by MAX_DEPOSITS
   private final SSZList<SignedVoluntaryExit> voluntary_exits; // List bounded by MAX_VOLUNTARY_EXITS
+
+  @Label("sos-ignore")
+  private final Supplier<Bytes32> hashTreeRoot = Suppliers.memoize(this::calculateRoot);
 
   public BeaconBlockBody(
       BLSSignature randao_reveal,
@@ -186,6 +193,10 @@ public class BeaconBlockBody implements SimpleOffsetSerializable, SSZContainer, 
 
   @Override
   public Bytes32 hash_tree_root() {
+    return hashTreeRoot.get();
+  }
+
+  public Bytes32 calculateRoot() {
     return HashTreeUtil.merkleize(
         Arrays.asList(
             HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, randao_reveal.toSSZBytes()),
