@@ -15,47 +15,46 @@ package tech.pegasys.teku.validator.coordinator.performance;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.SettableDoubleGauge;
-import tech.pegasys.teku.infrastructure.metrics.SettableIntGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class ValidatorPerformanceMetrics {
 
   // Attestation Performance Metrics
-  private final SettableIntGauge numberOfProducedAttestations;
-  private final SettableIntGauge numberOfIncludedAttestations;
-  private final SettableIntGauge inclusionDistanceMax;
-  private final SettableIntGauge inclusionDistanceMin;
+  private final SettableDoubleGauge numberOfProducedAttestations;
+  private final SettableDoubleGauge numberOfIncludedAttestations;
+  private final SettableDoubleGauge inclusionDistanceMax;
+  private final SettableDoubleGauge inclusionDistanceMin;
   private final SettableDoubleGauge inclusionDistanceAverage;
-  private final SettableIntGauge correctTargetCount;
-  private final SettableIntGauge correctHeadBlockCount;
+  private final SettableDoubleGauge correctTargetCount;
+  private final SettableDoubleGauge correctHeadBlockCount;
 
   // Block Performance Metrics
-  private final SettableIntGauge numberOfProducedBlocks;
-  private final SettableIntGauge numberOfIncludedBlocks;
+  private final SettableDoubleGauge numberOfProducedBlocks;
+  private final SettableDoubleGauge numberOfIncludedBlocks;
 
   public ValidatorPerformanceMetrics(final MetricsSystem metricsSystem) {
 
     // Attestation Performance Metrics
     numberOfProducedAttestations =
-        SettableIntGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem,
             TekuMetricCategory.VALIDATOR_PERFORMANCE,
             "produced_attestations",
             "Number of produced attestations");
     numberOfIncludedAttestations =
-        SettableIntGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem,
             TekuMetricCategory.VALIDATOR_PERFORMANCE,
             "included_attestations",
             "Number of included attestations");
     inclusionDistanceMax =
-        SettableIntGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem,
             TekuMetricCategory.VALIDATOR_PERFORMANCE,
             "inclusion_distance_max",
             "Inclusion distance max");
     inclusionDistanceMin =
-        SettableIntGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem,
             TekuMetricCategory.VALIDATOR_PERFORMANCE,
             "inclusion_distance_min",
@@ -67,13 +66,13 @@ public class ValidatorPerformanceMetrics {
             "inclusion_distance_average",
             "Inclusion distance average");
     correctTargetCount =
-        SettableIntGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem,
             TekuMetricCategory.VALIDATOR_PERFORMANCE,
             "correct_target_count",
             "Correct target count");
     correctHeadBlockCount =
-        SettableIntGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem,
             TekuMetricCategory.VALIDATOR_PERFORMANCE,
             "correct_head_block_count",
@@ -81,13 +80,13 @@ public class ValidatorPerformanceMetrics {
 
     // Block Performance Metrics
     numberOfIncludedBlocks =
-        SettableIntGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem,
             TekuMetricCategory.VALIDATOR_PERFORMANCE,
             "produced_blocks",
             "Number of produced blocks");
     numberOfProducedBlocks =
-        SettableIntGauge.create(
+        SettableDoubleGauge.create(
             metricsSystem,
             TekuMetricCategory.VALIDATOR_PERFORMANCE,
             "included_blocks",

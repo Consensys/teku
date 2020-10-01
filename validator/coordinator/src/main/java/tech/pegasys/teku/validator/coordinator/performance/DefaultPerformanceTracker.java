@@ -178,14 +178,21 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
         NavigableMap<UInt64, Bitlist> slotToBitlists =
             slotAndBitlistsByAttestationDataHash.computeIfAbsent(
                 attestationDataHash, __ -> new TreeMap<>());
-        slotToBitlists.put(slot, attestation.getAggregation_bits());
+        Bitlist bitlistToInsert = attestation.getAggregation_bits().copy();
+        Bitlist alreadySetBits = slotToBitlists.get(slot);
+        if (alreadySetBits != null) {
+          bitlistToInsert.setAllBits(alreadySetBits);
+        }
+        slotToBitlists.put(slot, bitlistToInsert);
       }
     }
 
     for (Attestation sentAttestation : producedAttestations) {
       Bytes32 sentAttestationDataHash = sentAttestation.getData().hash_tree_root();
       UInt64 sentAttestationSlot = sentAttestation.getData().getSlot();
-      if (!slotAndBitlistsByAttestationDataHash.containsKey(sentAttestationDataHash)) continue;
+      if (!slotAndBitlistsByAttestationDataHash.containsKey(sentAttestationDataHash)) {
+        continue;
+      }
       NavigableMap<UInt64, Bitlist> slotAndBitlists =
           slotAndBitlistsByAttestationDataHash.get(sentAttestationDataHash);
       for (UInt64 slot : slotAndBitlists.keySet()) {
@@ -226,18 +233,23 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
   private Set<BeaconBlock> getBlocksInEpochs(UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
     UInt64 epochStartSlot = compute_start_slot_at_epoch(startEpochInclusive);
-    UInt64 endEpochStartSlot = compute_start_slot_at_epoch(endEpochExclusive);
+    UInt64 inclusiveEndEpochEndSlot = compute_start_slot_at_epoch(endEpochExclusive).decrement();
 
     Set<BeaconBlock> blocksInEpoch = new HashSet<>();
-    for (UInt64 currSlot = epochStartSlot;
-        currSlot.isLessThan(endEpochStartSlot);
-        currSlot = currSlot.increment()) {
-      combinedChainDataClient
-          .getBlockAtSlotExact(currSlot)
+    UInt64 currSlot = inclusiveEndEpochEndSlot;
+    while (currSlot.isGreaterThanOrEqualTo(epochStartSlot)) {
+      // PerformanceTracker should not be running if chain data is not available.
+      BeaconBlock block = combinedChainDataClient
+          .getBlockInEffectAtSlot(currSlot)
           .join()
-          .ifPresent(signedBlock -> blocksInEpoch.add(signedBlock.getMessage()));
+          .orElseThrow()
+          .getMessage();
+      blocksInEpoch.add(block);
+      if (currSlot.equals(UInt64.ZERO)) {
+        break;
+      }
+      currSlot = currSlot.decrement();
     }
-
     return blocksInEpoch;
   }
 
