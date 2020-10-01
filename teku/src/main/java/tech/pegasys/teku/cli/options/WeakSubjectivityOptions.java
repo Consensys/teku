@@ -27,7 +27,6 @@ public class WeakSubjectivityOptions {
       hidden = true)
   private String weakSubjectivityCheckpoint = "";
 
-  // TODO(#2779) - Make this option public when we're ready
   @CommandLine.Option(
       names = {"--Xweak-subjectivity-suppress-errors-until-epoch"},
       paramLabel = "<EPOCH_NUMBER>",
