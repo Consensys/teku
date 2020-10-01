@@ -14,9 +14,12 @@
 package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Suppliers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
+import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -32,6 +35,9 @@ public class SignedBeaconBlock implements SimpleOffsetSerializable, SSZContainer
 
   private final BeaconBlock message;
   private final BLSSignature signature;
+
+  @Label("sos-ignore")
+  private final Supplier<Bytes32> hashTreeRoot = Suppliers.memoize(this::calculateRoot);
 
   public SignedBeaconBlock(final BeaconBlock message, final BLSSignature signature) {
     this.message = message;
@@ -117,6 +123,10 @@ public class SignedBeaconBlock implements SimpleOffsetSerializable, SSZContainer
 
   @Override
   public Bytes32 hash_tree_root() {
+    return hashTreeRoot.get();
+  }
+
+  public Bytes32 calculateRoot() {
     return HashTreeUtil.merkleize(
         List.of(
             message.hash_tree_root(),
