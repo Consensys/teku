@@ -13,19 +13,7 @@
 
 package tech.pegasys.teku.statetransition.blockimport;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-
 import com.google.common.eventbus.EventBus;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -58,6 +46,19 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 public class BlockImporterTest {
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
@@ -316,10 +317,10 @@ public class BlockImporterTest {
   @Test
   public void importBlock_invalidStateTransition() throws Exception {
     final SignedBeaconBlock block = otherChain.createBlockAtSlot(UInt64.ONE);
-    block.getMessage().setState_root(Bytes32.ZERO);
+    SignedBeaconBlock newBlock = new SignedBeaconBlock(new BeaconBlock(block.getMessage(), Bytes32.ZERO), block.getSignature());
     localChain.setSlot(block.getSlot());
 
-    final BlockImportResult result = blockImporter.importBlock(block).get();
+    final BlockImportResult result = blockImporter.importBlock(newBlock).get();
     assertImportFailed(result, FailureReason.FAILED_STATE_TRANSITION);
   }
 
