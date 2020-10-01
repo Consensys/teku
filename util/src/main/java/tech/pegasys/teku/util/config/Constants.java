@@ -187,7 +187,8 @@ public class Constants {
             "swift",
             "altona",
             "medalla",
-            "spadina")
+            "spadina",
+            "zinken")
         .load(source)
         .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
   }
