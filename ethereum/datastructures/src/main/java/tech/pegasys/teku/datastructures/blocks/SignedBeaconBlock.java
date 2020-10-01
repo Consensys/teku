@@ -14,9 +14,6 @@
 package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -28,10 +25,15 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
 public class SignedBeaconBlock implements SimpleOffsetSerializable, SSZContainer, Merkleizable {
 
   private final BeaconBlock message;
   private final BLSSignature signature;
+
 
   public SignedBeaconBlock(final BeaconBlock message, final BLSSignature signature) {
     this.message = message;
