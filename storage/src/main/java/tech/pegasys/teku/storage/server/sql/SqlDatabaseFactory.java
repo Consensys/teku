@@ -86,7 +86,7 @@ public class SqlDatabaseFactory {
   static HikariDataSource createDataSource(final Path dbDir) {
     final HikariConfig config = new HikariConfig();
     config.setConnectionInitSql(
-        "PRAGMA journal_mode= WAL;PRAGMA busy_timeout=5000;PRAGMA mmap_size=268435456");
+        "PRAGMA journal_mode= WAL;PRAGMA busy_timeout=5000;PRAGMA synchronous=OFF;PRAGMA mmap_size=268435456");
     config.setJdbcUrl("jdbc:sqlite:" + dbDir.resolve(DB_FILENAME).toAbsolutePath());
     return new HikariDataSource(config);
   }
