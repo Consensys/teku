@@ -13,15 +13,14 @@
 
 package tech.pegasys.teku.util.config;
 
-import com.google.common.collect.ImmutableMap;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Arrays.asList;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.Arrays.asList;
 
 public class NetworkDefinition {
   private static final ImmutableMap<String, NetworkDefinition> NETWORKS =

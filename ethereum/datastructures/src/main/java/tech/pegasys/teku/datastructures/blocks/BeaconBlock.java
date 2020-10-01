@@ -15,6 +15,10 @@ package tech.pegasys.teku.datastructures.blocks;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Suppliers;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Supplier;
 import jdk.jfr.Label;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -26,11 +30,6 @@ import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.function.Supplier;
 
 public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable, SSZContainer {
 
@@ -154,18 +153,17 @@ public final class BeaconBlock implements Merkleizable, SimpleOffsetSerializable
   @Override
   public Bytes32 hash_tree_root() {
     return hashTreeRoot.get();
-
   }
 
   public Bytes32 getRoot() {
     return HashTreeUtil.merkleize(
-            Arrays.asList(
-                    HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
-                    HashTreeUtil.hash_tree_root(
-                            SSZTypes.BASIC, SSZ.encodeUInt64(proposer_index.longValue())),
-                    HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, parent_root),
-                    HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, state_root),
-                    body.hash_tree_root()));
+        Arrays.asList(
+            HashTreeUtil.hash_tree_root(SSZTypes.BASIC, SSZ.encodeUInt64(slot.longValue())),
+            HashTreeUtil.hash_tree_root(
+                SSZTypes.BASIC, SSZ.encodeUInt64(proposer_index.longValue())),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, parent_root),
+            HashTreeUtil.hash_tree_root(SSZTypes.VECTOR_OF_BASIC, state_root),
+            body.hash_tree_root()));
   }
 
   @Override
