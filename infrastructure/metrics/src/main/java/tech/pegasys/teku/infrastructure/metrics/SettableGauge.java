@@ -17,19 +17,19 @@ import com.google.common.util.concurrent.AtomicDouble;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
-public class SettableDoubleGauge {
+public class SettableGauge {
 
   private final AtomicDouble valueHolder;
 
-  private SettableDoubleGauge(AtomicDouble valueHolder) {
+  private SettableGauge(AtomicDouble valueHolder) {
     this.valueHolder = valueHolder;
   }
 
-  public static SettableDoubleGauge create(
+  public static SettableGauge create(
       MetricsSystem metricsSystem, MetricCategory category, String name, String help) {
     AtomicDouble valueHolder = new AtomicDouble();
     metricsSystem.createGauge(category, name, help, valueHolder::get);
-    return new SettableDoubleGauge(valueHolder);
+    return new SettableGauge(valueHolder);
   }
 
   public void set(double value) {

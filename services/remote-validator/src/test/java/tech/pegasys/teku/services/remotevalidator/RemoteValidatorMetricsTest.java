@@ -20,7 +20,7 @@ import com.google.common.util.concurrent.AtomicDouble;
 import org.assertj.core.util.introspection.FieldSupport;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.metrics.SettableDoubleGauge;
+import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 
 class RemoteValidatorMetricsTest {
 
@@ -31,7 +31,7 @@ class RemoteValidatorMetricsTest {
   @Test
   public void newMetricsInstance_ShouldCreateConnectedValidatorGauge() {
     // field is initialized during RemoteValidatorMetrics construction
-    final SettableDoubleGauge connectedValidatorsGauge = getConnectedValidatorsGauge();
+    final SettableGauge connectedValidatorsGauge = getConnectedValidatorsGauge();
     assertThat(connectedValidatorsGauge).isNotNull();
   }
 
@@ -42,9 +42,9 @@ class RemoteValidatorMetricsTest {
     assertThat(getConnectedValidatorsGaugeValue()).isEqualTo(123.0);
   }
 
-  private SettableDoubleGauge getConnectedValidatorsGauge() {
+  private SettableGauge getConnectedValidatorsGauge() {
     return FieldSupport.EXTRACTION.fieldValue(
-        "connectedValidatorsGauge", SettableDoubleGauge.class, metrics);
+        "connectedValidatorsGauge", SettableGauge.class, metrics);
   }
 
   private double getConnectedValidatorsGaugeValue() {
