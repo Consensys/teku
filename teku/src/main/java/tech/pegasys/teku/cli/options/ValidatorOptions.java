@@ -82,6 +82,18 @@ public class ValidatorOptions {
   private Bytes32 graffiti;
 
   @Option(
+      names = {"--validators-performance-tracking-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable validator performance tracking and logging",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean validatorPerformanceTrackingEnabled = false;
+
+  public boolean isValidatorPerformanceTrackingEnabled() {
+    return validatorPerformanceTrackingEnabled;
+  }
+
+  @Option(
       names = {"--validators-keystore-locking-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enable locking validator keystore files",

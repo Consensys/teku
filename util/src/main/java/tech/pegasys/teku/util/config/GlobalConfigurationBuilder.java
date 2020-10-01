@@ -56,6 +56,7 @@ public class GlobalConfigurationBuilder {
   private int interopNumberOfValidators;
   private boolean interopEnabled;
   private boolean validatorKeystoreLockingEnabled;
+  private boolean validatorPerformanceTrackingEnabled;
   private String validatorsKeyFile;
   private List<String> validatorKeystoreFiles = new ArrayList<>();
   private List<String> validatorKeystorePasswordFiles = new ArrayList<>();
@@ -238,6 +239,12 @@ public class GlobalConfigurationBuilder {
   public GlobalConfigurationBuilder setValidatorKeystoreLockingEnabled(
       final boolean keystoreLockingEnabled) {
     this.validatorKeystoreLockingEnabled = keystoreLockingEnabled;
+    return this;
+  }
+
+  public GlobalConfigurationBuilder setValidatorPerformanceTrackingEnabled(
+      final boolean trackingEnabled) {
+    this.validatorPerformanceTrackingEnabled = trackingEnabled;
     return this;
   }
 
@@ -543,6 +550,7 @@ public class GlobalConfigurationBuilder {
         interopNumberOfValidators,
         interopEnabled,
         validatorKeystoreLockingEnabled,
+        validatorPerformanceTrackingEnabled,
         validatorsKeyFile,
         validatorKeystoreFiles,
         validatorKeystorePasswordFiles,
