@@ -42,7 +42,7 @@ public class WeakSubjectivityValidator {
   private static final Logger LOG = LogManager.getLogger();
   // About a week with mainnet config
   static final long MAX_SUPPRESSED_EPOCHS = 1575;
-  private static final long SUPPRESSION_WARNING_FREQUENCY_IN_SLOTS = 10;
+  private static final long SUPPRESSION_WARNING_PERIOD_IN_SLOTS = 10;
 
   private final WeakSubjectivityCalculator calculator;
   private final List<WeakSubjectivityViolationPolicy> violationPolicies;
@@ -147,8 +147,8 @@ public class WeakSubjectivityValidator {
     if (!withinWSPeriod && !shouldSuppressErrors) {
       handleFinalizedCheckpointOutsideWSPeriod(latestFinalizedCheckpoint, currentSlot);
     } else if (!withinWSPeriod
-        && currentSlot.mod(SUPPRESSION_WARNING_FREQUENCY_IN_SLOTS).equals(UInt64.ZERO)
-        && lastSlotWithErrorLogged.getAndUpdate(__ -> currentSlot).isLessThan(currentSlot)) {
+        && currentSlot.mod(SUPPRESSION_WARNING_PERIOD_IN_SLOTS).equals(UInt64.ZERO)
+        && getAndSetLastLoggedSlot(currentSlot).isLessThan(currentSlot)) {
       LOG.warn(
           "Suppressing weak subjectivity errors until epoch {}", suppressionEpoch.orElseThrow());
     }
@@ -223,6 +223,16 @@ public class WeakSubjectivityValidator {
     }
   }
 
+  private UInt64 getAndSetLastLoggedSlot(final UInt64 newSlot) {
+    return lastSlotWithErrorLogged.getAndUpdate(
+        last -> {
+          if (newSlot.isGreaterThan(last)) {
+            return newSlot;
+          }
+          return last;
+        });
+  }
+
   @VisibleForTesting
   Optional<UInt64> getSuppressWSPeriodChecksUntilEpoch(final UInt64 currentSlot) {
     if (suppressWSPeriodErrorsUntilEpoch.isEmpty()
@@ -241,7 +251,7 @@ public class WeakSubjectivityValidator {
             startupEpoch);
       }
       LOG.warn(
-          "Validator configured to suppress weak subjectivity period checks until epoch {}",
+          "Configured to suppress weak subjectivity period checks until epoch {}",
           suppressionEpoch);
 
       suppressWSPeriodErrorsUntilEpoch = Optional.of(suppressionEpoch);
