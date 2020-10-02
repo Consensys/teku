@@ -106,6 +106,14 @@ public class NetworkDefinition {
                       // Proto
                       "enr:-Ku4QFW1SLbtzJ_ghQQC8-8xezvZ1Mx95J-zer9IPmDE2BKeD_SM7j4vH6xmroUFVuyK-54n2Ey2ueB-Lf-fkbcLwAQBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpDEqCQNAAAAAv__________gmlkgnY0gmlwhGQZkSyJc2VjcDI1NmsxoQJMcbZhTCEKYSH5-qPQPgYfSHHUMLGBAKU-f-96yYKFMIN1ZHCCIyg")
                   .build())
+          .put(
+              "zinken",
+              builder()
+                  .constants("zinken")
+                  .snappyCompressionEnabled(true)
+                  .startupTimeoutSeconds(120)
+                  .eth1DepositContractAddress("0x99F0Ec06548b086E46Cb0019C78D0b9b9F36cD53")
+                  .build())
           .build();
 
   private final String constants;

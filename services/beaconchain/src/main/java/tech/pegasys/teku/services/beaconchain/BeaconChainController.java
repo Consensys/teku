@@ -112,6 +112,10 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
+import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
+import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracker;
+import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
+import tech.pegasys.teku.validator.coordinator.performance.ValidatorPerformanceMetrics;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
@@ -150,6 +154,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private volatile OperationsReOrgManager operationsReOrgManager;
   private volatile WeakSubjectivityValidator weakSubjectivityValidator;
+  private volatile PerformanceTracker performanceTracker;
 
   private SyncStateTracker syncStateTracker;
   private UInt64 genesisTimeTracker = ZERO;
@@ -274,9 +279,22 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initSlotProcessor();
     initMetrics();
     initSyncStateTracker();
+    initPerformanceTracker();
     initValidatorApiHandler();
     initRestAPI();
     initOperationsReOrgManager();
+  }
+
+  private void initPerformanceTracker() {
+    LOG.debug("BeaconChainController.initPerformanceTracker()");
+    if (config.isValidatorPerformanceTrackingEnabled()) {
+      performanceTracker =
+          new DefaultPerformanceTracker(
+              combinedChainDataClient, STATUS_LOG, new ValidatorPerformanceMetrics(metricsSystem));
+      eventChannels.subscribe(SlotEventsChannel.class, performanceTracker);
+    } else {
+      performanceTracker = new NoOpPerformanceTracker();
+    }
   }
 
   private void initAttesterSlashingPool() {
@@ -425,7 +443,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationManager,
             attestationTopicSubscriber,
             eventBus,
-            DutyMetrics.create(metricsSystem, timeProvider, recentChainData));
+            DutyMetrics.create(metricsSystem, timeProvider, recentChainData),
+            performanceTracker);
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationTopicSubscriber)
         .subscribe(ValidatorApiChannel.class, validatorApiHandler);
@@ -685,6 +704,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       STATUS_LOG.timeUntilGenesis(timeUntilGenesis.longValue(), p2pNetwork.getPeerCount());
     }
     slotProcessor.setCurrentSlot(currentSlot);
+    performanceTracker.start(currentSlot);
   }
 
   private void validateChain(final UInt64 currentSlot) {

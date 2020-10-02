@@ -99,6 +99,16 @@ public class ChainUpdater {
     return advanceChain(UInt64.valueOf(slot));
   }
 
+  public SignedBlockAndState advanceChainUntil(final long slot) {
+    long currentSlot = chainBuilder.getLatestSlot().longValue();
+    SignedBlockAndState latestSigneBlockAndState = chainBuilder.getLatestBlockAndState();
+    while (currentSlot < slot) {
+      currentSlot++;
+      latestSigneBlockAndState = advanceChain(currentSlot);
+    }
+    return latestSigneBlockAndState;
+  }
+
   public SignedBlockAndState advanceChain(final UInt64 slot) {
     final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slot);
     saveBlock(block);

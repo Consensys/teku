@@ -316,10 +316,12 @@ public class BlockImporterTest {
   @Test
   public void importBlock_invalidStateTransition() throws Exception {
     final SignedBeaconBlock block = otherChain.createBlockAtSlot(UInt64.ONE);
-    block.getMessage().setState_root(Bytes32.ZERO);
+    SignedBeaconBlock newBlock =
+        new SignedBeaconBlock(
+            new BeaconBlock(block.getMessage(), Bytes32.ZERO), block.getSignature());
     localChain.setSlot(block.getSlot());
 
-    final BlockImportResult result = blockImporter.importBlock(block).get();
+    final BlockImportResult result = blockImporter.importBlock(newBlock).get();
     assertImportFailed(result, FailureReason.FAILED_STATE_TRANSITION);
   }
 

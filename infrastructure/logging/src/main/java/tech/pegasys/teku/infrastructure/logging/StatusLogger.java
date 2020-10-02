@@ -186,4 +186,8 @@ public class StatusLogger {
         "Adjusting target number of peers upper bound to equal lower bound, which is {}",
         p2pLowerBound);
   }
+
+  public void performance(final String performance) {
+    log.info(performance);
+  }
 }
