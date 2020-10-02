@@ -13,6 +13,7 @@ dependencies {
   implementation project(':ssz')
   implementation project(':storage')
   implementation project(':storage:api')
+  implementation project(':protoarray')
   implementation project(':util')
   implementation project(':services:serviceutils')
 

@@ -124,6 +124,10 @@ public class ChainUpdater {
         .orElseThrow()
         .onBlock(block.getBlock().getMessage(), block.getState());
 
+    saveBlockTime(block);
+  }
+
+  public void saveBlockTime(final SignedBlockAndState block) {
     // Make sure time is consistent with block
     final UInt64 blockTime = getSlotTime(block.getSlot());
     if (blockTime.compareTo(recentChainData.getStore().getTime()) > 0) {
