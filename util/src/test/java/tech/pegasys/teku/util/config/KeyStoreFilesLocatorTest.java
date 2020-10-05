@@ -13,17 +13,19 @@
 
 package tech.pegasys.teku.util.config;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class KeyStoreFilesLocatorTest {
   private static final String PATH_SEP = ":";
@@ -187,6 +189,26 @@ public class KeyStoreFilesLocatorTest {
 
     assertThat(locator.getFilePairs())
         .containsExactly(tuple(tempDir, List.of("key", "a"), List.of("pass", "a.txt")));
+  }
+
+  @Test
+  public void shouldHandleSymlinkedDirectories(@TempDir final Path tempDir) throws IOException {
+    Path realKeyDir = Path.of("actualKey");
+    Path realPassDir = Path.of("actualPass");
+    createFolders(tempDir, realKeyDir, realPassDir);
+    createFiles(tempDir, realKeyDir.resolve("a.json"), realPassDir.resolve("a.txt"));
+
+    Files.createSymbolicLink(tempDir.resolve("key"), realKeyDir);
+    Files.createSymbolicLink(tempDir.resolve("pass"), realPassDir);
+
+    final String p1 = generatePath(tempDir, PATH_SEP, "key", "pass");
+    final KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
+    locator.parse();
+
+    assertThat(locator.getFilePairs())
+        .containsExactlyInAnyOrder(
+            tuple(
+                tempDir, Path.of("key", "a.json").toString(), Path.of("pass", "a.txt").toString()));
   }
 
   private void createFolders(final Path tempDir, String... paths) {
