@@ -30,6 +30,7 @@ dependencyManagement {
       entry('javalin-openapi') {
         exclude 'org.webjars.npm:redoc'
         exclude 'javax.mail:mailapi'
+        exclude 'org.apache.httpcomponents:httpclient'
       }
     }
     dependency 'io.protostuff:protostuff-core:1.6.2'
