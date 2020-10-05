@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class WeakSubjectivityOptions {
   // TODO(#2779) - Make this option public when we're ready
@@ -26,11 +27,23 @@ public class WeakSubjectivityOptions {
       hidden = true)
   private String weakSubjectivityCheckpoint = "";
 
+  @CommandLine.Option(
+      names = {"--Xweak-subjectivity-suppress-errors-until-epoch"},
+      paramLabel = "<EPOCH_NUMBER>",
+      description =
+          "Suppress weak subjectivity finalized checkpoint errors until the supplied epoch is reached.",
+      arity = "1",
+      hidden = true)
+  private UInt64 suppressWSPeriodChecksUntilEpoch = null;
+
   public TekuConfiguration.Builder configure(TekuConfiguration.Builder builder) {
     return builder.weakSubjectivity(
         wsBuilder -> {
           if (!weakSubjectivityCheckpoint.isBlank()) {
             wsBuilder.weakSubjectivityCheckpoint(weakSubjectivityCheckpoint);
+          }
+          if (suppressWSPeriodChecksUntilEpoch != null) {
+            wsBuilder.suppressWSPeriodChecksUntilEpoch(suppressWSPeriodChecksUntilEpoch);
           }
         });
   }

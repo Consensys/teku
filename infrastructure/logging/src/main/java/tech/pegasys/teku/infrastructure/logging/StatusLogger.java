@@ -21,6 +21,7 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class StatusLogger {
 
@@ -189,5 +190,9 @@ public class StatusLogger {
 
   public void performance(final String performance) {
     log.info(performance);
+  }
+
+  public void warnWeakSubjectivityChecksSuppressed(final UInt64 untilEpoch) {
+    log.warn("Suppressing weak subjectivity errors until epoch {}", untilEpoch);
   }
 }
