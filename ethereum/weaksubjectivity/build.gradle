@@ -2,6 +2,7 @@ dependencies {
     implementation project(':ethereum:core')
     implementation project(':ethereum:datastructures')
     implementation project(':infrastructure:async')
+    implementation project(':infrastructure:logging')
     implementation project(':protoarray')
     implementation project(':storage')
     implementation 'com.google.guava:guava'

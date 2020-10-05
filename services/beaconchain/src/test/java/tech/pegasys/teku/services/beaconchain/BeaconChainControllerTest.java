@@ -35,6 +35,7 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -192,7 +193,9 @@ public class BeaconChainControllerTest {
 
     final WeakSubjectivityValidator expectedValidator =
         WeakSubjectivityValidator.lenient(WeakSubjectivityConfig.from(storedState));
-    assertThat(controller.getWeakSubjectivityValidator()).isEqualTo(expectedValidator);
+    assertThat(controller.getWeakSubjectivityValidator())
+        .usingRecursiveComparison()
+        .isEqualTo(expectedValidator);
   }
 
   @Test
@@ -200,7 +203,11 @@ public class BeaconChainControllerTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     final Checkpoint cliCheckpoint = dataStructureUtil.randomCheckpoint();
     final WeakSubjectivityConfig cliConfig =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(cliCheckpoint).build();
+        WeakSubjectivityConfig.builder()
+            .weakSubjectivityCheckpoint(cliCheckpoint)
+            .suppressWSPeriodChecksUntilEpoch(UInt64.valueOf(123))
+            .safetyDecay(UInt64.valueOf(5))
+            .build();
     final BeaconChainConfiguration beaconChainConfiguration =
         new BeaconChainConfiguration(cliConfig);
     final BeaconChainController controller =
@@ -229,7 +236,9 @@ public class BeaconChainControllerTest {
 
     final WeakSubjectivityValidator expectedValidator =
         WeakSubjectivityValidator.lenient(cliConfig);
-    assertThat(controller.getWeakSubjectivityValidator()).isEqualTo(expectedValidator);
+    assertThat(controller.getWeakSubjectivityValidator())
+        .usingRecursiveComparison()
+        .isEqualTo(expectedValidator);
   }
 
   @Test

@@ -63,6 +63,7 @@ import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
@@ -195,7 +196,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private CommandLine registerConverters(final CommandLine commandLine) {
     return commandLine
         .registerConverter(MetricCategory.class, metricCategoryConverter)
-        .registerConverter(Eth1Address.class, Eth1Address::fromHexString);
+        .registerConverter(Eth1Address.class, Eth1Address::fromHexString)
+        .registerConverter(UInt64.class, UInt64::valueOf);
   }
 
   private CommandLine getConfigFileCommandLine(final ConfigFileCommand configFileCommand) {

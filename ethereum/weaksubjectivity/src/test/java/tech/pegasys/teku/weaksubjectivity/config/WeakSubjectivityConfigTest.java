@@ -19,6 +19,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class WeakSubjectivityConfigTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -59,6 +60,20 @@ public class WeakSubjectivityConfigTest {
     assertThat(original.getWeakSubjectivityCheckpoint()).isEmpty();
     assertThat(updated.getWeakSubjectivityCheckpoint()).contains(checkpoint);
     assertThat(updated).isNotEqualTo(original);
+  }
+
+  @Test
+  public void updated_shouldCloneAllProperties() {
+    WeakSubjectivityConfig configA =
+        WeakSubjectivityConfig.builder()
+            .safetyDecay(UInt64.valueOf(123))
+            .weakSubjectivityCheckpoint(checkpoint)
+            .suppressWSPeriodChecksUntilEpoch(UInt64.ONE)
+            .build();
+    WeakSubjectivityConfig configB = configA.updated((__) -> {});
+
+    assertThat(configA).isEqualTo(configB);
+    assertThat(configA).isEqualToComparingFieldByField(configB);
   }
 
   @Test
