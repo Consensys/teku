@@ -41,7 +41,6 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final UInt64 DEFAULT_FUTURE_SLOT_TOLERANCE = UInt64.valueOf(2);
   private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE =
       UInt64.valueOf(Constants.SLOTS_PER_EPOCH * 10);
   private static final UInt64 GENESIS_SLOT = UInt64.valueOf(Constants.GENESIS_SLOT);
@@ -79,7 +78,8 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   }
 
   public static PendingPool<SignedBeaconBlock> createForBlocks() {
-    return createForBlocks(DEFAULT_HISTORICAL_SLOT_TOLERANCE, DEFAULT_FUTURE_SLOT_TOLERANCE);
+    return createForBlocks(
+        DEFAULT_HISTORICAL_SLOT_TOLERANCE, FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE);
   }
 
   public static PendingPool<SignedBeaconBlock> createForBlocks(
@@ -95,7 +95,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   public static PendingPool<ValidateableAttestation> createForAttestations() {
     return new PendingPool<>(
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
-        DEFAULT_FUTURE_SLOT_TOLERANCE,
+        FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
         ValidateableAttestation::hash_tree_root,
         ValidateableAttestation::getDependentBlockRoots,
         ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
@@ -280,7 +280,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
 
   private boolean isFromFarFuture(final T item) {
     final UInt64 slot = calculateFutureItemLimit();
-    return targetSlotFunction.apply(item).compareTo(slot) > 0;
+    return targetSlotFunction.apply(item).isGreaterThan(slot);
   }
 
   private boolean isOutsideOfHistoricalLimit(final T item) {

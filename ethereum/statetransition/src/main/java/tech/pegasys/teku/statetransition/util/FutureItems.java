@@ -24,16 +24,32 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 /** Holds items with slots that are in the future relative to our node's current slot */
-public class FutureItems<T> {
+public class FutureItems<T> implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
+  static final UInt64 DEFAULT_FUTURE_SLOT_TOLERANCE = UInt64.valueOf(2);
   private static final int MAX_ITEMS_PER_SLOT = 500;
-  private final NavigableMap<UInt64, Set<T>> queuedFutureItems = new ConcurrentSkipListMap<>();
+
+  private final UInt64 futureSlotTolerance;
   private final Function<T, UInt64> slotFunction;
 
-  public FutureItems(final Function<T, UInt64> slotFunction) {
+  private final NavigableMap<UInt64, Set<T>> queuedFutureItems = new ConcurrentSkipListMap<>();
+  private volatile UInt64 currentSlot = UInt64.ZERO;
+
+  private FutureItems(final Function<T, UInt64> slotFunction, final UInt64 futureSlotTolerance) {
     this.slotFunction = slotFunction;
+    this.futureSlotTolerance = futureSlotTolerance;
+  }
+
+  public static <T> FutureItems<T> create(final Function<T, UInt64> slotFunction) {
+    return new FutureItems<T>(slotFunction, DEFAULT_FUTURE_SLOT_TOLERANCE);
+  }
+
+  @Override
+  public void onSlot(final UInt64 slot) {
+    currentSlot = slot;
   }
 
   /**
@@ -43,6 +59,11 @@ public class FutureItems<T> {
    */
   public void add(final T item) {
     final UInt64 slot = slotFunction.apply(item);
+    if (slot.isGreaterThan(currentSlot.plus(futureSlotTolerance))) {
+      // Item is too far in the future
+      return;
+    }
+
     LOG.trace("Save future item at slot {} for later import: {}", slot, item);
     queuedFutureItems.computeIfAbsent(slot, key -> createNewSet()).add(item);
   }

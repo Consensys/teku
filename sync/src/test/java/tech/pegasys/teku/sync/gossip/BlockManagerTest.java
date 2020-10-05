@@ -58,7 +58,7 @@ public class BlockManagerTest {
   private final PendingPool<SignedBeaconBlock> pendingBlocks =
       PendingPool.createForBlocks(historicalBlockTolerance, futureBlockTolerance);
   private final FutureItems<SignedBeaconBlock> futureBlocks =
-      new FutureItems<>(SignedBeaconBlock::getSlot);
+      FutureItems.create(SignedBeaconBlock::getSlot);
   private final FetchRecentBlocksService recentBlockFetcher = mock(FetchRecentBlocksService.class);
 
   private final RecentChainData localRecentChainData =

@@ -41,7 +41,7 @@ public class SinglePeerSyncServiceFactory {
       final BlockImporter blockImporter) {
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
     final FutureItems<SignedBeaconBlock> futureBlocks =
-        new FutureItems<>(SignedBeaconBlock::getSlot);
+        FutureItems.create(SignedBeaconBlock::getSlot);
     final FetchRecentBlocksService recentBlockFetcher =
         FetchRecentBlocksService.create(asyncRunner, p2pNetwork, pendingBlocks);
     BlockManager blockManager =

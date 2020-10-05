@@ -59,7 +59,7 @@ class AttestationManagerTest {
   private final PendingPool<ValidateableAttestation> pendingAttestations =
       PendingPool.createForAttestations();
   private final FutureItems<ValidateableAttestation> futureAttestations =
-      new FutureItems<>(ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
+      FutureItems.create(ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
 
   private final AttestationManager attestationManager =
       new AttestationManager(
