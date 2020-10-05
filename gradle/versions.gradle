@@ -25,9 +25,12 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.4.0'
 
-    dependencySet(group: 'io.javalin', version: '3.10.1') {
+    dependencySet(group: 'io.javalin', version: '3.11.0') {
       entry 'javalin'
-      entry 'javalin-openapi'
+      entry('javalin-openapi') {
+        exclude 'org.webjars.npm:redoc'
+        exclude 'javax.mail:mailapi'
+      }
     }
     dependency 'io.protostuff:protostuff-core:1.6.2'
     dependency 'io.protostuff:protostuff-runtime:1.6.2'
@@ -48,7 +51,6 @@ dependencyManagement {
       entry 'swagger-models'
       entry 'swagger-annotations'
     }
-    dependency 'org.webjars:swagger-ui:3.25.2'
     dependency 'io.github.classgraph:classgraph:4.8.87'
 
     dependencySet(group: 'io.netty', version: '4.1.51.Final') {

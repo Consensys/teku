@@ -131,7 +131,6 @@ downloadLicenses {
               'Common Development and Distribution License (CDDL) v1.0',
               'Common Development and Distribution License 1.0',
               'CDDL + GPLv2 with classpath exception',
-              'GPLv2+CE',
               'Dual license consisting of the CDDL v1.1 and GPL v2'
       ],
       (cddl1_1): [
