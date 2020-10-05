@@ -347,28 +347,36 @@ public class PendingPoolTest {
 
   @Test
   public void onSlot_prunesOldBlocks() {
-    final SignedBeaconBlock blockA =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue() - 1L);
-    final SignedBeaconBlock blockB =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
-    pendingPool.add(blockA);
-    pendingPool.add(blockB);
+    // Interleave blocks to keep and blocks to prune
+    final List<SignedBeaconBlock> blocksToPrune = new ArrayList<>();
+    final List<SignedBeaconBlock> blocksToKeep = new ArrayList<>();
+    for (int i = 0; i < 3; i++) {
+      final SignedBeaconBlock toPrune =
+          dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue() - 1L);
+      final SignedBeaconBlock toKeep =
+          dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
 
-    assertThat(pendingPool.contains(blockA)).isTrue();
-    assertThat(pendingPool.contains(blockB)).isTrue();
+      blocksToPrune.add(toPrune);
+      blocksToKeep.add(toKeep);
+      pendingPool.add(toPrune);
+      pendingPool.add(toKeep);
+    }
+
+    blocksToKeep.forEach(b -> assertThat(pendingPool.contains(b)).isTrue());
+    blocksToPrune.forEach(b -> assertThat(pendingPool.contains(b)).isTrue());
 
     UInt64 newSlot = currentSlot;
     for (int i = 0; i < historicalTolerance.intValue() - 1; i++) {
       newSlot = newSlot.plus(UInt64.ONE);
       pendingPool.onSlot(newSlot);
-      assertThat(pendingPool.contains(blockA)).isTrue();
-      assertThat(pendingPool.contains(blockB)).isTrue();
+      blocksToKeep.forEach(b -> assertThat(pendingPool.contains(b)).isTrue());
+      blocksToPrune.forEach(b -> assertThat(pendingPool.contains(b)).isTrue());
     }
 
-    // Next slot should prune blockA
+    // Next slot should prune blocksToPrune
     pendingPool.onSlot(newSlot.plus(UInt64.ONE));
 
-    assertThat(pendingPool.contains(blockA)).isFalse();
-    assertThat(pendingPool.contains(blockB)).isTrue();
+    blocksToKeep.forEach(b -> assertThat(pendingPool.contains(b)).isTrue());
+    blocksToPrune.forEach(b -> assertThat(pendingPool.contains(b)).isFalse());
   }
 }

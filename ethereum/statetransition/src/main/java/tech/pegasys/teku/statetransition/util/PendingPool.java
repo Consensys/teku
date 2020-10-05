@@ -18,14 +18,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -54,10 +54,9 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   private final Subscribers<RequiredBlockRootDroppedSubscriber>
       requiredBlockRootDroppedSubscribers = Subscribers.create(true);
 
-  private final Map<Bytes32, T> pendingItems = new ConcurrentHashMap<>();
-  private final NavigableSet<SlotAndRoot> orderedPendingItems = new ConcurrentSkipListSet<>();
-  private final Map<Bytes32, Set<Bytes32>> pendingItemsByRequiredBlockRoot =
-      new ConcurrentHashMap<>();
+  private final Map<Bytes32, T> pendingItems = new HashMap<>();
+  private final NavigableSet<SlotAndRoot> orderedPendingItems = new TreeSet<>();
+  private final Map<Bytes32, Set<Bytes32>> pendingItemsByRequiredBlockRoot = new HashMap<>();
   // Define the range of slots we care about
   private final UInt64 futureSlotTolerance;
   private final UInt64 historicalSlotTolerance;
@@ -106,7 +105,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
         ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
   }
 
-  public void add(T item) {
+  public synchronized void add(T item) {
     if (shouldIgnoreItem(item)) {
       // Ignore items outside of the range we care about
       return;
@@ -119,13 +118,10 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
         requiredRoot ->
             // Index item by required roots
             pendingItemsByRequiredBlockRoot
-                // Go ahead and add our root when the set is constructed to ensure we don't
-                // accidentally
-                // drop this set when we prune empty sets
                 .computeIfAbsent(
                     requiredRoot,
                     (key) -> {
-                      final Set<Bytes32> dependants = createRootSet(itemRoot);
+                      final Set<Bytes32> dependants = new HashSet<>();
                       requiredBlockRootSubscribers.forEach(
                           c -> c.onRequiredBlockRoot(requiredRoot));
                       return dependants;
@@ -143,7 +139,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     orderedPendingItems.add(toSlotAndRoot(item));
   }
 
-  public void remove(T item) {
+  public synchronized void remove(T item) {
     final SlotAndRoot itemSlotAndRoot = toSlotAndRoot(item);
     orderedPendingItems.remove(itemSlotAndRoot);
     pendingItems.remove(itemSlotAndRoot.getRoot());
@@ -163,7 +159,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
         });
   }
 
-  public int size() {
+  public synchronized int size() {
     return pendingItems.size();
   }
 
@@ -172,7 +168,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     return contains(itemRoot);
   }
 
-  public boolean contains(final Bytes32 itemRoot) {
+  public synchronized boolean contains(final Bytes32 itemRoot) {
     return pendingItems.containsKey(itemRoot);
   }
 
@@ -200,7 +196,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
    * @param blockRoot The block root that some pending items may depend on
    * @return A list of items that depend on this block root.
    */
-  private List<T> getItemsDirectlyDependingOn(final Bytes32 blockRoot) {
+  private synchronized List<T> getItemsDirectlyDependingOn(final Bytes32 blockRoot) {
     final Set<Bytes32> dependentRoots = pendingItemsByRequiredBlockRoot.get(blockRoot);
     if (dependentRoots == null) {
       return Collections.emptyList();
@@ -220,7 +216,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
    * @param blockRoot The block root that some pending items may depend on.
    * @return A list of items that either directly or indirectly depend on the given block root.
    */
-  private List<T> getAllItemsDependingOn(final Bytes32 blockRoot) {
+  private synchronized List<T> getAllItemsDependingOn(final Bytes32 blockRoot) {
     final Set<Bytes32> dependentRoots = new HashSet<>();
 
     Set<Bytes32> requiredRoots = Set.of(blockRoot);
@@ -274,7 +270,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   }
 
   @VisibleForTesting
-  void prune() {
+  synchronized void prune() {
     final UInt64 slotLimit = latestFinalizedSlot.max(calculateItemAgeLimit());
 
     final List<T> toRemove = new ArrayList<>();
@@ -324,12 +320,6 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     final UInt64 slot = targetSlotFunction.apply(item);
     final Bytes32 root = hashTreeRootFunction.apply(item);
     return new SlotAndRoot(slot, root);
-  }
-
-  private Set<Bytes32> createRootSet(final Bytes32 initialValue) {
-    final Set<Bytes32> rootSet = Collections.newSetFromMap(new ConcurrentHashMap<>());
-    rootSet.add(initialValue);
-    return rootSet;
   }
 
   public interface RequiredBlockRootSubscriber {
