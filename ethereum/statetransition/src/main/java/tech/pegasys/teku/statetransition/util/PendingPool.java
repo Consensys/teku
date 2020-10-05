@@ -14,20 +14,24 @@
 package tech.pegasys.teku.statetransition.util;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -51,6 +55,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
       requiredBlockRootDroppedSubscribers = Subscribers.create(true);
 
   private final Map<Bytes32, T> pendingItems = new ConcurrentHashMap<>();
+  private final NavigableSet<SlotAndRoot> orderedPendingItems = new ConcurrentSkipListSet<>();
   private final Map<Bytes32, Set<Bytes32>> pendingItemsByRequiredBlockRoot =
       new ConcurrentHashMap<>();
   // Define the range of slots we care about
@@ -134,11 +139,14 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
           targetSlotFunction.apply(item),
           item);
     }
+
+    orderedPendingItems.add(toSlotAndRoot(item));
   }
 
   public void remove(T item) {
-    final Bytes32 itemRoot = hashTreeRootFunction.apply(item);
-    pendingItems.remove(itemRoot);
+    final SlotAndRoot itemSlotAndRoot = toSlotAndRoot(item);
+    orderedPendingItems.remove(itemSlotAndRoot);
+    pendingItems.remove(itemSlotAndRoot.getRoot());
 
     final Collection<Bytes32> requiredRoots = requiredBlockRootsFunction.apply(item);
     requiredRoots.forEach(
@@ -147,7 +155,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
           if (childSet == null) {
             return;
           }
-          childSet.remove(itemRoot);
+          childSet.remove(itemSlotAndRoot.getRoot());
           if (pendingItemsByRequiredBlockRoot.remove(requiredRoot, Collections.emptySet())) {
             requiredBlockRootDroppedSubscribers.forEach(
                 s -> s.onRequiredBlockRootDropped(requiredRoot));
@@ -267,7 +275,17 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
 
   @VisibleForTesting
   void prune() {
-    pruneItems(this::isTooOld);
+    final UInt64 slotLimit = latestFinalizedSlot.max(calculateItemAgeLimit());
+
+    final List<T> toRemove = new ArrayList<>();
+    for (SlotAndRoot slotAndRoot : orderedPendingItems) {
+      if (slotAndRoot.getSlot().isGreaterThan(slotLimit)) {
+        break;
+      }
+      toRemove.add(pendingItems.get(slotAndRoot.getRoot()));
+    }
+
+    toRemove.forEach(this::remove);
   }
 
   private boolean shouldIgnoreItem(final T item) {
@@ -302,8 +320,10 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     return currentSlot.plus(futureSlotTolerance);
   }
 
-  private void pruneItems(final Predicate<T> shouldRemove) {
-    pendingItems.values().stream().filter(shouldRemove).forEach(this::remove);
+  private SlotAndRoot toSlotAndRoot(final T item) {
+    final UInt64 slot = targetSlotFunction.apply(item);
+    final Bytes32 root = hashTreeRootFunction.apply(item);
+    return new SlotAndRoot(slot, root);
   }
 
   private Set<Bytes32> createRootSet(final Bytes32 initialValue) {
@@ -318,5 +338,30 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
 
   public interface RequiredBlockRootDroppedSubscriber {
     void onRequiredBlockRootDropped(final Bytes32 blockRoot);
+  }
+
+  private static class SlotAndRoot implements Comparable<SlotAndRoot> {
+    private final Comparator<SlotAndRoot> comparator =
+        Comparator.comparing(SlotAndRoot::getSlot).thenComparing(SlotAndRoot::getRoot);
+    private final UInt64 slot;
+    private final Bytes32 root;
+
+    private SlotAndRoot(final UInt64 slot, final Bytes32 root) {
+      this.slot = slot;
+      this.root = root;
+    }
+
+    public UInt64 getSlot() {
+      return slot;
+    }
+
+    public Bytes32 getRoot() {
+      return root;
+    }
+
+    @Override
+    public int compareTo(@NotNull final SlotAndRoot o) {
+      return comparator.compare(this, o);
+    }
   }
 }
