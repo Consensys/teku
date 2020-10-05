@@ -47,6 +47,11 @@ public class FutureItems<T> implements SlotEventsChannel {
     return new FutureItems<T>(slotFunction, DEFAULT_FUTURE_SLOT_TOLERANCE);
   }
 
+  public static <T> FutureItems<T> create(
+      final Function<T, UInt64> slotFunction, final UInt64 futureSlotTolerance) {
+    return new FutureItems<T>(slotFunction, futureSlotTolerance);
+  }
+
   @Override
   public void onSlot(final UInt64 slot) {
     currentSlot = slot;
