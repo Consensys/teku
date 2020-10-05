@@ -343,7 +343,7 @@ public class ForkChoiceUtil {
         .orElse(false);
   }
 
-  private static boolean blockDescendsFromLatestFinalizedBlock(
+  public static boolean blockDescendsFromLatestFinalizedBlock(
       final BeaconBlock block,
       final ReadOnlyStore store,
       final ForkChoiceStrategy forkChoiceStrategy) {
@@ -351,16 +351,21 @@ public class ForkChoiceUtil {
     final UInt64 blockSlot = block.getSlot();
 
     // Make sure this block's slot is after the latest finalized slot
-    final UInt64 finalizedEpochStartSlot = finalizedCheckpoint.getEpochStartSlot();
+    return blockIsAfterLatestFinalizedSlot(blockSlot, finalizedCheckpoint.getEpochStartSlot())
+        && hasAncestorAtSlot(
+            forkChoiceStrategy,
+            block.getParent_root(),
+            finalizedCheckpoint.getEpochStartSlot(),
+            finalizedCheckpoint.getRoot());
+  }
+
+  private static boolean blockIsAfterLatestFinalizedSlot(
+      final UInt64 blockSlot, final UInt64 finalizedEpochStartSlot) {
     if (blockSlot.compareTo(finalizedEpochStartSlot) <= 0) {
       return false;
+    } else {
+      return true;
     }
-
-    // Make sure this block descends from the finalized block
-    final UInt64 finalizedSlot =
-        forkChoiceStrategy.blockSlot(finalizedCheckpoint.getRoot()).orElseThrow();
-    return hasAncestorAtSlot(
-        forkChoiceStrategy, block.getParent_root(), finalizedSlot, finalizedCheckpoint.getRoot());
   }
 
   /**
