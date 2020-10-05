@@ -13,28 +13,6 @@
 
 package tech.pegasys.teku.core.epoch;
 
-import tech.pegasys.teku.core.Deltas;
-import tech.pegasys.teku.core.exceptions.EpochProcessingException;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.state.HistoricalBatch;
-import tech.pegasys.teku.datastructures.state.MutableBeaconState;
-import tech.pegasys.teku.datastructures.state.PendingAttestation;
-import tech.pegasys.teku.datastructures.state.Validator;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
-import tech.pegasys.teku.ssz.SSZTypes.SSZList;
-import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
-import tech.pegasys.teku.util.config.Constants;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.TreeSet;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.all;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_activation_exit_epoch;
@@ -64,6 +42,27 @@ import static tech.pegasys.teku.util.config.Constants.MAX_ATTESTATIONS;
 import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_HISTORICAL_ROOT;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.TreeSet;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import tech.pegasys.teku.core.Deltas;
+import tech.pegasys.teku.core.exceptions.EpochProcessingException;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.HistoricalBatch;
+import tech.pegasys.teku.datastructures.state.MutableBeaconState;
+import tech.pegasys.teku.datastructures.state.PendingAttestation;
+import tech.pegasys.teku.datastructures.state.Validator;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
+import tech.pegasys.teku.ssz.SSZTypes.SSZList;
+import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.util.config.Constants;
 
 public final class EpochProcessorUtil {
 
@@ -306,8 +305,10 @@ public final class EpochProcessorUtil {
   public static void process_slashings(MutableBeaconState state) {
     UInt64 epoch = get_current_epoch(state);
     UInt64 total_balance = get_total_active_balance(state);
-    UInt64 adjusted_total_slashing_balance = UInt64.valueOf(
-            state.getSlashings().stream().mapToLong(UInt64::longValue).sum() * Constants.PROPORTIONAL_SLASHING_MULTIPLIER)
+    UInt64 adjusted_total_slashing_balance =
+        UInt64.valueOf(
+                state.getSlashings().stream().mapToLong(UInt64::longValue).sum()
+                    * Constants.PROPORTIONAL_SLASHING_MULTIPLIER)
             .min(total_balance);
 
     SSZList<Validator> validators = state.getValidators();
