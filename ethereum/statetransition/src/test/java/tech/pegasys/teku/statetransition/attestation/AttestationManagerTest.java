@@ -104,8 +104,12 @@ class AttestationManagerTest {
 
   @Test
   public void shouldAddAttestationsThatHaveNotYetReachedTargetSlotToFutureItemsAndPool() {
+    final int futureSlot = 100;
+    final UInt64 currentSlot = UInt64.valueOf(futureSlot).minus(1);
+    attestationManager.onSlot(currentSlot);
+
     ValidateableAttestation attestation =
-        ValidateableAttestation.fromAttestation(attestationFromSlot(100));
+        ValidateableAttestation.fromAttestation(attestationFromSlot(futureSlot));
     IndexedAttestation randomIndexedAttestation = dataStructureUtil.randomIndexedAttestation();
     when(forkChoice.onAttestation(any())).thenReturn(completedFuture(SAVED_FOR_FUTURE));
     attestationManager.onAttestation(attestation).reportExceptions();
