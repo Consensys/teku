@@ -16,6 +16,7 @@ package tech.pegasys.teku.weaksubjectivity;
 import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
@@ -149,8 +150,7 @@ public class WeakSubjectivityValidator {
     } else if (!withinWSPeriod
         && currentSlot.mod(SUPPRESSION_WARNING_PERIOD_IN_SLOTS).equals(UInt64.ZERO)
         && getAndSetLastLoggedSlot(currentSlot).isLessThan(currentSlot)) {
-      LOG.warn(
-          "Suppressing weak subjectivity errors until epoch {}", suppressionEpoch.orElseThrow());
+      STATUS_LOG.warnWeakSubjectivityChecksSuppressed(suppressionEpoch.orElseThrow());
     }
   }
 
