@@ -13,7 +13,17 @@
 
 package tech.pegasys.teku.reference.phase0.sanity;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.reference.phase0.BlsSetting.IGNORED;
+import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadSsz;
+import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
+import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.StateTransitionException;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -21,17 +31,6 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.BlsSetting;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
-
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.reference.phase0.BlsSetting.IGNORED;
-import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadSsz;
-import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
-import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 
 public class SanityBlocksTestExecutor implements TestExecutor {
 

@@ -13,8 +13,16 @@
 
 package tech.pegasys.teku.reference.phase0.rewards;
 
+import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
+import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
+import java.io.IOException;
+import java.util.List;
+import java.util.function.Supplier;
 import tech.pegasys.teku.core.Deltas;
 import tech.pegasys.teku.core.epoch.MatchingAttestations;
 import tech.pegasys.teku.core.epoch.RewardsAndPenaltiesCalculator;
@@ -23,22 +31,13 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.phase0.TestExecutor;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.function.Supplier;
-
-import static java.util.stream.Collectors.toList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadStateFromSsz;
-import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
-
 public class RewardsTestExecutor implements TestExecutor {
 
   public static final ImmutableMap<String, TestExecutor> REWARDS_TEST_TYPES =
-          ImmutableMap.of(
-                  "rewards/basic", new RewardsTestExecutor(),
-                  "rewards/leak", new RewardsTestExecutor(),
-                  "rewards/random", new RewardsTestExecutor());
+      ImmutableMap.of(
+          "rewards/basic", new RewardsTestExecutor(),
+          "rewards/leak", new RewardsTestExecutor(),
+          "rewards/random", new RewardsTestExecutor());
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
