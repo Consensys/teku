@@ -139,6 +139,12 @@ class ForkChoiceUtilTest {
   }
 
   @Test
+  public void getCurrentSlot_shouldGetZeroPriorToGenesis() {
+    assertThat(ForkChoiceUtil.getCurrentSlot(GENESIS_TIME.minus(1), GENESIS_TIME))
+        .isEqualTo(UInt64.ZERO);
+  }
+
+  @Test
   public void getSlotStartTime_shouldGetGenesisTimeForBlockZero() {
     assertThat(ForkChoiceUtil.getSlotStartTime(UInt64.ZERO, GENESIS_TIME)).isEqualTo(GENESIS_TIME);
   }
@@ -155,6 +161,16 @@ class ForkChoiceUtilTest {
     when(store.getGenesisTime()).thenReturn(UInt64.valueOf(3000));
     when(store.getTime()).thenReturn(UInt64.ZERO);
     ForkChoiceUtil.on_tick(store, UInt64.valueOf(2000));
+
+    verify(store, never()).setTime(any());
+  }
+
+  @Test
+  void on_tick_shouldExitImmediatelyWhenCurrentTimeIsBeforeStoreTime() {
+    final MutableStore store = mock(MutableStore.class);
+    when(store.getGenesisTime()).thenReturn(UInt64.valueOf(3000));
+    when(store.getTime()).thenReturn(UInt64.valueOf(5000));
+    ForkChoiceUtil.on_tick(store, UInt64.valueOf(4000));
 
     verify(store, never()).setTime(any());
   }

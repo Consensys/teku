@@ -59,6 +59,9 @@ public class ForkChoiceUtil {
   }
 
   public static UInt64 getCurrentSlot(UInt64 currentTime, UInt64 genesisTime) {
+    if (currentTime.isLessThan(genesisTime)) {
+      return UInt64.ZERO;
+    }
     return currentTime.minus(genesisTime).dividedBy(SECONDS_PER_SLOT);
   }
 
@@ -190,7 +193,9 @@ public class ForkChoiceUtil {
    *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.1/specs/core/0_fork-choice.md#on_tick</a>
    */
   public static void on_tick(MutableStore store, UInt64 time) {
-    if (store.getGenesisTime().isGreaterThan(time)) {
+    // To be extra safe check both time and genesisTime, although time should always be >=
+    // genesisTime
+    if (store.getTime().isGreaterThan(time) || store.getGenesisTime().isGreaterThan(time)) {
       return;
     }
     UInt64 previous_slot = get_current_slot(store);
@@ -338,7 +343,7 @@ public class ForkChoiceUtil {
         .orElse(false);
   }
 
-  private static boolean blockDescendsFromLatestFinalizedBlock(
+  public static boolean blockDescendsFromLatestFinalizedBlock(
       final BeaconBlock block,
       final ReadOnlyStore store,
       final ForkChoiceStrategy forkChoiceStrategy) {
@@ -346,16 +351,21 @@ public class ForkChoiceUtil {
     final UInt64 blockSlot = block.getSlot();
 
     // Make sure this block's slot is after the latest finalized slot
-    final UInt64 finalizedEpochStartSlot = finalizedCheckpoint.getEpochStartSlot();
+    return blockIsAfterLatestFinalizedSlot(blockSlot, finalizedCheckpoint.getEpochStartSlot())
+        && hasAncestorAtSlot(
+            forkChoiceStrategy,
+            block.getParent_root(),
+            finalizedCheckpoint.getEpochStartSlot(),
+            finalizedCheckpoint.getRoot());
+  }
+
+  private static boolean blockIsAfterLatestFinalizedSlot(
+      final UInt64 blockSlot, final UInt64 finalizedEpochStartSlot) {
     if (blockSlot.compareTo(finalizedEpochStartSlot) <= 0) {
       return false;
+    } else {
+      return true;
     }
-
-    // Make sure this block descends from the finalized block
-    final UInt64 finalizedSlot =
-        forkChoiceStrategy.blockSlot(finalizedCheckpoint.getRoot()).orElseThrow();
-    return hasAncestorAtSlot(
-        forkChoiceStrategy, block.getParent_root(), finalizedSlot, finalizedCheckpoint.getRoot());
   }
 
   /**

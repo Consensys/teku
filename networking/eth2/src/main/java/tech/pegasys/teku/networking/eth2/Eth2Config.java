@@ -13,14 +13,24 @@
 
 package tech.pegasys.teku.networking.eth2;
 
+import java.util.Optional;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+
 public class Eth2Config {
   private final boolean enableSnappyCompression;
+  private final Optional<Checkpoint> requiredCheckpoint;
 
-  public Eth2Config(final boolean enableSnappyCompression) {
+  public Eth2Config(
+      final boolean enableSnappyCompression, Optional<Checkpoint> requiredCheckpoint) {
     this.enableSnappyCompression = enableSnappyCompression;
+    this.requiredCheckpoint = requiredCheckpoint;
   }
 
   public boolean isSnappyCompressionEnabled() {
     return enableSnappyCompression;
+  }
+
+  public Optional<Checkpoint> getRequiredCheckpoint() {
+    return requiredCheckpoint;
   }
 }

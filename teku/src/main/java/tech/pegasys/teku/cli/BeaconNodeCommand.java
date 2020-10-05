@@ -55,6 +55,7 @@ import tech.pegasys.teku.cli.subcommand.SlashingProtectionCommand;
 import tech.pegasys.teku.cli.subcommand.TransitionCommand;
 import tech.pegasys.teku.cli.subcommand.UnstableOptionsCommand;
 import tech.pegasys.teku.cli.subcommand.ValidatorClientCommand;
+import tech.pegasys.teku.cli.subcommand.admin.AdminCommand;
 import tech.pegasys.teku.cli.subcommand.debug.DebugToolsCommand;
 import tech.pegasys.teku.cli.util.CascadingDefaultProvider;
 import tech.pegasys.teku.cli.util.EnvironmentVariableDefaultProvider;
@@ -62,6 +63,7 @@ import tech.pegasys.teku.cli.util.YamlConfigFileDefaultProvider;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
@@ -73,6 +75,7 @@ import tech.pegasys.teku.util.config.NetworkDefinition;
     name = "teku",
     subcommands = {
       CommandLine.HelpCommand.class,
+      AdminCommand.class,
       TransitionCommand.class,
       PeerCommand.class,
       DepositCommand.class,
@@ -193,7 +196,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private CommandLine registerConverters(final CommandLine commandLine) {
     return commandLine
         .registerConverter(MetricCategory.class, metricCategoryConverter)
-        .registerConverter(Eth1Address.class, Eth1Address::fromHexString);
+        .registerConverter(Eth1Address.class, Eth1Address::fromHexString)
+        .registerConverter(UInt64.class, UInt64::valueOf);
   }
 
   private CommandLine getConfigFileCommandLine(final ConfigFileCommand configFileCommand) {
@@ -287,7 +291,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
       } else {
         reportUnexpectedError(e);
       }
-
     } catch (Throwable t) {
       reportUnexpectedError(t);
     }
@@ -323,12 +326,16 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   protected TekuConfiguration tekuConfiguration() {
-    TekuConfiguration.Builder builder = TekuConfiguration.builder();
+    try {
+      TekuConfiguration.Builder builder = TekuConfiguration.builder();
 
-    builder.globalConfig(this::buildGlobalConfiguration);
-    weakSubjectivityOptions.configure(builder);
+      builder.globalConfig(this::buildGlobalConfiguration);
+      weakSubjectivityOptions.configure(builder);
 
-    return builder.build();
+      return builder.build();
+    } catch (IllegalArgumentException e) {
+      throw new InvalidConfigurationException(e);
+    }
   }
 
   private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
@@ -359,6 +366,8 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setInteropNumberOfValidators(interopOptions.getInteropNumberOfValidators())
         .setInteropEnabled(interopOptions.isInteropEnabled())
         .setValidatorKeystoreLockingEnabled(validatorOptions.isValidatorKeystoreLockingEnabled())
+        .setValidatorPerformanceTrackingEnabled(
+            validatorOptions.isValidatorPerformanceTrackingEnabled())
         .setValidatorKeystoreFiles(validatorOptions.getValidatorKeystoreFiles())
         .setValidatorKeystorePasswordFiles(validatorOptions.getValidatorKeystorePasswordFiles())
         .setValidatorKeys(validatorOptions.getValidatorKeys())

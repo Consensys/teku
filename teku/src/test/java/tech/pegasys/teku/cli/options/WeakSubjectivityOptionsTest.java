@@ -20,6 +20,7 @@ import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
@@ -37,5 +38,50 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
   public void weakSubjectivityCheckpoint_shouldDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     assertThat(config.weakSubjectivity().getWeakSubjectivityCheckpoint()).isEmpty();
+  }
+
+  @Test
+  public void weakSubjectivityCheckpoint_handleBadValue() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+    final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
+    final String checkpointParam = checkpoint.getRoot().toHexString() + ":";
+    final String[] args = {"--Xweak-subjectivity-checkpoint", checkpointParam};
+
+    final int result = beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+    assertThat(str)
+        .contains(
+            "Weak subjectivity checkpoint arguments should be formatted as: <blockRoot>:<epochNumber> where blockRoot is a hex-encoded 32 byte value and epochNumber is a number in decimal format");
+    assertThat(str).contains("To display full help:");
+    assertThat(str).contains("--help");
+    assertThat(result).isGreaterThan(0);
+  }
+
+  @Test
+  public void suppressWSPeriodChecksUntilEpoch_shouldAcceptValue() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--Xweak-subjectivity-suppress-errors-until-epoch", "123");
+    assertThat(config.weakSubjectivity().getSuppressWSPeriodChecksUntilEpoch())
+        .contains(UInt64.valueOf(123));
+  }
+
+  @Test
+  public void suppressWSPeriodChecksUntilEpoch_shouldDefault() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.weakSubjectivity().getSuppressWSPeriodChecksUntilEpoch()).isEmpty();
+  }
+
+  @Test
+  public void suppressWSPeriodChecksUntilEpoch_handleBadValue() {
+    final String[] args = {"--Xweak-subjectivity-suppress-errors-until-epoch", "a:b"};
+    final int result = beaconNodeCommand.parse(args);
+
+    String str = getCommandLineOutput();
+    assertThat(str)
+        .contains("Invalid value for option '--Xweak-subjectivity-suppress-errors-until-epoch'");
+    assertThat(str).contains("To display full help:");
+    assertThat(str).contains("--help");
+    assertThat(result).isGreaterThan(0);
   }
 }

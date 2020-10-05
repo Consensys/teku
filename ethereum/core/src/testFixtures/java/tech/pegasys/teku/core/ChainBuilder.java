@@ -219,10 +219,10 @@ public class ChainBuilder {
   }
 
   public SignedBlockAndState generateGenesis() {
-    return generateGenesis(true);
+    return generateGenesis(UInt64.ZERO, true);
   }
 
-  public SignedBlockAndState generateGenesis(final boolean signDeposits) {
+  public SignedBlockAndState generateGenesis(final UInt64 genesisTime, final boolean signDeposits) {
     checkState(blocks.isEmpty(), "Genesis already created");
 
     // Generate genesis state
@@ -231,7 +231,7 @@ public class ChainBuilder {
             .createDeposits(validatorKeys);
     final BeaconState genesisState =
         new MockStartBeaconStateGenerator()
-            .createInitialBeaconState(UInt64.ZERO, initialDepositData);
+            .createInitialBeaconState(genesisTime, initialDepositData);
 
     // Generate genesis block
     BeaconBlock genesisBlock = new BeaconBlock(genesisState.hash_tree_root());
@@ -279,6 +279,10 @@ public class ChainBuilder {
     return generateBlockAtSlot(slot, BlockOptions.create());
   }
 
+  public SignedBlockAndState generateBlockAtSlot(final long slot, final BlockOptions options) {
+    return generateBlockAtSlot(UInt64.valueOf(slot), options);
+  }
+
   public SignedBlockAndState generateBlockAtSlot(final UInt64 slot, final BlockOptions options) {
     assertBlockCanBeGenerated();
     final SignedBlockAndState latest = getLatestBlockAndState();
@@ -290,6 +294,18 @@ public class ChainBuilder {
             + slot);
 
     return appendNewBlockToChain(slot, options);
+  }
+
+  /**
+   * Utility for streaming valid attestations available for inclusion at the given slot. This
+   * utility can be used to assign valid attestations to a generated block.
+   *
+   * @param slot The slot at which attestations are to be included
+   * @return A stream of valid attestations that can be included in a block generated at the given
+   *     slot
+   */
+  public Stream<Attestation> streamValidAttestationsForBlockAtSlot(final long slot) {
+    return streamValidAttestationsForBlockAtSlot(UInt64.valueOf(slot));
   }
 
   /**

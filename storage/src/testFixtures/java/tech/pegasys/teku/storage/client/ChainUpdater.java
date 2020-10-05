@@ -61,7 +61,7 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState initializeGenesis(final boolean signDeposits) {
-    final SignedBlockAndState genesis = chainBuilder.generateGenesis(signDeposits);
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis(UInt64.ZERO, signDeposits);
     assertThat(recentChainData.initializeFromGenesis(genesis.getState())).isCompleted();
     return genesis;
   }
@@ -99,6 +99,16 @@ public class ChainUpdater {
     return advanceChain(UInt64.valueOf(slot));
   }
 
+  public SignedBlockAndState advanceChainUntil(final long slot) {
+    long currentSlot = chainBuilder.getLatestSlot().longValue();
+    SignedBlockAndState latestSigneBlockAndState = chainBuilder.getLatestBlockAndState();
+    while (currentSlot < slot) {
+      currentSlot++;
+      latestSigneBlockAndState = advanceChain(currentSlot);
+    }
+    return latestSigneBlockAndState;
+  }
+
   public SignedBlockAndState advanceChain(final UInt64 slot) {
     final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slot);
     saveBlock(block);
@@ -114,6 +124,10 @@ public class ChainUpdater {
         .orElseThrow()
         .onBlock(block.getBlock().getMessage(), block.getState());
 
+    saveBlockTime(block);
+  }
+
+  public void saveBlockTime(final SignedBlockAndState block) {
     // Make sure time is consistent with block
     final UInt64 blockTime = getSlotTime(block.getSlot());
     if (blockTime.compareTo(recentChainData.getStore().getTime()) > 0) {

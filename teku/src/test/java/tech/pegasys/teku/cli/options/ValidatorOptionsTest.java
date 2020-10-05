@@ -39,6 +39,7 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
         getGlobalConfigurationFromFile("validatorOptions_config.yaml");
 
     assertThat(config.getValidatorKeystoreFiles()).containsExactly("a.key", "b.key");
+    assertThat(config.isValidatorPerformanceTrackingEnabled()).isTrue();
     assertThat(config.getValidatorKeystorePasswordFiles())
         .containsExactly("a.password", "b.password");
     assertThat(config.getValidatorKeys())

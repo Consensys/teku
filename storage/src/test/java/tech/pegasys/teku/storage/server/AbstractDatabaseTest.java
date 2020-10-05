@@ -67,6 +67,7 @@ public abstract class AbstractDatabaseTest {
 
   protected final ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
 
+  protected UInt64 genesisTime = UInt64.valueOf(100);
   protected AnchorPoint genesisAnchor;
   protected SignedBlockAndState genesisBlockAndState;
   protected SignedBlockAndState checkpoint1BlockAndState;
@@ -92,7 +93,7 @@ public abstract class AbstractDatabaseTest {
     Constants.SLOTS_PER_EPOCH = 3;
     createStorage(StateStorageMode.ARCHIVE);
 
-    genesisBlockAndState = chainBuilder.generateGenesis();
+    genesisBlockAndState = chainBuilder.generateGenesis(genesisTime, true);
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
     genesisAnchor = AnchorPoint.fromGenesisState(genesisBlockAndState.getState());
 
@@ -153,13 +154,13 @@ public abstract class AbstractDatabaseTest {
   public void updateWeakSubjectivityState_setValue() {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
-    assertThat(database.getWeakSubjectivityCheckpoint()).isEmpty();
+    assertThat(database.getWeakSubjectivityState().getCheckpoint()).isEmpty();
 
     final WeakSubjectivityUpdate update =
         WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(checkpoint);
     database.updateWeakSubjectivityState(update);
 
-    assertThat(database.getWeakSubjectivityCheckpoint()).contains(checkpoint);
+    assertThat(database.getWeakSubjectivityState().getCheckpoint()).contains(checkpoint);
   }
 
   @Test
@@ -171,13 +172,13 @@ public abstract class AbstractDatabaseTest {
     final WeakSubjectivityUpdate initUpdate =
         WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(checkpoint);
     database.updateWeakSubjectivityState(initUpdate);
-    assertThat(database.getWeakSubjectivityCheckpoint()).contains(checkpoint);
+    assertThat(database.getWeakSubjectivityState().getCheckpoint()).contains(checkpoint);
 
     // Clear the checkpoint
     final WeakSubjectivityUpdate update = WeakSubjectivityUpdate.clearWeakSubjectivityCheckpoint();
     database.updateWeakSubjectivityState(update);
 
-    assertThat(database.getWeakSubjectivityCheckpoint()).isEmpty();
+    assertThat(database.getWeakSubjectivityState().getCheckpoint()).isEmpty();
   }
 
   @Test
@@ -574,7 +575,7 @@ public abstract class AbstractDatabaseTest {
     // Setup chains
     // Both chains share block up to slot 3
     final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
-    primaryChain.generateGenesis();
+    primaryChain.generateGenesis(genesisTime, true);
     primaryChain.generateBlocksUpToSlot(3);
     final ChainBuilder forkChain = primaryChain.fork();
     // Fork chain's next block is at 6

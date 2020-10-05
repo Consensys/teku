@@ -79,8 +79,8 @@ public class BlockProposalUtil {
             preState, new SignedBeaconBlock(newBlock, BLSSignature.empty()), false);
 
     Bytes32 stateRoot = newState.hash_tree_root();
-    newBlock.setState_root(stateRoot);
+    BeaconBlock newCompleteBlock = new BeaconBlock(newBlock, stateRoot);
 
-    return new BeaconBlockAndState(newBlock, newState);
+    return new BeaconBlockAndState(newCompleteBlock, newState);
   }
 }

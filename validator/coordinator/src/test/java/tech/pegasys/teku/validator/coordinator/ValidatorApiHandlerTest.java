@@ -67,6 +67,7 @@ import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
+import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 
 class ValidatorApiHandlerTest {
 
@@ -84,6 +85,8 @@ class ValidatorApiHandlerTest {
   private final AttestationTopicSubscriber attestationTopicSubscriptions =
       mock(AttestationTopicSubscriber.class);
   private final EventBus eventBus = mock(EventBus.class);
+  private final DefaultPerformanceTracker performanceTracker =
+      mock(DefaultPerformanceTracker.class);
 
   private final ValidatorApiHandler validatorApiHandler =
       new ValidatorApiHandler(
@@ -95,7 +98,8 @@ class ValidatorApiHandlerTest {
           attestationManager,
           attestationTopicSubscriptions,
           eventBus,
-          mock(DutyMetrics.class));
+          mock(DutyMetrics.class),
+          performanceTracker);
 
   @BeforeEach
   public void setUp() {

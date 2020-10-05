@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.datastructures.util.AttestationUtil.get_attesting_indices;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
@@ -75,6 +74,7 @@ import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
+import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -87,6 +87,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final AttestationTopicSubscriber attestationTopicSubscriber;
   private final EventBus eventBus;
   private final DutyMetrics dutyMetrics;
+  private final PerformanceTracker performanceTracker;
 
   public ValidatorApiHandler(
       final CombinedChainDataClient combinedChainDataClient,
@@ -97,7 +98,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final AttestationManager attestationManager,
       final AttestationTopicSubscriber attestationTopicSubscriber,
       final EventBus eventBus,
-      final DutyMetrics dutyMetrics) {
+      final DutyMetrics dutyMetrics,
+      final PerformanceTracker performanceTracker) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateTracker = syncStateTracker;
     this.stateTransition = stateTransition;
@@ -107,6 +109,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.attestationTopicSubscriber = attestationTopicSubscriber;
     this.eventBus = eventBus;
     this.dutyMetrics = dutyMetrics;
+    this.performanceTracker = performanceTracker;
   }
 
   @Override
@@ -320,26 +323,15 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
               result.ifInvalid(
                   reason ->
                       VALIDATOR_LOGGER.producedInvalidAttestation(
-                          attestation.getData().getSlot(),
-                          getValidatorIndex(attestation),
-                          expectedValidatorIndex,
-                          reason));
+                          attestation.getData().getSlot(), reason));
               dutyMetrics.onAttestationPublished(attestation.getData().getSlot());
+              performanceTracker.saveProducedAttestation(attestation);
             },
             err ->
                 LOG.error(
-                    "Failed to send signed attestation for validator {}, slot {}, block {}",
-                    getValidatorIndex(attestation),
+                    "Failed to send signed attestation for slot {}, block {}",
                     attestation.getData().getSlot(),
                     attestation.getData().getBeacon_block_root()));
-  }
-
-  private int getValidatorIndex(final Attestation attestation) {
-    return get_attesting_indices(
-            combinedChainDataClient.getBestState().orElseThrow(),
-            attestation.getData(),
-            attestation.getAggregation_bits())
-        .get(0);
   }
 
   @Override
@@ -352,12 +344,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     attestationManager
         .onAttestation(ValidateableAttestation.fromSignedAggregate(aggregateAndProof))
         .finish(
-            result ->
-                result.ifInvalid(
-                    reason ->
-                        VALIDATOR_LOGGER.producedInvalidAggregate(
-                            aggregateAndProof.getMessage().getAggregate().getData().getSlot(),
-                            reason)),
+            result -> {
+              result.ifInvalid(
+                  reason ->
+                      VALIDATOR_LOGGER.producedInvalidAggregate(
+                          aggregateAndProof.getMessage().getAggregate().getData().getSlot(),
+                          reason));
+            },
             err ->
                 LOG.error(
                     "Failed to send aggregate for slot {}",
@@ -367,6 +360,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public void sendSignedBlock(final SignedBeaconBlock block) {
     eventBus.post(new ProposedBlockEvent(block));
+    performanceTracker.saveProducedBlock(block);
   }
 
   @VisibleForTesting

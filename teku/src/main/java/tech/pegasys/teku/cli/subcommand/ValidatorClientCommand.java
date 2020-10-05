@@ -106,6 +106,8 @@ public class ValidatorClientCommand implements Callable<Integer> {
         .setInteropOwnedValidatorCount(interopOptions.getInteropOwnerValidatorCount())
         .setInteropNumberOfValidators(interopOptions.getInteropNumberOfValidators())
         .setInteropEnabled(interopOptions.isInteropEnabled())
+        .setValidatorPerformanceTrackingEnabled(
+            validatorOptions.isValidatorPerformanceTrackingEnabled())
         .setValidatorKeystoreLockingEnabled(validatorOptions.isValidatorKeystoreLockingEnabled())
         .setValidatorKeystoreFiles(validatorOptions.getValidatorKeystoreFiles())
         .setValidatorKeystorePasswordFiles(validatorOptions.getValidatorKeystorePasswordFiles())

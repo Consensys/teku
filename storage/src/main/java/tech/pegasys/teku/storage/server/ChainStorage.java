@@ -28,6 +28,8 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
+import tech.pegasys.teku.storage.events.WeakSubjectivityState;
+import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.state.FinalizedStateCache;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.util.config.Constants;
@@ -87,6 +89,11 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   }
 
   @Override
+  public SafeFuture<WeakSubjectivityState> getWeakSubjectivityState() {
+    return SafeFuture.of(database::getWeakSubjectivityState);
+  }
+
+  @Override
   public SafeFuture<Void> onStorageUpdate(final StorageUpdate event) {
     return SafeFuture.fromRunnable(
         () -> {
@@ -98,6 +105,14 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   @Override
   public void onGenesis(final AnchorPoint genesis) {
     database.storeGenesis(genesis);
+  }
+
+  @Override
+  public SafeFuture<Void> onWeakSubjectivityUpdate(WeakSubjectivityUpdate weakSubjectivityUpdate) {
+    return SafeFuture.fromRunnable(
+        () -> {
+          database.updateWeakSubjectivityState(weakSubjectivityUpdate);
+        });
   }
 
   @Override

@@ -17,8 +17,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
 import java.util.HashMap;
@@ -27,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -47,6 +50,7 @@ import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
+import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
@@ -186,6 +190,11 @@ public class RocksDbDatabase implements Database {
 
   @Override
   public Optional<StoreBuilder> createMemoryStore() {
+    return createMemoryStore(() -> Instant.now().getEpochSecond());
+  }
+
+  @VisibleForTesting
+  Optional<StoreBuilder> createMemoryStore(final Supplier<Long> timeSupplier) {
     Optional<UInt64> maybeGenesisTime = hotDao.getGenesisTime();
     if (maybeGenesisTime.isEmpty()) {
       // If genesis time hasn't been set, genesis hasn't happened and we have no data
@@ -220,10 +229,16 @@ public class RocksDbDatabase implements Database {
     final SignedBlockAndState latestFinalized =
         new SignedBlockAndState(finalizedBlock, finalizedState);
 
+    // Make sure time is set to a reasonable value in the case where we start up before genesis when
+    // the clock time would be prior to genesis
+    final long clockTime = timeSupplier.get();
+    final UInt64 slotTime = genesisTime.plus(finalizedState.getSlot().times(SECONDS_PER_SLOT));
+    final UInt64 time = slotTime.max(clockTime);
+
     return Optional.of(
         StoreBuilder.create()
             .metricsSystem(metricsSystem)
-            .time(UInt64.valueOf(Instant.now().getEpochSecond()))
+            .time(time)
             .genesisTime(genesisTime)
             .finalizedCheckpoint(finalizedCheckpoint)
             .justifiedCheckpoint(justifiedCheckpoint)
@@ -235,8 +250,8 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
-    return hotDao.getWeakSubjectivityCheckpoint();
+  public WeakSubjectivityState getWeakSubjectivityState() {
+    return WeakSubjectivityState.create(hotDao.getWeakSubjectivityCheckpoint());
   }
 
   @Override
