@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
@@ -42,9 +41,10 @@ import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointChannel {
-
   private static final Logger LOG = LogManager.getLogger();
 
+  private static final Comparator<SlotAndRoot> SLOT_AND_ROOT_COMPARATOR =
+      Comparator.comparing(SlotAndRoot::getSlot).thenComparing(SlotAndRoot::getRoot);
   private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE =
       UInt64.valueOf(Constants.SLOTS_PER_EPOCH * 10);
   private static final int DEFAULT_MAX_ITEMS = 5000;
@@ -56,7 +56,8 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
       requiredBlockRootDroppedSubscribers = Subscribers.create(true);
 
   private final Map<Bytes32, T> pendingItems = new HashMap<>();
-  private final NavigableSet<SlotAndRoot> orderedPendingItems = new TreeSet<>();
+  private final NavigableSet<SlotAndRoot> orderedPendingItems =
+      new TreeSet<>(SLOT_AND_ROOT_COMPARATOR);
   private final Map<Bytes32, Set<Bytes32>> pendingItemsByRequiredBlockRoot = new HashMap<>();
   // Define the range of slots we care about
   private final UInt64 futureSlotTolerance;
@@ -92,7 +93,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
         DEFAULT_MAX_ITEMS);
   }
 
-  static PendingPool<SignedBeaconBlock> createForBlocks(
+  public static PendingPool<SignedBeaconBlock> createForBlocks(
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
       final int maxItems) {
@@ -349,9 +350,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     void onRequiredBlockRootDropped(final Bytes32 blockRoot);
   }
 
-  private static class SlotAndRoot implements Comparable<SlotAndRoot> {
-    private final Comparator<SlotAndRoot> comparator =
-        Comparator.comparing(SlotAndRoot::getSlot).thenComparing(SlotAndRoot::getRoot);
+  private static class SlotAndRoot {
     private final UInt64 slot;
     private final Bytes32 root;
 
@@ -366,11 +365,6 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
 
     public Bytes32 getRoot() {
       return root;
-    }
-
-    @Override
-    public int compareTo(@NotNull final SlotAndRoot o) {
-      return comparator.compare(this, o);
     }
   }
 }

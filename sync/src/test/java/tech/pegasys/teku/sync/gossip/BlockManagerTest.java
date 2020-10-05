@@ -55,8 +55,9 @@ public class BlockManagerTest {
   private final EventBus remoteEventBus = new EventBus();
   private final UInt64 historicalBlockTolerance = UInt64.valueOf(5);
   private final UInt64 futureBlockTolerance = UInt64.valueOf(2);
+  private final int maxPendingBlocks = 10;
   private final PendingPool<SignedBeaconBlock> pendingBlocks =
-      PendingPool.createForBlocks(historicalBlockTolerance, futureBlockTolerance);
+      PendingPool.createForBlocks(historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
   private final FutureItems<SignedBeaconBlock> futureBlocks =
       FutureItems.create(SignedBeaconBlock::getSlot);
   private final FetchRecentBlocksService recentBlockFetcher = mock(FetchRecentBlocksService.class);
