@@ -29,6 +29,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
@@ -80,7 +81,8 @@ public class BlockValidator {
                     stateTransition.process_slots(preState.get(), block.getMessage().getSlot());
                 if (blockIsProposedByTheExpectedProposer(block, postState)
                     && blockSignatureIsValidWithRespectToProposerIndex(
-                        block, preState.get(), postState)) {
+                        block, preState.get(), postState)
+                    && currentFinalizedCheckpointIsAncestorOfBlock(block)) {
                   return InternalValidationResult.ACCEPT;
                 }
               } catch (EpochProcessingException | SlotProcessingException e) {
@@ -128,6 +130,13 @@ public class BlockValidator {
       SignedBeaconBlock block, BeaconState postState) {
     final int proposerIndex = get_beacon_proposer_index(postState);
     return proposerIndex == block.getMessage().getProposer_index().longValue();
+  }
+
+  private boolean currentFinalizedCheckpointIsAncestorOfBlock(SignedBeaconBlock block) {
+    return ForkChoiceUtil.blockDescendsFromLatestFinalizedBlock(
+        block.getMessage(),
+        recentChainData.getStore(),
+        recentChainData.getForkChoiceStrategy().orElseThrow());
   }
 
   private static class SlotAndProposer {

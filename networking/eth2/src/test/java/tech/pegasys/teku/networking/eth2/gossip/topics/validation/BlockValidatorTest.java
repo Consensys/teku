@@ -18,17 +18,25 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import com.google.common.eventbus.EventBus;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSKeyGenerator;
+import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class BlockValidatorTest {
   private final EventBus eventBus = new EventBus();
@@ -153,6 +161,37 @@ public class BlockValidatorTest {
             beaconChainUtil.createBlockAtSlot(nextSlot).getMessage(), BLSSignature.random(0));
 
     InternalValidationResult result = blockValidator.validate(block).join();
+    assertThat(result).isEqualTo(InternalValidationResult.REJECT);
+  }
+
+  @Test
+  void shouldReturnInvalidForBlockThatDoesNotDescendFromFinalizedCheckpoint() throws Exception {
+    List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(4);
+
+    StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
+    ChainBuilder chainBuilder = ChainBuilder.create(VALIDATOR_KEYS);
+    ChainUpdater chainUpdater = new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
+
+    BlockValidator blockValidator =
+        new BlockValidator(storageSystem.recentChainData(), new StateTransition());
+    chainUpdater.initializeGenesis();
+
+    chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(1));
+
+    ChainBuilder chainBuilderFork = chainBuilder.fork();
+    ChainUpdater chainUpdaterFork =
+        new ChainUpdater(storageSystem.recentChainData(), chainBuilderFork);
+
+    UInt64 startSlotOfFinalizedEpoch = compute_start_slot_at_epoch(UInt64.valueOf(4));
+
+    chainUpdaterFork.advanceChain(20);
+
+    chainUpdater.finalizeEpoch(4);
+
+    SignedBlockAndState blockAndState =
+        chainBuilderFork.generateBlockAtSlot(startSlotOfFinalizedEpoch.increment());
+    chainUpdater.saveBlockTime(blockAndState);
+    InternalValidationResult result = blockValidator.validate(blockAndState.getBlock()).join();
     assertThat(result).isEqualTo(InternalValidationResult.REJECT);
   }
 }
