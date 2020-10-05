@@ -62,15 +62,20 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable, TWrap
       final TWrapped message, InternalValidationResult internalValidationResult);
 
   protected ValidationResult handleMessageProcessingError(Throwable err) {
+    final ValidationResult response;
     if (Throwables.getRootCause(err) instanceof DecodingException) {
       LOG.trace("Received malformed gossip message on {}", getTopic());
+      response = ValidationResult.Invalid;
     } else if (Throwables.getRootCause(err) instanceof RejectedExecutionException) {
       LOG.warn(
           "Discarding gossip message for topic {} because the executor queue is full", getTopic());
+      response = ValidationResult.Ignore;
     } else {
       LOG.warn("Encountered exception while processing message for topic {}", getTopic(), err);
+      response = ValidationResult.Ignore;
     }
-    return ValidationResult.Invalid;
+
+    return response;
   }
 
   public T deserialize(Bytes bytes) throws DecodingException {
