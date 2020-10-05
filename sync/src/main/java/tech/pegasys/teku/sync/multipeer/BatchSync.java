@@ -46,6 +46,7 @@ public class BatchSync implements Sync {
   private final BatchChain activeBatches;
 
   private Optional<Batch> importingBatch = Optional.empty();
+  private boolean switchingBranches = false;
 
   private UInt64 commonAncestorSlot;
 
@@ -221,13 +222,22 @@ public class BatchSync implements Sync {
       return;
     }
     if (!firstBatch.getTargetChain().equals(secondBatch.getTargetChain())) {
-      // We switched chains but they didn't actually match up. Go back to the finalized epoch
+      // We switched chains but they didn't actually match up. Stop downloading batches.
+      // When the current import is complete, restart from the common ancestor with the new chain
+      // We don't start downloading while an import is in progress, because it may update our
+      // finalized checkpoint which may lead to unknown parent failures because we're importing
+      // blocks from the new chain that are now before the finalized checkpoint
       LOG.debug(
           "New chain did not extend previous chain. {} and {} did not form chain",
           firstBatch,
           secondBatch);
+      if (importingBatch.isPresent()) {
+        switchingBranches = true;
+      } else {
+        // Nothing importing, can start downloading new chain immediately.
+        commonAncestorSlot = getCommonAncestorSlot();
+      }
       activeBatches.removeAll();
-      commonAncestorSlot = getCommonAncestorSlot();
       return;
     }
 
@@ -284,9 +294,11 @@ public class BatchSync implements Sync {
         isCurrentlyImportingBatch(importedBatch),
         "Received import complete for batch that shouldn't have been importing");
     importingBatch = Optional.empty();
-    if (!isActiveBatch(importedBatch)) {
+    if (switchingBranches) {
       // We switched to a different chain while this was importing. Can't infer anything about other
       // batches from this result but should still penalise the peer that sent it to us.
+      switchingBranches = false;
+      commonAncestorSlot = getCommonAncestorSlot();
       if (result.isFailure()) {
         importedBatch.markAsInvalid();
       }
@@ -340,6 +352,12 @@ public class BatchSync implements Sync {
     if (targetChain.getPeers().isEmpty()) {
       activeBatches.removeAll();
       syncResult.complete(SyncResult.FAILED);
+      return;
+    }
+    if (switchingBranches) {
+      // Waiting for last import to complete to switch branches so don't start new tasks
+      checkState(
+          importingBatch.isPresent(), "Waiting for import to complete but no import in progress");
       return;
     }
     startNextImport();
