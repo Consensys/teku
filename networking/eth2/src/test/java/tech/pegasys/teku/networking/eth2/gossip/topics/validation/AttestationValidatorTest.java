@@ -14,6 +14,11 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.BLS_VERIFY_DEPOSIT;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -25,6 +30,8 @@ import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SL
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.List;
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,12 +40,14 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.AttestationGenerator;
 import tech.pegasys.teku.core.ChainBuilder;
+import tech.pegasys.teku.core.ForkChoiceUtilWrapper;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -79,16 +88,17 @@ class AttestationValidatorTest {
   private final AttestationGenerator attestationGenerator =
       new AttestationGenerator(chainBuilder.getValidatorKeys());
 
-  private final AttestationValidator validator = new AttestationValidator(recentChainData);
+  private final AttestationValidator validator =
+      new AttestationValidator(recentChainData, new ForkChoiceUtilWrapper());
 
   @BeforeAll
   public static void init() {
-    BeaconStateUtil.BLS_VERIFY_DEPOSIT = false;
+    BLS_VERIFY_DEPOSIT = false;
   }
 
   @AfterAll
   public static void reset() {
-    BeaconStateUtil.BLS_VERIFY_DEPOSIT = true;
+    BLS_VERIFY_DEPOSIT = true;
   }
 
   @BeforeEach
@@ -299,6 +309,67 @@ class AttestationValidatorTest {
             validator.validate(
                 ValidateableAttestation.fromAttestation(attestation), expectedSubnetId))
         .isCompletedWithValue(ACCEPT);
+  }
+
+  @Test
+  public void shouldRejectAttestationsWithCommitteeIndexNotInTheExpectedRange() {
+    final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
+    final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
+    final AttestationData data = attestation.getData();
+    final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
+    assertThat(
+            validator.validate(
+                ValidateableAttestation.fromAttestation(
+                    new Attestation(
+                        attestation.getAggregation_bits(),
+                        new AttestationData(
+                            data.getSlot(),
+                            get_committee_count_per_slot(
+                                blockAndState.getState(), data.getTarget().getEpoch()),
+                            data.getBeacon_block_root(),
+                            data.getSource(),
+                            data.getTarget()),
+                        attestation.getAggregate_signature())),
+                expectedSubnetId))
+        .isCompletedWithValue(REJECT);
+  }
+
+  @Test
+  public void shouldRejectAttestationsThatHaveNonMatchingTargetEpochAndSlot() {
+    final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
+    final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
+    final AttestationData data = attestation.getData();
+    final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
+    assertThat(
+            validator.validate(
+                ValidateableAttestation.fromAttestation(
+                    new Attestation(
+                        attestation.getAggregation_bits(),
+                        new AttestationData(
+                            data.getSlot(),
+                            data.getIndex(),
+                            data.getBeacon_block_root(),
+                            data.getSource(),
+                            new Checkpoint(data.getTarget().getEpoch().plus(2), Bytes32.ZERO)),
+                        attestation.getAggregate_signature())),
+                expectedSubnetId))
+        .isCompletedWithValue(REJECT);
+  }
+
+  @Test
+  public void shouldRejectAttestationsThatHaveLMDVotesInconsistentWithTargetRoot() {
+    ForkChoiceUtilWrapper forkChoiceUtilWrapper = mock(ForkChoiceUtilWrapper.class);
+    when(forkChoiceUtilWrapper.get_ancestor(any(), any(), any()))
+        .thenReturn(Optional.of(Bytes32.ZERO));
+    final AttestationValidator validator =
+        new AttestationValidator(recentChainData, forkChoiceUtilWrapper);
+    final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
+    final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
+    final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
+    assertThat(
+            validator.validate(
+                ValidateableAttestation.fromAttestation(attestation), expectedSubnetId))
+        .isCompletedWithValue(REJECT);
   }
 
   private InternalValidationResult validate(final Attestation attestation) {

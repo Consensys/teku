@@ -78,7 +78,7 @@ public class SanityBlocksTestExecutor implements TestExecutor {
     private int blsSetting;
 
     @JsonProperty(value = "reveal_deadlines_setting", required = false, defaultValue = "0")
-    private int reavealDeadlinesSetting;
+    private int revealDeadlinesSetting;
 
     public int getBlocksCount() {
       return blocksCount;
@@ -89,7 +89,7 @@ public class SanityBlocksTestExecutor implements TestExecutor {
     }
 
     public int getRevealDeadlinesSetting() {
-      return reavealDeadlinesSetting;
+      return revealDeadlinesSetting;
     }
   }
 }
