@@ -47,6 +47,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
 
   private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE =
       UInt64.valueOf(Constants.SLOTS_PER_EPOCH * 10);
+  private static final int DEFAULT_MAX_ITEMS = 5000;
   private static final UInt64 GENESIS_SLOT = UInt64.valueOf(Constants.GENESIS_SLOT);
 
   private final Subscribers<RequiredBlockRootSubscriber> requiredBlockRootSubscribers =
@@ -60,6 +61,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   // Define the range of slots we care about
   private final UInt64 futureSlotTolerance;
   private final UInt64 historicalSlotTolerance;
+  private final int maxItems;
 
   private final Function<T, Bytes32> hashTreeRootFunction;
   private final Function<T, Collection<Bytes32>> requiredBlockRootsFunction;
@@ -71,11 +73,13 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   PendingPool(
       final UInt64 historicalSlotTolerance,
       final UInt64 futureSlotTolerance,
+      final int maxItems,
       final Function<T, Bytes32> hashTreeRootFunction,
       final Function<T, Collection<Bytes32>> requiredBlockRootsFunction,
       final Function<T, UInt64> targetSlotFunction) {
     this.historicalSlotTolerance = historicalSlotTolerance;
     this.futureSlotTolerance = futureSlotTolerance;
+    this.maxItems = maxItems;
     this.hashTreeRootFunction = hashTreeRootFunction;
     this.requiredBlockRootsFunction = requiredBlockRootsFunction;
     this.targetSlotFunction = targetSlotFunction;
@@ -83,14 +87,19 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
 
   public static PendingPool<SignedBeaconBlock> createForBlocks() {
     return createForBlocks(
-        DEFAULT_HISTORICAL_SLOT_TOLERANCE, FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE);
+        DEFAULT_HISTORICAL_SLOT_TOLERANCE,
+        FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
+        DEFAULT_MAX_ITEMS);
   }
 
-  public static PendingPool<SignedBeaconBlock> createForBlocks(
-      final UInt64 historicalBlockTolerance, final UInt64 futureBlockTolerance) {
+  static PendingPool<SignedBeaconBlock> createForBlocks(
+      final UInt64 historicalBlockTolerance,
+      final UInt64 futureBlockTolerance,
+      final int maxItems) {
     return new PendingPool<>(
         historicalBlockTolerance,
         futureBlockTolerance,
+        maxItems,
         block -> block.getMessage().hash_tree_root(),
         block -> Collections.singleton(block.getParent_root()),
         SignedBeaconBlock::getSlot);
@@ -100,6 +109,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     return new PendingPool<>(
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
+        DEFAULT_MAX_ITEMS,
         ValidateableAttestation::hash_tree_root,
         ValidateableAttestation::getDependentBlockRoots,
         ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
@@ -109,6 +119,15 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     if (shouldIgnoreItem(item)) {
       // Ignore items outside of the range we care about
       return;
+    }
+
+    // Make room for the new item
+    while (pendingItems.size() > (maxItems - 1)) {
+      final SlotAndRoot toRemove = orderedPendingItems.pollFirst();
+      if (toRemove == null) {
+        break;
+      }
+      remove(pendingItems.get(toRemove.getRoot()));
     }
 
     final Bytes32 itemRoot = hashTreeRootFunction.apply(item);
