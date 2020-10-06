@@ -56,14 +56,6 @@ public class GlobalConfiguration implements MetricsConfig {
   private final boolean interopEnabled;
 
   // Validator
-  //  private final String validatorsKeyFile;
-  //  private final List<String> validatorKeystoreFiles;
-  //  private final List<String> validatorKeystorePasswordFiles;
-  //  private final List<String> validatorKeys;
-  //  private final List<String> validatorExternalSignerPublicKeys;
-  //  private final String validatorExternalSignerUrl;
-  //  private final int validatorExternalSignerTimeout;
-  //  private final Bytes32 graffiti;
   private final Path validatorsSlashingProtectionPath;
 
   // Deposit
