@@ -161,7 +161,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private ForkChoiceExecutor forkChoiceExecutor;
 
   public BeaconChainController(
-      BeaconChainConfiguration beaconConfig, final ServiceConfig serviceConfig) {
+      final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
     this.beaconConfig = beaconConfig;
     this.config = serviceConfig.getConfig();
     asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
@@ -287,7 +287,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initPerformanceTracker() {
     LOG.debug("BeaconChainController.initPerformanceTracker()");
-    if (config.isValidatorPerformanceTrackingEnabled()) {
+    if (beaconConfig.validatorConfig().isValidatorPerformanceTrackingEnabled()) {
       performanceTracker =
           new DefaultPerformanceTracker(
               combinedChainDataClient, STATUS_LOG, new ValidatorPerformanceMetrics(metricsSystem));

@@ -11,52 +11,52 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.config;
+package tech.pegasys.teku.validator.api;
 
 import static java.util.Collections.emptyList;
 
 import java.util.List;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
-class GlobalConfigurationTest {
+class ValidatorConfigTest {
 
-  private GlobalConfigurationBuilder globalConfigurationBuilder = new GlobalConfigurationBuilder();
+  private final ValidatorConfig.Builder configBuilder = ValidatorConfig.builder();
 
   @Test
   public void shouldThrowExceptionIfValidatorKeystoreFilesButNotValidatorKeystorePasswordFiles() {
-    final GlobalConfiguration config = buildConfig(emptyList(), null);
+    final ValidatorConfig config = buildConfig(emptyList(), null);
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
-        .isThrownBy(config::validateConfig)
+        .isThrownBy(config::validate)
         .withMessageContaining(
             "Invalid configuration. '--validators-key-files' and '--validators-key-password-files' must be specified together");
   }
 
   @Test
   public void shouldThrowExceptionIfValidatorKeystorePasswordFilesButNotValidatorKeystoreFiles() {
-    final GlobalConfiguration config = buildConfig(null, emptyList());
+    final ValidatorConfig config = buildConfig(null, emptyList());
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
-        .isThrownBy(config::validateConfig)
+        .isThrownBy(config::validate)
         .withMessageContaining(
             "Invalid configuration. '--validators-key-files' and '--validators-key-password-files' must be specified together");
   }
 
   @Test
   public void shouldThrowExceptionIfValidatorKeystoreFilesPasswordsLengthMismatch() {
-    final GlobalConfiguration config = buildConfig(emptyList(), List.of("password"));
+    final ValidatorConfig config = buildConfig(emptyList(), List.of("password"));
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
-        .isThrownBy(config::validateConfig)
+        .isThrownBy(config::validate)
         .withMessageContaining(
             "Invalid configuration. The number of --validators-key-files (0) must equal the number of --validators-key-password-files (1)");
   }
 
-  private GlobalConfiguration buildConfig(
+  private ValidatorConfig buildConfig(
       final List<String> validatorKeystoreFiles,
       final List<String> validatorKeystorePasswordFiles) {
-    return globalConfigurationBuilder
-        .setInteropNumberOfValidators(10)
-        .setValidatorKeystoreFiles(validatorKeystoreFiles)
-        .setValidatorKeystorePasswordFiles(validatorKeystorePasswordFiles)
+    return configBuilder
+        .validatorKeystoreFiles(validatorKeystoreFiles)
+        .validatorKeystorePasswordFiles(validatorKeystorePasswordFiles)
         .build();
   }
 }

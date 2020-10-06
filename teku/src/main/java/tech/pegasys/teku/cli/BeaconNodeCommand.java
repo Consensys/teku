@@ -331,6 +331,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
       builder.globalConfig(this::buildGlobalConfiguration);
       weakSubjectivityOptions.configure(builder);
+      validatorOptions.configure(builder);
 
       return builder.build();
     } catch (IllegalArgumentException e) {
@@ -365,17 +366,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setInitialState(networkOptions.getInitialState())
         .setInteropNumberOfValidators(interopOptions.getInteropNumberOfValidators())
         .setInteropEnabled(interopOptions.isInteropEnabled())
-        .setValidatorKeystoreLockingEnabled(validatorOptions.isValidatorKeystoreLockingEnabled())
-        .setValidatorPerformanceTrackingEnabled(
-            validatorOptions.isValidatorPerformanceTrackingEnabled())
-        .setValidatorKeystoreFiles(validatorOptions.getValidatorKeystoreFiles())
-        .setValidatorKeystorePasswordFiles(validatorOptions.getValidatorKeystorePasswordFiles())
-        .setValidatorKeys(validatorOptions.getValidatorKeys())
-        .setValidatorExternalSignerPublicKeys(
-            validatorOptions.getValidatorExternalSignerPublicKeys())
-        .setValidatorExternalSignerUrl(validatorOptions.getValidatorExternalSignerUrl())
-        .setValidatorExternalSignerTimeout(validatorOptions.getValidatorExternalSignerTimeout())
-        .setGraffiti(validatorOptions.getGraffiti())
         .setEth1DepositContractAddress(depositOptions.getEth1DepositContractAddress())
         .setEth1Endpoint(depositOptions.getEth1Endpoint())
         .setEth1DepositsFromStorageEnabled(depositOptions.isEth1DepositsFromStorageEnabled())

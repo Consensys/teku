@@ -28,11 +28,11 @@ public class BeaconNodeServiceController extends ServiceController {
       TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
     // Note services will be started in the order they are added here.
     services.add(new StorageService(serviceConfig));
-    services.add(new BeaconChainService(tekuConfig.beaconChain(), serviceConfig));
+    services.add(new BeaconChainService(serviceConfig, tekuConfig.beaconChain()));
     if (serviceConfig.getConfig().isRemoteValidatorApiEnabled()) {
       services.add(new RemoteValidatorService(serviceConfig));
     } else {
-      services.add(ValidatorClientService.create(serviceConfig));
+      services.add(ValidatorClientService.create(serviceConfig, tekuConfig.validatorClient()));
     }
     services.add(new TimerService(serviceConfig));
     if (!serviceConfig.getConfig().isInteropEnabled()

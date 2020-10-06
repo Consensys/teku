@@ -79,10 +79,10 @@ public class ValidatorNode implements Node {
             eventChannels,
             metricsSystem,
             globalConfig);
-    serviceConfig.getConfig().validateConfig();
+    tekuConfig.validate();
     Constants.setConstants(globalConfig.getConstants());
 
-    this.serviceController = new ValidatorNodeServiceController(serviceConfig);
+    this.serviceController = new ValidatorNodeServiceController(tekuConfig, serviceConfig);
     STATUS_LOG.dataPathSet(serviceConfig.getConfig().getDataPath());
   }
 
