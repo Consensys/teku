@@ -41,6 +41,7 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
 import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -177,7 +178,7 @@ public class EventSubscriptionManagerTest {
         sampleEvent.slot,
         sampleEvent.newHeadState,
         sampleEvent.newHeadBlock,
-        false,
+        BeaconStateUtil.is_start_slot_of_epoch(sampleEvent.slot),
         Optional.of(
             new ReorgContext(
                 sampleEvent.oldHeadBlock,
