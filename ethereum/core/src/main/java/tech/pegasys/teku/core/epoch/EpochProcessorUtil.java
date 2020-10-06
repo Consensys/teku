@@ -62,6 +62,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
+import tech.pegasys.teku.util.config.Constants;
 
 public final class EpochProcessorUtil {
 
@@ -304,6 +305,11 @@ public final class EpochProcessorUtil {
   public static void process_slashings(MutableBeaconState state) {
     UInt64 epoch = get_current_epoch(state);
     UInt64 total_balance = get_total_active_balance(state);
+    UInt64 adjusted_total_slashing_balance =
+        state.getSlashings().stream()
+            .reduce(UInt64.ZERO, UInt64::plus)
+            .times(Constants.PROPORTIONAL_SLASHING_MULTIPLIER)
+            .min(total_balance);
 
     SSZList<Validator> validators = state.getValidators();
     for (int index = 0; index < validators.size(); index++) {
@@ -317,10 +323,7 @@ public final class EpochProcessorUtil {
             validator
                 .getEffective_balance()
                 .dividedBy(increment)
-                .times(
-                    UInt64.valueOf(
-                            state.getSlashings().stream().mapToLong(UInt64::longValue).sum() * 3)
-                        .min(total_balance));
+                .times(adjusted_total_slashing_balance);
         UInt64 penalty = penalty_numerator.dividedBy(total_balance).times(increment);
         decrease_balance(state, index, penalty);
       }
