@@ -464,6 +464,10 @@ public class BeaconStateUtil {
     return epoch.times(SLOTS_PER_EPOCH);
   }
 
+  public static boolean is_start_slot_of_epoch(final UInt64 slot) {
+    return slot.mod(SLOTS_PER_EPOCH).equals(UInt64.ZERO);
+  }
+
   /**
    * Initiate the exit of the validator with index ``index``.
    *

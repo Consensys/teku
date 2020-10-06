@@ -192,6 +192,26 @@ class BeaconStateUtilTest {
   }
 
   @Test
+  void startSlotOfEpoch() {
+    assertThat(BeaconStateUtil.is_start_slot_of_epoch(UInt64.valueOf(Constants.SLOTS_PER_EPOCH)))
+        .isTrue();
+    assertThat(BeaconStateUtil.is_start_slot_of_epoch(UInt64.ZERO)).isTrue();
+    assertThat(
+            BeaconStateUtil.is_start_slot_of_epoch(
+                UInt64.valueOf(Constants.SLOTS_PER_EPOCH).times(1024)))
+        .isTrue();
+
+    assertThat(
+            BeaconStateUtil.is_start_slot_of_epoch(
+                UInt64.valueOf(Constants.SLOTS_PER_EPOCH).increment()))
+        .isFalse();
+    assertThat(
+            BeaconStateUtil.is_start_slot_of_epoch(
+                UInt64.valueOf(Constants.SLOTS_PER_EPOCH).decrement()))
+        .isFalse();
+  }
+
+  @Test
   void succeedsWhenGetNextEpochReturnsTheEpochPlusOne() {
     BeaconState beaconState =
         createBeaconState().updated(state -> state.setSlot(UInt64.valueOf(Constants.GENESIS_SLOT)));
