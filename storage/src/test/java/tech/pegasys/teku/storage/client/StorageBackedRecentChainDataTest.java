@@ -36,12 +36,12 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
+import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
-import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.api.StubChainHeadChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
-import tech.pegasys.teku.storage.api.StubReorgEventChannel;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.store.StoreAssertions;
 import tech.pegasys.teku.storage.store.StoreBuilder;
@@ -57,7 +57,7 @@ public class StorageBackedRecentChainDataTest {
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final FinalizedCheckpointChannel finalizedCheckpointChannel =
       new StubFinalizedCheckpointChannel();
-  private final ReorgEventChannel reorgEventChannel = new StubReorgEventChannel();
+  private final ChainHeadChannel chainHeadChannel = new StubChainHeadChannel();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   @Test
@@ -78,7 +78,7 @@ public class StorageBackedRecentChainDataTest {
             storageUpdateChannel,
             new StubProtoArrayStorageChannel(),
             finalizedCheckpointChannel,
-            reorgEventChannel,
+            chainHeadChannel,
             eventBus);
 
     // We should have posted a request to get the store from storage
@@ -122,7 +122,7 @@ public class StorageBackedRecentChainDataTest {
             storageUpdateChannel,
             new StubProtoArrayStorageChannel(),
             finalizedCheckpointChannel,
-            reorgEventChannel,
+            chainHeadChannel,
             eventBus);
 
     // We should have posted a request to get the store from storage
@@ -172,7 +172,7 @@ public class StorageBackedRecentChainDataTest {
             storageUpdateChannel,
             new StubProtoArrayStorageChannel(),
             finalizedCheckpointChannel,
-            reorgEventChannel,
+            chainHeadChannel,
             eventBus);
 
     // We should have posted a request to get the store from storage
@@ -216,7 +216,7 @@ public class StorageBackedRecentChainDataTest {
             storageUpdateChannel,
             new StubProtoArrayStorageChannel(),
             finalizedCheckpointChannel,
-            reorgEventChannel,
+            chainHeadChannel,
             eventBus);
 
     // We should have posted a request to get the store from storage

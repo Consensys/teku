@@ -46,8 +46,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayForkChoiceStrategy;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
+import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
-import tech.pegasys.teku.storage.api.ReorgEventChannel;
+import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.store.EmptyStoreResults;
@@ -70,7 +71,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   protected final ProtoArrayStorageChannel protoArrayStorageChannel;
   protected final AsyncRunner asyncRunner;
   protected final MetricsSystem metricsSystem;
-  private final ReorgEventChannel reorgEventChannel;
+  private final ChainHeadChannel chainHeadChannel;
   private final StoreConfig storeConfig;
 
   private final AtomicBoolean storeInitialized = new AtomicBoolean(false);
@@ -92,14 +93,14 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final StorageUpdateChannel storageUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
-      final ReorgEventChannel reorgEventChannel,
+      final ChainHeadChannel chainHeadChannel,
       final EventBus eventBus) {
     this.asyncRunner = asyncRunner;
     this.metricsSystem = metricsSystem;
     this.storeConfig = storeConfig;
     this.blockProvider = blockProvider;
     this.stateProvider = stateProvider;
-    this.reorgEventChannel = reorgEventChannel;
+    this.chainHeadChannel = chainHeadChannel;
     this.eventBus = eventBus;
     this.storageUpdateChannel = storageUpdateChannel;
     this.protoArrayStorageChannel = protoArrayStorageChannel;
@@ -260,14 +261,18 @@ public abstract class RecentChainData implements StoreUpdateHandler {
               commonAncestorSlot);
         }
 
+        final boolean epochTransition =
+            compute_epoch_at_slot(previousChainHead.getForkChoiceSlot())
+                .isLessThan(compute_epoch_at_slot(newChainHead.getForkChoiceSlot()));
+
         reorgCounter.inc();
-        reorgEventChannel.reorgOccurred(
-            newChainHead.getRoot(),
+        chainHeadChannel.chainHeadUpdated(
             newChainHead.getSlot(),
             newChainHead.getStateRoot(),
-            previousChainHead.getRoot(),
-            previousChainHead.getStateRoot(),
-            commonAncestorSlot);
+            newChainHead.getRoot(),
+            epochTransition,
+            ReorgContext.of(
+                previousChainHead.getRoot(), previousChainHead.getStateRoot(), commonAncestorSlot));
       }
     }
 

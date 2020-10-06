@@ -24,11 +24,11 @@ import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
 import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
+import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
-import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.api.StubChainHeadChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
-import tech.pegasys.teku.storage.api.StubReorgEventChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -43,7 +43,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       final StorageUpdateChannel storageUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
-      final ReorgEventChannel reorgEventChannel) {
+      final ChainHeadChannel chainHeadChannel) {
     super(
         asyncRunner,
         metricsSystem,
@@ -53,7 +53,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         storageUpdateChannel,
         protoArrayStorageChannel,
         finalizedCheckpointChannel,
-        reorgEventChannel,
+        chainHeadChannel,
         eventBus);
     eventBus.register(this);
   }
@@ -67,16 +67,16 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
   }
 
   public static RecentChainData create(
-      final EventBus eventBus, final ReorgEventChannel reorgEventChannel) {
-    return builder().eventBus(eventBus).reorgEventChannel(reorgEventChannel).build();
+      final EventBus eventBus, final ChainHeadChannel chainHeadChannel) {
+    return builder().eventBus(eventBus).reorgEventChannel(chainHeadChannel).build();
   }
 
   public static RecentChainData createWithStore(
       final EventBus eventBus,
-      final ReorgEventChannel reorgEventChannel,
+      final ChainHeadChannel chainHeadChannel,
       final UpdatableStore store) {
     final RecentChainData recentChainData =
-        builder().eventBus(eventBus).reorgEventChannel(reorgEventChannel).build();
+        builder().eventBus(eventBus).reorgEventChannel(chainHeadChannel).build();
     recentChainData.setStore(store);
     return recentChainData;
   }
@@ -88,7 +88,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
     private ProtoArrayStorageChannel protoArrayStorageChannel = new StubProtoArrayStorageChannel();
     private FinalizedCheckpointChannel finalizedCheckpointChannel =
         new StubFinalizedCheckpointChannel();
-    private ReorgEventChannel reorgEventChannel = new StubReorgEventChannel();
+    private ChainHeadChannel chainHeadChannel = new StubChainHeadChannel();
 
     public RecentChainData build() {
       return new MemoryOnlyRecentChainData(
@@ -99,7 +99,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
           storageUpdateChannel,
           protoArrayStorageChannel,
           finalizedCheckpointChannel,
-          reorgEventChannel);
+          chainHeadChannel);
     }
 
     public Builder storeConfig(final StoreConfig storeConfig) {
@@ -127,9 +127,9 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       return this;
     }
 
-    public Builder reorgEventChannel(final ReorgEventChannel reorgEventChannel) {
-      checkNotNull(reorgEventChannel);
-      this.reorgEventChannel = reorgEventChannel;
+    public Builder reorgEventChannel(final ChainHeadChannel chainHeadChannel) {
+      checkNotNull(chainHeadChannel);
+      this.chainHeadChannel = chainHeadChannel;
       return this;
     }
   }

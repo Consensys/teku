@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.core.ForkChoiceUtilWrapper;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.operationsignatureverifiers.ProposerSlashingSignatureVerifier;
 import tech.pegasys.teku.core.operationsignatureverifiers.VoluntaryExitSignatureVerifier;
@@ -146,7 +147,8 @@ public class ActiveEth2Network extends DelegatingP2PNetwork<Eth2Peer> implements
   private synchronized void startup() {
     state.set(State.RUNNING);
     BlockValidator blockValidator = new BlockValidator(recentChainData, new StateTransition());
-    AttestationValidator attestationValidator = new AttestationValidator(recentChainData);
+    AttestationValidator attestationValidator =
+        new AttestationValidator(recentChainData, new ForkChoiceUtilWrapper());
     SignedAggregateAndProofValidator aggregateValidator =
         new SignedAggregateAndProofValidator(recentChainData, attestationValidator);
     final ForkInfo forkInfo = recentChainData.getHeadForkInfo().orElseThrow();

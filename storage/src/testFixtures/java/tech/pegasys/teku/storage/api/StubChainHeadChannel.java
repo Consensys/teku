@@ -11,19 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2;
+package tech.pegasys.teku.storage.api;
 
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class Eth2Config {
-  private final Optional<Checkpoint> requiredCheckpoint;
-
-  public Eth2Config(Optional<Checkpoint> requiredCheckpoint) {
-    this.requiredCheckpoint = requiredCheckpoint;
-  }
-
-  public Optional<Checkpoint> getRequiredCheckpoint() {
-    return requiredCheckpoint;
-  }
+public class StubChainHeadChannel implements ChainHeadChannel {
+  @Override
+  public void chainHeadUpdated(
+      final UInt64 slot,
+      final Bytes32 stateRoot,
+      final Bytes32 bestBlockRoot,
+      final boolean epochTransition,
+      final Optional<ReorgContext> optionalReorgContext) {}
 }
