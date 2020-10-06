@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.client;
 
 import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 
 import com.google.common.eventbus.EventBus;
@@ -262,9 +261,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
               commonAncestorSlot);
         }
 
-        final UInt64 epoch = compute_epoch_at_slot(newChainHead.getSlot());
         final boolean epochTransition =
-            newChainHead.getSlot().equals(compute_start_slot_at_epoch(epoch));
+            compute_epoch_at_slot(previousChainHead.getForkChoiceSlot())
+                .isLessThan(compute_epoch_at_slot(newChainHead.getForkChoiceSlot()));
 
         reorgCounter.inc();
         chainHeadChannel.chainHeadUpdated(
