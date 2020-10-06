@@ -677,10 +677,9 @@ class BatchSyncTest {
   }
 
   @Test
-  void shouldHandleSwitchingToNewChainWhileABatchIsImporting() {
+  void shouldDelaySwitchingToNewChainUntilCurrentImportCompletes() {
     assertThat(sync.syncToChain(targetChain)).isNotDone();
 
-    final ChainBuilder fork = chainBuilder.fork();
     final Batch batch0 = batches.get(0);
     final Batch batch1 = batches.get(1);
     batches.receiveBlocks(batch0, chainBuilder.generateBlockAtSlot(1).getBlock());
@@ -703,33 +702,15 @@ class BatchSyncTest {
 
     assertBatchNotActive(batch0);
 
-    // All pending batches returns at least one block so need to wait for an import to complete
-    eventThread.execute(
-        () -> {
-          batches.stream()
-              .filter(batch -> sync.isActiveBatch(batches.getEventThreadOnlyBatch(batch)))
-              .filter(Batch::isAwaitingBlocks)
-              .forEach(
-                  batch ->
-                      batches.receiveBlocks(
-                          batch, fork.generateBlockAtSlot(batch.getLastSlot()).getBlock()));
-          assertThat(
-                  batches.stream()
-                      .filter(batch -> sync.isActiveBatch(batches.getEventThreadOnlyBatch(batch))))
-              .noneMatch(Batch::isAwaitingBlocks);
-        });
+    // All batches should have been dropped and none started until the import completes
+    batches.forEach(this::assertBatchNotActive);
+    batches.clearBatchList();
 
+    final SignedBlockAndState finalizedBlock = storageSystem.chainUpdater().finalizeEpoch(1);
     batches.getImportResult(batch0).complete(IMPORT_FAILED);
-    // Should trigger a new import
-    eventThread.execute(
-        () -> {
-          final Batch firstPendingBatch =
-              batches.stream()
-                  .filter(batch -> sync.isActiveBatch(batches.getEventThreadOnlyBatch(batch)))
-                  .findFirst()
-                  .orElseThrow();
-          assertBatchImported(firstPendingBatch);
-        });
+
+    // Now we should start downloading from the latest finalized checkpoint
+    assertThat(batches.get(0).getFirstSlot()).isEqualTo(finalizedBlock.getSlot());
   }
 
   @Test

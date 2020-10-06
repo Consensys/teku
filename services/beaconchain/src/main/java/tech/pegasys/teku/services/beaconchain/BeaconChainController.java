@@ -82,8 +82,8 @@ import tech.pegasys.teku.statetransition.forkchoice.SingleThreadedForkChoiceExec
 import tech.pegasys.teku.statetransition.genesis.GenesisHandler;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
-import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -232,7 +232,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             eventChannels.getPublisher(StorageUpdateChannel.class, asyncRunner),
             eventChannels.getPublisher(ProtoArrayStorageChannel.class, asyncRunner),
             eventChannels.getPublisher(FinalizedCheckpointChannel.class, asyncRunner),
-            eventChannels.getPublisher(ReorgEventChannel.class),
+            eventChannels.getPublisher(ChainHeadChannel.class),
             eventBus)
         .thenAccept(
             client -> {
@@ -654,7 +654,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             attestationPool,
             attestationManager,
             recentChainData);
-    eventChannels.subscribe(ReorgEventChannel.class, operationsReOrgManager);
+    eventChannels.subscribe(ChainHeadChannel.class, operationsReOrgManager);
   }
 
   private void setupInteropState() {

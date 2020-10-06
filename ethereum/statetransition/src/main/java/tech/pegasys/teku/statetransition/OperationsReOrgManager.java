@@ -31,10 +31,11 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.storage.api.ReorgEventChannel;
+import tech.pegasys.teku.storage.api.ChainHeadChannel;
+import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class OperationsReOrgManager implements ReorgEventChannel {
+public class OperationsReOrgManager implements ChainHeadChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   final OperationPool<SignedVoluntaryExit> exitPool;
@@ -60,21 +61,24 @@ public class OperationsReOrgManager implements ReorgEventChannel {
   }
 
   @Override
-  public void reorgOccurred(
+  public void chainHeadUpdated(
+      final UInt64 slot,
+      final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
-      final UInt64 bestSlot,
-      final Bytes32 bestStateRoot,
-      final Bytes32 oldBestBlockRoot,
-      final Bytes32 oldBestStateRoot,
-      final UInt64 commonAncestorSlot) {
+      final boolean epochTransition,
+      final Optional<ReorgContext> optionalReorgContext) {
+    optionalReorgContext.ifPresent(
+        reorgContext -> {
+          NavigableMap<UInt64, Bytes32> notCanonicalBlockRoots =
+              recentChainData.getAncestorsOnFork(
+                  reorgContext.getCommonAncestorSlot(), reorgContext.getOldBestBlockRoot());
+          NavigableMap<UInt64, Bytes32> nowCanonicalBlockRoots =
+              recentChainData.getAncestorsOnFork(
+                  reorgContext.getCommonAncestorSlot(), bestBlockRoot);
 
-    NavigableMap<UInt64, Bytes32> notCanonicalBlockRoots =
-        recentChainData.getAncestorsOnFork(commonAncestorSlot, oldBestBlockRoot);
-    NavigableMap<UInt64, Bytes32> nowCanonicalBlockRoots =
-        recentChainData.getAncestorsOnFork(commonAncestorSlot, bestBlockRoot);
-
-    processNonCanonicalBlockOperations(notCanonicalBlockRoots.values());
-    processCanonicalBlockOperations(nowCanonicalBlockRoots.values());
+          processNonCanonicalBlockOperations(notCanonicalBlockRoots.values());
+          processCanonicalBlockOperations(nowCanonicalBlockRoots.values());
+        });
   }
 
   private void processNonCanonicalBlockOperations(Collection<Bytes32> nonCanonicalBlockRoots) {

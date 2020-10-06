@@ -30,8 +30,8 @@ import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.protoarray.ProtoArrayStorageChannel;
+import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
-import tech.pegasys.teku.storage.api.ReorgEventChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.store.StoreBuilder;
@@ -53,7 +53,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final StorageUpdateChannel storageUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
-      final ReorgEventChannel reorgEventChannel,
+      final ChainHeadChannel chainHeadChannel,
       final EventBus eventBus) {
     super(
         asyncRunner,
@@ -64,7 +64,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
         storageUpdateChannel,
         protoArrayStorageChannel,
         finalizedCheckpointChannel,
-        reorgEventChannel,
+        chainHeadChannel,
         eventBus);
     this.storeConfig = storeConfig;
     this.storageQueryChannel = storageQueryChannel;
@@ -81,7 +81,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final StorageUpdateChannel storageUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
-      final ReorgEventChannel reorgEventChannel,
+      final ChainHeadChannel chainHeadChannel,
       final EventBus eventBus) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
@@ -92,7 +92,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             storageUpdateChannel,
             protoArrayStorageChannel,
             finalizedCheckpointChannel,
-            reorgEventChannel,
+            chainHeadChannel,
             eventBus);
 
     return client.initializeFromStorageWithRetry(asyncRunner);
@@ -107,7 +107,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final StorageUpdateChannel storageUpdateChannel,
       final ProtoArrayStorageChannel protoArrayStorageChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
-      final ReorgEventChannel reorgEventChannel,
+      final ChainHeadChannel chainHeadChannel,
       final EventBus eventBus) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
@@ -118,7 +118,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             storageUpdateChannel,
             protoArrayStorageChannel,
             finalizedCheckpointChannel,
-            reorgEventChannel,
+            chainHeadChannel,
             eventBus);
 
     return client.initializeFromStorage().join();

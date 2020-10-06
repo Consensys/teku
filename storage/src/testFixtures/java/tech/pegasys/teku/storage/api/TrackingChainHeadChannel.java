@@ -17,28 +17,31 @@ import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class TrackingReorgEventChannel implements ReorgEventChannel {
+public class TrackingChainHeadChannel implements ChainHeadChannel {
   private final List<ReorgEvent> reorgEvents = new ArrayList<>();
 
   @Override
-  public void reorgOccurred(
+  public void chainHeadUpdated(
+      final UInt64 slot,
+      final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
-      final UInt64 bestSlot,
-      final Bytes32 bestStateRoot,
-      final Bytes32 oldBestBlockRoot,
-      final Bytes32 oldBestStateRoot,
-      final UInt64 commonAncestorSlot) {
-    reorgEvents.add(
-        new ReorgEvent(
-            bestBlockRoot,
-            bestSlot,
-            bestStateRoot,
-            oldBestBlockRoot,
-            oldBestStateRoot,
-            commonAncestorSlot));
+      final boolean epochTransition,
+      final Optional<ReorgContext> optionalReorgContext) {
+    optionalReorgContext.ifPresent(
+        context -> {
+          reorgEvents.add(
+              new ReorgEvent(
+                  bestBlockRoot,
+                  slot,
+                  stateRoot,
+                  context.getOldBestBlockRoot(),
+                  context.getOldBestStateRoot(),
+                  context.getCommonAncestorSlot()));
+        });
   }
 
   public List<ReorgEvent> getReorgEvents() {
