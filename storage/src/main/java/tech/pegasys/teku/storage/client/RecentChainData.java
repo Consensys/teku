@@ -242,7 +242,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         LOG.info("Skipping head block update to avoid potential rollback of the chain head.");
         return;
       }
+      if (originalHead.isPresent() && originalHead.get().equals(newChainHead)) {
+        LOG.trace("Not updating chain head");
+        return;
+      }
       this.chainHead = Optional.of(newChainHead);
+      final Optional<ReorgContext> optionalReorgContext;
       if (originalHead
           .map(head -> hasReorgedFrom(head.getRoot(), head.getForkChoiceSlot()))
           .orElse(false)) {
@@ -260,20 +265,26 @@ public abstract class RecentChainData implements StoreUpdateHandler {
               formatBlock(newChainHead.getForkChoiceSlot(), newChainHead.getRoot()),
               commonAncestorSlot);
         }
-
-        final boolean epochTransition =
-            compute_epoch_at_slot(previousChainHead.getForkChoiceSlot())
-                .isLessThan(compute_epoch_at_slot(newChainHead.getForkChoiceSlot()));
-
         reorgCounter.inc();
-        chainHeadChannel.chainHeadUpdated(
-            newChainHead.getSlot(),
-            newChainHead.getStateRoot(),
-            newChainHead.getRoot(),
-            epochTransition,
+        optionalReorgContext =
             ReorgContext.of(
-                previousChainHead.getRoot(), previousChainHead.getStateRoot(), commonAncestorSlot));
+                previousChainHead.getRoot(), previousChainHead.getStateRoot(), commonAncestorSlot);
+      } else {
+        optionalReorgContext = ReorgContext.empty();
       }
+      final boolean epochTransition =
+          originalHead
+              .map(
+                  previousChainHead ->
+                      compute_epoch_at_slot(previousChainHead.getForkChoiceSlot())
+                          .isLessThan(compute_epoch_at_slot(newChainHead.getForkChoiceSlot())))
+              .orElse(false);
+      chainHeadChannel.chainHeadUpdated(
+          newChainHead.getForkChoiceSlot(),
+          newChainHead.getStateRoot(),
+          newChainHead.getRoot(),
+          epochTransition,
+          optionalReorgContext);
     }
 
     bestBlockInitialized.complete(null);
