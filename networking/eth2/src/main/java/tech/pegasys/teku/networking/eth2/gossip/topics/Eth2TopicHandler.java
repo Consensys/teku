@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import com.google.common.base.Throwables;
 import io.libp2p.core.pubsub.ValidationResult;
 import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
@@ -27,6 +26,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValida
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
+import tech.pegasys.teku.util.exceptions.ExceptionUtil;
 
 public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable, TWrapped>
     implements TopicHandler {
@@ -62,15 +62,20 @@ public abstract class Eth2TopicHandler<T extends SimpleOffsetSerializable, TWrap
       final TWrapped message, InternalValidationResult internalValidationResult);
 
   protected ValidationResult handleMessageProcessingError(Throwable err) {
-    if (Throwables.getRootCause(err) instanceof DecodingException) {
+    final ValidationResult response;
+    if (ExceptionUtil.getCause(err, DecodingException.class).isPresent()) {
       LOG.trace("Received malformed gossip message on {}", getTopic());
-    } else if (Throwables.getRootCause(err) instanceof RejectedExecutionException) {
+      response = ValidationResult.Invalid;
+    } else if (ExceptionUtil.getCause(err, RejectedExecutionException.class).isPresent()) {
       LOG.warn(
           "Discarding gossip message for topic {} because the executor queue is full", getTopic());
+      response = ValidationResult.Ignore;
     } else {
       LOG.warn("Encountered exception while processing message for topic {}", getTopic(), err);
+      response = ValidationResult.Invalid;
     }
-    return ValidationResult.Invalid;
+
+    return response;
   }
 
   public T deserialize(Bytes bytes) throws DecodingException {

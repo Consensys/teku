@@ -11,19 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.api;
+package tech.pegasys.teku.core;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 
-public class StubReorgEventChannel implements ReorgEventChannel {
+public class ForkChoiceUtilWrapper {
 
-  @Override
-  public void reorgOccurred(
-      final Bytes32 bestBlockRoot,
-      final UInt64 bestSlot,
-      final Bytes32 bestStateRoot,
-      final Bytes32 oldBestBlockRoot,
-      final Bytes32 oldBestStateRoot,
-      final UInt64 commonAncestorSlot) {}
+  public Optional<Bytes32> get_ancestor(
+      ForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 slot) {
+    return ForkChoiceUtil.get_ancestor(forkChoiceStrategy, root, slot);
+  }
 }
