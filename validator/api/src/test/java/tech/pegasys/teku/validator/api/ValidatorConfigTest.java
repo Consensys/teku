@@ -26,37 +26,36 @@ class ValidatorConfigTest {
 
   @Test
   public void shouldThrowExceptionIfValidatorKeystoreFilesButNotValidatorKeystorePasswordFiles() {
-    final ValidatorConfig config = buildConfig(emptyList(), null);
+    final ValidatorConfig.Builder config = buildConfig(List.of("foo"), emptyList());
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
-        .isThrownBy(config::validate)
+        .isThrownBy(config::build)
         .withMessageContaining(
             "Invalid configuration. '--validators-key-files' and '--validators-key-password-files' must be specified together");
   }
 
   @Test
   public void shouldThrowExceptionIfValidatorKeystorePasswordFilesButNotValidatorKeystoreFiles() {
-    final ValidatorConfig config = buildConfig(null, emptyList());
+    final ValidatorConfig.Builder config = buildConfig(emptyList(), List.of("foo"));
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
-        .isThrownBy(config::validate)
+        .isThrownBy(config::build)
         .withMessageContaining(
             "Invalid configuration. '--validators-key-files' and '--validators-key-password-files' must be specified together");
   }
 
   @Test
   public void shouldThrowExceptionIfValidatorKeystoreFilesPasswordsLengthMismatch() {
-    final ValidatorConfig config = buildConfig(emptyList(), List.of("password"));
+    final ValidatorConfig.Builder config = buildConfig(List.of("a", "b"), List.of("password"));
     Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
-        .isThrownBy(config::validate)
+        .isThrownBy(config::build)
         .withMessageContaining(
-            "Invalid configuration. The number of --validators-key-files (0) must equal the number of --validators-key-password-files (1)");
+            "Invalid configuration. The number of --validators-key-files (2) must equal the number of --validators-key-password-files (1)");
   }
 
-  private ValidatorConfig buildConfig(
+  private ValidatorConfig.Builder buildConfig(
       final List<String> validatorKeystoreFiles,
       final List<String> validatorKeystorePasswordFiles) {
     return configBuilder
         .validatorKeystoreFiles(validatorKeystoreFiles)
-        .validatorKeystorePasswordFiles(validatorKeystorePasswordFiles)
-        .build();
+        .validatorKeystorePasswordFiles(validatorKeystorePasswordFiles);
   }
 }

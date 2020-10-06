@@ -103,42 +103,11 @@ public class ValidatorConfig {
         new KeyStoreFilesLocator(validatorKeys, File.pathSeparator);
     processor.parse();
     if (validatorKeystoreFiles != null) {
-      validateKeyStoreFilesAndPasswordFilesConfig();
       processor.parseKeyAndPasswordList(
           getValidatorKeystoreFiles(), getValidatorKeystorePasswordFiles());
     }
 
     return processor.getFilePairs();
-  }
-
-  public void validate() {
-    validateKeyStoreFilesAndPasswordFilesConfig();
-  }
-
-  private void validateKeyStoreFilesAndPasswordFilesConfig() {
-    final List<String> validatorKeystoreFiles = getValidatorKeystoreFiles();
-    final List<String> validatorKeystorePasswordFiles = getValidatorKeystorePasswordFiles();
-
-    if ((validatorKeystoreFiles != null && validatorKeystorePasswordFiles == null)
-        || (validatorKeystoreFiles == null && validatorKeystorePasswordFiles != null)) {
-      final String errorMessage =
-          "Invalid configuration. '--validators-key-files' and '--validators-key-password-files' must be specified together";
-      throw new InvalidConfigurationException(errorMessage);
-    }
-
-    if (validatorKeystoreFiles.size() != validatorKeystorePasswordFiles.size()) {
-      StatusLogger.getLogger()
-          .debug(
-              "Invalid configuration. The size of validator.validatorsKeystoreFiles {} and validator.validatorsKeystorePasswordFiles {} must match",
-              validatorKeystoreFiles.size(),
-              validatorKeystorePasswordFiles.size());
-
-      final String errorMessage =
-          String.format(
-              "Invalid configuration. The number of --validators-key-files (%d) must equal the number of --validators-key-password-files (%d)",
-              validatorKeystoreFiles.size(), validatorKeystorePasswordFiles.size());
-      throw new InvalidConfigurationException(errorMessage);
-    }
   }
 
   public static final class Builder {
@@ -203,6 +172,7 @@ public class ValidatorConfig {
     }
 
     public ValidatorConfig build() {
+      validateKeyStoreFilesAndPasswordFilesConfig();
       return new ValidatorConfig(
           validatorKeys,
           validatorKeystoreFiles,
@@ -213,6 +183,31 @@ public class ValidatorConfig {
           graffiti,
           validatorPerformanceTrackingEnabled,
           validatorKeystoreLockingEnabled);
+    }
+
+    private void validateKeyStoreFilesAndPasswordFilesConfig() {
+      if (validatorKeystoreFiles.isEmpty() && validatorKeystorePasswordFiles.isEmpty()) {
+        return;
+      }
+      if (validatorKeystoreFiles.isEmpty() != validatorKeystorePasswordFiles.isEmpty()) {
+        final String errorMessage =
+            "Invalid configuration. '--validators-key-files' and '--validators-key-password-files' must be specified together";
+        throw new InvalidConfigurationException(errorMessage);
+      }
+
+      if (validatorKeystoreFiles.size() != validatorKeystorePasswordFiles.size()) {
+        StatusLogger.getLogger()
+            .debug(
+                "Invalid configuration. The size of validator.validatorsKeystoreFiles {} and validator.validatorsKeystorePasswordFiles {} must match",
+                validatorKeystoreFiles.size(),
+                validatorKeystorePasswordFiles.size());
+
+        final String errorMessage =
+            String.format(
+                "Invalid configuration. The number of --validators-key-files (%d) must equal the number of --validators-key-password-files (%d)",
+                validatorKeystoreFiles.size(), validatorKeystorePasswordFiles.size());
+        throw new InvalidConfigurationException(errorMessage);
+      }
     }
   }
 }

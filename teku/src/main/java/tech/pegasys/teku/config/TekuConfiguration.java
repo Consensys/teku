@@ -25,7 +25,6 @@ public class TekuConfiguration {
   private final GlobalConfiguration globalConfiguration;
   private final WeakSubjectivityConfig weakSubjectivityConfig;
   private final BeaconChainConfiguration beaconChainConfig;
-  private final ValidatorConfig validatorConfig;
   private final ValidatorClientConfiguration validatorClientConfig;
 
   private TekuConfiguration(
@@ -34,7 +33,6 @@ public class TekuConfiguration {
       final ValidatorConfig validatorConfig) {
     this.globalConfiguration = globalConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
-    this.validatorConfig = validatorConfig;
     this.beaconChainConfig = new BeaconChainConfiguration(weakSubjectivityConfig, validatorConfig);
     this.validatorClientConfig =
         new ValidatorClientConfiguration(globalConfiguration, validatorConfig);
@@ -62,7 +60,6 @@ public class TekuConfiguration {
 
   public void validate() {
     globalConfiguration.validate();
-    validatorConfig.validate();
   }
 
   public static class Builder {
