@@ -31,7 +31,6 @@ public class TrackingChainHeadChannel implements ChainHeadChannel {
       final Bytes32 bestBlockRoot,
       final boolean epochTransition,
       final Optional<ReorgContext> optionalReorgContext) {
-    // FIXME
     optionalReorgContext.ifPresent(
         context -> {
           reorgEvents.add(
