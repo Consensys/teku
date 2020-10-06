@@ -15,15 +15,16 @@ package tech.pegasys.teku.services.remotevalidator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
 import io.javalin.Javalin;
 import io.javalin.websocket.WsConnectContext;
 import io.javalin.websocket.WsContext;
-import java.io.IOException;
 import java.util.Objects;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.jetty.websocket.api.StatusCode;
+import org.eclipse.jetty.websocket.api.WriteCallback;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.services.remotevalidator.RemoteValidatorSubscriptions.SubscriptionStatus;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
@@ -83,8 +84,25 @@ class RemoteValidatorApi {
             (msg) -> {
               try {
                 final String json = jsonProvider.objectToJSON(msg);
-                handler.session.getRemote().sendString(json);
-              } catch (IOException e) {
+                handler
+                    .session
+                    .getRemote()
+                    .sendString(
+                        json,
+                        new WriteCallback() {
+                          @Override
+                          public void writeFailed(final Throwable x) {
+                            LOG.error(
+                                "Error sending msg to validator {}", handler.getSessionId(), x);
+                            handler.session.close(
+                                StatusCode.SERVER_ERROR,
+                                "Unexpected error on Remote Validator server");
+                          }
+
+                          @Override
+                          public void writeSuccess() {}
+                        });
+              } catch (JsonProcessingException e) {
                 LOG.error("Error sending msg to validator {}", handler.getSessionId(), e);
                 handler.session.close(
                     StatusCode.SERVER_ERROR, "Unexpected error on Remote Validator server");
