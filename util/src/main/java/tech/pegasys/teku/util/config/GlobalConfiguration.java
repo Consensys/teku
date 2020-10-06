@@ -55,7 +55,6 @@ public class GlobalConfiguration implements MetricsConfig {
   private final int p2pPeerUpperBound;
   private final int targetSubnetSubscriberCount;
   private final List<String> p2pStaticPeers;
-  private final boolean p2pSnappyEnabled;
   private final boolean multiPeerSyncEnabled;
 
   // Interop
@@ -155,7 +154,6 @@ public class GlobalConfiguration implements MetricsConfig {
       final int p2pPeerUpperBound,
       final int targetSubnetSubscriberCount,
       final List<String> p2pStaticPeers,
-      final boolean p2pSnappyEnabled,
       final boolean multiPeerSyncEnabled,
       final Integer interopGenesisTime,
       final int interopOwnedValidatorStartIndex,
@@ -228,7 +226,6 @@ public class GlobalConfiguration implements MetricsConfig {
     this.p2pPeerUpperBound = p2pPeerUpperBound;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.p2pStaticPeers = p2pStaticPeers;
-    this.p2pSnappyEnabled = p2pSnappyEnabled;
     this.multiPeerSyncEnabled = multiPeerSyncEnabled;
     this.interopGenesisTime = interopGenesisTime;
     this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
@@ -356,10 +353,6 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public List<String> getP2pStaticPeers() {
     return p2pStaticPeers;
-  }
-
-  public boolean isP2pSnappyEnabled() {
-    return p2pSnappyEnabled;
   }
 
   public boolean isMultiPeerSyncEnabled() {
