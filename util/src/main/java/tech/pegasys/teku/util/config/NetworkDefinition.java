@@ -113,6 +113,8 @@ public class NetworkDefinition {
                   .snappyCompressionEnabled(true)
                   .startupTimeoutSeconds(120)
                   .eth1DepositContractAddress("0x99F0Ec06548b086E46Cb0019C78D0b9b9F36cD53")
+                  .discoveryBootnodes(
+                      "enr:-KG4QHPtVnKHEOkEJT1f5C6Hs-C_c4SlipTfkPrDIikLTzhqA_3m6bTq-CirsljlVP4IJybXelHE7J3l9DojR14_ZHUGhGV0aDKQ2jUIggAAAAP__________4JpZIJ2NIJpcIQSv2qciXNlY3AyNTZrMaECi_CNPDkKPilhimY7aEY-mBtSzI8AKMDvvv_I2Un74_qDdGNwgiMog3VkcIIjKA")
                   .build())
           .build();
 

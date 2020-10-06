@@ -18,6 +18,7 @@ import static java.util.stream.Collectors.toList;
 import com.google.common.base.Splitter;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -93,7 +94,7 @@ public class KeyStoreFilesLocator {
   }
 
   void parseDirectory(final File keyDirectory, final File passwordDirectory) {
-    try (Stream<Path> walk = Files.walk(keyDirectory.toPath())) {
+    try (Stream<Path> walk = Files.walk(keyDirectory.toPath(), FileVisitOption.FOLLOW_LINKS)) {
       walk.filter(Files::isRegularFile)
           .filter(
               (path) ->

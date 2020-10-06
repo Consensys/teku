@@ -13,17 +13,16 @@
 
 package tech.pegasys.teku.storage.api;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class StubReorgEventChannel implements ReorgEventChannel {
-
+public class StubChainHeadChannel implements ChainHeadChannel {
   @Override
-  public void reorgOccurred(
+  public void chainHeadUpdated(
+      final UInt64 slot,
+      final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
-      final UInt64 bestSlot,
-      final Bytes32 bestStateRoot,
-      final Bytes32 oldBestBlockRoot,
-      final Bytes32 oldBestStateRoot,
-      final UInt64 commonAncestorSlot) {}
+      final boolean epochTransition,
+      final Optional<ReorgContext> optionalReorgContext) {}
 }
