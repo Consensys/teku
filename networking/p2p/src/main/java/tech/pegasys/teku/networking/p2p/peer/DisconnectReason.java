@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.peer;
 
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.stream.Stream;
 import tech.pegasys.teku.datastructures.networking.libp2p.rpc.GoodbyeMessage;
@@ -36,9 +37,11 @@ public enum DisconnectReason {
   }
 
   public static Optional<DisconnectReason> fromReasonCode(final UInt64 reasonCode) {
+    // Pull the min matching value so that we deterministically map code to reason even if some
+    // reasons share the same code
     return Stream.of(values())
         .filter(reason -> reason.getReasonCode().equals(reasonCode))
-        .findAny();
+        .min(Comparator.comparing(Enum::name));
   }
 
   public UInt64 getReasonCode() {
