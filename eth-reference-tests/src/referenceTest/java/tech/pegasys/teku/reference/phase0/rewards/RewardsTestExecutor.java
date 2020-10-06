@@ -34,7 +34,10 @@ import tech.pegasys.teku.reference.phase0.TestExecutor;
 public class RewardsTestExecutor implements TestExecutor {
 
   public static final ImmutableMap<String, TestExecutor> REWARDS_TEST_TYPES =
-      ImmutableMap.of("rewards/core", new RewardsTestExecutor());
+      ImmutableMap.of(
+          "rewards/basic", new RewardsTestExecutor(),
+          "rewards/leak", new RewardsTestExecutor(),
+          "rewards/random", new RewardsTestExecutor());
 
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
