@@ -306,9 +306,9 @@ public final class EpochProcessorUtil {
     UInt64 epoch = get_current_epoch(state);
     UInt64 total_balance = get_total_active_balance(state);
     UInt64 adjusted_total_slashing_balance =
-        UInt64.valueOf(
-                state.getSlashings().stream().mapToLong(UInt64::longValue).sum()
-                    * Constants.PROPORTIONAL_SLASHING_MULTIPLIER)
+        state.getSlashings().stream()
+            .reduce(UInt64.ZERO, UInt64::plus)
+            .times(Constants.PROPORTIONAL_SLASHING_MULTIPLIER)
             .min(total_balance);
 
     SSZList<Validator> validators = state.getValidators();
