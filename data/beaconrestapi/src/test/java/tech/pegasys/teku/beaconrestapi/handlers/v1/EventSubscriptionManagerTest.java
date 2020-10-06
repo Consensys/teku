@@ -45,6 +45,8 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.storage.api.ReorgContext;
+import tech.pegasys.teku.util.config.Constants;
 
 public class EventSubscriptionManagerTest {
   private final JsonProvider jsonProvider = new JsonProvider();
@@ -172,12 +174,15 @@ public class EventSubscriptionManagerTest {
   }
 
   private void triggerReorgEvent() {
-    manager.reorgOccurred(
-        sampleEvent.newHeadBlock,
+    manager.chainHeadUpdated(
         sampleEvent.slot,
         sampleEvent.newHeadState,
-        sampleEvent.oldHeadBlock,
-        sampleEvent.oldHeadState,
-        sampleEvent.slot.minus(depth));
+        sampleEvent.newHeadBlock,
+        sampleEvent.slot.mod(Constants.SLOTS_PER_EPOCH).equals(UInt64.ZERO),
+        Optional.of(
+            new ReorgContext(
+                sampleEvent.oldHeadBlock,
+                sampleEvent.oldHeadState,
+                sampleEvent.slot.minus(depth))));
   }
 }

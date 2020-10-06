@@ -22,7 +22,7 @@ import tech.pegasys.teku.pow.api.TrackingEth1EventsChannel;
 import tech.pegasys.teku.protoarray.StubProtoArrayStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
-import tech.pegasys.teku.storage.api.TrackingReorgEventChannel;
+import tech.pegasys.teku.storage.api.TrackingChainHeadChannel;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -40,7 +40,7 @@ public class StorageSystem implements AutoCloseable {
   private final TrackingEth1EventsChannel eth1EventsChannel = new TrackingEth1EventsChannel();
 
   private final EventBus eventBus;
-  private final TrackingReorgEventChannel reorgEventChannel;
+  private final TrackingChainHeadChannel reorgEventChannel;
   private final StubMetricsSystem metricsSystem;
   private final RecentChainData recentChainData;
   private final StateStorageMode storageMode;
@@ -51,7 +51,7 @@ public class StorageSystem implements AutoCloseable {
   private StorageSystem(
       final StubMetricsSystem metricsSystem,
       final EventBus eventBus,
-      final TrackingReorgEventChannel reorgEventChannel,
+      final TrackingChainHeadChannel reorgEventChannel,
       final StateStorageMode storageMode,
       final Database database,
       final RecentChainData recentChainData,
@@ -84,7 +84,7 @@ public class StorageSystem implements AutoCloseable {
     // Create recent chain data
     final FinalizedCheckpointChannel finalizedCheckpointChannel =
         new StubFinalizedCheckpointChannel();
-    final TrackingReorgEventChannel reorgEventChannel = new TrackingReorgEventChannel();
+    final TrackingChainHeadChannel reorgEventChannel = new TrackingChainHeadChannel();
     final RecentChainData recentChainData =
         StorageBackedRecentChainData.createImmediately(
             SYNC_RUNNER,
@@ -162,7 +162,7 @@ public class StorageSystem implements AutoCloseable {
     return eventBus;
   }
 
-  public TrackingReorgEventChannel reorgEventChannel() {
+  public TrackingChainHeadChannel reorgEventChannel() {
     return reorgEventChannel;
   }
 
