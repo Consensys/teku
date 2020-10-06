@@ -8,6 +8,18 @@ we recommend most users use the latest `master` branch of Teku.
 - REST API endpoints will be updated to match emerging standards in a future release.
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments still work but will be removed in a future release.
 
+## 0.12.9
+
+### Additions and Improvements
+- Added `zinken` network definition. As the genesis state is not yet known, an ETH1 endpoint must be specified when connecting to the `zinken` testnet
+- Added the option to output validator performance over time. Service can be enabled by using `--validators-performance-tracking-enabled`
+- Implemented caching of beacon block roots to improve block import and thus sync speed
+
+### Bug Fixes
+- Fixed issues where slot calculation and Store time management led to underflow errors
+- Fixed issue discovered with the remote validator where the websocket publishing backed up due to slow readers
+- Fixed issue where was not following symlinks so was not finding key files mounted as secrets.
+
 ## 0.12.8
 
 ### Additions and Improvements
