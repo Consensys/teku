@@ -15,7 +15,7 @@ package tech.pegasys.teku.services.remotevalidator;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.eclipse.jetty.websocket.api.RemoteEndpoint;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.StatusCode;
+import org.eclipse.jetty.websocket.api.WriteCallback;
 import org.eclipse.jetty.websocket.servlet.ServletUpgradeRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -95,14 +96,21 @@ class RemoteValidatorApiTest {
     final Consumer<BeaconChainEvent> subscriberCallback = subscriberCallbackArgCaptor.getValue();
     subscriberCallback.accept(new BeaconChainEvent("foo", UInt64.ONE));
 
-    verify(remoteEndpoint).sendString(eq("{\"name\":\"foo\",\"data\":\"1\"}"));
+    verify(remoteEndpoint).sendString(eq("{\"name\":\"foo\",\"data\":\"1\"}"), any());
   }
 
   @Test
   public void onConnectCallback_SubscriptionCallbackShouldCloseSessionOnFailure() throws Exception {
     when(subscriptionManager.subscribe(any(), any())).thenReturn(SubscriptionStatus.success());
     final RemoteEndpoint remoteEndpoint = mock(RemoteEndpoint.class);
-    doThrow(new IOException()).when(remoteEndpoint).sendString(any());
+    doAnswer(
+            invocation -> {
+              final WriteCallback callback = invocation.getArgument(1);
+              callback.writeFailed(new IOException());
+              return null;
+            })
+        .when(remoteEndpoint)
+        .sendString(any(), any());
     when(wsSession.getRemote()).thenReturn(remoteEndpoint);
 
     remoteValidatorApi.subscribeValidator(wsContext);
