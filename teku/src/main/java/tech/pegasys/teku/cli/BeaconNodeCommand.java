@@ -48,7 +48,6 @@ import tech.pegasys.teku.cli.options.StoreOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.cli.options.WeakSubjectivityOptions;
-import tech.pegasys.teku.cli.subcommand.DepositCommand;
 import tech.pegasys.teku.cli.subcommand.GenesisCommand;
 import tech.pegasys.teku.cli.subcommand.PeerCommand;
 import tech.pegasys.teku.cli.subcommand.SlashingProtectionCommand;
@@ -78,7 +77,6 @@ import tech.pegasys.teku.util.config.NetworkDefinition;
       AdminCommand.class,
       TransitionCommand.class,
       PeerCommand.class,
-      DepositCommand.class,
       GenesisCommand.class,
       SlashingProtectionCommand.class,
       DebugToolsCommand.class,
