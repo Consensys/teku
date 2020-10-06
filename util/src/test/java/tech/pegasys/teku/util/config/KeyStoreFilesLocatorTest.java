@@ -17,6 +17,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.opentest4j.TestAbortedException;
 
 import java.io.File;
 import java.io.IOException;
@@ -198,8 +199,12 @@ public class KeyStoreFilesLocatorTest {
     createFolders(tempDir, realKeyDir, realPassDir);
     createFiles(tempDir, realKeyDir.resolve("a.json"), realPassDir.resolve("a.txt"));
 
-    Files.createSymbolicLink(tempDir.resolve("key"), realKeyDir);
-    Files.createSymbolicLink(tempDir.resolve("pass"), realPassDir);
+    try {
+      Files.createSymbolicLink(tempDir.resolve("key"), realKeyDir);
+      Files.createSymbolicLink(tempDir.resolve("pass"), realPassDir);
+    } catch (UnsupportedOperationException e) {
+      throw new TestAbortedException("Symbolic links not supported on this file system");
+    }
 
     final String p1 = generatePath(tempDir, PATH_SEP, "key", "pass");
     final KeyStoreFilesLocator locator = new KeyStoreFilesLocator(List.of(p1), PATH_SEP);
