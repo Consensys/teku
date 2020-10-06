@@ -35,10 +35,11 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
-import tech.pegasys.teku.storage.api.ReorgEventChannel;
+import tech.pegasys.teku.storage.api.ReorgContext;
 
-public class EventSubscriptionManager implements ReorgEventChannel, FinalizedCheckpointChannel {
+public class EventSubscriptionManager implements ChainHeadChannel, FinalizedCheckpointChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   public enum EventType {
@@ -68,7 +69,7 @@ public class EventSubscriptionManager implements ReorgEventChannel, FinalizedChe
             EventType.voluntary_exit, new ConcurrentLinkedQueue<>(),
             EventType.finalized_checkpoint, new ConcurrentLinkedQueue<>(),
             EventType.chain_reorg, new ConcurrentLinkedQueue<>());
-    eventChannels.subscribe(ReorgEventChannel.class, this);
+    eventChannels.subscribe(ChainHeadChannel.class, this);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, this);
   }
 
@@ -86,30 +87,31 @@ public class EventSubscriptionManager implements ReorgEventChannel, FinalizedChe
   }
 
   @Override
-  public void reorgOccurred(
+  public void chainHeadUpdated(
+      final UInt64 slot,
+      final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
-      final UInt64 bestSlot,
-      final Bytes32 bestStateRoot,
-      final Bytes32 oldBestBlockRoot,
-      final Bytes32 oldBestStateRoot,
-      final UInt64 commonAncestorSlot) {
-    try {
-      final UInt64 epoch = compute_epoch_at_slot(bestSlot);
+      final boolean epochTransition,
+      final Optional<ReorgContext> optionalReorgContext) {
 
-      final String reorgEventString =
-          jsonProvider.objectToJSON(
-              new ChainReorgEvent(
-                  bestSlot,
-                  bestSlot.minus(commonAncestorSlot),
-                  oldBestBlockRoot,
-                  bestBlockRoot,
-                  oldBestStateRoot,
-                  bestStateRoot,
-                  epoch));
-      sendEventToClients(EventType.chain_reorg, reorgEventString);
-    } catch (JsonProcessingException ex) {
-      LOG.error(ex);
-    }
+    optionalReorgContext.ifPresent(
+        context -> {
+          try {
+            final String reorgEventString =
+                jsonProvider.objectToJSON(
+                    new ChainReorgEvent(
+                        slot,
+                        slot.minus(context.getCommonAncestorSlot()),
+                        context.getOldBestBlockRoot(),
+                        bestBlockRoot,
+                        context.getOldBestStateRoot(),
+                        stateRoot,
+                        compute_epoch_at_slot(slot)));
+            sendEventToClients(EventType.chain_reorg, reorgEventString);
+          } catch (JsonProcessingException ex) {
+            LOG.error(ex);
+          }
+        });
   }
 
   @Override

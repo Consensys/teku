@@ -35,7 +35,8 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
-import tech.pegasys.teku.storage.api.ReorgEventChannel;
+import tech.pegasys.teku.storage.api.ChainHeadChannel;
+import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.validator.remote.BeaconChainEvent;
 import tech.pegasys.teku.validator.remote.BeaconChainReorgEvent;
@@ -77,7 +78,7 @@ class RemoteValidatorBeaconChainEventAdapterTest {
     eventsAdapter.start();
 
     verify(eventChannels).subscribe(eq(SlotEventsChannel.class), same(eventsAdapter));
-    verify(eventChannels).subscribe(eq(ReorgEventChannel.class), same(eventsAdapter));
+    verify(eventChannels).subscribe(eq(ChainHeadChannel.class), same(eventsAdapter));
   }
 
   @Test
@@ -137,8 +138,12 @@ class RemoteValidatorBeaconChainEventAdapterTest {
     final BeaconChainReorgEvent expectedAdaptedEvent =
         new BeaconChainReorgEvent(BeaconChainEvent.REORG_OCCURRED, slot, commonAncestorSlot);
 
-    eventsAdapter.reorgOccurred(
-        Bytes32.ZERO, slot, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, commonAncestorSlot);
+    eventsAdapter.chainHeadUpdated(
+        slot,
+        Bytes32.ZERO,
+        Bytes32.ZERO,
+        false,
+        ReorgContext.of(Bytes32.ZERO, Bytes32.ZERO, commonAncestorSlot));
     verify(listener).onEvent(beaconChainEventArgCaptor.capture());
 
     assertThat(beaconChainEventArgCaptor.getValue()).isEqualTo(expectedAdaptedEvent);

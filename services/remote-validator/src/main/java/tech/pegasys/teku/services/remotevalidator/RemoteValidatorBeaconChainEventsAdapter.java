@@ -16,18 +16,20 @@ package tech.pegasys.teku.services.remotevalidator;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.eventbus.Subscribe;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
-import tech.pegasys.teku.storage.api.ReorgEventChannel;
+import tech.pegasys.teku.storage.api.ChainHeadChannel;
+import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.validator.remote.BeaconChainEvent;
 import tech.pegasys.teku.validator.remote.BeaconChainReorgEvent;
 
-class RemoteValidatorBeaconChainEventsAdapter implements SlotEventsChannel, ReorgEventChannel {
+class RemoteValidatorBeaconChainEventsAdapter implements SlotEventsChannel, ChainHeadChannel {
 
   private final ServiceConfig config;
   private final BeaconChainEventsListener listener;
@@ -46,7 +48,7 @@ class RemoteValidatorBeaconChainEventsAdapter implements SlotEventsChannel, Reor
     config
         .getEventChannels()
         .subscribe(SlotEventsChannel.class, this)
-        .subscribe(ReorgEventChannel.class, this);
+        .subscribe(ChainHeadChannel.class, this);
   }
 
   @Subscribe
@@ -77,15 +79,18 @@ class RemoteValidatorBeaconChainEventsAdapter implements SlotEventsChannel, Reor
   }
 
   @Override
-  public void reorgOccurred(
+  public void chainHeadUpdated(
+      final UInt64 slot,
+      final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
-      final UInt64 bestSlot,
-      final Bytes32 bestStateRoot,
-      final Bytes32 oldBestBlockRoot,
-      final Bytes32 oldBestStateRoot,
-      final UInt64 commonAncestorSlot) {
-    final BeaconChainReorgEvent beaconChainEvent =
-        new BeaconChainReorgEvent(BeaconChainEvent.REORG_OCCURRED, bestSlot, commonAncestorSlot);
-    listener.onEvent(beaconChainEvent);
+      final boolean epochTransition,
+      final Optional<ReorgContext> optionalReorgContext) {
+    optionalReorgContext.ifPresent(
+        reorgContext -> {
+          final BeaconChainReorgEvent beaconChainEvent =
+              new BeaconChainReorgEvent(
+                  BeaconChainEvent.REORG_OCCURRED, slot, reorgContext.getCommonAncestorSlot());
+          listener.onEvent(beaconChainEvent);
+        });
   }
 }
