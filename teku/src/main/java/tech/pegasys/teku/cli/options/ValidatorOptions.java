@@ -98,10 +98,6 @@ public class ValidatorOptions {
       arity = "0..1")
   private boolean validatorPerformanceTrackingEnabled = false;
 
-  public boolean isValidatorPerformanceTrackingEnabled() {
-    return validatorPerformanceTrackingEnabled;
-  }
-
   @Option(
       names = {"--validators-keystore-locking-enabled"},
       paramLabel = "<BOOLEAN>",
