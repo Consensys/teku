@@ -41,6 +41,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 @SuppressWarnings("unchecked")
@@ -100,13 +101,13 @@ public class OperationsReOrgManagerTest {
     when(attestationManager.onAttestation(any()))
         .thenReturn(SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL));
 
-    operationsReOrgManager.reorgOccurred(
-        fork2Block2.hash_tree_root(),
+    operationsReOrgManager.chainHeadUpdated(
         UInt64.valueOf(13),
         fork2Block2.getState_root(),
-        fork1Block2.hash_tree_root(),
-        fork1Block2.getState_root(),
-        commonAncestorSlot);
+        fork2Block2.hash_tree_root(),
+        false,
+        ReorgContext.of(
+            fork1Block2.hash_tree_root(), fork1Block2.getState_root(), commonAncestorSlot));
 
     verify(recentChainData).getAncestorsOnFork(commonAncestorSlot, fork1Block2.hash_tree_root());
 
@@ -169,13 +170,12 @@ public class OperationsReOrgManagerTest {
     when(attestationManager.onAttestation(any()))
         .thenReturn(SafeFuture.completedFuture(AttestationProcessingResult.SUCCESSFUL));
 
-    operationsReOrgManager.reorgOccurred(
-        block2.hash_tree_root(),
+    operationsReOrgManager.chainHeadUpdated(
         UInt64.valueOf(13),
         block2.getState_root(),
-        Bytes32.ZERO,
-        Bytes32.ZERO,
-        commonAncestorSlot);
+        block2.hash_tree_root(),
+        false,
+        ReorgContext.of(Bytes32.ZERO, Bytes32.ZERO, commonAncestorSlot));
 
     verify(recentChainData).getAncestorsOnFork(commonAncestorSlot, block2.hash_tree_root());
 

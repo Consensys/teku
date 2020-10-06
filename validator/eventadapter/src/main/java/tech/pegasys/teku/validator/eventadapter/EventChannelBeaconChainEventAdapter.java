@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.eventadapter;
 
 import com.google.common.eventbus.Subscribe;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -22,7 +23,8 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
-import tech.pegasys.teku.storage.api.ReorgEventChannel;
+import tech.pegasys.teku.storage.api.ChainHeadChannel;
+import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
@@ -31,7 +33,7 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
  * {@link EventChannels}.
  */
 public class EventChannelBeaconChainEventAdapter
-    implements SlotEventsChannel, ReorgEventChannel, BeaconChainEventAdapter {
+    implements SlotEventsChannel, ChainHeadChannel, BeaconChainEventAdapter {
 
   private final ServiceConfig config;
   private final ValidatorTimingChannel validatorTimingChannel;
@@ -48,7 +50,7 @@ public class EventChannelBeaconChainEventAdapter
     config
         .getEventChannels()
         .subscribe(SlotEventsChannel.class, this)
-        .subscribe(ReorgEventChannel.class, this);
+        .subscribe(ChainHeadChannel.class, this);
 
     return SafeFuture.COMPLETE;
   }
@@ -80,13 +82,14 @@ public class EventChannelBeaconChainEventAdapter
   }
 
   @Override
-  public void reorgOccurred(
+  public void chainHeadUpdated(
+      final UInt64 slot,
+      final Bytes32 stateRoot,
       final Bytes32 bestBlockRoot,
-      final UInt64 bestSlot,
-      final Bytes32 bestStateRoot,
-      final Bytes32 oldBestBlockRoot,
-      final Bytes32 oldBestStateRoot,
-      final UInt64 commonAncestorSlot) {
-    validatorTimingChannel.onChainReorg(bestSlot, commonAncestorSlot);
+      final boolean epochTransition,
+      final Optional<ReorgContext> optionalReorgContext) {
+    optionalReorgContext.ifPresent(
+        reorgContext ->
+            validatorTimingChannel.onChainReorg(slot, reorgContext.getCommonAncestorSlot()));
   }
 }
