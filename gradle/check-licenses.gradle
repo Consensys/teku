@@ -18,6 +18,7 @@ ext.acceptedLicenses = [
     'BSD License',
     'BSD 2-Clause',
     'BSD 3-Clause',
+    'The JSON License',
     'Eclipse Distribution License - v 1.0',
     'Eclipse Distribution License v. 1.0',
     'EDL 1.0',
@@ -34,7 +35,7 @@ ext.acceptedLicenses = [
     'Public Domain, per Creative Commons CC0',
     'Mozilla Public License 1.0',
     'Mozilla Public License Version 1.1',
-    'Mozilla Public License Version 2.0',
+    'Mozilla Public License, Version 2.0',
     'CC0',
     'CC0 1.0 Universal License',
     'Common Development and Distribution License 1.0',
@@ -62,9 +63,11 @@ downloadLicenses {
   ext.cddl = license('Common Development and Distribution License 1.0', 'http://opensource.org/licenses/CDDL-1.0')
   ext.cddl1_1 = license('Common Development and Distribution License 1.0', 'http://oss.oracle.com/licenses/CDDL-1.1')
   ext.epl2_0 = license('Eclipse Public License - v 2.0', 'https://www.eclipse.org/legal/epl-2.0/')
+  ext.JSON = license('The JSON License', 'http://json.org/license.html')
   aliases = [
       (apache)    : [
           'Apache Software License - Version 2.0',
+          'Apache Software License, version 2.0',
           'The Apache Software License, Version 2.0',
           'The Apache Software License, version 2.0',
           'Apache License Version 2.0',
@@ -78,7 +81,11 @@ downloadLicenses {
           license('Apache Software Licenses', 'http://www.apache.org/licenses/LICENSE-2.0.txt'),
           license('Apache', 'http://www.opensource.org/licenses/Apache-2.0')
       ],
-      (mit)       : ['The MIT License'],
+      (JSON) : [
+         'The JSON License',
+         license('The JSON License', 'http://json.org/license.html')
+      ],
+      (mit)       : ['MIT','The MIT License'],
       (bsd)       : [
           'BSD',
           'BSD licence',
@@ -113,19 +120,22 @@ downloadLicenses {
           license('Mozilla Public License Version 1.1', 'http://www.mozilla.org/media/MPL/1.1/index.0c5913925d40.txt')
       ],
       (mpl2_0): [
+          'Mozilla Public License, Version 2.0',
           'MPL 2.0',
           'Mozilla Public License Version 2.0',
           license('Mozilla Public License 2.0', 'http://www.mozilla.org/media/MPL/2.0/index.815ca599c9df.txt')
       ],
       (cddl): [
               'CDDL',
+              'CDDL/GPLv2+CE',
+              'Common Development and Distribution License (CDDL) v1.0',
               'Common Development and Distribution License 1.0',
               'CDDL + GPLv2 with classpath exception',
               'Dual license consisting of the CDDL v1.1 and GPL v2'
       ],
-              (cddl1_1): [
-              'CDDL 1.1',
-              'COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.1',
+      (cddl1_1): [
+          'CDDL 1.1',
+          'COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.1',
       ],
       (epl2_0): [
           'EPL 2.0',
@@ -147,6 +157,7 @@ downloadLicenses {
       (group('teku.storage'))        : apache,
       (group('teku.validator'))      : apache,
       (group('teku.networking'))     : apache,
+      (group('com.fasterxml'))       : apache,
 
       // https://checkerframework.org/manual/#license
       // The more permissive MIT License applies to code that you might want
@@ -168,6 +179,8 @@ downloadLicenses {
       //Explicitly declare EPL 2.0 for jnr-poxix - it is simultaneously licensed under 3 licenses.
       'com.github.jnr:jnr-posix:3.0.33': epl2_0,
       'com.github.jnr:jnr-posix:3.0.47': epl2_0,
+      (group('com.github.java-json-tools')): apache,
+      (group('com.github.fge')): apache,
       //JMH-Core is licensed under GPLv2 with the Classpath Exception, which allows us to link it and license the derived work under our license.
       'org.openjdk.jmh:jmh-core:1.21': apache,
       (group('io.libp2p')): apache,
