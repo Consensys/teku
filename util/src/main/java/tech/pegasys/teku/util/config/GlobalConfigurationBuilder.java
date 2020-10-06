@@ -29,7 +29,6 @@ import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 @Deprecated
 public class GlobalConfigurationBuilder {
 
-  private static final boolean DEFAULT_P2P_SNAPPY_ENABLED = true;
   private String constants;
   private Integer startupTargetPeerCount;
   private Integer startupTimeoutSeconds;
@@ -47,7 +46,6 @@ public class GlobalConfigurationBuilder {
   private int p2pPeerUpperBound;
   private int targetSubnetSubscriberCount;
   private List<String> p2pStaticPeers;
-  private Boolean p2pSnappyEnabled;
   private boolean multiPeerSyncEnabled = false;
   private Integer interopGenesisTime;
   private int interopOwnedValidatorStartIndex;
@@ -190,11 +188,6 @@ public class GlobalConfigurationBuilder {
 
   public GlobalConfigurationBuilder setP2pStaticPeers(final List<String> p2pStaticPeers) {
     this.p2pStaticPeers = p2pStaticPeers;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setP2pSnappyEnabled(final Boolean p2pSnappyEnabled) {
-    this.p2pSnappyEnabled = p2pSnappyEnabled;
     return this;
   }
 
@@ -513,8 +506,6 @@ public class GlobalConfigurationBuilder {
           getOrOptionalDefault(eth1DepositContractAddress, network::getEth1DepositContractAddress);
       p2pDiscoveryBootnodes = getOrDefault(p2pDiscoveryBootnodes, network::getDiscoveryBootnodes);
       eth1Endpoint = getOrOptionalDefault(eth1Endpoint, network::getEth1Endpoint);
-      p2pSnappyEnabled =
-          getOrOptionalDefault(p2pSnappyEnabled, network::getSnappyCompressionEnabled);
     }
 
     if (eth1DepositContractAddress == null && eth1Endpoint != null) {
@@ -522,7 +513,6 @@ public class GlobalConfigurationBuilder {
           "eth1-deposit-contract-address is required if eth1-endpoint is specified.");
     }
 
-    p2pSnappyEnabled = Optional.ofNullable(p2pSnappyEnabled).orElse(DEFAULT_P2P_SNAPPY_ENABLED);
     return new GlobalConfiguration(
         constants,
         startupTargetPeerCount,
@@ -541,7 +531,6 @@ public class GlobalConfigurationBuilder {
         p2pPeerUpperBound,
         targetSubnetSubscriberCount,
         p2pStaticPeers,
-        p2pSnappyEnabled,
         multiPeerSyncEnabled,
         interopGenesisTime,
         interopOwnedValidatorStartIndex,

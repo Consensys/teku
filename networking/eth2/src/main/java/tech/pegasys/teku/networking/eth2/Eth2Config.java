@@ -17,17 +17,10 @@ import java.util.Optional;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 
 public class Eth2Config {
-  private final boolean enableSnappyCompression;
   private final Optional<Checkpoint> requiredCheckpoint;
 
-  public Eth2Config(
-      final boolean enableSnappyCompression, Optional<Checkpoint> requiredCheckpoint) {
-    this.enableSnappyCompression = enableSnappyCompression;
+  public Eth2Config(Optional<Checkpoint> requiredCheckpoint) {
     this.requiredCheckpoint = requiredCheckpoint;
-  }
-
-  public boolean isSnappyCompressionEnabled() {
-    return enableSnappyCompression;
   }
 
   public Optional<Checkpoint> getRequiredCheckpoint() {
