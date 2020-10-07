@@ -173,7 +173,7 @@ public class PendingPoolTest {
     }
 
     // Final sanity check
-    assertThat(pendingPool.size()).isEqualTo(15);
+    assertThat(pendingPool.size()).isEqualTo(maxItems);
   }
 
   @Test
