@@ -33,6 +33,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<Optional<ForkInfo>> getForkInfo();
 
+  SafeFuture<Optional<UInt64>> getGenesisTime();
+
   SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
       UInt64 epoch, Collection<BLSPublicKey> publicKeys);
 

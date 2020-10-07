@@ -31,6 +31,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
 import tech.pegasys.teku.api.response.GetForkResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
@@ -98,6 +99,47 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThat(fork).isPresent();
     assertThat(fork.get()).usingRecursiveComparison().isEqualTo(getForkResponse);
+  }
+
+  @Test
+  public void getGenesis_MakesExpectedRequest() throws Exception {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+
+    apiClient.getGenesis();
+
+    RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getMethod()).isEqualTo("GET");
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_GENESIS.getPath());
+  }
+
+  @Test
+  public void getGenesis_WhenServerError_ThrowsRuntimeException() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+
+    assertThatThrownBy(() -> apiClient.getGenesis())
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("Unexpected response from Beacon Node API");
+  }
+
+  @Test
+  public void getGenesis_WhenNoContent_ReturnsEmpty() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+
+    assertThat(apiClient.getGenesis()).isEmpty();
+  }
+
+  @Test
+  public void getGenesis_WhenSuccess_ReturnsForkResponse() {
+    final GetGenesisResponse getGenesisResponse = schemaObjects.getGenesisResponse();
+
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(200).setBody(asJson(getGenesisResponse)));
+
+    Optional<GetGenesisResponse> genesis = apiClient.getGenesis();
+
+    assertThat(genesis).isPresent();
+    assertThat(genesis.get()).usingRecursiveComparison().isEqualTo(getGenesisResponse);
   }
 
   @Test
