@@ -46,6 +46,7 @@ public class BeaconChainEventMapper {
     final String name = event.get(NAME_FIELD).toString();
     switch (name) {
       case ATTESTATION:
+      case IMPORTED_BLOCK:
         {
           validatorTimingChannel.onAttestationCreationDue(slot);
           break;
@@ -53,11 +54,6 @@ public class BeaconChainEventMapper {
       case AGGREGATION:
         {
           validatorTimingChannel.onAttestationAggregationDue(slot);
-          break;
-        }
-      case IMPORTED_BLOCK:
-        {
-          validatorTimingChannel.onBlockImportedForSlot(slot);
           break;
         }
       case ON_SLOT:
