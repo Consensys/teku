@@ -243,7 +243,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         return;
       }
       if (originalHead.isPresent() && originalHead.get().equals(newChainHead)) {
-        LOG.trace("Not updating chain head");
+        LOG.trace("Skippping head update because new head is same as previous head");
         return;
       }
       this.chainHead = Optional.of(newChainHead);
