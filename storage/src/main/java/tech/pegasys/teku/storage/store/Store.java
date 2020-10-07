@@ -546,34 +546,4 @@ class Store implements UpdatableStore {
       writeLock.unlock();
     }
   }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (o == this) {
-      return true;
-    }
-    if (!(o instanceof Store)) {
-      return false;
-    }
-    final Store store = (Store) o;
-    return Objects.equals(time, store.time)
-        && Objects.equals(genesis_time, store.genesis_time)
-        && Objects.equals(justified_checkpoint, store.justified_checkpoint)
-        && Objects.equals(finalized_checkpoint, store.finalized_checkpoint)
-        && Objects.equals(best_justified_checkpoint, store.best_justified_checkpoint)
-        && Objects.equals(blocks, store.blocks)
-        && Objects.equals(
-            hotStatePersistenceFrequencyInEpochs, store.hotStatePersistenceFrequencyInEpochs);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(
-        time,
-        genesis_time,
-        justified_checkpoint,
-        finalized_checkpoint,
-        best_justified_checkpoint,
-        blocks);
-  }
 }
