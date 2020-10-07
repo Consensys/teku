@@ -11,12 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.services.powchain;
+package tech.pegasys.teku.test.acceptance.dsl.tools.deposits;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
-import java.util.function.Consumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
@@ -32,7 +33,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.contract.DepositContract;
 import tech.pegasys.teku.util.config.Eth1Address;
 
-public class DepositTransactionSender {
+class DepositTransactionSender {
+  private static final Logger LOG = LogManager.getLogger();
+
   // Increase the poll rate for tx receipts but keep the default 10 min timeout.
   private static final int POLL_INTERVAL_MILLIS = 2000;
   private static final int MAX_POLL_ATTEMPTS = 300;
@@ -58,13 +61,7 @@ public class DepositTransactionSender {
   public SafeFuture<TransactionReceipt> sendDepositTransaction(
       BLSKeyPair validatorKeyPair,
       final BLSPublicKey withdrawalPublicKey,
-      final UInt64 amountInGwei,
-      final Consumer<String> commandStdOutput,
-      final Consumer<String> commandErrorOutput) {
-    commandStdOutput.accept(
-        String.format(
-            "%nSending deposit for Validator Key [%s].%n",
-            validatorKeyPair.getPublicKey().toString()));
+      final UInt64 amountInGwei) {
 
     final DepositData depositData =
         depositGenerator.createDepositData(validatorKeyPair, amountInGwei, withdrawalPublicKey);
@@ -73,16 +70,14 @@ public class DepositTransactionSender {
 
     safeFuture.finish(
         transactionReceipt ->
-            commandStdOutput.accept(
-                String.format(
-                    "Transaction for Validator Key [%s] Completed. Transaction Hash: [%s]%n",
-                    validatorKeyPair.getPublicKey().toString(),
-                    transactionReceipt.getTransactionHash())),
+            LOG.info(
+                "Transaction for Validator Key [{}] Completed. Transaction Hash: [{}]",
+                validatorKeyPair.getPublicKey(),
+                transactionReceipt.getTransactionHash()),
         exception ->
-            commandErrorOutput.accept(
-                String.format(
-                    "Transaction for Validator Key [%s] Failed: Message: [%s]%n",
-                    validatorKeyPair.getPublicKey().toString(), exception.getMessage())));
+            LOG.error(
+                "Transaction for Validator Key [{}] Failed: Message: [{}]%n",
+                validatorKeyPair.getPublicKey().toString(), exception.getMessage()));
 
     return safeFuture;
   }

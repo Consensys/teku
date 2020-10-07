@@ -1,6 +1,9 @@
 dependencies {
+  testFixturesImplementation project(':bls')
   testFixturesImplementation project(':data:provider')
   testFixturesImplementation project(':data:serializer')
+  testFixturesImplementation project(':ethereum:datastructures')
+  testFixturesImplementation project(':pow')
   testFixturesImplementation project(':infrastructure:async')
   testFixturesImplementation testFixtures(project(':infrastructure:async'))
   testFixturesImplementation testFixtures(project(':util'))
@@ -16,4 +19,5 @@ dependencies {
   testFixturesImplementation 'org.testcontainers:testcontainers'
   testFixturesImplementation 'com.fasterxml.jackson.core:jackson-databind'
   testFixturesImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
+  testFixturesImplementation 'org.web3j:core'
 }
