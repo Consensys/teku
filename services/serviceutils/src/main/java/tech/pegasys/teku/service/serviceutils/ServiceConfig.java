@@ -57,6 +57,7 @@ public class ServiceConfig {
     return eventChannels;
   }
 
+  @Deprecated
   public GlobalConfiguration getConfig() {
     return this.config;
   }

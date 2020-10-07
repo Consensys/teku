@@ -95,7 +95,10 @@ public class ValidatorClientCommand implements Callable<Integer> {
   }
 
   private TekuConfiguration tekuConfiguration() {
-    return TekuConfiguration.builder().globalConfig(this::buildGlobalConfiguration).build();
+    final TekuConfiguration.Builder builder = TekuConfiguration.builder();
+    builder.globalConfig(this::buildGlobalConfiguration);
+    validatorOptions.configure(builder);
+    return builder.build();
   }
 
   private void buildGlobalConfiguration(final GlobalConfigurationBuilder builder) {
@@ -106,17 +109,6 @@ public class ValidatorClientCommand implements Callable<Integer> {
         .setInteropOwnedValidatorCount(interopOptions.getInteropOwnerValidatorCount())
         .setInteropNumberOfValidators(interopOptions.getInteropNumberOfValidators())
         .setInteropEnabled(interopOptions.isInteropEnabled())
-        .setValidatorPerformanceTrackingEnabled(
-            validatorOptions.isValidatorPerformanceTrackingEnabled())
-        .setValidatorKeystoreLockingEnabled(validatorOptions.isValidatorKeystoreLockingEnabled())
-        .setValidatorKeystoreFiles(validatorOptions.getValidatorKeystoreFiles())
-        .setValidatorKeystorePasswordFiles(validatorOptions.getValidatorKeystorePasswordFiles())
-        .setValidatorKeys(validatorOptions.getValidatorKeys())
-        .setValidatorExternalSignerPublicKeys(
-            validatorOptions.getValidatorExternalSignerPublicKeys())
-        .setValidatorExternalSignerUrl(validatorOptions.getValidatorExternalSignerUrl())
-        .setValidatorExternalSignerTimeout(validatorOptions.getValidatorExternalSignerTimeout())
-        .setGraffiti(validatorOptions.getGraffiti())
         .setLogColorEnabled(loggingOptions.isLogColorEnabled())
         .setLogIncludeEventsEnabled(loggingOptions.isLogIncludeEventsEnabled())
         .setLogIncludeValidatorDutiesEnabled(loggingOptions.isLogIncludeValidatorDutiesEnabled())

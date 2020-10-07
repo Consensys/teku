@@ -44,6 +44,7 @@ import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
@@ -63,7 +64,8 @@ public class BeaconChainControllerTest {
   }
 
   private BeaconChainConfiguration beaconChainConfiguration() {
-    return new BeaconChainConfiguration(WeakSubjectivityConfig.builder().build());
+    return new BeaconChainConfiguration(
+        WeakSubjectivityConfig.builder().build(), ValidatorConfig.builder().build());
   }
 
   @Test
@@ -72,7 +74,7 @@ public class BeaconChainControllerTest {
         GlobalConfiguration.builder().setDataPath(dataDir.getCanonicalPath()).build();
     globalConfig.set(globalConfiguration);
     BeaconChainController controller =
-        new BeaconChainController(beaconChainConfiguration(), serviceConfig);
+        new BeaconChainController(serviceConfig, beaconChainConfiguration());
 
     MemKeyValueStore<String, Bytes> store = new MemKeyValueStore<>();
 
@@ -104,7 +106,7 @@ public class BeaconChainControllerTest {
             .build();
     globalConfig.set(globalConfiguration1);
     BeaconChainController controller1 =
-        new BeaconChainController(beaconChainConfiguration(), serviceConfig);
+        new BeaconChainController(serviceConfig, beaconChainConfiguration());
     Bytes customPK = controller1.getP2pPrivateKeyBytes(store);
     assertThat(customPK).isEqualTo(generatedPK);
   }
@@ -112,7 +114,7 @@ public class BeaconChainControllerTest {
   @Test
   public void initWeakSubjectivityValidator_nothingStored_noNewArgs() {
     final BeaconChainController controller =
-        new BeaconChainController(beaconChainConfiguration(), serviceConfig);
+        new BeaconChainController(serviceConfig, beaconChainConfiguration());
 
     // Mock storage channels
     final StorageQueryChannel queryChannel = mock(StorageQueryChannel.class);
@@ -140,9 +142,9 @@ public class BeaconChainControllerTest {
     final WeakSubjectivityConfig cliConfig =
         WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(cliCheckpoint).build();
     final BeaconChainConfiguration beaconChainConfiguration =
-        new BeaconChainConfiguration(cliConfig);
+        new BeaconChainConfiguration(cliConfig, ValidatorConfig.builder().build());
     final BeaconChainController controller =
-        new BeaconChainController(beaconChainConfiguration, serviceConfig);
+        new BeaconChainController(serviceConfig, beaconChainConfiguration);
 
     // Mock storage channels
     final StorageQueryChannel queryChannel = mock(StorageQueryChannel.class);
@@ -171,7 +173,7 @@ public class BeaconChainControllerTest {
   public void initWeakSubjectivityValidator_withStoredCheckpoint_noNewArgs() {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     final BeaconChainController controller =
-        new BeaconChainController(beaconChainConfiguration(), serviceConfig);
+        new BeaconChainController(serviceConfig, beaconChainConfiguration());
 
     // Mock storage channels
     final StorageQueryChannel queryChannel = mock(StorageQueryChannel.class);
@@ -209,9 +211,9 @@ public class BeaconChainControllerTest {
             .safetyDecay(UInt64.valueOf(5))
             .build();
     final BeaconChainConfiguration beaconChainConfiguration =
-        new BeaconChainConfiguration(cliConfig);
+        new BeaconChainConfiguration(cliConfig, ValidatorConfig.builder().build());
     final BeaconChainController controller =
-        new BeaconChainController(beaconChainConfiguration, serviceConfig);
+        new BeaconChainController(serviceConfig, beaconChainConfiguration);
 
     // Mock storage channels
     final StorageQueryChannel queryChannel = mock(StorageQueryChannel.class);
@@ -248,9 +250,9 @@ public class BeaconChainControllerTest {
     final WeakSubjectivityConfig cliConfig =
         WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(cliCheckpoint).build();
     final BeaconChainConfiguration beaconChainConfiguration =
-        new BeaconChainConfiguration(cliConfig);
+        new BeaconChainConfiguration(cliConfig, ValidatorConfig.builder().build());
     final BeaconChainController controller =
-        new BeaconChainController(beaconChainConfiguration, serviceConfig);
+        new BeaconChainController(serviceConfig, beaconChainConfiguration);
 
     // Mock storage channels
     final StorageQueryChannel queryChannel = mock(StorageQueryChannel.class);

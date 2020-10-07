@@ -42,17 +42,20 @@ import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
   private final KeystoreLocker keystoreLocker;
+  private final ValidatorConfig config;
 
-  public KeystoresValidatorKeyProvider(KeystoreLocker keystoreLocker) {
+  public KeystoresValidatorKeyProvider(
+      final KeystoreLocker keystoreLocker, final ValidatorConfig config) {
     this.keystoreLocker = keystoreLocker;
+    this.config = config;
   }
 
   @Override
-  public List<BLSKeyPair> loadValidatorKeys(final GlobalConfiguration config) {
+  public List<BLSKeyPair> loadValidatorKeys() {
     final List<Pair<Path, Path>> keystorePasswordFilePairs =
         config.getValidatorKeystorePasswordFilePairs();
     checkNotNull(keystorePasswordFilePairs, "validator keystore and password pairs cannot be null");
@@ -72,8 +75,7 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
                       executorService.submit(
                           () -> {
                             Bytes32 privateKey =
-                                loadBLSPrivateKey(
-                                    config, pair.getLeft(), loadPassword(pair.getRight()));
+                                loadBLSPrivateKey(pair.getLeft(), loadPassword(pair.getRight()));
                             int loadedValidatorCount = numberOfLoadedKeys.incrementAndGet();
                             if (loadedValidatorCount % 10 == 0) {
                               StatusLogger.STATUS_LOG.atLoadedValidatorNumber(
@@ -102,8 +104,7 @@ public class KeystoresValidatorKeyProvider implements ValidatorKeyProvider {
     }
   }
 
-  private Bytes32 loadBLSPrivateKey(
-      GlobalConfiguration config, final Path keystoreFile, final String password) {
+  private Bytes32 loadBLSPrivateKey(final Path keystoreFile, final String password) {
     try {
       if (config.isValidatorKeystoreLockingEnabled()) {
         keystoreLocker.lockKeystore(keystoreFile);
