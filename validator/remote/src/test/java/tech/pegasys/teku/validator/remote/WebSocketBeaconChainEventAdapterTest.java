@@ -61,7 +61,7 @@ class WebSocketBeaconChainEventAdapterTest {
 
     mapEvent(event);
 
-    verify(validatorTimingChannel).onBlockImportedForSlot(eq(UInt64.ONE));
+    verify(validatorTimingChannel).onAttestationCreationDue(eq(UInt64.ONE));
   }
 
   @Test
