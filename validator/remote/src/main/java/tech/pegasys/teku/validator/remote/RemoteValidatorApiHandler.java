@@ -78,6 +78,12 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<UInt64>> getGenesisTime() {
+    return asyncRunner.runAsync(
+        () -> apiClient.getGenesis().map(response -> response.data.genesisTime));
+  }
+
+  @Override
   public SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
       final UInt64 epoch, final Collection<BLSPublicKey> publicKeys) {
     if (publicKeys.isEmpty()) {
