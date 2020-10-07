@@ -18,7 +18,7 @@ import org.web3j.protocol.core.methods.response.EthCall;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class ErrorTrackingEth1Provider implements Eth1Provider {
 

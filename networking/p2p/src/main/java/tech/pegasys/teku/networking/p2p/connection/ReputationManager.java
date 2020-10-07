@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.util.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class ReputationManager {
   static final UInt64 FAILURE_BAN_PERIOD = UInt64.valueOf(TimeUnit.MINUTES.toSeconds(2));

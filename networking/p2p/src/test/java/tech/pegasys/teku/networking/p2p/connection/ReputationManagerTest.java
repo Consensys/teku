@@ -20,10 +20,10 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.StubGauge;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
-import tech.pegasys.teku.util.time.StubTimeProvider;
 
 class ReputationManagerTest {
 

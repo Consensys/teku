@@ -49,7 +49,7 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class Eth2NetworkBuilder {
   public static final Duration DEFAULT_ETH2_RPC_PING_INTERVAL = Duration.ofSeconds(10);

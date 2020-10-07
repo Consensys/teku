@@ -22,7 +22,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class Eth1StatusLogger {
   private static final Logger LOG = LogManager.getLogger();

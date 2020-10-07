@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.time;
+package tech.pegasys.teku.infrastructure.time;
 
 import java.util.concurrent.TimeUnit;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;

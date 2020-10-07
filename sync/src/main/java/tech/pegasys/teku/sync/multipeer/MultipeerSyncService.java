@@ -41,7 +41,7 @@ import tech.pegasys.teku.sync.multipeer.chains.PeerChainTracker;
 import tech.pegasys.teku.sync.multipeer.chains.SyncSourceFactory;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class MultipeerSyncService extends Service implements SyncService {

@@ -21,7 +21,7 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessage
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.util.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class Eth2PeerFactory {
 

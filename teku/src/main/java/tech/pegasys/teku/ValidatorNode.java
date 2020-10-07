@@ -36,7 +36,7 @@ import tech.pegasys.teku.services.ValidatorNodeServiceController;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
-import tech.pegasys.teku.util.time.SystemTimeProvider;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 
 public class ValidatorNode implements Node {
 

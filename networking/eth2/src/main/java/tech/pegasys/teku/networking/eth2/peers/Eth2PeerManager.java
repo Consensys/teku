@@ -45,7 +45,7 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class Eth2PeerManager implements PeerLookup, PeerHandler {
   private static final Logger LOG = LogManager.getLogger();

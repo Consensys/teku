@@ -24,7 +24,7 @@ import tech.pegasys.teku.networking.eth2.peers.RateTracker;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
-import tech.pegasys.teku.util.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class ThrottlingSyncSource implements SyncSource {
   private static final Logger LOG = LogManager.getLogger();

@@ -20,7 +20,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class DutyMetrics {
 
