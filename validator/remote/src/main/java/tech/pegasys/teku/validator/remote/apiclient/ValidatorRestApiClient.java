@@ -36,7 +36,7 @@ public interface ValidatorRestApiClient {
 
   Optional<GetForkResponse> getFork();
 
-  Optional<GetGenesisResponse> getGenesisTime();
+  Optional<GetGenesisResponse> getGenesis();
 
   List<ValidatorDuties> getDuties(ValidatorDutiesRequest request);
 

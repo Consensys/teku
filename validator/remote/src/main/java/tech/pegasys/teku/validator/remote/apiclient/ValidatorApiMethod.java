@@ -15,7 +15,7 @@ package tech.pegasys.teku.validator.remote.apiclient;
 
 public enum ValidatorApiMethod {
   GET_FORK("node/fork"),
-  GET_GENESIS_DATA("eth/v1/beacon/genesis"),
+  GET_GENESIS("eth/v1/beacon/genesis"),
   GET_DUTIES("validator/duties"),
   GET_UNSIGNED_BLOCK("validator/block"),
   SEND_SIGNED_BLOCK("validator/block"),

@@ -72,15 +72,15 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
     return asyncRunner.runAsync(() -> apiClient.getFork().map(this::mapGetForkResponse));
   }
 
-  @Override
-  public SafeFuture<Optional<UInt64>> getGenesisTime() {
-    return asyncRunner.runAsync(
-        () -> apiClient.getGenesisTime().map(response -> response.data.genesisTime));
-  }
-
   private ForkInfo mapGetForkResponse(final GetForkResponse response) {
     final Fork fork = new Fork(response.previous_version, response.current_version, response.epoch);
     return new ForkInfo(fork, response.genesis_validators_root);
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getGenesisTime() {
+    return asyncRunner.runAsync(
+        () -> apiClient.getGenesis().map(response -> response.data.genesisTime));
   }
 
   @Override

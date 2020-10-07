@@ -17,7 +17,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_FORK;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_GENESIS_DATA;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_GENESIS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK;
@@ -93,8 +93,8 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public Optional<GetGenesisResponse> getGenesisTime() {
-    return get(GET_GENESIS_DATA, EMPTY_QUERY_PARAMS, GetGenesisResponse.class);
+  public Optional<GetGenesisResponse> getGenesis() {
+    return get(GET_GENESIS, EMPTY_QUERY_PARAMS, GetGenesisResponse.class);
   }
 
   @Override

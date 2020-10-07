@@ -338,6 +338,10 @@ public class CombinedChainDataClient {
     return result;
   }
 
+  public Optional<UInt64> getGenesisTime() {
+    return Optional.ofNullable(recentChainData.getGenesisTime());
+  }
+
   /** @return The slot at which the chain head block was proposed */
   public UInt64 getHeadSlot() {
     return this.recentChainData.getHeadSlot();
@@ -360,10 +364,6 @@ public class CombinedChainDataClient {
   /** @return The current epoch according to clock time */
   public UInt64 getCurrentEpoch() {
     return compute_epoch_at_slot(getCurrentSlot());
-  }
-
-  public Optional<UInt64> getGenesisTime() {
-    return Optional.ofNullable(recentChainData.getGenesisTime());
   }
 
   @VisibleForTesting
