@@ -119,6 +119,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<UInt64>> getGenesisTime() {
+    return SafeFuture.completedFuture(combinedChainDataClient.getGenesisTime());
+  }
+
+  @Override
   public SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
       final UInt64 epoch, final Collection<BLSPublicKey> publicKeys) {
     if (isSyncActive()) {
@@ -489,7 +494,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     final UInt64 endSlot = epochStartSlot.plus(Constants.SLOTS_PER_EPOCH);
     final Map<UInt64, BLSPublicKey> proposerSlots = new HashMap<>();
     for (UInt64 slot = startSlot; slot.compareTo(endSlot) < 0; slot = slot.plus(UInt64.ONE)) {
-      final Integer proposerIndex = get_beacon_proposer_index(state, slot);
+      final int proposerIndex = get_beacon_proposer_index(state, slot);
       final BLSPublicKey publicKey = state.getValidators().get(proposerIndex).getPubkey();
       proposerSlots.put(slot, publicKey);
     }

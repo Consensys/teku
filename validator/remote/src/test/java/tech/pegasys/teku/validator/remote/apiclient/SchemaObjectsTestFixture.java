@@ -15,6 +15,8 @@ package tech.pegasys.teku.validator.remote.apiclient;
 
 import java.util.List;
 import tech.pegasys.teku.api.response.GetForkResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
+import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
@@ -33,6 +35,14 @@ public class SchemaObjectsTestFixture {
 
   public GetForkResponse getForkResponse() {
     return new GetForkResponse(dataStructureUtil.randomForkInfo());
+  }
+
+  public GetGenesisResponse getGenesisResponse() {
+    return new GetGenesisResponse(
+        new GenesisData(
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes4()));
   }
 
   public BLSPubKey BLSPubKey() {
