@@ -30,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
 import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
+import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -112,6 +113,14 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
             LOG.error(ex);
           }
         });
+
+    try {
+      final String headEventString =
+          jsonProvider.objectToJSON(new HeadEvent(slot, bestBlockRoot, stateRoot, epochTransition));
+      sendEventToClients(EventType.head, headEventString);
+    } catch (JsonProcessingException ex) {
+      LOG.error(ex);
+    }
   }
 
   @Override
