@@ -14,8 +14,6 @@
 package tech.pegasys.teku.test.acceptance.dsl.tools.deposits;
 
 import java.security.SecureRandom;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -30,10 +28,6 @@ class ValidatorKeyGenerator {
     this.srng = SecureRandomProvider.createSecureRandom();
   }
 
-  public List<ValidatorKeys> generateKeys() {
-    return generateKeysStream().collect(Collectors.toList());
-  }
-
   public Stream<ValidatorKeys> generateKeysStream() {
     return IntStream.range(0, validatorCount).mapToObj(ignore -> generateKey());
   }
@@ -42,5 +36,23 @@ class ValidatorKeyGenerator {
     final BLSKeyPair validatorKey = BLSKeyPair.random(srng);
     final BLSKeyPair withdrawalKey = BLSKeyPair.random(srng);
     return new ValidatorKeys(validatorKey, withdrawalKey);
+  }
+
+  static class ValidatorKeys {
+    private final BLSKeyPair validatorKey;
+    private final BLSKeyPair withdrawalKey;
+
+    public ValidatorKeys(final BLSKeyPair validatorKey, final BLSKeyPair withdrawalKey) {
+      this.validatorKey = validatorKey;
+      this.withdrawalKey = withdrawalKey;
+    }
+
+    public BLSKeyPair getValidatorKey() {
+      return validatorKey;
+    }
+
+    public BLSKeyPair getWithdrawalKey() {
+      return withdrawalKey;
+    }
   }
 }

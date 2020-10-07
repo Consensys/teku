@@ -22,9 +22,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Eth1Address;
 
 public class DepositGenerator implements AutoCloseable {
-
   private final ValidatorKeyGenerator validatorKeyGenerator;
-  private final DepositSender depositSender;
+  private final DepositSenderService depositSenderService;
 
   public DepositGenerator(
       final String eth1Endpoint,
@@ -33,25 +32,24 @@ public class DepositGenerator implements AutoCloseable {
       final int validatorCount,
       final UInt64 amount) {
     this.validatorKeyGenerator = new ValidatorKeyGenerator(validatorCount);
-    this.depositSender =
-        new DepositSender(eth1Endpoint, eth1Credentials, depositContractAddress, amount);
+    this.depositSenderService =
+        new DepositSenderService(eth1Endpoint, eth1Credentials, depositContractAddress, amount);
   }
 
   public SafeFuture<Void> generate() {
-    try {
-      final List<SafeFuture<TransactionReceipt>> transactionReceipts =
-          validatorKeyGenerator
-              .generateKeysStream()
-              .map(depositSender::sendDeposit)
-              .collect(Collectors.toList());
-      return SafeFuture.allOf(transactionReceipts.toArray(SafeFuture[]::new));
-    } catch (final Throwable t) {
-      return SafeFuture.failedFuture(t);
-    }
+    return SafeFuture.of(
+        () -> {
+          final List<SafeFuture<TransactionReceipt>> transactionReceipts =
+              validatorKeyGenerator
+                  .generateKeysStream()
+                  .map(depositSenderService::sendDeposit)
+                  .collect(Collectors.toList());
+          return SafeFuture.allOf(transactionReceipts.toArray(SafeFuture[]::new));
+        });
   }
 
   @Override
   public void close() {
-    depositSender.close();
+    depositSenderService.close();
   }
 }
