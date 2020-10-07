@@ -25,8 +25,14 @@ class MockStartValidatorKeyProvider implements ValidatorKeyProvider {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final GlobalConfiguration config;
+
+  public MockStartValidatorKeyProvider(final GlobalConfiguration config) {
+    this.config = config;
+  }
+
   @Override
-  public List<BLSKeyPair> loadValidatorKeys(final GlobalConfiguration config) {
+  public List<BLSKeyPair> loadValidatorKeys() {
     final int startIndex = config.getInteropOwnedValidatorStartIndex();
     final int endIndex = startIndex + config.getInteropOwnedValidatorCount();
     LOG.log(Level.DEBUG, "Owning validator range " + startIndex + " to " + endIndex);

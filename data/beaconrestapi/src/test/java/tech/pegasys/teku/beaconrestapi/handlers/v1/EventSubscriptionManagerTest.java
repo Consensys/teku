@@ -40,6 +40,7 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
 import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
+import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -57,7 +58,7 @@ public class EventSubscriptionManagerTest {
   private final UInt64 slot = UInt64.valueOf("1024100");
   private final UInt64 epoch = compute_epoch_at_slot(slot);
   private final UInt64 depth = UInt64.valueOf(100);
-  private final ChainReorgEvent sampleEvent =
+  private final ChainReorgEvent chainReorgEvent =
       new ChainReorgEvent(
           slot,
           depth,
@@ -66,6 +67,9 @@ public class EventSubscriptionManagerTest {
           data.randomBytes32(),
           data.randomBytes32(),
           epoch);
+
+  private final HeadEvent headEvent =
+      new HeadEvent(slot, data.randomBytes32(), data.randomBytes32(), false);
 
   private final FinalizedCheckpointEvent sampleCheckpointEvent =
       new FinalizedCheckpointEvent(data.randomBytes32(), data.randomBytes32(), epoch);
@@ -103,7 +107,34 @@ public class EventSubscriptionManagerTest {
         jsonProvider.jsonToObject(
             eventString.substring(eventString.indexOf("{")), ChainReorgEvent.class);
 
-    assertThat(event).isEqualTo(sampleEvent);
+    assertThat(event).isEqualTo(chainReorgEvent);
+  }
+
+  @Test
+  void shouldPropagateHeadEvent() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=head");
+    manager.registerClient(client1);
+
+    triggerHeadEvent();
+    verify(outputStream).print(stringArgs.capture());
+    final String eventString = stringArgs.getValue();
+    assertThat(eventString).contains("event: head\n");
+    final HeadEvent event =
+        jsonProvider.jsonToObject(eventString.substring(eventString.indexOf("{")), HeadEvent.class);
+
+    assertThat(event).isEqualTo(headEvent);
+  }
+
+  @Test
+  void shouldPropagateHeadAndReorg() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=chain_reorg,head");
+    manager.registerClient(client1);
+
+    triggerReorgEvent();
+    verify(outputStream, times(2)).print(stringArgs.capture());
+    final List<String> events = stringArgs.getAllValues();
+    assertThat(events.get(0)).contains("event: chain_reorg\n");
+    assertThat(events.get(1)).contains("event: head\n");
   }
 
   @Test
@@ -145,10 +176,19 @@ public class EventSubscriptionManagerTest {
 
   @Test
   void shouldNotGetReorgIfNotSubscribed() throws IOException {
-    when(req.getQueryString()).thenReturn("&topics=head");
+    when(req.getQueryString()).thenReturn("&topics=finalized_checkpoint");
     manager.registerClient(client1);
 
     triggerReorgEvent();
+    verify(outputStream, never()).print(anyString());
+  }
+
+  @Test
+  void shouldNotGetHeadIfNotSubscribed() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=finalized_checkpoint");
+    manager.registerClient(client1);
+
+    triggerHeadEvent();
     verify(outputStream, never()).print(anyString());
   }
 
@@ -175,14 +215,19 @@ public class EventSubscriptionManagerTest {
 
   private void triggerReorgEvent() {
     manager.chainHeadUpdated(
-        sampleEvent.slot,
-        sampleEvent.newHeadState,
-        sampleEvent.newHeadBlock,
-        sampleEvent.slot.mod(Constants.SLOTS_PER_EPOCH).equals(UInt64.ZERO),
+        chainReorgEvent.slot,
+        chainReorgEvent.newHeadState,
+        chainReorgEvent.newHeadBlock,
+        chainReorgEvent.slot.mod(Constants.SLOTS_PER_EPOCH).equals(UInt64.ZERO),
         Optional.of(
             new ReorgContext(
-                sampleEvent.oldHeadBlock,
-                sampleEvent.oldHeadState,
-                sampleEvent.slot.minus(depth))));
+                chainReorgEvent.oldHeadBlock,
+                chainReorgEvent.oldHeadState,
+                chainReorgEvent.slot.minus(depth))));
+  }
+
+  private void triggerHeadEvent() {
+    manager.chainHeadUpdated(
+        headEvent.slot, headEvent.state, headEvent.block, false, Optional.empty());
   }
 }

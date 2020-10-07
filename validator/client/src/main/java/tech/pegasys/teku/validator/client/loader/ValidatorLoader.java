@@ -33,6 +33,7 @@ import tech.pegasys.teku.core.signatures.SlashingProtectedSigner;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.signer.ExternalSigner;
 
@@ -46,12 +47,13 @@ public class ValidatorLoader {
     this.asyncRunner = asyncRunner;
   }
 
-  public Map<BLSPublicKey, Validator> initializeValidators(GlobalConfiguration config) {
+  public Map<BLSPublicKey, Validator> initializeValidators(
+      ValidatorConfig config, final GlobalConfiguration globalConfiguration) {
     // Get validator connection info and create a new Validator object and put it into the
     // Validators map
 
     final Map<BLSPublicKey, Validator> validators = new HashMap<>();
-    validators.putAll(createLocalSignerValidator(config));
+    validators.putAll(createLocalSignerValidator(config, globalConfiguration));
     validators.putAll(createExternalSignerValidator(config));
 
     STATUS_LOG.validatorsInitialised(
@@ -63,8 +65,8 @@ public class ValidatorLoader {
   }
 
   private Map<BLSPublicKey, Validator> createLocalSignerValidator(
-      final GlobalConfiguration config) {
-    return loadValidatorKeys(config).stream()
+      final ValidatorConfig config, final GlobalConfiguration globalConfiguration) {
+    return loadValidatorKeys(config, globalConfiguration).stream()
         .map(
             blsKeyPair ->
                 new Validator(
@@ -75,8 +77,7 @@ public class ValidatorLoader {
         .collect(toMap(Validator::getPublicKey, Function.identity()));
   }
 
-  private Map<BLSPublicKey, Validator> createExternalSignerValidator(
-      final GlobalConfiguration config) {
+  private Map<BLSPublicKey, Validator> createExternalSignerValidator(final ValidatorConfig config) {
     final Duration timeout = Duration.ofMillis(config.getValidatorExternalSignerTimeout());
     return config.getValidatorExternalSignerPublicKeys().stream()
         .map(
@@ -95,22 +96,19 @@ public class ValidatorLoader {
     return new SlashingProtectedSigner(publicKey, slashingProtector, signer);
   }
 
-  private static Collection<BLSKeyPair> loadValidatorKeys(final GlobalConfiguration config) {
+  private static Collection<BLSKeyPair> loadValidatorKeys(
+      final ValidatorConfig config, final GlobalConfiguration globalConfiguration) {
     final Set<ValidatorKeyProvider> keyProviders = new LinkedHashSet<>();
-    if (config.isInteropEnabled()) {
-      keyProviders.add(new MockStartValidatorKeyProvider());
+    if (globalConfiguration.isInteropEnabled()) {
+      keyProviders.add(new MockStartValidatorKeyProvider(globalConfiguration));
     } else {
-      // support loading keys both from unencrypted yaml and encrypted keystores
-      if (config.getValidatorsKeyFile() != null) {
-        keyProviders.add(new YamlValidatorKeyProvider());
-      }
-
+      // support loading keys both from encrypted keystores
       if (config.getValidatorKeystorePasswordFilePairs() != null) {
-        keyProviders.add(new KeystoresValidatorKeyProvider(new KeystoreLocker()));
+        keyProviders.add(new KeystoresValidatorKeyProvider(new KeystoreLocker(), config));
       }
     }
     return keyProviders.stream()
-        .flatMap(validatorKeyProvider -> validatorKeyProvider.loadValidatorKeys(config).stream())
+        .flatMap(validatorKeyProvider -> validatorKeyProvider.loadValidatorKeys().stream())
         .collect(Collectors.toSet());
   }
 }

@@ -14,12 +14,10 @@
 package tech.pegasys.teku.util.config;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Supplier;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 
 /**
@@ -53,15 +51,6 @@ public class GlobalConfigurationBuilder {
   private String initialState;
   private int interopNumberOfValidators;
   private boolean interopEnabled;
-  private boolean validatorKeystoreLockingEnabled;
-  private boolean validatorPerformanceTrackingEnabled;
-  private String validatorsKeyFile;
-  private List<String> validatorKeystoreFiles = new ArrayList<>();
-  private List<String> validatorKeystorePasswordFiles = new ArrayList<>();
-  private List<String> validatorKeys = new ArrayList<>();
-  private List<String> validatorExternalSignerPublicKeys;
-  private String validatorExternalSignerUrl;
-  private int validatorExternalSignerTimeout;
   private Eth1Address eth1DepositContractAddress;
   private String eth1Endpoint;
   private boolean eth1DepositsFromStorageEnabled;
@@ -97,7 +86,6 @@ public class GlobalConfigurationBuilder {
   private int remoteValidatorApiPort;
   private int remoteValidatorApiMaxSubscribers;
   private boolean remoteValidatorApiEnabled;
-  private Bytes32 graffiti;
   private Path validatorsSlashingProtectionPath;
   private boolean isValidatorClient;
   private String beaconNodeApiEndpoint;
@@ -226,58 +214,6 @@ public class GlobalConfigurationBuilder {
 
   public GlobalConfigurationBuilder setInteropEnabled(final boolean interopEnabled) {
     this.interopEnabled = interopEnabled;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setValidatorKeystoreLockingEnabled(
-      final boolean keystoreLockingEnabled) {
-    this.validatorKeystoreLockingEnabled = keystoreLockingEnabled;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setValidatorPerformanceTrackingEnabled(
-      final boolean trackingEnabled) {
-    this.validatorPerformanceTrackingEnabled = trackingEnabled;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setValidatorKeyFile(final String validatorsKeyFile) {
-    this.validatorsKeyFile = validatorsKeyFile;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setValidatorKeystoreFiles(
-      final List<String> validatorKeystoreFiles) {
-    this.validatorKeystoreFiles = validatorKeystoreFiles;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setValidatorKeystorePasswordFiles(
-      final List<String> validatorKeystorePasswordFiles) {
-    this.validatorKeystorePasswordFiles = validatorKeystorePasswordFiles;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setValidatorKeys(final List<String> validatorKeys) {
-    this.validatorKeys = validatorKeys;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setValidatorExternalSignerPublicKeys(
-      final List<String> validatorsExternalSignerPublicKeys) {
-    this.validatorExternalSignerPublicKeys = validatorsExternalSignerPublicKeys;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setValidatorExternalSignerUrl(
-      final String validatorsExternalSignerUrl) {
-    this.validatorExternalSignerUrl = validatorsExternalSignerUrl;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setValidatorExternalSignerTimeout(
-      final int validatorsExternalSignerTimeout) {
-    this.validatorExternalSignerTimeout = validatorsExternalSignerTimeout;
     return this;
   }
 
@@ -462,11 +398,6 @@ public class GlobalConfigurationBuilder {
     return this;
   }
 
-  public GlobalConfigurationBuilder setGraffiti(final Bytes32 graffiti) {
-    this.graffiti = graffiti;
-    return this;
-  }
-
   public GlobalConfigurationBuilder setNetwork(final NetworkDefinition network) {
     this.network = network;
     return this;
@@ -538,15 +469,6 @@ public class GlobalConfigurationBuilder {
         initialState,
         interopNumberOfValidators,
         interopEnabled,
-        validatorKeystoreLockingEnabled,
-        validatorPerformanceTrackingEnabled,
-        validatorsKeyFile,
-        validatorKeystoreFiles,
-        validatorKeystorePasswordFiles,
-        validatorKeys,
-        validatorExternalSignerPublicKeys,
-        validatorExternalSignerUrl,
-        validatorExternalSignerTimeout,
         eth1DepositContractAddress,
         eth1Endpoint,
         eth1DepositsFromStorageEnabled,
@@ -581,7 +503,6 @@ public class GlobalConfigurationBuilder {
         remoteValidatorApiPort,
         remoteValidatorApiMaxSubscribers,
         remoteValidatorApiEnabled,
-        graffiti,
         validatorsSlashingProtectionPath,
         isValidatorClient,
         beaconNodeApiEndpoint,

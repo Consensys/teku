@@ -11,26 +11,26 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.services.beaconchain;
+package tech.pegasys.teku.validator.client;
 
+import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
-import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
-public class BeaconChainConfiguration {
-  private final WeakSubjectivityConfig weakSubjectivityConfig;
+public class ValidatorClientConfiguration {
+  private final GlobalConfiguration globalConfiguration;
   private final ValidatorConfig validatorConfig;
 
-  public BeaconChainConfiguration(
-      final WeakSubjectivityConfig weakSubjectivityConfig, final ValidatorConfig validatorConfig) {
-    this.weakSubjectivityConfig = weakSubjectivityConfig;
+  public ValidatorClientConfiguration(
+      final GlobalConfiguration globalConfiguration, final ValidatorConfig validatorConfig) {
+    this.globalConfiguration = globalConfiguration;
     this.validatorConfig = validatorConfig;
   }
 
-  public WeakSubjectivityConfig weakSubjectivity() {
-    return weakSubjectivityConfig;
+  public GlobalConfiguration getGlobalConfiguration() {
+    return globalConfiguration;
   }
 
-  public ValidatorConfig validatorConfig() {
+  public ValidatorConfig getValidatorConfig() {
     return validatorConfig;
   }
 }
