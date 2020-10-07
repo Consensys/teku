@@ -13,6 +13,24 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.BLS_VERIFY_DEPOSIT;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.SAVE_FOR_FUTURE;
+import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
+
+import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -37,25 +55,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.StateStorageMode;
-
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.BLS_VERIFY_DEPOSIT;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.REJECT;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.validation.InternalValidationResult.SAVE_FOR_FUTURE;
-import static tech.pegasys.teku.util.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 /**
  * The following validations MUST pass before forwarding the attestation on the subnet.
@@ -377,17 +376,17 @@ class AttestationValidatorTest {
   public void shouldRejectAttestationsThatHaveLMDVotesInconsistentWithFinalizedCheckpointRoot() {
     ForkChoiceUtilWrapper forkChoiceUtilWrapper = mock(ForkChoiceUtilWrapper.class);
     final AttestationValidator validator =
-            new AttestationValidator(recentChainData, forkChoiceUtilWrapper);
+        new AttestationValidator(recentChainData, forkChoiceUtilWrapper);
     final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     when(forkChoiceUtilWrapper.get_ancestor(any(), any(), any()))
-            .thenReturn(Optional.of(attestation.getData().getTarget().getRoot()))
-            .thenReturn(Optional.of(Bytes32.ZERO));
+        .thenReturn(Optional.of(attestation.getData().getTarget().getRoot()))
+        .thenReturn(Optional.of(Bytes32.ZERO));
     final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
     assertThat(
             validator.validate(
-                    ValidateableAttestation.fromAttestation(attestation), expectedSubnetId))
-            .isCompletedWithValue(REJECT);
+                ValidateableAttestation.fromAttestation(attestation), expectedSubnetId))
+        .isCompletedWithValue(REJECT);
   }
 
   private InternalValidationResult validate(final Attestation attestation) {
