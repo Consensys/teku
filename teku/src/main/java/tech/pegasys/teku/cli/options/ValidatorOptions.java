@@ -13,11 +13,20 @@
 
 package tech.pegasys.teku.cli.options;
 
+import com.google.common.base.Strings;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
+import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 public class ValidatorOptions {
   @Option(
@@ -89,10 +98,6 @@ public class ValidatorOptions {
       arity = "0..1")
   private boolean validatorPerformanceTrackingEnabled = false;
 
-  public boolean isValidatorPerformanceTrackingEnabled() {
-    return validatorPerformanceTrackingEnabled;
-  }
-
   @Option(
       names = {"--validators-keystore-locking-enabled"},
       paramLabel = "<BOOLEAN>",
@@ -100,35 +105,44 @@ public class ValidatorOptions {
       arity = "1")
   private boolean validatorKeystoreLockingEnabled = true;
 
-  public boolean isValidatorKeystoreLockingEnabled() {
-    return validatorKeystoreLockingEnabled;
+  public void configure(TekuConfiguration.Builder builder) {
+    builder.validator(
+        config ->
+            config
+                .validatorKeystoreLockingEnabled(validatorKeystoreLockingEnabled)
+                .validatorKeystoreFiles(validatorKeystoreFiles)
+                .validatorKeystorePasswordFiles(validatorKeystorePasswordFiles)
+                .validatorExternalSignerPublicKeys(parseExternalSignerPublicKeys())
+                .validatorExternalSignerUrl(parseValidatorExternalSignerUrl())
+                .validatorExternalSignerTimeout(validatorExternalSignerTimeout)
+                .validatorPerformanceTrackingEnabled(validatorPerformanceTrackingEnabled)
+                .graffiti(graffiti)
+                .validatorKeys(validatorKeys));
   }
 
-  public List<String> getValidatorKeystoreFiles() {
-    return validatorKeystoreFiles;
+  private List<BLSPublicKey> parseExternalSignerPublicKeys() {
+    if (validatorExternalSignerPublicKeys == null) {
+      return Collections.emptyList();
+    }
+    try {
+      return validatorExternalSignerPublicKeys.stream()
+          .map(key -> BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)))
+          .collect(Collectors.toList());
+    } catch (IllegalArgumentException e) {
+      throw new InvalidConfigurationException(
+          "Invalid configuration. Signer public key is invalid", e);
+    }
   }
 
-  public List<String> getValidatorKeystorePasswordFiles() {
-    return validatorKeystorePasswordFiles;
-  }
-
-  public List<String> getValidatorExternalSignerPublicKeys() {
-    return validatorExternalSignerPublicKeys;
-  }
-
-  public String getValidatorExternalSignerUrl() {
-    return validatorExternalSignerUrl;
-  }
-
-  public int getValidatorExternalSignerTimeout() {
-    return validatorExternalSignerTimeout;
-  }
-
-  public Bytes32 getGraffiti() {
-    return graffiti;
-  }
-
-  public List<String> getValidatorKeys() {
-    return validatorKeys;
+  public URL parseValidatorExternalSignerUrl() {
+    if (Strings.isNullOrEmpty(validatorExternalSignerUrl)) {
+      return null;
+    }
+    try {
+      return new URL(validatorExternalSignerUrl);
+    } catch (MalformedURLException e) {
+      throw new InvalidConfigurationException(
+          "Invalid configuration. Signer URL has invalid syntax", e);
+    }
   }
 }
