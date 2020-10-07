@@ -20,6 +20,7 @@ import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.Attestation;
@@ -139,6 +140,10 @@ public class BlockImporter {
                 LOG.trace(
                     "Successfully imported proposed block: {}",
                     formatBlock(blockProposedEvent.getBlock()));
+              } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
+                LOG.info(
+                    "Delayed processing block for slot {} because it was from the future.",
+                    blockProposedEvent.getBlock().getSlot());
               } else {
                 LOG.error(
                     "Failed to import proposed block for reason "

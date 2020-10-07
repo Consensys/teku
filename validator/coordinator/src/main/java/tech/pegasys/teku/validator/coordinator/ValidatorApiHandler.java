@@ -119,6 +119,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<UInt64>> getGenesisTime() {
+    return SafeFuture.completedFuture(combinedChainDataClient.getGenesisTime());
+  }
+
+  @Override
   public SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
       final UInt64 epoch, final Collection<BLSPublicKey> publicKeys) {
     if (isSyncActive()) {

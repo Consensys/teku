@@ -362,6 +362,10 @@ public class CombinedChainDataClient {
     return compute_epoch_at_slot(getCurrentSlot());
   }
 
+  public Optional<UInt64> getGenesisTime() {
+    return Optional.ofNullable(recentChainData.getGenesisTime());
+  }
+
   @VisibleForTesting
   public UpdatableStore getStore() {
     return recentChainData.getStore();

@@ -149,6 +149,7 @@ public class Constants {
   // Teku Validator Client Specific
   public static final long FORK_RETRY_DELAY_SECONDS = 10; // in sec
   public static final long FORK_REFRESH_TIME_SECONDS = TimeUnit.MINUTES.toSeconds(5); // in sec
+  public static final long GENESIS_TIME_RETRY_DELAY_SECONDS = 10; // in sec
 
   // Networking
   public static final int GOSSIP_MAX_SIZE = 1048576; // bytes

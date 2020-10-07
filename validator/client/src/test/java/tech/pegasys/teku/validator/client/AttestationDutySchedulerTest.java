@@ -302,56 +302,6 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   }
 
   @Test
-  public void shouldScheduleAttestationDutiesWhenBlockIsImported() {
-    final UInt64 attestationSlot = UInt64.valueOf(5);
-    final int validator1Index = 5;
-    final int validator1Committee = 3;
-    final int validator1CommitteePosition = 9;
-    final int validator2Index = 6;
-    final int validator2Committee = 4;
-    final int validator2CommitteePosition = 8;
-    final ValidatorDuties validator1Duties =
-        ValidatorDuties.withDuties(
-            VALIDATOR1_KEY,
-            validator1Index,
-            validator1Committee,
-            validator1CommitteePosition,
-            0,
-            emptyList(),
-            attestationSlot);
-    final ValidatorDuties validator2Duties =
-        ValidatorDuties.withDuties(
-            VALIDATOR2_KEY,
-            validator2Index,
-            validator2Committee,
-            validator2CommitteePosition,
-            0,
-            emptyList(),
-            attestationSlot);
-    when(validatorApiChannel.getDuties(eq(ZERO), any()))
-        .thenReturn(completedFuture(Optional.of(List.of(validator1Duties, validator2Duties))));
-
-    final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
-    when(attestationDuty.performDuty()).thenReturn(new SafeFuture<>());
-    when(dutyFactory.createAttestationProductionDuty(attestationSlot)).thenReturn(attestationDuty);
-
-    // Load duties
-    dutyScheduler.onSlot(compute_start_slot_at_epoch(ZERO));
-
-    // Both validators should be scheduled to create an attestation in the same slot
-    verify(attestationDuty)
-        .addValidator(
-            validator1, validator1Committee, validator1CommitteePosition, validator1Index);
-    verify(attestationDuty)
-        .addValidator(
-            validator2, validator2Committee, validator2CommitteePosition, validator2Index);
-
-    // Execute
-    dutyScheduler.onBlockImportedForSlot(attestationSlot);
-    verify(attestationDuty).performDuty();
-  }
-
-  @Test
   public void shouldNotScheduleAttestationDutiesTwice() {
     final UInt64 attestationSlot = UInt64.valueOf(5);
     final int validator1Index = 5;
@@ -397,7 +347,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             validator2, validator2Committee, validator2CommitteePosition, validator2Index);
 
     // Execute
-    dutyScheduler.onBlockImportedForSlot(attestationSlot);
+    dutyScheduler.onAttestationCreationDue(attestationSlot);
     verify(attestationDuty).performDuty();
 
     dutyScheduler.onAttestationCreationDue(attestationSlot);

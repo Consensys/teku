@@ -33,11 +33,12 @@ import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.metrics.MetricRecordingValidatorApiChannel;
 import tech.pegasys.teku.validator.eventadapter.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.eventadapter.EventChannelBeaconChainEventAdapter;
+import tech.pegasys.teku.validator.eventadapter.IndependentTimerEventChannelBeaconChainEventAdapter;
 import tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler;
 import tech.pegasys.teku.validator.remote.WebSocketBeaconChainEventAdapter;
 
 public class ValidatorClientService extends Service {
-
+  private static final boolean USE_INDEPENDENT_TIMER = true;
   private final EventChannels eventChannels;
   private final ValidatorTimingChannel attestationTimingChannel;
   private final ValidatorTimingChannel blockProductionTimingChannel;
@@ -47,16 +48,11 @@ public class ValidatorClientService extends Service {
       final EventChannels eventChannels,
       final ValidatorTimingChannel attestationTimingChannel,
       final ValidatorTimingChannel blockProductionTimingChannel,
-      final ServiceConfig serviceConfig) {
+      final BeaconChainEventAdapter beaconChainEventAdapter) {
     this.eventChannels = eventChannels;
     this.attestationTimingChannel = attestationTimingChannel;
     this.blockProductionTimingChannel = blockProductionTimingChannel;
-
-    if (serviceConfig.getConfig().isValidatorClient()) {
-      beaconChainEventAdapter = new WebSocketBeaconChainEventAdapter(serviceConfig);
-    } else {
-      beaconChainEventAdapter = new EventChannelBeaconChainEventAdapter(serviceConfig);
-    }
+    this.beaconChainEventAdapter = beaconChainEventAdapter;
   }
 
   public static ValidatorClientService create(
@@ -91,8 +87,20 @@ public class ValidatorClientService extends Service {
         new AttestationDutyScheduler(metricsSystem, dutyLoader, stableSubnetSubscriber);
     final BlockDutyScheduler blockDutyScheduler = new BlockDutyScheduler(metricsSystem, dutyLoader);
 
+    final BeaconChainEventAdapter beaconChainEventAdapter;
+    if (services.getConfig().isValidatorClient()) {
+      beaconChainEventAdapter = new WebSocketBeaconChainEventAdapter(services);
+    } else {
+      if (USE_INDEPENDENT_TIMER) {
+        beaconChainEventAdapter =
+            IndependentTimerEventChannelBeaconChainEventAdapter.create(services, asyncRunner);
+      } else {
+        beaconChainEventAdapter = new EventChannelBeaconChainEventAdapter(services);
+      }
+    }
+
     return new ValidatorClientService(
-        eventChannels, attestationDutyScheduler, blockDutyScheduler, services);
+        eventChannels, attestationDutyScheduler, blockDutyScheduler, beaconChainEventAdapter);
   }
 
   private static RetryingDutyLoader createDutyLoader(

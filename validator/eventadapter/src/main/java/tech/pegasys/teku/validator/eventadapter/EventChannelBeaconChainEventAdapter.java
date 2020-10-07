@@ -72,7 +72,7 @@ public class EventChannelBeaconChainEventAdapter
 
   @Subscribe
   public void onImportedBlockEvent(ImportedBlockEvent event) {
-    validatorTimingChannel.onBlockImportedForSlot(event.getBlock().getSlot());
+    validatorTimingChannel.onAttestationCreationDue(event.getBlock().getSlot());
   }
 
   @Override

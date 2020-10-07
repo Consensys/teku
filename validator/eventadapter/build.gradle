@@ -1,10 +1,12 @@
 dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
   implementation project(':bls')
+  implementation project(':ethereum:core')
   implementation project(':ethereum:datastructures')
   implementation project(':ethereum:statetransition')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:async')
+  implementation project(':infrastructure:logging')
   implementation project(':services:serviceutils')
   implementation project(':storage:api')
   implementation project(':validator:api')

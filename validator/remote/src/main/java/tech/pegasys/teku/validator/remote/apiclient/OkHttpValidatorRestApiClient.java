@@ -17,6 +17,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_FORK;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_GENESIS_DATA;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK;
@@ -48,6 +49,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
 import tech.pegasys.teku.api.response.GetForkResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
@@ -88,6 +90,11 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   @Override
   public Optional<GetForkResponse> getFork() {
     return get(GET_FORK, EMPTY_QUERY_PARAMS, GetForkResponse.class);
+  }
+
+  @Override
+  public Optional<GetGenesisResponse> getGenesisTime() {
+    return get(GET_GENESIS_DATA, EMPTY_QUERY_PARAMS, GetGenesisResponse.class);
   }
 
   @Override

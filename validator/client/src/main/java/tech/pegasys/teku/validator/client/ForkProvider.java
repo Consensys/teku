@@ -28,7 +28,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 public class ForkProvider {
   private static final Logger LOG = LogManager.getLogger();
 
-  private AsyncRunner asyncRunner;
+  private final AsyncRunner asyncRunner;
   private final ValidatorApiChannel validatorApiChannel;
 
   private volatile Optional<ForkInfo> currentFork = Optional.empty();
