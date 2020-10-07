@@ -11,19 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2;
+package tech.pegasys.teku.core;
 
 import java.util.Optional;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 
-public class Eth2Config {
-  private final Optional<Checkpoint> requiredCheckpoint;
+public class ForkChoiceUtilWrapper {
 
-  public Eth2Config(Optional<Checkpoint> requiredCheckpoint) {
-    this.requiredCheckpoint = requiredCheckpoint;
-  }
-
-  public Optional<Checkpoint> getRequiredCheckpoint() {
-    return requiredCheckpoint;
+  public Optional<Bytes32> get_ancestor(
+      ForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 slot) {
+    return ForkChoiceUtil.get_ancestor(forkChoiceStrategy, root, slot);
   }
 }

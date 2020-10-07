@@ -91,8 +91,7 @@ public class Eth2NetworkBuilder {
 
     // Setup eth2 handlers
     final AttestationSubnetService attestationSubnetService = new AttestationSubnetService();
-    final RpcEncoding rpcEncoding =
-        eth2Config.isSnappyCompressionEnabled() ? RpcEncoding.SSZ_SNAPPY : RpcEncoding.SSZ;
+    final RpcEncoding rpcEncoding = RpcEncoding.SSZ_SNAPPY;
     final Eth2PeerManager eth2PeerManager =
         Eth2PeerManager.create(
             asyncRunner,
@@ -112,8 +111,7 @@ public class Eth2NetworkBuilder {
     rpcMethods.addAll(eth2RpcMethods);
     peerHandlers.add(eth2PeerManager);
 
-    final GossipEncoding gossipEncoding =
-        eth2Config.isSnappyCompressionEnabled() ? GossipEncoding.SSZ_SNAPPY : GossipEncoding.SSZ;
+    final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     // Build core network and inject eth2 handlers
     final DiscoveryNetwork<?> network = buildNetwork(gossipEncoding);
 

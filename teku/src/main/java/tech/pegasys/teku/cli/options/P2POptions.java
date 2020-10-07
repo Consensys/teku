@@ -113,13 +113,6 @@ public class P2POptions {
   private List<String> p2pStaticPeers = new ArrayList<>();
 
   @Option(
-      names = {"--p2p-snappy-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Enables snappy compression for P2P traffic",
-      arity = "1")
-  private Boolean p2pSnappyEnabled = null;
-
-  @Option(
       names = {"--Xp2p-multipeer-sync-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enables experimental multipeer sync",
@@ -183,10 +176,6 @@ public class P2POptions {
 
   public List<String> getP2pStaticPeers() {
     return p2pStaticPeers;
-  }
-
-  public Boolean isP2pSnappyEnabled() {
-    return p2pSnappyEnabled;
   }
 
   public boolean isMultiPeerSyncEnabled() {

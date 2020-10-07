@@ -59,27 +59,29 @@ public class ValidatorClientService extends Service {
     }
   }
 
-  public static ValidatorClientService create(final ServiceConfig config) {
-    final EventChannels eventChannels = config.getEventChannels();
-    final MetricsSystem metricsSystem = config.getMetricsSystem();
-    final AsyncRunner asyncRunner = config.createAsyncRunner("validator");
-    final Path slashingProtectionPath = config.getConfig().getValidatorsSlashingProtectionPath();
+  public static ValidatorClientService create(
+      final ServiceConfig services, final ValidatorClientConfiguration config) {
+    final EventChannels eventChannels = services.getEventChannels();
+    final MetricsSystem metricsSystem = services.getMetricsSystem();
+    final AsyncRunner asyncRunner = services.createAsyncRunner("validator");
+    final Path slashingProtectionPath = services.getConfig().getValidatorsSlashingProtectionPath();
     final SlashingProtector slashingProtector =
         new SlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
     final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector, asyncRunner);
     final Map<BLSPublicKey, Validator> validators =
-        validatorLoader.initializeValidators(config.getConfig());
+        validatorLoader.initializeValidators(
+            config.getValidatorConfig(), config.getGlobalConfiguration());
 
     final ValidatorApiChannel validatorApiChannel;
-    if (config.getConfig().isValidatorClient()) {
+    if (services.getConfig().isValidatorClient()) {
       validatorApiChannel =
           new MetricRecordingValidatorApiChannel(
-              metricsSystem, new RemoteValidatorApiHandler(config, asyncRunner));
+              metricsSystem, new RemoteValidatorApiHandler(services, asyncRunner));
     } else {
       validatorApiChannel =
           new MetricRecordingValidatorApiChannel(
               metricsSystem,
-              config.getEventChannels().getPublisher(ValidatorApiChannel.class, asyncRunner));
+              services.getEventChannels().getPublisher(ValidatorApiChannel.class, asyncRunner));
     }
     final RetryingDutyLoader dutyLoader =
         createDutyLoader(metricsSystem, validatorApiChannel, asyncRunner, validators);
@@ -90,7 +92,7 @@ public class ValidatorClientService extends Service {
     final BlockDutyScheduler blockDutyScheduler = new BlockDutyScheduler(metricsSystem, dutyLoader);
 
     return new ValidatorClientService(
-        eventChannels, attestationDutyScheduler, blockDutyScheduler, config);
+        eventChannels, attestationDutyScheduler, blockDutyScheduler, services);
   }
 
   private static RetryingDutyLoader createDutyLoader(

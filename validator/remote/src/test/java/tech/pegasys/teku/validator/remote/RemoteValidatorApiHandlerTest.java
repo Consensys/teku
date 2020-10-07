@@ -33,6 +33,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.response.GetForkResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
+import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -81,6 +83,32 @@ class RemoteValidatorApiHandlerTest {
     when(apiClient.getFork()).thenReturn(Optional.empty());
 
     SafeFuture<Optional<ForkInfo>> future = apiHandler.getForkInfo();
+
+    assertThat(unwrapToOptional(future)).isNotPresent();
+  }
+
+  @Test
+  public void getGenesisTime_WhenPresent_ReturnsValue() {
+    final UInt64 genesisTime = dataStructureUtil.randomUInt64();
+    when(apiClient.getGenesis())
+        .thenReturn(
+            Optional.of(
+                new GetGenesisResponse(
+                    new GenesisData(
+                        genesisTime,
+                        dataStructureUtil.randomBytes32(),
+                        dataStructureUtil.randomBytes4()))));
+
+    SafeFuture<Optional<UInt64>> future = apiHandler.getGenesisTime();
+
+    assertThat(unwrapToValue(future)).isEqualTo(genesisTime);
+  }
+
+  @Test
+  public void getGenesisTime_WhenNotPresent_ReturnsEmpty() {
+    when(apiClient.getGenesis()).thenReturn(Optional.empty());
+
+    SafeFuture<Optional<UInt64>> future = apiHandler.getGenesisTime();
 
     assertThat(unwrapToOptional(future)).isNotPresent();
   }

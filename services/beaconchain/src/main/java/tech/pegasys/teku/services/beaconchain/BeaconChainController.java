@@ -161,7 +161,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private ForkChoiceExecutor forkChoiceExecutor;
 
   public BeaconChainController(
-      BeaconChainConfiguration beaconConfig, final ServiceConfig serviceConfig) {
+      final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
     this.beaconConfig = beaconConfig;
     this.config = serviceConfig.getConfig();
     asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
@@ -287,7 +287,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void initPerformanceTracker() {
     LOG.debug("BeaconChainController.initPerformanceTracker()");
-    if (config.isValidatorPerformanceTrackingEnabled()) {
+    if (beaconConfig.validatorConfig().isValidatorPerformanceTrackingEnabled()) {
       performanceTracker =
           new DefaultPerformanceTracker(
               combinedChainDataClient, STATUS_LOG, new ValidatorPerformanceMetrics(metricsSystem));
@@ -505,8 +505,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                   config.isLogWireGossip()));
 
       p2pConfig.validateListenPortAvailable();
-      final Eth2Config eth2Config =
-          new Eth2Config(config.isP2pSnappyEnabled(), weakSubjectivityValidator.getWSCheckpoint());
+      final Eth2Config eth2Config = new Eth2Config(weakSubjectivityValidator.getWSCheckpoint());
 
       this.p2pNetwork =
           Eth2NetworkBuilder.create()

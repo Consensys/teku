@@ -13,21 +13,11 @@
 
 package tech.pegasys.teku.util.config;
 
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.status.StatusLogger;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
 import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 
@@ -55,7 +45,6 @@ public class GlobalConfiguration implements MetricsConfig {
   private final int p2pPeerUpperBound;
   private final int targetSubnetSubscriberCount;
   private final List<String> p2pStaticPeers;
-  private final boolean p2pSnappyEnabled;
   private final boolean multiPeerSyncEnabled;
 
   // Interop
@@ -66,16 +55,6 @@ public class GlobalConfiguration implements MetricsConfig {
   private final boolean interopEnabled;
 
   // Validator
-  private final boolean validatorKeystoreLockingEnabled;
-  private final boolean validatorPerformanceTrackingEnabled;
-  private final String validatorsKeyFile;
-  private final List<String> validatorKeystoreFiles;
-  private final List<String> validatorKeystorePasswordFiles;
-  private final List<String> validatorKeys;
-  private final List<String> validatorExternalSignerPublicKeys;
-  private final String validatorExternalSignerUrl;
-  private final int validatorExternalSignerTimeout;
-  private final Bytes32 graffiti;
   private final Path validatorsSlashingProtectionPath;
 
   // Deposit
@@ -155,7 +134,6 @@ public class GlobalConfiguration implements MetricsConfig {
       final int p2pPeerUpperBound,
       final int targetSubnetSubscriberCount,
       final List<String> p2pStaticPeers,
-      final boolean p2pSnappyEnabled,
       final boolean multiPeerSyncEnabled,
       final Integer interopGenesisTime,
       final int interopOwnedValidatorStartIndex,
@@ -163,15 +141,6 @@ public class GlobalConfiguration implements MetricsConfig {
       final String initialState,
       final int interopNumberOfValidators,
       final boolean interopEnabled,
-      final boolean validatorKeystoreLockingEnabled,
-      final boolean validatorPerformanceTrackingEnabled,
-      final String validatorsKeyFile,
-      final List<String> validatorKeystoreFiles,
-      final List<String> validatorKeystorePasswordFiles,
-      final List<String> validatorKeys,
-      final List<String> validatorExternalSignerPublicKeys,
-      final String validatorExternalSignerUrl,
-      final int validatorExternalSignerTimeout,
       final Eth1Address eth1DepositContractAddress,
       final String eth1Endpoint,
       final boolean eth1DepositsFromStorageEnabled,
@@ -206,7 +175,6 @@ public class GlobalConfiguration implements MetricsConfig {
       final int remoteValidatorApiPort,
       final int remoteValidatorApiMaxSubscribers,
       final boolean remoteValidatorApiEnabled,
-      final Bytes32 graffiti,
       final Path validatorsSlashingProtectionPath,
       final boolean isValidatorClient,
       final String beaconNodeApiEndpoint,
@@ -228,7 +196,6 @@ public class GlobalConfiguration implements MetricsConfig {
     this.p2pPeerUpperBound = p2pPeerUpperBound;
     this.targetSubnetSubscriberCount = targetSubnetSubscriberCount;
     this.p2pStaticPeers = p2pStaticPeers;
-    this.p2pSnappyEnabled = p2pSnappyEnabled;
     this.multiPeerSyncEnabled = multiPeerSyncEnabled;
     this.interopGenesisTime = interopGenesisTime;
     this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
@@ -236,15 +203,6 @@ public class GlobalConfiguration implements MetricsConfig {
     this.initialState = initialState;
     this.interopNumberOfValidators = interopNumberOfValidators;
     this.interopEnabled = interopEnabled;
-    this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
-    this.validatorPerformanceTrackingEnabled = validatorPerformanceTrackingEnabled;
-    this.validatorsKeyFile = validatorsKeyFile;
-    this.validatorKeystoreFiles = validatorKeystoreFiles;
-    this.validatorKeystorePasswordFiles = validatorKeystorePasswordFiles;
-    this.validatorKeys = validatorKeys;
-    this.validatorExternalSignerPublicKeys = validatorExternalSignerPublicKeys;
-    this.validatorExternalSignerUrl = validatorExternalSignerUrl;
-    this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
     this.eth1Endpoint = eth1Endpoint;
     this.eth1DepositsFromStorageEnabled = eth1DepositsFromStorageEnabled;
@@ -279,7 +237,6 @@ public class GlobalConfiguration implements MetricsConfig {
     this.remoteValidatorApiPort = remoteValidatorApiPort;
     this.remoteValidatorApiEnabled = remoteValidatorApiEnabled;
     this.remoteValidatorApiMaxSubscribers = remoteValidatorApiMaxSubscribers;
-    this.graffiti = graffiti;
     this.validatorsSlashingProtectionPath = validatorsSlashingProtectionPath;
     this.isValidatorClient = isValidatorClient;
     this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
@@ -358,10 +315,6 @@ public class GlobalConfiguration implements MetricsConfig {
     return p2pStaticPeers;
   }
 
-  public boolean isP2pSnappyEnabled() {
-    return p2pSnappyEnabled;
-  }
-
   public boolean isMultiPeerSyncEnabled() {
     return multiPeerSyncEnabled;
   }
@@ -392,55 +345,6 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public boolean isInteropEnabled() {
     return interopEnabled;
-  }
-
-  public boolean isValidatorKeystoreLockingEnabled() {
-    return validatorKeystoreLockingEnabled;
-  }
-
-  public boolean isValidatorPerformanceTrackingEnabled() {
-    return validatorPerformanceTrackingEnabled;
-  }
-
-  public String getValidatorsKeyFile() {
-    return validatorsKeyFile;
-  }
-
-  public List<String> getValidatorKeystoreFiles() {
-    return validatorKeystoreFiles;
-  }
-
-  public List<String> getValidatorKeystorePasswordFiles() {
-    return validatorKeystorePasswordFiles;
-  }
-
-  public List<String> getValidatorKeys() {
-    return validatorKeys;
-  }
-
-  public List<BLSPublicKey> getValidatorExternalSignerPublicKeys() {
-    if (validatorExternalSignerPublicKeys == null) {
-      return Collections.emptyList();
-    }
-    try {
-      return validatorExternalSignerPublicKeys.stream()
-          .map(key -> BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)))
-          .collect(Collectors.toList());
-    } catch (IllegalArgumentException e) {
-      throw new IllegalArgumentException("Invalid configuration. Signer public key is invalid", e);
-    }
-  }
-
-  public URL getValidatorExternalSignerUrl() {
-    try {
-      return new URL(validatorExternalSignerUrl);
-    } catch (MalformedURLException e) {
-      throw new IllegalArgumentException("Invalid configuration. Signer URL has invalid syntax", e);
-    }
-  }
-
-  public int getValidatorExternalSignerTimeout() {
-    return validatorExternalSignerTimeout;
   }
 
   public boolean isEth1Enabled() {
@@ -588,10 +492,6 @@ public class GlobalConfiguration implements MetricsConfig {
     return remoteValidatorApiMaxSubscribers;
   }
 
-  public Bytes32 getGraffiti() {
-    return graffiti;
-  }
-
   public boolean isValidatorClient() {
     return isValidatorClient;
   }
@@ -604,53 +504,13 @@ public class GlobalConfiguration implements MetricsConfig {
     return beaconNodeEventsWsEndpoint;
   }
 
-  public List<Pair<Path, Path>> getValidatorKeystorePasswordFilePairs() {
-    final KeyStoreFilesLocator processor =
-        new KeyStoreFilesLocator(validatorKeys, File.pathSeparator);
-    processor.parse();
-    if (validatorKeystoreFiles != null) {
-      validateKeyStoreFilesAndPasswordFilesConfig();
-      processor.parseKeyAndPasswordList(
-          getValidatorKeystoreFiles(), getValidatorKeystorePasswordFiles());
-    }
-
-    return processor.getFilePairs();
-  }
-
-  public void validateConfig() throws IllegalArgumentException {
+  public void validate() throws IllegalArgumentException {
     final int interopNumberOfValidators = getInteropNumberOfValidators();
     if (interopNumberOfValidators < Constants.SLOTS_PER_EPOCH) {
       throw new InvalidConfigurationException(
           String.format(
               "Invalid configuration. Interop number of validators [%d] must be greater than or equal to [%d]",
               interopNumberOfValidators, Constants.SLOTS_PER_EPOCH));
-    }
-    validateKeyStoreFilesAndPasswordFilesConfig();
-  }
-
-  private void validateKeyStoreFilesAndPasswordFilesConfig() {
-    final List<String> validatorKeystoreFiles = getValidatorKeystoreFiles();
-    final List<String> validatorKeystorePasswordFiles = getValidatorKeystorePasswordFiles();
-
-    if ((validatorKeystoreFiles != null && validatorKeystorePasswordFiles == null)
-        || (validatorKeystoreFiles == null && validatorKeystorePasswordFiles != null)) {
-      final String errorMessage =
-          "Invalid configuration. '--validators-key-files' and '--validators-key-password-files' must be specified together";
-      throw new InvalidConfigurationException(errorMessage);
-    }
-
-    if (validatorKeystoreFiles.size() != validatorKeystorePasswordFiles.size()) {
-      StatusLogger.getLogger()
-          .debug(
-              "Invalid configuration. The size of validator.validatorsKeystoreFiles {} and validator.validatorsKeystorePasswordFiles {} must match",
-              validatorKeystoreFiles.size(),
-              validatorKeystorePasswordFiles.size());
-
-      final String errorMessage =
-          String.format(
-              "Invalid configuration. The number of --validators-key-files (%d) must equal the number of --validators-key-password-files (%d)",
-              validatorKeystoreFiles.size(), validatorKeystorePasswordFiles.size());
-      throw new InvalidConfigurationException(errorMessage);
     }
   }
 

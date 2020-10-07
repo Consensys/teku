@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.services;
 
+import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 
 public class ValidatorNodeServiceController extends ServiceController {
 
-  public ValidatorNodeServiceController(final ServiceConfig config) {
-    services.add(ValidatorClientService.create(config));
+  public ValidatorNodeServiceController(
+      final TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
+    this.services.add(ValidatorClientService.create(serviceConfig, tekuConfig.validatorClient()));
   }
 }

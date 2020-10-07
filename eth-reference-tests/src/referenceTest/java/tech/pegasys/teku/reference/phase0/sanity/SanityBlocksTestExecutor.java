@@ -77,12 +77,19 @@ public class SanityBlocksTestExecutor implements TestExecutor {
     @JsonProperty(value = "bls_setting", required = false, defaultValue = "0")
     private int blsSetting;
 
+    @JsonProperty(value = "reveal_deadlines_setting", required = false, defaultValue = "0")
+    private int revealDeadlinesSetting;
+
     public int getBlocksCount() {
       return blocksCount;
     }
 
     public BlsSetting getBlsSetting() {
       return BlsSetting.forCode(blsSetting);
+    }
+
+    public int getRevealDeadlinesSetting() {
+      return revealDeadlinesSetting;
     }
   }
 }

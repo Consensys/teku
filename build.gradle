@@ -218,7 +218,7 @@ allprojects {
   }
 }
 
-def refTestVersion = 'v0.12.2'
+def refTestVersion = 'v0.12.3'
 def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
 def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
 def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/"
@@ -353,7 +353,7 @@ task distDocker(type: Exec) {
   dependsOn dockerDistUntar
 
   def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
-  def image = "pegasyseng/teku:develop"
+  def image = "quorumengineering/teku:develop"
   def dockerBuildDir = "build/docker-teku/"
   workingDir "${dockerBuildDir}"
 
@@ -693,23 +693,27 @@ bintrayUpload.mustRunAfter(distZip)
 
 task dockerUpload(type: Exec) {
   dependsOn([distDocker])
-  def imageRepos = 'pegasyseng'
-  def imageName = "${imageRepos}/teku"
-  def image = "${imageName}:develop"
-  def cmd = []
-  def additionalTags = ["${rootProject.version}"]
+  def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
+  def imageName = "quorumengineering/teku"
+  def image = "${imageName}:${dockerBuildVersion}"
+  def cmd = "docker push '${image}'"
+
+  def psImageName = "pegasyseng/teku"
+  def psImage = "${psImageName}:${dockerBuildVersion}"
+  cmd += " && docker tag '${image}' '${psImage}' && docker push '${psImage}'"
+
+  def additionalTags = []
   if (project.hasProperty('branch') && project.property('branch') == 'master') {
     additionalTags.add('develop')
   }
 
-  if (!(version ==~ /.*-SNAPSHOT/)) {
+  if (!(dockerBuildVersion ==~ /.*-SNAPSHOT/)) {
     additionalTags.add('latest')
-    additionalTags.add(version.split(/\./)[0..1].join('.'))
+    additionalTags.add(dockerBuildVersion.split(/\./)[0..1].join('.'))
   }
 
-  additionalTags.each { tag ->
-    cmd.add("docker tag '${image}' '${imageName}:${tag.trim()}' && docker push '${imageName}:${tag.trim()}'")
-  }
+  additionalTags.each { tag -> cmd += " && docker tag '${image}' '${imageName}:${tag.trim()}' && docker push '${imageName}:${tag.trim()}'" }
+  additionalTags.each { tag -> cmd += " && docker tag '${image}' '${psImageName}:${tag.trim()}' && docker push '${psImageName}:${tag.trim()}'" }
   executable "sh"
-  args '-c', cmd.join(' && ')
+  args '-c', cmd
 }
