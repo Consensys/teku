@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.sync.gossip;
 
+import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import java.util.HashSet;
@@ -21,6 +23,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -30,6 +33,7 @@ import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
+import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -92,6 +96,36 @@ public class BlockManager extends Service implements SlotEventsChannel {
     importBlock(gossipedBlockEvent.getBlock());
   }
 
+  @Subscribe
+  @SuppressWarnings("unused")
+  private void onBlockProposed(final ProposedBlockEvent blockProposedEvent) {
+    final SignedBeaconBlock block = blockProposedEvent.getBlock();
+    LOG.trace(
+        "Preparing to import proposed block: {}",
+        () -> formatBlock(block.getSlot(), block.getRoot()));
+    doImportBlock(block)
+        .thenAccept(
+            (result) -> {
+              if (result.isSuccessful()) {
+                LOG.trace(
+                    "Successfully imported proposed block: {}",
+                    () -> formatBlock(block.getSlot(), block.getRoot()));
+              } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
+                LOG.debug(
+                    "Delayed processing proposed block {} because it is from the future",
+                    formatBlock(block.getSlot(), block.getRoot()));
+              } else {
+                LOG.error(
+                    "Failed to import proposed block for reason "
+                        + result.getFailureReason()
+                        + ": "
+                        + formatBlock(block.getSlot(), block.getRoot()),
+                    result.getFailureCause().orElse(null));
+              }
+            })
+        .reportExceptions();
+  }
+
   @Override
   public void onSlot(final UInt64 slot) {
     pendingBlocks.onSlot(slot);
@@ -111,14 +145,18 @@ public class BlockManager extends Service implements SlotEventsChannel {
   }
 
   private void importBlock(final SignedBeaconBlock block) {
+    doImportBlock(block).reportExceptions();
+  }
+
+  private SafeFuture<BlockImportResult> doImportBlock(final SignedBeaconBlock block) {
     recentBlockFetcher.cancelRecentBlockRequest(block.getRoot());
     if (!shouldImportBlock(block)) {
-      return;
+      return SafeFuture.completedFuture(BlockImportResult.knownBlock(block));
     }
 
-    blockImporter
+    return blockImporter
         .importBlock(block)
-        .thenAccept(
+        .thenPeek(
             result -> {
               if (result.isSuccessful()) {
                 LOG.trace("Imported block: {}", block);
@@ -128,7 +166,8 @@ public class BlockManager extends Service implements SlotEventsChannel {
                 // Check if the parent was imported while we were trying to import this block
                 // and if so, remove from the pendingPool again and process now
                 // We must add the block to the pending pool before this check happens
-                // to avoid race conditions between performing the check and the parent importing.
+                // to avoid race conditions between performing the check and the parent
+                // importing.
                 if (recentChainData.containsBlock(block.getParent_root())) {
                   pendingBlocks.remove(block);
                   importBlock(block);
@@ -140,8 +179,7 @@ public class BlockManager extends Service implements SlotEventsChannel {
                     "Unable to import block for reason {}: {}", result.getFailureReason(), block);
                 dropInvalidBlock(block);
               }
-            })
-        .reportExceptions();
+            });
   }
 
   private boolean shouldImportBlock(final SignedBeaconBlock block) {
