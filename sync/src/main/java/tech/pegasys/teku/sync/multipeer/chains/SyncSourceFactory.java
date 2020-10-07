@@ -19,9 +19,9 @@ import static tech.pegasys.teku.util.config.Constants.SYNC_BATCH_SIZE;
 import java.util.HashMap;
 import java.util.Map;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class SyncSourceFactory {
 

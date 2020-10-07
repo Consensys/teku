@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -41,7 +42,6 @@ import tech.pegasys.teku.sync.multipeer.chains.PeerChainTracker;
 import tech.pegasys.teku.sync.multipeer.chains.SyncSourceFactory;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class MultipeerSyncService extends Service implements SyncService {
