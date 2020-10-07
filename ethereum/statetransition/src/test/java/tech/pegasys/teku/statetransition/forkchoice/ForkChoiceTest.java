@@ -132,7 +132,7 @@ class ForkChoiceTest {
         .contains(
             new ReorgEvent(
                 blockAndState.getRoot(),
-                blockAndState.getSlot(),
+                nodeSlot,
                 blockAndState.getStateRoot(),
                 genesis.getRoot(),
                 genesis.getStateRoot(),
