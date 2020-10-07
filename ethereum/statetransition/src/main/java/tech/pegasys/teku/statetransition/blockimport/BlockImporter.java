@@ -59,7 +59,6 @@ public class BlockImporter {
     this.forkChoice = forkChoice;
     this.weakSubjectivityValidator = weakSubjectivityValidator;
     this.eventBus = eventBus;
-    eventBus.register(this);
   }
 
   @CheckReturnValue
