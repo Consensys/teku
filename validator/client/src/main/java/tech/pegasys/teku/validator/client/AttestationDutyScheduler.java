@@ -52,12 +52,6 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
   }
 
   @Override
-  public void onBlockImportedForSlot(final UInt64 slot) {
-    // Create attestations for the current slot as soon as the block is imported.
-    onAttestationCreationDue(slot);
-  }
-
-  @Override
   public void onAttestationAggregationDue(final UInt64 slot) {
     notifyDutyQueue(DutyQueue::onAttestationAggregationDue, slot);
   }

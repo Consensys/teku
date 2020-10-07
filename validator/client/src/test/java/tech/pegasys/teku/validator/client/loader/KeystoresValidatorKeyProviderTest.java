@@ -29,14 +29,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 class KeystoresValidatorKeyProviderTest {
   private static final String EXPECTED_PASSWORD = "testpassword";
-  private final GlobalConfiguration config = mock(GlobalConfiguration.class);
+  private final ValidatorConfig config = mock(ValidatorConfig.class);
   private final KeystoreLocker keystoreLocker = mock(KeystoreLocker.class);
   private final KeystoresValidatorKeyProvider keystoresValidatorKeyProvider =
-      new KeystoresValidatorKeyProvider(keystoreLocker);
+      new KeystoresValidatorKeyProvider(keystoreLocker, config);
   private static final Bytes32 BLS_PRIVATE_KEY =
       Bytes32.fromHexString("0x000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f");
   private static final BLSKeyPair EXPECTED_BLS_KEY_PAIR =
@@ -58,7 +58,7 @@ class KeystoresValidatorKeyProviderTest {
 
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
 
-    final List<BLSKeyPair> blsKeyPairs = keystoresValidatorKeyProvider.loadValidatorKeys(config);
+    final List<BLSKeyPair> blsKeyPairs = keystoresValidatorKeyProvider.loadValidatorKeys();
 
     // since both test vectors encrypted same private key, we should get 1 element
     Assertions.assertThat(blsKeyPairs).containsExactly(EXPECTED_BLS_KEY_PAIR);
@@ -78,7 +78,7 @@ class KeystoresValidatorKeyProviderTest {
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
 
     Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> keystoresValidatorKeyProvider.loadValidatorKeys(config))
+        .isThrownBy(keystoresValidatorKeyProvider::loadValidatorKeys)
         .withMessage("Keystore password cannot be empty: " + tempPasswordFile);
   }
 
@@ -97,7 +97,7 @@ class KeystoresValidatorKeyProviderTest {
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
 
     Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> keystoresValidatorKeyProvider.loadValidatorKeys(config))
+        .isThrownBy(keystoresValidatorKeyProvider::loadValidatorKeys)
         .withMessage("Invalid keystore password: " + scryptKeystore);
   }
 
@@ -115,7 +115,7 @@ class KeystoresValidatorKeyProviderTest {
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
 
     Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> keystoresValidatorKeyProvider.loadValidatorKeys(config))
+        .isThrownBy(keystoresValidatorKeyProvider::loadValidatorKeys)
         .withMessage("Keystore password file not found: " + tempPasswordFile);
   }
 
@@ -134,7 +134,7 @@ class KeystoresValidatorKeyProviderTest {
     when(config.getValidatorKeystorePasswordFilePairs()).thenReturn(keystorePasswordFilePairs);
 
     Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> keystoresValidatorKeyProvider.loadValidatorKeys(config))
+        .isThrownBy(keystoresValidatorKeyProvider::loadValidatorKeys)
         .withMessage("KeyStore file not found: " + scryptKeystore);
   }
 }

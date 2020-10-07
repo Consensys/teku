@@ -15,8 +15,7 @@ package tech.pegasys.teku.validator.client.loader;
 
 import java.util.List;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public interface ValidatorKeyProvider {
-  List<BLSKeyPair> loadValidatorKeys(GlobalConfiguration config);
+  List<BLSKeyPair> loadValidatorKeys();
 }

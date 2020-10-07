@@ -338,6 +338,10 @@ public class CombinedChainDataClient {
     return result;
   }
 
+  public Optional<UInt64> getGenesisTime() {
+    return Optional.ofNullable(recentChainData.getGenesisTime());
+  }
+
   /** @return The slot at which the chain head block was proposed */
   public UInt64 getHeadSlot() {
     return this.recentChainData.getHeadSlot();

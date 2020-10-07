@@ -301,7 +301,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                   .setP2pPort(9000)
                   .setP2pPrivateKeyFile(null)
                   .setInteropEnabled(false)
-                  .setValidatorKeystoreLockingEnabled(true)
                   .setPeerRateLimit(500)
                   .setPeerRequestLimit(50)
                   .setInteropGenesisTime(0)
@@ -309,22 +308,25 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                   .setLogDestination(DEFAULT_BOTH)
                   .setLogFile(DEFAULT_LOG_FILE)
                   .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN);
-            });
+            })
+        .validator(b -> b.validatorKeystoreLockingEnabled(true));
   }
 
   private TekuConfiguration.Builder expectedCompleteConfigInFileBuilder() {
     return expectedConfigurationBuilder()
         .globalConfig(
-            builder -> {
-              builder
-                  .setLogFile("teku.log")
-                  .setLogDestination(LoggingDestination.BOTH)
-                  .setLogFileNamePattern("teku_%d{yyyy-MM-dd}.log");
-            });
+            builder ->
+                builder
+                    .setLogFile("teku.log")
+                    .setLogDestination(LoggingDestination.BOTH)
+                    .setLogFileNamePattern("teku_%d{yyyy-MM-dd}.log"));
   }
 
   private TekuConfiguration.Builder expectedConfigurationBuilder() {
-    return TekuConfiguration.builder().globalConfig(this::buildExpectedGlobalConfiguration);
+    return TekuConfiguration.builder()
+        .globalConfig(this::buildExpectedGlobalConfiguration)
+        .validator(
+            b -> b.validatorExternalSignerTimeout(1000).validatorKeystoreLockingEnabled(true));
   }
 
   private void buildExpectedGlobalConfiguration(final GlobalConfigurationBuilder builder) {
@@ -349,7 +351,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setInteropOwnedValidatorCount(64)
         .setInteropNumberOfValidators(64)
         .setInteropEnabled(true)
-        .setValidatorKeystoreLockingEnabled(true)
         .setEth1DepositContractAddress(address)
         .setEth1Endpoint("http://localhost:8545")
         .setEth1DepositsFromStorageEnabled(true)
@@ -365,7 +366,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN)
         .setLogIncludeEventsEnabled(true)
         .setLogIncludeValidatorDutiesEnabled(true)
-        .setValidatorExternalSignerTimeout(1000)
         .setDataPath(dataPath.toString())
         .setDataStorageMode(PRUNE)
         .setDataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
