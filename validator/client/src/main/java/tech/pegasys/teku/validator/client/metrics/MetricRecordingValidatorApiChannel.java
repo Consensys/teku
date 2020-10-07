@@ -39,6 +39,8 @@ import tech.pegasys.teku.validator.api.ValidatorDuties;
 public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   public static final String FORK_REQUESTS_COUNTER_NAME = "beacon_node_fork_info_requests_total";
+  public static final String GENESIS_TIME_REQUESTS_COUNTER_NAME =
+      "beacon_node_genesis_time_requests_total";
   public static final String DUTIES_REQUESTS_COUNTER_NAME = "beacon_node_duties_requests_total";
   public static final String ATTESTATION_DUTIES_REQUESTS_COUNTER_NAME =
       "beacon_node_attestation_duties_requests_total";
@@ -61,6 +63,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   public static final String PUBLISHED_BLOCK_COUNTER_NAME = "beacon_node_published_block_total";
   private final ValidatorApiChannel delegate;
   private final BeaconChainRequestCounter forkInfoRequestCounter;
+  private final BeaconChainRequestCounter genesisTimeRequestCounter;
   private final BeaconChainRequestCounter dutiesRequestCounter;
   private final BeaconChainRequestCounter attestationDutiesRequestCounter;
   private final BeaconChainRequestCounter proposerDutiesRequestCounter;
@@ -82,6 +85,12 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             metricsSystem,
             FORK_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for fork info");
+
+    genesisTimeRequestCounter =
+        BeaconChainRequestCounter.create(
+            metricsSystem,
+            GENESIS_TIME_REQUESTS_COUNTER_NAME,
+            "Counter recording the number of requests for genesis time");
     dutiesRequestCounter =
         BeaconChainRequestCounter.create(
             metricsSystem,
@@ -142,6 +151,11 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<ForkInfo>> getForkInfo() {
     return countRequest(delegate.getForkInfo(), forkInfoRequestCounter);
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getGenesisTime() {
+    return countRequest(delegate.getGenesisTime(), genesisTimeRequestCounter);
   }
 
   @Override

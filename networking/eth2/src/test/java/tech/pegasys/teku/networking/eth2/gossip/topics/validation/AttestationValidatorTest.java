@@ -372,6 +372,23 @@ class AttestationValidatorTest {
         .isCompletedWithValue(REJECT);
   }
 
+  @Test
+  public void shouldRejectAttestationsThatHaveLMDVotesInconsistentWithFinalizedCheckpointRoot() {
+    ForkChoiceUtilWrapper forkChoiceUtilWrapper = mock(ForkChoiceUtilWrapper.class);
+    final AttestationValidator validator =
+        new AttestationValidator(recentChainData, forkChoiceUtilWrapper);
+    final BeaconBlockAndState blockAndState = recentChainData.getHeadBlockAndState().orElseThrow();
+    final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
+    when(forkChoiceUtilWrapper.get_ancestor(any(), any(), any()))
+        .thenReturn(Optional.of(attestation.getData().getTarget().getRoot()))
+        .thenReturn(Optional.of(Bytes32.ZERO));
+    final int expectedSubnetId = computeSubnetForAttestation(blockAndState.getState(), attestation);
+    assertThat(
+            validator.validate(
+                ValidateableAttestation.fromAttestation(attestation), expectedSubnetId))
+        .isCompletedWithValue(REJECT);
+  }
+
   private InternalValidationResult validate(final Attestation attestation) {
     final BeaconState state = recentChainData.getBestState().orElseThrow();
     return validator
