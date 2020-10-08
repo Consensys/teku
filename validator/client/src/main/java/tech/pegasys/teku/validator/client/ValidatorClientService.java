@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.validator.client;
 
+import java.nio.file.Path;
+import java.util.Map;
+import java.util.Random;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
@@ -36,10 +39,6 @@ import tech.pegasys.teku.validator.eventadapter.EventChannelBeaconChainEventAdap
 import tech.pegasys.teku.validator.eventadapter.IndependentTimerEventChannelEventAdapter;
 import tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler;
 import tech.pegasys.teku.validator.remote.WebSocketBeaconChainEventAdapter;
-
-import java.nio.file.Path;
-import java.util.Map;
-import java.util.Random;
 
 public class ValidatorClientService extends Service {
 
@@ -131,20 +130,20 @@ public class ValidatorClientService extends Service {
   }
 
   private static RetryingDutyLoader createDutyLoader(
-          final MetricsSystem metricsSystem,
-          final ValidatorApiChannel validatorApiChannel,
-          final AsyncRunner asyncRunner,
-          final Map<BLSPublicKey, Validator> validators) {
+      final MetricsSystem metricsSystem,
+      final ValidatorApiChannel validatorApiChannel,
+      final AsyncRunner asyncRunner,
+      final Map<BLSPublicKey, Validator> validators) {
     final ForkProvider forkProvider = new ForkProvider(asyncRunner, validatorApiChannel);
     final ValidatorDutyFactory validatorDutyFactory =
-            new ValidatorDutyFactory(forkProvider, validatorApiChannel);
+        new ValidatorDutyFactory(forkProvider, validatorApiChannel);
     return new RetryingDutyLoader(
-            asyncRunner,
-            new ValidatorApiDutyLoader(
-                    metricsSystem,
-                    validatorApiChannel,
-                    forkProvider,
-                    () -> new ScheduledDuties(validatorDutyFactory),
-                    validators));
+        asyncRunner,
+        new ValidatorApiDutyLoader(
+            metricsSystem,
+            validatorApiChannel,
+            forkProvider,
+            () -> new ScheduledDuties(validatorDutyFactory),
+            validators));
   }
 }

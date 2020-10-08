@@ -13,17 +13,16 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
+import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
+
+import java.util.NavigableMap;
+import java.util.Optional;
+import java.util.TreeMap;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.Validator;
-
-import java.util.NavigableMap;
-import java.util.Optional;
-import java.util.TreeMap;
-
-import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 public class ScheduledDuties {
   private final NavigableMap<UInt64, BlockProductionDuty> blockProductionDuties = new TreeMap<>();
@@ -84,8 +83,8 @@ public class ScheduledDuties {
 
   public int countDuties() {
     return blockProductionDuties.size()
-            + attestationProductionDuties.size()
-            + aggregationDuties.size();
+        + attestationProductionDuties.size()
+        + aggregationDuties.size();
   }
 
   private void performDutyForSlot(

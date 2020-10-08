@@ -14,18 +14,6 @@
 package tech.pegasys.teku.statetransition.util;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
-import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -37,6 +25,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
+import tech.pegasys.teku.util.config.Constants;
+import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointChannel {
 
@@ -187,7 +186,6 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     }
   }
 
-
   public long subscribeRequiredBlockRoot(final RequiredBlockRootSubscriber subscriber) {
     return requiredBlockRootSubscribers.subscribe(subscriber);
   }
@@ -241,9 +239,9 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     }
 
     return dependentRoots.stream()
-            .map(pendingItems::get)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+        .map(pendingItems::get)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
   }
 
   /**
@@ -260,20 +258,20 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     Set<Bytes32> requiredRoots = Set.of(blockRoot);
     while (!requiredRoots.isEmpty()) {
       final Set<Bytes32> roots =
-              requiredRoots.stream()
-                      .map(pendingItemsByRequiredBlockRoot::get)
-                      .filter(Objects::nonNull)
-                      .flatMap(Set::stream)
-                      .collect(Collectors.toSet());
+          requiredRoots.stream()
+              .map(pendingItemsByRequiredBlockRoot::get)
+              .filter(Objects::nonNull)
+              .flatMap(Set::stream)
+              .collect(Collectors.toSet());
 
       dependentRoots.addAll(roots);
       requiredRoots = roots;
     }
 
     return dependentRoots.stream()
-            .map(pendingItems::get)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+        .map(pendingItems::get)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
   }
 
   private boolean shouldIgnoreItem(final T item) {
