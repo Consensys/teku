@@ -13,11 +13,17 @@
 
 package tech.pegasys.teku.infrastructure.logging;
 
+import static tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.print;
+
 import org.apache.commons.lang3.StringUtils;
 
 public class SubCommandLogger {
 
   public static final SubCommandLogger SUB_COMMAND_LOG = new SubCommandLogger();
+
+  static {
+    LoggingConfigurator.setColorEnabled(true);
+  }
 
   public void exit(int exitCode, final String message) {
     if (!StringUtils.isEmpty(message)) {
@@ -29,6 +35,13 @@ public class SubCommandLogger {
     }
 
     System.exit(exitCode);
+  }
+
+  public void commandIsDeprecated() {
+    error(
+        print(
+            "WARNING: This command is deprecated and will be removed soon.",
+            ColorConsolePrinter.Color.RED));
   }
 
   public void exit(final int exitCode, final String message, final Exception exception) {
