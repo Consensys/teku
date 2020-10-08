@@ -32,7 +32,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 @Command(
     name = "generate-and-register",
     description =
-        "Register validators by generating new keys and sending deposit transactions to an Ethereum 1 node",
+        "[DEPRECATED] Register validators by generating new keys and sending deposit transactions to an Ethereum 1 node",
     mixinStandardHelpOptions = true,
     showDefaultValues = true,
     abbreviateSynopsis = true,
@@ -68,6 +68,7 @@ public class DepositGenerateAndRegisterCommand implements Runnable {
 
   @Override
   public void run() {
+    SUB_COMMAND_LOG.commandIsDeprecated();
     final GenerateAction generateAction =
         generateParams.createGenerateAction(verboseOutputParam.isVerboseOutputEnabled());
 

@@ -13,14 +13,20 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.util.config.Constants.MAX_EFFECTIVE_BALANCE;
 
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
+import org.web3j.crypto.Credentials;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.DepositGenerator;
+import tech.pegasys.teku.util.config.Eth1Address;
 
 public class TekuDepositSender extends Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -29,30 +35,20 @@ public class TekuDepositSender extends Node {
     super(network, TekuNode.TEKU_DOCKER_IMAGE, LOG);
   }
 
-  public void sendValidatorDeposits(final BesuNode eth1Node, final int numberOfValidators) {
-    container.setEnv(List.of("KEYSTORE_PASSWORD=p4ssword"));
-    container.setCommand(
-        "validator",
-        "generate-and-register",
-        "--network",
-        "swift",
-        "--verbose-output-enabled",
-        "true",
-        "--encrypted-keystore-validator-password-env",
-        "KEYSTORE_PASSWORD",
-        "--encrypted-keystore-withdrawal-password-env",
-        "KEYSTORE_PASSWORD",
-        "--eth1-deposit-contract-address",
-        eth1Node.getDepositContractAddress(),
-        "--number-of-validators",
-        Integer.toString(numberOfValidators),
-        "--eth1-private-key",
-        eth1Node.getRichBenefactorKey(),
-        "--eth1-endpoint",
-        eth1Node.getInternalJsonRpcUrl());
-    container.start();
-    // Deposit sender waits for up to 2 minutes for all transactions to process
-    Waiter.waitFor(() -> assertThat(container.isRunning()).isFalse(), 2, TimeUnit.MINUTES);
-    container.stop();
+  public void sendValidatorDeposits(final BesuNode eth1Node, final int numberOfValidators)
+      throws InterruptedException, ExecutionException, TimeoutException {
+    final Eth1Address eth1Address = Eth1Address.fromHexString(eth1Node.getDepositContractAddress());
+    final Credentials eth1Credentials = Credentials.create(eth1Node.getRichBenefactorKey());
+    final UInt64 depositAmount = UInt64.valueOf(MAX_EFFECTIVE_BALANCE);
+    try (final DepositGenerator depositGenerator =
+        new DepositGenerator(
+            eth1Node.getExternalJsonRpcUrl(),
+            eth1Address,
+            eth1Credentials,
+            numberOfValidators,
+            depositAmount)) {
+      final SafeFuture<Void> future = depositGenerator.generate();
+      Waiter.waitFor(future, Duration.ofMinutes(2));
+    }
   }
 }
