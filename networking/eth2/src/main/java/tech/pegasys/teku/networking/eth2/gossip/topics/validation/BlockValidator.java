@@ -13,16 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics.validation;
 
-import static tech.pegasys.teku.core.ForkChoiceUtil.getCurrentSlot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
-import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
-import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
-import static tech.pegasys.teku.util.config.Constants.VALID_BLOCK_SET_SIZE;
-
 import com.google.common.base.Objects;
-import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -41,6 +32,16 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
+
+import java.util.Set;
+
+import static tech.pegasys.teku.core.ForkChoiceUtil.getCurrentSlot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_domain;
+import static tech.pegasys.teku.util.config.Constants.DOMAIN_BEACON_PROPOSER;
+import static tech.pegasys.teku.util.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
+import static tech.pegasys.teku.util.config.Constants.VALID_BLOCK_SET_SIZE;
 
 public class BlockValidator {
   private static final Logger LOG = LogManager.getLogger();
@@ -87,7 +88,6 @@ public class BlockValidator {
                 }
               } catch (EpochProcessingException | SlotProcessingException e) {
                 LOG.error("BlockValidator: Unable to process block state.", e);
-                return InternalValidationResult.REJECT;
               }
 
               return InternalValidationResult.REJECT;
