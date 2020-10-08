@@ -50,6 +50,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.validator.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToBeaconCommittee;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToPersistentSubnets;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
@@ -88,6 +89,7 @@ class BeaconRestApiTest {
             attestationPool),
         config,
         eventChannels,
+        new StubAsyncRunner(),
         app);
   }
 
