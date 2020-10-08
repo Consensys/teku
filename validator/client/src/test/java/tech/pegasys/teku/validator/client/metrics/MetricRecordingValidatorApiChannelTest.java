@@ -152,6 +152,11 @@ class MetricRecordingValidatorApiChannelTest {
             MetricRecordingValidatorApiChannel.FORK_REQUESTS_COUNTER_NAME,
             dataStructureUtil.randomForkInfo()),
         requestDataTest(
+            "getGenesisTime",
+            ValidatorApiChannel::getGenesisTime,
+            MetricRecordingValidatorApiChannel.GENESIS_TIME_REQUESTS_COUNTER_NAME,
+            dataStructureUtil.randomUInt64()),
+        requestDataTest(
             "getDuties",
             channel -> channel.getDuties(slot, Collections.emptyList()),
             MetricRecordingValidatorApiChannel.DUTIES_REQUESTS_COUNTER_NAME,

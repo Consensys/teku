@@ -347,7 +347,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             validator2, validator2Committee, validator2CommitteePosition, validator2Index);
 
     // Execute
-    dutyScheduler.onBlockImportedForSlot(attestationSlot);
+    dutyScheduler.onAttestationCreationDue(attestationSlot);
     verify(attestationDuty).performDuty();
   }
 
@@ -397,7 +397,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             validator2, validator2Committee, validator2CommitteePosition, validator2Index);
 
     // Execute
-    dutyScheduler.onBlockImportedForSlot(attestationSlot);
+    dutyScheduler.onAttestationCreationDue(attestationSlot);
     verify(attestationDuty).performDuty();
 
     dutyScheduler.onAttestationCreationDue(attestationSlot);

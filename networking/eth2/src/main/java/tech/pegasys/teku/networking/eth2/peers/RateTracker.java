@@ -15,8 +15,8 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.util.time.TimeProvider;
 
 public class RateTracker {
   private final NavigableMap<UInt64, Long> requestCount;

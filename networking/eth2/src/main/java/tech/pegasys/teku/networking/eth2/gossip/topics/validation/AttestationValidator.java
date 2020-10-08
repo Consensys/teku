@@ -191,6 +191,20 @@ public class AttestationValidator {
                 return REJECT;
               }
 
+              // The current finalized_checkpoint is an ancestor of the block defined by
+              // aggregate.data.beacon_block_root
+              Checkpoint finalizedCheckpoint =
+                  recentChainData.getFinalizedCheckpoint().orElseThrow();
+              if (!forkChoiceUtilWrapper
+                  .get_ancestor(
+                      recentChainData.getForkChoiceStrategy().orElseThrow(),
+                      data.getBeacon_block_root(),
+                      compute_start_slot_at_epoch(finalizedCheckpoint.getEpoch()))
+                  .map(ancestorOfLMDVote -> ancestorOfLMDVote.equals(finalizedCheckpoint.getRoot()))
+                  .orElse(false)) {
+                return REJECT;
+              }
+
               // Save committee shuffling seed since the state is available and attestation is valid
               validateableAttestation.saveCommitteeShufflingSeed(state);
               return ACCEPT;

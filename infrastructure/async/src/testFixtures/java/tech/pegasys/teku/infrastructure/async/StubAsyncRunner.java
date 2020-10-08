@@ -13,34 +13,59 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
+import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.propagateResult;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class StubAsyncRunner implements AsyncRunner {
-  private List<Runnable> queuedActions = new ArrayList<>();
+  private final TimeProvider timeProvider;
+
+  private final PriorityQueue<Task> queuedActions =
+      new PriorityQueue<>(Comparator.comparing(Task::getScheduledTimeMillis));
+
+  public StubAsyncRunner() {
+    this(() -> UInt64.ZERO);
+  }
+
+  public StubAsyncRunner(final TimeProvider timeProvider) {
+    this.timeProvider = timeProvider;
+  }
 
   @Override
   public <U> SafeFuture<U> runAsync(final Supplier<SafeFuture<U>> action) {
+    // Schedule for immediate execution
+    return schedule(action, 0L);
+  }
+
+  private <U> SafeFuture<U> schedule(
+      final Supplier<SafeFuture<U>> action, final long scheduledTimeMillis) {
     final SafeFuture<U> result = new SafeFuture<>();
     queuedActions.add(
-        () -> {
-          try {
-            propagateResult(action.get(), result);
-          } catch (final Throwable t) {
-            result.completeExceptionally(t);
-          }
-        });
+        new Task(
+            scheduledTimeMillis,
+            () -> {
+              try {
+                propagateResult(action.get(), result);
+              } catch (final Throwable t) {
+                result.completeExceptionally(t);
+              }
+            }));
     return result;
   }
 
   @Override
   public <U> SafeFuture<U> runAfterDelay(
       Supplier<SafeFuture<U>> action, long delayAmount, TimeUnit delayUnit) {
-    return runAsync(action);
+    return schedule(
+        action, timeProvider.getTimeInMillis().longValue() + delayUnit.toMillis(delayAmount));
   }
 
   @Override
@@ -49,16 +74,40 @@ public class StubAsyncRunner implements AsyncRunner {
   }
 
   public void executeQueuedActions() {
-    final List<Runnable> actionsToExecute = queuedActions;
-    queuedActions = new ArrayList<>();
-    actionsToExecute.forEach(Runnable::run);
+    final List<Task> actionsToExecute = new ArrayList<>(queuedActions);
+    queuedActions.clear();
+    actionsToExecute.forEach(Task::run);
   }
 
   public void executeQueuedActions(int limit) {
-    final List<Runnable> actionsToExecute = queuedActions.subList(0, limit);
-    final List<Runnable> rest = queuedActions.subList(limit, queuedActions.size());
-    queuedActions = new ArrayList<>(rest);
-    actionsToExecute.forEach(Runnable::run);
+    final List<Task> actionsToExecute = new ArrayList<>();
+    for (int i = 0; i < limit && !queuedActions.isEmpty(); i++) {
+      actionsToExecute.add(queuedActions.remove());
+    }
+    actionsToExecute.forEach(Task::run);
+  }
+
+  public void executeDueActions() {
+    final long maxScheduledTime = timeProvider.getTimeInMillis().longValue();
+    final List<Task> actionsToExecute = new ArrayList<>();
+    Task next = queuedActions.peek();
+    while (next != null && next.getScheduledTimeMillis() <= maxScheduledTime) {
+      actionsToExecute.add(queuedActions.remove());
+      next = queuedActions.peek();
+    }
+    actionsToExecute.forEach(Task::run);
+  }
+
+  public void executeDueActionsRepeatedly() {
+    int loopCounter = 0;
+    final long maxScheduledTime = timeProvider.getTimeInMillis().longValue();
+    Task nextTask = queuedActions.peek();
+    while (nextTask != null && nextTask.getScheduledTimeMillis() <= maxScheduledTime) {
+      executeDueActions();
+      nextTask = queuedActions.peek();
+      loopCounter++;
+      checkState(loopCounter < 100, "Executed due actions 100 times and still not done");
+    }
   }
 
   public void executeUntilDone() {
@@ -109,5 +158,23 @@ public class StubAsyncRunner implements AsyncRunner {
 
   public int countDelayedActions() {
     return queuedActions.size();
+  }
+
+  private static class Task {
+    private final long scheduledTimeMillis;
+    private final Runnable action;
+
+    private Task(final long scheduledTimeMillis, final Runnable action) {
+      this.scheduledTimeMillis = scheduledTimeMillis;
+      this.action = action;
+    }
+
+    public long getScheduledTimeMillis() {
+      return scheduledTimeMillis;
+    }
+
+    public void run() {
+      action.run();
+    }
   }
 }

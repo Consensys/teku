@@ -20,6 +20,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.BLOCK_PERFORMANCE_EVALUATION_INTERVAL;
 
 import java.util.List;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -63,6 +64,11 @@ public class PerformanceTrackerTest {
   void beforeEach() {
     chainUpdater.initializeGenesis();
     performanceTracker.start(UInt64.ZERO);
+  }
+
+  @AfterAll
+  static void restoreConstants() {
+    Constants.setConstants("minimal");
   }
 
   @Test

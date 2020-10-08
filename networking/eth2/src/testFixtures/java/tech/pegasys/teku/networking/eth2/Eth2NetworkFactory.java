@@ -51,6 +51,7 @@ import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -79,7 +80,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.time.StubTimeProvider;
 
 public class Eth2NetworkFactory {
 

@@ -2,7 +2,10 @@ version: 2.1
 executors:
   small_executor:
     docker:
-      - image: circleci/openjdk:11.0.4-jdk-stretch
+      - image: circleci/openjdk:11.0.8-jdk-buster
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASSWORD      
     resource_class: small
     working_directory: ~/project
     environment:
@@ -11,7 +14,10 @@ executors:
 
   medium_executor:
     docker:
-      - image: circleci/openjdk:11.0.4-jdk-stretch
+      - image: circleci/openjdk:11.0.8-jdk-buster
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASSWORD      
     resource_class: medium
     working_directory: ~/project
     environment:
@@ -20,7 +26,10 @@ executors:
 
   medium_plus_executor:
     docker:
-      - image: circleci/openjdk:11.0.4-jdk-stretch
+      - image: circleci/openjdk:11.0.8-jdk-buster
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASSWORD      
     resource_class: "medium+"
     working_directory: ~/project
     environment:
@@ -29,7 +38,10 @@ executors:
 
   large_executor:
     docker:
-      - image: circleci/openjdk:11.0.4-jdk-stretch
+      - image: circleci/openjdk:11.0.8-jdk-buster
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASSWORD      
     resource_class: large
     working_directory: ~/project
     environment:
@@ -38,13 +50,16 @@ executors:
 
   machine_executor:
     machine:
-      image: ubuntu-1604:201903-01 #Ubuntu 16.04, docker 18.09.3, docker-compose 1.23.1
+      image: ubuntu-2004:202008-01 #Ubuntu 20.04, docker 19.03, docker-compose 1.27.4
       docker_layer_caching: true
     working_directory: ~/project
 
   node_executor:
     docker:
       - image: circleci/node:14-buster
+        auth:
+          username: $DOCKER_USER
+          password: $DOCKER_PASSWORD  
 
 commands:
   prepare:
@@ -57,17 +72,6 @@ commands:
             - deps-{{ checksum "build.gradle" }}-{{ .Branch }}-{{ .Revision }}
             - deps-{{ checksum "build.gradle" }}
             - deps-
-  install_java:
-    description: "Install Java"
-    steps:
-      - run:
-          name: Install Packages - Java 11
-          command: |
-            sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13 5DC22404A6F9F1CA
-            sudo add-apt-repository -y ppa:openjdk-r/ppa
-            sudo apt update
-            sudo apt install -y openjdk-11-jdk
-            sudo update-java-alternatives -s java-1.11.0-openjdk-amd64
   capture_test_results:
     description: "Capture test results"
     steps:
@@ -180,7 +184,6 @@ jobs:
       - prepare
       - attach_workspace:
           at: ~/project
-      - install_java
       - run:
           name: AcceptanceTests
           command: |
@@ -243,7 +246,6 @@ jobs:
       - prepare
       - attach_workspace:
           at: ~/project
-      - install_java
       - run:
           name: CompatibilityTests
           no_output_timeout: 20m
