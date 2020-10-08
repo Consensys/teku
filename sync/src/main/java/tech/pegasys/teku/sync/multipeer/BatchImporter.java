@@ -17,8 +17,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.core.results.BlockImportResult;
@@ -52,21 +51,20 @@ public class BatchImporter {
   public SafeFuture<BatchImportResult> importBatch(final Batch batch) {
     // Copy the data from batch as we're going to use them from off the event thread.
     final List<SignedBeaconBlock> blocks = new ArrayList<>(batch.getBlocks());
-    final Map<SignedBeaconBlock, SyncSource> blockToSource =
-        blocks.stream().collect(Collectors.toUnmodifiableMap(b -> b, batch::getBlockSource));
+    final Optional<SyncSource> source = batch.getSource();
 
     checkState(!blocks.isEmpty(), "Batch has no blocks to import");
     return asyncRunner.runAsync(
         () -> {
           SafeFuture<BlockImportResult> importResult =
-              importBlock(blocks.get(0), blockToSource.get(blocks.get(0)));
+              importBlock(blocks.get(0), source.orElseThrow());
           for (int i = 1; i < blocks.size(); i++) {
             final SignedBeaconBlock block = blocks.get(i);
             importResult =
                 importResult.thenCompose(
                     previousResult -> {
                       if (previousResult.isSuccessful()) {
-                        return importBlock(block, blockToSource.get(block));
+                        return importBlock(block, source.orElseThrow());
                       } else {
                         return SafeFuture.completedFuture(previousResult);
                       }

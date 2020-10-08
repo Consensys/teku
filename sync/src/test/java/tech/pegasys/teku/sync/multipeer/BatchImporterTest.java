@@ -24,6 +24,8 @@ import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.data.BlockProcessingRecord;
@@ -42,8 +44,14 @@ class BatchImporterTest {
   private final BlockImporter blockImporter = mock(BlockImporter.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final Batch batch = mock(Batch.class);
+  final SyncSource syncSource = mock(SyncSource.class);
 
   private final BatchImporter importer = new BatchImporter(blockImporter, asyncRunner);
+
+  @BeforeEach
+  public void setup() {
+    when(batch.getSource()).thenReturn(Optional.of(syncSource));
+  }
 
   @Test
   void shouldImportBlocksInOrder() {
@@ -115,8 +123,6 @@ class BatchImporterTest {
 
   @Test
   void shouldDisconnectPeersForWeakSubjectivityViolation() {
-    final SyncSource syncSource = mock(SyncSource.class);
-    when(batch.getBlockSource(any())).thenReturn(syncSource);
     when(syncSource.disconnectCleanly(any())).thenReturn(SafeFuture.completedFuture(null));
 
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
@@ -143,7 +149,7 @@ class BatchImporterTest {
     // Import bad block
     importResult2.complete(BlockImportResult.FAILED_WEAK_SUBJECTIVITY_CHECKS);
     assertThat(result).isCompletedWithValue(BatchImportResult.IMPORT_FAILED);
-    verify(batch).getBlockSource(block2);
+    verify(batch).getSource();
     verify(syncSource).disconnectCleanly(DisconnectReason.REMOTE_FAULT);
 
     verifyNoMoreInteractions(blockImporter);

@@ -62,9 +62,9 @@ public class EventThreadOnlyBatch implements Batch {
   }
 
   @Override
-  public SyncSource getBlockSource(final SignedBeaconBlock block) {
+  public Optional<SyncSource> getSource() {
     eventThread.checkOnEventThread();
-    return delegate.getBlockSource(block);
+    return delegate.getSource();
   }
 
   @Override

@@ -32,7 +32,7 @@ public interface Batch {
 
   List<SignedBeaconBlock> getBlocks();
 
-  SyncSource getBlockSource(final SignedBeaconBlock block);
+  Optional<SyncSource> getSource();
 
   void markComplete();
 
