@@ -11,17 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.util.time;
+package tech.pegasys.teku.infrastructure.time;
 
+import java.time.Clock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface TimeProvider {
+public class SystemTimeProvider implements TimeProvider {
 
-  UInt64 MILLIS_PER_SECOND = UInt64.valueOf(1000);
+  private final Clock clock;
 
-  UInt64 getTimeInMillis();
+  public SystemTimeProvider() {
+    this.clock = Clock.systemUTC();
+  }
 
-  default UInt64 getTimeInSeconds() {
-    return getTimeInMillis().dividedBy(MILLIS_PER_SECOND);
+  @Override
+  public UInt64 getTimeInMillis() {
+    return UInt64.valueOf(clock.millis());
   }
 }

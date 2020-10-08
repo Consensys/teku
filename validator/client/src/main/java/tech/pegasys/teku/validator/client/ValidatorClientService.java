@@ -21,6 +21,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -31,12 +32,17 @@ import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.ValidatorDutyFactory;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.metrics.MetricRecordingValidatorApiChannel;
+import tech.pegasys.teku.validator.client.time.GenesisTimeProvider;
+import tech.pegasys.teku.validator.client.time.TimeBasedEventAdapter;
 import tech.pegasys.teku.validator.eventadapter.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.eventadapter.EventChannelBeaconChainEventAdapter;
+import tech.pegasys.teku.validator.eventadapter.IndependentTimerEventChannelEventAdapter;
 import tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler;
 import tech.pegasys.teku.validator.remote.WebSocketBeaconChainEventAdapter;
 
 public class ValidatorClientService extends Service {
+
+  private static final boolean USE_INDEPENDENT_TIMER = false;
 
   private final EventChannels eventChannels;
   private final ValidatorTimingChannel attestationTimingChannel;
@@ -47,16 +53,11 @@ public class ValidatorClientService extends Service {
       final EventChannels eventChannels,
       final ValidatorTimingChannel attestationTimingChannel,
       final ValidatorTimingChannel blockProductionTimingChannel,
-      final ServiceConfig serviceConfig) {
+      final BeaconChainEventAdapter beaconChainEventAdapter) {
     this.eventChannels = eventChannels;
     this.attestationTimingChannel = attestationTimingChannel;
     this.blockProductionTimingChannel = blockProductionTimingChannel;
-
-    if (serviceConfig.getConfig().isValidatorClient()) {
-      beaconChainEventAdapter = new WebSocketBeaconChainEventAdapter(serviceConfig);
-    } else {
-      beaconChainEventAdapter = new EventChannelBeaconChainEventAdapter(serviceConfig);
-    }
+    this.beaconChainEventAdapter = beaconChainEventAdapter;
   }
 
   public static ValidatorClientService create(
@@ -91,8 +92,29 @@ public class ValidatorClientService extends Service {
         new AttestationDutyScheduler(metricsSystem, dutyLoader, stableSubnetSubscriber);
     final BlockDutyScheduler blockDutyScheduler = new BlockDutyScheduler(metricsSystem, dutyLoader);
 
+    final BeaconChainEventAdapter beaconChainEventAdapter;
+    if (services.getConfig().isValidatorClient()) {
+      beaconChainEventAdapter = new WebSocketBeaconChainEventAdapter(services);
+    } else {
+      if (USE_INDEPENDENT_TIMER) {
+        final ValidatorTimingChannel validatorTimingChannel =
+            eventChannels.getPublisher(ValidatorTimingChannel.class);
+        final TimeBasedEventAdapter timeBasedEventAdapter =
+            new TimeBasedEventAdapter(
+                new GenesisTimeProvider(asyncRunner, validatorApiChannel),
+                new RepeatingTaskScheduler(asyncRunner, services.getTimeProvider()),
+                services.getTimeProvider(),
+                validatorTimingChannel);
+        beaconChainEventAdapter =
+            new IndependentTimerEventChannelEventAdapter(
+                eventChannels, timeBasedEventAdapter, validatorTimingChannel);
+      } else {
+        beaconChainEventAdapter = new EventChannelBeaconChainEventAdapter(services);
+      }
+    }
+
     return new ValidatorClientService(
-        eventChannels, attestationDutyScheduler, blockDutyScheduler, services);
+        eventChannels, attestationDutyScheduler, blockDutyScheduler, beaconChainEventAdapter);
   }
 
   private static RetryingDutyLoader createDutyLoader(
