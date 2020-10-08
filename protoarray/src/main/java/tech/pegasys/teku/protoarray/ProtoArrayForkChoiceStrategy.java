@@ -13,13 +13,6 @@
 
 package tech.pegasys.teku.protoarray;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
@@ -32,6 +25,14 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 
 public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   private final ReadWriteLock protoArrayLock = new ReentrantReadWriteLock();
@@ -185,7 +186,7 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
 
   // Internal
   void processAttestation(
-      MutableStore store, UInt64 validatorIndex, Bytes32 blockRoot, UInt64 targetEpoch) {
+          MutableStore store, UInt64 validatorIndex, Bytes32 blockRoot, UInt64 targetEpoch) {
     VoteTracker vote = store.getVote(validatorIndex);
 
     if (targetEpoch.isGreaterThan(vote.getNextEpoch()) || vote.equals(VoteTracker.Default())) {
@@ -195,27 +196,27 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
   }
 
   void processBlock(
-      UInt64 blockSlot,
-      Bytes32 blockRoot,
-      Bytes32 parentRoot,
-      Bytes32 stateRoot,
-      UInt64 justifiedEpoch,
-      UInt64 finalizedEpoch) {
+          UInt64 blockSlot,
+          Bytes32 blockRoot,
+          Bytes32 parentRoot,
+          Bytes32 stateRoot,
+          UInt64 justifiedEpoch,
+          UInt64 finalizedEpoch) {
     protoArrayLock.writeLock().lock();
     try {
       protoArray.onBlock(
-          blockSlot, blockRoot, parentRoot, stateRoot, justifiedEpoch, finalizedEpoch);
+              blockSlot, blockRoot, parentRoot, stateRoot, justifiedEpoch, finalizedEpoch);
     } finally {
       protoArrayLock.writeLock().unlock();
     }
   }
 
   Bytes32 findHead(
-      MutableStore store,
-      UInt64 justifiedEpoch,
-      Bytes32 justifiedRoot,
-      UInt64 finalizedEpoch,
-      List<UInt64> justifiedStateBalances) {
+          MutableStore store,
+          UInt64 justifiedEpoch,
+          Bytes32 justifiedRoot,
+          UInt64 finalizedEpoch,
+          List<UInt64> justifiedStateBalances) {
     protoArrayLock.writeLock().lock();
     votesLock.writeLock().lock();
     balancesLock.writeLock().lock();
@@ -224,8 +225,8 @@ public class ProtoArrayForkChoiceStrategy implements ForkChoiceStrategy {
       List<UInt64> newBalances = justifiedStateBalances;
 
       List<Long> deltas =
-          ProtoArrayScoreCalculator.computeDeltas(
-              store, protoArray.getIndices(), oldBalances, newBalances);
+              ProtoArrayScoreCalculator.computeDeltas(
+                      store, protoArray.getIndices(), oldBalances, newBalances);
 
       protoArray.applyScoreChanges(deltas, justifiedEpoch, finalizedEpoch);
       balances = new ArrayList<>(newBalances);

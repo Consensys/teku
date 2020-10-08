@@ -13,27 +13,8 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
-import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
-import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
-import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -75,6 +56,26 @@ import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
+import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
+import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
+import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -209,6 +210,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 blockAndState.getState(), blockAndState.getBlock(), slot, randaoReveal, graffiti));
   }
 
+
   @Override
   public SafeFuture<Optional<Attestation>> createUnsignedAttestation(
       final UInt64 slot, final int committeeIndex) {
@@ -336,42 +338,42 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private Attestation createAttestation(
-      final BeaconBlock block,
-      final BeaconState state,
-      final UInt64 slot,
-      final int committeeIndex) {
+          final BeaconBlock block,
+          final BeaconState state,
+          final UInt64 slot,
+          final int committeeIndex) {
     final int committeeCount =
-        get_committee_count_per_slot(state, compute_epoch_at_slot(slot)).intValue();
+            get_committee_count_per_slot(state, compute_epoch_at_slot(slot)).intValue();
 
     if (committeeIndex < 0 || committeeIndex >= committeeCount) {
       throw new IllegalArgumentException(
-          "Invalid committee index "
-              + committeeIndex
-              + " - expected between 0 and "
-              + (committeeCount - 1));
+              "Invalid committee index "
+                      + committeeIndex
+                      + " - expected between 0 and "
+                      + (committeeCount - 1));
     }
     final UInt64 committeeIndexUnsigned = UInt64.valueOf(committeeIndex);
     final AttestationData attestationData =
-        AttestationUtil.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
+            AttestationUtil.getGenericAttestationData(slot, state, block, committeeIndexUnsigned);
     final List<Integer> committee =
-        CommitteeUtil.get_beacon_committee(state, slot, committeeIndexUnsigned);
+            CommitteeUtil.get_beacon_committee(state, slot, committeeIndexUnsigned);
 
     final Bitlist aggregationBits = new Bitlist(committee.size(), MAX_VALIDATORS_PER_COMMITTEE);
     return new Attestation(aggregationBits, attestationData, BLSSignature.empty());
   }
 
   private <T> SafeFuture<Optional<T>> createFromBlockAndState(
-      final UInt64 maximumSlot, final ExceptionThrowingFunction<BeaconBlockAndState, T> creator) {
+          final UInt64 maximumSlot, final ExceptionThrowingFunction<BeaconBlockAndState, T> creator) {
 
     return combinedChainDataClient
-        .getBlockAndStateInEffectAtSlot(maximumSlot)
-        .thenApplyChecked(
-            maybeBlockAndState -> {
-              if (maybeBlockAndState.isEmpty()) {
-                return Optional.empty();
-              }
-              return Optional.of(creator.apply(maybeBlockAndState.get()));
-            });
+            .getBlockAndStateInEffectAtSlot(maximumSlot)
+            .thenApplyChecked(
+                    maybeBlockAndState -> {
+                      if (maybeBlockAndState.isEmpty()) {
+                        return Optional.empty();
+                      }
+                      return Optional.of(creator.apply(maybeBlockAndState.get()));
+                    });
   }
 
   private boolean headBlockIsTooFarBehind() {

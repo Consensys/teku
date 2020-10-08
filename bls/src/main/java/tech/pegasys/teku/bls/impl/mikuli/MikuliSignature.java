@@ -13,20 +13,21 @@
 
 package tech.pegasys.teku.bls.impl.mikuli;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.toList;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
-import java.util.List;
-import java.util.Objects;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
 import tech.pegasys.teku.bls.impl.Signature;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.toList;
 
 /** This class represents a Signature on G2 */
 public class MikuliSignature implements Signature {
@@ -89,6 +90,7 @@ public class MikuliSignature implements Signature {
         bytes.size());
     return new MikuliSignature(bytes);
   }
+
 
   /**
    * Create a random signature for testing
@@ -281,11 +283,11 @@ public class MikuliSignature implements Signature {
       return G2Point.fromBytes(signatureBytes);
     }
     throw new RuntimeException(
-        "Expected either "
-            + COMPRESSED_SIG_SIZE
-            + " or "
-            + UNCOMPRESSED_SIG_SIZE
-            + " bytes for signature, but found "
-            + signatureBytes.size());
+            "Expected either "
+                    + COMPRESSED_SIG_SIZE
+                    + " or "
+                    + UNCOMPRESSED_SIG_SIZE
+                    + " bytes for signature, but found "
+                    + signatureBytes.size());
   }
 }

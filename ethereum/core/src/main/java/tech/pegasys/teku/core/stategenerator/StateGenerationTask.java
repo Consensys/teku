@@ -13,10 +13,6 @@
 
 package tech.pegasys.teku.core.stategenerator;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import java.util.Optional;
-import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -26,6 +22,11 @@ import tech.pegasys.teku.core.stategenerator.CachingTaskQueue.CacheableTask;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class StateGenerationTask implements CacheableTask<Bytes32, SignedBlockAndState> {
   private static final Logger LOG = LogManager.getLogger();
@@ -96,13 +97,13 @@ public class StateGenerationTask implements CacheableTask<Bytes32, SignedBlockAn
   @Override
   public SafeFuture<Optional<SignedBlockAndState>> performTask() {
     return resolveAgainstLatestEpochBoundary()
-        .thenCompose(StateGenerationTask::regenerateState)
-        .thenApply(Optional::of);
+            .thenCompose(StateGenerationTask::regenerateState)
+            .thenApply(Optional::of);
   }
 
   protected SafeFuture<SignedBlockAndState> regenerateState() {
     final StateGenerator stateGenerator =
-        StateGenerator.create(tree, baseBlockAndState, blockProvider);
+            StateGenerator.create(tree, baseBlockAndState, blockProvider);
     return stateGenerator.regenerateStateForBlock(blockRoot);
   }
 

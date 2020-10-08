@@ -13,19 +13,20 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import static com.google.common.collect.Streams.stream;
-
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
+
 import java.util.List;
 import java.util.Optional;
+
+import static com.google.common.collect.Streams.stream;
 
 public class HostAllowlistUtils {
 
   static boolean isHostAuthorized(final List<String> allowlist, String hostHeader) {
     Optional<String> optionalHost = getAndValidateHostHeader(hostHeader);
     return allowlist.contains("*")
-        || (optionalHost.isPresent() && hostIsInAllowlist(allowlist, optionalHost.get()));
+            || (optionalHost.isPresent() && hostIsInAllowlist(allowlist, optionalHost.get()));
   }
 
   static Optional<String> getAndValidateHostHeader(final String hostHeader) {
