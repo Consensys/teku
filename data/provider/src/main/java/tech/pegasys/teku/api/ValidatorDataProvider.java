@@ -60,7 +60,7 @@ public class ValidatorDataProvider {
   public static final String NO_SLOT_PROVIDED = "No slot was provided.";
   public static final String NO_RANDAO_PROVIDED = "No randao_reveal was provided.";
   private final ValidatorApiChannel validatorApiChannel;
-  private CombinedChainDataClient combinedChainDataClient;
+  private final CombinedChainDataClient combinedChainDataClient;
   private final BlockImporter blockImporter;
 
   public static final int INTERNAL_ERROR_HTTP_CODE = 500;
