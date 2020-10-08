@@ -55,6 +55,10 @@ public class LoggingConfigurator {
     return COLOR.get();
   }
 
+  public static synchronized void setColorEnabled(final boolean isEnabled) {
+    COLOR.set(isEnabled);
+  }
+
   public static synchronized void setAllLevels(final Level level) {
     StatusLogger.getLogger().info("Setting logging level to {}", level.name());
     Configurator.setAllLevels("", level);

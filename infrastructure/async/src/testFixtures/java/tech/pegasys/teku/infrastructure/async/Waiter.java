@@ -55,6 +55,11 @@ public class Waiter {
     return future.get(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS);
   }
 
+  public static <T> T waitFor(final Future<T> future, final Duration duration)
+      throws InterruptedException, ExecutionException, TimeoutException {
+    return future.get(duration.toSeconds(), TimeUnit.SECONDS);
+  }
+
   public interface Condition {
     void run() throws Throwable;
   }

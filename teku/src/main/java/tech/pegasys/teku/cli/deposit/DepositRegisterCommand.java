@@ -43,7 +43,7 @@ import tech.pegasys.teku.cli.options.WithdrawalPublicKeyOptions;
 @Command(
     name = "register",
     description =
-        "Register a validator from existing keys by sending a deposit transaction to an Ethereum 1 node",
+        "[DEPRECATED] Register a validator from existing keys by sending a deposit transaction to an Ethereum 1 node",
     mixinStandardHelpOptions = true,
     showDefaultValues = true,
     abbreviateSynopsis = true,
@@ -117,6 +117,7 @@ public class DepositRegisterCommand implements Runnable {
 
   @Override
   public void run() {
+    SUB_COMMAND_LOG.commandIsDeprecated();
     final BLSKeyPair validatorKey = getValidatorKey();
 
     try (final RegisterAction registerAction =
