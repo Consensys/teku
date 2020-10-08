@@ -82,7 +82,13 @@ public class EventSubscriber {
                 event = queuedEvents.poll();
               }
             })
-        .alwaysRun(() -> processingQueue.set(false))
+        .alwaysRun(
+            () -> {
+              processingQueue.set(false);
+              if (queuedEvents.size() > 0) {
+                processEventQueue();
+              }
+            })
         .finish(
             error ->
                 LOG.error(
