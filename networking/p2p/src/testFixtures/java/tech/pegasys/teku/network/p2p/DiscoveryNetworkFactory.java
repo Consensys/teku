@@ -31,6 +31,7 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
@@ -40,7 +41,6 @@ import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.util.time.StubTimeProvider;
 
 public class DiscoveryNetworkFactory {
 
