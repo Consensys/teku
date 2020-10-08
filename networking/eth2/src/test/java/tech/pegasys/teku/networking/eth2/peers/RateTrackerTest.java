@@ -16,7 +16,7 @@ package tech.pegasys.teku.networking.eth2.peers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.util.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 
 public class RateTrackerTest {
 

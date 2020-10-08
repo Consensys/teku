@@ -1,11 +1,15 @@
 dependencies {
   implementation project(":infrastructure:metrics")
+  implementation project(":infrastructure:time")
   implementation 'com.google.guava:guava'
 
   testImplementation testFixtures(project(":infrastructure:metrics"))
+  testImplementation testFixtures(project(":infrastructure:time"))
   testImplementation 'org.apache.logging.log4j:log4j-core'
 
   testFixturesApi 'com.google.guava:guava'
+  testFixturesImplementation project(":infrastructure:unsigned")
+  testFixturesImplementation project(":infrastructure:time")
   testFixturesImplementation 'org.apache.logging.log4j:log4j-core'
   testFixturesImplementation 'org.awaitility:awaitility'
 }

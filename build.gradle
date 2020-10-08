@@ -696,7 +696,7 @@ task dockerUpload(type: Exec) {
   def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
   def imageName = "quorumengineering/teku"
   def image = "${imageName}:${dockerBuildVersion}"
-  def cmd = "docker push '${image}'"
+  def cmd = "docker tag '${imageName}:develop' '${image}' && docker push '${image}'"
 
   def psImageName = "pegasyseng/teku"
   def psImage = "${psImageName}:${dockerBuildVersion}"
