@@ -24,7 +24,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -33,7 +32,6 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 class GenesisTimeProviderTest {
 
   private static final UInt64 GENESIS_TIME = UInt64.valueOf(12341234);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
 
