@@ -21,9 +21,9 @@ import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.MetricsHistogram;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.util.time.StubTimeProvider;
 
 class DutyMetricsTest {
 

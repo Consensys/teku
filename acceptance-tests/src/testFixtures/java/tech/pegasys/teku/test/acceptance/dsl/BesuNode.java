@@ -56,6 +56,10 @@ public class BesuNode extends Node {
     return "http://" + nodeAlias + ":" + JSON_RPC_PORT;
   }
 
+  public String getExternalJsonRpcUrl() {
+    return "http://127.0.0.1:" + container.getMappedPort(JSON_RPC_PORT);
+  }
+
   public String getRichBenefactorKey() {
     return "0x8f2a55949038a9610f50fb23b5883af3b4ecb3c3bb792cbcefbd1542c692be63";
   }
