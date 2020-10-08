@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.core.results.BlockImportResult;
@@ -48,19 +50,23 @@ public class BatchImporter {
    * @return a future reporting the result of the import
    */
   public SafeFuture<BatchImportResult> importBatch(final Batch batch) {
-    // Copy the blocks as we're going to use them from off the event thread.
+    // Copy the data from batch as we're going to use them from off the event thread.
     final List<SignedBeaconBlock> blocks = new ArrayList<>(batch.getBlocks());
+    final Map<SignedBeaconBlock, SyncSource> blockToSource =
+        blocks.stream().collect(Collectors.toUnmodifiableMap(b -> b, batch::getBlockSource));
+
     checkState(!blocks.isEmpty(), "Batch has no blocks to import");
     return asyncRunner.runAsync(
         () -> {
-          SafeFuture<BlockImportResult> importResult = importBlock(blocks.get(0), batch);
+          SafeFuture<BlockImportResult> importResult =
+              importBlock(blocks.get(0), blockToSource.get(blocks.get(0)));
           for (int i = 1; i < blocks.size(); i++) {
             final SignedBeaconBlock block = blocks.get(i);
             importResult =
                 importResult.thenCompose(
                     previousResult -> {
                       if (previousResult.isSuccessful()) {
-                        return importBlock(block, batch);
+                        return importBlock(block, blockToSource.get(block));
                       } else {
                         return SafeFuture.completedFuture(previousResult);
                       }
@@ -82,20 +88,18 @@ public class BatchImporter {
   }
 
   private SafeFuture<BlockImportResult> importBlock(
-      final SignedBeaconBlock block, final Batch batch) {
+      final SignedBeaconBlock block, final SyncSource source) {
     return blockImporter
         .importBlock(block)
         .thenApply(
             result -> {
               if (result.getFailureReason()
                   == BlockImportResult.FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS) {
-                final SyncSource source = batch.getBlockSource(block);
                 LOG.warn(
                     "Disconnecting source ({}) for sending block that failed weak subjectivity checks: {}",
                     source,
                     result);
                 source.disconnectCleanly(DisconnectReason.REMOTE_FAULT).reportExceptions();
-                batch.markAsInvalid();
               }
               return result;
             });

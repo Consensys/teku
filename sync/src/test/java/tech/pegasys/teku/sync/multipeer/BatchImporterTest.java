@@ -145,7 +145,6 @@ class BatchImporterTest {
     assertThat(result).isCompletedWithValue(BatchImportResult.IMPORT_FAILED);
     verify(batch).getBlockSource(block2);
     verify(syncSource).disconnectCleanly(DisconnectReason.REMOTE_FAULT);
-    verify(batch).markAsInvalid();
 
     verifyNoMoreInteractions(blockImporter);
   }
