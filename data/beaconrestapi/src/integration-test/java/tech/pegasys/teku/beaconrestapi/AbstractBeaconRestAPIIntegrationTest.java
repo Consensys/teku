@@ -33,6 +33,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -86,7 +87,8 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
             blockImporter,
             attestationPool);
 
-    beaconRestApi = new BeaconRestApi(dataProvider, config, eventChannels);
+    beaconRestApi =
+        new BeaconRestApi(dataProvider, config, eventChannels, SyncAsyncRunner.SYNC_RUNNER);
     beaconRestApi.start();
     client = new OkHttpClient();
   }
