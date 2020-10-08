@@ -74,7 +74,10 @@ public class ValidatorClientService extends Service {
             config.getValidatorConfig(), config.getGlobalConfiguration());
 
     final ValidatorApiChannel validatorApiChannel;
+    final BeaconChainEventAdapter beaconChainEventAdapter;
     if (services.getConfig().isValidatorClient()) {
+
+      beaconChainEventAdapter = new WebSocketBeaconChainEventAdapter(services);
       validatorApiChannel =
           new MetricRecordingValidatorApiChannel(
               metricsSystem, new RemoteValidatorApiHandler(services, asyncRunner));
@@ -83,19 +86,6 @@ public class ValidatorClientService extends Service {
           new MetricRecordingValidatorApiChannel(
               metricsSystem,
               services.getEventChannels().getPublisher(ValidatorApiChannel.class, asyncRunner));
-    }
-    final RetryingDutyLoader dutyLoader =
-        createDutyLoader(metricsSystem, validatorApiChannel, asyncRunner, validators);
-    final StableSubnetSubscriber stableSubnetSubscriber =
-        new StableSubnetSubscriber(validatorApiChannel, new Random(), validators.size());
-    final AttestationDutyScheduler attestationDutyScheduler =
-        new AttestationDutyScheduler(metricsSystem, dutyLoader, stableSubnetSubscriber);
-    final BlockDutyScheduler blockDutyScheduler = new BlockDutyScheduler(metricsSystem, dutyLoader);
-
-    final BeaconChainEventAdapter beaconChainEventAdapter;
-    if (services.getConfig().isValidatorClient()) {
-      beaconChainEventAdapter = new WebSocketBeaconChainEventAdapter(services);
-    } else {
       if (USE_INDEPENDENT_TIMER) {
         final ValidatorTimingChannel validatorTimingChannel =
             eventChannels.getPublisher(ValidatorTimingChannel.class);
@@ -113,6 +103,13 @@ public class ValidatorClientService extends Service {
       }
     }
 
+    final RetryingDutyLoader dutyLoader =
+        createDutyLoader(metricsSystem, validatorApiChannel, asyncRunner, validators);
+    final StableSubnetSubscriber stableSubnetSubscriber =
+        new StableSubnetSubscriber(validatorApiChannel, new Random(), validators.size());
+    final AttestationDutyScheduler attestationDutyScheduler =
+        new AttestationDutyScheduler(metricsSystem, dutyLoader, stableSubnetSubscriber);
+    final BlockDutyScheduler blockDutyScheduler = new BlockDutyScheduler(metricsSystem, dutyLoader);
     return new ValidatorClientService(
         eventChannels, attestationDutyScheduler, blockDutyScheduler, beaconChainEventAdapter);
   }

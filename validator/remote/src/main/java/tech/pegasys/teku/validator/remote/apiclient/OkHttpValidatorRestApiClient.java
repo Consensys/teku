@@ -28,7 +28,6 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SU
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_PERSISTENT_SUBNETS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -81,8 +80,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     this(HttpUrl.parse(baseEndpoint), new OkHttpClient());
   }
 
-  @VisibleForTesting
-  OkHttpValidatorRestApiClient(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
+  public OkHttpValidatorRestApiClient(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
     this.baseEndpoint = baseEndpoint;
     this.httpClient = okHttpClient;
   }

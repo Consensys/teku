@@ -9,6 +9,7 @@ dependencies {
   implementation project(':validator:api')
   implementation project(':validator:eventadapter')
 
+  implementation 'com.launchdarkly:okhttp-eventsource'
   implementation 'com.squareup.okhttp3:okhttp'
   implementation 'io.vertx:vertx-core'
 
