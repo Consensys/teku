@@ -18,6 +18,7 @@ import static tech.pegasys.teku.util.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST
 
 import com.google.common.base.Throwables;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,6 +52,12 @@ public class PeerSync {
    * returned.
    */
   static final UInt64 MIN_SLOTS_TO_PROGRESS_PER_REQUEST = UInt64.valueOf(50);
+
+  private static final List<FailureReason> BAD_BLOCK_FAILURE_REASONS =
+      List.of(
+          FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS,
+          FailureReason.FAILED_STATE_TRANSITION,
+          FailureReason.UNKNOWN_PARENT);
 
   private static final Logger LOG = LogManager.getLogger();
   private static final UInt64 STEP = UInt64.ONE;
@@ -191,9 +198,12 @@ public class PeerSync {
       final FailureReason reason = importException.getResult().getFailureReason();
       final SignedBeaconBlock block = importException.getBlock();
       LOG.warn("Failed to import block from peer (err: {}) {}: {}", reason, block, peer);
-      if (reason == FailureReason.FAILED_STATE_TRANSITION
-          || reason == FailureReason.UNKNOWN_PARENT) {
-        LOG.debug("Disconnecting from peer ({}) who sent invalid block: {}", peer, block);
+      if (BAD_BLOCK_FAILURE_REASONS.contains(reason)) {
+        LOG.debug(
+            "Disconnecting from peer ({}) who sent invalid block ({}): {}",
+            peer,
+            reason.name(),
+            block);
         disconnectFromPeer(peer);
         return PeerSyncResult.BAD_BLOCK;
       } else {
