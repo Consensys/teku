@@ -13,10 +13,6 @@
 
 package tech.pegasys.teku.cli.deposit;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.math.BigInteger;
-import java.util.function.Consumer;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
@@ -32,10 +28,16 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.contract.DepositContract;
 import tech.pegasys.teku.util.config.Eth1Address;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.math.BigInteger;
+import java.util.function.Consumer;
+
 public class DepositTransactionSender {
   // Increase the poll rate for tx receipts but keep the default 10 min timeout.
   private static final int POLL_INTERVAL_MILLIS = 2000;
   private static final int MAX_POLL_ATTEMPTS = 300;
+  private static final long REASONABLE_GAS_LIMIT = 200_000L;
   private final DepositGenerator depositGenerator = new DepositGenerator();
   private final DepositContract depositContract;
 
@@ -128,7 +130,7 @@ public class DepositTransactionSender {
 
     @Override
     public BigInteger getGasLimit() {
-      return BigInteger.valueOf(200_000L);
+      return BigInteger.valueOf(REASONABLE_GAS_LIMIT);
     }
   }
 }
