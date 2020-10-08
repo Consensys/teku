@@ -14,17 +14,6 @@
 package tech.pegasys.teku.statetransition.util;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -36,6 +25,18 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointChannel {
 
@@ -186,60 +187,9 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     }
   }
 
-  /**
-   * Returns any items that are directly dependent on the given block root
-   *
-   * @param blockRoot The block root that some pending items may depend on
-   * @return A list of items that depend on this block root.
-   */
-  private List<T> getItemsDirectlyDependingOn(final Bytes32 blockRoot) {
-    final Set<Bytes32> dependentRoots = pendingItemsByRequiredBlockRoot.get(blockRoot);
-    if (dependentRoots == null) {
-      return Collections.emptyList();
-    }
-
-    return dependentRoots.stream()
-        .map(pendingItems::get)
-        .filter(Objects::nonNull)
-        .collect(Collectors.toList());
-  }
-
-  /**
-   * Returns all items that directly or indirectly depend on the given block root. In other words,
-   * if item B depends on item A which in turn depends on {@code blockRoot}, both items A and B are
-   * returned.
-   *
-   * @param blockRoot The block root that some pending items may depend on.
-   * @return A list of items that either directly or indirectly depend on the given block root.
-   */
-  private List<T> getAllItemsDependingOn(final Bytes32 blockRoot) {
-    final Set<Bytes32> dependentRoots = new HashSet<>();
-
-    Set<Bytes32> requiredRoots = Set.of(blockRoot);
-    while (!requiredRoots.isEmpty()) {
-      final Set<Bytes32> roots =
-          requiredRoots.stream()
-              .map(pendingItemsByRequiredBlockRoot::get)
-              .filter(Objects::nonNull)
-              .flatMap(Set::stream)
-              .collect(Collectors.toSet());
-
-      dependentRoots.addAll(roots);
-      requiredRoots = roots;
-    }
-
-    return dependentRoots.stream()
-        .map(pendingItems::get)
-        .filter(Objects::nonNull)
-        .collect(Collectors.toList());
-  }
 
   public long subscribeRequiredBlockRoot(final RequiredBlockRootSubscriber subscriber) {
     return requiredBlockRootSubscribers.subscribe(subscriber);
-  }
-
-  public boolean unsubscribeRequiredBlockRoot(final long subscriberId) {
-    return requiredBlockRootSubscribers.unsubscribe(subscriberId);
   }
 
   public long subscribeRequiredBlockRootDropped(
@@ -265,9 +215,65 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     this.latestFinalizedSlot = checkpoint.getEpochStartSlot();
   }
 
+  public interface RequiredBlockRootSubscriber {
+    void onRequiredBlockRoot(final Bytes32 blockRoot);
+  }
+
+  public interface RequiredBlockRootDroppedSubscriber {
+    void onRequiredBlockRootDropped(final Bytes32 blockRoot);
+  }
+
   @VisibleForTesting
   void prune() {
     pruneItems(this::isTooOld);
+  }
+
+  /**
+   * Returns any items that are directly dependent on the given block root
+   *
+   * @param blockRoot The block root that some pending items may depend on
+   * @return A list of items that depend on this block root.
+   */
+  private List<T> getItemsDirectlyDependingOn(final Bytes32 blockRoot) {
+    final Set<Bytes32> dependentRoots = pendingItemsByRequiredBlockRoot.get(blockRoot);
+    if (dependentRoots == null) {
+      return Collections.emptyList();
+    }
+
+    return dependentRoots.stream()
+            .map(pendingItems::get)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+  }
+
+  /**
+   * Returns all items that directly or indirectly depend on the given block root. In other words,
+   * if item B depends on item A which in turn depends on {@code blockRoot}, both items A and B are
+   * returned.
+   *
+   * @param blockRoot The block root that some pending items may depend on.
+   * @return A list of items that either directly or indirectly depend on the given block root.
+   */
+  private List<T> getAllItemsDependingOn(final Bytes32 blockRoot) {
+    final Set<Bytes32> dependentRoots = new HashSet<>();
+
+    Set<Bytes32> requiredRoots = Set.of(blockRoot);
+    while (!requiredRoots.isEmpty()) {
+      final Set<Bytes32> roots =
+              requiredRoots.stream()
+                      .map(pendingItemsByRequiredBlockRoot::get)
+                      .filter(Objects::nonNull)
+                      .flatMap(Set::stream)
+                      .collect(Collectors.toSet());
+
+      dependentRoots.addAll(roots);
+      requiredRoots = roots;
+    }
+
+    return dependentRoots.stream()
+            .map(pendingItems::get)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
   }
 
   private boolean shouldIgnoreItem(final T item) {
@@ -310,13 +316,5 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     final Set<Bytes32> rootSet = Collections.newSetFromMap(new ConcurrentHashMap<>());
     rootSet.add(initialValue);
     return rootSet;
-  }
-
-  public interface RequiredBlockRootSubscriber {
-    void onRequiredBlockRoot(final Bytes32 blockRoot);
-  }
-
-  public interface RequiredBlockRootDroppedSubscriber {
-    void onRequiredBlockRootDropped(final Bytes32 blockRoot);
   }
 }

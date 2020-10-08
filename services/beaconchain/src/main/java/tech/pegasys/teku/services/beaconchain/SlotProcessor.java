@@ -13,12 +13,6 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
 import tech.pegasys.teku.core.ForkChoiceUtil;
@@ -32,6 +26,12 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 public class SlotProcessor {
   private final RecentChainData recentChainData;
@@ -125,13 +125,6 @@ public class SlotProcessor {
     }
   }
 
-  private void processSlotWhileSyncing() {
-    UInt64 slot = nodeSlot.getValue();
-    this.forkChoice.processHead(slot, true);
-    eventLog.syncEvent(slot, recentChainData.getHeadSlot(), p2pNetwork.getPeerCount());
-    slotEventsChannelPublisher.onSlot(slot);
-  }
-
   boolean isNextSlotDue(final UInt64 currentTime, final UInt64 genesisTime) {
     final UInt64 slotStartTime = ForkChoiceUtil.getSlotStartTime(nodeSlot.getValue(), genesisTime);
     return currentTime.compareTo(slotStartTime) >= 0;
@@ -164,6 +157,13 @@ public class SlotProcessor {
         nodeSlotStartTime.plus(oneThirdSlotSeconds).plus(oneThirdSlotSeconds);
     return isProcessingDueForSlot(calculatedSlot, onTickSlotAggregate)
         && isTimeReached(currentTime, earliestTime);
+  }
+
+  private void processSlotWhileSyncing() {
+    UInt64 slot = nodeSlot.getValue();
+    this.forkChoice.processHead(slot, true);
+    eventLog.syncEvent(slot, recentChainData.getHeadSlot(), p2pNetwork.getPeerCount());
+    slotEventsChannelPublisher.onSlot(slot);
   }
 
   private void processSlotStart(final UInt64 nodeEpoch) {
