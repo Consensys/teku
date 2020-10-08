@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
+import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
+
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
@@ -22,7 +24,8 @@ import tech.pegasys.teku.cli.deposit.DepositRegisterCommand;
 
 @Command(
     name = "validator",
-    description = "Register validators by sending deposit transactions to an Ethereum 1 node",
+    description =
+        "[DEPRECATED] Register validators by sending deposit transactions to an Ethereum 1 node",
     showDefaultValues = true,
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
@@ -40,6 +43,7 @@ import tech.pegasys.teku.cli.deposit.DepositRegisterCommand;
 public class DepositCommand implements Runnable {
   @Override
   public void run() {
+    SUB_COMMAND_LOG.commandIsDeprecated();
     CommandLine.usage(this, System.out);
   }
 }
