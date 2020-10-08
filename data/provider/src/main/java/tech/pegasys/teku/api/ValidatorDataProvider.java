@@ -13,16 +13,6 @@
 
 package tech.pegasys.teku.api;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
@@ -50,6 +40,17 @@ import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties.Duties;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
+
 public class ValidatorDataProvider {
 
   public static final String CANNOT_PRODUCE_FAR_FUTURE_BLOCK =
@@ -61,6 +62,10 @@ public class ValidatorDataProvider {
   private final ValidatorApiChannel validatorApiChannel;
   private CombinedChainDataClient combinedChainDataClient;
   private final BlockImporter blockImporter;
+
+  public static final int INTERNAL_ERROR_HTTP_CODE = 500;
+  public static final int ACCEPTED_HTTP_CODE = 202;
+  public static final int OK_HTTP_CODE = 200;
 
   public ValidatorDataProvider(
       final ValidatorApiChannel validatorApiChannel,
@@ -180,12 +185,12 @@ public class ValidatorDataProvider {
               if (!blockImportResult.isSuccessful()) {
                 if (blockImportResult.getFailureReason()
                     == BlockImportResult.FailureReason.INTERNAL_ERROR) {
-                  responseCode = 500;
+                  responseCode = INTERNAL_ERROR_HTTP_CODE;
                 } else {
-                  responseCode = 202;
+                  responseCode = ACCEPTED_HTTP_CODE;
                 }
               } else {
-                responseCode = 200;
+                responseCode = OK_HTTP_CODE;
                 hashRoot = blockImportResult.getBlock().getMessage().hash_tree_root();
               }
 
