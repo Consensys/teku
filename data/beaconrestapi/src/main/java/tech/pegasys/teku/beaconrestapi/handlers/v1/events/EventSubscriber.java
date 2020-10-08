@@ -18,14 +18,13 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 
 public class EventSubscriber {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int MAX_PENDING_EVENTS = 10;
+  static final int MAX_PENDING_EVENTS = 10;
   private final List<EventType> eventTypes;
   private final SseClient sseClient;
   private final Queue<QueuedEvent> queuedEvents;
@@ -38,7 +37,7 @@ public class EventSubscriber {
       final SseClient sseClient,
       final Runnable closeCallback,
       final AsyncRunner asyncRunner) {
-    this.eventTypes = getTopics(eventTypes);
+    this.eventTypes = EventType.getTopics(eventTypes);
     this.sseClient = sseClient;
     this.closeCallback = closeCallback;
     this.queuedEvents = new ConcurrentLinkedQueue<>();
@@ -48,20 +47,17 @@ public class EventSubscriber {
   }
 
   public void onEvent(final EventType eventType, final String message) {
-    if (eventTypes.contains(eventType)) {
-      if (queuedEvents.size() < MAX_PENDING_EVENTS) {
-        queuedEvents.add(QueuedEvent.of(eventType, message));
-        processEventQueue();
-      } else {
-        LOG.trace("Closing client connection due to exceeding the pending message limit");
-        sseClient.ctx.req.getAsyncContext().complete();
-        closeCallback.run();
-      }
+    if (!eventTypes.contains(eventType)) {
+      return;
     }
-  }
-
-  static List<EventType> getTopics(List<String> topics) {
-    return topics.stream().map(EventType::valueOf).collect(Collectors.toList());
+    if (queuedEvents.size() < MAX_PENDING_EVENTS) {
+      queuedEvents.add(QueuedEvent.of(eventType, message));
+      processEventQueue();
+    } else {
+      LOG.trace("Closing client connection due to exceeding the pending message limit");
+      sseClient.ctx.req.getAsyncContext().complete();
+      closeCallback.run();
+    }
   }
 
   public SseClient getSseClient() {
@@ -80,13 +76,16 @@ public class EventSubscriber {
                   "Processing queue with {} elements for event client {}",
                   queuedEvents.size(),
                   sseClient.hashCode());
-              while (queuedEvents.size() > 0) {
-                QueuedEvent event = queuedEvents.peek();
-                queuedEvents.remove(event);
+              QueuedEvent event = queuedEvents.poll();
+              while (event != null) {
                 sseClient.sendEvent(event.getEventType().name(), event.getMessageData());
+                event = queuedEvents.poll();
               }
-              processingQueue.set(false);
             })
-        .reportExceptions();
+        .alwaysRun(() -> processingQueue.set(false))
+        .finish(
+            error ->
+                LOG.error(
+                    "Failed to process event queue for client " + sseClient.hashCode(), error));
   }
 }

@@ -13,18 +13,25 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.List;
-import java.util.stream.Collectors;
+import org.junit.jupiter.api.Test;
 
-public enum EventType {
-  head,
-  block,
-  attestation,
-  voluntary_exit,
-  finalized_checkpoint,
-  chain_reorg;
+public class EventTypeTest {
 
-  public static List<EventType> getTopics(List<String> topics) {
-    return topics.stream().map(EventType::valueOf).collect(Collectors.toList());
+  @Test
+  void shouldParseEventTypes() {
+    List<EventType> topics =
+        EventType.getTopics(List.of("head", "chain_reorg", "finalized_checkpoint"));
+    assertThat(topics)
+        .containsExactlyInAnyOrder(
+            EventType.head, EventType.chain_reorg, EventType.finalized_checkpoint);
+  }
+
+  @Test
+  void shouldFailToParseInvalidEvents() {
+    assertThrows(IllegalArgumentException.class, () -> EventType.getTopics(List.of("head1")));
   }
 }

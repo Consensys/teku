@@ -19,7 +19,7 @@ public class QueuedEvent {
   private final EventType eventType;
   private final String messageData;
 
-  public QueuedEvent(final EventType eventType, final String messageData) {
+  private QueuedEvent(final EventType eventType, final String messageData) {
     this.eventType = eventType;
     this.messageData = messageData;
   }

@@ -14,13 +14,13 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.events.EventSubscriber.MAX_PENDING_EVENTS;
 
 import io.javalin.http.Context;
 import io.javalin.http.sse.SseClient;
@@ -64,20 +64,6 @@ public class EventSubscriberTest {
   }
 
   @Test
-  void shouldParseEventTypes() {
-    List<EventType> topics =
-        EventSubscriber.getTopics(List.of("head", "chain_reorg", "finalized_checkpoint"));
-    assertThat(topics)
-        .containsExactlyInAnyOrder(
-            EventType.head, EventType.chain_reorg, EventType.finalized_checkpoint);
-  }
-
-  @Test
-  void shouldFailToParseInvalidEvents() {
-    assertThrows(IllegalArgumentException.class, () -> EventSubscriber.getTopics(List.of("head1")));
-  }
-
-  @Test
   void shouldGetSseClient() {
     EventSubscriber eventSubscriber =
         new EventSubscriber(List.of("head"), sseClient, onCloseCallback, asyncRunner);
@@ -89,7 +75,7 @@ public class EventSubscriberTest {
     EventSubscriber eventSubscriber =
         new EventSubscriber(List.of("head"), sseClient, onCloseCallback, asyncRunner);
 
-    for (int i = 0; i < 11; i++) {
+    for (int i = 0; i < MAX_PENDING_EVENTS + 1; i++) {
       verify(onCloseCallback, never()).run();
       eventSubscriber.onEvent(EventType.head, "test");
     }
@@ -115,13 +101,13 @@ public class EventSubscriberTest {
     EventSubscriber eventSubscriber =
         new EventSubscriber(List.of("head"), sseClient, onCloseCallback, asyncRunner);
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < MAX_PENDING_EVENTS; i++) {
       eventSubscriber.onEvent(EventType.head, "test");
     }
     asyncRunner.executeQueuedActions();
     verify(outputStream, times(10)).print(anyString());
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < MAX_PENDING_EVENTS; i++) {
       eventSubscriber.onEvent(EventType.head, "test");
     }
 
