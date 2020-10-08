@@ -60,10 +60,10 @@ import tech.pegasys.teku.beaconrestapi.handlers.node.GetFork;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.GetEvents;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
@@ -78,6 +78,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.validator.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToBeaconCommittee;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToPersistentSubnets;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -96,7 +97,8 @@ public class BeaconRestApi {
   private void initialize(
       final DataProvider dataProvider,
       final GlobalConfiguration configuration,
-      final EventChannels eventChannels) {
+      final EventChannels eventChannels,
+      final AsyncRunner asyncRunner) {
     if (app.config != null) {
       // the beaconRestApi test mocks the app object, and will skip this
       app.config.server(
@@ -113,7 +115,7 @@ public class BeaconRestApi {
     addExceptionHandlers();
     // standard api endpoint inclusion
     addV1BeaconHandlers(dataProvider);
-    addEventHandler(dataProvider, eventChannels);
+    addEventHandler(dataProvider, eventChannels, asyncRunner);
     addV1NodeHandlers(dataProvider);
     addV1ValidatorHandlers(dataProvider);
 
@@ -174,7 +176,8 @@ public class BeaconRestApi {
   public BeaconRestApi(
       final DataProvider dataProvider,
       final GlobalConfiguration configuration,
-      final EventChannels eventChannels) {
+      final EventChannels eventChannels,
+      final AsyncRunner asyncRunner) {
     this.app =
         Javalin.create(
             config -> {
@@ -184,16 +187,17 @@ public class BeaconRestApi {
               config.logIfServerNotStarted = false;
               config.showJavalinBanner = false;
             });
-    initialize(dataProvider, configuration, eventChannels);
+    initialize(dataProvider, configuration, eventChannels, asyncRunner);
   }
 
   BeaconRestApi(
       final DataProvider dataProvider,
       final GlobalConfiguration configuration,
       final EventChannels eventChannels,
+      final AsyncRunner asyncRunner,
       final Javalin app) {
     this.app = app;
-    initialize(dataProvider, configuration, eventChannels);
+    initialize(dataProvider, configuration, eventChannels, asyncRunner);
   }
 
   public void start() {
@@ -268,8 +272,11 @@ public class BeaconRestApi {
     app.get(GetStateValidator.ROUTE, new GetStateValidator(dataProvider, jsonProvider));
   }
 
-  private void addEventHandler(final DataProvider dataProvider, final EventChannels eventChannels) {
-    app.get(GetEvents.ROUTE, new GetEvents(dataProvider, jsonProvider, eventChannels));
+  private void addEventHandler(
+      final DataProvider dataProvider,
+      final EventChannels eventChannels,
+      final AsyncRunner asyncRunner) {
+    app.get(GetEvents.ROUTE, new GetEvents(dataProvider, jsonProvider, eventChannels, asyncRunner));
   }
 
   private void addNodeHandlers(final DataProvider provider) {

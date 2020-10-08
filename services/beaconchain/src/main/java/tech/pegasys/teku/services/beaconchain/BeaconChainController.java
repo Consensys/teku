@@ -135,6 +135,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final SlotEventsChannel slotEventsChannelPublisher;
   private final AsyncRunner networkAsyncRunner;
   private final AsyncRunnerFactory asyncRunnerFactory;
+  private final AsyncRunner eventAsyncRunner;
 
   private volatile ForkChoice forkChoice;
   private volatile StateTransition stateTransition;
@@ -166,6 +167,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.config = serviceConfig.getConfig();
     asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
     this.asyncRunner = serviceConfig.createAsyncRunner("beaconchain");
+    this.eventAsyncRunner = serviceConfig.createAsyncRunner("events", 10);
     this.networkAsyncRunner = serviceConfig.createAsyncRunner("p2p", 10);
     this.timeProvider = serviceConfig.getTimeProvider();
     this.eventBus = serviceConfig.getEventBus();
@@ -603,7 +605,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             blockImporter,
             attestationPool);
     if (config.isRestApiEnabled()) {
-      beaconRestAPI = Optional.of(new BeaconRestApi(dataProvider, config, eventChannels));
+
+      beaconRestAPI =
+          Optional.of(new BeaconRestApi(dataProvider, config, eventChannels, eventAsyncRunner));
     } else {
       LOG.info("rest-api-enabled is false, not starting rest api.");
     }

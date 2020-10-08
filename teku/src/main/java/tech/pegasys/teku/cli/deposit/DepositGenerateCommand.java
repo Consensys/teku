@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.deposit;
 
+import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.util.function.Consumer;
 import picocli.CommandLine.Command;
@@ -21,7 +23,7 @@ import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 
 @Command(
     name = "generate",
-    description = "Generate validator keys",
+    description = "[DEPRECATED] Generate validator keys",
     mixinStandardHelpOptions = true,
     showDefaultValues = true,
     abbreviateSynopsis = true,
@@ -54,6 +56,7 @@ public class DepositGenerateCommand implements Runnable {
 
   @Override
   public void run() {
+    SUB_COMMAND_LOG.commandIsDeprecated();
     final GenerateAction generateAction =
         generateParams.createGenerateAction(verboseOutputParam.isVerboseOutputEnabled());
     generateAction.generateKeys();

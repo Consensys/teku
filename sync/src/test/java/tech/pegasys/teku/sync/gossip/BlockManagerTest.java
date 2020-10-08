@@ -39,6 +39,7 @@ import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.ImportedBlocks;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
+import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.statetransition.util.FutureItems;
@@ -199,6 +200,30 @@ public class BlockManagerTest {
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(0);
     assertThat(pendingBlocks.contains(nextNextBlock)).isTrue();
+  }
+
+  @Test
+  public void onProposedBlock_shouldImport() throws Exception {
+    final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
+    final SignedBeaconBlock nextBlock = localChain.createBlockAtSlot(nextSlot);
+    incrementSlot();
+
+    assertThat(importedBlocks.get()).isEmpty();
+    localEventBus.post(new ProposedBlockEvent(nextBlock));
+    assertThat(importedBlocks.get()).containsExactly(nextBlock);
+    assertThat(pendingBlocks.size()).isEqualTo(0);
+  }
+
+  @Test
+  public void onProposedBlock_futureBlock() throws Exception {
+    final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
+    final SignedBeaconBlock nextBlock = remoteChain.createAndImportBlockAtSlot(nextSlot);
+
+    localEventBus.post(new ProposedBlockEvent(nextBlock));
+    assertThat(importedBlocks.get()).isEmpty();
+    assertThat(pendingBlocks.size()).isEqualTo(0);
+    assertThat(futureBlocks.size()).isEqualTo(1);
+    assertThat(futureBlocks.contains(nextBlock)).isTrue();
   }
 
   @Test
