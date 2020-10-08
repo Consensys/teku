@@ -1,19 +1,30 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.infrastructure.async.timed;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.time.TimeProvider.MILLIS_PER_SECOND;
 
-import java.util.Comparator;
-import java.util.Queue;
-import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class RepeatingTaskScheduler {
-  private final Queue<TimedEvent> eventQueue =
-      new PriorityBlockingQueue<>(11, Comparator.comparing(TimedEvent::getNextDueSeconds));
-
+  private static final Logger LOG = LogManager.getLogger();
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
 
@@ -30,52 +41,27 @@ public class RepeatingTaskScheduler {
   }
 
   private void scheduleEvent(final TimedEvent event) {
-    eventQueue.add(event);
-    scheduleNextEvent();
-  }
-
-  private synchronized void scheduleNextEvent() {
-    // Remove and execute any tasks that are due or overdue
-    TimedEvent nextEvent = eventQueue.poll();
-    while (nextEvent != null
-        && timeProvider.getTimeInSeconds().isGreaterThanOrEqualTo(nextEvent.getNextDueSeconds())) {
-      executeEvent(nextEvent);
-      nextEvent = eventQueue.poll();
-    }
-    if (nextEvent == null) {
-      return;
-    }
-    // Otherwise schedule the next task for when it becomes due
     final UInt64 nowMs = timeProvider.getTimeInMillis();
-    final UInt64 timeDueMs = nextEvent.getNextDueSeconds().times(TimeProvider.MILLIS_PER_SECOND);
-    if (nowMs.isGreaterThanOrEqualTo(timeDueMs)) {
-      // Became due during the calculations, execute immediately
-      onNextEventDue(nextEvent);
+    final UInt64 dueMs = event.getNextDueSeconds().times(MILLIS_PER_SECOND);
+    if (nowMs.isGreaterThanOrEqualTo(dueMs)) {
+      executeEvent(event);
     } else {
-      final TimedEvent event = nextEvent;
       asyncRunner
           .runAfterDelay(
-              () -> onNextEventDue(event),
-              timeDueMs.minus(nowMs).longValue(),
-              TimeUnit.MILLISECONDS)
-          .reportExceptions(); // TODO: Probably should keep retrying if rejected?
+              () -> executeEvent(event), dueMs.minus(nowMs).longValue(), TimeUnit.MILLISECONDS)
+          .finish(error -> LOG.fatal("Failed to schedule next scheduled event", error));
     }
   }
 
-  private void onNextEventDue(final TimedEvent dueEvent) {
-    executeEvent(dueEvent);
-    scheduleNextEvent();
-  }
-
-  private void executeEvent(final TimedEvent nextEvent) {
+  private void executeEvent(final TimedEvent event) {
     asyncRunner
         .runAsync(
             () -> {
               try {
-                nextEvent.execute(timeProvider.getTimeInSeconds());
+                event.execute(timeProvider.getTimeInSeconds());
               } finally {
                 // Schedule the next invocation
-                scheduleEvent(nextEvent);
+                scheduleEvent(event);
               }
             })
         .reportExceptions();
