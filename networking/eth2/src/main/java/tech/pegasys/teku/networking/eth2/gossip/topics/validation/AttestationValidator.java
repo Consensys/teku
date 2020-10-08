@@ -169,8 +169,7 @@ public class AttestationValidator {
 
               // The check below is not specified in the Eth2 networking spec, yet an attestation
               // with aggregation bits size greater/less than the committee size is invalid. So we
-              // reject
-              // those attestations at the networking layer.
+              // reject those attestations at the networking layer.
               final List<Integer> committee =
                   get_beacon_committee(state, data.getSlot(), data.getIndex());
               if (committee.size() != attestation.getAggregation_bits().getCurrentSize()) {
