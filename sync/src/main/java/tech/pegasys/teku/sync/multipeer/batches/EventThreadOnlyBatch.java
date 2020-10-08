@@ -19,6 +19,7 @@ import java.util.Optional;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 
 public class EventThreadOnlyBatch implements Batch {
@@ -58,6 +59,12 @@ public class EventThreadOnlyBatch implements Batch {
   public List<SignedBeaconBlock> getBlocks() {
     eventThread.checkOnEventThread();
     return delegate.getBlocks();
+  }
+
+  @Override
+  public SyncSource getBlockSource(final SignedBeaconBlock block) {
+    eventThread.checkOnEventThread();
+    return delegate.getBlockSource(block);
   }
 
   @Override

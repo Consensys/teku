@@ -58,7 +58,11 @@ public class SyncSourceBatchTest {
     batch.requestMoreBlocks(callback);
     verifyNoInteractions(callback);
 
-    receiveBlocks(batch, dataStructureUtil.randomSignedBeaconBlock(75));
+    final SignedBeaconBlock[] blocks =
+        new SignedBeaconBlock[] {dataStructureUtil.randomSignedBeaconBlock(75)};
+    receiveBlocks(batch, blocks);
+
+    assertBlocksProcessed(batch, blocks);
     getSyncSource(batch).assertRequestedBlocks(70, 50);
     verify(callback).run();
     verifyNoMoreInteractions(callback);
@@ -172,12 +176,19 @@ public class SyncSourceBatchTest {
     final Batch batch = createBatch(10, 10);
 
     batch.requestMoreBlocks(() -> {});
-    receiveBlocks(batch, dataStructureUtil.randomSignedBeaconBlock(10));
+
+    final SignedBeaconBlock[] blocks =
+        new SignedBeaconBlock[] {dataStructureUtil.randomSignedBeaconBlock(10)};
+    receiveBlocks(batch, blocks);
+    assertBlocksProcessed(batch, blocks);
     verifyNoInteractions(conflictResolutionStrategy);
 
     // Second request returns a block whose parent doesn't match the previous block
     batch.requestMoreBlocks(() -> {});
-    receiveBlocks(batch, dataStructureUtil.randomSignedBeaconBlock(11));
+    final SignedBeaconBlock[] invalidBlocks =
+        new SignedBeaconBlock[] {dataStructureUtil.randomSignedBeaconBlock(11)};
+    receiveBlocks(batch, invalidBlocks);
+    assertBlocksNotProcessed(batch, invalidBlocks);
 
     // Node is disagreeing with itself so mark it as invalid
     verify(conflictResolutionStrategy).reportInvalidBatch(batch, getSyncSource(batch));
@@ -228,6 +239,21 @@ public class SyncSourceBatchTest {
 
   protected void receiveBlocks(final Batch batch, final SignedBeaconBlock... blocks) {
     getSyncSource(batch).receiveBlocks(blocks);
+  }
+
+  protected void assertBlocksProcessed(final Batch batch, final SignedBeaconBlock... blocks) {
+    final StubSyncSource source = getSyncSource(batch);
+    for (SignedBeaconBlock block : blocks) {
+      assertThat(batch.getBlocks()).contains(block);
+      assertThat(batch.getBlockSource(block)).isEqualTo(source);
+    }
+  }
+
+  protected void assertBlocksNotProcessed(final Batch batch, final SignedBeaconBlock... blocks) {
+    for (SignedBeaconBlock block : blocks) {
+      assertThat(batch.getBlocks()).doesNotContain(block);
+      assertThat(batch.getBlockSource(block)).isNull();
+    }
   }
 
   protected void requestError(final Batch batch, final Throwable error) {

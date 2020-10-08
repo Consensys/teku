@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 
 /** A section of a particular target chain that can be downloded in parallel. */
@@ -30,6 +31,8 @@ public interface Batch {
   Optional<SignedBeaconBlock> getLastBlock();
 
   List<SignedBeaconBlock> getBlocks();
+
+  SyncSource getBlockSource(final SignedBeaconBlock block);
 
   void markComplete();
 

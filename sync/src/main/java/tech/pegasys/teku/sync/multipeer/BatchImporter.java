@@ -23,6 +23,8 @@ import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.networking.eth2.peers.SyncSource;
+import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.sync.multipeer.batches.Batch;
 
@@ -51,14 +53,14 @@ public class BatchImporter {
     checkState(!blocks.isEmpty(), "Batch has no blocks to import");
     return asyncRunner.runAsync(
         () -> {
-          SafeFuture<BlockImportResult> importResult = blockImporter.importBlock(blocks.get(0));
+          SafeFuture<BlockImportResult> importResult = importBlock(blocks.get(0), batch);
           for (int i = 1; i < blocks.size(); i++) {
             final SignedBeaconBlock block = blocks.get(i);
             importResult =
                 importResult.thenCompose(
                     previousResult -> {
                       if (previousResult.isSuccessful()) {
-                        return blockImporter.importBlock(block);
+                        return importBlock(block, batch);
                       } else {
                         return SafeFuture.completedFuture(previousResult);
                       }
@@ -77,6 +79,26 @@ public class BatchImporter {
                 return BatchImportResult.IMPORT_FAILED;
               });
         });
+  }
+
+  private SafeFuture<BlockImportResult> importBlock(
+      final SignedBeaconBlock block, final Batch batch) {
+    return blockImporter
+        .importBlock(block)
+        .thenApply(
+            result -> {
+              if (result.getFailureReason()
+                  == BlockImportResult.FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS) {
+                final SyncSource source = batch.getBlockSource(block);
+                LOG.warn(
+                    "Disconnecting source ({}) for sending block that failed weak subjectivity checks: {}",
+                    source,
+                    result);
+                source.disconnectCleanly(DisconnectReason.REMOTE_FAULT).reportExceptions();
+                batch.markAsInvalid();
+              }
+              return result;
+            });
   }
 
   public enum BatchImportResult {

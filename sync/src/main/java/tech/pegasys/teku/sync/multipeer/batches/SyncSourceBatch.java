@@ -95,6 +95,11 @@ public class SyncSourceBatch implements Batch {
   }
 
   @Override
+  public SyncSource getBlockSource(final SignedBeaconBlock block) {
+    return currentSyncSource.orElse(null);
+  }
+
+  @Override
   public void markComplete() {
     complete = true;
   }
