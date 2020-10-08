@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.weaksubjectivity.config;
+package tech.pegasys.teku.cli.converter;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -19,27 +19,28 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.Splitter;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
+import picocli.CommandLine;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class WeakSubjectivityParameterParser {
-  static final String CHECKPOINT_ERROR =
-      "Weak subjectivity checkpoint arguments should be formatted as: <blockRoot>:<epochNumber> where blockRoot is a hex-encoded 32 byte value and epochNumber is a number in decimal format";
+public class CheckpointConverter implements CommandLine.ITypeConverter<Checkpoint> {
+  public static final String CHECKPOINT_ERROR =
+      "Checkpoint arguments should be formatted as <BLOCK_ROOT>:<EPOCH_NUMBER> where blockRoot is a hex-encoded 32 byte value and epochNumber is a number in decimal format";
 
-  public Checkpoint parseCheckpoint(final String checkpointString) {
-    checkNotNull(checkpointString);
-    final String trimmed = checkpointString.trim();
-    checkArgument(trimmed.length() > 0);
-
-    List<String> parts = Splitter.on(':').splitToList(trimmed);
-    checkArgument(parts.size() == 2, CHECKPOINT_ERROR);
-
+  @Override
+  public Checkpoint convert(final String checkpointString) {
     try {
+      checkNotNull(checkpointString);
+      final String trimmed = checkpointString.trim();
+      checkArgument(trimmed.length() > 0);
+      List<String> parts = Splitter.on(':').splitToList(trimmed);
+      checkArgument(parts.size() == 2, CHECKPOINT_ERROR);
+
       final Bytes32 blockRoot = parseBytes32(parts.get(0));
       final UInt64 epoch = parseNumber(parts.get(1));
       return new Checkpoint(epoch, blockRoot);
     } catch (Throwable e) {
-      throw new IllegalArgumentException(CHECKPOINT_ERROR);
+      throw new CommandLine.TypeConversionException(CHECKPOINT_ERROR);
     }
   }
 
