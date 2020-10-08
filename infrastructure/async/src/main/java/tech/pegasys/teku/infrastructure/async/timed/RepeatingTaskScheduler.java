@@ -33,38 +33,63 @@ public class RepeatingTaskScheduler {
     this.timeProvider = timeProvider;
   }
 
+  /**
+   * Schedules a repeating event. If the initial invocation time has already been reached, the task
+   * will be executed immediately. The task will then try to repeat repeatingPeriodSeconds after
+   * that initial invocation time.
+   *
+   * <p>It is guaranteed that only one instance of the task will execute at a time. If a task is
+   * still executing when the next repeat is due, the next repeat will be executed immediately after
+   * the first task completes. Tasks are not skipped because of these delays but the scheduled and
+   * actual time is provided when the task is executed. Tasks should use that information to skip
+   * unnecessary work when events are delayed to allow the system to catch up.
+   *
+   * @param initialInvocationTimeInSeconds the time in epoch seconds that the task should first be
+   *     executed.
+   * @param repeatingPeriodSeconds the number of seconds after the previous execution was due that
+   *     the next execution should occur
+   * @param task the task to execute
+   */
   public void scheduleRepeatingEvent(
       final UInt64 initialInvocationTimeInSeconds,
       final UInt64 repeatingPeriodSeconds,
-      final RepeatingTask action) {
-    scheduleEvent(new TimedEvent(initialInvocationTimeInSeconds, repeatingPeriodSeconds, action));
+      final RepeatingTask task) {
+    scheduleEvent(new TimedEvent(initialInvocationTimeInSeconds, repeatingPeriodSeconds, task));
   }
 
   private void scheduleEvent(final TimedEvent event) {
-    final UInt64 nowMs = timeProvider.getTimeInMillis();
-    final UInt64 dueMs = event.getNextDueSeconds().times(MILLIS_PER_SECOND);
-    if (nowMs.isGreaterThanOrEqualTo(dueMs)) {
+    UInt64 nowMs = timeProvider.getTimeInMillis();
+    UInt64 dueMs = event.getNextDueSeconds().times(MILLIS_PER_SECOND);
+    // First execute any already due executions
+    while (nowMs.isGreaterThanOrEqualTo(dueMs)) {
       executeEvent(event);
-    } else {
-      asyncRunner
-          .runAfterDelay(
-              () -> executeEvent(event), dueMs.minus(nowMs).longValue(), TimeUnit.MILLISECONDS)
-          .finish(error -> LOG.fatal("Failed to schedule next scheduled event", error));
+      // Update both now and due in case another repeat because due while we were executing
+      nowMs = timeProvider.getTimeInMillis();
+      dueMs = event.getNextDueSeconds().times(MILLIS_PER_SECOND);
     }
+    asyncRunner
+        .runAfterDelay(
+            () -> executeEvent(event), dueMs.minus(nowMs).longValue(), TimeUnit.MILLISECONDS)
+        .finish(
+            () -> scheduleEvent(event),
+            error -> {
+              LOG.error("Failed to schedule next repeat of event. Skipping", error);
+              // We may be hopelessly blocked but try to recover by moving on to the next event
+              // If the thread pool and its queue are full, we should still be able to schedule a
+              // task in the future.
+              event.moveToNextScheduledTime();
+              scheduleEvent(event);
+            });
   }
 
   private void executeEvent(final TimedEvent event) {
-    asyncRunner
-        .runAsync(
-            () -> {
-              try {
-                event.execute(timeProvider.getTimeInSeconds());
-              } finally {
-                // Schedule the next invocation
-                scheduleEvent(event);
-              }
-            })
-        .reportExceptions();
+    try {
+      event.execute(timeProvider.getTimeInSeconds());
+    } catch (final Throwable t) {
+      Thread.currentThread()
+          .getUncaughtExceptionHandler()
+          .uncaughtException(Thread.currentThread(), t);
+    }
   }
 
   private static class TimedEvent {
@@ -93,8 +118,12 @@ public class RepeatingTaskScheduler {
       try {
         action.execute(nextDueSeconds, actualTime);
       } finally {
-        nextDueSeconds = nextDueSeconds.plus(repeatPeriodSeconds);
+        moveToNextScheduledTime();
       }
+    }
+
+    public void moveToNextScheduledTime() {
+      nextDueSeconds = nextDueSeconds.plus(repeatPeriodSeconds);
     }
   }
 

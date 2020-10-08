@@ -33,11 +33,19 @@ class RepeatingTaskSchedulerTest {
       new RepeatingTaskScheduler(asyncRunner, timeProvider);
 
   @Test
-  void shouldExecuteEventImmediatelyOnSeparateThreadWhenAlreadyDue() {
+  void shouldExecuteEventImmediatelyWhenAlreadyDue() {
     eventQueue.scheduleRepeatingEvent(timeProvider.getTimeInSeconds(), UInt64.valueOf(12), action);
-    verifyNoInteractions(action);
+    verify(action).execute(timeProvider.getTimeInSeconds(), timeProvider.getTimeInSeconds());
+  }
 
-    asyncRunner.executeDueActionsRepeatedly();
+  @Test
+  void shouldExecuteEventImmediatelyMultipleTimesWhenMultipleRepeatsAreAlreadyDue() {
+    eventQueue.scheduleRepeatingEvent(
+        timeProvider.getTimeInSeconds().minus(24), UInt64.valueOf(12), action);
+    verify(action)
+        .execute(timeProvider.getTimeInSeconds().minus(24), timeProvider.getTimeInSeconds());
+    verify(action)
+        .execute(timeProvider.getTimeInSeconds().minus(12), timeProvider.getTimeInSeconds());
     verify(action).execute(timeProvider.getTimeInSeconds(), timeProvider.getTimeInSeconds());
   }
 
@@ -64,8 +72,6 @@ class RepeatingTaskSchedulerTest {
     final UInt64 repeatPeriod = UInt64.valueOf(12);
     // Action executes immediately
     eventQueue.scheduleRepeatingEvent(timeProvider.getTimeInSeconds(), repeatPeriod, action);
-    verifyNoInteractions(action);
-
     asyncRunner.executeDueActionsRepeatedly();
     verify(action).execute(timeProvider.getTimeInSeconds(), timeProvider.getTimeInSeconds());
 
@@ -82,7 +88,7 @@ class RepeatingTaskSchedulerTest {
         timeProvider.getTimeInSeconds(), UInt64.valueOf(5), secondAction);
 
     // Both execute initially
-    asyncRunner.executeQueuedActions();
+    asyncRunner.executeDueActionsRepeatedly();
     verify(action).execute(timeProvider.getTimeInSeconds(), timeProvider.getTimeInSeconds());
     verify(secondAction).execute(timeProvider.getTimeInSeconds(), timeProvider.getTimeInSeconds());
 
@@ -104,7 +110,7 @@ class RepeatingTaskSchedulerTest {
     final UInt64 scheduledTime = timeProvider.getTimeInSeconds().minus(5);
     eventQueue.scheduleRepeatingEvent(scheduledTime, UInt64.valueOf(10), action);
 
-    asyncRunner.executeQueuedActions();
+    asyncRunner.executeDueActionsRepeatedly();
     verify(action).execute(scheduledTime, timeProvider.getTimeInSeconds());
   }
 }
