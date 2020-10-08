@@ -13,14 +13,6 @@
 
 package tech.pegasys.teku.core.stategenerator;
 
-import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.hyperledger.besu.plugin.services.metrics.Counter;
-import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.collections.LimitedMap;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -31,6 +23,13 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntSupplier;
 import java.util.stream.Stream;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 
 public class CachingTaskQueue<K, V> {
 
@@ -156,18 +155,6 @@ public class CachingTaskQueue<K, V> {
     return Optional.ofNullable(cache.get(key));
   }
 
-  public void cache(final K key, final V value) {
-    cache.put(key, value);
-  }
-
-  public void cacheAll(final Map<K, V> values) {
-    cache.putAll(values);
-  }
-
-  public void remove(final K key) {
-    cache.remove(key);
-  }
-
   private void queueTask(final CacheableTask<K, V> task) {
     queuedTasks.add(task);
     tryProcessNext();
@@ -217,6 +204,18 @@ public class CachingTaskQueue<K, V> {
               }
             })
         .reportExceptions();
+  }
+
+  public void cache(final K key, final V value) {
+    cache.put(key, value);
+  }
+
+  public void cacheAll(final Map<K, V> values) {
+    cache.putAll(values);
+  }
+
+  public void remove(final K key) {
+    cache.remove(key);
   }
 
   public interface CacheableTask<K, V> {

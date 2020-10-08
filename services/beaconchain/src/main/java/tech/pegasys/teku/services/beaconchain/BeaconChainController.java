@@ -13,12 +13,26 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
+import static tech.pegasys.teku.core.ForkChoiceUtil.on_tick;
+import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
+import java.io.IOException;
+import java.net.BindException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Duration;
+import java.util.Objects;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -105,21 +119,6 @@ import tech.pegasys.teku.validator.coordinator.performance.ValidatorPerformanceM
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
-import java.io.IOException;
-import java.net.BindException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Duration;
-import java.util.Objects;
-import java.util.Optional;
-
-import static tech.pegasys.teku.core.ForkChoiceUtil.on_tick;
-import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
-
 public class BeaconChainController extends Service implements TimeTickChannel {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -175,54 +174,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
   }
 
-  public void initAll() {
-    initWeakSubjectivityValidator().join();
-    initStateTransition();
-    initForkChoice();
-    initBlockImporter();
-    initCombinedChainDataClient();
-    initAttestationPool();
-    initAttesterSlashingPool();
-    initProposerSlashingPool();
-    initVoluntaryExitPool();
-    initEth1DataCache();
-    initDepositProvider();
-    initGenesisHandler();
-    initAttestationManager();
-    initP2PNetwork();
-    initSyncManager();
-    initSlotProcessor();
-    initMetrics();
-    initSyncStateTracker();
-    initPerformanceTracker();
-    initValidatorApiHandler();
-    initRestAPI();
-    initOperationsReOrgManager();
-  }
-
-  @Override
-  public void onTick() {
-    if (recentChainData.isPreGenesis()) {
-      return;
-    }
-    final UInt64 currentTime = timeProvider.getTimeInSeconds();
-    final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    on_tick(transaction, currentTime);
-    transaction.commit().join();
-
-    final UInt64 genesisTime = recentChainData.getGenesisTime();
-    if (genesisTime.isGreaterThan(currentTime)) {
-      // notify every 10 minutes
-      if (genesisTimeTracker.plus(600L).isLessThanOrEqualTo(currentTime)) {
-        genesisTimeTracker = currentTime;
-        STATUS_LOG.timeUntilGenesis(
-                genesisTime.minus(currentTime).longValue(), p2pNetwork.getPeerCount());
-      }
-    }
-
-    slotProcessor.onTick(currentTime);
-  }
-
   @Override
   protected SafeFuture<?> doStart() {
     this.eventBus.register(this);
@@ -230,19 +181,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return initialize()
         .thenCompose(
             (__) -> SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::start)));
-  }
-
-  @Override
-  protected SafeFuture<?> doStop() {
-    LOG.debug("Stopping {}", this.getClass().getSimpleName());
-    return SafeFuture.allOf(
-            SafeFuture.fromRunnable(() -> eventBus.unregister(this)),
-            SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::stop)),
-            SafeFuture.fromRunnable(() -> forkChoiceExecutor.stop()),
-            syncStateTracker.stop(),
-            syncService.stop(),
-            attestationManager.stop(),
-            p2pNetwork.stop());
   }
 
   private void startServices() {
@@ -265,6 +203,19 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                     .uncaughtException(Thread.currentThread(), error);
               }
             });
+  }
+
+  @Override
+  protected SafeFuture<?> doStop() {
+    LOG.debug("Stopping {}", this.getClass().getSimpleName());
+    return SafeFuture.allOf(
+        SafeFuture.fromRunnable(() -> eventBus.unregister(this)),
+        SafeFuture.fromRunnable(() -> beaconRestAPI.ifPresent(BeaconRestApi::stop)),
+        SafeFuture.fromRunnable(() -> forkChoiceExecutor.stop()),
+        syncStateTracker.stop(),
+        syncService.stop(),
+        attestationManager.stop(),
+        p2pNetwork.stop());
   }
 
   private SafeFuture<?> initialize() {
@@ -309,6 +260,30 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             });
   }
 
+  public void initAll() {
+    initWeakSubjectivityValidator().join();
+    initStateTransition();
+    initForkChoice();
+    initBlockImporter();
+    initCombinedChainDataClient();
+    initAttestationPool();
+    initAttesterSlashingPool();
+    initProposerSlashingPool();
+    initVoluntaryExitPool();
+    initEth1DataCache();
+    initDepositProvider();
+    initGenesisHandler();
+    initAttestationManager();
+    initP2PNetwork();
+    initSyncManager();
+    initSlotProcessor();
+    initMetrics();
+    initSyncStateTracker();
+    initPerformanceTracker();
+    initValidatorApiHandler();
+    initRestAPI();
+    initOperationsReOrgManager();
+  }
 
   private void initPerformanceTracker() {
     LOG.debug("BeaconChainController.initPerformanceTracker()");
@@ -411,7 +386,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     forkChoice = new ForkChoice(forkChoiceExecutor, recentChainData, stateTransition);
   }
 
-  private void initMetrics() {
+  public void initMetrics() {
     LOG.debug("BeaconChainController.initMetrics()");
     eventChannels.subscribe(
         SlotEventsChannel.class,
@@ -419,7 +394,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             recentChainData, slotProcessor.getNodeSlot(), metricsSystem, p2pNetwork));
   }
 
-  private void initDepositProvider() {
+  public void initDepositProvider() {
     LOG.debug("BeaconChainController.initDepositProvider()");
     depositProvider = new DepositProvider(recentChainData, eth1DataCache);
     eventChannels
@@ -443,7 +418,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             Duration.ofSeconds(config.getStartupTimeoutSeconds()));
   }
 
-  private void initValidatorApiHandler() {
+  public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
     final BlockFactory blockFactory =
         new BlockFactory(
@@ -497,7 +472,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         .subscribe(FinalizedCheckpointChannel.class, pendingAttestations);
   }
 
-  private void initP2PNetwork() {
+  public void initP2PNetwork() {
     LOG.debug("BeaconChainController.initP2PNetwork()");
     if (!config.isP2pEnabled()) {
       this.p2pNetwork = new NoOpEth2Network();
@@ -608,14 +583,14 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     return weakSubjectivityValidator;
   }
 
-  private void initAttestationPool() {
+  public void initAttestationPool() {
     LOG.debug("BeaconChainController.initAttestationPool()");
     attestationPool = new AggregatingAttestationPool(new AttestationDataStateTransitionValidator());
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
     blockImporter.subscribeToVerifiedBlockAttestations(attestationPool::removeAll);
   }
 
-  private void initRestAPI() {
+  public void initRestAPI() {
     LOG.debug("BeaconChainController.initRestAPI()");
     DataProvider dataProvider =
         new DataProvider(
@@ -633,13 +608,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     }
   }
 
-  private void initBlockImporter() {
+  public void initBlockImporter() {
     LOG.debug("BeaconChainController.initBlockImporter()");
     blockImporter =
         new BlockImporter(recentChainData, forkChoice, weakSubjectivityValidator, eventBus);
   }
 
-  private void initSyncManager() {
+  public void initSyncManager() {
     LOG.debug("BeaconChainController.initSyncManager()");
     if (!config.isP2pEnabled()) {
       syncService = new NoopSyncService();
@@ -750,5 +725,28 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                   "Encountered an error while trying to validate latest finalized checkpoint", err);
               throw new RuntimeException(err);
             });
+  }
+
+  @Override
+  public void onTick() {
+    if (recentChainData.isPreGenesis()) {
+      return;
+    }
+    final UInt64 currentTime = timeProvider.getTimeInSeconds();
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    on_tick(transaction, currentTime);
+    transaction.commit().join();
+
+    final UInt64 genesisTime = recentChainData.getGenesisTime();
+    if (genesisTime.isGreaterThan(currentTime)) {
+      // notify every 10 minutes
+      if (genesisTimeTracker.plus(600L).isLessThanOrEqualTo(currentTime)) {
+        genesisTimeTracker = currentTime;
+        STATUS_LOG.timeUntilGenesis(
+            genesisTime.minus(currentTime).longValue(), p2pNetwork.getPeerCount());
+      }
+    }
+
+    slotProcessor.onTick(currentTime);
   }
 }

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.bls.impl.blst;
 
+import java.util.Objects;
+import java.util.Random;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.impl.SecretKey;
@@ -21,9 +23,6 @@ import tech.pegasys.teku.bls.impl.blst.swig.blst;
 import tech.pegasys.teku.bls.impl.blst.swig.p1;
 import tech.pegasys.teku.bls.impl.blst.swig.p1_affine;
 import tech.pegasys.teku.bls.impl.blst.swig.scalar;
-
-import java.util.Objects;
-import java.util.Random;
 
 public class BlstSecretKey implements SecretKey {
   static final BlstSecretKey ZERO_SK = BlstSecretKey.fromBytesRaw(Bytes32.ZERO);
@@ -34,6 +33,12 @@ public class BlstSecretKey implements SecretKey {
     } else {
       return fromBytesRaw(bytes);
     }
+  }
+
+  private static BlstSecretKey fromBytesRaw(Bytes32 bytes) {
+    scalar scalarVal = new scalar();
+    blst.scalar_from_bendian(scalarVal, bytes.toArrayUnsafe());
+    return new BlstSecretKey(scalarVal);
   }
 
   public static BlstSecretKey generateNew(Random random) {
@@ -97,6 +102,16 @@ public class BlstSecretKey implements SecretKey {
     }
   }
 
+  scalar getScalarVal() {
+    if (destroyed) throw new IllegalStateException("Private key was destroyed");
+    return scalarVal;
+  }
+
+  @SuppressWarnings("ReferenceEquality")
+  boolean isZero() {
+    return this == ZERO_SK;
+  }
+
   @Override
   public int hashCode() {
     return toBytes().hashCode();
@@ -113,22 +128,5 @@ public class BlstSecretKey implements SecretKey {
 
     BlstSecretKey that = (BlstSecretKey) o;
     return Objects.equals(toBytes(), that.toBytes());
-  }
-
-
-  scalar getScalarVal() {
-    if (destroyed) throw new IllegalStateException("Private key was destroyed");
-    return scalarVal;
-  }
-
-  @SuppressWarnings("ReferenceEquality")
-  boolean isZero() {
-    return this == ZERO_SK;
-  }
-
-  private static BlstSecretKey fromBytesRaw(Bytes32 bytes) {
-    scalar scalarVal = new scalar();
-    blst.scalar_from_bendian(scalarVal, bytes.toArrayUnsafe());
-    return new BlstSecretKey(scalarVal);
   }
 }

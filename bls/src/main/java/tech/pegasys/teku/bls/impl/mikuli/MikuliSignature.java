@@ -13,21 +13,20 @@
 
 package tech.pegasys.teku.bls.impl.mikuli;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.toList;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Suppliers;
-import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.bls.impl.PublicKey;
-import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
-import tech.pegasys.teku.bls.impl.Signature;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.toList;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.bls.impl.PublicKey;
+import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
+import tech.pegasys.teku.bls.impl.Signature;
 
 /** This class represents a Signature on G2 */
 public class MikuliSignature implements Signature {
@@ -35,11 +34,6 @@ public class MikuliSignature implements Signature {
   private static final int COMPRESSED_SIG_SIZE = 96;
   private static final int UNCOMPRESSED_SIG_SIZE = 192;
   private static final G1Point g1GeneratorNeg = Util.g1Generator.neg();
-
-  // Sometimes we are dealing with random, invalid signature points, e.g. when testing.
-  // Let's only interpret the raw data into a point when necessary to do so.
-  private final Bytes rawData;
-  private final Supplier<G2Point> point;
 
   /**
    * Aggregates a list of Signatures, returning the signature that corresponds to G2 point at
@@ -91,6 +85,13 @@ public class MikuliSignature implements Signature {
     return new MikuliSignature(bytes);
   }
 
+  static MikuliSignature fromSignature(Signature signature) {
+    if (signature instanceof MikuliSignature) {
+      return (MikuliSignature) signature;
+    } else {
+      return MikuliSignature.fromBytesCompressed(signature.toBytesCompressed());
+    }
+  }
 
   /**
    * Create a random signature for testing
@@ -103,6 +104,11 @@ public class MikuliSignature implements Signature {
     byte[] message = "Hello, world!".getBytes(UTF_8);
     return MikuliBLS12381.sign(keyPair.getSecretKey(), Bytes.wrap(message));
   }
+
+  // Sometimes we are dealing with random, invalid signature points, e.g. when testing.
+  // Let's only interpret the raw data into a point when necessary to do so.
+  private final Bytes rawData;
+  private final Supplier<G2Point> point;
 
   /**
    * Construct signature from a given G2 point.
@@ -153,6 +159,21 @@ public class MikuliSignature implements Signature {
   @Override
   public boolean verify(PublicKey publicKey, Bytes message, Bytes dst) {
     return MikuliBLS12381.coreVerify(MikuliPublicKey.fromPublicKey(publicKey), message, this, dst);
+  }
+
+  private G2Point parseSignatureBytes(Bytes signatureBytes) {
+    if (signatureBytes.size() == COMPRESSED_SIG_SIZE) {
+      return G2Point.fromBytesCompressed(signatureBytes);
+    } else if (signatureBytes.size() == UNCOMPRESSED_SIG_SIZE) {
+      return G2Point.fromBytes(signatureBytes);
+    }
+    throw new RuntimeException(
+        "Expected either "
+            + COMPRESSED_SIG_SIZE
+            + " or "
+            + UNCOMPRESSED_SIG_SIZE
+            + " bytes for signature, but found "
+            + signatureBytes.size());
   }
 
   /**
@@ -266,28 +287,5 @@ public class MikuliSignature implements Signature {
       // Invalid points are only equal if they have the exact some data.
       return false;
     }
-  }
-
-  static MikuliSignature fromSignature(Signature signature) {
-    if (signature instanceof MikuliSignature) {
-      return (MikuliSignature) signature;
-    } else {
-      return MikuliSignature.fromBytesCompressed(signature.toBytesCompressed());
-    }
-  }
-
-  private G2Point parseSignatureBytes(Bytes signatureBytes) {
-    if (signatureBytes.size() == COMPRESSED_SIG_SIZE) {
-      return G2Point.fromBytesCompressed(signatureBytes);
-    } else if (signatureBytes.size() == UNCOMPRESSED_SIG_SIZE) {
-      return G2Point.fromBytes(signatureBytes);
-    }
-    throw new RuntimeException(
-            "Expected either "
-                    + COMPRESSED_SIG_SIZE
-                    + " or "
-                    + UNCOMPRESSED_SIG_SIZE
-                    + " bytes for signature, but found "
-                    + signatureBytes.size());
   }
 }

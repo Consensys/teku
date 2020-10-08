@@ -13,7 +13,15 @@
 
 package tech.pegasys.teku.datastructures.util;
 
+import static java.lang.Long.max;
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
+
 import com.google.common.annotations.VisibleForTesting;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.crypto.Hash;
@@ -21,18 +29,10 @@ import org.apache.tuweni.ssz.SSZ;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
+import tech.pegasys.teku.ssz.SSZTypes.Bitvector;
 import tech.pegasys.teku.ssz.SSZTypes.SSZImmutableCollection;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static java.lang.Long.max;
-import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 /** This class is a collection of tree hash root convenience methods */
 public final class HashTreeUtil {
@@ -61,6 +61,17 @@ public final class HashTreeUtil {
 
   private static List<Bytes32> zerohashes = getZerohashes();
 
+  private static List<Bytes32> getZerohashes() {
+    List<Bytes32> zerohashes = new ArrayList<>();
+    zerohashes.add(Bytes32.ZERO);
+    IntStream.range(1, 100)
+        .forEach(
+            i ->
+                zerohashes.add(
+                    Hash.sha2_256(
+                        Bytes.concatenate(zerohashes.get(i - 1), zerohashes.get(i - 1)))));
+    return zerohashes;
+  }
 
   // BYTES_PER_CHUNK is rather tightly coupled to the value 32 due to the assumption that it fits in
   // the Byte32 type. Use care if this ever has to change.
@@ -205,26 +216,6 @@ public final class HashTreeUtil {
     return tmp.get(max_depth);
   }
 
-  /**
-   * Create the hash tree root of a SSZ Bitlist.
-   *
-   * @return The SSZ tree root hash of the values.
-   * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
-   *     Spec v0.5.1</a>
-   */
-  public static Bytes32 hash_tree_root_bitlist(Bitlist bitlist) {
-    return mix_in_length(
-            merkleize(
-                    bitfield_bytes(bitlist.serialize()),
-                    chunk_count(SSZTypes.BITLIST, bitlist.getMaxSize())),
-            bitlist.getCurrentSize());
-  }
-
-  public static Bytes32 merkleize(List<Bytes32> sszChunks) {
-    return merkleize(sszChunks, sszChunks.size());
-  }
-
   static void merge(Bytes32 h, int i, List<Bytes32> tmp, long count, int depth) {
     int j = 0;
     while (true) {
@@ -240,6 +231,10 @@ public final class HashTreeUtil {
       j += 1;
     }
     tmp.set(j, h);
+  }
+
+  public static Bytes32 merkleize(List<Bytes32> sszChunks) {
+    return merkleize(sszChunks, sszChunks.size());
   }
 
   /**
@@ -272,6 +267,36 @@ public final class HashTreeUtil {
     return hash_tree_root_basic_type(bytes);
   }
 
+  /**
+   * Create the hash tree root of a SSZ Bitlist.
+   *
+   * @return The SSZ tree root hash of the values.
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
+   *     Spec v0.5.1</a>
+   */
+  public static Bytes32 hash_tree_root_bitlist(Bitlist bitlist) {
+    return mix_in_length(
+        merkleize(
+            bitfield_bytes(bitlist.serialize()),
+            chunk_count(SSZTypes.BITLIST, bitlist.getMaxSize())),
+        bitlist.getCurrentSize());
+  }
+
+  /**
+   * Create the hash tree root of a SSZ Bitvector.
+   *
+   * @param bitvector One Bytes value or a list of homogeneous Bytes values.
+   * @return The SSZ tree root hash of the values.
+   * @see <a
+   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.5.1/specs/simple-serialize.md">SSZ
+   *     Spec v0.5.1</a>
+   */
+  public static Bytes32 hash_tree_root_bitvector(Bitvector bitvector) {
+    return merkleize(
+        separateIntoChunks(bitvector.serialize()),
+        chunk_count(SSZTypes.BITVECTOR, bitvector.getSize()));
+  }
 
   /**
    * Create the hash tree root of a list of values of basic SSZ types. This is only to be used for
@@ -431,17 +456,5 @@ public final class HashTreeUtil {
   @VisibleForTesting
   static boolean is_power_of_two(int value) {
     return value > 0 && (value & (value - 1)) == 0;
-  }
-
-  private static List<Bytes32> getZerohashes() {
-    List<Bytes32> zerohashes = new ArrayList<>();
-    zerohashes.add(Bytes32.ZERO);
-    IntStream.range(1, 100)
-            .forEach(
-                    i ->
-                            zerohashes.add(
-                                    Hash.sha2_256(
-                                            Bytes.concatenate(zerohashes.get(i - 1), zerohashes.get(i - 1)))));
-    return zerohashes;
   }
 }

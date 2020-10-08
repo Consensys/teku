@@ -13,7 +13,14 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
+import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
+
 import com.google.common.base.Throwables;
+import java.util.List;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -33,14 +40,6 @@ import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceExecutor.ForkChoiceTask;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
-
-import java.util.List;
-import java.util.Optional;
-
-import static tech.pegasys.teku.core.ForkChoiceUtil.on_attestation;
-import static tech.pegasys.teku.core.ForkChoiceUtil.on_block;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 public class ForkChoice {
   private static final Logger LOG = LogManager.getLogger();
@@ -65,12 +64,63 @@ public class ForkChoice {
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
   }
 
+  private void initializeProtoArrayForkChoice() {
+    processHead();
+  }
+
   public void processHead() {
     processHead(Optional.empty(), false);
   }
 
   public void processHead(UInt64 nodeSlot, boolean syncing) {
     processHead(Optional.of(nodeSlot), syncing);
+  }
+
+  private void processHead(Optional<UInt64> nodeSlot, boolean syncing) {
+    final Checkpoint retrievedJustifiedCheckpoint =
+        recentChainData.getStore().getJustifiedCheckpoint();
+    recentChainData
+        .retrieveCheckpointState(retrievedJustifiedCheckpoint)
+        .thenCompose(
+            justifiedCheckpointState ->
+                onForkChoiceThread(
+                    () -> {
+                      final Checkpoint finalizedCheckpoint =
+                          recentChainData.getStore().getFinalizedCheckpoint();
+                      final Checkpoint justifiedCheckpoint =
+                          recentChainData.getStore().getJustifiedCheckpoint();
+                      if (!justifiedCheckpoint.equals(retrievedJustifiedCheckpoint)) {
+                        LOG.info(
+                            "Skipping head block update as justified checkpoint was updated while loading checkpoint state. Was {} ({}) but now {} ({})",
+                            retrievedJustifiedCheckpoint.getEpoch(),
+                            retrievedJustifiedCheckpoint.getRoot(),
+                            justifiedCheckpoint.getEpoch(),
+                            justifiedCheckpoint.getRoot());
+                        return SafeFuture.COMPLETE;
+                      }
+                      final StoreTransaction transaction = recentChainData.startStoreTransaction();
+                      final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+                      Bytes32 headBlockRoot =
+                          forkChoiceStrategy.findHead(
+                              transaction,
+                              finalizedCheckpoint,
+                              justifiedCheckpoint,
+                              justifiedCheckpointState.orElseThrow());
+
+                      recentChainData.updateHead(
+                          headBlockRoot,
+                          nodeSlot.orElse(
+                              forkChoiceStrategy
+                                  .blockSlot(headBlockRoot)
+                                  .orElseThrow(
+                                      () ->
+                                          new IllegalStateException(
+                                              "Unable to retrieve the slot of fork choice head: "
+                                                  + headBlockRoot))),
+                          syncing);
+                      return transaction.commit();
+                    }))
+        .join();
   }
 
   public SafeFuture<BlockImportResult> onBlock(
@@ -191,57 +241,6 @@ public class ForkChoice {
               return transaction.commit();
             })
         .reportExceptions();
-  }
-
-  private void processHead(Optional<UInt64> nodeSlot, boolean syncing) {
-    final Checkpoint retrievedJustifiedCheckpoint =
-            recentChainData.getStore().getJustifiedCheckpoint();
-    recentChainData
-            .retrieveCheckpointState(retrievedJustifiedCheckpoint)
-            .thenCompose(
-                    justifiedCheckpointState ->
-                            onForkChoiceThread(
-                                    () -> {
-                                      final Checkpoint finalizedCheckpoint =
-                                              recentChainData.getStore().getFinalizedCheckpoint();
-                                      final Checkpoint justifiedCheckpoint =
-                                              recentChainData.getStore().getJustifiedCheckpoint();
-                                      if (!justifiedCheckpoint.equals(retrievedJustifiedCheckpoint)) {
-                                        LOG.info(
-                                                "Skipping head block update as justified checkpoint was updated while loading checkpoint state. Was {} ({}) but now {} ({})",
-                                                retrievedJustifiedCheckpoint.getEpoch(),
-                                                retrievedJustifiedCheckpoint.getRoot(),
-                                                justifiedCheckpoint.getEpoch(),
-                                                justifiedCheckpoint.getRoot());
-                                        return SafeFuture.COMPLETE;
-                                      }
-                                      final StoreTransaction transaction = recentChainData.startStoreTransaction();
-                                      final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
-                                      Bytes32 headBlockRoot =
-                                              forkChoiceStrategy.findHead(
-                                                      transaction,
-                                                      finalizedCheckpoint,
-                                                      justifiedCheckpoint,
-                                                      justifiedCheckpointState.orElseThrow());
-
-                                      recentChainData.updateHead(
-                                              headBlockRoot,
-                                              nodeSlot.orElse(
-                                                      forkChoiceStrategy
-                                                              .blockSlot(headBlockRoot)
-                                                              .orElseThrow(
-                                                                      () ->
-                                                                              new IllegalStateException(
-                                                                                      "Unable to retrieve the slot of fork choice head: "
-                                                                                              + headBlockRoot))),
-                                              syncing);
-                                      return transaction.commit();
-                                    }))
-            .join();
-  }
-
-  private void initializeProtoArrayForkChoice() {
-    processHead();
   }
 
   private ForkChoiceStrategy getForkChoiceStrategy() {
