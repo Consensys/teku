@@ -13,31 +13,12 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.Arrays.asList;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.libp2p.core.PeerId;
 import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -51,10 +32,30 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateConfig;
 import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static org.assertj.core.api.Assertions.assertThat;
+
 public class TekuNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
 
-  public static final String TEKU_DOCKER_IMAGE = "pegasyseng/teku:develop";
+  public static final String TEKU_DOCKER_IMAGE = "quorumengineering/teku:develop";
   private static final int REST_API_PORT = 9051;
   private static final String CONFIG_FILE_PATH = "/config.yaml";
   protected static final String WORKING_DIRECTORY = "/opt/teku/";
