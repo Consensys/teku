@@ -46,6 +46,7 @@ import tech.pegasys.teku.core.operationvalidators.AttesterSlashingStateTransitio
 import tech.pegasys.teku.core.operationvalidators.ProposerSlashingStateTransitionValidator;
 import tech.pegasys.teku.core.operationvalidators.VoluntaryExitStateTransitionValidator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.interop.InteropStartupUtil;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
@@ -97,6 +98,10 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncStateTracker;
+import tech.pegasys.teku.sync.gossip.BlockManager;
+import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
+import tech.pegasys.teku.sync.gossip.NoopRecentBlockFetcher;
+import tech.pegasys.teku.sync.gossip.RecentBlockFetcher;
 import tech.pegasys.teku.sync.multipeer.MultipeerSyncService;
 import tech.pegasys.teku.sync.noop.NoopSyncService;
 import tech.pegasys.teku.sync.singlepeer.SinglePeerSyncServiceFactory;
@@ -160,6 +165,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private SyncStateTracker syncStateTracker;
   private UInt64 genesisTimeTracker = ZERO;
   private ForkChoiceExecutor forkChoiceExecutor;
+  private BlockManager blockManager;
 
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
@@ -189,6 +195,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     SafeFuture.allOfFailFast(
             attestationManager.start(),
             p2pNetwork.start(),
+            blockManager.start(),
             syncService.start(),
             syncStateTracker.start())
         .finish(
@@ -216,6 +223,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         SafeFuture.fromRunnable(() -> forkChoiceExecutor.stop()),
         syncStateTracker.stop(),
         syncService.stop(),
+        blockManager.stop(),
         attestationManager.stop(),
         p2pNetwork.stop());
   }
@@ -277,6 +285,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initGenesisHandler();
     initAttestationManager();
     initP2PNetwork();
+    initBlockManager();
     initSyncManager();
     initSlotProcessor();
     initMetrics();
@@ -618,6 +627,30 @@ public class BeaconChainController extends Service implements TimeTickChannel {
         new BlockImporter(recentChainData, forkChoice, weakSubjectivityValidator, eventBus);
   }
 
+  public void initBlockManager() {
+    LOG.debug("BeaconChainController.initBlockManager()");
+    final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
+    final FutureItems<SignedBeaconBlock> futureBlocks =
+        new FutureItems<>(SignedBeaconBlock::getSlot);
+    final RecentBlockFetcher recentBlockFetcher;
+    if (!config.isP2pEnabled()) {
+      recentBlockFetcher = new NoopRecentBlockFetcher();
+    } else {
+      recentBlockFetcher = FetchRecentBlocksService.create(asyncRunner, p2pNetwork, pendingBlocks);
+    }
+    blockManager =
+        BlockManager.create(
+            eventBus,
+            pendingBlocks,
+            futureBlocks,
+            recentBlockFetcher,
+            recentChainData,
+            blockImporter);
+    eventChannels
+        .subscribe(SlotEventsChannel.class, blockManager)
+        .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
+  }
+
   public void initSyncManager() {
     LOG.debug("BeaconChainController.initSyncManager()");
     if (!config.isP2pEnabled()) {
@@ -628,21 +661,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               asyncRunnerFactory,
               asyncRunner,
               timeProvider,
-              eventBus,
-              eventChannels,
               recentChainData,
               p2pNetwork,
               blockImporter);
     } else {
       syncService =
           SinglePeerSyncServiceFactory.create(
-              metricsSystem,
-              asyncRunner,
-              eventChannels,
-              eventBus,
-              p2pNetwork,
-              recentChainData,
-              blockImporter);
+              metricsSystem, asyncRunner, p2pNetwork, recentChainData, blockImporter);
     }
   }
 
