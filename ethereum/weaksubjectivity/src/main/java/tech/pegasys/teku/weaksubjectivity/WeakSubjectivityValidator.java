@@ -22,7 +22,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,6 +30,8 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.time.Throttler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -43,15 +44,16 @@ public class WeakSubjectivityValidator {
   private static final Logger LOG = LogManager.getLogger();
   // About a week with mainnet config
   static final long MAX_SUPPRESSED_EPOCHS = 1575;
-  private static final long SUPPRESSION_WARNING_PERIOD_IN_SLOTS = 10;
 
   private final WeakSubjectivityCalculator calculator;
   private final List<WeakSubjectivityViolationPolicy> violationPolicies;
 
   private final WeakSubjectivityConfig config;
   private volatile Optional<UInt64> suppressWSPeriodErrorsUntilEpoch = Optional.empty();
-  private final AtomicReference<UInt64> lastSlotWithErrorLogged =
-      new AtomicReference<>(UInt64.ZERO);
+  private final Throttler<StatusLogger> wsChecksSuppressedLogger =
+      new Throttler<>(STATUS_LOG, UInt64.valueOf(10));
+  private final Throttler<StatusLogger> deferValidationLogger =
+      new Throttler<>(STATUS_LOG, UInt64.valueOf(10));
 
   WeakSubjectivityValidator(
       final WeakSubjectivityConfig config,
@@ -123,10 +125,12 @@ public class WeakSubjectivityValidator {
       final CheckpointState latestFinalizedCheckpoint, final UInt64 currentSlot) {
     if (isPriorToWSCheckpoint(latestFinalizedCheckpoint)) {
       // Defer validation until we reach the weakSubjectivity checkpoint
-      LOG.debug(
-          "Latest finalized checkpoint at epoch {} is prior to weak subjectivity checkpoint at epoch {}. Defer validation.",
-          latestFinalizedCheckpoint.getEpoch(),
-          config.getWeakSubjectivityCheckpoint().orElseThrow().getEpoch());
+      final UInt64 finalizedEpoch = latestFinalizedCheckpoint.getEpoch();
+      final UInt64 wsEpoch = config.getWeakSubjectivityCheckpoint().orElseThrow().getEpoch();
+      deferValidationLogger.invoke(
+          currentSlot,
+          l ->
+              l.warnWeakSubjectivityFinalizedCheckpointValidationDeferred(finalizedEpoch, wsEpoch));
       return;
     }
 
@@ -147,10 +151,9 @@ public class WeakSubjectivityValidator {
     final boolean withinWSPeriod = isWithinWSPeriod(latestFinalizedCheckpoint, currentSlot);
     if (!withinWSPeriod && !shouldSuppressErrors) {
       handleFinalizedCheckpointOutsideWSPeriod(latestFinalizedCheckpoint, currentSlot);
-    } else if (!withinWSPeriod
-        && currentSlot.mod(SUPPRESSION_WARNING_PERIOD_IN_SLOTS).equals(UInt64.ZERO)
-        && getAndSetLastLoggedSlot(currentSlot).isLessThan(currentSlot)) {
-      STATUS_LOG.warnWeakSubjectivityChecksSuppressed(suppressionEpoch.orElseThrow());
+    } else if (!withinWSPeriod) {
+      wsChecksSuppressedLogger.invoke(
+          currentSlot, l -> l.warnWeakSubjectivityChecksSuppressed(suppressionEpoch.orElseThrow()));
     }
   }
 
@@ -221,16 +224,6 @@ public class WeakSubjectivityValidator {
     for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
       policy.onChainInconsistentWithWeakSubjectivityCheckpoint(wsCheckpoint, inconsistentBlock);
     }
-  }
-
-  private UInt64 getAndSetLastLoggedSlot(final UInt64 newSlot) {
-    return lastSlotWithErrorLogged.getAndUpdate(
-        last -> {
-          if (newSlot.isGreaterThan(last)) {
-            return newSlot;
-          }
-          return last;
-        });
   }
 
   @VisibleForTesting

@@ -195,4 +195,12 @@ public class StatusLogger {
   public void warnWeakSubjectivityChecksSuppressed(final UInt64 untilEpoch) {
     log.warn("Suppressing weak subjectivity errors until epoch {}", untilEpoch);
   }
+
+  public void warnWeakSubjectivityFinalizedCheckpointValidationDeferred(
+      final UInt64 finalizedEpoch, final UInt64 wsCheckpointEpoch) {
+    log.warn(
+        "Deferring finalized checkpoint validation prior to weak subjectivity checkpoint at epoch {} for finalized checkpoint at epoch {}",
+        wsCheckpointEpoch,
+        finalizedEpoch);
+  }
 }
