@@ -26,6 +26,7 @@ import io.javalin.core.JavalinServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
@@ -63,6 +64,7 @@ public class BeaconRestApiWithSwaggerTest {
             attestationPool),
         config,
         eventChannels,
+        new StubAsyncRunner(),
         app);
   }
 

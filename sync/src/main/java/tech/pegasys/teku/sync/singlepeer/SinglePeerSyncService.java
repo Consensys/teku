@@ -18,21 +18,15 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncingStatus;
-import tech.pegasys.teku.sync.gossip.BlockManager;
 
 public class SinglePeerSyncService extends Service implements SyncService {
 
   private final SyncManager syncManager;
-  private final BlockManager blockManager;
   private final RecentChainData storageClient;
 
-  public SinglePeerSyncService(
-      final BlockManager blockManager,
-      final SyncManager syncManager,
-      final RecentChainData storageClient) {
+  public SinglePeerSyncService(final SyncManager syncManager, final RecentChainData storageClient) {
     this.storageClient = storageClient;
     this.syncManager = syncManager;
-    this.blockManager = blockManager;
   }
 
   @Override
@@ -40,17 +34,13 @@ public class SinglePeerSyncService extends Service implements SyncService {
     // We shouldn't start syncing until we have reached genesis.
     // There are also no valid blocks until we've reached genesis so no point in gossipping and
     // queuing them
-    storageClient.subscribeStoreInitialized(
-        () -> {
-          syncManager.start().reportExceptions();
-          blockManager.start().reportExceptions();
-        });
+    storageClient.subscribeStoreInitialized(() -> syncManager.start().reportExceptions());
     return SafeFuture.COMPLETE;
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.allOf(syncManager.stop(), blockManager.stop());
+    return syncManager.stop();
   }
 
   @Override

@@ -11,10 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v1;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -43,6 +42,7 @@ import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -81,6 +81,7 @@ public class EventSubscriptionManagerTest {
   private final ServletResponse srvResponse = mock(ServletResponse.class);
   private final ServletOutputStream outputStream = mock(ServletOutputStream.class);
   private final Context ctx = new Context(req, res, Collections.emptyMap());
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private SseClient client1;
 
   private EventSubscriptionManager manager;
@@ -90,7 +91,7 @@ public class EventSubscriptionManagerTest {
     when(req.getAsyncContext()).thenReturn(async);
     when(async.getResponse()).thenReturn(srvResponse);
     when(srvResponse.getOutputStream()).thenReturn(outputStream);
-    manager = new EventSubscriptionManager(chainDataProvider, jsonProvider, channels);
+    manager = new EventSubscriptionManager(chainDataProvider, jsonProvider, asyncRunner, channels);
     client1 = new SseClient(ctx);
   }
 
@@ -192,25 +193,10 @@ public class EventSubscriptionManagerTest {
     verify(outputStream, never()).print(anyString());
   }
 
-  @Test
-  void shouldParseEventTypes() {
-    List<EventSubscriptionManager.EventType> topics =
-        manager.getTopics(List.of("head", "chain_reorg", "finalized_checkpoint"));
-    assertThat(topics)
-        .containsExactlyInAnyOrder(
-            EventSubscriptionManager.EventType.head,
-            EventSubscriptionManager.EventType.chain_reorg,
-            EventSubscriptionManager.EventType.finalized_checkpoint);
-  }
-
-  @Test
-  void shouldFailToParseInvalidEvents() {
-    assertThrows(IllegalArgumentException.class, () -> manager.getTopics(List.of("head1")));
-  }
-
   private void triggerFinalizedCheckpointEvent() {
     manager.onNewFinalizedCheckpoint(
         new Checkpoint(sampleCheckpointEvent.epoch, sampleCheckpointEvent.block));
+    asyncRunner.executeQueuedActions();
   }
 
   private void triggerReorgEvent() {
@@ -224,10 +210,12 @@ public class EventSubscriptionManagerTest {
                 chainReorgEvent.oldHeadBlock,
                 chainReorgEvent.oldHeadState,
                 chainReorgEvent.slot.minus(depth))));
+    asyncRunner.executeQueuedActions();
   }
 
   private void triggerHeadEvent() {
     manager.chainHeadUpdated(
         headEvent.slot, headEvent.state, headEvent.block, false, Optional.empty());
+    asyncRunner.executeQueuedActions();
   }
 }

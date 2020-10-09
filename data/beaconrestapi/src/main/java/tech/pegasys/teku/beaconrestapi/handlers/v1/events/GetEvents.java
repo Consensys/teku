@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v1;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -37,6 +37,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.provider.JsonProvider;
 
@@ -49,16 +50,19 @@ public class GetEvents implements Handler {
   public GetEvents(
       final DataProvider dataProvider,
       final JsonProvider jsonProvider,
-      final EventChannels eventChannels) {
-    this(dataProvider.getChainDataProvider(), jsonProvider, eventChannels);
+      final EventChannels eventChannels,
+      final AsyncRunner asyncRunner) {
+    this(dataProvider.getChainDataProvider(), jsonProvider, eventChannels, asyncRunner);
   }
 
   GetEvents(
       final ChainDataProvider provider,
       final JsonProvider jsonProvider,
-      final EventChannels eventChannels) {
+      final EventChannels eventChannels,
+      final AsyncRunner asyncRunner) {
     this.jsonProvider = jsonProvider;
-    eventSubscriptionManager = new EventSubscriptionManager(provider, jsonProvider, eventChannels);
+    eventSubscriptionManager =
+        new EventSubscriptionManager(provider, jsonProvider, asyncRunner, eventChannels);
   }
 
   @OpenApi(

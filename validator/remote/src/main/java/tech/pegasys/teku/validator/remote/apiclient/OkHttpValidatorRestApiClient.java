@@ -28,7 +28,6 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SU
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_PERSISTENT_SUBNETS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -77,12 +76,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   private final OkHttpClient httpClient;
   private final HttpUrl baseEndpoint;
 
-  public OkHttpValidatorRestApiClient(final String baseEndpoint) {
-    this(HttpUrl.parse(baseEndpoint), new OkHttpClient());
-  }
-
-  @VisibleForTesting
-  OkHttpValidatorRestApiClient(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
+  public OkHttpValidatorRestApiClient(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
     this.baseEndpoint = baseEndpoint;
     this.httpClient = okHttpClient;
   }
@@ -262,8 +256,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
           }
       }
     } catch (IOException e) {
-      LOG.error("Error communicating with Beacon Node API", e);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Error communicating with Beacon Node API: " + e.getMessage(), e);
     }
   }
 

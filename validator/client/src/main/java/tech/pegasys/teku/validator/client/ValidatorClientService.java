@@ -21,43 +21,34 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
+import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.ValidatorDutyFactory;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
-import tech.pegasys.teku.validator.client.metrics.MetricRecordingValidatorApiChannel;
-import tech.pegasys.teku.validator.client.time.GenesisTimeProvider;
-import tech.pegasys.teku.validator.client.time.TimeBasedEventAdapter;
-import tech.pegasys.teku.validator.eventadapter.BeaconChainEventAdapter;
-import tech.pegasys.teku.validator.eventadapter.EventChannelBeaconChainEventAdapter;
-import tech.pegasys.teku.validator.eventadapter.IndependentTimerEventChannelEventAdapter;
-import tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler;
-import tech.pegasys.teku.validator.remote.WebSocketBeaconChainEventAdapter;
+import tech.pegasys.teku.validator.eventadapter.InProcessBeaconNodeApi;
+import tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi;
 
 public class ValidatorClientService extends Service {
-
-  private static final boolean USE_INDEPENDENT_TIMER = false;
-
   private final EventChannels eventChannels;
   private final ValidatorTimingChannel attestationTimingChannel;
   private final ValidatorTimingChannel blockProductionTimingChannel;
-  private final BeaconChainEventAdapter beaconChainEventAdapter;
+  private final BeaconNodeApi beaconNodeApi;
 
   private ValidatorClientService(
       final EventChannels eventChannels,
       final ValidatorTimingChannel attestationTimingChannel,
       final ValidatorTimingChannel blockProductionTimingChannel,
-      final BeaconChainEventAdapter beaconChainEventAdapter) {
+      final BeaconNodeApi beaconNodeApi) {
     this.eventChannels = eventChannels;
     this.attestationTimingChannel = attestationTimingChannel;
     this.blockProductionTimingChannel = blockProductionTimingChannel;
-    this.beaconChainEventAdapter = beaconChainEventAdapter;
+    this.beaconNodeApi = beaconNodeApi;
   }
 
   public static ValidatorClientService create(
@@ -73,17 +64,14 @@ public class ValidatorClientService extends Service {
         validatorLoader.initializeValidators(
             config.getValidatorConfig(), config.getGlobalConfiguration());
 
-    final ValidatorApiChannel validatorApiChannel;
+    final BeaconNodeApi beaconNodeApi;
     if (services.getConfig().isValidatorClient()) {
-      validatorApiChannel =
-          new MetricRecordingValidatorApiChannel(
-              metricsSystem, new RemoteValidatorApiHandler(services, asyncRunner));
+      beaconNodeApi = RemoteBeaconNodeApi.create(services, asyncRunner);
     } else {
-      validatorApiChannel =
-          new MetricRecordingValidatorApiChannel(
-              metricsSystem,
-              services.getEventChannels().getPublisher(ValidatorApiChannel.class, asyncRunner));
+      beaconNodeApi = InProcessBeaconNodeApi.create(services, asyncRunner);
     }
+
+    final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
     final RetryingDutyLoader dutyLoader =
         createDutyLoader(metricsSystem, validatorApiChannel, asyncRunner, validators);
     final StableSubnetSubscriber stableSubnetSubscriber =
@@ -91,30 +79,8 @@ public class ValidatorClientService extends Service {
     final AttestationDutyScheduler attestationDutyScheduler =
         new AttestationDutyScheduler(metricsSystem, dutyLoader, stableSubnetSubscriber);
     final BlockDutyScheduler blockDutyScheduler = new BlockDutyScheduler(metricsSystem, dutyLoader);
-
-    final BeaconChainEventAdapter beaconChainEventAdapter;
-    if (services.getConfig().isValidatorClient()) {
-      beaconChainEventAdapter = new WebSocketBeaconChainEventAdapter(services);
-    } else {
-      if (USE_INDEPENDENT_TIMER) {
-        final ValidatorTimingChannel validatorTimingChannel =
-            eventChannels.getPublisher(ValidatorTimingChannel.class);
-        final TimeBasedEventAdapter timeBasedEventAdapter =
-            new TimeBasedEventAdapter(
-                new GenesisTimeProvider(asyncRunner, validatorApiChannel),
-                new RepeatingTaskScheduler(asyncRunner, services.getTimeProvider()),
-                services.getTimeProvider(),
-                validatorTimingChannel);
-        beaconChainEventAdapter =
-            new IndependentTimerEventChannelEventAdapter(
-                eventChannels, timeBasedEventAdapter, validatorTimingChannel);
-      } else {
-        beaconChainEventAdapter = new EventChannelBeaconChainEventAdapter(services);
-      }
-    }
-
     return new ValidatorClientService(
-        eventChannels, attestationDutyScheduler, blockDutyScheduler, beaconChainEventAdapter);
+        eventChannels, attestationDutyScheduler, blockDutyScheduler, beaconNodeApi);
   }
 
   private static RetryingDutyLoader createDutyLoader(
@@ -139,11 +105,11 @@ public class ValidatorClientService extends Service {
   protected SafeFuture<?> doStart() {
     eventChannels.subscribe(ValidatorTimingChannel.class, blockProductionTimingChannel);
     eventChannels.subscribe(ValidatorTimingChannel.class, attestationTimingChannel);
-    return SafeFuture.of(beaconChainEventAdapter.start());
+    return beaconNodeApi.subscribeToEvents();
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    return SafeFuture.of(beaconChainEventAdapter.stop());
+    return beaconNodeApi.unsubscribeFromEvents();
   }
 }

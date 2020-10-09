@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.blockimport;
 
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 import java.util.Optional;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
@@ -31,7 +30,6 @@ import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
-import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
@@ -61,7 +59,6 @@ public class BlockImporter {
     this.forkChoice = forkChoice;
     this.weakSubjectivityValidator = weakSubjectivityValidator;
     this.eventBus = eventBus;
-    eventBus.register(this);
   }
 
   @CheckReturnValue
@@ -126,29 +123,6 @@ public class BlockImporter {
                   "Encountered an error while trying to validate latest finalized checkpoint", err);
               throw new RuntimeException(err);
             });
-  }
-
-  @Subscribe
-  @SuppressWarnings("unused")
-  private void onBlockProposed(final ProposedBlockEvent blockProposedEvent) {
-    LOG.trace("Preparing to import proposed block: {}", formatBlock(blockProposedEvent.getBlock()));
-    importBlock(blockProposedEvent.getBlock())
-        .thenAccept(
-            (result) -> {
-              if (result.isSuccessful()) {
-                LOG.trace(
-                    "Successfully imported proposed block: {}",
-                    formatBlock(blockProposedEvent.getBlock()));
-              } else {
-                LOG.error(
-                    "Failed to import proposed block for reason "
-                        + result.getFailureReason()
-                        + ": "
-                        + formatBlock(blockProposedEvent.getBlock()),
-                    result.getFailureCause().orElse(null));
-              }
-            })
-        .reportExceptions();
   }
 
   private void notifyBlockOperationSubscribers(SignedBeaconBlock block) {
