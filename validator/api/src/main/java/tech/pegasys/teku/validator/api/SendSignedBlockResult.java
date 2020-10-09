@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.api;
 
+import com.google.common.base.MoreObjects;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 
@@ -52,5 +54,33 @@ public class SendSignedBlockResult {
 
   public boolean isPublished() {
     return published;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final SendSignedBlockResult that = (SendSignedBlockResult) o;
+    return published == that.published &&
+        Objects.equals(blockRoot, that.blockRoot) &&
+        Objects.equals(rejectionReason, that.rejectionReason);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(blockRoot, rejectionReason, published);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("blockRoot", blockRoot)
+        .add("rejectionReason", rejectionReason)
+        .add("published", published)
+        .toString();
   }
 }

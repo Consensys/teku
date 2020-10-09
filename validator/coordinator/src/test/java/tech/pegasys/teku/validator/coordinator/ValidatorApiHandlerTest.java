@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.core.results.BlockImportResult.FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED;
 import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
@@ -38,6 +39,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
@@ -67,6 +70,7 @@ import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 
@@ -515,11 +519,47 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void sendSignedBlock_shouldPostProposedBlockEvent() {
+  public void sendSignedBlock_shouldConvertSuccessfulResult() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
-    validatorApiHandler.sendSignedBlock(block);
+    when(blockImportChannel.importBlock(block))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                BlockImportResult.successful(
+                    new BlockProcessingRecord(
+                        dataStructureUtil.randomBeaconState(),
+                        block,
+                        dataStructureUtil.randomBeaconState()))));
+    final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
 
     verify(eventBus).post(new ProposedBlockEvent(block));
+    verify(blockImportChannel).importBlock(block);
+    assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
+  }
+
+  @Test
+  public void sendSignedBlock_shouldConvertFailedResult() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    when(blockImportChannel.importBlock(block))
+        .thenReturn(SafeFuture.completedFuture(BlockImportResult.FAILED_INVALID_ANCESTRY));
+    final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
+
+    verify(eventBus).post(new ProposedBlockEvent(block));
+    verify(blockImportChannel).importBlock(block);
+    assertThat(result)
+        .isCompletedWithValue(
+            SendSignedBlockResult.notImported(DOES_NOT_DESCEND_FROM_LATEST_FINALIZED.name()));
+  }
+
+  @Test
+  public void sendSignedBlock_shouldConvertKnownBlockResult() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    when(blockImportChannel.importBlock(block))
+        .thenReturn(SafeFuture.completedFuture(BlockImportResult.knownBlock(block)));
+    final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
+
+    verify(eventBus).post(new ProposedBlockEvent(block));
+    verify(blockImportChannel).importBlock(block);
+    assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
   }
 
   @Test

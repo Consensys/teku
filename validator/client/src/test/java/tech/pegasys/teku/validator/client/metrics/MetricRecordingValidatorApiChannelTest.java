@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.metrics.BeaconChainRequestCounter.RequestOutcome;
 
@@ -128,11 +129,7 @@ class MetricRecordingValidatorApiChannelTest {
             "sendAggregateAndProof",
             channel ->
                 channel.sendAggregateAndProof(dataStructureUtil.randomSignedAggregateAndProof()),
-            MetricRecordingValidatorApiChannel.PUBLISHED_AGGREGATE_COUNTER_NAME),
-        noResponseTest(
-            "sendSignedBlock",
-            channel -> channel.sendSignedBlock(dataStructureUtil.randomSignedBeaconBlock(1)),
-            MetricRecordingValidatorApiChannel.PUBLISHED_BLOCK_COUNTER_NAME));
+            MetricRecordingValidatorApiChannel.PUBLISHED_AGGREGATE_COUNTER_NAME));
   }
 
   private static Arguments noResponseTest(
@@ -175,7 +172,15 @@ class MetricRecordingValidatorApiChannelTest {
             "createAggregate",
             channel -> channel.createAggregate(attestationData.hashTreeRoot()),
             MetricRecordingValidatorApiChannel.AGGREGATE_REQUESTS_COUNTER_NAME,
-            dataStructureUtil.randomAttestation()));
+            dataStructureUtil.randomAttestation()),
+        requestDataTest(
+            "sendSignedBlock",
+            channel ->
+                channel
+                    .sendSignedBlock(dataStructureUtil.randomSignedBeaconBlock(1))
+                    .thenApply(Optional::of),
+            MetricRecordingValidatorApiChannel.PUBLISHED_BLOCK_COUNTER_NAME,
+            SendSignedBlockResult.notImported("foo")));
   }
 
   private static <T> Arguments requestDataTest(
