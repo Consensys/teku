@@ -14,6 +14,13 @@ we recommend most users use the latest `master` branch of Teku.
 ### Additions and Improvements
 - Added `zinken` network genesis state so an ETH1 endpoint is no longer required when connecting to Zinken.
 - Deprecated the validator subcommands (which were mainly for testing) used for generating and registering validators.
+- Removed the option to configure snappy compression. It is enabled by default.
+
+### Bug Fixes
+- Fixed an issue where some of the newer validator options weren't being applied in the stand alone validator client. 
+- Fixed an issue where some of the blocks produced by the stand alone validator client was being dropped.
+- Fixed an issue where the create block API coudn't create blocks after more than one epoch of empty slots.
+- Fixed a DOS vector where queues for blocks and attestation that are not yet ready for processing could be exploited.
 
 ## 0.12.9
 
