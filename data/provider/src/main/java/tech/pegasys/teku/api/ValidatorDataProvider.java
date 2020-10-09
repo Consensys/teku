@@ -63,9 +63,9 @@ public class ValidatorDataProvider {
   private final CombinedChainDataClient combinedChainDataClient;
   private final BlockImporter blockImporter;
 
-  public static final int INTERNAL_ERROR_HTTP_CODE = 500;
-  public static final int ACCEPTED_HTTP_CODE = 202;
-  public static final int OK_HTTP_CODE = 200;
+  private static final int SC_INTERNAL_ERROR = 500;
+  private static final int SC_ACCEPTED = 202;
+  private static final int SC_OK = 200;
 
   public ValidatorDataProvider(
       final ValidatorApiChannel validatorApiChannel,
@@ -185,12 +185,12 @@ public class ValidatorDataProvider {
               if (!blockImportResult.isSuccessful()) {
                 if (blockImportResult.getFailureReason()
                     == BlockImportResult.FailureReason.INTERNAL_ERROR) {
-                  responseCode = INTERNAL_ERROR_HTTP_CODE;
+                  responseCode = SC_INTERNAL_ERROR;
                 } else {
-                  responseCode = ACCEPTED_HTTP_CODE;
+                  responseCode = SC_ACCEPTED;
                 }
               } else {
-                responseCode = OK_HTTP_CODE;
+                responseCode = SC_OK;
                 hashRoot = blockImportResult.getBlock().getMessage().hash_tree_root();
               }
 
