@@ -74,6 +74,7 @@ class BatchImporterTest {
 
     // We should have copied the blocks to avoid accessing the Batch data from other threads
     verify(batch).getBlocks();
+    verify(batch).getSource();
     blocks.clear();
 
     asyncRunner.executeQueuedActions();
