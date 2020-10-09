@@ -19,6 +19,7 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
@@ -40,9 +41,9 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
         baseEndpoint.resolve(
             ValidatorApiMethod.EVENTS.getPath()
                 + "?topics="
-                + EventTypes.HEAD
+                + EventType.head
                 + ","
-                + EventTypes.CHAIN_REORG);
+                + EventType.chain_reorg);
     this.eventSource =
         new EventSource.Builder(new EventSourceHandler(validatorTimingChannel), eventSourceUrl)
             .client(okHttpClient)

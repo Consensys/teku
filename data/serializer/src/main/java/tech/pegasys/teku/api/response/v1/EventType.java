@@ -11,9 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.remote;
+package tech.pegasys.teku.api.response.v1;
 
-public class EventTypes {
-  public static final String HEAD = "head";
-  public static final String CHAIN_REORG = "chain_reorg";
+import java.util.List;
+import java.util.stream.Collectors;
+
+public enum EventType {
+  head,
+  block,
+  attestation,
+  voluntary_exit,
+  finalized_checkpoint,
+  chain_reorg;
+
+  public static List<EventType> getTopics(List<String> topics) {
+    return topics.stream().map(EventType::valueOf).collect(Collectors.toList());
+  }
 }

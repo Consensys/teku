@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import com.launchdarkly.eventsource.MessageEvent;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
+import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -48,7 +49,7 @@ class EventSourceHandlerTest {
     final HeadEvent event =
         new HeadEvent(
             slot, dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32(), false);
-    handler.onMessage(EventTypes.HEAD, new MessageEvent(jsonProvider.objectToJSON(event)));
+    handler.onMessage(EventType.head.name(), new MessageEvent(jsonProvider.objectToJSON(event)));
 
     verify(validatorTimingChannel).onAttestationCreationDue(slot);
     verifyNoMoreInteractions(validatorTimingChannel);
@@ -68,7 +69,8 @@ class EventSourceHandlerTest {
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomEpoch());
-    handler.onMessage(EventTypes.CHAIN_REORG, new MessageEvent(jsonProvider.objectToJSON(event)));
+    handler.onMessage(
+        EventType.chain_reorg.name(), new MessageEvent(jsonProvider.objectToJSON(event)));
 
     verify(validatorTimingChannel).onChainReorg(event.slot, commonAncestorSlot);
     verifyNoMoreInteractions(validatorTimingChannel);
@@ -82,7 +84,7 @@ class EventSourceHandlerTest {
             slot, dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32(), false);
     // Head message with a reorg type
     final MessageEvent messageEvent = new MessageEvent(jsonProvider.objectToJSON(event));
-    assertDoesNotThrow(() -> handler.onMessage(EventTypes.CHAIN_REORG, messageEvent));
+    assertDoesNotThrow(() -> handler.onMessage(EventType.chain_reorg.name(), messageEvent));
     verifyNoInteractions(validatorTimingChannel);
   }
 
@@ -90,7 +92,7 @@ class EventSourceHandlerTest {
   void onMessage_shouldHandleUnparsableMessage() {
     // Head message with a reorg type
     final MessageEvent messageEvent = new MessageEvent("{this isn't json!}");
-    assertDoesNotThrow(() -> handler.onMessage(EventTypes.CHAIN_REORG, messageEvent));
+    assertDoesNotThrow(() -> handler.onMessage(EventType.chain_reorg.name(), messageEvent));
     verifyNoInteractions(validatorTimingChannel);
   }
 }

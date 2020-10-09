@@ -19,6 +19,7 @@ import com.launchdarkly.eventsource.MessageEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
+import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -50,17 +51,17 @@ class EventSourceHandler implements EventHandler {
   @Override
   public void onMessage(final String event, final MessageEvent messageEvent) throws Exception {
     try {
-      switch (event) {
-        case EventTypes.HEAD:
+      switch (EventType.valueOf(event)) {
+        case head:
           handleHeadEvent(messageEvent.getData());
           return;
-        case EventTypes.CHAIN_REORG:
+        case chain_reorg:
           handleChainReorgEvent(messageEvent);
           return;
         default:
           LOG.warn("Received unexpected event type: " + event);
       }
-    } catch (final JsonProcessingException e) {
+    } catch (final IllegalArgumentException | JsonProcessingException e) {
       LOG.warn(
           "Received invalid event from beacon node. Event type: {} Event data: {}",
           event,
