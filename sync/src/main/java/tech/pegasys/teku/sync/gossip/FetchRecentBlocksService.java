@@ -81,13 +81,13 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
   }
 
   @Override
-  public SafeFuture<?> doStart() {
+  protected SafeFuture<?> doStart() {
     setupSubscribers();
     return SafeFuture.completedFuture(null);
   }
 
   @Override
-  public SafeFuture<?> doStop() {
+  protected SafeFuture<?> doStop() {
     return SafeFuture.completedFuture(null);
   }
 
