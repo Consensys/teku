@@ -165,7 +165,7 @@ public class WeakSubjectivityValidatorTest {
 
   @Test
   public void
-      validateLatestFinalizedCheckpoint_withWSCheckpoint_shouldRunChecksWhenFinalizedAtCheckpoint_shouldFail() {
+      validateLatestFinalizedCheckpoint_withWSCheckpoint_shouldRunChecksWhenFinalizedAtCheckpoint_failDueToInconsistency() {
     final Checkpoint wsCheckpoint =
         new Checkpoint(UInt64.valueOf(100), Bytes32.fromHexStringLenient("0x01"));
     final WeakSubjectivityConfig config =
@@ -190,6 +190,36 @@ public class WeakSubjectivityValidatorTest {
         .verify(policies.get(1))
         .onChainInconsistentWithWeakSubjectivityCheckpoint(
             wsCheckpoint, checkpointState.getBlock());
+
+    orderedPolicyMocks.verifyNoMoreInteractions();
+  }
+
+  @Test
+  public void
+      validateLatestFinalizedCheckpoint_withWSCheckpoint_shouldRunChecksWhenFinalizedAtCheckpoint_failDueToWSPeriod() {
+    final Checkpoint wsCheckpoint =
+        new Checkpoint(UInt64.valueOf(100), Bytes32.fromHexStringLenient("0x01"));
+    final WeakSubjectivityConfig config =
+        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(wsCheckpoint).build();
+    final WeakSubjectivityValidator validator =
+        new WeakSubjectivityValidator(config, calculator, policies);
+
+    final int validatorCount = 101;
+    when(checkpointState.getEpoch()).thenReturn(wsCheckpoint.getEpoch());
+    when(checkpointState.getRoot()).thenReturn(wsCheckpoint.getRoot());
+    when(calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)).thenReturn(false);
+    when(calculator.getActiveValidators(checkpointState.getState())).thenReturn(validatorCount);
+
+    validator.validateLatestFinalizedCheckpoint(checkpointState, currentSlot);
+
+    orderedPolicyMocks
+        .verify(policies.get(0))
+        .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
+            checkpointState, validatorCount, currentSlot);
+    orderedPolicyMocks
+        .verify(policies.get(1))
+        .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
+            checkpointState, validatorCount, currentSlot);
 
     orderedPolicyMocks.verifyNoMoreInteractions();
   }
