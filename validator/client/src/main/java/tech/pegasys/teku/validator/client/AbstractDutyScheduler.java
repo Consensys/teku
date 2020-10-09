@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import org.apache.logging.log4j.LogManager;
@@ -29,7 +30,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private final int lookAheadEpochs;
 
   protected final NavigableMap<UInt64, DutyQueue> dutiesByEpoch = new TreeMap<>();
-  private UInt64 currentEpoch = UInt64.ZERO;
+  private Optional<UInt64> currentEpoch = Optional.empty();
 
   protected AbstractDutyScheduler(
       final DutyLoader epochDutiesScheduler, final int lookAheadEpochs) {
@@ -50,7 +51,8 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
-    currentEpoch = compute_epoch_at_slot(slot);
+    final UInt64 currentEpoch = compute_epoch_at_slot(slot);
+    this.currentEpoch = Optional.of(currentEpoch);
     removePriorEpochs(currentEpoch);
     recalculateDuties(currentEpoch);
   }
@@ -73,7 +75,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   public void onEventsMissed() {
     // We may have missed a re-org notification so we need to recalculate all duties.
     removeEpochs(dutiesByEpoch);
-    recalculateDuties(currentEpoch);
+    currentEpoch.ifPresent(this::recalculateDuties);
   }
 
   protected void recalculateDuties(final UInt64 epochNumber) {
