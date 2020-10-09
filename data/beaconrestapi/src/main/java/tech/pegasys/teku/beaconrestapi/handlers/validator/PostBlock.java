@@ -110,7 +110,7 @@ public class PostBlock implements Handler {
       throws JsonProcessingException {
     ctx.status(validatorBlockResult.getResponseCode());
     if (validatorBlockResult.getFailureReason().isPresent()) {
-      return jsonProvider.objectToJSON(validatorBlockResult.getFailureReason().get().getMessage());
+      return jsonProvider.objectToJSON(validatorBlockResult.getFailureReason().get());
     } else {
       return jsonProvider.objectToJSON(validatorBlockResult.getHash_tree_root());
     }

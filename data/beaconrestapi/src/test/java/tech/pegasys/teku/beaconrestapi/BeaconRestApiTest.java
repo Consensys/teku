@@ -80,13 +80,7 @@ class BeaconRestApiTest {
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
         new DataProvider(
-            storageClient,
-            combinedChainDataClient,
-            null,
-            syncService,
-            null,
-            blockImporter,
-            attestationPool),
+            storageClient, combinedChainDataClient, null, syncService, null, attestationPool),
         config,
         eventChannels,
         new StubAsyncRunner(),

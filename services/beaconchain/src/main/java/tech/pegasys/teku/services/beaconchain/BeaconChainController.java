@@ -77,6 +77,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.blockimport.BlockImportChannel;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceExecutor;
@@ -444,12 +445,15 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             VersionProvider.getDefaultGraffiti());
     final AttestationTopicSubscriber attestationTopicSubscriber =
         new AttestationTopicSubscriber(p2pNetwork, recentChainData);
+    final BlockImportChannel blockImportChannel =
+        eventChannels.getPublisher(BlockImportChannel.class, asyncRunner);
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             combinedChainDataClient,
             syncStateTracker,
             stateTransition,
             blockFactory,
+            blockImportChannel,
             attestationPool,
             attestationManager,
             attestationTopicSubscriber,
@@ -610,7 +614,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             p2pNetwork,
             syncService,
             eventChannels.getPublisher(ValidatorApiChannel.class, asyncRunner),
-            blockImporter,
             attestationPool);
     if (config.isRestApiEnabled()) {
 
@@ -648,6 +651,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             blockImporter);
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
+        .subscribe(BlockImportChannel.class, blockManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
   }
 

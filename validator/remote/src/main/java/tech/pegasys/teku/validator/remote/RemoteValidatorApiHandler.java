@@ -43,6 +43,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.ProposerDuties;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
@@ -204,14 +205,9 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendSignedBlock(final SignedBeaconBlock block) {
-    asyncRunner
-        .runAsync(
-            () ->
-                apiClient.sendSignedBlock(
-                    new tech.pegasys.teku.api.schema.SignedBeaconBlock(block)))
-        .finish(error -> LOG.error("Failed to send signed block", error));
-    ;
+  public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
+    return asyncRunner.runAsync(
+        () -> apiClient.sendSignedBlock(new tech.pegasys.teku.api.schema.SignedBeaconBlock(block)));
   }
 
   @Override

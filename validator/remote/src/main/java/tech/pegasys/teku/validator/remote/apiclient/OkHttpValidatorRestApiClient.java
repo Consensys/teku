@@ -60,10 +60,12 @@ import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
+import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.ValidatorDuties;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
@@ -135,8 +137,11 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public void sendSignedBlock(final SignedBeaconBlock beaconBlock) {
-    post(SEND_SIGNED_BLOCK, beaconBlock, null);
+  public SendSignedBlockResult sendSignedBlock(final SignedBeaconBlock beaconBlock) {
+    return post(SEND_SIGNED_BLOCK, beaconBlock, ValidatorBlockResult.class)
+        .flatMap(ValidatorBlockResult::getHash_tree_root)
+        .map(SendSignedBlockResult::success)
+        .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
   }
 
   @Override

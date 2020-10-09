@@ -84,7 +84,6 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
             eth2Network,
             syncService,
             validatorApiChannel,
-            blockImporter,
             attestationPool);
 
     beaconRestApi =
