@@ -7,8 +7,10 @@ dependencies {
   implementation project(':services:serviceutils')
   implementation project(':storage:api')
   implementation project(':validator:api')
+  implementation project(':validator:beaconnode')
   implementation project(':validator:eventadapter')
 
+  implementation 'com.launchdarkly:okhttp-eventsource'
   implementation 'com.squareup.okhttp3:okhttp'
   implementation 'io.vertx:vertx-core'
 

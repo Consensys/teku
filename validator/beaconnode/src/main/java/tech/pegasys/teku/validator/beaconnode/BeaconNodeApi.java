@@ -11,21 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.api;
+package tech.pegasys.teku.validator.beaconnode;
 
-import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
-public interface ValidatorTimingChannel extends VoidReturningChannelInterface {
-  void onSlot(UInt64 slot);
+public interface BeaconNodeApi {
 
-  void onChainReorg(UInt64 newSlot, UInt64 commonAncestorSlot);
+  boolean USE_INDEPENDENT_TIMER = false;
 
-  void onPossibleMissedEvents();
+  SafeFuture<Void> subscribeToEvents();
 
-  void onBlockProductionDue(UInt64 slot);
+  SafeFuture<Void> unsubscribeFromEvents();
 
-  void onAttestationCreationDue(UInt64 slot);
-
-  void onAttestationAggregationDue(UInt64 slot);
+  ValidatorApiChannel getValidatorApi();
 }
