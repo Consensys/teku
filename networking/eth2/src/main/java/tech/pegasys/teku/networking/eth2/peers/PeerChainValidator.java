@@ -111,8 +111,8 @@ public class PeerChainValidator {
             isValid -> {
               if (!isValid) {
                 // Short-circuit if we know the chain is invalid
-                LOG.trace(
-                    "Failed to validate peer {} against required checkpoint {}",
+                LOG.warn(
+                    "Peer {} failed validation against required checkpoint {}",
                     peer.getId(),
                     requiredCheckpoint);
                 return SafeFuture.completedFuture(isValid);
