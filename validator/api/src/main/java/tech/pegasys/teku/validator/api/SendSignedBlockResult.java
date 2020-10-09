@@ -65,9 +65,9 @@ public class SendSignedBlockResult {
       return false;
     }
     final SendSignedBlockResult that = (SendSignedBlockResult) o;
-    return published == that.published &&
-        Objects.equals(blockRoot, that.blockRoot) &&
-        Objects.equals(rejectionReason, that.rejectionReason);
+    return published == that.published
+        && Objects.equals(blockRoot, that.blockRoot)
+        && Objects.equals(rejectionReason, that.rejectionReason);
   }
 
   @Override
