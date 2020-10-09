@@ -119,6 +119,7 @@ public class SyncingNodeManager {
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
 
+    blockManager.start().join();
     syncService.start().join();
 
     return new SyncingNodeManager(
