@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.time;
+package tech.pegasys.teku.validator.beaconnode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -23,6 +23,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
 import java.util.Optional;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -72,7 +73,7 @@ class GenesisTimeProviderTest {
     final SafeFuture<UInt64> result = genesisTimeProvider.getGenesisTime();
     verify(validatorApiChannel).getGenesisTime();
     assertThat(result).isNotDone();
-    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    Assertions.assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
     // Retry is scheduled.
     asyncRunner.executeQueuedActions();
@@ -90,7 +91,7 @@ class GenesisTimeProviderTest {
     final SafeFuture<UInt64> result = genesisTimeProvider.getGenesisTime();
     verify(validatorApiChannel).getGenesisTime();
     assertThat(result).isNotDone();
-    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+    Assertions.assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
     // Retry is scheduled.
     asyncRunner.executeQueuedActions();
