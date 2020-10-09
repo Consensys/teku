@@ -14,15 +14,19 @@
 package tech.pegasys.teku.validator.remote;
 
 import com.launchdarkly.eventsource.EventSource;
+import java.util.concurrent.CountDownLatch;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 
 public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapter {
-
+  private static final Logger LOG = LogManager.getLogger();
+  private final CountDownLatch runningLatch = new CountDownLatch(1);
   private final BeaconChainEventAdapter timeBasedEventAdapter;
   private final EventSource eventSource;
 
@@ -47,13 +51,27 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
 
   @Override
   public SafeFuture<Void> start() {
+    // EventSource uses a daemon thread which allows the process to exit because all threads are
+    // daemons, but while we're subscribed to events we should just wait for the next event, not
+    // exit.  So create a non-daemon thread that lives until the adapter is stopped.
     eventSource.start();
+    new Thread(this::waitForExit).start();
     return timeBasedEventAdapter.start();
   }
 
   @Override
   public SafeFuture<Void> stop() {
     eventSource.close();
-    return timeBasedEventAdapter.stop();
+    return timeBasedEventAdapter.stop().thenRun(runningLatch::countDown);
+  }
+
+  private void waitForExit() {
+    while (true) {
+      try {
+        runningLatch.await();
+      } catch (InterruptedException e) {
+        LOG.debug("Interrupted while waiting for shutdown");
+      }
+    }
   }
 }

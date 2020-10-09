@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.client;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -44,7 +43,6 @@ public class ValidatorClientService extends Service {
   private final ValidatorTimingChannel attestationTimingChannel;
   private final ValidatorTimingChannel blockProductionTimingChannel;
   private final BeaconNodeApi beaconNodeApi;
-  private final CountDownLatch runningLatch = new CountDownLatch(1);
 
   private ValidatorClientService(
       final EventChannels eventChannels,
@@ -111,22 +109,11 @@ public class ValidatorClientService extends Service {
   protected SafeFuture<?> doStart() {
     eventChannels.subscribe(ValidatorTimingChannel.class, blockProductionTimingChannel);
     eventChannels.subscribe(ValidatorTimingChannel.class, attestationTimingChannel);
-    new Thread(this::waitForExit).start();
     return beaconNodeApi.subscribeToEvents();
-  }
-
-  private void waitForExit() {
-    while (true) {
-      try {
-        runningLatch.await();
-      } catch (InterruptedException e) {
-        LOG.debug("Interrupted while waiting for shutdown");
-      }
-    }
   }
 
   @Override
   protected SafeFuture<?> doStop() {
-    return beaconNodeApi.unsubscribeFromEvents().thenRun(runningLatch::countDown);
+    return beaconNodeApi.unsubscribeFromEvents();
   }
 }
