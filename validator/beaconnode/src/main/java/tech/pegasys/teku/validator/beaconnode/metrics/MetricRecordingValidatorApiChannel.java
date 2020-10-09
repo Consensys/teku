@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.metrics;
+package tech.pegasys.teku.validator.beaconnode.metrics;
 
 import java.util.Collection;
 import java.util.List;

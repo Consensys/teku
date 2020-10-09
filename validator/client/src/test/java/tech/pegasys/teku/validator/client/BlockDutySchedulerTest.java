@@ -170,4 +170,28 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
 
     verifyNoMoreInteractions(validatorApiChannel);
   }
+
+  @Test
+  void shouldRefetchAllDutiesOnMissedEvents() {
+    final UInt64 currentEpoch = UInt64.valueOf(5);
+    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+    when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
+    dutyScheduler.onSlot(currentSlot);
+
+    verify(validatorApiChannel).getDuties(currentEpoch, VALIDATOR_KEYS);
+
+    dutyScheduler.onPossibleMissedEvents();
+
+    // Remembers the previous latest epoch and uses it to recalculate duties
+    verify(validatorApiChannel, times(2)).getDuties(currentEpoch, VALIDATOR_KEYS);
+    verifyNoMoreInteractions(validatorApiChannel);
+  }
+
+  @Test
+  void shouldRefetchAllDutiesOnMissedEventsWithNoPreviousEpoch() {
+    dutyScheduler.onPossibleMissedEvents();
+
+    // Latest epoch is unknown so can't recalculate duties
+    verifyNoMoreInteractions(validatorApiChannel);
+  }
 }

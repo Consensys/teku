@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
 import java.util.Objects;
+import tech.pegasys.teku.api.response.v1.EventType;
 
 public class QueuedEvent {
   private final EventType eventType;

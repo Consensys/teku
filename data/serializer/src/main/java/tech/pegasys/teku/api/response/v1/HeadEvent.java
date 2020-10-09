@@ -14,14 +14,16 @@
 package tech.pegasys.teku.api.response.v1;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class HeadEvent {
-  @JsonProperty("slot")
+  @JsonProperty(value = "slot", required = true)
   public final UInt64 slot;
 
   @JsonProperty("block")
@@ -35,7 +37,7 @@ public class HeadEvent {
 
   @JsonCreator
   public HeadEvent(
-      @JsonProperty("slot") final UInt64 slot,
+      @JsonProperty(value = "slot", required = true) final UInt64 slot,
       @JsonProperty("block") final Bytes32 block,
       @JsonProperty("state") final Bytes32 state,
       @JsonProperty("epoch_transition") final boolean epochTransition) {

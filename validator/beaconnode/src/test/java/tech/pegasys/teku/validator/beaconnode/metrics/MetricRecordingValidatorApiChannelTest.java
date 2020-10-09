@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.metrics;
+package tech.pegasys.teku.validator.beaconnode.metrics;
 
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -35,7 +36,7 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
-import tech.pegasys.teku.validator.client.metrics.BeaconChainRequestCounter.RequestOutcome;
+import tech.pegasys.teku.validator.beaconnode.metrics.BeaconChainRequestCounter.RequestOutcome;
 
 class MetricRecordingValidatorApiChannelTest {
 
@@ -105,7 +106,8 @@ class MetricRecordingValidatorApiChannelTest {
       final String name, final Consumer<ValidatorApiChannel> method, final String counterName) {
     method.accept(apiChannel);
 
-    assertThat(metricsSystem.getCounter(TekuMetricCategory.VALIDATOR, counterName).getValue())
+    Assertions.assertThat(
+            metricsSystem.getCounter(TekuMetricCategory.VALIDATOR, counterName).getValue())
         .isEqualTo(1);
   }
 
