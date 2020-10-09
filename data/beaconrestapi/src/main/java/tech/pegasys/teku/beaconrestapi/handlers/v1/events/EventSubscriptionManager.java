@@ -62,7 +62,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   }
 
   public void registerClient(final SseClient sseClient) {
-    LOG.info("connected " + sseClient.hashCode());
+    LOG.trace("connected " + sseClient.hashCode());
     final List<String> allTopicsInContext =
         ListQueryParameterUtils.getParameterAsStringList(sseClient.ctx.queryParamMap(), TOPICS);
     final EventSubscriber subscriber =
@@ -71,7 +71,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
             sseClient,
             () -> {
               eventSubscribers.removeIf(sub -> sub.getSseClient().equals(sseClient));
-              LOG.info("disconnected " + sseClient.hashCode());
+              LOG.trace("disconnected " + sseClient.hashCode());
             },
             asyncRunner);
     eventSubscribers.add(subscriber);
