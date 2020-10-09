@@ -11,28 +11,28 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v1;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TOPICS;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.sse.SseClient;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
+import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -43,48 +43,39 @@ import tech.pegasys.teku.storage.api.ReorgContext;
 public class EventSubscriptionManager implements ChainHeadChannel, FinalizedCheckpointChannel {
   private static final Logger LOG = LogManager.getLogger();
 
-  public enum EventType {
-    head,
-    block,
-    attestation,
-    voluntary_exit,
-    finalized_checkpoint,
-    chain_reorg
-  }
-
   private final JsonProvider jsonProvider;
   private final ChainDataProvider provider;
-  private final Map<EventType, Queue<SseClient>> eventClientMap;
+  private final AsyncRunner asyncRunner;
+  // collection of subscribers
+  private final Collection<EventSubscriber> eventSubscribers;
 
   public EventSubscriptionManager(
       final ChainDataProvider provider,
       final JsonProvider jsonProvider,
+      final AsyncRunner asyncRunner,
       final EventChannels eventChannels) {
     this.provider = provider;
     this.jsonProvider = jsonProvider;
-    eventClientMap =
-        Map.of(
-            EventType.head, new ConcurrentLinkedQueue<>(),
-            EventType.block, new ConcurrentLinkedQueue<>(),
-            EventType.attestation, new ConcurrentLinkedQueue<>(),
-            EventType.voluntary_exit, new ConcurrentLinkedQueue<>(),
-            EventType.finalized_checkpoint, new ConcurrentLinkedQueue<>(),
-            EventType.chain_reorg, new ConcurrentLinkedQueue<>());
+    this.asyncRunner = asyncRunner;
+    this.eventSubscribers = new ConcurrentLinkedQueue<>();
     eventChannels.subscribe(ChainHeadChannel.class, this);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, this);
   }
 
   public void registerClient(final SseClient sseClient) {
-    LOG.trace("connected " + sseClient.hashCode());
+    LOG.info("connected " + sseClient.hashCode());
     final List<String> allTopicsInContext =
         ListQueryParameterUtils.getParameterAsStringList(sseClient.ctx.queryParamMap(), TOPICS);
-    sseClient.onClose(
-        () -> {
-          getTopics(allTopicsInContext).forEach(e -> eventClientMap.get(e).remove(sseClient));
-          LOG.trace("disconnected " + sseClient.hashCode());
-        });
-
-    getTopics(allTopicsInContext).forEach(e -> eventClientMap.get(e).add(sseClient));
+    final EventSubscriber subscriber =
+        new EventSubscriber(
+            allTopicsInContext,
+            sseClient,
+            () -> {
+              eventSubscribers.removeIf(sub -> sub.getSseClient().equals(sseClient));
+              LOG.info("disconnected " + sseClient.hashCode());
+            },
+            asyncRunner);
+    eventSubscribers.add(subscriber);
   }
 
   @Override
@@ -108,7 +99,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
                         context.getOldBestStateRoot(),
                         stateRoot,
                         compute_epoch_at_slot(slot)));
-            sendEventToClients(EventType.chain_reorg, reorgEventString);
+            notifySubscribersOfEvent(EventType.chain_reorg, reorgEventString);
           } catch (JsonProcessingException ex) {
             LOG.error(ex);
           }
@@ -117,7 +108,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     try {
       final String headEventString =
           jsonProvider.objectToJSON(new HeadEvent(slot, bestBlockRoot, stateRoot, epochTransition));
-      sendEventToClients(EventType.head, headEventString);
+      notifySubscribersOfEvent(EventType.head, headEventString);
     } catch (JsonProcessingException ex) {
       LOG.error(ex);
     }
@@ -131,17 +122,13 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
           jsonProvider.objectToJSON(
               new FinalizedCheckpointEvent(
                   checkpoint.getRoot(), stateRoot.orElse(Bytes32.ZERO), checkpoint.getEpoch()));
-      sendEventToClients(EventType.finalized_checkpoint, checkpointString);
+      notifySubscribersOfEvent(EventType.finalized_checkpoint, checkpointString);
     } catch (JsonProcessingException ex) {
       LOG.error(ex);
     }
   }
 
-  private void sendEventToClients(final EventType eventType, final String eventString) {
-    eventClientMap.get(eventType).forEach(ctx -> ctx.sendEvent(eventType.name(), eventString));
-  }
-
-  List<EventType> getTopics(List<String> topics) {
-    return topics.stream().map(EventType::valueOf).collect(Collectors.toList());
+  private void notifySubscribersOfEvent(final EventType eventType, final String eventString) {
+    eventSubscribers.forEach(subscriber -> subscriber.onEvent(eventType, eventString));
   }
 }

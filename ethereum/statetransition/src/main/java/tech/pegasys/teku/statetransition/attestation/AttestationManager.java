@@ -83,6 +83,7 @@ public class AttestationManager extends Service implements SlotEventsChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
+    futureAttestations.onSlot(slot);
     List<ValidateableAttestation> attestations = futureAttestations.prune(slot);
     if (attestations.isEmpty()) {
       return;

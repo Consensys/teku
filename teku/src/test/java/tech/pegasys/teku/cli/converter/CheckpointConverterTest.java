@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.weaksubjectivity.config;
+package tech.pegasys.teku.cli.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -23,14 +23,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import picocli.CommandLine;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class WeakSubjectivityParamaterParserTest {
-  private final WeakSubjectivityParameterParser parser = new WeakSubjectivityParameterParser();
+public class CheckpointConverterTest {
+  private final CheckpointConverter parser = new CheckpointConverter();
 
   @Test
-  public void parseCheckpoint_valid() {
+  public void convert_valid() {
     final Bytes32 blockRoot = Bytes32.fromHexStringLenient("0x0102");
     final String blockRootStr =
         "0x0000000000000000000000000000000000000000000000000000000000000102";
@@ -38,53 +39,52 @@ public class WeakSubjectivityParamaterParserTest {
     final String epochStr = "11";
     final String input = blockRootStr + ":" + epochStr;
 
-    Checkpoint result = parser.parseCheckpoint(input);
+    Checkpoint result = parser.convert(input);
     assertThat(result.getRoot()).isEqualTo(blockRoot);
     assertThat(result.getEpoch()).isEqualTo(epoch);
   }
 
   @ParameterizedTest(name = "input = {0}")
   @MethodSource("getValidCheckpointArguments")
-  public void parseCheckpoint_valid(
-      final String input, final String blockRoot, final String epoch) {
-    Checkpoint result = parser.parseCheckpoint(input);
+  public void convert_valid(final String input, final String blockRoot, final String epoch) {
+    Checkpoint result = parser.convert(input);
     assertThat(result.getRoot()).isEqualTo(Bytes32.fromHexString(blockRoot));
     assertThat(result.getEpoch()).isEqualTo(UInt64.valueOf(epoch));
   }
 
   @ParameterizedTest(name = "input = {0}")
   @MethodSource("getValidCheckpointArguments")
-  public void parseCheckpoint_valid_withLeadingWhitespace(
+  public void convert_valid_withLeadingWhitespace(
       final String input, final String blockRoot, final String epoch) {
-    Checkpoint result = parser.parseCheckpoint("  " + input);
+    Checkpoint result = parser.convert("  " + input);
     assertThat(result.getRoot()).isEqualTo(Bytes32.fromHexString(blockRoot));
     assertThat(result.getEpoch()).isEqualTo(UInt64.valueOf(epoch));
   }
 
   @ParameterizedTest(name = "input = {0}")
   @MethodSource("getValidCheckpointArguments")
-  public void parseCheckpoint_valid_withTrailingWhitespace(
+  public void convert_valid_withTrailingWhitespace(
       final String input, final String blockRoot, final String epoch) {
-    Checkpoint result = parser.parseCheckpoint(input + " ");
+    Checkpoint result = parser.convert(input + " ");
     assertThat(result.getRoot()).isEqualTo(Bytes32.fromHexString(blockRoot));
     assertThat(result.getEpoch()).isEqualTo(UInt64.valueOf(epoch));
   }
 
   @ParameterizedTest(name = "input = {0}")
   @MethodSource("getValidCheckpointArguments")
-  public void parseCheckpoint_valid_withLeadingAndTrailingWhitespace(
+  public void convert_valid_withLeadingAndTrailingWhitespace(
       final String input, final String blockRoot, final String epoch) {
-    Checkpoint result = parser.parseCheckpoint(" " + input + "   ");
+    Checkpoint result = parser.convert(" " + input + "   ");
     assertThat(result.getRoot()).isEqualTo(Bytes32.fromHexString(blockRoot));
     assertThat(result.getEpoch()).isEqualTo(UInt64.valueOf(epoch));
   }
 
   @ParameterizedTest(name = "input = {0}")
   @MethodSource("getInvalidCheckpointArguments")
-  public void parseCheckpoint_invalid(final String input) {
-    assertThatThrownBy(() -> parser.parseCheckpoint(input))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining(WeakSubjectivityParameterParser.CHECKPOINT_ERROR);
+  public void convert_invalid(final String input) {
+    assertThatThrownBy(() -> parser.convert(input))
+        .isInstanceOf(CommandLine.TypeConversionException.class)
+        .hasMessageContaining(CheckpointConverter.CHECKPOINT_ERROR);
   }
 
   public static Stream<Arguments> getValidCheckpointArguments() {

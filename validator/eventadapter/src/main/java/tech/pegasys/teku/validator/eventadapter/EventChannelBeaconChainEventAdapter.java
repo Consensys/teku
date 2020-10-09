@@ -27,6 +27,7 @@ import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
+import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 
 /**
  * Converts events from the {@link com.google.common.eventbus.EventBus} to the new validator client

@@ -21,6 +21,8 @@ public interface ValidatorTimingChannel extends VoidReturningChannelInterface {
 
   void onChainReorg(UInt64 newSlot, UInt64 commonAncestorSlot);
 
+  void onPossibleMissedEvents();
+
   void onBlockProductionDue(UInt64 slot);
 
   void onAttestationCreationDue(UInt64 slot);
