@@ -29,7 +29,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private final int lookAheadEpochs;
 
   protected final NavigableMap<UInt64, DutyQueue> dutiesByEpoch = new TreeMap<>();
-  private UInt64 currentEpoch;
+  private UInt64 currentEpoch = UInt64.ZERO;
 
   protected AbstractDutyScheduler(
       final DutyLoader epochDutiesScheduler, final int lookAheadEpochs) {
