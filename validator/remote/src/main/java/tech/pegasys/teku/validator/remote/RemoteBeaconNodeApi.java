@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.remote;
 
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
@@ -54,7 +55,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             new RemoteValidatorApiHandler(apiClient, asyncRunner));
 
     final BeaconChainEventAdapter beaconChainEventAdapter;
-    if (USE_INDEPENDENT_TIMER) {
+    if (StringUtils.isEmpty(serviceConfig.getConfig().getBeaconNodeEventsWsEndpoint())) {
       final ValidatorTimingChannel validatorTimingChannel =
           serviceConfig.getEventChannels().getPublisher(ValidatorTimingChannel.class);
       beaconChainEventAdapter =
