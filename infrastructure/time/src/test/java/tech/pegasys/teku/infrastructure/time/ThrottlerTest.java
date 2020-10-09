@@ -86,7 +86,7 @@ public class ThrottlerTest {
   }
 
   @Test
-  public void invoke_shouldNotThrottleBasedOnLastSuccessfulInvocation() {
+  public void invoke_shouldThrottleBasedOnLastSuccessfulInvocation() {
     UInt64 lastInvocation = UInt64.valueOf(21);
     throttler.invoke(UInt64.valueOf(21), AtomicInteger::incrementAndGet);
     assertThat(resource.get()).isEqualTo(1);
