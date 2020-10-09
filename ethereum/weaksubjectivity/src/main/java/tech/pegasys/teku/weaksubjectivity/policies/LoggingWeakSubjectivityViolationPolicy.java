@@ -14,20 +14,16 @@
 package tech.pegasys.teku.weaksubjectivity.policies;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.util.Objects;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class LoggingWeakSubjectivityViolationPolicy implements WeakSubjectivityViolationPolicy {
-
-  private static final Logger LOG = LogManager.getLogger();
-
   private final Level level;
 
   public LoggingWeakSubjectivityViolationPolicy(Level level) {
@@ -40,33 +36,25 @@ public class LoggingWeakSubjectivityViolationPolicy implements WeakSubjectivityV
       final int activeValidatorCount,
       final UInt64 currentSlot) {
     final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
-    LOG.log(
-        level,
-        "As of the current epoch {}, the latest finalized checkpoint at epoch {} ({} active validators) is outside of the weak subjectivity period.",
-        currentEpoch,
-        latestFinalizedCheckpoint.getEpoch(),
-        activeValidatorCount);
+    STATUS_LOG.finalizedCheckpointOutsideOfWeakSubjectivityPeriod(
+        level, latestFinalizedCheckpoint.getEpoch(), activeValidatorCount, currentEpoch);
   }
 
   @Override
   public void onChainInconsistentWithWeakSubjectivityCheckpoint(
       Checkpoint wsCheckpoint, SignedBeaconBlock block) {
-    LOG.log(
-        level,
-        "Block {} at slot {} is inconsistent with weak subjectivity checkpoint {}",
-        block.getRoot(),
-        block.getSlot(),
-        wsCheckpoint);
+    STATUS_LOG.chainInconsistentWithWeakSubjectivityCheckpoint(
+        level, block.getRoot(), block.getSlot(), wsCheckpoint.getRoot(), wsCheckpoint.getEpoch());
   }
 
   @Override
   public void onFailedToPerformValidation(final String message) {
-    LOG.log(level, "Failed to perform weak subjectivity validation: {}", message);
+    STATUS_LOG.failedToPerformWeakSubjectivityValidation(level, message);
   }
 
   @Override
   public void onFailedToPerformValidation(final String message, final Throwable error) {
-    LOG.log(level, "Failed to perform weak subjectivity validation: " + message, error);
+    STATUS_LOG.failedToPerformWeakSubjectivityValidation(level, message, error);
   }
 
   @Override

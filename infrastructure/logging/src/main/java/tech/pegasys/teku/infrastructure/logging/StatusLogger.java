@@ -19,8 +19,10 @@ import java.nio.file.Path;
 import java.util.List;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DurationFormatUtils;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class StatusLogger {
@@ -199,8 +201,45 @@ public class StatusLogger {
   public void warnWeakSubjectivityFinalizedCheckpointValidationDeferred(
       final UInt64 finalizedEpoch, final UInt64 wsCheckpointEpoch) {
     log.warn(
-        "Deferring finalized checkpoint validation prior to weak subjectivity checkpoint at epoch {} for finalized checkpoint at epoch {}",
-        wsCheckpointEpoch,
-        finalizedEpoch);
+        "Deferring weak subjectivity checks for finalized checkpoint at epoch {}.  Checks will resume once weak subjectivity checkpoint at epoch {} is reached.",
+        finalizedEpoch,
+        wsCheckpointEpoch);
+  }
+
+  public void finalizedCheckpointOutsideOfWeakSubjectivityPeriod(
+      Level level,
+      final UInt64 latestFinalizedCheckpointEpoch,
+      final int activeValidatorCount,
+      final UInt64 currentEpoch) {
+    log.log(
+        level,
+        "As of the current epoch {}, the latest finalized checkpoint at epoch {} ({} active validators) is outside of the weak subjectivity period.",
+        currentEpoch,
+        latestFinalizedCheckpointEpoch,
+        activeValidatorCount);
+  }
+
+  public void chainInconsistentWithWeakSubjectivityCheckpoint(
+      final Level level,
+      final Bytes32 blockRoot,
+      final UInt64 blockSlot,
+      final Bytes32 wsCheckpointRoot,
+      final UInt64 wsCheckpointEpoch) {
+    log.log(
+        level,
+        "Block {} at slot {} is inconsistent with weak subjectivity checkpoint (root {}, epoch {})",
+        blockRoot,
+        blockSlot,
+        wsCheckpointRoot,
+        wsCheckpointEpoch);
+  }
+
+  public void failedToPerformWeakSubjectivityValidation(final Level level, final String message) {
+    log.log(level, "Failed to perform weak subjectivity validation: {}", message);
+  }
+
+  public void failedToPerformWeakSubjectivityValidation(
+      final Level level, final String message, final Throwable error) {
+    log.log(level, "Failed to perform weak subjectivity validation: " + message, error);
   }
 }
