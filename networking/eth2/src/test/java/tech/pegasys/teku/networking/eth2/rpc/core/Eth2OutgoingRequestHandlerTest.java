@@ -33,6 +33,7 @@ import tech.pegasys.teku.datastructures.networking.libp2p.rpc.BeaconBlocksByRang
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppendedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ServerErrorException;
@@ -42,8 +43,9 @@ public abstract class Eth2OutgoingRequestHandlerTest
     extends AbstractRequestHandlerTest<
         Eth2OutgoingRequestHandler<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>> {
 
-  private final StubAsyncRunner asyncRequestRunner = new StubAsyncRunner();
-  private final StubAsyncRunner timeoutRunner = new StubAsyncRunner();
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
+  private final StubAsyncRunner asyncRequestRunner = new StubAsyncRunner(timeProvider);
+  private final StubAsyncRunner timeoutRunner = new StubAsyncRunner(timeProvider);
 
   private final List<SignedBeaconBlock> blocks = new ArrayList<>();
   private final AtomicReference<ResponseStreamListener<SignedBeaconBlock>> responseListener =
@@ -181,8 +183,8 @@ public abstract class Eth2OutgoingRequestHandlerTest
     verify(rpcStream, never()).close();
 
     // Run async tasks
-    assertThat(timeoutRunner.countDelayedActions()).isEqualTo(1);
-    timeoutRunner.executeQueuedActions();
+    timeProvider.advanceTimeByMillis(RpcTimeouts.TTFB_TIMEOUT.toMillis());
+    timeoutRunner.executeDueActions();
     verify(rpcStream).close();
   }
 
@@ -192,12 +194,14 @@ public abstract class Eth2OutgoingRequestHandlerTest
     verify(rpcStream).closeWriteStream();
     verify(rpcStream, never()).close();
 
-    // Deliver some bytes
+    // Deliver some bytes just in time
+    timeProvider.advanceTimeByMillis(RpcTimeouts.TTFB_TIMEOUT.toMillis() - 1);
+    timeoutRunner.executeDueActions();
     deliverInitialBytes();
 
-    // Run async tasks
-    assertThat(timeoutRunner.countDelayedActions()).isEqualTo(2);
-    timeoutRunner.executeQueuedActions(1);
+    // Go past the time the first bytes should have been received and check it doesn't timeout
+    timeProvider.advanceTimeByMillis(10);
+    timeoutRunner.executeDueActions();
     verify(rpcStream, never()).close();
   }
 
@@ -208,7 +212,8 @@ public abstract class Eth2OutgoingRequestHandlerTest
     deliverInitialBytes();
 
     // Run timeouts
-    timeoutRunner.executeQueuedActions();
+    timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis());
+    timeoutRunner.executeDueActions();
     verify(rpcStream).close();
   }
 
@@ -216,11 +221,14 @@ public abstract class Eth2OutgoingRequestHandlerTest
   public void doNotDisconnectsIfFirstChunkReceivedInTime() throws Exception {
     sendInitialPayload();
 
+    // First byte is received just in time
+    timeProvider.advanceTimeByMillis(RpcTimeouts.TTFB_TIMEOUT.toMillis() - 1);
     deliverChunk(0);
 
-    // Run timeouts
-    assertThat(timeoutRunner.countDelayedActions()).isEqualTo(3);
-    timeoutRunner.executeQueuedActions(2);
+    // Go past the time the first chunk would have timed out but not enough to trigger timeout on
+    // the second chunk and ensure the timeout never fires.
+    timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis() - 1);
+    timeoutRunner.executeDueActions();
     verify(rpcStream, never()).close();
   }
 
@@ -228,13 +236,14 @@ public abstract class Eth2OutgoingRequestHandlerTest
   public void disconnectsIfSecondChunkNotReceivedInTime() throws Exception {
     sendInitialPayload();
 
+    timeProvider.advanceTimeByMillis(100);
     deliverChunk(0);
+    asyncRequestRunner.executeQueuedActions();
+    assertThat(blocks.size()).isEqualTo(1);
 
     // Run timeouts
-    assertThat(timeoutRunner.countDelayedActions()).isEqualTo(3);
-    asyncRequestRunner.waitForExactly(1);
-    timeoutRunner.executeQueuedActions();
-    assertThat(blocks.size()).isEqualTo(1);
+    timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis());
+    timeoutRunner.executeDueActions();
     verify(rpcStream).close();
   }
 
@@ -242,15 +251,23 @@ public abstract class Eth2OutgoingRequestHandlerTest
   public void doNotDisconnectsIfSecondChunkReceivedInTime() throws Exception {
     sendInitialPayload();
 
+    timeProvider.advanceTimeByMillis(100);
     deliverChunk(0);
-    deliverChunk(1);
+    asyncRequestRunner.executeQueuedActions();
+    assertThat(blocks.size()).isEqualTo(1);
 
-    // Run timeouts
-    assertThat(timeoutRunner.countDelayedActions()).isEqualTo(4);
-    asyncRequestRunner.waitForExactly(2);
-    timeoutRunner.executeQueuedActions(3);
-    assertThat(blocks.size()).isEqualTo(2);
+    // Second chunk is received just in time
+    timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis() - 1);
+    timeoutRunner.executeDueActions();
+    deliverChunk(1);
+    asyncRequestRunner.executeQueuedActions();
+
+    // Go past the time the second chunk would have timed out but not enough to trigger timeout on
+    // the third chunk and ensure the timeout never fires.
+    timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis() - 1);
+    timeoutRunner.executeDueActions();
     verify(rpcStream, never()).close();
+    assertThat(blocks.size()).isEqualTo(2);
   }
 
   private void sendInitialPayload() {

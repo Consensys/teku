@@ -22,6 +22,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
+import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 
 public class IndependentTimerEventChannelEventAdapter
     implements ChainHeadChannel, BeaconChainEventAdapter {

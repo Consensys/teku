@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.time;
+package tech.pegasys.teku.validator.beaconnode;
 
 import static tech.pegasys.teku.core.ForkChoiceUtil.getCurrentSlot;
 import static tech.pegasys.teku.core.ForkChoiceUtil.getSlotStartTime;
@@ -24,7 +24,6 @@ import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
-import tech.pegasys.teku.validator.eventadapter.BeaconChainEventAdapter;
 
 public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
   private static final Logger LOG = LogManager.getLogger();

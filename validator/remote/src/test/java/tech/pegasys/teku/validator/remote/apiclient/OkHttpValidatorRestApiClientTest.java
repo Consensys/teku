@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -53,7 +54,7 @@ class OkHttpValidatorRestApiClientTest {
   @BeforeEach
   public void beforeEach() throws Exception {
     mockWebServer.start();
-    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/").toString());
+    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), new OkHttpClient());
   }
 
   @AfterEach

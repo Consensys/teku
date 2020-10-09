@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
-import tech.pegasys.teku.validator.eventadapter.BeaconChainEventAdapter;
+import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 
 public class WebSocketBeaconChainEventAdapter implements BeaconChainEventAdapter {
 

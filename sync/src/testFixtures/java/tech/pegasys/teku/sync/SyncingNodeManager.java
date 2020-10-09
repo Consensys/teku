@@ -113,12 +113,13 @@ public class SyncingNodeManager {
     SyncManager syncManager =
         SyncManager.create(
             asyncRunner, eth2Network, recentChainData, blockImporter, new NoOpMetricsSystem());
-    SyncService syncService = new SinglePeerSyncService(blockManager, syncManager, recentChainData);
+    SyncService syncService = new SinglePeerSyncService(syncManager, recentChainData);
 
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
 
+    blockManager.start().join();
     syncService.start().join();
 
     return new SyncingNodeManager(

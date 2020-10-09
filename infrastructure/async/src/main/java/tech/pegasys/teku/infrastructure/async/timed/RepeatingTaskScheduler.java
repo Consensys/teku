@@ -69,9 +69,8 @@ public class RepeatingTaskScheduler {
     }
     asyncRunner
         .runAfterDelay(
-            () -> executeEvent(event), dueMs.minus(nowMs).longValue(), TimeUnit.MILLISECONDS)
+            () -> scheduleEvent(event), dueMs.minus(nowMs).longValue(), TimeUnit.MILLISECONDS)
         .finish(
-            () -> scheduleEvent(event),
             error -> {
               LOG.error("Failed to schedule next repeat of event. Skipping", error);
               // We may be hopelessly blocked but try to recover by moving on to the next event
