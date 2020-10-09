@@ -11,20 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
+package tech.pegasys.teku.sync.gossip;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService.BlockSubscriber;
 
-public enum EventType {
-  head,
-  block,
-  attestation,
-  voluntary_exit,
-  finalized_checkpoint,
-  chain_reorg;
+public interface RecentBlockFetcher {
 
-  public static List<EventType> getTopics(List<String> topics) {
-    return topics.stream().map(EventType::valueOf).collect(Collectors.toList());
-  }
+  SafeFuture<?> start();
+
+  SafeFuture<?> stop();
+
+  long subscribeBlockFetched(BlockSubscriber subscriber);
+
+  void requestRecentBlock(Bytes32 blockRoot);
+
+  void cancelRecentBlockRequest(Bytes32 blockRoot);
 }

@@ -48,7 +48,7 @@ public class BlockManager extends Service implements SlotEventsChannel {
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
 
   private final FutureItems<SignedBeaconBlock> futureBlocks;
-  private final FetchRecentBlocksService recentBlockFetcher;
+  private final RecentBlockFetcher recentBlockFetcher;
   private final Set<Bytes32> invalidBlockRoots = LimitedSet.create(500);
 
   BlockManager(
@@ -57,7 +57,7 @@ public class BlockManager extends Service implements SlotEventsChannel {
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
-      final FetchRecentBlocksService recentBlockFetcher) {
+      final RecentBlockFetcher recentBlockFetcher) {
     this.eventBus = eventBus;
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
@@ -70,7 +70,7 @@ public class BlockManager extends Service implements SlotEventsChannel {
       final EventBus eventBus,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
-      final FetchRecentBlocksService recentBlockFetcher,
+      final RecentBlockFetcher recentBlockFetcher,
       final RecentChainData recentChainData,
       final BlockImporter blockImporter) {
     return new BlockManager(
@@ -129,6 +129,7 @@ public class BlockManager extends Service implements SlotEventsChannel {
   @Override
   public void onSlot(final UInt64 slot) {
     pendingBlocks.onSlot(slot);
+    futureBlocks.onSlot(slot);
     futureBlocks.prune(slot).forEach(this::importBlock);
   }
 

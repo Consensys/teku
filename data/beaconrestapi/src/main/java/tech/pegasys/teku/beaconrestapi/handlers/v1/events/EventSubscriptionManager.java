@@ -27,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
+import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;

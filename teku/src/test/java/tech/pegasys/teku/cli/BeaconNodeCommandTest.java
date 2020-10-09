@@ -382,7 +382,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setRemoteValidatorApiPort(9999)
         .setRemoteValidatorApiEnabled(false)
         .setBeaconNodeApiEndpoint("http://127.0.0.1:5051")
-        .setBeaconNodeEventsWsEndpoint("ws://127.0.0.1:9999");
+        .setBeaconNodeEventsWsEndpoint("");
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {
