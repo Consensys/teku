@@ -29,7 +29,6 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
-import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -44,7 +43,6 @@ public class BeaconRestApiWithSwaggerTest {
   private final Javalin app = mock(Javalin.class);
   private final EventChannels eventChannels = mock(EventChannels.class);
   private final SyncService syncService = mock(SyncService.class);
-  private final BlockImporter blockImporter = mock(BlockImporter.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private static final Integer THE_PORT = 12345;
 

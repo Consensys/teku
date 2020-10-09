@@ -37,7 +37,6 @@ import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
-import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -65,7 +64,6 @@ public abstract class AbstractBeaconRestAPIIntegrationTest {
   protected RecentChainData recentChainData = mock(RecentChainData.class);
   protected final SyncService syncService = mock(SyncService.class);
   protected final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
-  private final BlockImporter blockImporter = mock(BlockImporter.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   protected final EventChannels eventChannels = mock(EventChannels.class);
 
