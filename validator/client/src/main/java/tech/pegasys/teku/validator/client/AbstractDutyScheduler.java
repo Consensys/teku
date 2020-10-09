@@ -72,7 +72,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   }
 
   @Override
-  public void onEventsMissed() {
+  public void onPossibleMissedEvents() {
     // We may have missed a re-org notification so we need to recalculate all duties.
     removeEpochs(dutiesByEpoch);
     currentEpoch.ifPresent(this::recalculateDuties);

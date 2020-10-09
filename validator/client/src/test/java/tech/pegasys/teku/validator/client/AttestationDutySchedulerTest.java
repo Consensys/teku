@@ -199,7 +199,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     verify(validatorApiChannel).getDuties(currentEpoch, VALIDATOR_KEYS);
     verify(validatorApiChannel).getDuties(nextEpoch, VALIDATOR_KEYS);
 
-    dutyScheduler.onEventsMissed();
+    dutyScheduler.onPossibleMissedEvents();
 
     // Remembers the previous latest epoch and uses it to recalculate duties
     verify(validatorApiChannel, times(2)).getDuties(currentEpoch, VALIDATOR_KEYS);
@@ -209,7 +209,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
 
   @Test
   void shouldRefetchAllDutiesOnMissedEventsWithNoPreviousEpoch() {
-    dutyScheduler.onEventsMissed();
+    dutyScheduler.onPossibleMissedEvents();
 
     // Latest epoch is unknown so can't recalculate duties
     verifyNoMoreInteractions(validatorApiChannel);

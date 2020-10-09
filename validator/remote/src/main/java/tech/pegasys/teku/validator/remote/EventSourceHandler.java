@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.launchdarkly.eventsource.EventHandler;
 import com.launchdarkly.eventsource.MessageEvent;
 import org.apache.logging.log4j.LogManager;
@@ -36,8 +37,9 @@ class EventSourceHandler implements EventHandler {
   @Override
   public void onOpen() {
     LOG.info("Successfully connected to beacon chain event stream");
-    // We might have missed some events while reconnecting so ensure the duties are recalculated
-    validatorTimingChannel.onEventsMissed();
+    // We might have missed some events while connecting or reconnected so ensure the duties are
+    // recalculated
+    validatorTimingChannel.onPossibleMissedEvents();
   }
 
   @Override
@@ -47,31 +49,43 @@ class EventSourceHandler implements EventHandler {
 
   @Override
   public void onMessage(final String event, final MessageEvent messageEvent) throws Exception {
-    switch (event) {
-      case EventTypes.HEAD:
-        handleHeadEvent(messageEvent.getData());
-        return;
-      case EventTypes.CHAIN_REORG:
-        final ChainReorgEvent reorgEvent =
-            jsonProvider.jsonToObject(messageEvent.getData(), ChainReorgEvent.class);
-        final UInt64 commonAncestorSlot;
-        if (reorgEvent.depth.isGreaterThan(reorgEvent.slot)) {
-          LOG.warn("Received reorg that is deeper than the current chain");
-          commonAncestorSlot = UInt64.ZERO;
-        } else {
-          commonAncestorSlot = reorgEvent.slot.minus(reorgEvent.depth);
-        }
-        validatorTimingChannel.onChainReorg(reorgEvent.slot, commonAncestorSlot);
-        return;
-      default:
-        LOG.warn("Received unexpected event type: " + event);
+    try {
+      switch (event) {
+        case EventTypes.HEAD:
+          handleHeadEvent(messageEvent.getData());
+          return;
+        case EventTypes.CHAIN_REORG:
+          handleChainReorgEvent(messageEvent);
+          return;
+        default:
+          LOG.warn("Received unexpected event type: " + event);
+      }
+    } catch (final JsonProcessingException e) {
+      LOG.warn(
+          "Received invalid event from beacon node. Event type: {} Event data: {}",
+          event,
+          messageEvent.getData(),
+          e);
     }
   }
 
-  private void handleHeadEvent(final String data)
-      throws com.fasterxml.jackson.core.JsonProcessingException {
+  private void handleHeadEvent(final String data) throws JsonProcessingException {
     final HeadEvent headEvent = jsonProvider.jsonToObject(data, HeadEvent.class);
     validatorTimingChannel.onAttestationCreationDue(headEvent.slot);
+  }
+
+  private void handleChainReorgEvent(final MessageEvent messageEvent)
+      throws JsonProcessingException {
+    final ChainReorgEvent reorgEvent =
+        jsonProvider.jsonToObject(messageEvent.getData(), ChainReorgEvent.class);
+    final UInt64 commonAncestorSlot;
+    if (reorgEvent.depth.isGreaterThan(reorgEvent.slot)) {
+      LOG.warn("Received reorg that is deeper than the current chain");
+      commonAncestorSlot = UInt64.ZERO;
+    } else {
+      commonAncestorSlot = reorgEvent.slot.minus(reorgEvent.depth);
+    }
+    validatorTimingChannel.onChainReorg(reorgEvent.slot, commonAncestorSlot);
   }
 
   @Override
