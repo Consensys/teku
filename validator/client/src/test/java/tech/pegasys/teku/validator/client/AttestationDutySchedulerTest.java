@@ -189,6 +189,33 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   }
 
   @Test
+  void shouldRefetchAllDutiesOnMissedEvents() {
+    final UInt64 currentEpoch = UInt64.valueOf(5);
+    final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
+    final UInt64 nextEpoch = currentEpoch.plus(1);
+    when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
+    dutyScheduler.onSlot(currentSlot);
+
+    verify(validatorApiChannel).getDuties(currentEpoch, VALIDATOR_KEYS);
+    verify(validatorApiChannel).getDuties(nextEpoch, VALIDATOR_KEYS);
+
+    dutyScheduler.onEventsMissed();
+
+    // Remembers the previous latest epoch and uses it to recalculate duties
+    verify(validatorApiChannel, times(2)).getDuties(currentEpoch, VALIDATOR_KEYS);
+    verify(validatorApiChannel, times(2)).getDuties(nextEpoch, VALIDATOR_KEYS);
+    verifyNoMoreInteractions(validatorApiChannel);
+  }
+
+  @Test
+  void shouldRefetchAllDutiesOnMissedEventsWithNoPreviousEpoch() {
+    dutyScheduler.onEventsMissed();
+
+    // Latest epoch is unknown so can't recalculate duties
+    verifyNoMoreInteractions(validatorApiChannel);
+  }
+
+  @Test
   public void shouldDelayExecutingDutiesUntilSchedulingIsComplete() {
     final ScheduledDuties scheduledDuties = mock(ScheduledDuties.class);
     final StubMetricsSystem metricsSystem = new StubMetricsSystem();
