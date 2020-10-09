@@ -364,8 +364,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                         b -> b.weakSubjectivityCheckpoint(storedState.getCheckpoint()));
               }
 
-              // TODO(#2779) - make this validator strict when it is fully fleshed out
-              weakSubjectivityValidator = WeakSubjectivityValidator.lenient(wsConfig);
+              weakSubjectivityValidator = WeakSubjectivityValidator.strict(wsConfig);
               return configToPersist;
             })
         .thenCompose(
