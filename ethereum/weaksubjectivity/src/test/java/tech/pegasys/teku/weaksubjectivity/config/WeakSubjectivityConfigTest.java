@@ -26,17 +26,6 @@ public class WeakSubjectivityConfigTest {
   private final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
 
   @Test
-  public void build_withStringParameters() {
-    final String checkpointString =
-        checkpoint.getRoot().toHexString() + ":" + checkpoint.getEpoch();
-
-    WeakSubjectivityConfig config =
-        WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(checkpointString).build();
-
-    assertThat(config.getWeakSubjectivityCheckpoint()).contains(checkpoint);
-  }
-
-  @Test
   public void build_withParsedParameters() {
     WeakSubjectivityConfig config =
         WeakSubjectivityConfig.builder().weakSubjectivityCheckpoint(checkpoint).build();
