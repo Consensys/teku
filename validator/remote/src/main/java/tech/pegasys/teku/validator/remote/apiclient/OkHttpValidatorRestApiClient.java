@@ -76,10 +76,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   private final OkHttpClient httpClient;
   private final HttpUrl baseEndpoint;
 
-  public OkHttpValidatorRestApiClient(final String baseEndpoint) {
-    this(HttpUrl.parse(baseEndpoint), new OkHttpClient());
-  }
-
   public OkHttpValidatorRestApiClient(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
     this.baseEndpoint = baseEndpoint;
     this.httpClient = okHttpClient;
@@ -260,8 +256,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
           }
       }
     } catch (IOException e) {
-      LOG.error("Error communicating with Beacon Node API", e);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Error communicating with Beacon Node API: " + e.getMessage(), e);
     }
   }
 

@@ -1,14 +1,24 @@
+/*
+ * Copyright 2020 ConsenSys AG.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package tech.pegasys.teku.validator.remote;
 
-import com.launchdarkly.eventsource.EventHandler;
 import com.launchdarkly.eventsource.EventSource;
-import com.launchdarkly.eventsource.EventSource.Builder;
-import com.launchdarkly.eventsource.MessageEvent;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
-import tech.pegasys.teku.validator.eventadapter.BeaconChainEventAdapter;
+import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 
 public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapter {
@@ -17,16 +27,20 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
   private final EventSource eventSource;
 
   public EventSourceBeaconChainEventAdapter(
-      final String baseEndpoint,
+      final HttpUrl baseEndpoint,
       final OkHttpClient okHttpClient,
       final BeaconChainEventAdapter timeBasedEventAdapter,
       final ValidatorTimingChannel validatorTimingChannel) {
     this.timeBasedEventAdapter = timeBasedEventAdapter;
+    final HttpUrl eventSourceUrl =
+        baseEndpoint.resolve(
+            ValidatorApiMethod.EVENTS.getPath()
+                + "?topics="
+                + EventTypes.HEAD
+                + ","
+                + EventTypes.CHAIN_REORG);
     this.eventSource =
-        new Builder(
-                new BeaconEventHandler(validatorTimingChannel),
-                HttpUrl.parse(baseEndpoint)
-                    .resolve(ValidatorApiMethod.EVENTS.getPath() + "?topics=head,chain_reorg"))
+        new EventSource.Builder(new EventSourceHandler(validatorTimingChannel), eventSourceUrl)
             .client(okHttpClient)
             .build();
   }
@@ -34,46 +48,12 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
   @Override
   public SafeFuture<Void> start() {
     eventSource.start();
-    return SafeFuture.COMPLETE;
+    return timeBasedEventAdapter.start();
   }
 
   @Override
   public SafeFuture<Void> stop() {
     eventSource.close();
-    return SafeFuture.COMPLETE;
-  }
-
-  private class BeaconEventHandler implements EventHandler {
-
-    private final ValidatorTimingChannel validatorTimingChannel;
-
-    public BeaconEventHandler(final ValidatorTimingChannel validatorTimingChannel) {
-      this.validatorTimingChannel = validatorTimingChannel;
-    }
-
-    @Override
-    public void onOpen() throws Exception {
-      System.out.println("Opened");
-    }
-
-    @Override
-    public void onClosed() throws Exception {
-      System.out.println("Closed");
-    }
-
-    @Override
-    public void onMessage(final String event, final MessageEvent messageEvent) throws Exception {
-      System.out.println("Got message of type: " + event + " with: " + messageEvent.getData());
-    }
-
-    @Override
-    public void onComment(final String comment) throws Exception {
-      System.out.println("COMMENT: " + comment);
-    }
-
-    @Override
-    public void onError(final Throwable t) {
-      t.printStackTrace();
-    }
+    return timeBasedEventAdapter.stop();
   }
 }

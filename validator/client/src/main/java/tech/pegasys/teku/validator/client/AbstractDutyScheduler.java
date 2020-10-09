@@ -29,6 +29,7 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
   private final int lookAheadEpochs;
 
   protected final NavigableMap<UInt64, DutyQueue> dutiesByEpoch = new TreeMap<>();
+  private UInt64 currentEpoch;
 
   protected AbstractDutyScheduler(
       final DutyLoader epochDutiesScheduler, final int lookAheadEpochs) {
@@ -49,9 +50,9 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
-    final UInt64 epochNumber = compute_epoch_at_slot(slot);
-    removePriorEpochs(epochNumber);
-    recalculateDuties(epochNumber);
+    currentEpoch = compute_epoch_at_slot(slot);
+    removePriorEpochs(currentEpoch);
+    recalculateDuties(currentEpoch);
   }
 
   @Override
@@ -66,6 +67,13 @@ public abstract class AbstractDutyScheduler implements ValidatorTimingChannel {
         lastUnaffectedEpoch);
     removeEpochs(dutiesByEpoch.tailMap(lastUnaffectedEpoch, false));
     recalculateDuties(compute_epoch_at_slot(newSlot));
+  }
+
+  @Override
+  public void onEventsMissed() {
+    // We may have missed a re-org notification so we need to recalculate all duties.
+    removeEpochs(dutiesByEpoch);
+    recalculateDuties(currentEpoch);
   }
 
   protected void recalculateDuties(final UInt64 epochNumber) {

@@ -11,21 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.api;
+package tech.pegasys.teku.validator.remote;
 
-import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-
-public interface ValidatorTimingChannel extends VoidReturningChannelInterface {
-  void onSlot(UInt64 slot);
-
-  void onChainReorg(UInt64 newSlot, UInt64 commonAncestorSlot);
-
-  void onEventsMissed();
-
-  void onBlockProductionDue(UInt64 slot);
-
-  void onAttestationCreationDue(UInt64 slot);
-
-  void onAttestationAggregationDue(UInt64 slot);
+public class EventTypes {
+  public static final String HEAD = "head";
+  public static final String CHAIN_REORG = "chain_reorg";
 }
