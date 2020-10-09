@@ -35,7 +35,7 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.sync.gossip.FetchBlockTask.FetchBlockResult;
 import tech.pegasys.teku.sync.singlepeer.RetryDelayFunction;
 
-public class FetchRecentBlocksService extends Service {
+public class FetchRecentBlocksService extends Service implements RecentBlockFetcher {
   private static final Logger LOG = LogManager.getLogger();
 
   private static final int MAX_CONCURRENT_REQUESTS = 3;
@@ -91,6 +91,7 @@ public class FetchRecentBlocksService extends Service {
     return SafeFuture.completedFuture(null);
   }
 
+  @Override
   public long subscribeBlockFetched(final BlockSubscriber subscriber) {
     return blockSubscribers.subscribe(subscriber);
   }
@@ -104,6 +105,7 @@ public class FetchRecentBlocksService extends Service {
     this.pendingBlocksPool.subscribeRequiredBlockRootDropped(this::cancelRecentBlockRequest);
   }
 
+  @Override
   public void requestRecentBlock(final Bytes32 blockRoot) {
     if (pendingBlocksPool.contains(blockRoot)) {
       // We've already got this block
@@ -119,6 +121,7 @@ public class FetchRecentBlocksService extends Service {
     queueTask(task);
   }
 
+  @Override
   public void cancelRecentBlockRequest(final Bytes32 blockRoot) {
     final FetchBlockTask task = allTasks.get(blockRoot);
     if (task != null) {
