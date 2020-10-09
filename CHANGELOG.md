@@ -7,6 +7,13 @@ we recommend most users use the latest `master` branch of Teku.
 
 - REST API endpoints will be updated to match emerging standards in a future release.
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments still work but will be removed in a future release.
+- Validator subcommands for generating and registering validators are now deprecated and will be removed in a future release to encourage the use of the Eth2 Launchpad, which is the most secure way of generating keys and sending deposits.
+
+## 0.12.10
+
+### Additions and Improvements
+- Added `zinken` network genesis state so an ETH1 endpoint is no longer required when connecting to Zinken.
+- Deprecated the validator subcommands (which were mainly for testing) used for generating and registering validators.
 
 ## 0.12.9
 
