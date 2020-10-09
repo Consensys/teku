@@ -31,7 +31,7 @@ public class ValidatorClientOptions {
       description = "Endpoint of the Beacon Node Events WebSocket API",
       arity = "1",
       hidden = true)
-  private String beaconNodeEventsWsEndpoint = "ws://127.0.0.1:9999";
+  private String beaconNodeEventsWsEndpoint = "";
 
   public String getBeaconNodeApiEndpoint() {
     return beaconNodeApiEndpoint;

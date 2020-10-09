@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 
 public class EventSubscriber {

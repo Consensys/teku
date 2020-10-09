@@ -14,17 +14,19 @@
 package tech.pegasys.teku.api.response.v1;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ChainReorgEvent {
-  @JsonProperty("slot")
+  @JsonProperty(value = "slot", required = true)
   public final UInt64 slot;
 
-  @JsonProperty("depth")
+  @JsonProperty(value = "depth", required = true)
   public final UInt64 depth;
 
   @JsonProperty("old_head_block")
@@ -44,8 +46,8 @@ public class ChainReorgEvent {
 
   @JsonCreator
   public ChainReorgEvent(
-      @JsonProperty("slot") final UInt64 slot,
-      @JsonProperty("depth") final UInt64 depth,
+      @JsonProperty(value = "slot", required = true) final UInt64 slot,
+      @JsonProperty(value = "depth", required = true) final UInt64 depth,
       @JsonProperty("old_head_block") final Bytes32 oldHeadBlock,
       @JsonProperty("new_head_block") final Bytes32 newHeadBlock,
       @JsonProperty("old_head_state") final Bytes32 oldHeadState,

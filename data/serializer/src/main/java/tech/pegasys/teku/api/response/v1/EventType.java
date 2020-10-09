@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
+package tech.pegasys.teku.api.response.v1;
 
 import java.util.List;
 import java.util.stream.Collectors;
