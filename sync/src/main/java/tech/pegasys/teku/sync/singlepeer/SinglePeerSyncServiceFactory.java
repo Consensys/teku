@@ -20,7 +20,6 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.sync.gossip.BlockManager;
 
 public class SinglePeerSyncServiceFactory {
   public static SyncService create(
@@ -28,10 +27,9 @@ public class SinglePeerSyncServiceFactory {
       final AsyncRunner asyncRunner,
       final P2PNetwork<Eth2Peer> p2pNetwork,
       final RecentChainData recentChainData,
-      final BlockImporter blockImporter,
-      final BlockManager blockManager) {
+      final BlockImporter blockImporter) {
     final SyncManager syncManager =
         SyncManager.create(asyncRunner, p2pNetwork, recentChainData, blockImporter, metricsSystem);
-    return new SinglePeerSyncService(blockManager, syncManager, recentChainData);
+    return new SinglePeerSyncService(syncManager, recentChainData);
   }
 }

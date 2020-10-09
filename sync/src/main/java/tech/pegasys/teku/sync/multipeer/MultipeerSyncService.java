@@ -29,7 +29,6 @@ import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncingStatus;
-import tech.pegasys.teku.sync.gossip.BlockManager;
 import tech.pegasys.teku.sync.multipeer.batches.BatchFactory;
 import tech.pegasys.teku.sync.multipeer.chains.PeerChainTracker;
 import tech.pegasys.teku.sync.multipeer.chains.SyncSourceFactory;
@@ -39,19 +38,16 @@ import tech.pegasys.teku.util.config.Constants;
 public class MultipeerSyncService extends Service implements SyncService {
   private static final Logger LOG = LogManager.getLogger();
   private final EventThread eventThread;
-  private final BlockManager blockManager;
   private final RecentChainData recentChainData;
   private final PeerChainTracker peerChainTracker;
   private final SyncController syncController;
 
   MultipeerSyncService(
       final EventThread eventThread,
-      final BlockManager blockManager,
       final RecentChainData recentChainData,
       final PeerChainTracker peerChainTracker,
       final SyncController syncController) {
     this.eventThread = eventThread;
-    this.blockManager = blockManager;
     this.recentChainData = recentChainData;
     this.peerChainTracker = peerChainTracker;
     this.syncController = syncController;
@@ -63,8 +59,7 @@ public class MultipeerSyncService extends Service implements SyncService {
       final TimeProvider timeProvider,
       final RecentChainData recentChainData,
       final P2PNetwork<Eth2Peer> p2pNetwork,
-      final BlockImporter blockImporter,
-      final BlockManager blockManager) {
+      final BlockImporter blockImporter) {
     LOG.info("Using multipeer sync");
     final EventThread eventThread = new AsyncRunnerEventThread("sync", asyncRunnerFactory);
 
@@ -94,8 +89,7 @@ public class MultipeerSyncService extends Service implements SyncService {
             finalizedTargetChains,
             nonfinalizedTargetChains);
     peerChainTracker.subscribeToTargetChainUpdates(syncController::onTargetChainsUpdated);
-    return new MultipeerSyncService(
-        eventThread, blockManager, recentChainData, peerChainTracker, syncController);
+    return new MultipeerSyncService(eventThread, recentChainData, peerChainTracker, syncController);
   }
 
   @Override
@@ -106,7 +100,6 @@ public class MultipeerSyncService extends Service implements SyncService {
     recentChainData.subscribeStoreInitialized(
         () -> {
           eventThread.start();
-          blockManager.start().reportExceptions();
           peerChainTracker.start();
         });
     return SafeFuture.COMPLETE;
@@ -116,7 +109,7 @@ public class MultipeerSyncService extends Service implements SyncService {
   protected SafeFuture<?> doStop() {
     peerChainTracker.stop();
     eventThread.stop();
-    return blockManager.stop();
+    return SafeFuture.COMPLETE;
   }
 
   @Override

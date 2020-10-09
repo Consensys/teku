@@ -113,7 +113,7 @@ public class SyncingNodeManager {
     SyncManager syncManager =
         SyncManager.create(
             asyncRunner, eth2Network, recentChainData, blockImporter, new NoOpMetricsSystem());
-    SyncService syncService = new SinglePeerSyncService(blockManager, syncManager, recentChainData);
+    SyncService syncService = new SinglePeerSyncService(syncManager, recentChainData);
 
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)

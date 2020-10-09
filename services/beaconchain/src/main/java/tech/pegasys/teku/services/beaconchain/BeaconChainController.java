@@ -663,12 +663,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               timeProvider,
               recentChainData,
               p2pNetwork,
-              blockImporter,
-              blockManager);
+              blockImporter);
     } else {
       syncService =
           SinglePeerSyncServiceFactory.create(
-              metricsSystem, asyncRunner, p2pNetwork, recentChainData, blockImporter, blockManager);
+              metricsSystem, asyncRunner, p2pNetwork, recentChainData, blockImporter);
     }
   }
 
