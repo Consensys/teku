@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server.rocksdb.schema;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 
@@ -49,4 +50,7 @@ public interface Schema {
               }
             });
   }
+
+  List<RocksDbColumn<?, ?>> getAllColumns();
+  List<RocksDbVariable<?>> getAllVariables();
 }
