@@ -16,16 +16,24 @@ package tech.pegasys.teku.statetransition.util;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class FutureItemsTest {
 
-  private final FutureItems<Item> futureItems = new FutureItems<>(Item::getSlot);
+  private final UInt64 currentSlot = UInt64.valueOf(5);
+  private final FutureItems<Item> futureItems = FutureItems.create(Item::getSlot);
+
+  @BeforeEach
+  public void beforeEach() {
+    futureItems.onSlot(currentSlot);
+  }
 
   @Test
-  public void add() {
-    final Item item = new Item(5);
+  public void add_success() {
+    final UInt64 itemSlot = currentSlot.plus(FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE);
+    final Item item = new Item(itemSlot);
 
     futureItems.add(item);
     assertThat(futureItems.size()).isEqualTo(1);
@@ -33,8 +41,22 @@ public class FutureItemsTest {
   }
 
   @Test
+  public void add_ignored() {
+    final UInt64 itemSlot = currentSlot.plus(FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE).plus(1);
+    final Item itemA = new Item(itemSlot);
+    final Item itemB = new Item(itemSlot.plus(10));
+
+    futureItems.add(itemA);
+    futureItems.add(itemB);
+    assertThat(futureItems.size()).isEqualTo(0);
+    assertThat(futureItems.contains(itemA)).isFalse();
+    assertThat(futureItems.contains(itemB)).isFalse();
+  }
+
+  @Test
   public void prune_nothingToPrune() {
-    final Item item = new Item(5);
+    final UInt64 itemSlot = currentSlot.plus(FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE);
+    final Item item = new Item(itemSlot);
 
     futureItems.add(item);
 
@@ -48,7 +70,8 @@ public class FutureItemsTest {
 
   @Test
   public void prune_itemAtSlot() {
-    final Item item = new Item(5);
+    final UInt64 itemSlot = currentSlot.plus(FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE);
+    final Item item = new Item(itemSlot);
 
     futureItems.add(item);
 
@@ -59,7 +82,8 @@ public class FutureItemsTest {
 
   @Test
   public void prune_itemPriorToSlot() {
-    final Item item = new Item(5);
+    final UInt64 itemSlot = currentSlot.plus(FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE);
+    final Item item = new Item(itemSlot);
 
     futureItems.add(item);
 
@@ -71,8 +95,8 @@ public class FutureItemsTest {
   private static class Item {
     private final UInt64 slot;
 
-    private Item(final long slot) {
-      this.slot = UInt64.valueOf(slot);
+    private Item(final UInt64 slot) {
+      this.slot = slot;
     }
 
     public UInt64 getSlot() {

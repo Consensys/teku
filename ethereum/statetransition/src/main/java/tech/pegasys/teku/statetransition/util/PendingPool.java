@@ -14,16 +14,19 @@
 package tech.pegasys.teku.statetransition.util;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.TreeSet;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,12 +41,13 @@ import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointChannel {
-
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final UInt64 DEFAULT_FUTURE_SLOT_TOLERANCE = UInt64.valueOf(2);
+  private static final Comparator<SlotAndRoot> SLOT_AND_ROOT_COMPARATOR =
+      Comparator.comparing(SlotAndRoot::getSlot).thenComparing(SlotAndRoot::getRoot);
   private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE =
       UInt64.valueOf(Constants.SLOTS_PER_EPOCH * 10);
+  private static final int DEFAULT_MAX_ITEMS = 5000;
   private static final UInt64 GENESIS_SLOT = UInt64.valueOf(Constants.GENESIS_SLOT);
 
   private final Subscribers<RequiredBlockRootSubscriber> requiredBlockRootSubscribers =
@@ -51,12 +55,14 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   private final Subscribers<RequiredBlockRootDroppedSubscriber>
       requiredBlockRootDroppedSubscribers = Subscribers.create(true);
 
-  private final Map<Bytes32, T> pendingItems = new ConcurrentHashMap<>();
-  private final Map<Bytes32, Set<Bytes32>> pendingItemsByRequiredBlockRoot =
-      new ConcurrentHashMap<>();
+  private final Map<Bytes32, T> pendingItems = new HashMap<>();
+  private final NavigableSet<SlotAndRoot> orderedPendingItems =
+      new TreeSet<>(SLOT_AND_ROOT_COMPARATOR);
+  private final Map<Bytes32, Set<Bytes32>> pendingItemsByRequiredBlockRoot = new HashMap<>();
   // Define the range of slots we care about
   private final UInt64 futureSlotTolerance;
   private final UInt64 historicalSlotTolerance;
+  private final int maxItems;
 
   private final Function<T, Bytes32> hashTreeRootFunction;
   private final Function<T, Collection<Bytes32>> requiredBlockRootsFunction;
@@ -68,25 +74,33 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   PendingPool(
       final UInt64 historicalSlotTolerance,
       final UInt64 futureSlotTolerance,
+      final int maxItems,
       final Function<T, Bytes32> hashTreeRootFunction,
       final Function<T, Collection<Bytes32>> requiredBlockRootsFunction,
       final Function<T, UInt64> targetSlotFunction) {
     this.historicalSlotTolerance = historicalSlotTolerance;
     this.futureSlotTolerance = futureSlotTolerance;
+    this.maxItems = maxItems;
     this.hashTreeRootFunction = hashTreeRootFunction;
     this.requiredBlockRootsFunction = requiredBlockRootsFunction;
     this.targetSlotFunction = targetSlotFunction;
   }
 
   public static PendingPool<SignedBeaconBlock> createForBlocks() {
-    return createForBlocks(DEFAULT_HISTORICAL_SLOT_TOLERANCE, DEFAULT_FUTURE_SLOT_TOLERANCE);
+    return createForBlocks(
+        DEFAULT_HISTORICAL_SLOT_TOLERANCE,
+        FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
+        DEFAULT_MAX_ITEMS);
   }
 
   public static PendingPool<SignedBeaconBlock> createForBlocks(
-      final UInt64 historicalBlockTolerance, final UInt64 futureBlockTolerance) {
+      final UInt64 historicalBlockTolerance,
+      final UInt64 futureBlockTolerance,
+      final int maxItems) {
     return new PendingPool<>(
         historicalBlockTolerance,
         futureBlockTolerance,
+        maxItems,
         block -> block.getMessage().hash_tree_root(),
         block -> Collections.singleton(block.getParent_root()),
         SignedBeaconBlock::getSlot);
@@ -95,16 +109,26 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   public static PendingPool<ValidateableAttestation> createForAttestations() {
     return new PendingPool<>(
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
-        DEFAULT_FUTURE_SLOT_TOLERANCE,
+        FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
+        DEFAULT_MAX_ITEMS,
         ValidateableAttestation::hash_tree_root,
         ValidateableAttestation::getDependentBlockRoots,
         ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
   }
 
-  public void add(T item) {
+  public synchronized void add(T item) {
     if (shouldIgnoreItem(item)) {
       // Ignore items outside of the range we care about
       return;
+    }
+
+    // Make room for the new item
+    while (pendingItems.size() > (maxItems - 1)) {
+      final SlotAndRoot toRemove = orderedPendingItems.pollFirst();
+      if (toRemove == null) {
+        break;
+      }
+      remove(pendingItems.get(toRemove.getRoot()));
     }
 
     final Bytes32 itemRoot = hashTreeRootFunction.apply(item);
@@ -114,13 +138,10 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
         requiredRoot ->
             // Index item by required roots
             pendingItemsByRequiredBlockRoot
-                // Go ahead and add our root when the set is constructed to ensure we don't
-                // accidentally
-                // drop this set when we prune empty sets
                 .computeIfAbsent(
                     requiredRoot,
                     (key) -> {
-                      final Set<Bytes32> dependants = createRootSet(itemRoot);
+                      final Set<Bytes32> dependants = new HashSet<>();
                       requiredBlockRootSubscribers.forEach(
                           c -> c.onRequiredBlockRoot(requiredRoot));
                       return dependants;
@@ -134,11 +155,14 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
           targetSlotFunction.apply(item),
           item);
     }
+
+    orderedPendingItems.add(toSlotAndRoot(item));
   }
 
-  public void remove(T item) {
-    final Bytes32 itemRoot = hashTreeRootFunction.apply(item);
-    pendingItems.remove(itemRoot);
+  public synchronized void remove(T item) {
+    final SlotAndRoot itemSlotAndRoot = toSlotAndRoot(item);
+    orderedPendingItems.remove(itemSlotAndRoot);
+    pendingItems.remove(itemSlotAndRoot.getRoot());
 
     final Collection<Bytes32> requiredRoots = requiredBlockRootsFunction.apply(item);
     requiredRoots.forEach(
@@ -147,7 +171,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
           if (childSet == null) {
             return;
           }
-          childSet.remove(itemRoot);
+          childSet.remove(itemSlotAndRoot.getRoot());
           if (pendingItemsByRequiredBlockRoot.remove(requiredRoot, Collections.emptySet())) {
             requiredBlockRootDroppedSubscribers.forEach(
                 s -> s.onRequiredBlockRootDropped(requiredRoot));
@@ -155,7 +179,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
         });
   }
 
-  public int size() {
+  public synchronized int size() {
     return pendingItems.size();
   }
 
@@ -164,7 +188,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     return contains(itemRoot);
   }
 
-  public boolean contains(final Bytes32 itemRoot) {
+  public synchronized boolean contains(final Bytes32 itemRoot) {
     return pendingItems.containsKey(itemRoot);
   }
 
@@ -192,7 +216,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
    * @param blockRoot The block root that some pending items may depend on
    * @return A list of items that depend on this block root.
    */
-  private List<T> getItemsDirectlyDependingOn(final Bytes32 blockRoot) {
+  private synchronized List<T> getItemsDirectlyDependingOn(final Bytes32 blockRoot) {
     final Set<Bytes32> dependentRoots = pendingItemsByRequiredBlockRoot.get(blockRoot);
     if (dependentRoots == null) {
       return Collections.emptyList();
@@ -212,7 +236,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
    * @param blockRoot The block root that some pending items may depend on.
    * @return A list of items that either directly or indirectly depend on the given block root.
    */
-  private List<T> getAllItemsDependingOn(final Bytes32 blockRoot) {
+  private synchronized List<T> getAllItemsDependingOn(final Bytes32 blockRoot) {
     final Set<Bytes32> dependentRoots = new HashSet<>();
 
     Set<Bytes32> requiredRoots = Set.of(blockRoot);
@@ -266,8 +290,18 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   }
 
   @VisibleForTesting
-  void prune() {
-    pruneItems(this::isTooOld);
+  synchronized void prune() {
+    final UInt64 slotLimit = latestFinalizedSlot.max(calculateItemAgeLimit());
+
+    final List<T> toRemove = new ArrayList<>();
+    for (SlotAndRoot slotAndRoot : orderedPendingItems) {
+      if (slotAndRoot.getSlot().isGreaterThan(slotLimit)) {
+        break;
+      }
+      toRemove.add(pendingItems.get(slotAndRoot.getRoot()));
+    }
+
+    toRemove.forEach(this::remove);
   }
 
   private boolean shouldIgnoreItem(final T item) {
@@ -280,7 +314,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
 
   private boolean isFromFarFuture(final T item) {
     final UInt64 slot = calculateFutureItemLimit();
-    return targetSlotFunction.apply(item).compareTo(slot) > 0;
+    return targetSlotFunction.apply(item).isGreaterThan(slot);
   }
 
   private boolean isOutsideOfHistoricalLimit(final T item) {
@@ -302,14 +336,10 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     return currentSlot.plus(futureSlotTolerance);
   }
 
-  private void pruneItems(final Predicate<T> shouldRemove) {
-    pendingItems.values().stream().filter(shouldRemove).forEach(this::remove);
-  }
-
-  private Set<Bytes32> createRootSet(final Bytes32 initialValue) {
-    final Set<Bytes32> rootSet = Collections.newSetFromMap(new ConcurrentHashMap<>());
-    rootSet.add(initialValue);
-    return rootSet;
+  private SlotAndRoot toSlotAndRoot(final T item) {
+    final UInt64 slot = targetSlotFunction.apply(item);
+    final Bytes32 root = hashTreeRootFunction.apply(item);
+    return new SlotAndRoot(slot, root);
   }
 
   public interface RequiredBlockRootSubscriber {
@@ -318,5 +348,23 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
 
   public interface RequiredBlockRootDroppedSubscriber {
     void onRequiredBlockRootDropped(final Bytes32 blockRoot);
+  }
+
+  private static class SlotAndRoot {
+    private final UInt64 slot;
+    private final Bytes32 root;
+
+    private SlotAndRoot(final UInt64 slot, final Bytes32 root) {
+      this.slot = slot;
+      this.root = root;
+    }
+
+    public UInt64 getSlot() {
+      return slot;
+    }
+
+    public Bytes32 getRoot() {
+      return root;
+    }
   }
 }

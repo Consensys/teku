@@ -105,6 +105,7 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
   @Override
   public void onSlot(final UInt64 slot) {
     pendingBlocks.onSlot(slot);
+    futureBlocks.onSlot(slot);
     futureBlocks.prune(slot).forEach(this::importBlockIgnoringResult);
   }
 

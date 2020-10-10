@@ -478,7 +478,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final PendingPool<ValidateableAttestation> pendingAttestations =
         PendingPool.createForAttestations();
     final FutureItems<ValidateableAttestation> futureAttestations =
-        new FutureItems<>(ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
+        FutureItems.create(
+            ValidateableAttestation::getEarliestSlotForForkChoiceProcessing, UInt64.valueOf(3));
     attestationManager =
         AttestationManager.create(
             eventBus, pendingAttestations, futureAttestations, forkChoice, attestationPool);
@@ -634,7 +635,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     LOG.debug("BeaconChainController.initBlockManager()");
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
     final FutureItems<SignedBeaconBlock> futureBlocks =
-        new FutureItems<>(SignedBeaconBlock::getSlot);
+        FutureItems.create(SignedBeaconBlock::getSlot);
     final RecentBlockFetcher recentBlockFetcher;
     if (!config.isP2pEnabled()) {
       recentBlockFetcher = new NoopRecentBlockFetcher();

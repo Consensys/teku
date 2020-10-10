@@ -103,8 +103,6 @@ public class WeakSubjectivityConfig {
   }
 
   public static class Builder {
-    private WeakSubjectivityParameterParser parser = new WeakSubjectivityParameterParser();
-
     private UInt64 safetyDecay = DEFAULT_SAFETY_DECAY;
     private Optional<Checkpoint> weakSubjectivityCheckpoint = Optional.empty();
     private Optional<UInt64> suppressWSPeriodChecksUntilEpoch = Optional.empty();
@@ -118,12 +116,6 @@ public class WeakSubjectivityConfig {
 
     public Builder weakSubjectivityCheckpoint(Checkpoint weakSubjectivityCheckpoint) {
       return weakSubjectivityCheckpoint(Optional.of(weakSubjectivityCheckpoint));
-    }
-
-    public Builder weakSubjectivityCheckpoint(String weakSubjectivityCheckpoint) {
-      checkNotNull(weakSubjectivityCheckpoint);
-      final Checkpoint checkpoint = parser.parseCheckpoint(weakSubjectivityCheckpoint);
-      return weakSubjectivityCheckpoint(checkpoint);
     }
 
     public Builder weakSubjectivityCheckpoint(Optional<Checkpoint> weakSubjectivityCheckpoint) {

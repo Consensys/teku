@@ -14,18 +14,21 @@
 package tech.pegasys.teku.cli.options;
 
 import picocli.CommandLine;
+import tech.pegasys.teku.cli.converter.CheckpointConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class WeakSubjectivityOptions {
   // TODO(#2779) - Make this option public when we're ready
   @CommandLine.Option(
+      converter = CheckpointConverter.class,
       names = {"--Xweak-subjectivity-checkpoint"},
       paramLabel = "<BLOCK_ROOT>:<EPOCH_NUMBER>",
       description = "A recent checkpoint within the weak subjectivity period.",
       arity = "1",
       hidden = true)
-  private String weakSubjectivityCheckpoint = "";
+  private Checkpoint weakSubjectivityCheckpoint;
 
   @CommandLine.Option(
       names = {"--Xweak-subjectivity-suppress-errors-until-epoch"},
@@ -39,7 +42,7 @@ public class WeakSubjectivityOptions {
   public TekuConfiguration.Builder configure(TekuConfiguration.Builder builder) {
     return builder.weakSubjectivity(
         wsBuilder -> {
-          if (!weakSubjectivityCheckpoint.isBlank()) {
+          if (weakSubjectivityCheckpoint != null) {
             wsBuilder.weakSubjectivityCheckpoint(weakSubjectivityCheckpoint);
           }
           if (suppressWSPeriodChecksUntilEpoch != null) {
