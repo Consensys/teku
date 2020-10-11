@@ -131,7 +131,8 @@ public class BeaconRestApiV1Test {
   public void shouldHaveValidatorBlockEndpoint() {
     verify(app).post(eq(PostBlock.ROUTE), any(PostBlock.class));
   }
-    @Test
+
+  @Test
   public void shouldHaveGetNewBlockEndpoint() {
     verify(app).get(eq(GetNewBlock.ROUTE), any(GetNewBlock.class));
   }

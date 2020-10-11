@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_ACCEPTED;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -25,7 +27,6 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -34,12 +35,13 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.apache.tuweni.bytes.Bytes32;
+import joptsimple.internal.Strings;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
+import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class PostBlock implements Handler {
@@ -95,6 +97,7 @@ public class PostBlock implements Handler {
     try {
       if (syncDataProvider.getSyncStatus().is_syncing) {
         ctx.status(SC_SERVICE_UNAVAILABLE);
+        ctx.result(BadRequest.serviceUnavailable(jsonProvider));
         return;
       }
 
@@ -109,20 +112,25 @@ public class PostBlock implements Handler {
 
     } catch (final JsonMappingException | JsonParseException ex) {
       ctx.status(SC_BAD_REQUEST);
+      ctx.result(BadRequest.badRequest(jsonProvider, ex.getMessage()));
     } catch (final Exception ex) {
       ctx.status(SC_INTERNAL_SERVER_ERROR);
+      ctx.result(BadRequest.internalError(jsonProvider, ex.getMessage()));
     }
   }
 
   private String handleResponseContext(
-      final Context ctx, final ValidatorBlockResult validatorBlockResult)
-      throws JsonProcessingException {
+      final Context ctx, final ValidatorBlockResult validatorBlockResult) {
     ctx.status(validatorBlockResult.getResponseCode());
-    if (validatorBlockResult.getFailureReason().isPresent()) {
-      return jsonProvider.objectToJSON(validatorBlockResult.getFailureReason().get());
-    } else {
-      return jsonProvider.objectToJSON(
-          validatorBlockResult.getHash_tree_root().map(Bytes32::toHexString).orElse(""));
+    if (validatorBlockResult.getResponseCode() == SC_ACCEPTED
+        || validatorBlockResult.getResponseCode() == SC_OK) {
+      return Strings.EMPTY;
     }
+    return validatorBlockResult
+        .getFailureReason()
+        .map(
+            reason ->
+                BadRequest.serialize(jsonProvider, validatorBlockResult.getResponseCode(), reason))
+        .orElse(Strings.EMPTY);
   }
 }
