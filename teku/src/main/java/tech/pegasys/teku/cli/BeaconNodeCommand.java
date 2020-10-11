@@ -44,7 +44,6 @@ import tech.pegasys.teku.cli.options.MetricsOptions;
 import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.cli.options.OutputOptions;
 import tech.pegasys.teku.cli.options.P2POptions;
-import tech.pegasys.teku.cli.options.RemoteValidatorApiOptions;
 import tech.pegasys.teku.cli.options.StoreOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
@@ -172,9 +171,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
   @Mixin(name = "REST API")
   private BeaconRestApiOptions beaconRestApiOptions;
-
-  @Mixin(name = "Remote Validator API")
-  private RemoteValidatorApiOptions remoteValidatorApiOptions;
 
   @Mixin(name = "Validator Client")
   private ValidatorClientOptions validatorClientOptions;
@@ -399,12 +395,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setRestApiEnabled(beaconRestApiOptions.isRestApiEnabled())
         .setRestApiInterface(beaconRestApiOptions.getRestApiInterface())
         .setRestApiHostAllowlist(beaconRestApiOptions.getRestApiHostAllowlist())
-        .setRemoteValidatorApiInterface(remoteValidatorApiOptions.getApiInterface())
-        .setRemoteValidatorApiPort(remoteValidatorApiOptions.getApiPort())
-        .setRemoteValidatorApiMaxSubscribers(remoteValidatorApiOptions.getMaxSubscribers())
-        .setRemoteValidatorApiEnabled(remoteValidatorApiOptions.isApiEnabled())
         .setValidatorClient(false)
-        .setBeaconNodeApiEndpoint(validatorClientOptions.getBeaconNodeApiEndpoint())
-        .setBeaconNodeEventsWsEndpoint(validatorClientOptions.getBeaconNodeEventsWsEndpoint());
+        .setBeaconNodeApiEndpoint(validatorClientOptions.getBeaconNodeApiEndpoint());
   }
 }
