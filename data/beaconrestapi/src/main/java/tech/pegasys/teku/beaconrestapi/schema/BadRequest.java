@@ -21,7 +21,6 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILAB
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import joptsimple.internal.Strings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -75,6 +74,6 @@ public class BadRequest {
     } catch (JsonProcessingException e) {
       LOG.error("Failed to serialize to json", e);
     }
-    return Strings.EMPTY;
+    return "";
   }
 }

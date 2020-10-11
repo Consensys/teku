@@ -35,7 +35,6 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import joptsimple.internal.Strings;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -124,13 +123,13 @@ public class PostBlock implements Handler {
     ctx.status(validatorBlockResult.getResponseCode());
     if (validatorBlockResult.getResponseCode() == SC_ACCEPTED
         || validatorBlockResult.getResponseCode() == SC_OK) {
-      return Strings.EMPTY;
+      return "";
     }
     return validatorBlockResult
         .getFailureReason()
         .map(
             reason ->
                 BadRequest.serialize(jsonProvider, validatorBlockResult.getResponseCode(), reason))
-        .orElse(Strings.EMPTY);
+        .orElse("");
   }
 }
