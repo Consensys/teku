@@ -29,6 +29,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.ScopeType;
 import picocli.CommandLine.Unmatched;
 import tech.pegasys.teku.cli.converter.LogTypeConverter;
 import tech.pegasys.teku.cli.converter.MetricCategoryConverter;
@@ -109,7 +110,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
 
     @Option(
         names = {"-c", CONFIG_FILE_OPTION_NAME},
-        arity = "1")
+        arity = "1",
+        // Available to all subcommands
+        scope = ScopeType.INHERIT)
     File configFile;
 
     @SuppressWarnings("UnunsedVariable")

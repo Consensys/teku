@@ -14,6 +14,8 @@
 package tech.pegasys.teku.cli.util;
 
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -28,6 +30,8 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
+import picocli.CommandLine.ParseResult;
+import tech.pegasys.teku.cli.util.TestCommand.Subcommand;
 
 class YamlConfigFileDefaultProviderTest {
 
@@ -55,7 +59,7 @@ class YamlConfigFileDefaultProviderTest {
     commandLine.setDefaultValueProvider(
         new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
 
-    Assertions.assertThatExceptionOfType(CommandLine.ParameterException.class)
+    assertThatExceptionOfType(CommandLine.ParameterException.class)
         .isThrownBy(commandLine::parseArgs)
         .withMessage("Empty yaml configuration file: %s", configFile);
   }
@@ -67,7 +71,7 @@ class YamlConfigFileDefaultProviderTest {
     commandLine.setDefaultValueProvider(
         new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
 
-    Assertions.assertThatExceptionOfType(CommandLine.ParameterException.class)
+    assertThatExceptionOfType(CommandLine.ParameterException.class)
         .isThrownBy(commandLine::parseArgs)
         .withMessage("Unable to read yaml configuration. File not found: %s", configFile);
   }
@@ -80,7 +84,7 @@ class YamlConfigFileDefaultProviderTest {
     commandLine.setDefaultValueProvider(
         new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
 
-    Assertions.assertThatExceptionOfType(CommandLine.ParameterException.class)
+    assertThatExceptionOfType(CommandLine.ParameterException.class)
         .isThrownBy(commandLine::parseArgs)
         .withMessageStartingWith(
             "Unable to read yaml configuration. Invalid yaml file [%s]:", configFile);
@@ -95,7 +99,7 @@ class YamlConfigFileDefaultProviderTest {
     commandLine.setDefaultValueProvider(
         new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
 
-    Assertions.assertThatExceptionOfType(CommandLine.ParameterException.class)
+    assertThatExceptionOfType(CommandLine.ParameterException.class)
         .isThrownBy(commandLine::parseArgs)
         .withMessage("Unexpected yaml content, expecting block mappings.");
   }
@@ -113,10 +117,27 @@ class YamlConfigFileDefaultProviderTest {
     commandLine.setDefaultValueProvider(
         new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
 
-    Assertions.assertThatExceptionOfType(CommandLine.ParameterException.class)
+    assertThatExceptionOfType(CommandLine.ParameterException.class)
         .isThrownBy(commandLine::parseArgs)
         .withMessage(
             "Unknown options in yaml configuration file: additional-option-1, additional-option-2, additional-option-3");
+  }
+
+  @Test
+  void subcommandOptionsInYamlConfigFileAreAllowed(@TempDir final Path tempDir) throws IOException {
+    final Map<String, Object> options = defaultOptions();
+    options.put("subcommand-option-1", "x");
+    final Path configFile = writeToYamlConfigFile(options, tempDir);
+
+    final CommandLine commandLine = new CommandLine(TestCommand.class);
+    commandLine.setDefaultValueProvider(
+        new YamlConfigFileDefaultProvider(commandLine, configFile.toFile()));
+
+    final ParseResult result = commandLine.parseArgs("subcommand");
+    assertThat(result.hasSubcommand()).isTrue();
+
+    final Subcommand subcommand = commandLine.getSubcommands().get("subcommand").getCommand();
+    assertThat(subcommand.getSubcommandOption()).isEqualTo("x");
   }
 
   private Map<String, Object> defaultOptions() {
