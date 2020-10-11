@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.ProposerDuties;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 
@@ -230,9 +231,9 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendSignedBlock(final SignedBeaconBlock block) {
+  public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
     sendBlockRequestCounter.inc();
-    delegate.sendSignedBlock(block);
+    return delegate.sendSignedBlock(block);
   }
 
   private <T> SafeFuture<Optional<T>> countRequest(

@@ -31,6 +31,7 @@ import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.ValidatorDuties;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public interface ValidatorRestApiClient {
 
@@ -48,7 +49,7 @@ public interface ValidatorRestApiClient {
   Optional<BeaconBlock> createUnsignedBlock(
       UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);
 
-  void sendSignedBlock(SignedBeaconBlock beaconBlock);
+  SendSignedBlockResult sendSignedBlock(SignedBeaconBlock beaconBlock);
 
   Optional<Attestation> createUnsignedAttestation(UInt64 slot, int committeeIndex);
 

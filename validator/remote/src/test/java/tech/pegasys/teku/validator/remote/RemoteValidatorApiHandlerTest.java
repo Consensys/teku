@@ -51,6 +51,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 
@@ -266,18 +267,22 @@ class RemoteValidatorApiHandlerTest {
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(UInt64.ONE);
     final BLSSignature signature = dataStructureUtil.randomSignature();
     final SignedBeaconBlock signedBeaconBlock = new SignedBeaconBlock(beaconBlock, signature);
+    final SendSignedBlockResult expectedResult = SendSignedBlockResult.success(Bytes32.ZERO);
 
     final tech.pegasys.teku.api.schema.SignedBeaconBlock schemaSignedBlock =
         new tech.pegasys.teku.api.schema.SignedBeaconBlock(signedBeaconBlock);
 
+    when(apiClient.sendSignedBlock(any())).thenReturn(expectedResult);
+
     ArgumentCaptor<tech.pegasys.teku.api.schema.SignedBeaconBlock> argumentCaptor =
         ArgumentCaptor.forClass(tech.pegasys.teku.api.schema.SignedBeaconBlock.class);
 
-    apiHandler.sendSignedBlock(signedBeaconBlock);
+    final SafeFuture<SendSignedBlockResult> result = apiHandler.sendSignedBlock(signedBeaconBlock);
     asyncRunner.executeQueuedActions();
 
     verify(apiClient).sendSignedBlock(argumentCaptor.capture());
     assertThat(argumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(schemaSignedBlock);
+    assertThat(result).isCompletedWithValue(expectedResult);
   }
 
   @Test
