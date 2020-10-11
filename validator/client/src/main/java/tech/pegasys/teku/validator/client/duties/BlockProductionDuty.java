@@ -61,12 +61,23 @@ public class BlockProductionDuty implements Duty {
     return createRandaoReveal(forkInfo)
         .thenCompose(this::createUnsignedBlock)
         .thenCompose(unsignedBlock -> signBlock(forkInfo, unsignedBlock))
-        .thenApply(
-            signedBlock -> {
-              validatorApiChannel.sendSignedBlock(signedBlock);
-              return DutyResult.success(signedBlock.getRoot());
-            })
+        .thenCompose(this::sendBlock)
         .exceptionally(DutyResult::forError);
+  }
+
+  private SafeFuture<DutyResult> sendBlock(final SignedBeaconBlock signedBlock) {
+    return validatorApiChannel
+        .sendSignedBlock(signedBlock)
+        .thenApply(
+            result -> {
+              if (result.isPublished()) {
+                return DutyResult.success(signedBlock.getRoot());
+              }
+              return DutyResult.forError(
+                  new IllegalArgumentException(
+                      "Block was rejected by the beacon node: "
+                          + result.getRejectionReason().orElse("<reason unknown>")));
+            });
   }
 
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(final BLSSignature randaoReveal) {

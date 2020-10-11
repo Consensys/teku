@@ -60,5 +60,5 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   void sendAggregateAndProof(SignedAggregateAndProof aggregateAndProof);
 
-  void sendSignedBlock(SignedBeaconBlock block);
+  SafeFuture<SendSignedBlockResult> sendSignedBlock(SignedBeaconBlock block);
 }

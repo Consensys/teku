@@ -130,11 +130,7 @@ class MetricRecordingValidatorApiChannelTest {
             "sendAggregateAndProof",
             channel ->
                 channel.sendAggregateAndProof(dataStructureUtil.randomSignedAggregateAndProof()),
-            MetricRecordingValidatorApiChannel.PUBLISHED_AGGREGATE_COUNTER_NAME),
-        noResponseTest(
-            "sendSignedBlock",
-            channel -> channel.sendSignedBlock(dataStructureUtil.randomSignedBeaconBlock(1)),
-            MetricRecordingValidatorApiChannel.PUBLISHED_BLOCK_COUNTER_NAME));
+            MetricRecordingValidatorApiChannel.PUBLISHED_AGGREGATE_COUNTER_NAME));
   }
 
   private static Arguments noResponseTest(

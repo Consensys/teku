@@ -39,10 +39,9 @@ import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.ValidatorDuties;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuties;
@@ -59,16 +58,13 @@ public class ValidatorDataProvider {
   public static final String NO_SLOT_PROVIDED = "No slot was provided.";
   public static final String NO_RANDAO_PROVIDED = "No randao_reveal was provided.";
   private final ValidatorApiChannel validatorApiChannel;
-  private CombinedChainDataClient combinedChainDataClient;
-  private final BlockImporter blockImporter;
+  private final CombinedChainDataClient combinedChainDataClient;
 
   public ValidatorDataProvider(
       final ValidatorApiChannel validatorApiChannel,
-      final BlockImporter blockImporter,
       final CombinedChainDataClient combinedChainDataClient) {
     this.validatorApiChannel = validatorApiChannel;
     this.combinedChainDataClient = combinedChainDataClient;
-    this.blockImporter = blockImporter;
   }
 
   public boolean isStoreAvailable() {
@@ -170,27 +166,24 @@ public class ValidatorDataProvider {
 
   public SafeFuture<ValidatorBlockResult> submitSignedBlock(
       final SignedBeaconBlock signedBeaconBlock) {
-    return blockImporter
-        .importBlock(signedBeaconBlock.asInternalSignedBeaconBlock())
+    return validatorApiChannel
+        .sendSignedBlock(signedBeaconBlock.asInternalSignedBeaconBlock())
         .thenApply(
-            blockImportResult -> {
+            result -> {
               int responseCode;
-              Bytes32 hashRoot = null;
-
-              if (!blockImportResult.isSuccessful()) {
-                if (blockImportResult.getFailureReason()
-                    == BlockImportResult.FailureReason.INTERNAL_ERROR) {
-                  responseCode = 500;
-                } else {
-                  responseCode = 202;
-                }
-              } else {
+              Optional<Bytes32> hashRoot = result.getBlockRoot();
+              if (result.getRejectionReason().isEmpty()) {
                 responseCode = 200;
-                hashRoot = blockImportResult.getBlock().getMessage().hash_tree_root();
+              } else if (result
+                  .getRejectionReason()
+                  .get()
+                  .equals(FailureReason.INTERNAL_ERROR.name())) {
+                responseCode = 500;
+              } else {
+                responseCode = 202;
               }
 
-              return new ValidatorBlockResult(
-                  responseCode, blockImportResult.getFailureCause(), Optional.ofNullable(hashRoot));
+              return new ValidatorBlockResult(responseCode, result.getRejectionReason(), hashRoot);
             });
   }
 
