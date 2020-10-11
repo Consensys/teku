@@ -60,6 +60,7 @@ public class PostBlock implements Handler {
       path = ROUTE,
       method = HttpMethod.POST,
       summary = "Submit a signed transaction to be imported.",
+      deprecated = true,
       tags = {TAG_VALIDATOR},
       requestBody =
           @OpenApiRequestBody(content = {@OpenApiContent(from = SignedBeaconBlock.class)}),
