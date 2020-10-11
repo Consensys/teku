@@ -11,20 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.validator;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.GRAFFITI;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.NO_CONTENT_PRE_GENESIS;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBLSSignature;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
-import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64;
 
 import com.google.common.base.Throwables;
 import io.javalin.http.Context;
@@ -38,46 +39,44 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.api.schema.BeaconBlock;
+import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
-public class GetNewBlock implements Handler {
-  public static final String ROUTE = "/validator/block";
-  private final JsonProvider jsonProvider;
+public class GetNewBlock extends AbstractHandler implements Handler {
+  public static final String ROUTE = "/eth/v1/validator/blocks/:slot";
   private final ValidatorDataProvider provider;
 
   public GetNewBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    this.jsonProvider = jsonProvider;
+    super(jsonProvider);
     this.provider = dataProvider.getValidatorDataProvider();
   }
 
   GetNewBlock(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
-    this.jsonProvider = jsonProvider;
+    super(jsonProvider);
     this.provider = provider;
   }
 
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      deprecated = true,
-      summary = "Produce Unsigned Block",
+      summary = "Produce unsigned block",
+      tags = {TAG_V1_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       description =
-          "Create and return an unsigned beacon block at the specified slot.\n\n"
-              + "Deprecated - use `/eth/v1/validator/blocks/{slot}` instead.",
-      tags = {TAG_VALIDATOR},
-      queryParams = {
+          "Requests a beacon node to produce a valid block, which can then be signed by a validator.",
+      pathParams = {
         @OpenApiParam(
             name = SLOT,
-            description = "`uint64` Slot in which to create the beacon block.",
-            required = true),
+            description = "The slot for which the block should be proposed."),
+      },
+      queryParams = {
         @OpenApiParam(
             name = RANDAO_REVEAL,
             description = "`BLSSignature Hex` BLS12-381 signature for the current epoch.",
@@ -87,18 +86,21 @@ public class GetNewBlock implements Handler {
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = BeaconBlock.class),
-            description = "`BeaconBlock` object for the specified slot."),
-        @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),
-        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied")
+            content = @OpenApiContent(from = GetNewBlockResponse.class)),
+        @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied"),
+        @OpenApiResponse(status = RES_INTERNAL_ERROR),
+        @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
       })
   @Override
-  public void handle(@NotNull Context ctx) throws Exception {
+  public void handle(final Context ctx) throws Exception {
     try {
       final Map<String, List<String>> queryParamMap = ctx.queryParamMap();
-      BLSSignature randao = getParameterValueAsBLSSignature(queryParamMap, RANDAO_REVEAL);
-      UInt64 slot = getParameterValueAsUInt64(queryParamMap, SLOT);
-      Optional<Bytes32> graffiti = getOptionalParameterValueAsBytes32(queryParamMap, GRAFFITI);
+      final Map<String, String> pathParamMap = ctx.pathParamMap();
+
+      final UInt64 slot = UInt64.valueOf(pathParamMap.get(SLOT));
+      final BLSSignature randao = getParameterValueAsBLSSignature(queryParamMap, RANDAO_REVEAL);
+      final Optional<Bytes32> graffiti =
+          getOptionalParameterValueAsBytes32(queryParamMap, GRAFFITI);
       ctx.result(
           provider
               .getUnsignedBeaconBlockAtSlot(slot, randao, graffiti)
@@ -107,7 +109,7 @@ public class GetNewBlock implements Handler {
                     if (maybeBlock.isEmpty()) {
                       throw new ChainDataUnavailableException();
                     }
-                    return jsonProvider.objectToJSON(maybeBlock.get());
+                    return jsonProvider.objectToJSON(new GetNewBlockResponse(maybeBlock.get()));
                   })
               .exceptionallyCompose(error -> handleError(ctx, error)));
     } catch (final IllegalArgumentException e) {
