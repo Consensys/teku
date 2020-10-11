@@ -11,12 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.validator;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -26,6 +27,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.BeaconBlock;
@@ -39,6 +41,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 class PostBlockTest {
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
 
   private final Context context = mock(Context.class);
   private final ValidatorDataProvider validatorDataProvider = mock(ValidatorDataProvider.class);
@@ -97,6 +101,9 @@ class PostBlockTest {
     handler.handle(context);
 
     verify(context).status(SC_OK);
+    verify(context).result(args.capture());
+    SafeFuture<String> data = args.getValue();
+    assertThat(data.get()).isEqualTo("");
   }
 
   @Test
@@ -113,6 +120,9 @@ class PostBlockTest {
     handler.handle(context);
 
     verify(context).status(SC_ACCEPTED);
+    verify(context).result(args.capture());
+    SafeFuture<String> data = args.getValue();
+    assertThat(data.get()).isEqualTo("");
   }
 
   private SyncingStatus buildSyncStatus(final boolean isSyncing) {

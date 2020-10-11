@@ -14,11 +14,19 @@
 package tech.pegasys.teku.beaconrestapi.schema;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.provider.JsonProvider;
 
 public class BadRequest {
+  private static final Logger LOG = LogManager.getLogger();
   private final Integer status;
   private final String message;
 
@@ -42,5 +50,30 @@ public class BadRequest {
   @JsonProperty("message")
   public final String getMessage() {
     return message;
+  }
+
+  public static String serviceUnavailable(final JsonProvider provider)
+      throws JsonProcessingException {
+    return provider.objectToJSON(new BadRequest(SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE));
+  }
+
+  public static String badRequest(final JsonProvider provider, final String message)
+      throws JsonProcessingException {
+    return provider.objectToJSON(new BadRequest(SC_BAD_REQUEST, message));
+  }
+
+  public static String internalError(final JsonProvider provider, final String message)
+      throws JsonProcessingException {
+    return provider.objectToJSON(new BadRequest(SC_INTERNAL_SERVER_ERROR, message));
+  }
+
+  public static String serialize(
+      final JsonProvider provider, final Integer status, final String message) {
+    try {
+      return provider.objectToJSON(new BadRequest(status, message));
+    } catch (JsonProcessingException e) {
+      LOG.error("Failed to serialize to json", e);
+    }
+    return "";
   }
 }
