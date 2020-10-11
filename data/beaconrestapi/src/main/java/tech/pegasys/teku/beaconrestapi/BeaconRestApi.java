@@ -264,6 +264,10 @@ public class BeaconRestApi {
   private void addV1ValidatorHandlers(final DataProvider dataProvider) {
     app.get(GetAttesterDuties.ROUTE, new GetAttesterDuties(dataProvider, jsonProvider));
     app.get(GetProposerDuties.ROUTE, new GetProposerDuties(dataProvider, jsonProvider));
+    app.get(
+        tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock.ROUTE,
+        new tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock(
+            dataProvider, jsonProvider));
   }
 
   private void addV1BeaconHandlers(final DataProvider dataProvider) {

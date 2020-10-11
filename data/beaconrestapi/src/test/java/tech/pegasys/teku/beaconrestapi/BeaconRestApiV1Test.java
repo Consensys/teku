@@ -35,6 +35,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttesterDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -123,5 +124,10 @@ public class BeaconRestApiV1Test {
   @Test
   public void shouldHaveGetGenesisEndpoint() {
     verify(app).get(eq(GetGenesis.ROUTE), any(GetGenesis.class));
+  }
+
+  @Test
+  public void shouldHaveGetNewBlockEndpoint() {
+    verify(app).get(eq(GetNewBlock.ROUTE), any(GetNewBlock.class));
   }
 }
