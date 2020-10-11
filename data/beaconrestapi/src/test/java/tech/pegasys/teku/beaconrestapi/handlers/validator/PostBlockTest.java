@@ -102,7 +102,7 @@ class PostBlockTest {
   @Test
   void shouldReturnAcceptedIfBlockFailsValidation() throws Exception {
     final ValidatorBlockResult failResult =
-        new ValidatorBlockResult(202, Optional.of(new Exception()), Optional.empty());
+        new ValidatorBlockResult(202, Optional.of("ERROR"), Optional.empty());
     final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
         SafeFuture.completedFuture(failResult);
 

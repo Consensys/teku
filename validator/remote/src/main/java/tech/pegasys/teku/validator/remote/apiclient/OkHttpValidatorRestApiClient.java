@@ -63,6 +63,7 @@ import tech.pegasys.teku.api.schema.ValidatorDuties;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
@@ -129,8 +130,11 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public void sendSignedBlock(final SignedBeaconBlock beaconBlock) {
-    post(SEND_SIGNED_BLOCK, beaconBlock, null);
+  public SendSignedBlockResult sendSignedBlock(final SignedBeaconBlock beaconBlock) {
+    return post(SEND_SIGNED_BLOCK, beaconBlock, String.class)
+        .map(Bytes32::fromHexString)
+        .map(SendSignedBlockResult::success)
+        .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
   }
 
   @Override
