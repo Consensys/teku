@@ -272,7 +272,7 @@ class RemoteValidatorApiHandlerTest {
     final tech.pegasys.teku.api.schema.SignedBeaconBlock schemaSignedBlock =
         new tech.pegasys.teku.api.schema.SignedBeaconBlock(signedBeaconBlock);
 
-    when(apiClient.sendSignedBlock(schemaSignedBlock)).thenReturn(expectedResult);
+    when(apiClient.sendSignedBlock(any())).thenReturn(expectedResult);
 
     ArgumentCaptor<tech.pegasys.teku.api.schema.SignedBeaconBlock> argumentCaptor =
         ArgumentCaptor.forClass(tech.pegasys.teku.api.schema.SignedBeaconBlock.class);
