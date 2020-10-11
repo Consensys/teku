@@ -25,6 +25,7 @@ import java.nio.file.NoSuchFileException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -95,9 +96,14 @@ public class YamlConfigFileDefaultProvider implements IDefaultValueProvider {
   private void checkUnknownOptions(final Map<String, Object> result) {
     final CommandSpec commandSpec = commandLine.getCommandSpec();
 
+    final Set<String> validOptions = new HashSet<>(commandSpec.optionsMap().keySet());
+    commandSpec.subcommands().values().stream()
+        .flatMap(subcommand -> subcommand.getCommandSpec().optionsMap().keySet().stream())
+        .forEach(validOptions::add);
+
     final Set<String> unknownOptionsList =
         result.keySet().stream()
-            .filter(option -> !commandSpec.optionsMap().containsKey("--" + option))
+            .filter(option -> !validOptions.contains("--" + option))
             .collect(Collectors.toCollection(TreeSet::new));
 
     if (!unknownOptionsList.isEmpty()) {
