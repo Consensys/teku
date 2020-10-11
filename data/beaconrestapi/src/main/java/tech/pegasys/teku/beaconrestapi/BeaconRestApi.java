@@ -270,6 +270,10 @@ public class BeaconRestApi {
     app.get(GetGenesis.ROUTE, new GetGenesis(dataProvider, jsonProvider));
     app.get(GetStateFork.ROUTE, new GetStateFork(dataProvider, jsonProvider));
     app.get(GetStateValidator.ROUTE, new GetStateValidator(dataProvider, jsonProvider));
+    app.post(
+        tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock.ROUTE,
+        new tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock(
+            dataProvider, jsonProvider));
   }
 
   private void addEventHandler(

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.validator;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -21,7 +21,8 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -34,6 +35,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
@@ -41,13 +43,19 @@ import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class PostBlock implements Handler {
-  public static final String ROUTE = "/validator/block";
+  public static final String ROUTE = "/eth/v1/beacon/blocks";
 
   private final JsonProvider jsonProvider;
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
 
-  public PostBlock(
+  public PostBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
+    this.validatorDataProvider = dataProvider.getValidatorDataProvider();
+    this.syncDataProvider = dataProvider.getSyncDataProvider();
+    this.jsonProvider = jsonProvider;
+  }
+
+  PostBlock(
       final ValidatorDataProvider validatorDataProvider,
       final SyncDataProvider syncDataProvider,
       final JsonProvider jsonProvider) {
@@ -59,14 +67,13 @@ public class PostBlock implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.POST,
-      summary = "Submit a signed transaction to be imported.",
-      tags = {TAG_VALIDATOR},
+      summary = "Publish a signed block",
+      tags = {TAG_V1_BEACON, TAG_VALIDATOR_REQUIRED},
       requestBody =
           @OpenApiRequestBody(content = {@OpenApiContent(from = SignedBeaconBlock.class)}),
       description =
           "Submit a signed beacon block to the beacon node to be imported."
-              + " The beacon node performs the required validation.\n\n"
-              + "Deprecated - use `/eth/v1/beacon/blocks` instead",
+              + " The beacon node performs the required validation.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
