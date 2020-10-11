@@ -28,6 +28,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
@@ -124,6 +125,11 @@ public class BeaconRestApiV1Test {
   @Test
   public void shouldHaveGetGenesisEndpoint() {
     verify(app).get(eq(GetGenesis.ROUTE), any(GetGenesis.class));
+  }
+
+  @Test
+  public void shouldHaveValidatorBlockEndpoint() {
+    verify(app).post(eq(PostBlock.ROUTE), any(PostBlock.class));
   }
 
   @Test
