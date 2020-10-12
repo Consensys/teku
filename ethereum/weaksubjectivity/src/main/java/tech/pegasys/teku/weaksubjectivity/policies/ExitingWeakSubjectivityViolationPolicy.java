@@ -11,15 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.weaksubjectivity.policies.simple;
+package tech.pegasys.teku.weaksubjectivity.policies;
 
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.weaksubjectivity.policies.WeakSubjectivityViolationPolicy;
 
-public class ExitingWeakSubjectivityViolationPolicy implements WeakSubjectivityViolationPolicy {
+class ExitingWeakSubjectivityViolationPolicy implements WeakSubjectivityViolationPolicy {
 
   @Override
   public void onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(

@@ -19,13 +19,16 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.weaksubjectivity.policies.simple.ExitingWeakSubjectivityViolationPolicy;
-import tech.pegasys.teku.weaksubjectivity.policies.simple.LoggingWeakSubjectivityViolationPolicy;
+import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public interface WeakSubjectivityViolationPolicy {
 
   static WeakSubjectivityViolationPolicy lenient() {
     return new LoggingWeakSubjectivityViolationPolicy(Level.TRACE);
+  }
+
+  static WeakSubjectivityViolationPolicy moderate(final WeakSubjectivityConfig config) {
+    return new ModerateWeakSubjectivityViolationPolicy(config);
   }
 
   static WeakSubjectivityViolationPolicy strict() {
