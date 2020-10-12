@@ -31,6 +31,8 @@ public class Constants {
   public static int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
   public static int JUSTIFICATION_BITS_LENGTH = 4;
 
+  public static String CONFIG_NAME;
+
   // Misc
   public static int MAX_COMMITTEES_PER_SLOT;
   public static int TARGET_COMMITTEE_SIZE;
@@ -70,7 +72,6 @@ public class Constants {
   public static int SLOTS_PER_HISTORICAL_ROOT;
   public static int MIN_VALIDATOR_WITHDRAWABILITY_DELAY;
   public static UInt64 SHARD_COMMITTEE_PERIOD;
-  public static int MAX_EPOCHS_PER_CROSSLINK;
 
   // State list lengths
   public static int EPOCHS_PER_HISTORICAL_VECTOR;
