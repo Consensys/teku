@@ -93,16 +93,20 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
           for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
             final List<BLSPublicKey> batch =
                 publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
-            apiClient
-                .getValidators(
-                    batch.stream()
-                        .map(key -> key.toBytesCompressed().toHexString())
-                        .collect(Collectors.toList()))
-                .map(this::convertToValidatorIndexMap)
-                .ifPresent(indices::putAll);
+            requestValidatorIndices(batch).ifPresent(indices::putAll);
           }
           return indices;
         });
+  }
+
+  private Optional<Map<BLSPublicKey, Integer>> requestValidatorIndices(
+      final List<BLSPublicKey> batch) {
+    return apiClient
+        .getValidators(
+            batch.stream()
+                .map(key -> key.toBytesCompressed().toHexString())
+                .collect(Collectors.toList()))
+        .map(this::convertToValidatorIndexMap);
   }
 
   private Map<BLSPublicKey, Integer> convertToValidatorIndexMap(
