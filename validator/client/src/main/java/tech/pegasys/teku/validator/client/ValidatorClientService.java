@@ -38,16 +38,19 @@ public class ValidatorClientService extends Service {
   private final EventChannels eventChannels;
   private final ValidatorTimingChannel attestationTimingChannel;
   private final ValidatorTimingChannel blockProductionTimingChannel;
+  private final ValidatorIndexProvider validatorIndexProvider;
   private final BeaconNodeApi beaconNodeApi;
 
   private ValidatorClientService(
       final EventChannels eventChannels,
       final ValidatorTimingChannel attestationTimingChannel,
       final ValidatorTimingChannel blockProductionTimingChannel,
+      final ValidatorIndexProvider validatorIndexProvider,
       final BeaconNodeApi beaconNodeApi) {
     this.eventChannels = eventChannels;
     this.attestationTimingChannel = attestationTimingChannel;
     this.blockProductionTimingChannel = blockProductionTimingChannel;
+    this.validatorIndexProvider = validatorIndexProvider;
     this.beaconNodeApi = beaconNodeApi;
   }
 
@@ -72,39 +75,49 @@ public class ValidatorClientService extends Service {
     }
 
     final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
-    final RetryingDutyLoader dutyLoader =
-        createDutyLoader(metricsSystem, validatorApiChannel, asyncRunner, validators);
+    final ForkProvider forkProvider = new ForkProvider(asyncRunner, validatorApiChannel);
+    final ValidatorIndexProvider validatorIndexProvider =
+        new ValidatorIndexProvider(validators.keySet(), validatorApiChannel);
+    final ValidatorDutyFactory validatorDutyFactory =
+        new ValidatorDutyFactory(forkProvider, validatorApiChannel);
+    final DutyLoader attestationDutyLoader =
+        new RetryingDutyLoader(
+            asyncRunner,
+            new AttestationDutyLoader(
+                validatorApiChannel,
+                forkProvider,
+                () -> new ScheduledDuties(validatorDutyFactory),
+                validators,
+                validatorIndexProvider));
+    final DutyLoader blockDutyLoader =
+        new RetryingDutyLoader(
+            asyncRunner,
+            new BlockProductionDutyLoader(
+                validatorApiChannel,
+                () -> new ScheduledDuties(validatorDutyFactory),
+                validators,
+                validatorIndexProvider));
     final StableSubnetSubscriber stableSubnetSubscriber =
         new StableSubnetSubscriber(validatorApiChannel, new Random(), validators.size());
     final AttestationDutyScheduler attestationDutyScheduler =
-        new AttestationDutyScheduler(metricsSystem, dutyLoader, stableSubnetSubscriber);
-    final BlockDutyScheduler blockDutyScheduler = new BlockDutyScheduler(metricsSystem, dutyLoader);
+        new AttestationDutyScheduler(metricsSystem, attestationDutyLoader, stableSubnetSubscriber);
+    final BlockDutyScheduler blockDutyScheduler =
+        new BlockDutyScheduler(metricsSystem, blockDutyLoader);
     return new ValidatorClientService(
-        eventChannels, attestationDutyScheduler, blockDutyScheduler, beaconNodeApi);
-  }
-
-  private static RetryingDutyLoader createDutyLoader(
-      final MetricsSystem metricsSystem,
-      final ValidatorApiChannel validatorApiChannel,
-      final AsyncRunner asyncRunner,
-      final Map<BLSPublicKey, Validator> validators) {
-    final ForkProvider forkProvider = new ForkProvider(asyncRunner, validatorApiChannel);
-    final ValidatorDutyFactory validatorDutyFactory =
-        new ValidatorDutyFactory(forkProvider, validatorApiChannel);
-    return new RetryingDutyLoader(
-        asyncRunner,
-        new ValidatorApiDutyLoader(
-            metricsSystem,
-            validatorApiChannel,
-            forkProvider,
-            () -> new ScheduledDuties(validatorDutyFactory),
-            validators));
+        eventChannels,
+        attestationDutyScheduler,
+        blockDutyScheduler,
+        validatorIndexProvider,
+        beaconNodeApi);
   }
 
   @Override
   protected SafeFuture<?> doStart() {
-    eventChannels.subscribe(ValidatorTimingChannel.class, blockProductionTimingChannel);
-    eventChannels.subscribe(ValidatorTimingChannel.class, attestationTimingChannel);
+    eventChannels.subscribe(
+        ValidatorTimingChannel.class,
+        new ValidatorTimingActions(
+            validatorIndexProvider, blockProductionTimingChannel, attestationTimingChannel));
+    validatorIndexProvider.lookupValidators();
     return beaconNodeApi.subscribeToEvents();
   }
 
