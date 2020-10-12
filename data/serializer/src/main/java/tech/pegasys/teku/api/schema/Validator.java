@@ -22,6 +22,7 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.PATTERN_PUBKEY;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
@@ -141,5 +142,19 @@ public class Validator {
         activation_epoch,
         exit_epoch,
         withdrawable_epoch);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("pubkey", pubkey)
+        .add("withdrawal_credentials", withdrawal_credentials)
+        .add("effective_balance", effective_balance)
+        .add("slashed", slashed)
+        .add("activation_eligibility_epoch", activation_eligibility_epoch)
+        .add("activation_epoch", activation_epoch)
+        .add("exit_epoch", exit_epoch)
+        .add("withdrawable_epoch", withdrawable_epoch)
+        .toString();
   }
 }
