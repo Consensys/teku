@@ -50,7 +50,6 @@ public class MockStartDepositGenerator {
   }
 
   private DepositData createDepositData(final BLSKeyPair keyPair, final UInt64 depositBalance) {
-    return depositGenerator.createDepositData(
-        keyPair, depositBalance, keyPair.getPublicKey());
+    return depositGenerator.createDepositData(keyPair, depositBalance, keyPair.getPublicKey());
   }
 }
