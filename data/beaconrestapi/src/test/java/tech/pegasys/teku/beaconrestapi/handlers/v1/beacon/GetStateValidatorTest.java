@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -33,10 +32,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetStateValidatorTest extends AbstractBeaconHandlerTest {
-  final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  final GetStateValidator handler = new GetStateValidator(chainDataProvider, jsonProvider);
-  Validator validator = new Validator(dataStructureUtil.randomValidator());
-  final ValidatorResponse validatorResponse =
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final GetStateValidator handler = new GetStateValidator(chainDataProvider, jsonProvider);
+  private final Validator validator = new Validator(dataStructureUtil.randomValidator());
+  private final ValidatorResponse validatorResponse =
       new ValidatorResponse(
           ONE,
           UInt64.valueOf("32000000000"),
@@ -53,8 +52,11 @@ public class GetStateValidatorTest extends AbstractBeaconHandlerTest {
 
   @Test
   public void shouldGetValidatorFromState() throws Exception {
+    final UInt64 slot = dataStructureUtil.randomUInt64();
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head", "validator_id", "1"));
-    when(chainDataProvider.getValidatorDetails(any(), any()))
+    when(chainDataProvider.stateParameterToSlot("head")).thenReturn(Optional.of(slot));
+    when(chainDataProvider.validatorParameterToIndex("1")).thenReturn(Optional.of(1));
+    when(chainDataProvider.getValidatorDetails(slot, Optional.of(1)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(validatorResponse)));
     handler.handle(context);
     GetStateValidatorResponse response = getResponseFromFuture(GetStateValidatorResponse.class);

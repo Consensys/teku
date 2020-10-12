@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.api;
 
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.api.DataProviderFailures.chainUnavailable;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.response.GetForkResponse;
@@ -105,7 +107,7 @@ public class ChainDataProvider {
                         combinedChainDataClient
                             .getCommitteesFromState(checkpointState.getState(), epoch).stream()
                             .map(Committee::new)
-                            .collect(Collectors.toList())));
+                            .collect(toList())));
   }
 
   public SafeFuture<Optional<GetBlockResponse>> getBlockBySlot(final UInt64 slot) {
@@ -324,21 +326,44 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<ValidatorResponse>> getValidatorDetails(
-      final Optional<UInt64> maybeSlot, final Optional<Integer> maybeIndex) {
+      final UInt64 slot, final Optional<Integer> validatorIndex) {
+    if (validatorIndex.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    } else {
+      return getValidatorsDetails(slot, List.of(validatorIndex.get()))
+          .thenApply(
+              maybeValidators ->
+                  maybeValidators.flatMap(
+                      validators -> {
+                        checkState(
+                            validators.size() <= 1,
+                            "Received more than one validator for a single index");
+                        return validators.stream().findFirst();
+                      }));
+    }
+  }
+
+  public SafeFuture<Optional<List<ValidatorResponse>>> getValidatorsDetails(
+      final UInt64 slot, final List<Integer> validatorIndices) {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
     }
 
-    if (maybeSlot.isEmpty() || maybeIndex.isEmpty()) {
-      return SafeFuture.completedFuture(Optional.empty());
+    if (validatorIndices.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.of(emptyList()));
     }
 
-    final int index = maybeIndex.get();
-
     return combinedChainDataClient
-        .getStateAtSlotExact(maybeSlot.get())
-        .thenApply(
-            maybeState -> maybeState.map(state -> ValidatorResponse.fromState(state, index)));
+        .getStateAtSlotExact(slot)
+        .thenApply(maybeState -> maybeState.map(state -> getValidators(validatorIndices, state)));
+  }
+
+  private List<ValidatorResponse> getValidators(
+      final List<Integer> validatorIndices,
+      final tech.pegasys.teku.datastructures.state.BeaconState state) {
+    return validatorIndices.stream()
+        .map(index -> ValidatorResponse.fromState(state, index))
+        .collect(toList());
   }
 
   public Optional<Bytes32> getStateRootFromBlockRoot(final Bytes32 blockRoot) {

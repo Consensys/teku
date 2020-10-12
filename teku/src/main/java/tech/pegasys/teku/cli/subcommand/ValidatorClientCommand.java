@@ -126,7 +126,6 @@ public class ValidatorClientCommand implements Callable<Integer> {
         .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist())
         .setDataPath(dataOptions.getDataPath())
         .setValidatorClient(true)
-        .setBeaconNodeApiEndpoint(validatorClientOptions.getBeaconNodeApiEndpoint())
-        .setBeaconNodeEventsWsEndpoint(validatorClientOptions.getBeaconNodeEventsWsEndpoint());
+        .setBeaconNodeApiEndpoint(validatorClientOptions.getBeaconNodeApiEndpoint());
   }
 }

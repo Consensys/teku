@@ -101,16 +101,9 @@ public class GlobalConfiguration implements MetricsConfig {
   private final String restApiInterface;
   private final List<String> restApiHostAllowlist;
 
-  // Remote Validator WS API
-  private final String remoteValidatorApiInterface;
-  private final int remoteValidatorApiPort;
-  private final boolean remoteValidatorApiEnabled;
-  private final int remoteValidatorApiMaxSubscribers;
-
   // Validator Client
   private final boolean isValidatorClient;
   private final String beaconNodeApiEndpoint;
-  private final String beaconNodeEventsWsEndpoint;
 
   public static GlobalConfigurationBuilder builder() {
     return new GlobalConfigurationBuilder();
@@ -171,14 +164,9 @@ public class GlobalConfiguration implements MetricsConfig {
       final boolean restApiEnabled,
       final String restApiInterface,
       final List<String> restApiHostAllowlist,
-      final String remoteValidatorApiInterface,
-      final int remoteValidatorApiPort,
-      final int remoteValidatorApiMaxSubscribers,
-      final boolean remoteValidatorApiEnabled,
       final Path validatorsSlashingProtectionPath,
       final boolean isValidatorClient,
-      final String beaconNodeApiEndpoint,
-      final String beaconNodeEventsWsEndpoint) {
+      final String beaconNodeApiEndpoint) {
     this.constants = constants;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
@@ -233,14 +221,9 @@ public class GlobalConfiguration implements MetricsConfig {
     this.restApiEnabled = restApiEnabled;
     this.restApiInterface = restApiInterface;
     this.restApiHostAllowlist = restApiHostAllowlist;
-    this.remoteValidatorApiInterface = remoteValidatorApiInterface;
-    this.remoteValidatorApiPort = remoteValidatorApiPort;
-    this.remoteValidatorApiEnabled = remoteValidatorApiEnabled;
-    this.remoteValidatorApiMaxSubscribers = remoteValidatorApiMaxSubscribers;
     this.validatorsSlashingProtectionPath = validatorsSlashingProtectionPath;
     this.isValidatorClient = isValidatorClient;
     this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
-    this.beaconNodeEventsWsEndpoint = beaconNodeEventsWsEndpoint;
   }
 
   public String getConstants() {
@@ -476,32 +459,12 @@ public class GlobalConfiguration implements MetricsConfig {
     return restApiHostAllowlist;
   }
 
-  public String getRemoteValidatorApiInterface() {
-    return remoteValidatorApiInterface;
-  }
-
-  public int getRemoteValidatorApiPort() {
-    return remoteValidatorApiPort;
-  }
-
-  public boolean isRemoteValidatorApiEnabled() {
-    return remoteValidatorApiEnabled;
-  }
-
-  public int getRemoteValidatorApiMaxSubscribers() {
-    return remoteValidatorApiMaxSubscribers;
-  }
-
   public boolean isValidatorClient() {
     return isValidatorClient;
   }
 
   public String getBeaconNodeApiEndpoint() {
     return beaconNodeApiEndpoint;
-  }
-
-  public String getBeaconNodeEventsWsEndpoint() {
-    return beaconNodeEventsWsEndpoint;
   }
 
   public void validate() throws IllegalArgumentException {
