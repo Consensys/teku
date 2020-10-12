@@ -26,11 +26,13 @@ import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.eventbus.EventBus;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -572,6 +574,27 @@ class ValidatorApiHandlerTest {
 
     verify(attestationManager)
         .onAttestation(ValidateableAttestation.fromSignedAggregate(aggregateAndProof));
+  }
+
+  @Test
+  void getValidatorIndices_shouldReturnEmptyOptionalWhenBestStateNotAvailable() {
+    when(chainDataClient.getBestState()).thenReturn(Optional.empty());
+
+    assertThatSafeFuture(
+            validatorApiHandler.getValidatorIndices(List.of(dataStructureUtil.randomPublicKey())))
+        .isCompletedWithEmptyOptional();
+  }
+
+  @Test
+  void getValidatorIndices_shouldReturnMapWithKnownValidatorsWhenBestStateAvailable() {
+    final BeaconState state = dataStructureUtil.randomBeaconState();
+    final BLSPublicKey validator0 = state.getValidators().get(0).getPubkey();
+    final BLSPublicKey unknownValidator = dataStructureUtil.randomPublicKey();
+    when(chainDataClient.getBestState()).thenReturn(Optional.of(state));
+
+    assertThatSafeFuture(
+            validatorApiHandler.getValidatorIndices(List.of(validator0, unknownValidator)))
+        .isCompletedWithValue(Map.of(validator0, 0));
   }
 
   private <T> Optional<List<T>> assertCompletedSuccessfully(
