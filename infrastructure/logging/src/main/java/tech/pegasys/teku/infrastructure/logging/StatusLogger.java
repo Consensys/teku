@@ -207,16 +207,11 @@ public class StatusLogger {
   }
 
   public void finalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-      Level level,
-      final UInt64 latestFinalizedCheckpointEpoch,
-      final int activeValidatorCount,
-      final UInt64 currentEpoch) {
+      Level level, final UInt64 latestFinalizedCheckpointEpoch) {
     log.log(
         level,
-        "As of the current epoch {}, the latest finalized checkpoint at epoch {} ({} active validators) is outside of the weak subjectivity period.",
-        currentEpoch,
-        latestFinalizedCheckpointEpoch,
-        activeValidatorCount);
+        "The latest finalized checkpoint at epoch {} is outside of the weak subjectivity period.  Please supply a recent weak subjectivity checkpoint using --ws-checkpoint=<BLOCK_ROOT>:<EPOCH>.",
+        latestFinalizedCheckpointEpoch);
   }
 
   public void chainInconsistentWithWeakSubjectivityCheckpoint(

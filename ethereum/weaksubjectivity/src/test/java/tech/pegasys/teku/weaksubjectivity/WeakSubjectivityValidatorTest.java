@@ -57,6 +57,7 @@ public class WeakSubjectivityValidatorTest {
   private final CheckpointState checkpointState = mock(CheckpointState.class);
   private final UInt64 currentSlot = UInt64.valueOf(10_000);
   private final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
+  private final UInt64 mockWsPeriod = UInt64.valueOf(3);
 
   @BeforeEach
   public void setup() {
@@ -71,17 +72,18 @@ public class WeakSubjectivityValidatorTest {
     final int validatorCount = 101;
     when(calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)).thenReturn(false);
     when(calculator.getActiveValidators(checkpointState.getState())).thenReturn(validatorCount);
+    when(calculator.computeWeakSubjectivityPeriod(validatorCount)).thenReturn(mockWsPeriod);
 
     validator.validateLatestFinalizedCheckpoint(checkpointState, currentSlot);
 
     orderedPolicyMocks
         .verify(policies.get(0))
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-            checkpointState, validatorCount, currentSlot);
+            checkpointState, validatorCount, currentSlot, mockWsPeriod);
     orderedPolicyMocks
         .verify(policies.get(1))
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-            checkpointState, validatorCount, currentSlot);
+            checkpointState, validatorCount, currentSlot, mockWsPeriod);
 
     orderedPolicyMocks.verifyNoMoreInteractions();
   }
@@ -130,17 +132,18 @@ public class WeakSubjectivityValidatorTest {
     when(checkpointState.getEpoch()).thenReturn(wsCheckpoint.getEpoch().plus(1));
     when(calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)).thenReturn(false);
     when(calculator.getActiveValidators(checkpointState.getState())).thenReturn(validatorCount);
+    when(calculator.computeWeakSubjectivityPeriod(validatorCount)).thenReturn(mockWsPeriod);
 
     validator.validateLatestFinalizedCheckpoint(checkpointState, currentSlot);
 
     orderedPolicyMocks
         .verify(policies.get(0))
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-            checkpointState, validatorCount, currentSlot);
+            checkpointState, validatorCount, currentSlot, mockWsPeriod);
     orderedPolicyMocks
         .verify(policies.get(1))
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-            checkpointState, validatorCount, currentSlot);
+            checkpointState, validatorCount, currentSlot, mockWsPeriod);
 
     orderedPolicyMocks.verifyNoMoreInteractions();
   }
@@ -209,17 +212,18 @@ public class WeakSubjectivityValidatorTest {
     when(checkpointState.getRoot()).thenReturn(wsCheckpoint.getRoot());
     when(calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)).thenReturn(false);
     when(calculator.getActiveValidators(checkpointState.getState())).thenReturn(validatorCount);
+    when(calculator.computeWeakSubjectivityPeriod(validatorCount)).thenReturn(mockWsPeriod);
 
     validator.validateLatestFinalizedCheckpoint(checkpointState, currentSlot);
 
     orderedPolicyMocks
         .verify(policies.get(0))
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-            checkpointState, validatorCount, currentSlot);
+            checkpointState, validatorCount, currentSlot, mockWsPeriod);
     orderedPolicyMocks
         .verify(policies.get(1))
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-            checkpointState, validatorCount, currentSlot);
+            checkpointState, validatorCount, currentSlot, mockWsPeriod);
 
     orderedPolicyMocks.verifyNoMoreInteractions();
   }
@@ -240,6 +244,7 @@ public class WeakSubjectivityValidatorTest {
     when(checkpointState.getRoot()).thenReturn(Bytes32.fromHexStringLenient("0x02"));
     when(calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)).thenReturn(false);
     when(calculator.getActiveValidators(checkpointState.getState())).thenReturn(validatorCount);
+    when(calculator.computeWeakSubjectivityPeriod(validatorCount)).thenReturn(mockWsPeriod);
 
     validator.validateLatestFinalizedCheckpoint(checkpointState, currentSlot);
 
@@ -254,11 +259,11 @@ public class WeakSubjectivityValidatorTest {
     orderedPolicyMocks
         .verify(policies.get(0))
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-            checkpointState, validatorCount, currentSlot);
+            checkpointState, validatorCount, currentSlot, mockWsPeriod);
     orderedPolicyMocks
         .verify(policies.get(1))
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-            checkpointState, validatorCount, currentSlot);
+            checkpointState, validatorCount, currentSlot, mockWsPeriod);
 
     orderedPolicyMocks.verifyNoMoreInteractions();
   }
@@ -311,17 +316,18 @@ public class WeakSubjectivityValidatorTest {
     final int validatorCount = 101;
     when(calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)).thenReturn(false);
     when(calculator.getActiveValidators(checkpointState.getState())).thenReturn(validatorCount);
+    when(calculator.computeWeakSubjectivityPeriod(validatorCount)).thenReturn(mockWsPeriod);
 
     validator.validateLatestFinalizedCheckpoint(checkpointState, currentSlot);
 
     orderedPolicyMocks
         .verify(policies.get(0))
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-            checkpointState, validatorCount, currentSlot);
+            checkpointState, validatorCount, currentSlot, mockWsPeriod);
     orderedPolicyMocks
         .verify(policies.get(1))
         .onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-            checkpointState, validatorCount, currentSlot);
+            checkpointState, validatorCount, currentSlot, mockWsPeriod);
 
     orderedPolicyMocks.verifyNoMoreInteractions();
   }

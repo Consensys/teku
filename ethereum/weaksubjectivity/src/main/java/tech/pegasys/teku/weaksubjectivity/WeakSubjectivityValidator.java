@@ -213,9 +213,10 @@ public class WeakSubjectivityValidator {
       final CheckpointState latestFinalizedCheckpoint, final UInt64 currentSlot) {
     final int activeValidators =
         calculator.getActiveValidators(latestFinalizedCheckpoint.getState());
+    final UInt64 wsPeriod = calculator.computeWeakSubjectivityPeriod(activeValidators);
     for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
       policy.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-          latestFinalizedCheckpoint, activeValidators, currentSlot);
+          latestFinalizedCheckpoint, activeValidators, currentSlot, wsPeriod);
     }
   }
 

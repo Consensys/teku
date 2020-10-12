@@ -18,12 +18,15 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.util.Objects;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class LoggingWeakSubjectivityViolationPolicy implements WeakSubjectivityViolationPolicy {
+  private static final Logger LOG = LogManager.getLogger();
   private final Level level;
 
   public LoggingWeakSubjectivityViolationPolicy(Level level) {
@@ -34,10 +37,18 @@ public class LoggingWeakSubjectivityViolationPolicy implements WeakSubjectivityV
   public void onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
       final CheckpointState latestFinalizedCheckpoint,
       final int activeValidatorCount,
-      final UInt64 currentSlot) {
+      final UInt64 currentSlot,
+      final UInt64 wsPeriod) {
     final UInt64 currentEpoch = compute_epoch_at_slot(currentSlot);
+    LOG.log(
+        level,
+        "The latest finalized checkpoint at epoch {} ({} active validators) fell outside of the weak subjectivity period after epoch {}, which is prior to the current epoch {}.",
+        latestFinalizedCheckpoint.getEpoch(),
+        activeValidatorCount,
+        latestFinalizedCheckpoint.getEpoch().plus(wsPeriod),
+        currentEpoch);
     STATUS_LOG.finalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-        level, latestFinalizedCheckpoint.getEpoch(), activeValidatorCount, currentEpoch);
+        level, latestFinalizedCheckpoint.getEpoch());
   }
 
   @Override
