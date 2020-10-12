@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -42,6 +43,12 @@ public class ProtoArrayStorageTest {
     storageSystem.chainUpdater().initializeGenesis();
     protoArrayStorage = storageSystem.createProtoArrayStorage();
   }
+
+  @AfterEach
+  void cleanUp() throws Exception {
+    storageSystem.close();
+  }
+
 
   @ParameterizedTest(name = "{0}")
   @ArgumentsSource(StorageSystemArgumentsProvider.class)
