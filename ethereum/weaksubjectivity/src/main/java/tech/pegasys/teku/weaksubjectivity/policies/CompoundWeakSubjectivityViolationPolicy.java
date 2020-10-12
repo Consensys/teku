@@ -48,13 +48,6 @@ class CompoundWeakSubjectivityViolationPolicy implements WeakSubjectivityViolati
   }
 
   @Override
-  public void onFailedToPerformValidation(final String message) {
-    for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
-      policy.onFailedToPerformValidation(message);
-    }
-  }
-
-  @Override
   public void onFailedToPerformValidation(final String message, final Throwable error) {
     for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
       policy.onFailedToPerformValidation(message, error);

@@ -36,11 +36,6 @@ class ExitingWeakSubjectivityViolationPolicy implements WeakSubjectivityViolatio
   }
 
   @Override
-  public void onFailedToPerformValidation(final String message) {
-    exitClient();
-  }
-
-  @Override
   public void onFailedToPerformValidation(final String message, final Throwable error) {
     exitClient();
   }

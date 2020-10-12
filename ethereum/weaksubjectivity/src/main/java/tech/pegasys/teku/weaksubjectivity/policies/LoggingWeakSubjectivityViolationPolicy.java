@@ -59,11 +59,6 @@ class LoggingWeakSubjectivityViolationPolicy implements WeakSubjectivityViolatio
   }
 
   @Override
-  public void onFailedToPerformValidation(final String message) {
-    STATUS_LOG.failedToPerformWeakSubjectivityValidation(level, message);
-  }
-
-  @Override
   public void onFailedToPerformValidation(final String message, final Throwable error) {
     STATUS_LOG.failedToPerformWeakSubjectivityValidation(level, message, error);
   }

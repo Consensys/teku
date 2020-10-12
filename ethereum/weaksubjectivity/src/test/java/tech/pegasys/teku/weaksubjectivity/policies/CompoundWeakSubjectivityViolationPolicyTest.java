@@ -68,16 +68,6 @@ public class CompoundWeakSubjectivityViolationPolicyTest {
   }
 
   @Test
-  public void onFailedToPerformValidation() {
-    final String msg = "Bla";
-    policy.onFailedToPerformValidation(msg);
-
-    orderedPolicyMocks.verify(policies.get(0)).onFailedToPerformValidation(msg);
-    orderedPolicyMocks.verify(policies.get(1)).onFailedToPerformValidation(msg);
-    orderedPolicyMocks.verifyNoMoreInteractions();
-  }
-
-  @Test
   public void onFailedToPerformValidation_withError() {
     final String msg = "Bla";
     final Throwable error = new RuntimeException();

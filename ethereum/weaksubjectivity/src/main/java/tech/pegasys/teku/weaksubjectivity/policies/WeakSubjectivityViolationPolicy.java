@@ -47,7 +47,5 @@ public interface WeakSubjectivityViolationPolicy {
   void onChainInconsistentWithWeakSubjectivityCheckpoint(
       Checkpoint wsCheckpoint, SignedBeaconBlock block);
 
-  void onFailedToPerformValidation(final String message);
-
   void onFailedToPerformValidation(final String message, Throwable error);
 }

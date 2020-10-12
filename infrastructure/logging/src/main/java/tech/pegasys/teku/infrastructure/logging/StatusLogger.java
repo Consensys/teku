@@ -229,10 +229,6 @@ public class StatusLogger {
         wsCheckpointEpoch);
   }
 
-  public void failedToPerformWeakSubjectivityValidation(final Level level, final String message) {
-    log.log(level, "Failed to perform weak subjectivity validation: {}", message);
-  }
-
   public void failedToPerformWeakSubjectivityValidation(
       final Level level, final String message, final Throwable error) {
     log.log(level, "Failed to perform weak subjectivity validation: " + message, error);

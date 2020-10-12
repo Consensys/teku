@@ -539,18 +539,6 @@ public class WeakSubjectivityValidatorTest {
   }
 
   @Test
-  public void handleValidationFailure() {
-    final WeakSubjectivityValidator validator =
-        new WeakSubjectivityValidator(config, calculator, policy);
-
-    final String message = "Oops";
-    validator.handleValidationFailure(message);
-
-    verify(policy).onFailedToPerformValidation(message);
-    verifyNoMoreInteractions(policy);
-  }
-
-  @Test
   public void handleValidationFailure_withThrowable() {
     final WeakSubjectivityValidator validator =
         new WeakSubjectivityValidator(config, calculator, policy);
