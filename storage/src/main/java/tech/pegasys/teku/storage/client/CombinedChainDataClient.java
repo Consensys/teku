@@ -291,7 +291,7 @@ public class CombinedChainDataClient {
       final BeaconState preState, final UInt64 slot) {
     if (preState.getSlot().equals(slot)) {
       return Optional.of(preState);
-    } else if (slot.compareTo(getHeadSlot()) > 0) {
+    } else if (slot.compareTo(getCurrentSlot()) > 0) {
       LOG.debug("Attempted to wind forward to a future state: {}", slot.toString());
       return Optional.empty();
     }
