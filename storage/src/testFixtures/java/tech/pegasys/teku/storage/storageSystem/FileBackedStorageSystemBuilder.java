@@ -17,11 +17,14 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.nio.file.Path;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
+import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
+import tech.pegasys.teku.storage.server.rocksdb.schema.V6SchemaFinalized;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -46,6 +49,9 @@ public class FileBackedStorageSystemBuilder {
   public StorageSystem build() {
     final Database database;
     switch (version) {
+      case V6:
+        database = createV6Database();
+        break;
       case V5:
         database = createV5Database();
         break;
@@ -109,6 +115,17 @@ public class FileBackedStorageSystemBuilder {
 
   private StorageSystem.RestartedStorageSupplier createRestartSupplier() {
     return (mode) -> copy().storageMode(mode).build();
+  }
+
+  private Database createV6Database() {
+    return RocksDbDatabase.createV6(
+        new StubMetricsSystem(),
+        RocksDbConfiguration.v6SingleDefaults().withDatabaseDir(hotDir),
+        Optional.empty(),
+        V4SchemaHot.INSTANCE,
+        V6SchemaFinalized.INSTANCE,
+        storageMode,
+        stateStorageFrequency);
   }
 
   private Database createV5Database() {

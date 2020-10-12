@@ -25,6 +25,12 @@ public class DatabaseVersionTest {
   }
 
   @Test
+  public void shouldAcceptV6FromString() {
+    Optional<DatabaseVersion> data = DatabaseVersion.fromString("6");
+    assertThat(data).contains(DatabaseVersion.V6);
+  }
+
+  @Test
   public void shouldAcceptV5FromString() {
     Optional<DatabaseVersion> data = DatabaseVersion.fromString("5");
     assertThat(data).contains(DatabaseVersion.V5);
