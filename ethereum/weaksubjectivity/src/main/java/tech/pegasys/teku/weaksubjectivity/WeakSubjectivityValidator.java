@@ -19,7 +19,6 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.Objects;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -270,20 +269,5 @@ public class WeakSubjectivityValidator {
         .getWeakSubjectivityCheckpoint()
         .map(c -> checkpoint.getEpoch().equals(c.getEpoch()))
         .orElse(false);
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    final WeakSubjectivityValidator that = (WeakSubjectivityValidator) o;
-    return Objects.equals(calculator, that.calculator)
-        && Objects.equals(violationPolicy, that.violationPolicy)
-        && Objects.equals(config, that.config);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(calculator, violationPolicy, config);
   }
 }
