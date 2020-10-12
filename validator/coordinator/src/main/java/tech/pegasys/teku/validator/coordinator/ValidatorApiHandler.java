@@ -20,6 +20,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
+import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
@@ -43,6 +44,7 @@ import tech.pegasys.teku.core.CommitteeAssignmentUtil;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
+import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
@@ -64,6 +66,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscrib
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.blockimport.BlockImportChannel;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.SyncState;
@@ -72,6 +75,7 @@ import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
@@ -82,6 +86,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final SyncStateTracker syncStateTracker;
   private final StateTransition stateTransition;
   private final BlockFactory blockFactory;
+  private final BlockImportChannel blockImportChannel;
   private final AggregatingAttestationPool attestationPool;
   private final AttestationManager attestationManager;
   private final AttestationTopicSubscriber attestationTopicSubscriber;
@@ -94,6 +99,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncStateTracker syncStateTracker,
       final StateTransition stateTransition,
       final BlockFactory blockFactory,
+      final BlockImportChannel blockImportChannel,
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
       final AttestationTopicSubscriber attestationTopicSubscriber,
@@ -104,6 +110,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncStateTracker = syncStateTracker;
     this.stateTransition = stateTransition;
     this.blockFactory = blockFactory;
+    this.blockImportChannel = blockImportChannel;
     this.attestationPool = attestationPool;
     this.attestationManager = attestationManager;
     this.attestationTopicSubscriber = attestationTopicSubscriber;
@@ -363,9 +370,33 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendSignedBlock(final SignedBeaconBlock block) {
-    eventBus.post(new ProposedBlockEvent(block));
+  public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
     performanceTracker.saveProducedBlock(block);
+    eventBus.post(new ProposedBlockEvent(block));
+    return blockImportChannel
+        .importBlock(block)
+        .thenApply(
+            result -> {
+              if (result.isSuccessful()) {
+                LOG.trace(
+                    "Successfully imported proposed block: {}",
+                    () -> formatBlock(block.getSlot(), block.getRoot()));
+                return SendSignedBlockResult.success(block.getRoot());
+              } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
+                LOG.debug(
+                    "Delayed processing proposed block {} because it is from the future",
+                    formatBlock(block.getSlot(), block.getRoot()));
+                return SendSignedBlockResult.notImported(result.getFailureReason().name());
+              } else {
+                LOG.error(
+                    "Failed to import proposed block due to "
+                        + result.getFailureReason()
+                        + ": "
+                        + formatBlock(block.getSlot(), block.getRoot()),
+                    result.getFailureCause().orElse(null));
+                return SendSignedBlockResult.notImported(result.getFailureReason().name());
+              }
+            });
   }
 
   @VisibleForTesting

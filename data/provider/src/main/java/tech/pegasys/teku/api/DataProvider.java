@@ -15,7 +15,6 @@ package tech.pegasys.teku.api;
 
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
-import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
@@ -34,14 +33,13 @@ public class DataProvider {
       final Eth2Network p2pNetwork,
       final SyncService syncService,
       final ValidatorApiChannel validatorApiChannel,
-      final BlockImporter blockImporter,
       final AggregatingAttestationPool attestationPool) {
     networkDataProvider = new NetworkDataProvider(p2pNetwork);
     nodeDataProvider = new NodeDataProvider(attestationPool);
     chainDataProvider = new ChainDataProvider(recentChainData, combinedChainDataClient);
     syncDataProvider = new SyncDataProvider(syncService);
     this.validatorDataProvider =
-        new ValidatorDataProvider(validatorApiChannel, blockImporter, combinedChainDataClient);
+        new ValidatorDataProvider(validatorApiChannel, combinedChainDataClient);
   }
 
   public NetworkDataProvider getNetworkDataProvider() {

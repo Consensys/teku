@@ -67,7 +67,11 @@ public class GetNewBlock implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Create and return an unsigned beacon block at the specified slot.",
+      deprecated = true,
+      summary = "Produce Unsigned Block",
+      description =
+          "Create and return an unsigned beacon block at the specified slot.\n\n"
+              + "Deprecated - use `/eth/v1/validator/blocks/{slot}` instead.",
       tags = {TAG_VALIDATOR},
       queryParams = {
         @OpenApiParam(
@@ -80,9 +84,6 @@ public class GetNewBlock implements Handler {
             required = true),
         @OpenApiParam(name = GRAFFITI, description = "`Bytes32 Hex` Graffiti.")
       },
-      description =
-          "Create and return an unsigned beacon block at the specified slot. "
-              + "The `randao_reveal` and `slot` must be provided to create the block.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,

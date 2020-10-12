@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.remote;
 
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
@@ -54,23 +53,18 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             serviceConfig.getMetricsSystem(),
             new RemoteValidatorApiHandler(apiClient, asyncRunner));
 
-    final BeaconChainEventAdapter beaconChainEventAdapter;
-    if (StringUtils.isEmpty(serviceConfig.getConfig().getBeaconNodeEventsWsEndpoint())) {
-      final ValidatorTimingChannel validatorTimingChannel =
-          serviceConfig.getEventChannels().getPublisher(ValidatorTimingChannel.class);
-      beaconChainEventAdapter =
-          new EventSourceBeaconChainEventAdapter(
-              apiEndpoint,
-              okHttpClient,
-              new TimeBasedEventAdapter(
-                  new GenesisTimeProvider(asyncRunner, validatorApiChannel),
-                  new RepeatingTaskScheduler(asyncRunner, serviceConfig.getTimeProvider()),
-                  serviceConfig.getTimeProvider(),
-                  validatorTimingChannel),
-              validatorTimingChannel);
-    } else {
-      beaconChainEventAdapter = new WebSocketBeaconChainEventAdapter(serviceConfig);
-    }
+    final ValidatorTimingChannel validatorTimingChannel =
+        serviceConfig.getEventChannels().getPublisher(ValidatorTimingChannel.class);
+    final BeaconChainEventAdapter beaconChainEventAdapter =
+        new EventSourceBeaconChainEventAdapter(
+            apiEndpoint,
+            okHttpClient,
+            new TimeBasedEventAdapter(
+                new GenesisTimeProvider(asyncRunner, validatorApiChannel),
+                new RepeatingTaskScheduler(asyncRunner, serviceConfig.getTimeProvider()),
+                serviceConfig.getTimeProvider(),
+                validatorTimingChannel),
+            validatorTimingChannel);
 
     return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApiChannel);
   }

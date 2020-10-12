@@ -31,7 +31,6 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQ
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
@@ -41,7 +40,6 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorResponse;
@@ -53,7 +51,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
-public class GetStateValidator extends AbstractHandler implements Handler {
+public class GetStateValidator extends AbstractHandler {
   private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/eth/v1/beacon/states/:state_id/validators/:validator_id";
   private final ChainDataProvider chainDataProvider;
@@ -89,25 +87,26 @@ public class GetStateValidator extends AbstractHandler implements Handler {
         @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
       })
   @Override
-  public void handle(@NotNull final Context ctx) throws Exception {
-
+  public void handle(final Context ctx) throws Exception {
     final Map<String, String> pathParams = ctx.pathParamMap();
     try {
-      final Optional<UInt64> maybeSlot =
-          chainDataProvider.stateParameterToSlot(pathParams.get(PARAM_STATE_ID));
-      final Optional<Integer> validatorId =
+      final UInt64 slot =
+          chainDataProvider
+              .stateParameterToSlot(pathParams.get(PARAM_STATE_ID))
+              .orElseThrow(ChainDataUnavailableException::new);
+      final Optional<Integer> validatorIndex =
           chainDataProvider.validatorParameterToIndex(pathParams.get(PARAM_VALIDATOR_ID));
-
-      SafeFuture<Optional<ValidatorResponse>> future =
-          chainDataProvider.getValidatorDetails(maybeSlot, validatorId);
+      final SafeFuture<Optional<ValidatorResponse>> future =
+          chainDataProvider.getValidatorDetails(slot, validatorIndex);
       handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
     } catch (ChainDataUnavailableException ex) {
       LOG.trace(ex);
       ctx.status(SC_SERVICE_UNAVAILABLE);
+      ctx.result(BadRequest.serviceUnavailable(jsonProvider));
     } catch (IllegalArgumentException ex) {
       LOG.trace(ex);
       ctx.status(SC_BAD_REQUEST);
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(ex.getMessage())));
+      ctx.result(BadRequest.badRequest(jsonProvider, ex.getMessage()));
     }
   }
 
