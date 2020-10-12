@@ -15,12 +15,16 @@ package tech.pegasys.teku.storage.storageSystem;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.rocksdb.InMemoryRocksDbDatabaseFactory;
 import tech.pegasys.teku.storage.server.rocksdb.core.MockRocksDbInstance;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
+import tech.pegasys.teku.storage.server.rocksdb.schema.V6SchemaFinalized;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
@@ -53,6 +57,9 @@ public class InMemoryStorageSystemBuilder {
   public StorageSystem build() {
     final Database database;
     switch (version) {
+      case V6:
+        database = createV6Database();
+        break;
       case V5:
         database = createV5Database();
         break;
@@ -115,6 +122,27 @@ public class InMemoryStorageSystemBuilder {
     };
   }
 
+  private static <T> List<T> concat(Collection<? extends T> l1, Collection<? extends T> l2) {
+    ArrayList<T> ret = new ArrayList<>(l1);
+    ret.addAll(l2);
+    return ret;
+  }
+
+  private Database createV6Database() {
+    if (hotDb == null) {
+      hotDb =
+          MockRocksDbInstance.createEmpty(
+              concat(
+                  V4SchemaHot.INSTANCE.getAllColumns(), V6SchemaFinalized.INSTANCE.getAllColumns()),
+              concat(
+                  V4SchemaHot.INSTANCE.getAllVariables(),
+                  V6SchemaFinalized.INSTANCE.getAllVariables()));
+      coldDb = hotDb;
+    }
+    return InMemoryRocksDbDatabaseFactory.createV6(
+        hotDb, coldDb, storageMode, stateStorageFrequency);
+  }
+
   // V5 only differs by the RocksDB configuration which doesn't apply to the in-memory version
   private Database createV5Database() {
     return createV4Database();
@@ -122,10 +150,15 @@ public class InMemoryStorageSystemBuilder {
 
   private Database createV4Database() {
     if (hotDb == null) {
-      hotDb = MockRocksDbInstance.createEmpty(V4SchemaHot.class);
+      hotDb =
+          MockRocksDbInstance.createEmpty(
+              V4SchemaHot.INSTANCE.getAllColumns(), V4SchemaHot.INSTANCE.getAllVariables());
     }
     if (coldDb == null) {
-      coldDb = MockRocksDbInstance.createEmpty(V4SchemaFinalized.class);
+      coldDb =
+          MockRocksDbInstance.createEmpty(
+              V4SchemaFinalized.INSTANCE.getAllColumns(),
+              V4SchemaFinalized.INSTANCE.getAllVariables());
     }
     return InMemoryRocksDbDatabaseFactory.createV4(
         hotDb, coldDb, storageMode, stateStorageFrequency);

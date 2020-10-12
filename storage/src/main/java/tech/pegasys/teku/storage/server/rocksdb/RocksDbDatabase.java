@@ -68,7 +68,6 @@ import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V3RocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V4FinalizedRocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V4HotRocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
-import tech.pegasys.teku.storage.server.rocksdb.schema.Schema;
 import tech.pegasys.teku.storage.server.rocksdb.schema.SchemaFinalized;
 import tech.pegasys.teku.storage.server.rocksdb.schema.SchemaHot;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
@@ -97,7 +96,7 @@ public class RocksDbDatabase implements Database {
             metricsSystem,
             STORAGE_HOT_DB,
             configuration,
-            Schema.streamColumns(V3Schema.class).collect(Collectors.toList()));
+            V3Schema.ALL_COLUMNS);
     return createV3(metricsSystem, db, stateStorageMode);
   }
 
@@ -148,10 +147,14 @@ public class RocksDbDatabase implements Database {
           RocksDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
       hotDb = finalizedDb;
     }
-    final V4HotRocksDbDao dao = new V4HotRocksDbDao(hotDb, schemaHot);
-    final V4FinalizedRocksDbDao finalizedDbDao =
-        new V4FinalizedRocksDbDao(finalizedDb, schemaFinalized, stateStorageFrequency);
-    return new RocksDbDatabase(metricsSystem, dao, finalizedDbDao, dao, dao, stateStorageMode);
+    return createV6(
+        metricsSystem,
+        hotDb,
+        finalizedDb,
+        schemaHot,
+        schemaFinalized,
+        stateStorageMode,
+        stateStorageFrequency);
   }
 
   static Database createV3(
@@ -171,6 +174,20 @@ public class RocksDbDatabase implements Database {
     final V4HotRocksDbDao dao = new V4HotRocksDbDao(hotDb, V4SchemaHot.INSTANCE);
     final V4FinalizedRocksDbDao finalizedDbDao =
         new V4FinalizedRocksDbDao(finalizedDb, V4SchemaFinalized.INSTANCE, stateStorageFrequency);
+    return new RocksDbDatabase(metricsSystem, dao, finalizedDbDao, dao, dao, stateStorageMode);
+  }
+
+  static Database createV6(
+      final MetricsSystem metricsSystem,
+      final RocksDbAccessor hotDb,
+      final RocksDbAccessor finalizedDb,
+      final SchemaHot schemaHot,
+      final SchemaFinalized schemaFinalized,
+      final StateStorageMode stateStorageMode,
+      final long stateStorageFrequency) {
+    final V4HotRocksDbDao dao = new V4HotRocksDbDao(hotDb, schemaHot);
+    final V4FinalizedRocksDbDao finalizedDbDao =
+        new V4FinalizedRocksDbDao(finalizedDb, schemaFinalized, stateStorageFrequency);
     return new RocksDbDatabase(metricsSystem, dao, finalizedDbDao, dao, dao, stateStorageMode);
   }
 
