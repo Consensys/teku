@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -53,7 +54,7 @@ class OkHttpValidatorRestApiClientTest {
   @BeforeEach
   public void beforeEach() throws Exception {
     mockWebServer.start();
-    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/").toString());
+    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), new OkHttpClient());
   }
 
   @AfterEach
@@ -262,10 +263,11 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void sendSignedBlock_MakesExpectedRequest() throws Exception {
+    final Bytes32 blockRoot = Bytes32.fromHexStringLenient("0x1234");
     final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
 
     // Block has been successfully broadcast, validated and imported
-    mockWebServer.enqueue(new MockResponse().setResponseCode(200));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody(asJson(blockRoot)));
 
     apiClient.sendSignedBlock(signedBeaconBlock);
 
@@ -583,7 +585,7 @@ class OkHttpValidatorRestApiClientTest {
       return jsonProvider.objectToJSON(object);
     } catch (JsonProcessingException e) {
       fail("Error conversing object to json", e);
-      return null;
+      return "";
     }
   }
 }

@@ -275,10 +275,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       "--rest-api-docs-enabled", "false",
       "--rest-api-enabled", "false",
       "--rest-api-interface", "127.0.0.1",
-      "--Xremote-validator-api-interface", "127.0.0.1",
-      "--Xremote-validator-api-port", "9999",
-      "--Xremote-validator-api-max-subscribers", "1000",
-      "--Xremote-validator-api-enabled", "false",
       "--Xpeer-rate-limit", "500",
       "--Xpeer-request-limit", "50"
     };
@@ -377,12 +373,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setRestApiEnabled(false)
         .setRestApiInterface("127.0.0.1")
         .setRestApiHostAllowlist(List.of("127.0.0.1", "localhost"))
-        .setRemoteValidatorApiInterface("127.0.0.1")
-        .setRemoteValidatorApiMaxSubscribers(1000)
-        .setRemoteValidatorApiPort(9999)
-        .setRemoteValidatorApiEnabled(false)
-        .setBeaconNodeApiEndpoint("http://127.0.0.1:5051")
-        .setBeaconNodeEventsWsEndpoint("ws://127.0.0.1:9999");
+        .setBeaconNodeApiEndpoint("http://127.0.0.1:5051");
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {

@@ -38,6 +38,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -78,11 +79,13 @@ class BlockProductionDutyTest {
     when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.of(graffiti)))
         .thenReturn(completedFuture(Optional.of(unsignedBlock)));
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
+    final SignedBeaconBlock signedBlock = new SignedBeaconBlock(unsignedBlock, blockSignature);
+    when(validatorApiChannel.sendSignedBlock(signedBlock))
+        .thenReturn(completedFuture(SendSignedBlockResult.success(signedBlock.getRoot())));
 
     performAndReportDuty();
 
-    verify(validatorApiChannel)
-        .sendSignedBlock(new SignedBeaconBlock(unsignedBlock, blockSignature));
+    verify(validatorApiChannel).sendSignedBlock(signedBlock);
     verify(validatorLogger)
         .dutyCompleted(duty.getProducedType(), SLOT, 1, Set.of(unsignedBlock.hash_tree_root()));
     verifyNoMoreInteractions(validatorLogger);

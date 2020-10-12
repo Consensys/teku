@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.api;
 
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,6 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
@@ -72,7 +75,7 @@ public class ChainDataProviderTest {
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private CombinedChainDataClient combinedChainDataClient;
-  private StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
+  private final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
   private tech.pegasys.teku.datastructures.state.BeaconState beaconStateInternal;
 
   private SignedBlockAndState bestBlock;
@@ -82,8 +85,9 @@ public class ChainDataProviderTest {
   private Bytes32 stateRoot;
   private UInt64 slot;
   private RecentChainData recentChainData;
-  private CombinedChainDataClient mockCombinedChainDataClient = mock(CombinedChainDataClient.class);
-  private RecentChainData mockRecentChainData = mock(RecentChainData.class);
+  private final CombinedChainDataClient mockCombinedChainDataClient =
+      mock(CombinedChainDataClient.class);
+  private final RecentChainData mockRecentChainData = mock(RecentChainData.class);
 
   @BeforeEach
   public void setup() {
@@ -366,7 +370,15 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
     assertThrows(
         ChainDataUnavailableException.class,
-        () -> provider.getValidatorDetails(Optional.empty(), Optional.empty()));
+        () -> provider.getValidatorDetails(ZERO, Optional.of(2)));
+  }
+
+  @Test
+  public void getValidatorsDetails_shouldThrowWhenStoreNotFound() {
+    final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
+    assertThrows(
+        ChainDataUnavailableException.class,
+        () -> provider.getValidatorsDetails(ZERO, emptyList()));
   }
 
   @Test
@@ -624,32 +636,17 @@ public class ChainDataProviderTest {
   public void validatorDetails_shouldReturnEmptyForFutureState() {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
-    Optional<ValidatorResponse> response =
-        provider.getValidatorDetails(Optional.of(UInt64.valueOf(12345678)), Optional.of(1)).join();
-    assertThat(response).isEmpty();
-  }
-
-  @Test
-  public void getValidatorDetails_shouldReturnEmptyFromEmptyState() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(recentChainData, combinedChainDataClient);
-    assertThat(provider.getValidatorDetails(Optional.empty(), Optional.of(1)).join()).isEmpty();
+    final SafeFuture<Optional<ValidatorResponse>> response =
+        provider.getValidatorDetails(UInt64.valueOf(12345678), Optional.of(1));
+    assertThatSafeFuture(response).isCompletedWithEmptyOptional();
   }
 
   @Test
   public void getValidatorDetails_shouldReturnEmptyFromEmptyValidatorIndex() {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
-    assertThat(provider.getValidatorDetails(Optional.of(ONE), Optional.empty()).join()).isEmpty();
-  }
-
-  @Test
-  public void getForkAtSlot_shouldGetCurrentFork() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(recentChainData, combinedChainDataClient);
-    final Bytes4 FORK_ONE = Bytes4.fromHexString("0x00000001");
-    final Optional<Fork> expectedResult = Optional.of(new Fork(FORK_ONE, FORK_ONE, ZERO));
-    assertThat(provider.getForkAtSlot(ONE).join()).isEqualTo(expectedResult);
+    assertThatSafeFuture(provider.getValidatorDetails(ONE, Optional.empty()))
+        .isCompletedWithEmptyOptional();
   }
 
   @Test
@@ -661,10 +658,43 @@ public class ChainDataProviderTest {
     assertValidatorRespondsWithCorrectValidatorAtHead(provider, validator, 1);
   }
 
+  @Test
+  public void validatorsDetails_shouldReturnEmptyForFutureState() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    SafeFuture<Optional<List<ValidatorResponse>>> response =
+        provider.getValidatorsDetails(UInt64.valueOf(12345678), List.of(1));
+    assertThatSafeFuture(response).isCompletedWithEmptyOptional();
+  }
+
+  @Test
+  public void getValidatorsDetails_shouldReturnEmptyListWhenNoValidatorIndicesProvided() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    assertThatSafeFuture(provider.getValidatorsDetails(ONE, emptyList()))
+        .isCompletedWithValue(Optional.of(emptyList()));
+  }
+
+  @Test
+  public void validatorsDetails_shouldGetResponse() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    assertValidatorsRespondsWithCorrectValidatorsAtHead(provider, List.of(0, 1, 2));
+  }
+
+  @Test
+  public void getForkAtSlot_shouldGetCurrentFork() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    final Bytes4 FORK_ONE = Bytes4.fromHexString("0x00000001");
+    final Optional<Fork> expectedResult = Optional.of(new Fork(FORK_ONE, FORK_ONE, ZERO));
+    assertThat(provider.getForkAtSlot(ONE).join()).isEqualTo(expectedResult);
+  }
+
   private void assertValidatorRespondsWithCorrectValidatorAtHead(
       final ChainDataProvider provider, final Validator validator, final Integer validatorId) {
     SafeFuture<Optional<ValidatorResponse>> response =
-        provider.getValidatorDetails(Optional.of(ZERO), Optional.of(validatorId));
+        provider.getValidatorDetails(ZERO, Optional.of(validatorId));
     Optional<ValidatorResponse> maybeValidator = response.join();
     assertThat(maybeValidator.isPresent()).isTrue();
     assertThat(maybeValidator.get())
@@ -682,5 +712,16 @@ public class ChainDataProviderTest {
                     ZERO,
                     FAR_FUTURE_EPOCH,
                     FAR_FUTURE_EPOCH)));
+  }
+
+  private void assertValidatorsRespondsWithCorrectValidatorsAtHead(
+      final ChainDataProvider provider, final List<Integer> validatorIds) {
+    final List<ValidatorResponse> expectedValidators =
+        validatorIds.stream()
+            .map(id -> ValidatorResponse.fromState(beaconStateInternal, id))
+            .collect(toList());
+    SafeFuture<Optional<List<ValidatorResponse>>> response =
+        provider.getValidatorsDetails(ZERO, validatorIds);
+    assertThatSafeFuture(response).isCompletedWithValue(Optional.of(expectedValidators));
   }
 }

@@ -25,19 +25,7 @@ public class ValidatorClientOptions {
       hidden = true)
   private String beaconNodeApiEndpoint = "http://127.0.0.1:5051";
 
-  @Option(
-      names = {"--Xbeacon-node-events-endpoint"},
-      paramLabel = "<NETWORK>",
-      description = "Endpoint of the Beacon Node Events WebSocket API",
-      arity = "1",
-      hidden = true)
-  private String beaconNodeEventsWsEndpoint = "ws://127.0.0.1:9999";
-
   public String getBeaconNodeApiEndpoint() {
     return beaconNodeApiEndpoint;
-  }
-
-  public String getBeaconNodeEventsWsEndpoint() {
-    return beaconNodeEventsWsEndpoint;
   }
 }

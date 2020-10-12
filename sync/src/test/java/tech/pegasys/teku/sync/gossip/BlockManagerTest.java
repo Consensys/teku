@@ -39,7 +39,6 @@ import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.ImportedBlocks;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
-import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.statetransition.util.FutureItems;
@@ -56,10 +55,11 @@ public class BlockManagerTest {
   private final EventBus remoteEventBus = new EventBus();
   private final UInt64 historicalBlockTolerance = UInt64.valueOf(5);
   private final UInt64 futureBlockTolerance = UInt64.valueOf(2);
+  private final int maxPendingBlocks = 10;
   private final PendingPool<SignedBeaconBlock> pendingBlocks =
-      PendingPool.createForBlocks(historicalBlockTolerance, futureBlockTolerance);
+      PendingPool.createForBlocks(historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
   private final FutureItems<SignedBeaconBlock> futureBlocks =
-      new FutureItems<>(SignedBeaconBlock::getSlot);
+      FutureItems.create(SignedBeaconBlock::getSlot);
   private final FetchRecentBlocksService recentBlockFetcher = mock(FetchRecentBlocksService.class);
 
   private final RecentChainData localRecentChainData =
@@ -208,7 +208,7 @@ public class BlockManagerTest {
     incrementSlot();
 
     assertThat(importedBlocks.get()).isEmpty();
-    localEventBus.post(new ProposedBlockEvent(nextBlock));
+    assertThat(blockManager.importBlock(nextBlock)).isCompleted();
     assertThat(importedBlocks.get()).containsExactly(nextBlock);
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
@@ -218,7 +218,7 @@ public class BlockManagerTest {
     final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock = remoteChain.createAndImportBlockAtSlot(nextSlot);
 
-    localEventBus.post(new ProposedBlockEvent(nextBlock));
+    assertThat(blockManager.importBlock(nextBlock)).isCompleted();
     assertThat(importedBlocks.get()).isEmpty();
     assertThat(pendingBlocks.size()).isEqualTo(0);
     assertThat(futureBlocks.size()).isEqualTo(1);

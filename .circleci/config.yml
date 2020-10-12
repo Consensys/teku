@@ -4,8 +4,8 @@ executors:
     docker:
       - image: circleci/openjdk:11.0.8-jdk-buster
         auth:
-          username: $DOCKER_USER
-          password: $DOCKER_PASSWORD      
+          username: $DOCKER_USER_RO
+          password: $DOCKER_PASSWORD_RO      
     resource_class: small
     working_directory: ~/project
     environment:
@@ -16,8 +16,8 @@ executors:
     docker:
       - image: circleci/openjdk:11.0.8-jdk-buster
         auth:
-          username: $DOCKER_USER
-          password: $DOCKER_PASSWORD      
+          username: $DOCKER_USER_RO
+          password: $DOCKER_PASSWORD_RO       
     resource_class: medium
     working_directory: ~/project
     environment:
@@ -28,8 +28,8 @@ executors:
     docker:
       - image: circleci/openjdk:11.0.8-jdk-buster
         auth:
-          username: $DOCKER_USER
-          password: $DOCKER_PASSWORD      
+          username: $DOCKER_USER_RO
+          password: $DOCKER_PASSWORD_RO         
     resource_class: "medium+"
     working_directory: ~/project
     environment:
@@ -40,8 +40,8 @@ executors:
     docker:
       - image: circleci/openjdk:11.0.8-jdk-buster
         auth:
-          username: $DOCKER_USER
-          password: $DOCKER_PASSWORD      
+          username: $DOCKER_USER_RO
+          password: $DOCKER_PASSWORD_RO      
     resource_class: large
     working_directory: ~/project
     environment:
@@ -58,8 +58,8 @@ executors:
     docker:
       - image: circleci/node:14-buster
         auth:
-          username: $DOCKER_USER
-          password: $DOCKER_PASSWORD  
+          username: $DOCKER_USER_RO
+          password: $DOCKER_PASSWORD_RO      
 
 commands:
   prepare:
@@ -289,7 +289,7 @@ jobs:
       - run:
           name: Publish Docker
           command: |
-            docker login --username "${DOCKER_USER}" --password "${DOCKER_PASSWORD}"
+            docker login --username "${DOCKER_USER_RW}" --password "${DOCKER_PASSWORD_RW}"
             ./gradlew --no-daemon --parallel "-Pbranch=${CIRCLE_BRANCH}" dockerUpload
 
   extractAPISpec:
@@ -403,34 +403,48 @@ jobs:
             git push origin
 
 workflows:
-  version: 2
   circleci:
     jobs:
-      - assemble
-      - spotless
+      - assemble:
+          context: 
+            - dockerhub-quorumengineering-ro  
+      - spotless:
+          context: 
+            - dockerhub-quorumengineering-ro  
       - referenceTests:
           requires:
             - assemble
             - spotless
+          context: 
+            - dockerhub-quorumengineering-ro               
       - unitTests:
           requires:
             - assemble
             - spotless
+          context: 
+            - dockerhub-quorumengineering-ro              
       - integrationTests:
           requires:
             - assemble
             - spotless
+          context: 
+            - dockerhub-quorumengineering-ro        
       - acceptanceTests:
           requires:
             - assemble
             - spotless
+          context: 
+            - dockerhub-quorumengineering-ro           
       - docker:
           requires:
             - assemble
             - spotless
+          context: 
+            - dockerhub-quorumengineering-ro             
       - extractAPISpec:
           requires:
             - assemble
+          context: dockerhub-quorumengineering-ro            
       - publish:
           filters:
             branches:
@@ -445,6 +459,9 @@ workflows:
             - referenceTests
             - docker
             - extractAPISpec
+          context: 
+            - dockerhub-quorumengineering-ro   
+            - quorum-gradle          
       - publishDocker:
           filters:
             branches:
@@ -459,6 +476,8 @@ workflows:
             - referenceTests
             - docker
             - extractAPISpec
+          context: 
+            - dockerhub-quorumengineering-rw 
       - publishAPIDoc:
           filters:
             branches:
@@ -474,6 +493,8 @@ workflows:
             - referenceTests
             - docker
             - extractAPISpec
+          context: 
+            - dockerhub-quorumengineering-ro        
 
 #  nightly:
 #    triggers:

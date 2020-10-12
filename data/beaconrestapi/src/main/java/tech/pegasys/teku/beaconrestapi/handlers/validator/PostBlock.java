@@ -33,6 +33,7 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
@@ -59,12 +60,14 @@ public class PostBlock implements Handler {
       path = ROUTE,
       method = HttpMethod.POST,
       summary = "Submit a signed transaction to be imported.",
+      deprecated = true,
       tags = {TAG_VALIDATOR},
       requestBody =
           @OpenApiRequestBody(content = {@OpenApiContent(from = SignedBeaconBlock.class)}),
       description =
           "Submit a signed beacon block to the beacon node to be imported."
-              + " The beacon node performs the required validation.",
+              + " The beacon node performs the required validation.\n\n"
+              + "Deprecated - use `/eth/v1/beacon/blocks` instead",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
@@ -110,9 +113,10 @@ public class PostBlock implements Handler {
       throws JsonProcessingException {
     ctx.status(validatorBlockResult.getResponseCode());
     if (validatorBlockResult.getFailureReason().isPresent()) {
-      return jsonProvider.objectToJSON(validatorBlockResult.getFailureReason().get().getMessage());
+      return jsonProvider.objectToJSON(validatorBlockResult.getFailureReason().get());
     } else {
-      return jsonProvider.objectToJSON(validatorBlockResult.getHash_tree_root());
+      return jsonProvider.objectToJSON(
+          validatorBlockResult.getHash_tree_root().map(Bytes32::toHexString).orElse(""));
     }
   }
 }

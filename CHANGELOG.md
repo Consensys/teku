@@ -7,6 +7,20 @@ we recommend most users use the latest `master` branch of Teku.
 
 - REST API endpoints will be updated to match emerging standards in a future release.
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments still work but will be removed in a future release.
+- Validator subcommands for generating and registering validators are now deprecated and will be removed in a future release to encourage the use of the Eth2 Launchpad, which is the most secure way of generating keys and sending deposits.
+
+## 0.12.10
+
+### Additions and Improvements
+- Added `zinken` network genesis state so an ETH1 endpoint is no longer required when connecting to Zinken.
+- Deprecated the validator subcommands (which were mainly for testing) used for generating and registering validators.
+- Removed the option to configure snappy compression. It is enabled by default.
+
+### Bug Fixes
+- Fixed an issue where some of the newer validator options weren't being applied in the stand alone validator client. 
+- Fixed an issue where some of the blocks produced by the stand alone validator client was being dropped.
+- Fixed an issue where the create block API coudn't create blocks after more than one epoch of empty slots.
+- Fixed a DOS vector where queues for blocks and attestation that are not yet ready for processing could be exploited.
 
 ## 0.12.9
 

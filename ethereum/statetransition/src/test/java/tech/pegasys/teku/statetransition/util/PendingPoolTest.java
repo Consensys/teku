@@ -30,8 +30,9 @@ public class PendingPoolTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final UInt64 historicalTolerance = UInt64.valueOf(5);
   private final UInt64 futureTolerance = UInt64.valueOf(2);
+  private final int maxItems = 15;
   private final PendingPool<SignedBeaconBlock> pendingPool =
-      PendingPool.createForBlocks(historicalTolerance, futureTolerance);
+      PendingPool.createForBlocks(historicalTolerance, futureTolerance, maxItems);
   private UInt64 currentSlot = historicalTolerance.times(2);
   private List<Bytes32> requiredRootEvents = new ArrayList<>();
   private List<Bytes32> requiredRootDroppedEvents = new ArrayList<>();
@@ -157,6 +158,86 @@ public class PendingPoolTest {
     assertThat(pendingPool.getItemsDependingOn(block.getParent_root(), false)).isEmpty();
     assertThat(requiredRootEvents).isEmpty();
     assertThat(requiredRootDroppedEvents).isEmpty();
+  }
+
+  @Test
+  public void add_moreThanMaxItems() {
+    for (int i = 0; i < maxItems * 2; i++) {
+      final SignedBeaconBlock block =
+          dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+      pendingPool.add(block);
+
+      final int expectedSize = Math.min(maxItems, i + 1);
+      assertThat(pendingPool.contains(block)).isTrue();
+      assertThat(pendingPool.size()).isEqualTo(expectedSize);
+    }
+
+    // Final sanity check
+    assertThat(pendingPool.size()).isEqualTo(maxItems);
+  }
+
+  @Test
+  public void add_dontDropItemsWhenNewItemsIgnored() {
+    final List<SignedBeaconBlock> blocks = new ArrayList<>();
+    for (int i = 0; i < maxItems; i++) {
+      final SignedBeaconBlock block =
+          dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+      pendingPool.add(block);
+      blocks.add(block);
+
+      final int expectedSize = Math.min(maxItems, i + 1);
+      assertThat(pendingPool.contains(block)).isTrue();
+      assertThat(pendingPool.size()).isEqualTo(expectedSize);
+    }
+    assertThat(pendingPool.size()).isEqualTo(maxItems);
+
+    // Add some blocks that should be ignored
+    SignedBeaconBlock ignoredBlock =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.plus(futureTolerance).plus(1));
+    pendingPool.add(ignoredBlock);
+    ignoredBlock =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.minus(historicalTolerance).minus(1));
+    pendingPool.add(ignoredBlock);
+
+    // All initial blocks should still be present
+    assertThat(pendingPool.size()).isEqualTo(maxItems);
+    blocks.forEach(b -> assertThat(pendingPool.contains(b)).isTrue());
+  }
+
+  @Test
+  public void add_shouldDropOldestItemsWhenEnforcingLimits() {
+    final UInt64 olderSlot = currentSlot;
+    final UInt64 newerSlot = currentSlot.plus(1);
+    SignedBeaconBlock block;
+
+    // Add older block
+    SignedBeaconBlock olderBlock = dataStructureUtil.randomSignedBeaconBlock(olderSlot);
+    pendingPool.add(olderBlock);
+    assertThat(pendingPool.contains(olderBlock)).isTrue();
+
+    // Add max newer blocks
+    for (int i = 0; i < maxItems; i++) {
+      block = dataStructureUtil.randomSignedBeaconBlock(newerSlot);
+      pendingPool.add(block);
+
+      assertThat(pendingPool.contains(block)).isTrue();
+      assertThat(pendingPool.size()).isLessThanOrEqualTo(maxItems);
+    }
+
+    // Older block should've been dropped
+    assertThat(pendingPool.contains(olderBlock)).isFalse();
+
+    // Add older block
+    olderBlock = dataStructureUtil.randomSignedBeaconBlock(olderSlot);
+    pendingPool.add(olderBlock);
+    assertThat(pendingPool.contains(olderBlock)).isTrue();
+    // Add newer block
+    block = dataStructureUtil.randomSignedBeaconBlock(newerSlot);
+    pendingPool.add(block);
+
+    // Older block should be dropped when newer block is added
+    assertThat(pendingPool.contains(olderBlock)).isFalse();
+    assertThat(pendingPool.size()).isEqualTo(maxItems);
   }
 
   private Checkpoint finalizedCheckpoint(SignedBeaconBlock block) {
@@ -347,28 +428,36 @@ public class PendingPoolTest {
 
   @Test
   public void onSlot_prunesOldBlocks() {
-    final SignedBeaconBlock blockA =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue() - 1L);
-    final SignedBeaconBlock blockB =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
-    pendingPool.add(blockA);
-    pendingPool.add(blockB);
+    // Interleave blocks to keep and blocks to prune
+    final List<SignedBeaconBlock> blocksToPrune = new ArrayList<>();
+    final List<SignedBeaconBlock> blocksToKeep = new ArrayList<>();
+    for (int i = 0; i < 3; i++) {
+      final SignedBeaconBlock toPrune =
+          dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue() - 1L);
+      final SignedBeaconBlock toKeep =
+          dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
 
-    assertThat(pendingPool.contains(blockA)).isTrue();
-    assertThat(pendingPool.contains(blockB)).isTrue();
+      blocksToPrune.add(toPrune);
+      blocksToKeep.add(toKeep);
+      pendingPool.add(toPrune);
+      pendingPool.add(toKeep);
+    }
+
+    blocksToKeep.forEach(b -> assertThat(pendingPool.contains(b)).isTrue());
+    blocksToPrune.forEach(b -> assertThat(pendingPool.contains(b)).isTrue());
 
     UInt64 newSlot = currentSlot;
     for (int i = 0; i < historicalTolerance.intValue() - 1; i++) {
       newSlot = newSlot.plus(UInt64.ONE);
       pendingPool.onSlot(newSlot);
-      assertThat(pendingPool.contains(blockA)).isTrue();
-      assertThat(pendingPool.contains(blockB)).isTrue();
+      blocksToKeep.forEach(b -> assertThat(pendingPool.contains(b)).isTrue());
+      blocksToPrune.forEach(b -> assertThat(pendingPool.contains(b)).isTrue());
     }
 
-    // Next slot should prune blockA
+    // Next slot should prune blocksToPrune
     pendingPool.onSlot(newSlot.plus(UInt64.ONE));
 
-    assertThat(pendingPool.contains(blockA)).isFalse();
-    assertThat(pendingPool.contains(blockB)).isTrue();
+    blocksToKeep.forEach(b -> assertThat(pendingPool.contains(b)).isTrue());
+    blocksToPrune.forEach(b -> assertThat(pendingPool.contains(b)).isFalse());
   }
 }

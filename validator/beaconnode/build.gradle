@@ -1,0 +1,22 @@
+dependencies {
+  implementation project(':ethereum:core')
+  implementation project(':ethereum:datastructures')
+  implementation project(':infrastructure:async')
+  implementation project(':infrastructure:events')
+  implementation project(':infrastructure:metrics')
+  implementation project(':util')
+  implementation project(':validator:api')
+
+  implementation 'org.apache.tuweni:tuweni-bytes'
+
+  implementation 'com.google.guava:guava'
+  implementation 'org.apache.logging.log4j:log4j-api'
+  implementation 'org.apache.commons:commons-lang3'
+
+  testImplementation 'org.mockito:mockito-core'
+  testImplementation testFixtures(project(':ethereum:datastructures'))
+  testImplementation testFixtures(project(':infrastructure:async'))
+  testImplementation testFixtures(project(':infrastructure:metrics'))
+  testImplementation testFixtures(project(':infrastructure:time'))
+  testImplementation testFixtures(project(':util'))
+}
