@@ -111,10 +111,11 @@ public class GetStateValidators extends AbstractHandler {
     } catch (ChainDataUnavailableException ex) {
       LOG.trace(ex);
       ctx.status(SC_SERVICE_UNAVAILABLE);
+      ctx.result(BadRequest.serviceUnavailable(jsonProvider));
     } catch (IllegalArgumentException ex) {
       LOG.trace(ex);
       ctx.status(SC_BAD_REQUEST);
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(ex.getMessage())));
+      ctx.result(BadRequest.badRequest(jsonProvider, ex.getMessage()));
     }
   }
 
