@@ -1,105 +1,156 @@
-# Minimal preset - phase 1
+# Minimal preset
 
 CONFIG_NAME: "minimal"
 
-# phase1-fork
-# ---------------------------------------------------------------
-# [customized] for testnet distinction
-PHASE_1_FORK_VERSION: 0x01000001
-# [STUB]
-PHASE_1_FORK_SLOT: 0
-# [customized] reduced for testing
-INITIAL_ACTIVE_SHARDS: 2
-
-
-# beacon-chain
-# ---------------------------------------------------------------
 # Misc
-# [customized] reduced for testing
-MAX_SHARDS: 8
-# 2**7 (= 128)
-LIGHT_CLIENT_COMMITTEE_SIZE: 128
-#  2**3 (= 8)
-GASPRICE_ADJUSTMENT_COEFFICIENT: 8
+# ---------------------------------------------------------------
 
-# Shard block configs
-# 2**20 (= 1048,576) bytes
-MAX_SHARD_BLOCK_SIZE: 1048576
-# 2**18 (= 262,144) bytes
-TARGET_SHARD_BLOCK_SIZE: 262144
-# Note: MAX_SHARD_BLOCKS_PER_ATTESTATION is derived from the list length.
-SHARD_BLOCK_OFFSETS: [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233]
-# len(SHARD_BLOCK_OFFSETS)
-MAX_SHARD_BLOCKS_PER_ATTESTATION: 12
-# 2**12 (= 4,096)
-BYTES_PER_CUSTODY_CHUNK: 4096
-# ceillog2(MAX_SHARD_BLOCK_SIZE // BYTES_PER_CUSTODY_CHUNK)
-CUSTODY_RESPONSE_DEPTH: 8
+# [customized] Just 4 committees for slot for testing purposes
+MAX_COMMITTEES_PER_SLOT: 4
+# [customized] unsecure, but fast
+TARGET_COMMITTEE_SIZE: 4
+# 2**11 (= 2,048)
+MAX_VALIDATORS_PER_COMMITTEE: 2048
+# 2**2 (= 4)
+MIN_PER_EPOCH_CHURN_LIMIT: 4
+# 2**16 (= 65,536)
+CHURN_LIMIT_QUOTIENT: 65536
+# [customized] Faster, but unsecure.
+SHUFFLE_ROUND_COUNT: 10
+# [customized]
+MIN_GENESIS_ACTIVE_VALIDATOR_COUNT: 64
+# Jan 3, 2020
+MIN_GENESIS_TIME: 1578009600
+# 4
+HYSTERESIS_QUOTIENT: 4
+# 1 (minus 0.25)
+HYSTERESIS_DOWNWARD_MULTIPLIER: 1
+# 5 (plus 1.25)
+HYSTERESIS_UPWARD_MULTIPLIER: 5
+
+
+# Fork Choice
+# ---------------------------------------------------------------
+# 2**1 (= 1)
+SAFE_SLOTS_TO_UPDATE_JUSTIFIED: 2
+
+
+# Validator
+# ---------------------------------------------------------------
+# [customized] process deposits more quickly, but insecure
+ETH1_FOLLOW_DISTANCE: 16
+# 2**4 (= 16)
+TARGET_AGGREGATORS_PER_COMMITTEE: 16
+# 2**0 (= 1)
+RANDOM_SUBNETS_PER_VALIDATOR: 1
+# 2**8 (= 256)
+EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION: 256
+# 14 (estimate from Eth1 mainnet)
+SECONDS_PER_ETH1_BLOCK: 14
+
+
+# Deposit contract
+# ---------------------------------------------------------------
+# Ethereum Goerli testnet
+DEPOSIT_CHAIN_ID: 5
+DEPOSIT_NETWORK_ID: 5
+# **TBD**
+DEPOSIT_CONTRACT_ADDRESS: 0x1234567890123456789012345678901234567890
+
 
 # Gwei values
-# 2**14 (= 16,384) Gwei
-MAX_GASPRICE: 16384
-# 2**3 (= 8) Gwei
-MIN_GASPRICE: 8
-
-# Time parameters
-# 2**3 (= 8) | online epochs
-ONLINE_PERIOD: 8
-# 2**8 (= 256) | epochs
-LIGHT_CLIENT_COMMITTEE_PERIOD: 256
-
-# Max operations per block
-# 2**20 (= 1,048,576)
-MAX_CUSTODY_CHUNK_CHALLENGE_RECORDS: 1048576
-
-# Domain types
-DOMAIN_SHARD_PROPOSAL: 0x80000000
-DOMAIN_SHARD_COMMITTEE: 0x81000000
-DOMAIN_LIGHT_CLIENT: 0x82000000
-# custody-game spec
-DOMAIN_CUSTODY_BIT_SLASHING: 0x83000000
-DOMAIN_LIGHT_SELECTION_PROOF: 0x84000000
-DOMAIN_LIGHT_AGGREGATE_AND_PROOF: 0x85000000
-
-# custody-game
 # ---------------------------------------------------------------
+# 2**0 * 10**9 (= 1,000,000,000) Gwei
+MIN_DEPOSIT_AMOUNT: 1000000000
+# 2**5 * 10**9 (= 32,000,000,000) Gwei
+MAX_EFFECTIVE_BALANCE: 32000000000
+# 2**4 * 10**9 (= 16,000,000,000) Gwei
+EJECTION_BALANCE: 16000000000
+# 2**0 * 10**9 (= 1,000,000,000) Gwei
+EFFECTIVE_BALANCE_INCREMENT: 1000000000
+
+
+# Initial values
+# ---------------------------------------------------------------
+# Highest byte set to 0x01 to avoid collisions with mainnet versioning
+GENESIS_FORK_VERSION: 0x00000001
+BLS_WITHDRAWAL_PREFIX: 0x00
+
+
 # Time parameters
-# 2**1 (= 2) epochs
-RANDAO_PENALTY_EPOCHS: 2
-# [customized] quicker for testing
-EARLY_DERIVED_SECRET_PENALTY_MAX_FUTURE_EPOCHS: 64
-# [customized] quicker for testing
-EPOCHS_PER_CUSTODY_PERIOD: 32
-# [customized] quicker for testing
-CUSTODY_PERIOD_TO_RANDAO_PADDING: 8
-# [customize for faster testing]
-MAX_CHUNK_CHALLENGE_DELAY: 64
+# ---------------------------------------------------------------
+# [customized] Faster to spin up testnets, but does not give validator reasonable warning time for genesis
+GENESIS_DELAY: 300
+# [customized] Faster for testing purposes
+SECONDS_PER_SLOT: 6
+# 2**0 (= 1) slots 6 seconds
+MIN_ATTESTATION_INCLUSION_DELAY: 1
+# [customized] fast epochs
+SLOTS_PER_EPOCH: 8
+# 2**0 (= 1) epochs
+MIN_SEED_LOOKAHEAD: 1
+# 2**2 (= 4) epochs
+MAX_SEED_LOOKAHEAD: 4
+# [customized] higher frequency new deposits from eth1 for testing
+EPOCHS_PER_ETH1_VOTING_PERIOD: 4
+# [customized] smaller state
+SLOTS_PER_HISTORICAL_ROOT: 64
+# 2**8 (= 256) epochs
+MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256
+# [customized] higher frequency of committee turnover and faster time to acceptable voluntary exit
+SHARD_COMMITTEE_PERIOD: 64
+# 2**2 (= 4) epochs
+MIN_EPOCHS_TO_INACTIVITY_PENALTY: 4
 
 
-# Misc parameters
-# 2**256 - 189
-CUSTODY_PRIME: 115792089237316195423570985008687907853269984665640564039457584007913129639747
-# 3
-CUSTODY_SECRETS: 3
-# 2**5 (= 32) bytes
-BYTES_PER_CUSTODY_ATOM: 32
-# 1/4 chance of custody bit 1 [customized for faster testing]
-CUSTODY_PROBABILITY_EXPONENT: 2
+# State vector lengths
+# ---------------------------------------------------------------
+# [customized] smaller state
+EPOCHS_PER_HISTORICAL_VECTOR: 64
+# [customized] smaller state
+EPOCHS_PER_SLASHINGS_VECTOR: 64
+# 2**24 (= 16,777,216) historical roots
+HISTORICAL_ROOTS_LIMIT: 16777216
+# 2**40 (= 1,099,511,627,776) validator spots
+VALIDATOR_REGISTRY_LIMIT: 1099511627776
 
-
-# Max operations
-# 2**8 (= 256)
-MAX_CUSTODY_KEY_REVEALS: 256
-# 2**0 (= 1)
-MAX_EARLY_DERIVED_SECRET_REVEALS: 1
-# [customized]
-MAX_CUSTODY_CHUNK_CHALLENGES: 2
-# [customized]
-MAX_CUSTODY_CHUNK_CHALLENGE_RESP: 8
-# 2**0 (= 1)
-MAX_CUSTODY_SLASHINGS: 1
 
 # Reward and penalty quotients
-EARLY_DERIVED_SECRET_REVEAL_SLOT_REWARD_MULTIPLE: 2
-# 2**8 (= 256)
-MINOR_REWARD_QUOTIENT: 256
+# ---------------------------------------------------------------
+# 2**6 (= 64)
+BASE_REWARD_FACTOR: 64
+# 2**9 (= 512)
+WHISTLEBLOWER_REWARD_QUOTIENT: 512
+# 2**3 (= 8)
+PROPOSER_REWARD_QUOTIENT: 8
+# [customized] 2**25 (= 33,554,432)
+INACTIVITY_PENALTY_QUOTIENT: 33554432
+# [customized] 2**6 (= 64)
+MIN_SLASHING_PENALTY_QUOTIENT: 64
+# [customized] 2 (lower safety margin than Phase 0 genesis but different than mainnet config for testing)
+PROPORTIONAL_SLASHING_MULTIPLIER: 2
+
+
+# Max operations per block
+# ---------------------------------------------------------------
+# 2**4 (= 16)
+MAX_PROPOSER_SLASHINGS: 16
+# 2**1 (= 2)
+MAX_ATTESTER_SLASHINGS: 2
+# 2**7 (= 128)
+MAX_ATTESTATIONS: 128
+# 2**4 (= 16)
+MAX_DEPOSITS: 16
+# 2**4 (= 16)
+MAX_VOLUNTARY_EXITS: 16
+
+
+# Signature domains
+# ---------------------------------------------------------------
+DOMAIN_BEACON_PROPOSER: 0x00000000
+DOMAIN_BEACON_ATTESTER: 0x01000000
+DOMAIN_RANDAO: 0x02000000
+DOMAIN_DEPOSIT: 0x03000000
+DOMAIN_VOLUNTARY_EXIT: 0x04000000
+DOMAIN_SELECTION_PROOF: 0x05000000
+DOMAIN_AGGREGATE_AND_PROOF: 0x06000000
