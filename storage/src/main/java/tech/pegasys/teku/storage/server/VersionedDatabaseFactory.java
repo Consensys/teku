@@ -296,6 +296,9 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           throw new DatabaseStorageException(
               "Database directory not found: " + v5ArchiveDirectory.getAbsolutePath());
         }
+        break;
+      default:
+        // do nothing
     }
   }
 
