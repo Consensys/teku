@@ -20,7 +20,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SchemaFinalized extends Schema {
   RocksDbColumn<Bytes32, UInt64> getColumnSlotsByFinalizedRoot();
+
   RocksDbColumn<UInt64, SignedBeaconBlock> getColumnFinalizedBlocksBySlot();
+
   RocksDbColumn<UInt64, BeaconState> getColumnFinalizedStatesBySlot();
+
   RocksDbColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot();
 }

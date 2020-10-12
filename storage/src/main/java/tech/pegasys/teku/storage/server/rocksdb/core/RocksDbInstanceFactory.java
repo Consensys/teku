@@ -154,7 +154,8 @@ public class RocksDbInstanceFactory {
   }
 
   private static List<ColumnFamilyDescriptor> createColumnFamilyDescriptors(
-      final Collection<RocksDbColumn<?, ?>> columns, final ColumnFamilyOptions columnFamilyOptions) {
+      final Collection<RocksDbColumn<?, ?>> columns,
+      final ColumnFamilyOptions columnFamilyOptions) {
     List<ColumnFamilyDescriptor> columnDescriptors =
         columns.stream()
             .map(

@@ -28,18 +28,29 @@ public interface SchemaHot extends Schema {
   RocksDbColumn<Bytes32, SignedBeaconBlock> getColumnHotBlocksByRoot();
   // Checkpoint states are no longer stored, keeping only for backwards compatibility.
   RocksDbColumn<Checkpoint, BeaconState> getColumnCheckpointStates();
+
   RocksDbColumn<UInt64, VoteTracker> getColumnVotes();
+
   RocksDbColumn<UInt64, DepositsFromBlockEvent> getColumnDepositsFromBlockEvents();
+
   RocksDbColumn<Bytes32, SlotAndBlockRoot> getColumnStateRootToSlotAndBlockRoot();
+
   RocksDbColumn<Bytes32, BeaconState> getColumnHotStatesByRoot();
 
   // Variables
   RocksDbVariable<UInt64> getVariableGenesisTime();
+
   RocksDbVariable<Checkpoint> getVariableJustifiedCheckpoint();
+
   RocksDbVariable<Checkpoint> getVariableBestJustifiedCheckpoint();
+
   RocksDbVariable<Checkpoint> getVariableFinalizedCheckpoint();
+
   RocksDbVariable<BeaconState> getVariableLatestFinalizedState();
+
   RocksDbVariable<MinGenesisTimeBlockEvent> getVariableMinGenesisTimeBlock();
+
   RocksDbVariable<ProtoArraySnapshot> getVariableProtoArraySnapshot();
+
   RocksDbVariable<Checkpoint> getVariableWeakSubjectivityCheckpoint();
 }

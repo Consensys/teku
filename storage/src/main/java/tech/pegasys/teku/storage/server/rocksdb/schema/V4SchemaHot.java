@@ -54,14 +54,16 @@ public class V4SchemaHot implements SchemaHot {
       RocksDbColumn.create(6, BYTES32_SERIALIZER, STATE_SERIALIZER);
 
   // Variables
-  private static final RocksDbVariable<UInt64> GENESIS_TIME = RocksDbVariable.create(1, UINT64_SERIALIZER);
+  private static final RocksDbVariable<UInt64> GENESIS_TIME =
+      RocksDbVariable.create(1, UINT64_SERIALIZER);
   private static final RocksDbVariable<Checkpoint> JUSTIFIED_CHECKPOINT =
       RocksDbVariable.create(2, CHECKPOINT_SERIALIZER);
   private static final RocksDbVariable<Checkpoint> BEST_JUSTIFIED_CHECKPOINT =
       RocksDbVariable.create(3, CHECKPOINT_SERIALIZER);
   private static final RocksDbVariable<Checkpoint> FINALIZED_CHECKPOINT =
       RocksDbVariable.create(4, CHECKPOINT_SERIALIZER);
-  private static final RocksDbVariable<BeaconState> LATEST_FINALIZED_STATE = RocksDbVariable.create(5, STATE_SERIALIZER);
+  private static final RocksDbVariable<BeaconState> LATEST_FINALIZED_STATE =
+      RocksDbVariable.create(5, STATE_SERIALIZER);
   private static final RocksDbVariable<MinGenesisTimeBlockEvent> MIN_GENESIS_TIME_BLOCK =
       RocksDbVariable.create(6, MIN_GENESIS_TIME_BLOCK_EVENT_SERIALIZER);
   private static final RocksDbVariable<ProtoArraySnapshot> PROTO_ARRAY_SNAPSHOT =
@@ -89,8 +91,7 @@ public class V4SchemaHot implements SchemaHot {
           PROTO_ARRAY_SNAPSHOT,
           WEAK_SUBJECTIVITY_CHECKPOINT);
 
-  private V4SchemaHot() {
-  }
+  private V4SchemaHot() {}
 
   @Override
   public RocksDbColumn<Bytes32, SignedBeaconBlock> getColumnHotBlocksByRoot() {

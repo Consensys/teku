@@ -28,13 +28,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class V4SchemaFinalized implements SchemaFinalized {
   public static final SchemaFinalized INSTANCE = new V4SchemaFinalized();
 
-  private final static RocksDbColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_ROOT =
+  private static final RocksDbColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_ROOT =
       RocksDbColumn.create(1, BYTES32_SERIALIZER, UINT64_SERIALIZER);
-  private final static RocksDbColumn<UInt64, SignedBeaconBlock> FINALIZED_BLOCKS_BY_SLOT =
+  private static final RocksDbColumn<UInt64, SignedBeaconBlock> FINALIZED_BLOCKS_BY_SLOT =
       RocksDbColumn.create(2, UINT64_SERIALIZER, SIGNED_BLOCK_SERIALIZER);
-  private final static RocksDbColumn<UInt64, BeaconState> FINALIZED_STATES_BY_SLOT =
+  private static final RocksDbColumn<UInt64, BeaconState> FINALIZED_STATES_BY_SLOT =
       RocksDbColumn.create(3, UINT64_SERIALIZER, STATE_SERIALIZER);
-  private final static RocksDbColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_STATE_ROOT =
+  private static final RocksDbColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_STATE_ROOT =
       RocksDbColumn.create(4, BYTES32_SERIALIZER, UINT64_SERIALIZER);
   private static final List<RocksDbColumn<?, ?>> ALL_COLUMNS =
       List.of(
@@ -43,8 +43,7 @@ public class V4SchemaFinalized implements SchemaFinalized {
           FINALIZED_STATES_BY_SLOT,
           SLOTS_BY_FINALIZED_STATE_ROOT);
 
-  private V4SchemaFinalized() {
-  }
+  private V4SchemaFinalized() {}
 
   @Override
   public RocksDbColumn<Bytes32, UInt64> getColumnSlotsByFinalizedRoot() {

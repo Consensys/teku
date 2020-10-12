@@ -51,7 +51,7 @@ public interface Schema {
             });
   }
 
-
   List<RocksDbColumn<?, ?>> getAllColumns();
+
   List<RocksDbVariable<?>> getAllVariables();
 }
