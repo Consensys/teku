@@ -96,10 +96,14 @@ class GenesisGeneratorTest {
     MockStartDepositGenerator mockStartDepositGenerator =
         new MockStartDepositGenerator(new DepositGenerator(true));
     DepositData PARTIAL_DEPOSIT_DATA =
-        mockStartDepositGenerator.createDeposits(VALIDATOR_KEYS.subList(0, 1), 1000000000L).get(0);
+        mockStartDepositGenerator
+            .createDeposits(VALIDATOR_KEYS.subList(0, 1), UInt64.valueOf(1000000000L))
+            .get(0);
 
     DepositData TOP_UP_DEPOSIT_DATA =
-        mockStartDepositGenerator.createDeposits(VALIDATOR_KEYS.subList(0, 1), 31000000000L).get(0);
+        mockStartDepositGenerator
+            .createDeposits(VALIDATOR_KEYS.subList(0, 1), UInt64.valueOf(31000000000L))
+            .get(0);
 
     List<DepositData> INITIAL_DEPOSIT_DATA = List.of(PARTIAL_DEPOSIT_DATA, TOP_UP_DEPOSIT_DATA);
 
