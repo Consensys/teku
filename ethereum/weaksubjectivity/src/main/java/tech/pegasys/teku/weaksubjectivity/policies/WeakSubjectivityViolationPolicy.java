@@ -13,12 +13,27 @@
 
 package tech.pegasys.teku.weaksubjectivity.policies;
 
+import java.util.List;
+import org.apache.logging.log4j.Level;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.weaksubjectivity.policies.simple.ExitingWeakSubjectivityViolationPolicy;
+import tech.pegasys.teku.weaksubjectivity.policies.simple.LoggingWeakSubjectivityViolationPolicy;
 
 public interface WeakSubjectivityViolationPolicy {
+
+  static WeakSubjectivityViolationPolicy lenient() {
+    return new LoggingWeakSubjectivityViolationPolicy(Level.TRACE);
+  }
+
+  static WeakSubjectivityViolationPolicy strict() {
+    return new CompoundWeakSubjectivityViolationPolicy(
+        List.of(
+            new LoggingWeakSubjectivityViolationPolicy(Level.FATAL),
+            new ExitingWeakSubjectivityViolationPolicy()));
+  }
 
   void onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
       final CheckpointState latestFinalizedCheckpoint,

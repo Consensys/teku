@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.weaksubjectivity.policies;
+package tech.pegasys.teku.weaksubjectivity.policies.simple;
 
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
@@ -24,6 +24,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.weaksubjectivity.policies.WeakSubjectivityViolationPolicy;
 
 public class LoggingWeakSubjectivityViolationPolicy implements WeakSubjectivityViolationPolicy {
   private static final Logger LOG = LogManager.getLogger();

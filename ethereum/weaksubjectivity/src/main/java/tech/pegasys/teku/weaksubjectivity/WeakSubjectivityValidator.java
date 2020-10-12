@@ -19,10 +19,8 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -36,8 +34,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
-import tech.pegasys.teku.weaksubjectivity.policies.LoggingWeakSubjectivityViolationPolicy;
-import tech.pegasys.teku.weaksubjectivity.policies.StrictWeakSubjectivityViolationPolicy;
 import tech.pegasys.teku.weaksubjectivity.policies.WeakSubjectivityViolationPolicy;
 
 public class WeakSubjectivityValidator {
@@ -46,7 +42,7 @@ public class WeakSubjectivityValidator {
   static final long MAX_SUPPRESSED_EPOCHS = 1575;
 
   private final WeakSubjectivityCalculator calculator;
-  private final List<WeakSubjectivityViolationPolicy> violationPolicies;
+  private final WeakSubjectivityViolationPolicy violationPolicy;
 
   private final WeakSubjectivityConfig config;
   private volatile Optional<UInt64> suppressWSPeriodErrorsUntilEpoch = Optional.empty();
@@ -58,19 +54,16 @@ public class WeakSubjectivityValidator {
   WeakSubjectivityValidator(
       final WeakSubjectivityConfig config,
       WeakSubjectivityCalculator calculator,
-      List<WeakSubjectivityViolationPolicy> violationPolicies) {
+      WeakSubjectivityViolationPolicy violationPolicy) {
     this.calculator = calculator;
-    this.violationPolicies = violationPolicies;
+    this.violationPolicy = violationPolicy;
     this.config = config;
   }
 
   public static WeakSubjectivityValidator strict(final WeakSubjectivityConfig config) {
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
-    final List<WeakSubjectivityViolationPolicy> policies =
-        List.of(
-            new LoggingWeakSubjectivityViolationPolicy(Level.FATAL),
-            new StrictWeakSubjectivityViolationPolicy());
-    return new WeakSubjectivityValidator(config, calculator, policies);
+    return new WeakSubjectivityValidator(
+        config, calculator, WeakSubjectivityViolationPolicy.strict());
   }
 
   public static WeakSubjectivityValidator lenient() {
@@ -79,9 +72,8 @@ public class WeakSubjectivityValidator {
 
   public static WeakSubjectivityValidator lenient(final WeakSubjectivityConfig config) {
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
-    final List<WeakSubjectivityViolationPolicy> policies =
-        List.of(new LoggingWeakSubjectivityViolationPolicy(Level.TRACE));
-    return new WeakSubjectivityValidator(config, calculator, policies);
+    return new WeakSubjectivityValidator(
+        config, calculator, WeakSubjectivityViolationPolicy.lenient());
   }
 
   public Optional<Checkpoint> getWSCheckpoint() {
@@ -192,9 +184,7 @@ public class WeakSubjectivityValidator {
    * @param message An error message
    */
   public void handleValidationFailure(final String message) {
-    for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
-      policy.onFailedToPerformValidation(message);
-    }
+    violationPolicy.onFailedToPerformValidation(message);
   }
 
   /**
@@ -204,9 +194,7 @@ public class WeakSubjectivityValidator {
    * @param error The error encountered
    */
   public void handleValidationFailure(final String message, Throwable error) {
-    for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
-      policy.onFailedToPerformValidation(message, error);
-    }
+    violationPolicy.onFailedToPerformValidation(message, error);
   }
 
   private void handleFinalizedCheckpointOutsideWSPeriod(
@@ -214,17 +202,14 @@ public class WeakSubjectivityValidator {
     final int activeValidators =
         calculator.getActiveValidators(latestFinalizedCheckpoint.getState());
     final UInt64 wsPeriod = calculator.computeWeakSubjectivityPeriod(activeValidators);
-    for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
-      policy.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-          latestFinalizedCheckpoint, activeValidators, currentSlot, wsPeriod);
-    }
+    violationPolicy.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
+        latestFinalizedCheckpoint, activeValidators, currentSlot, wsPeriod);
   }
 
   private void handleInconsistentWsCheckpoint(final SignedBeaconBlock inconsistentBlock) {
     final Checkpoint wsCheckpoint = config.getWeakSubjectivityCheckpoint().orElseThrow();
-    for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
-      policy.onChainInconsistentWithWeakSubjectivityCheckpoint(wsCheckpoint, inconsistentBlock);
-    }
+    violationPolicy.onChainInconsistentWithWeakSubjectivityCheckpoint(
+        wsCheckpoint, inconsistentBlock);
   }
 
   @VisibleForTesting
@@ -296,12 +281,12 @@ public class WeakSubjectivityValidator {
     if (o == null || getClass() != o.getClass()) return false;
     final WeakSubjectivityValidator that = (WeakSubjectivityValidator) o;
     return Objects.equals(calculator, that.calculator)
-        && Objects.equals(violationPolicies, that.violationPolicies)
+        && Objects.equals(violationPolicy, that.violationPolicy)
         && Objects.equals(config, that.config);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(calculator, violationPolicies, config);
+    return Objects.hash(calculator, violationPolicy, config);
   }
 }

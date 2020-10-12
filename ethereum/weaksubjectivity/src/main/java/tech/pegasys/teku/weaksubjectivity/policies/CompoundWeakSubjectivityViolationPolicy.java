@@ -13,50 +13,51 @@
 
 package tech.pegasys.teku.weaksubjectivity.policies;
 
+import java.util.List;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class StrictWeakSubjectivityViolationPolicy implements WeakSubjectivityViolationPolicy {
+class CompoundWeakSubjectivityViolationPolicy implements WeakSubjectivityViolationPolicy {
+  private final List<WeakSubjectivityViolationPolicy> violationPolicies;
+
+  public CompoundWeakSubjectivityViolationPolicy(
+      final List<WeakSubjectivityViolationPolicy> violationPolicies) {
+    this.violationPolicies = violationPolicies;
+  }
 
   @Override
   public void onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-      CheckpointState latestFinalizedCheckpoint,
-      int activeValidatorCount,
-      UInt64 currentSlot,
+      final CheckpointState latestFinalizedCheckpoint,
+      final int activeValidatorCount,
+      final UInt64 currentSlot,
       final UInt64 wsPeriod) {
-    exitClient();
+    for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
+      policy.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
+          latestFinalizedCheckpoint, activeValidatorCount, currentSlot, wsPeriod);
+    }
   }
 
   @Override
   public void onChainInconsistentWithWeakSubjectivityCheckpoint(
-      Checkpoint wsCheckpoint, SignedBeaconBlock block) {
-    exitClient();
+      final Checkpoint wsCheckpoint, final SignedBeaconBlock block) {
+    for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
+      policy.onChainInconsistentWithWeakSubjectivityCheckpoint(wsCheckpoint, block);
+    }
   }
 
   @Override
   public void onFailedToPerformValidation(final String message) {
-    exitClient();
+    for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
+      policy.onFailedToPerformValidation(message);
+    }
   }
 
   @Override
   public void onFailedToPerformValidation(final String message, final Throwable error) {
-    exitClient();
-  }
-
-  private void exitClient() {
-    System.exit(2);
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) return true;
-    return o != null && getClass() == o.getClass();
-  }
-
-  @Override
-  public int hashCode() {
-    return getClass().hashCode();
+    for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
+      policy.onFailedToPerformValidation(message, error);
+    }
   }
 }
