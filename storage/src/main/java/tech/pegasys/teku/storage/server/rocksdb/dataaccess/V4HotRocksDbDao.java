@@ -46,59 +46,59 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
 
   @Override
   public Optional<UInt64> getGenesisTime() {
-    return db.get(schema.variable_GENESIS_TIME());
+    return db.get(schema.getVariableGenesisTime());
   }
 
   @Override
   public Optional<Checkpoint> getJustifiedCheckpoint() {
-    return db.get(schema.variable_JUSTIFIED_CHECKPOINT());
+    return db.get(schema.getVariableJustifiedCheckpoint());
   }
 
   @Override
   public Optional<Checkpoint> getBestJustifiedCheckpoint() {
-    return db.get(schema.variable_BEST_JUSTIFIED_CHECKPOINT());
+    return db.get(schema.getVariableBestJustifiedCheckpoint());
   }
 
   @Override
   public Optional<Checkpoint> getFinalizedCheckpoint() {
-    return db.get(schema.variable_FINALIZED_CHECKPOINT());
+    return db.get(schema.getVariableFinalizedCheckpoint());
   }
 
   @Override
   public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 root) {
-    return db.get(schema.column_HOT_BLOCKS_BY_ROOT(), root);
+    return db.get(schema.getColumnHotBlocksByRoot(), root);
   }
 
   @Override
   public Optional<BeaconState> getHotState(final Bytes32 root) {
-    return db.get(schema.column_HOT_STATES_BY_ROOT(), root);
+    return db.get(schema.getColumnHotStatesByRoot(), root);
   }
 
   @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamHotBlocks() {
-    return db.stream(schema.column_HOT_BLOCKS_BY_ROOT()).map(ColumnEntry::getValue);
+    return db.stream(schema.getColumnHotBlocksByRoot()).map(ColumnEntry::getValue);
   }
 
   @Override
   public Optional<BeaconState> getLatestFinalizedState() {
-    return db.get(schema.variable_LATEST_FINALIZED_STATE());
+    return db.get(schema.getVariableLatestFinalizedState());
   }
 
   @Override
   public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
-    return db.get(schema.variable_WEAK_SUBJECTIVITY_CHECKPOINT());
+    return db.get(schema.getVariableWeakSubjectivityCheckpoint());
   }
 
   @Override
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks() {
-    return db.getAll(schema.column_HOT_BLOCKS_BY_ROOT());
+    return db.getAll(schema.getColumnHotBlocksByRoot());
   }
 
   @Override
   public List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot) {
     try (Stream<ColumnEntry<Bytes32, SlotAndBlockRoot>> stream =
-        db.stream(schema.column_STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT())) {
+        db.stream(schema.getColumnStateRootToSlotAndBlockRoot())) {
       return stream
           .filter((column) -> column.getValue().getSlot().compareTo(slot) < 0)
           .map(ColumnEntry::getKey)
@@ -108,28 +108,28 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
 
   @Override
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot) {
-    return db.get(schema.column_STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT(), stateRoot);
+    return db.get(schema.getColumnStateRootToSlotAndBlockRoot(), stateRoot);
   }
 
   @Override
   public Map<UInt64, VoteTracker> getVotes() {
-    return db.getAll(schema.column_VOTES());
+    return db.getAll(schema.getColumnVotes());
   }
 
   @Override
   @MustBeClosed
   public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks() {
-    return db.stream(schema.column_DEPOSITS_FROM_BLOCK_EVENTS()).map(ColumnEntry::getValue);
+    return db.stream(schema.getColumnDepositsFromBlockEvents()).map(ColumnEntry::getValue);
   }
 
   @Override
   public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
-    return db.get(schema.variable_MIN_GENESIS_TIME_BLOCK());
+    return db.get(schema.getVariableMinGenesisTimeBlock());
   }
 
   @Override
   public Optional<ProtoArraySnapshot> getProtoArraySnapshot() {
-    return db.get(schema.variable_PROTO_ARRAY_SNAPSHOT());
+    return db.get(schema.getVariableProtoArraySnapshot());
   }
 
   @Override
@@ -167,48 +167,48 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
 
     @Override
     public void setGenesisTime(final UInt64 genesisTime) {
-      transaction.put(schema.variable_GENESIS_TIME(), genesisTime);
+      transaction.put(schema.getVariableGenesisTime(), genesisTime);
     }
 
     @Override
     public void setJustifiedCheckpoint(final Checkpoint checkpoint) {
-      transaction.put(schema.variable_JUSTIFIED_CHECKPOINT(), checkpoint);
+      transaction.put(schema.getVariableJustifiedCheckpoint(), checkpoint);
     }
 
     @Override
     public void setBestJustifiedCheckpoint(final Checkpoint checkpoint) {
-      transaction.put(schema.variable_BEST_JUSTIFIED_CHECKPOINT(), checkpoint);
+      transaction.put(schema.getVariableBestJustifiedCheckpoint(), checkpoint);
     }
 
     @Override
     public void setFinalizedCheckpoint(final Checkpoint checkpoint) {
-      transaction.put(schema.variable_FINALIZED_CHECKPOINT(), checkpoint);
+      transaction.put(schema.getVariableFinalizedCheckpoint(), checkpoint);
     }
 
     @Override
     public void setWeakSubjectivityCheckpoint(Checkpoint checkpoint) {
-      transaction.put(schema.variable_WEAK_SUBJECTIVITY_CHECKPOINT(), checkpoint);
+      transaction.put(schema.getVariableWeakSubjectivityCheckpoint(), checkpoint);
     }
 
     @Override
     public void clearWeakSubjectivityCheckpoint() {
-      transaction.delete(schema.variable_WEAK_SUBJECTIVITY_CHECKPOINT());
+      transaction.delete(schema.getVariableWeakSubjectivityCheckpoint());
     }
 
     @Override
     public void setLatestFinalizedState(final BeaconState state) {
-      transaction.put(schema.variable_LATEST_FINALIZED_STATE(), state);
+      transaction.put(schema.getVariableLatestFinalizedState(), state);
     }
 
     @Override
     public void addHotBlock(final SignedBeaconBlock block) {
       final Bytes32 blockRoot = block.getRoot();
-      transaction.put(schema.column_HOT_BLOCKS_BY_ROOT(), blockRoot, block);
+      transaction.put(schema.getColumnHotBlocksByRoot(), blockRoot, block);
     }
 
     @Override
     public void addHotState(final Bytes32 blockRoot, final BeaconState state) {
-      transaction.put(schema.column_HOT_STATES_BY_ROOT(), blockRoot, state);
+      transaction.put(schema.getColumnHotStatesByRoot(), blockRoot, state);
     }
 
     @Override
@@ -217,46 +217,46 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
       stateRootToSlotAndBlockRootMap.forEach(
           (stateRoot, slotAndBlockRoot) ->
               transaction.put(
-                  schema.column_STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT(), stateRoot, slotAndBlockRoot));
+                  schema.getColumnStateRootToSlotAndBlockRoot(), stateRoot, slotAndBlockRoot));
     }
 
     @Override
     public void pruneHotStateRoots(final List<Bytes32> stateRoots) {
       stateRoots.stream()
           .forEach(
-              (root) -> transaction.delete(schema.column_STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT(), root));
+              (root) -> transaction.delete(schema.getColumnStateRootToSlotAndBlockRoot(), root));
     }
 
     @Override
     public void addVotes(final Map<UInt64, VoteTracker> votes) {
       votes.forEach(
-          (validatorIndex, vote) -> transaction.put(schema.column_VOTES(), validatorIndex, vote));
+          (validatorIndex, vote) -> transaction.put(schema.getColumnVotes(), validatorIndex, vote));
     }
 
     @Override
     public void deleteHotBlock(final Bytes32 blockRoot) {
-      transaction.delete(schema.column_HOT_BLOCKS_BY_ROOT(), blockRoot);
+      transaction.delete(schema.getColumnHotBlocksByRoot(), blockRoot);
       deleteHotState(blockRoot);
     }
 
     @Override
     public void deleteHotState(final Bytes32 blockRoot) {
-      transaction.delete(schema.column_HOT_STATES_BY_ROOT(), blockRoot);
+      transaction.delete(schema.getColumnHotStatesByRoot(), blockRoot);
     }
 
     @Override
     public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
-      transaction.put(schema.variable_MIN_GENESIS_TIME_BLOCK(), event);
+      transaction.put(schema.getVariableMinGenesisTimeBlock(), event);
     }
 
     @Override
     public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
-      transaction.put(schema.column_DEPOSITS_FROM_BLOCK_EVENTS(), event.getBlockNumber(), event);
+      transaction.put(schema.getColumnDepositsFromBlockEvents(), event.getBlockNumber(), event);
     }
 
     @Override
     public void putProtoArraySnapshot(ProtoArraySnapshot newProtoArray) {
-      transaction.put(schema.variable_PROTO_ARRAY_SNAPSHOT(), newProtoArray);
+      transaction.put(schema.getVariableProtoArraySnapshot(), newProtoArray);
     }
 
     @Override

@@ -47,22 +47,22 @@ public class V4SchemaFinalized implements SchemaFinalized {
   }
 
   @Override
-  public RocksDbColumn<Bytes32, UInt64> column_SLOTS_BY_FINALIZED_ROOT() {
+  public RocksDbColumn<Bytes32, UInt64> getColumnSlotsByFinalizedRoot() {
     return SLOTS_BY_FINALIZED_ROOT;
   }
 
   @Override
-  public RocksDbColumn<UInt64, SignedBeaconBlock> column_FINALIZED_BLOCKS_BY_SLOT() {
+  public RocksDbColumn<UInt64, SignedBeaconBlock> getColumnFinalizedBlocksBySlot() {
     return FINALIZED_BLOCKS_BY_SLOT;
   }
 
   @Override
-  public RocksDbColumn<UInt64, BeaconState> column_FINALIZED_STATES_BY_SLOT() {
+  public RocksDbColumn<UInt64, BeaconState> getColumnFinalizedStatesBySlot() {
     return FINALIZED_STATES_BY_SLOT;
   }
 
   @Override
-  public RocksDbColumn<Bytes32, UInt64> column_SLOTS_BY_FINALIZED_STATE_ROOT() {
+  public RocksDbColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot() {
     return SLOTS_BY_FINALIZED_STATE_ROOT;
   }
 

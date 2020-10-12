@@ -25,21 +25,21 @@ import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 
 public interface SchemaHot extends Schema {
-  RocksDbColumn<Bytes32, SignedBeaconBlock> column_HOT_BLOCKS_BY_ROOT();
+  RocksDbColumn<Bytes32, SignedBeaconBlock> getColumnHotBlocksByRoot();
   // Checkpoint states are no longer stored, keeping only for backwards compatibility.
-  RocksDbColumn<Checkpoint, BeaconState> column_CHECKPOINT_STATES();
-  RocksDbColumn<UInt64, VoteTracker> column_VOTES();
-  RocksDbColumn<UInt64, DepositsFromBlockEvent> column_DEPOSITS_FROM_BLOCK_EVENTS();
-  RocksDbColumn<Bytes32, SlotAndBlockRoot> column_STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT();
-  RocksDbColumn<Bytes32, BeaconState> column_HOT_STATES_BY_ROOT();
+  RocksDbColumn<Checkpoint, BeaconState> getColumnCheckpointStates();
+  RocksDbColumn<UInt64, VoteTracker> getColumnVotes();
+  RocksDbColumn<UInt64, DepositsFromBlockEvent> getColumnDepositsFromBlockEvents();
+  RocksDbColumn<Bytes32, SlotAndBlockRoot> getColumnStateRootToSlotAndBlockRoot();
+  RocksDbColumn<Bytes32, BeaconState> getColumnHotStatesByRoot();
 
   // Variables
-  RocksDbVariable<UInt64> variable_GENESIS_TIME();
-  RocksDbVariable<Checkpoint> variable_JUSTIFIED_CHECKPOINT();
-  RocksDbVariable<Checkpoint> variable_BEST_JUSTIFIED_CHECKPOINT();
-  RocksDbVariable<Checkpoint> variable_FINALIZED_CHECKPOINT();
-  RocksDbVariable<BeaconState> variable_LATEST_FINALIZED_STATE();
-  RocksDbVariable<MinGenesisTimeBlockEvent> variable_MIN_GENESIS_TIME_BLOCK();
-  RocksDbVariable<ProtoArraySnapshot> variable_PROTO_ARRAY_SNAPSHOT();
-  RocksDbVariable<Checkpoint> variable_WEAK_SUBJECTIVITY_CHECKPOINT();
+  RocksDbVariable<UInt64> getVariableGenesisTime();
+  RocksDbVariable<Checkpoint> getVariableJustifiedCheckpoint();
+  RocksDbVariable<Checkpoint> getVariableBestJustifiedCheckpoint();
+  RocksDbVariable<Checkpoint> getVariableFinalizedCheckpoint();
+  RocksDbVariable<BeaconState> getVariableLatestFinalizedState();
+  RocksDbVariable<MinGenesisTimeBlockEvent> getVariableMinGenesisTimeBlock();
+  RocksDbVariable<ProtoArraySnapshot> getVariableProtoArraySnapshot();
+  RocksDbVariable<Checkpoint> getVariableWeakSubjectivityCheckpoint();
 }

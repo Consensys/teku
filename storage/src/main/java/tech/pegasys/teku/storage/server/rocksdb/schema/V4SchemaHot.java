@@ -93,72 +93,72 @@ public class V4SchemaHot implements SchemaHot {
   }
 
   @Override
-  public RocksDbColumn<Bytes32, SignedBeaconBlock> column_HOT_BLOCKS_BY_ROOT() {
+  public RocksDbColumn<Bytes32, SignedBeaconBlock> getColumnHotBlocksByRoot() {
     return HOT_BLOCKS_BY_ROOT;
   }
 
   @Override
-  public RocksDbColumn<Checkpoint, BeaconState> column_CHECKPOINT_STATES() {
+  public RocksDbColumn<Checkpoint, BeaconState> getColumnCheckpointStates() {
     return CHECKPOINT_STATES;
   }
 
   @Override
-  public RocksDbColumn<UInt64, VoteTracker> column_VOTES() {
+  public RocksDbColumn<UInt64, VoteTracker> getColumnVotes() {
     return VOTES;
   }
 
   @Override
-  public RocksDbColumn<UInt64, DepositsFromBlockEvent> column_DEPOSITS_FROM_BLOCK_EVENTS() {
+  public RocksDbColumn<UInt64, DepositsFromBlockEvent> getColumnDepositsFromBlockEvents() {
     return DEPOSITS_FROM_BLOCK_EVENTS;
   }
 
   @Override
-  public RocksDbColumn<Bytes32, SlotAndBlockRoot> column_STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT() {
+  public RocksDbColumn<Bytes32, SlotAndBlockRoot> getColumnStateRootToSlotAndBlockRoot() {
     return STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT;
   }
 
   @Override
-  public RocksDbColumn<Bytes32, BeaconState> column_HOT_STATES_BY_ROOT() {
+  public RocksDbColumn<Bytes32, BeaconState> getColumnHotStatesByRoot() {
     return HOT_STATES_BY_ROOT;
   }
 
   @Override
-  public RocksDbVariable<UInt64> variable_GENESIS_TIME() {
+  public RocksDbVariable<UInt64> getVariableGenesisTime() {
     return GENESIS_TIME;
   }
 
   @Override
-  public RocksDbVariable<Checkpoint> variable_JUSTIFIED_CHECKPOINT() {
+  public RocksDbVariable<Checkpoint> getVariableJustifiedCheckpoint() {
     return JUSTIFIED_CHECKPOINT;
   }
 
   @Override
-  public RocksDbVariable<Checkpoint> variable_BEST_JUSTIFIED_CHECKPOINT() {
+  public RocksDbVariable<Checkpoint> getVariableBestJustifiedCheckpoint() {
     return BEST_JUSTIFIED_CHECKPOINT;
   }
 
   @Override
-  public RocksDbVariable<Checkpoint> variable_FINALIZED_CHECKPOINT() {
+  public RocksDbVariable<Checkpoint> getVariableFinalizedCheckpoint() {
     return FINALIZED_CHECKPOINT;
   }
 
   @Override
-  public RocksDbVariable<BeaconState> variable_LATEST_FINALIZED_STATE() {
+  public RocksDbVariable<BeaconState> getVariableLatestFinalizedState() {
     return LATEST_FINALIZED_STATE;
   }
 
   @Override
-  public RocksDbVariable<MinGenesisTimeBlockEvent> variable_MIN_GENESIS_TIME_BLOCK() {
+  public RocksDbVariable<MinGenesisTimeBlockEvent> getVariableMinGenesisTimeBlock() {
     return MIN_GENESIS_TIME_BLOCK;
   }
 
   @Override
-  public RocksDbVariable<ProtoArraySnapshot> variable_PROTO_ARRAY_SNAPSHOT() {
+  public RocksDbVariable<ProtoArraySnapshot> getVariableProtoArraySnapshot() {
     return PROTO_ARRAY_SNAPSHOT;
   }
 
   @Override
-  public RocksDbVariable<Checkpoint> variable_WEAK_SUBJECTIVITY_CHECKPOINT() {
+  public RocksDbVariable<Checkpoint> getVariableWeakSubjectivityCheckpoint() {
     return WEAK_SUBJECTIVITY_CHECKPOINT;
   }
 
