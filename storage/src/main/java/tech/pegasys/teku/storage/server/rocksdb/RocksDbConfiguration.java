@@ -93,6 +93,10 @@ public class RocksDbConfiguration {
     return new RocksDbConfiguration();
   }
 
+  public static RocksDbConfiguration v6SingleDefaults() {
+    return new RocksDbConfiguration();
+  }
+
   public RocksDbConfiguration withDatabaseDir(final Path databaseDir) {
     this.databaseDir = databaseDir;
     return this;
