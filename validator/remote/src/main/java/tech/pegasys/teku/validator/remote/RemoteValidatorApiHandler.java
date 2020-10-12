@@ -13,9 +13,13 @@
 
 package tech.pegasys.teku.validator.remote;
 
+import static java.util.Collections.emptyMap;
+
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -23,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.GetForkResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -49,6 +54,7 @@ import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   private static final Logger LOG = LogManager.getLogger();
+  static final int MAX_PUBLIC_KEY_BATCH_SIZE = 10;
 
   private final ValidatorRestApiClient apiClient;
   private final AsyncRunner asyncRunner;
@@ -73,6 +79,43 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   public SafeFuture<Optional<UInt64>> getGenesisTime() {
     return asyncRunner.runAsync(
         () -> apiClient.getGenesis().map(response -> response.data.genesisTime));
+  }
+
+  @Override
+  public SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(
+      final List<BLSPublicKey> publicKeys) {
+    if (publicKeys.isEmpty()) {
+      return SafeFuture.completedFuture(emptyMap());
+    }
+    return asyncRunner.runAsync(
+        () -> {
+          final Map<BLSPublicKey, Integer> indices = new HashMap<>();
+          for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
+            final List<BLSPublicKey> batch =
+                publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
+            requestValidatorIndices(batch).ifPresent(indices::putAll);
+          }
+          return indices;
+        });
+  }
+
+  private Optional<Map<BLSPublicKey, Integer>> requestValidatorIndices(
+      final List<BLSPublicKey> batch) {
+    return apiClient
+        .getValidators(
+            batch.stream()
+                .map(key -> key.toBytesCompressed().toHexString())
+                .collect(Collectors.toList()))
+        .map(this::convertToValidatorIndexMap);
+  }
+
+  private Map<BLSPublicKey, Integer> convertToValidatorIndexMap(
+      final List<ValidatorResponse> validatorResponses) {
+    return validatorResponses.stream()
+        .collect(
+            Collectors.<ValidatorResponse, BLSPublicKey, Integer>toMap(
+                response -> response.validator.pubkey.asBLSPublicKey(),
+                response -> response.index.intValue()));
   }
 
   @Override

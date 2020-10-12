@@ -33,6 +33,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
 import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
@@ -131,7 +133,7 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
-  public void getGenesis_WhenSuccess_ReturnsForkResponse() {
+  public void getGenesis_WhenSuccess_ReturnsGenesisResponse() {
     final GetGenesisResponse getGenesisResponse = schemaObjects.getGenesisResponse();
 
     mockWebServer.enqueue(
@@ -141,6 +143,49 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThat(genesis).isPresent();
     assertThat(genesis.get()).usingRecursiveComparison().isEqualTo(getGenesisResponse);
+  }
+
+  @Test
+  void getValidators_MakesExpectedRequest() throws Exception {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+
+    apiClient.getValidators(List.of("1", "0x1234"));
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+    assertThat(request.getMethod()).isEqualTo("GET");
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_VALIDATORS.getPath());
+    // %2C is ,
+    assertThat(request.getPath()).contains("?validator_id=1%2C0x1234");
+  }
+
+  @Test
+  void getValidators_WhenServerError_ThrowsRuntimeException() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+
+    assertThatThrownBy(() -> apiClient.getValidators(List.of("1")))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("Unexpected response from Beacon Node API");
+  }
+
+  @Test
+  public void getValidators_WhenNoContent_ReturnsEmpty() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+
+    assertThat(apiClient.getValidators(List.of("1"))).isEmpty();
+  }
+
+  @Test
+  public void getValidators_WhenSuccess_ReturnsResponse() {
+    final List<ValidatorResponse> expected =
+        List.of(schemaObjects.validatorResponse(), schemaObjects.validatorResponse());
+    final GetStateValidatorsResponse response = new GetStateValidatorsResponse(expected);
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody(asJson(response)));
+
+    Optional<List<ValidatorResponse>> result = apiClient.getValidators(List.of("1", "2"));
+
+    assertThat(result).isPresent();
+    assertThat(result.get()).usingRecursiveComparison().isEqualTo(expected);
   }
 
   @Test
