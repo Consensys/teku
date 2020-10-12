@@ -44,7 +44,13 @@ public class InMemoryRocksDbDatabaseFactory {
       final StateStorageMode storageMode,
       final long stateStorageFrequency) {
     return RocksDbDatabase.createV6(
-        new StubMetricsSystem(), hotDb, coldDb, V4SchemaHot.INSTANCE, V6SchemaFinalized.INSTANCE, storageMode, stateStorageFrequency);
+        new StubMetricsSystem(),
+        hotDb,
+        coldDb,
+        V4SchemaHot.INSTANCE,
+        V6SchemaFinalized.INSTANCE,
+        storageMode,
+        stateStorageFrequency);
   }
 
   public static MockRocksDbInstance createEmptyV3RocksDbInstance() {

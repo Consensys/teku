@@ -62,7 +62,8 @@ public class MockRocksDbInstance implements RocksDbAccessor {
     }
   }
 
-  public static MockRocksDbInstance createEmpty(final Collection<RocksDbColumn<?, ?>> columns, List<RocksDbVariable<?>> variables) {
+  public static MockRocksDbInstance createEmpty(
+      final Collection<RocksDbColumn<?, ?>> columns, List<RocksDbVariable<?>> variables) {
     checkArgument(columns.size() > 0, "No columns attached to schema");
 
     final Map<RocksDbColumn<?, ?>, NavigableMap<Bytes, Bytes>> columnData =

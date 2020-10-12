@@ -93,10 +93,7 @@ public class RocksDbDatabase implements Database {
       final StateStorageMode stateStorageMode) {
     final RocksDbAccessor db =
         RocksDbInstanceFactory.create(
-            metricsSystem,
-            STORAGE_HOT_DB,
-            configuration,
-            V3Schema.ALL_COLUMNS);
+            metricsSystem, STORAGE_HOT_DB, configuration, V3Schema.ALL_COLUMNS);
     return createV3(metricsSystem, db, stateStorageMode);
   }
 

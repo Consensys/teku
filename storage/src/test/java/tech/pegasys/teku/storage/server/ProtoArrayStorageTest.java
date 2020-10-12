@@ -49,7 +49,6 @@ public class ProtoArrayStorageTest {
     storageSystem.close();
   }
 
-
   @ParameterizedTest(name = "{0}")
   @ArgumentsSource(StorageSystemArgumentsProvider.class)
   public void shouldReturnEmptyIfThereIsNoProtoArrayOnDisk(
