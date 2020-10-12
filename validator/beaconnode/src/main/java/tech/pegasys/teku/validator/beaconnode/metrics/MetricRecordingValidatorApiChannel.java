@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.beaconnode.metrics;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
@@ -42,6 +43,8 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   public static final String FORK_REQUESTS_COUNTER_NAME = "beacon_node_fork_info_requests_total";
   public static final String GENESIS_TIME_REQUESTS_COUNTER_NAME =
       "beacon_node_genesis_time_requests_total";
+  public static final String GET_VALIDATOR_INDICES_REQUESTS_COUNTER_NAME =
+      "beacon_node_get_validator_indices_requests_total";
   public static final String DUTIES_REQUESTS_COUNTER_NAME = "beacon_node_duties_requests_total";
   public static final String ATTESTATION_DUTIES_REQUESTS_COUNTER_NAME =
       "beacon_node_attestation_duties_requests_total";
@@ -71,6 +74,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   private final BeaconChainRequestCounter unsignedBlockRequestsCounter;
   private final BeaconChainRequestCounter unsignedAttestationRequestsCounter;
   private final BeaconChainRequestCounter aggregateRequestsCounter;
+  private final Counter getValidatorIndicesRequestCounter;
   private final Counter subscribeAggregationRequestCounter;
   private final Counter subscribePersistentRequestCounter;
   private final Counter sendAttestationRequestCounter;
@@ -122,6 +126,11 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             metricsSystem,
             AGGREGATE_REQUESTS_COUNTER_NAME,
             "Counter recording the number of requests for aggregate attestations");
+    getValidatorIndicesRequestCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.VALIDATOR,
+            GET_VALIDATOR_INDICES_REQUESTS_COUNTER_NAME,
+            "Counter recording the number of requests for validator indices");
     subscribeAggregationRequestCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.VALIDATOR,
@@ -157,6 +166,13 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<UInt64>> getGenesisTime() {
     return countRequest(delegate.getGenesisTime(), genesisTimeRequestCounter);
+  }
+
+  @Override
+  public SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(
+      final List<BLSPublicKey> publicKeys) {
+    getValidatorIndicesRequestCounter.inc();
+    return delegate.getValidatorIndices(publicKeys);
   }
 
   @Override

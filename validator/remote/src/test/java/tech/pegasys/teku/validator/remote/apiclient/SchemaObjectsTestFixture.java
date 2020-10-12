@@ -17,6 +17,8 @@ import java.util.List;
 import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
@@ -24,10 +26,13 @@ import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
+import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.ValidatorDuties;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.util.config.Constants;
 
 public class SchemaObjectsTestFixture {
 
@@ -51,6 +56,26 @@ public class SchemaObjectsTestFixture {
 
   public BLSSignature BLSSignature() {
     return new BLSSignature(dataStructureUtil.randomSignature());
+  }
+
+  public ValidatorResponse validatorResponse() {
+    return validatorResponse(dataStructureUtil.randomLong(), dataStructureUtil.randomPublicKey());
+  }
+
+  public ValidatorResponse validatorResponse(final long index, final BLSPublicKey publicKey) {
+    return new ValidatorResponse(
+        UInt64.valueOf(index),
+        dataStructureUtil.randomUInt64(),
+        ValidatorStatus.active_ongoing,
+        new Validator(
+            new BLSPubKey(publicKey),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomUInt64(),
+            false,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            Constants.FAR_FUTURE_EPOCH,
+            Constants.FAR_FUTURE_EPOCH));
   }
 
   public ValidatorDutiesRequest validatorDutiesRequest() {
