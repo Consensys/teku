@@ -116,8 +116,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     LOG.info("Data directory set to: {}", dataDirectory.getAbsolutePath());
     validateDataPaths();
     final DatabaseVersion dbVersion = getDatabaseVersion();
-    validateDataPaths(dbVersion);
-    createDirectories();
+    createDirectories(dbVersion);
     saveDatabaseVersion(dbVersion);
 
     Database database;
@@ -288,35 +287,37 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     }
   }
 
-  private void validateDataPaths(DatabaseVersion dbVersion) {
-    switch (dbVersion) {
-      case V4:
-      case V5:
-        if (!v5ArchiveDirectory.isDirectory()) {
-          throw new DatabaseStorageException(
-              "Database directory not found: " + v5ArchiveDirectory.getAbsolutePath());
-        }
-        break;
-      default:
-        // do nothing
-    }
-  }
-
-  private void createDirectories() {
+  private void createDirectories(DatabaseVersion dbVersion) {
     if (!dbDirectory.mkdirs() && !dbDirectory.isDirectory()) {
       throw new DatabaseStorageException(
           String.format(
               "Unable to create the path to store database files at %s",
               dbDirectory.getAbsolutePath()));
     }
-    v6ArchiveDirectory.ifPresent(
-        archiveDirectory -> {
-          if (!archiveDirectory.mkdirs() && !archiveDirectory.isDirectory()) {
-            throw new DatabaseStorageException(
-                "Unable to create the path to store archive files at "
-                    + archiveDirectory.getAbsolutePath());
-          }
-        });
+
+    switch (dbVersion) {
+      case V4:
+      case V5:
+        if (!v5ArchiveDirectory.mkdirs() && !v5ArchiveDirectory.isDirectory()) {
+          throw new DatabaseStorageException(
+              String.format(
+                  "Unable to create the path to store archive files at %s",
+                  v5ArchiveDirectory.getAbsolutePath()));
+        }
+        break;
+      case V6:
+        v6ArchiveDirectory.ifPresent(
+            archiveDirectory -> {
+              if (!archiveDirectory.mkdirs() && !archiveDirectory.isDirectory()) {
+                throw new DatabaseStorageException(
+                    "Unable to create the path to store archive files at "
+                        + archiveDirectory.getAbsolutePath());
+              }
+            });
+        break;
+      default:
+        // do nothing
+    }
   }
 
   @VisibleForTesting
