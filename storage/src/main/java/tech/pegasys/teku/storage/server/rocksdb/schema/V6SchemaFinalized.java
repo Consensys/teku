@@ -34,7 +34,7 @@ public class V6SchemaFinalized implements SchemaFinalized {
 
   // column ids should be distinct across different DAOs to make possible using
   // schemes both for a single and separated DBs
-  private static final int ID_OFFSET = 256;
+  private static final int ID_OFFSET = 128;
 
   private static final RocksDbColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_ROOT =
       RocksDbColumn.create(ID_OFFSET + 1, BYTES32_SERIALIZER, UINT64_SERIALIZER);
