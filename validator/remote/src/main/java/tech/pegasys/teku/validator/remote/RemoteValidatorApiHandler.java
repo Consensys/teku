@@ -180,7 +180,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
         attesterDuty.pubkey.asBLSPublicKey(),
         attesterDuty.validatorIndex.intValue(),
         attesterDuty.committeeLength.intValue(),
-        attesterDuty.committeeLength.intValue(),
+        attesterDuty.committeeIndex.intValue(),
         attesterDuty.validatorCommitteeIndex.intValue(),
         attesterDuty.slot);
   }
