@@ -196,15 +196,17 @@ public class StatusLogger {
   }
 
   public void warnWeakSubjectivityChecksSuppressed(final UInt64 untilEpoch) {
-    log.warn("Suppressing weak subjectivity errors until epoch {}", untilEpoch);
+    final String msg = "Suppressing weak subjectivity errors until epoch " + untilEpoch;
+    logWithColorIfLevelGreaterThanInfo(Level.WARN, msg, ColorConsolePrinter.Color.YELLOW);
   }
 
   public void warnWeakSubjectivityFinalizedCheckpointValidationDeferred(
       final UInt64 finalizedEpoch, final UInt64 wsCheckpointEpoch) {
-    log.warn(
-        "Deferring weak subjectivity checks for finalized checkpoint at epoch {}.  Checks will resume once weak subjectivity checkpoint at epoch {} is reached.",
-        finalizedEpoch,
-        wsCheckpointEpoch);
+    final String msg =
+        String.format(
+            "Deferring weak subjectivity checks for finalized checkpoint at epoch %s.  Checks will resume once weak subjectivity checkpoint at epoch %s is reached.",
+            finalizedEpoch, wsCheckpointEpoch);
+    logWithColorIfLevelGreaterThanInfo(Level.WARN, msg, ColorConsolePrinter.Color.YELLOW);
   }
 
   public void finalizedCheckpointOutsideOfWeakSubjectivityPeriod(
