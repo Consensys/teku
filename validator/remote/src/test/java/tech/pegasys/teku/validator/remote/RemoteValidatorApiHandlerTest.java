@@ -14,7 +14,9 @@
 package tech.pegasys.teku.validator.remote;
 
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -23,11 +25,14 @@ import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_PUBLIC_KEY_BATCH_SIZE;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +40,9 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
+import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -51,13 +59,17 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
+import tech.pegasys.teku.validator.remote.apiclient.SchemaObjectsTestFixture;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 
 class RemoteValidatorApiHandlerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
+  private final SchemaObjectsTestFixture schemaObjects = new SchemaObjectsTestFixture();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final ValidatorRestApiClient apiClient = mock(ValidatorRestApiClient.class);
@@ -112,6 +124,93 @@ class RemoteValidatorApiHandlerTest {
     SafeFuture<Optional<UInt64>> future = apiHandler.getGenesisTime();
 
     assertThat(unwrapToOptional(future)).isNotPresent();
+  }
+
+  @Test
+  void getValidatorIndices_WithEmptyPublicKeys_ReturnsEmptyMap() {
+    final SafeFuture<Map<BLSPublicKey, Integer>> future =
+        apiHandler.getValidatorIndices(emptyList());
+
+    asyncRunner.executeQueuedActions();
+    assertThat(future).isCompleted();
+    assertThat(future.join()).isEmpty();
+  }
+
+  @Test
+  void getValidatorIndices_WithSmallNumberOfPublicKeys_RequestsSingleBatch() {
+    final BLSPublicKey key1 = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey key2 = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey key3 = dataStructureUtil.randomPublicKey();
+    final List<String> expectedValidatorIds =
+        List.of(
+            key1.toBytesCompressed().toHexString(),
+            key2.toBytesCompressed().toHexString(),
+            key3.toBytesCompressed().toHexString());
+    when(apiClient.getValidators(expectedValidatorIds))
+        .thenReturn(
+            Optional.of(
+                List.of(
+                    schemaObjects.validatorResponse(1, key1),
+                    schemaObjects.validatorResponse(2, key2))));
+
+    final SafeFuture<Map<BLSPublicKey, Integer>> future =
+        apiHandler.getValidatorIndices(List.of(key1, key2, key3));
+
+    asyncRunner.executeQueuedActions();
+    assertThat(future).isCompleted();
+    assertThat(future.join()).containsOnly(entry(key1, 1), entry(key2, 2));
+    verify(apiClient).getValidators(expectedValidatorIds);
+  }
+
+  @Test
+  void getValidatorIndices_WithLargeNumberOfPublicKeys_CombinesMultipleBatches() {
+    // Need to ensure the URL length limit isn't exceeded, so send requests in batches
+    final List<BLSPublicKey> allKeys =
+        IntStream.range(0, MAX_PUBLIC_KEY_BATCH_SIZE * 3 - 2)
+            .mapToObj(index -> dataStructureUtil.randomPublicKey())
+            .collect(toList());
+
+    final List<String> allSerializedKeys =
+        allKeys.stream().map(key -> key.toBytesCompressed().toHexString()).collect(toList());
+
+    final List<String> expectedBatch1 = allSerializedKeys.subList(0, MAX_PUBLIC_KEY_BATCH_SIZE);
+    final List<String> expectedBatch2 =
+        allSerializedKeys.subList(MAX_PUBLIC_KEY_BATCH_SIZE, MAX_PUBLIC_KEY_BATCH_SIZE * 2);
+    final List<String> expectedBatch3 =
+        allSerializedKeys.subList(MAX_PUBLIC_KEY_BATCH_SIZE * 2, allKeys.size());
+
+    final List<ValidatorResponse> batch1Responses =
+        List.of(
+            schemaObjects.validatorResponse(10, allKeys.get(0)),
+            schemaObjects.validatorResponse(11, allKeys.get(3)));
+    final List<ValidatorResponse> batch2Responses =
+        List.of(
+            schemaObjects.validatorResponse(20, allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE)),
+            schemaObjects.validatorResponse(21, allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE + 3)));
+    final List<ValidatorResponse> batch3Responses =
+        List.of(
+            schemaObjects.validatorResponse(30, allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE * 2)),
+            schemaObjects.validatorResponse(31, allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE * 2 + 3)));
+
+    when(apiClient.getValidators(expectedBatch1)).thenReturn(Optional.of(batch1Responses));
+    when(apiClient.getValidators(expectedBatch2)).thenReturn(Optional.of(batch2Responses));
+    when(apiClient.getValidators(expectedBatch3)).thenReturn(Optional.of(batch3Responses));
+
+    final SafeFuture<Map<BLSPublicKey, Integer>> future = apiHandler.getValidatorIndices(allKeys);
+
+    asyncRunner.executeQueuedActions();
+    assertThat(future).isCompleted();
+    assertThat(future.join())
+        .containsOnly(
+            entry(allKeys.get(0), 10),
+            entry(allKeys.get(3), 11),
+            entry(allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE), 20),
+            entry(allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE + 3), 21),
+            entry(allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE * 2), 30),
+            entry(allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE * 2 + 3), 31));
+    verify(apiClient).getValidators(expectedBatch1);
+    verify(apiClient).getValidators(expectedBatch2);
+    verify(apiClient).getValidators(expectedBatch3);
   }
 
   @Test
@@ -174,6 +273,97 @@ class RemoteValidatorApiHandlerTest {
 
     verify(apiClient).getDuties(requestArgumentCaptor.capture());
     assertThat(requestArgumentCaptor.getValue()).usingRecursiveComparison().isEqualTo(request);
+  }
+
+  @Test
+  public void getAttestationDuties_WithEmptyPublicKeys_ReturnsEmpty() {
+    SafeFuture<Optional<List<AttesterDuties>>> future =
+        apiHandler.getAttestationDuties(UInt64.ONE, emptyList());
+
+    assertThat(unwrapToValue(future)).isEmpty();
+  }
+
+  @Test
+  public void getAttestationDuties_WhenNoneFound_ReturnsEmpty() {
+    when(apiClient.getAttestationDuties(any(), any())).thenReturn(Collections.emptyList());
+
+    SafeFuture<Optional<List<AttesterDuties>>> future =
+        apiHandler.getAttestationDuties(UInt64.ONE, List.of(1234));
+
+    assertThat(unwrapToValue(future)).isEmpty();
+  }
+
+  @Test
+  public void getAttestationDuties_WhenFound_ReturnsDuties() {
+    final BLSPublicKey blsPublicKey = dataStructureUtil.randomPublicKey();
+    final int validatorIndex = 472;
+    final int committeeLength = 2;
+    final int committeeIndex = 1;
+    final int validatorCommitteeIndex = 3;
+    final AttesterDuty schemaValidatorDuties =
+        new AttesterDuty(
+            new BLSPubKey(blsPublicKey),
+            UInt64.valueOf(validatorIndex),
+            UInt64.valueOf(committeeIndex),
+            UInt64.valueOf(committeeLength),
+            UInt64.valueOf(validatorCommitteeIndex),
+            UInt64.ZERO);
+    final AttesterDuties expectedValidatorDuties =
+        new AttesterDuties(
+            blsPublicKey,
+            validatorIndex,
+            committeeLength,
+            committeeIndex,
+            validatorCommitteeIndex,
+            UInt64.ZERO);
+
+    when(apiClient.getAttestationDuties(UInt64.ONE, List.of(validatorIndex)))
+        .thenReturn(List.of(schemaValidatorDuties));
+
+    SafeFuture<Optional<List<AttesterDuties>>> future =
+        apiHandler.getAttestationDuties(UInt64.ONE, List.of(validatorIndex));
+
+    List<AttesterDuties> validatorDuties = unwrapToValue(future);
+
+    assertThat(validatorDuties.get(0))
+        .usingRecursiveComparison()
+        .isEqualTo(expectedValidatorDuties);
+  }
+
+  @Test
+  public void getProposerDuties_WithEmptyPublicKeys_ReturnsEmpty() {
+    SafeFuture<Optional<List<ProposerDuties>>> future = apiHandler.getProposerDuties(UInt64.ONE);
+
+    assertThat(unwrapToValue(future)).isEmpty();
+  }
+
+  @Test
+  public void getProposerDuties_WhenNoneFound_ReturnsEmpty() {
+    when(apiClient.getProposerDuties(any())).thenReturn(Collections.emptyList());
+
+    SafeFuture<Optional<List<ProposerDuties>>> future = apiHandler.getProposerDuties(UInt64.ONE);
+
+    assertThat(unwrapToValue(future)).isEmpty();
+  }
+
+  @Test
+  public void getProposerDuties_WhenFound_ReturnsDuties() {
+    final BLSPublicKey blsPublicKey = dataStructureUtil.randomPublicKey();
+    final int validatorIndex = 472;
+    final ProposerDuty schemaValidatorDuties =
+        new ProposerDuty(new BLSPubKey(blsPublicKey), validatorIndex, UInt64.ZERO);
+    final ProposerDuties expectedValidatorDuties =
+        new ProposerDuties(blsPublicKey, validatorIndex, UInt64.ZERO);
+
+    when(apiClient.getProposerDuties(UInt64.ONE)).thenReturn(List.of(schemaValidatorDuties));
+
+    SafeFuture<Optional<List<ProposerDuties>>> future = apiHandler.getProposerDuties(UInt64.ONE);
+
+    List<ProposerDuties> validatorDuties = unwrapToValue(future);
+
+    assertThat(validatorDuties.get(0))
+        .usingRecursiveComparison()
+        .isEqualTo(expectedValidatorDuties);
   }
 
   @Test

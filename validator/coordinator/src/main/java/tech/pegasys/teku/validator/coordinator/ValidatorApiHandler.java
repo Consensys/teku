@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
@@ -82,6 +83,13 @@ import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final Logger LOG = LogManager.getLogger();
+  /**
+   * Number of epochs ahead of the current head that duties can be requested. This provides some
+   * tolerance for validator clients clocks being slightly ahead while still limiting the number of
+   * empty slots that may need to be processed when calculating duties.
+   */
+  private static final int DUTY_EPOCH_TOLERANCE = 1;
+
   private final CombinedChainDataClient combinedChainDataClient;
   private final SyncStateTracker syncStateTracker;
   private final StateTransition stateTransition;
@@ -131,6 +139,24 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(
+      final List<BLSPublicKey> publicKeys) {
+    return SafeFuture.completedFuture(
+        combinedChainDataClient
+            .getBestState()
+            .map(
+                state -> {
+                  final Map<BLSPublicKey, Integer> results = new HashMap<>();
+                  publicKeys.forEach(
+                      publicKey ->
+                          ValidatorsUtil.getValidatorIndex(state, publicKey)
+                              .ifPresent(index -> results.put(publicKey, index)));
+                  return results;
+                })
+            .orElse(emptyMap()));
+  }
+
+  @Override
   public SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
       final UInt64 epoch, final Collection<BLSPublicKey> publicKeys) {
     if (isSyncActive()) {
@@ -160,7 +186,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return SafeFuture.completedFuture(Optional.of(emptyList()));
     }
     if (epoch.isGreaterThan(
-        combinedChainDataClient.getCurrentEpoch().plus(Constants.MIN_SEED_LOOKAHEAD))) {
+        combinedChainDataClient
+            .getCurrentEpoch()
+            .plus(Constants.MIN_SEED_LOOKAHEAD + DUTY_EPOCH_TOLERANCE))) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
               String.format(
@@ -185,7 +213,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
-    if (epoch.isGreaterThan(combinedChainDataClient.getCurrentEpoch())) {
+    if (epoch.isGreaterThan(combinedChainDataClient.getCurrentEpoch().plus(DUTY_EPOCH_TOLERANCE))) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
               String.format(

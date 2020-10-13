@@ -24,12 +24,8 @@ public class HostAllowlistUtils {
 
   static boolean isHostAuthorized(final List<String> allowlist, String hostHeader) {
     Optional<String> optionalHost = getAndValidateHostHeader(hostHeader);
-    if (allowlist.contains("*")
-        || (optionalHost.isPresent() && hostIsInAllowlist(allowlist, optionalHost.get()))) {
-      return true;
-    } else {
-      return false;
-    }
+    return allowlist.contains("*")
+        || (optionalHost.isPresent() && hostIsInAllowlist(allowlist, optionalHost.get()));
   }
 
   static Optional<String> getAndValidateHostHeader(final String hostHeader) {

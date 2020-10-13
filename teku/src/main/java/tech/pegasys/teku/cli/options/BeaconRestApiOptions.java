@@ -19,12 +19,14 @@ import picocli.CommandLine.Option;
 
 public class BeaconRestApiOptions {
 
+  public static final int DEFAULT_REST_API_PORT = 5051;
+
   @Option(
       names = {"--rest-api-port"},
       paramLabel = "<INTEGER>",
       description = "Port number of Beacon Rest API",
       arity = "1")
-  private int restApiPort = 5051;
+  private int restApiPort = DEFAULT_REST_API_PORT;
 
   @Option(
       names = {"--rest-api-docs-enabled"},
