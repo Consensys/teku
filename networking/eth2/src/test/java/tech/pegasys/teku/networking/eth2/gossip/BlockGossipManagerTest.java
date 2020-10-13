@@ -13,6 +13,12 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
 import com.google.common.eventbus.EventBus;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,12 +37,6 @@ import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-
 public class BlockGossipManagerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -51,7 +51,8 @@ public class BlockGossipManagerTest {
 
   @SuppressWarnings("unchecked")
   private final GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer =
-          mock(GossipedItemConsumer.class);
+      mock(GossipedItemConsumer.class);
+
   @BeforeEach
   public void setup() {
     doReturn(topicChannel)

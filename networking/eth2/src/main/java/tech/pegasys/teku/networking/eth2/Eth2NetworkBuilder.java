@@ -13,7 +13,16 @@
 
 package tech.pegasys.teku.networking.eth2;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.common.eventbus.EventBus;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
@@ -42,16 +51,6 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.util.config.Constants;
-
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 public class Eth2NetworkBuilder {
   public static final Duration DEFAULT_ETH2_RPC_PING_INTERVAL = Duration.ofSeconds(10);
@@ -241,7 +240,7 @@ public class Eth2NetworkBuilder {
   }
 
   public Eth2NetworkBuilder gossipedBlockConsumer(
-          final GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer) {
+      final GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer) {
     checkNotNull(gossipedAttestationConsumer);
     this.gossipedBlockConsumer = gossipedBlockConsumer;
     return this;

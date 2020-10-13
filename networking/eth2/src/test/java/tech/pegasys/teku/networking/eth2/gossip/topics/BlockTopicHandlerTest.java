@@ -13,6 +13,12 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.google.common.eventbus.EventBus;
 import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.tuweni.bytes.Bytes;
@@ -32,12 +38,6 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 public class BlockTopicHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final EventBus eventBus = mock(EventBus.class);
@@ -50,7 +50,7 @@ public class BlockTopicHandlerTest {
 
   @SuppressWarnings("unchecked")
   private final GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer =
-          mock(GossipedItemConsumer.class);
+      mock(GossipedItemConsumer.class);
 
   private BlockTopicHandler topicHandler =
       new BlockTopicHandler(
@@ -130,7 +130,8 @@ public class BlockTopicHandlerTest {
     final ForkInfo forkInfo = mock(ForkInfo.class);
     when(forkInfo.getForkDigest()).thenReturn(forkDigest);
     final BlockTopicHandler topicHandler =
-        new BlockTopicHandler(asyncRunner, gossipEncoding, forkInfo, blockValidator, gossipedBlockConsumer);
+        new BlockTopicHandler(
+            asyncRunner, gossipEncoding, forkInfo, blockValidator, gossipedBlockConsumer);
     assertThat(topicHandler.getTopic()).isEqualTo("/eth2/11223344/beacon_block/ssz_snappy");
   }
 }

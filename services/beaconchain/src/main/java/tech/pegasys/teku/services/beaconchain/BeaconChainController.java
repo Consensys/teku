@@ -305,8 +305,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void initPendingBlocks() {
     LOG.debug("BeaconChainController.initPendingBlocks()");
     pendingBlocks = PendingPool.createForBlocks();
-    eventChannels
-        .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
+    eventChannels.subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
   }
 
   private void initRecentBlockFetcher() {
@@ -669,7 +668,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             blockImporter);
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
-        .subscribe(BlockImportChannel.class, blockManager)
+        .subscribe(BlockImportChannel.class, blockManager);
   }
 
   public void initSyncManager() {
