@@ -60,6 +60,10 @@ public class ValidatorDataProvider {
   private final ValidatorApiChannel validatorApiChannel;
   private final CombinedChainDataClient combinedChainDataClient;
 
+  private static final int SC_INTERNAL_ERROR = 500;
+  private static final int SC_ACCEPTED = 202;
+  private static final int SC_OK = 200;
+
   public ValidatorDataProvider(
       final ValidatorApiChannel validatorApiChannel,
       final CombinedChainDataClient combinedChainDataClient) {
@@ -173,14 +177,14 @@ public class ValidatorDataProvider {
               int responseCode;
               Optional<Bytes32> hashRoot = result.getBlockRoot();
               if (result.getRejectionReason().isEmpty()) {
-                responseCode = 200;
+                responseCode = SC_OK;
               } else if (result
                   .getRejectionReason()
                   .get()
                   .equals(FailureReason.INTERNAL_ERROR.name())) {
-                responseCode = 500;
+                responseCode = SC_INTERNAL_ERROR;
               } else {
-                responseCode = 202;
+                responseCode = SC_ACCEPTED;
               }
 
               return new ValidatorBlockResult(responseCode, result.getRejectionReason(), hashRoot);

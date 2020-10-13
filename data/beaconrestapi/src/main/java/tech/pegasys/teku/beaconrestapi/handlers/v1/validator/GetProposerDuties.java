@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
+import static java.util.Collections.emptyList;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.EPOCH;
@@ -23,8 +24,10 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVA
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_VALIDATOR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.base.Throwables;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -37,7 +40,6 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -54,22 +56,18 @@ public class GetProposerDuties extends AbstractHandler implements Handler {
   public static final String ROUTE = "/eth/v1/validator/duties/proposer/:epoch";
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
-  private final ChainDataProvider chainDataProvider;
 
   public GetProposerDuties(final DataProvider dataProvider, final JsonProvider jsonProvider) {
     super(jsonProvider);
     this.validatorDataProvider = dataProvider.getValidatorDataProvider();
     this.syncDataProvider = dataProvider.getSyncDataProvider();
-    this.chainDataProvider = dataProvider.getChainDataProvider();
   }
 
   GetProposerDuties(
-      final ChainDataProvider chainDataProvider,
       final SyncDataProvider syncDataProvider,
       final ValidatorDataProvider validatorDataProvider,
       final JsonProvider jsonProvider) {
     super(jsonProvider);
-    this.chainDataProvider = chainDataProvider;
     this.validatorDataProvider = validatorDataProvider;
     this.syncDataProvider = syncDataProvider;
   }
@@ -99,20 +97,9 @@ public class GetProposerDuties extends AbstractHandler implements Handler {
     final Map<String, String> parameters = ctx.pathParamMap();
     try {
       final UInt64 epoch = UInt64.valueOf(parameters.get(EPOCH));
-      final UInt64 currentEpoch = chainDataProvider.getCurrentEpoch();
-      if (currentEpoch.isLessThan(epoch)) {
-        ctx.result(
-            jsonProvider.objectToJSON(
-                new BadRequest(
-                    "Cannot get proposer duties for "
-                        + epoch.minus(currentEpoch)
-                        + " epochs ahead")));
-        ctx.status(SC_BAD_REQUEST);
-        return;
-      }
       SafeFuture<Optional<List<ProposerDuty>>> future =
           validatorDataProvider.getProposerDuties(epoch);
-      handleOptionalResult(ctx, future, this::handleResult, List.of());
+      handleOptionalResult(ctx, future, this::handleResult, this::handleError, emptyList());
     } catch (NumberFormatException ex) {
       LOG.trace("Error parsing", ex);
       ctx.status(SC_BAD_REQUEST);
@@ -125,5 +112,15 @@ public class GetProposerDuties extends AbstractHandler implements Handler {
   private Optional<String> handleResult(Context ctx, final List<ProposerDuty> response)
       throws JsonProcessingException {
     return Optional.of(jsonProvider.objectToJSON(new GetProposerDutiesResponse(response)));
+  }
+
+  private SafeFuture<String> handleError(final Context ctx, final Throwable error) {
+    final Throwable rootCause = Throwables.getRootCause(error);
+    if (rootCause instanceof IllegalArgumentException) {
+      ctx.status(SC_BAD_REQUEST);
+      return SafeFuture.of(() -> BadRequest.badRequest(jsonProvider, rootCause.getMessage()));
+    } else {
+      return failedFuture(error);
+    }
   }
 }
