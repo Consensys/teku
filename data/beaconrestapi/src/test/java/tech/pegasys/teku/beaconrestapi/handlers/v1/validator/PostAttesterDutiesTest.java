@@ -79,7 +79,7 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
     when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.isSyncActive()).thenReturn(false);
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
-    when(context.queryParamMap()).thenReturn(Map.of("index", List.of("2")));
+    when(context.body()).thenReturn("[\"2\"]");
     when(validatorDataProvider.getAttesterDuties(UInt64.valueOf(100), List.of(2)))
         .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("Bad epoch")));
 
