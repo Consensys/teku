@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.remote.apiclient;
 
 import java.util.Map;
-import java.util.Map.Entry;
 
 public enum ValidatorApiMethod {
   GET_FORK("node/fork"),
@@ -41,7 +40,7 @@ public enum ValidatorApiMethod {
 
   public String getPath(final Map<String, String> urlParams) {
     String result = path;
-    for (Entry<String, String> param : urlParams.entrySet()) {
+    for (final Map.Entry<String, String> param : urlParams.entrySet()) {
       result = result.replace(":" + param.getKey(), param.getValue());
     }
     return result;
