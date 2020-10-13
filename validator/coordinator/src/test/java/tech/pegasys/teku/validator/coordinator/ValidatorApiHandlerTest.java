@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -21,15 +22,18 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.core.results.BlockImportResult.FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED;
 import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.SUCCESSFUL;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.eventbus.EventBus;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -38,6 +42,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.StateTransition;
+import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.data.BlockProcessingRecord;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
@@ -58,6 +64,7 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.blockimport.BlockImportChannel;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.SyncState;
@@ -66,6 +73,7 @@ import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 
@@ -84,6 +92,7 @@ class ValidatorApiHandlerTest {
   private final AttestationManager attestationManager = mock(AttestationManager.class);
   private final AttestationTopicSubscriber attestationTopicSubscriptions =
       mock(AttestationTopicSubscriber.class);
+  private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
   private final EventBus eventBus = mock(EventBus.class);
   private final DefaultPerformanceTracker performanceTracker =
       mock(DefaultPerformanceTracker.class);
@@ -94,6 +103,7 @@ class ValidatorApiHandlerTest {
           syncStateTracker,
           stateTransition,
           blockFactory,
+          blockImportChannel,
           attestationPool,
           attestationManager,
           attestationTopicSubscriptions,
@@ -316,7 +326,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getAttestationDuties_shouldFailForEpochTooFarAhead() {
-    when(chainDataClient.getCurrentEpoch()).thenReturn(UInt64.valueOf(11));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(3));
 
     final SafeFuture<Optional<List<AttesterDuties>>> result =
         validatorApiHandler.getAttestationDuties(EPOCH, List.of(1));
@@ -340,6 +350,21 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
+  public void getAttestationDuties_shouldAllowOneEpochTolerance() {
+    final BeaconState state = createStateWithActiveValidators();
+    final BLSPublicKey validator1Key = state.getValidators().get(1).getPubkey();
+    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+        .thenReturn(completedFuture(Optional.of(state)));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
+
+    final SafeFuture<Optional<List<AttesterDuties>>> result =
+        validatorApiHandler.getAttestationDuties(EPOCH, List.of(1, 32));
+    final Optional<List<AttesterDuties>> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.get())
+        .containsExactly(new AttesterDuties(validator1Key, 1, 4, 0, 1, UInt64.valueOf(108)));
+  }
+
+  @Test
   public void getProposerDuties_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
     final SafeFuture<Optional<List<ProposerDuties>>> duties =
@@ -350,7 +375,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getProposerDuties_shouldFailForEpochTooFarAhead() {
-    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(UInt64.ONE));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
 
     final SafeFuture<Optional<List<ProposerDuties>>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
@@ -364,6 +389,19 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
+
+    final SafeFuture<Optional<List<ProposerDuties>>> result =
+        validatorApiHandler.getProposerDuties(EPOCH);
+    final Optional<List<ProposerDuties>> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.get().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
+  }
+
+  @Test
+  public void getProposerDuties_shouldAllowOneEpochTolerance() {
+    final BeaconState state = createStateWithActiveValidators();
+    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+        .thenReturn(completedFuture(Optional.of(state)));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(1));
 
     final SafeFuture<Optional<List<ProposerDuties>>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
@@ -512,11 +550,47 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void sendSignedBlock_shouldPostProposedBlockEvent() {
+  public void sendSignedBlock_shouldConvertSuccessfulResult() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
-    validatorApiHandler.sendSignedBlock(block);
+    when(blockImportChannel.importBlock(block))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                BlockImportResult.successful(
+                    new BlockProcessingRecord(
+                        dataStructureUtil.randomBeaconState(),
+                        block,
+                        dataStructureUtil.randomBeaconState()))));
+    final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
 
     verify(eventBus).post(new ProposedBlockEvent(block));
+    verify(blockImportChannel).importBlock(block);
+    assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
+  }
+
+  @Test
+  public void sendSignedBlock_shouldConvertFailedResult() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    when(blockImportChannel.importBlock(block))
+        .thenReturn(SafeFuture.completedFuture(BlockImportResult.FAILED_INVALID_ANCESTRY));
+    final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
+
+    verify(eventBus).post(new ProposedBlockEvent(block));
+    verify(blockImportChannel).importBlock(block);
+    assertThat(result)
+        .isCompletedWithValue(
+            SendSignedBlockResult.notImported(DOES_NOT_DESCEND_FROM_LATEST_FINALIZED.name()));
+  }
+
+  @Test
+  public void sendSignedBlock_shouldConvertKnownBlockResult() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    when(blockImportChannel.importBlock(block))
+        .thenReturn(SafeFuture.completedFuture(BlockImportResult.knownBlock(block)));
+    final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
+
+    verify(eventBus).post(new ProposedBlockEvent(block));
+    verify(blockImportChannel).importBlock(block);
+    assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
   }
 
   @Test
@@ -529,6 +603,27 @@ class ValidatorApiHandlerTest {
 
     verify(attestationManager)
         .onAttestation(ValidateableAttestation.fromSignedAggregate(aggregateAndProof));
+  }
+
+  @Test
+  void getValidatorIndices_shouldReturnEmptyMapWhenBestStateNotAvailable() {
+    when(chainDataClient.getBestState()).thenReturn(Optional.empty());
+
+    assertThatSafeFuture(
+            validatorApiHandler.getValidatorIndices(List.of(dataStructureUtil.randomPublicKey())))
+        .isCompletedWithValue(emptyMap());
+  }
+
+  @Test
+  void getValidatorIndices_shouldReturnMapWithKnownValidatorsWhenBestStateAvailable() {
+    final BeaconState state = dataStructureUtil.randomBeaconState();
+    final BLSPublicKey validator0 = state.getValidators().get(0).getPubkey();
+    final BLSPublicKey unknownValidator = dataStructureUtil.randomPublicKey();
+    when(chainDataClient.getBestState()).thenReturn(Optional.of(state));
+
+    assertThatSafeFuture(
+            validatorApiHandler.getValidatorIndices(List.of(validator0, unknownValidator)))
+        .isCompletedWithValue(Map.of(validator0, 0));
   }
 
   private <T> Optional<List<T>> assertCompletedSuccessfully(

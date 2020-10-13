@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.api;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
@@ -34,6 +35,8 @@ public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<Optional<ForkInfo>> getForkInfo();
 
   SafeFuture<Optional<UInt64>> getGenesisTime();
+
+  SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(final List<BLSPublicKey> publicKeys);
 
   SafeFuture<Optional<List<ValidatorDuties>>> getDuties(
       UInt64 epoch, Collection<BLSPublicKey> publicKeys);
@@ -60,5 +63,5 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   void sendAggregateAndProof(SignedAggregateAndProof aggregateAndProof);
 
-  void sendSignedBlock(SignedBeaconBlock block);
+  SafeFuture<SendSignedBlockResult> sendSignedBlock(SignedBeaconBlock block);
 }

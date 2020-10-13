@@ -38,7 +38,7 @@ public class MockStartDepositGenerator {
   }
 
   public List<DepositData> createDeposits(
-      final List<BLSKeyPair> validatorKeys, final long depositBalance) {
+      final List<BLSKeyPair> validatorKeys, final UInt64 depositBalance) {
     return validatorKeys.stream()
         .map(key -> createDepositData(key, depositBalance))
         .collect(toList());
@@ -49,8 +49,7 @@ public class MockStartDepositGenerator {
         keyPair, UInt64.valueOf(MAX_EFFECTIVE_BALANCE), keyPair.getPublicKey());
   }
 
-  private DepositData createDepositData(final BLSKeyPair keyPair, final long depositBalance) {
-    return depositGenerator.createDepositData(
-        keyPair, UInt64.valueOf(depositBalance), keyPair.getPublicKey());
+  private DepositData createDepositData(final BLSKeyPair keyPair, final UInt64 depositBalance) {
+    return depositGenerator.createDepositData(keyPair, depositBalance, keyPair.getPublicKey());
   }
 }

@@ -13,31 +13,20 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.cli.options.BeaconRestApiOptions.DEFAULT_REST_API_PORT;
+
 import picocli.CommandLine.Option;
 
 public class ValidatorClientOptions {
 
   @Option(
-      names = {"--Xbeacon-node-api-endpoint"},
+      names = {"--beacon-node-api-endpoint"},
       paramLabel = "<ENDPOINT>",
-      description = "Endpoint of the Beacon Node API",
-      arity = "1",
-      hidden = true)
-  private String beaconNodeApiEndpoint = "http://127.0.0.1:5051";
-
-  @Option(
-      names = {"--Xbeacon-node-events-endpoint"},
-      paramLabel = "<NETWORK>",
-      description = "Endpoint of the Beacon Node Events WebSocket API",
-      arity = "1",
-      hidden = true)
-  private String beaconNodeEventsWsEndpoint = "";
+      description = "Endpoint of the Beacon Node REST API",
+      arity = "1")
+  private String beaconNodeApiEndpoint = "http://127.0.0.1:" + DEFAULT_REST_API_PORT;
 
   public String getBeaconNodeApiEndpoint() {
     return beaconNodeApiEndpoint;
-  }
-
-  public String getBeaconNodeEventsWsEndpoint() {
-    return beaconNodeEventsWsEndpoint;
   }
 }

@@ -28,6 +28,8 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
@@ -35,11 +37,12 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttesterDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
-import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -53,7 +56,6 @@ public class BeaconRestApiV1Test {
   private final JavalinServer server = mock(JavalinServer.class);
   private final Javalin app = mock(Javalin.class);
   private final SyncService syncService = mock(SyncService.class);
-  private final BlockImporter blockImporter = mock(BlockImporter.class);
   private final EventChannels eventChannels = mock(EventChannels.class);
   private static final Integer THE_PORT = 12345;
   private AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
@@ -65,13 +67,7 @@ public class BeaconRestApiV1Test {
     when(app.server()).thenReturn(server);
     new BeaconRestApi(
         new DataProvider(
-            storageClient,
-            combinedChainDataClient,
-            null,
-            syncService,
-            null,
-            blockImporter,
-            attestationPool),
+            storageClient, combinedChainDataClient, null, syncService, null, attestationPool),
         config,
         eventChannels,
         new StubAsyncRunner(),
@@ -114,6 +110,11 @@ public class BeaconRestApiV1Test {
   }
 
   @Test
+  public void shouldHavePostAttesterDutiesEndpoint() {
+    verify(app).post(eq(PostAttesterDuties.ROUTE), any(PostAttesterDuties.class));
+  }
+
+  @Test
   public void shouldHaveGetProposerDutiesEndpoint() {
     verify(app).get(eq(GetProposerDuties.ROUTE), any(GetProposerDuties.class));
   }
@@ -129,7 +130,22 @@ public class BeaconRestApiV1Test {
   }
 
   @Test
+  public void shouldHaveGetStateValidatorsEndpoint() {
+    verify(app).get(eq(GetStateValidators.ROUTE), any(GetStateValidators.class));
+  }
+
+  @Test
   public void shouldHaveGetGenesisEndpoint() {
     verify(app).get(eq(GetGenesis.ROUTE), any(GetGenesis.class));
+  }
+
+  @Test
+  public void shouldHaveValidatorBlockEndpoint() {
+    verify(app).post(eq(PostBlock.ROUTE), any(PostBlock.class));
+  }
+
+  @Test
+  public void shouldHaveGetNewBlockEndpoint() {
+    verify(app).get(eq(GetNewBlock.ROUTE), any(GetNewBlock.class));
   }
 }

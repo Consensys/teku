@@ -39,10 +39,9 @@ import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.ValidatorDuties;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.results.BlockImportResult;
+import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuties;
@@ -60,7 +59,6 @@ public class ValidatorDataProvider {
   public static final String NO_RANDAO_PROVIDED = "No randao_reveal was provided.";
   private final ValidatorApiChannel validatorApiChannel;
   private final CombinedChainDataClient combinedChainDataClient;
-  private final BlockImporter blockImporter;
 
   private static final int SC_INTERNAL_ERROR = 500;
   private static final int SC_ACCEPTED = 202;
@@ -68,11 +66,9 @@ public class ValidatorDataProvider {
 
   public ValidatorDataProvider(
       final ValidatorApiChannel validatorApiChannel,
-      final BlockImporter blockImporter,
       final CombinedChainDataClient combinedChainDataClient) {
     this.validatorApiChannel = validatorApiChannel;
     this.combinedChainDataClient = combinedChainDataClient;
-    this.blockImporter = blockImporter;
   }
 
   public boolean isStoreAvailable() {
@@ -174,27 +170,24 @@ public class ValidatorDataProvider {
 
   public SafeFuture<ValidatorBlockResult> submitSignedBlock(
       final SignedBeaconBlock signedBeaconBlock) {
-    return blockImporter
-        .importBlock(signedBeaconBlock.asInternalSignedBeaconBlock())
+    return validatorApiChannel
+        .sendSignedBlock(signedBeaconBlock.asInternalSignedBeaconBlock())
         .thenApply(
-            blockImportResult -> {
+            result -> {
               int responseCode;
-              Bytes32 hashRoot = null;
-
-              if (!blockImportResult.isSuccessful()) {
-                if (blockImportResult.getFailureReason()
-                    == BlockImportResult.FailureReason.INTERNAL_ERROR) {
-                  responseCode = SC_INTERNAL_ERROR;
-                } else {
-                  responseCode = SC_ACCEPTED;
-                }
-              } else {
+              Optional<Bytes32> hashRoot = result.getBlockRoot();
+              if (result.getRejectionReason().isEmpty()) {
                 responseCode = SC_OK;
-                hashRoot = blockImportResult.getBlock().getMessage().hash_tree_root();
+              } else if (result
+                  .getRejectionReason()
+                  .get()
+                  .equals(FailureReason.INTERNAL_ERROR.name())) {
+                responseCode = SC_INTERNAL_ERROR;
+              } else {
+                responseCode = SC_ACCEPTED;
               }
 
-              return new ValidatorBlockResult(
-                  responseCode, blockImportResult.getFailureCause(), Optional.ofNullable(hashRoot));
+              return new ValidatorBlockResult(responseCode, result.getRejectionReason(), hashRoot);
             });
   }
 

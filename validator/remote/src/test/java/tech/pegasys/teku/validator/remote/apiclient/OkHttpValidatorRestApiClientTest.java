@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.apiclient;
 
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -33,6 +34,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
 import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
@@ -71,7 +74,7 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_FORK.getPath());
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_FORK.getPath(emptyMap()));
   }
 
   @Test
@@ -111,7 +114,7 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_GENESIS.getPath());
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_GENESIS.getPath(emptyMap()));
   }
 
   @Test
@@ -131,7 +134,7 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
-  public void getGenesis_WhenSuccess_ReturnsForkResponse() {
+  public void getGenesis_WhenSuccess_ReturnsGenesisResponse() {
     final GetGenesisResponse getGenesisResponse = schemaObjects.getGenesisResponse();
 
     mockWebServer.enqueue(
@@ -141,6 +144,49 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThat(genesis).isPresent();
     assertThat(genesis.get()).usingRecursiveComparison().isEqualTo(getGenesisResponse);
+  }
+
+  @Test
+  void getValidators_MakesExpectedRequest() throws Exception {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+
+    apiClient.getValidators(List.of("1", "0x1234"));
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+    assertThat(request.getMethod()).isEqualTo("GET");
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_VALIDATORS.getPath(emptyMap()));
+    // %2C is ,
+    assertThat(request.getPath()).contains("?validator_id=1%2C0x1234");
+  }
+
+  @Test
+  void getValidators_WhenServerError_ThrowsRuntimeException() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+
+    assertThatThrownBy(() -> apiClient.getValidators(List.of("1")))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("Unexpected response from Beacon Node API");
+  }
+
+  @Test
+  public void getValidators_WhenNoContent_ReturnsEmpty() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+
+    assertThat(apiClient.getValidators(List.of("1"))).isEmpty();
+  }
+
+  @Test
+  public void getValidators_WhenSuccess_ReturnsResponse() {
+    final List<ValidatorResponse> expected =
+        List.of(schemaObjects.validatorResponse(), schemaObjects.validatorResponse());
+    final GetStateValidatorsResponse response = new GetStateValidatorsResponse(expected);
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody(asJson(response)));
+
+    Optional<List<ValidatorResponse>> result = apiClient.getValidators(List.of("1", "2"));
+
+    assertThat(result).isPresent();
+    assertThat(result.get()).usingRecursiveComparison().isEqualTo(expected);
   }
 
   @Test
@@ -154,7 +200,7 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("POST");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_DUTIES.getPath());
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_DUTIES.getPath(emptyMap()));
     assertThat(request.getBody().readString(StandardCharsets.UTF_8))
         .isEqualTo(asJson(validatorDutiesRequest));
   }
@@ -215,7 +261,8 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_UNSIGNED_BLOCK.getPath());
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.GET_UNSIGNED_BLOCK.getPath(emptyMap()));
     assertThat(request.getRequestUrl().queryParameter("slot")).isEqualTo(slot.toString());
     assertThat(request.getRequestUrl().queryParameter("randao_reveal"))
         .isEqualTo(blsSignature.toHexString());
@@ -235,14 +282,15 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
-  public void createUnsignedBlock_WhenBadRequest_ReturnsEmpty() {
+  public void createUnsignedBlock_WhenBadRequest_ThrowsIllegalArgumentException() {
     final UInt64 slot = UInt64.ONE;
     final BLSSignature blsSignature = schemaObjects.BLSSignature();
     final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(400));
 
-    assertThat(apiClient.createUnsignedBlock(slot, blsSignature, graffiti)).isEmpty();
+    assertThatThrownBy(() -> apiClient.createUnsignedBlock(slot, blsSignature, graffiti))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
@@ -263,17 +311,19 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void sendSignedBlock_MakesExpectedRequest() throws Exception {
+    final Bytes32 blockRoot = Bytes32.fromHexStringLenient("0x1234");
     final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
 
     // Block has been successfully broadcast, validated and imported
-    mockWebServer.enqueue(new MockResponse().setResponseCode(200));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody(asJson(blockRoot)));
 
     apiClient.sendSignedBlock(signedBeaconBlock);
 
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("POST");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.SEND_SIGNED_BLOCK.getPath());
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.SEND_SIGNED_BLOCK.getPath(emptyMap()));
     assertThat(request.getBody().readString(StandardCharsets.UTF_8))
         .isEqualTo(asJson(signedBeaconBlock));
   }
@@ -289,12 +339,13 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
-  public void sendSignedBlock_WhenBadParameters_DoesNotFailHandlingResponse() {
+  public void sendSignedBlock_WhenBadParameters_ThrowsIllegalArgumentException() {
     final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(400));
 
-    apiClient.sendSignedBlock(signedBeaconBlock);
+    assertThatThrownBy(() -> apiClient.sendSignedBlock(signedBeaconBlock))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
@@ -330,20 +381,22 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_UNSIGNED_ATTESTATION.getPath());
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.GET_UNSIGNED_ATTESTATION.getPath(emptyMap()));
     assertThat(request.getRequestUrl().queryParameter("slot")).isEqualTo(slot.toString());
     assertThat(request.getRequestUrl().queryParameter("committee_index"))
         .isEqualTo(String.valueOf(committeeIndex));
   }
 
   @Test
-  public void createUnsignedAttestation_WhenBadRequest_ReturnsEmpty() {
+  public void createUnsignedAttestation_WhenBadRequest_ThrowsIllegalArgumentException() {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(400));
 
-    assertThat(apiClient.createUnsignedAttestation(slot, committeeIndex)).isEmpty();
+    assertThatThrownBy(() -> apiClient.createUnsignedAttestation(slot, committeeIndex))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
@@ -383,17 +436,19 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("POST");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION.getPath());
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION.getPath(emptyMap()));
     assertThat(request.getBody().readString(StandardCharsets.UTF_8)).isEqualTo(asJson(attestation));
   }
 
   @Test
-  public void sendSignedAttestation_WhenBadParameters_DoesNotFailHandlingResponse() {
+  public void sendSignedAttestation_WhenBadParameters_ThrowsIllegalArgumentException() {
     final Attestation attestation = schemaObjects.attestation();
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(400));
 
-    apiClient.sendSignedAttestation(attestation);
+    assertThatThrownBy(() -> apiClient.sendSignedAttestation(attestation))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
@@ -419,19 +474,20 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_AGGREGATE.getPath());
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_AGGREGATE.getPath(emptyMap()));
     assertThat(request.getRequestUrl().queryParameter("slot")).isEqualTo(slot.toString());
     assertThat(request.getRequestUrl().queryParameter("attestation_data_root"))
         .isEqualTo(attestationHashTreeRoot.toHexString());
   }
 
   @Test
-  public void createAggregate_WhenBadParameters_ReturnsEmpty() {
+  public void createAggregate_WhenBadParameters_ThrowsIllegalArgumentException() {
     final Bytes32 attestationHashTreeRoot = Bytes32.random();
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(400));
 
-    assertThat(apiClient.createAggregate(attestationHashTreeRoot)).isEmpty();
+    assertThatThrownBy(() -> apiClient.createAggregate(attestationHashTreeRoot))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
@@ -471,18 +527,19 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThat(request.getMethod()).isEqualTo("POST");
     assertThat(request.getPath())
-        .contains(ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF.getPath());
+        .contains(ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF.getPath(emptyMap()));
     assertThat(request.getBody().readString(StandardCharsets.UTF_8))
         .isEqualTo(asJson(signedAggregateAndProof));
   }
 
   @Test
-  public void sendAggregateAndProof_WhenBadParameters_DoesNotFailHandlingResponse() {
+  public void sendAggregateAndProof_WhenBadParameters_ThrowsIllegalArgumentException() {
     final SignedAggregateAndProof signedAggregateAndProof = schemaObjects.signedAggregateAndProof();
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(400));
 
-    apiClient.sendAggregateAndProof(signedAggregateAndProof);
+    assertThatThrownBy(() -> apiClient.sendAggregateAndProof(signedAggregateAndProof))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
@@ -512,20 +569,23 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThat(request.getMethod()).isEqualTo("POST");
     assertThat(request.getPath())
-        .contains(ValidatorApiMethod.SUBSCRIBE_TO_COMMITTEE_FOR_AGGREGATION.getPath());
+        .contains(ValidatorApiMethod.SUBSCRIBE_TO_COMMITTEE_FOR_AGGREGATION.getPath(emptyMap()));
     assertThat(request.getBody().readString(StandardCharsets.UTF_8))
         .isEqualTo(asJson(expectedRequest));
   }
 
   @Test
   public void
-      subscribeToBeaconCommitteeForAggregation_WhenBadRequest_DoesNotFailHandlingResponse() {
+      subscribeToBeaconCommitteeForAggregation_WhenBadRequest_ThrowsIllegalArgumentException() {
     final int committeeIndex = 1;
     final UInt64 aggregationSlot = UInt64.ONE;
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(400));
 
-    apiClient.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot);
+    assertThatThrownBy(
+            () ->
+                apiClient.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
@@ -554,18 +614,18 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThat(request.getMethod()).isEqualTo("POST");
     assertThat(request.getPath())
-        .contains(ValidatorApiMethod.SUBSCRIBE_TO_PERSISTENT_SUBNETS.getPath());
+        .contains(ValidatorApiMethod.SUBSCRIBE_TO_PERSISTENT_SUBNETS.getPath(emptyMap()));
     assertThat(request.getBody().readString(StandardCharsets.UTF_8))
         .isEqualTo(asJson(subnetSubscriptions));
   }
 
   @Test
-  public void subscribeToPersistentSubnets_WhenBadRequest_DoesNotFailHandlingResponse() {
+  public void subscribeToPersistentSubnets_WhenBadRequest_ThrowsIllegalArgumentException() {
     final Set<SubnetSubscription> subnetSubscriptions = Set.of(schemaObjects.subnetSubscription());
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(400));
-
-    apiClient.subscribeToPersistentSubnets(subnetSubscriptions);
+    assertThatThrownBy(() -> apiClient.subscribeToPersistentSubnets(subnetSubscriptions))
+        .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
@@ -584,7 +644,7 @@ class OkHttpValidatorRestApiClientTest {
       return jsonProvider.objectToJSON(object);
     } catch (JsonProcessingException e) {
       fail("Error conversing object to json", e);
-      return null;
+      return "";
     }
   }
 }

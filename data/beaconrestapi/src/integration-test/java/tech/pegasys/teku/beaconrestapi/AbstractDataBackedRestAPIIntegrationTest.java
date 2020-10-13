@@ -49,7 +49,6 @@ import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
-import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -61,7 +60,6 @@ import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
-import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(16);
@@ -99,7 +97,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   private ChainUpdater chainUpdater;
 
   protected final JsonProvider jsonProvider = new JsonProvider();
-  private BlockImporter blockImporter;
 
   protected DataProvider dataProvider;
   protected BeaconRestApi beaconRestApi;
@@ -129,12 +126,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   }
 
   private void setupAndStartRestAPI(GlobalConfiguration config) {
-    blockImporter =
-        new BlockImporter(
-            recentChainData,
-            forkChoice,
-            WeakSubjectivityValidator.lenient(),
-            storageSystem.eventBus());
     combinedChainDataClient = storageSystem.combinedChainDataClient();
     dataProvider =
         new DataProvider(
@@ -143,7 +134,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             eth2Network,
             syncService,
             validatorApiChannel,
-            blockImporter,
             attestationPool);
     beaconRestApi =
         new BeaconRestApi(dataProvider, config, eventChannels, SyncAsyncRunner.SYNC_RUNNER);
@@ -194,6 +184,10 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     final UInt64[] unsignedSlots =
         Arrays.stream(slots).mapToObj(UInt64::valueOf).toArray(UInt64[]::new);
     return createBlocksAtSlots(unsignedSlots);
+  }
+
+  public void setCurrentSlot(long slot) {
+    chainUpdater.setCurrentSlot(UInt64.valueOf(slot));
   }
 
   public ArrayList<SignedBlockAndState> createBlocksAtSlots(UInt64... slots) {

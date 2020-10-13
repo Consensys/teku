@@ -23,14 +23,14 @@ public class ValidatorBlockResult {
   private final int responseCode;
 
   @Schema(type = "string")
-  private final Optional<Throwable> failureReason;
+  private final Optional<String> failureReason;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   private final Optional<Bytes32> hash_tree_root;
 
   public ValidatorBlockResult(
       final int responseCode,
-      final Optional<Throwable> failureCause,
+      final Optional<String> failureCause,
       final Optional<Bytes32> hash_tree_root) {
     this.responseCode = responseCode;
     this.failureReason = failureCause;
@@ -41,7 +41,7 @@ public class ValidatorBlockResult {
     return responseCode;
   }
 
-  public Optional<Throwable> getFailureReason() {
+  public Optional<String> getFailureReason() {
     return failureReason;
   }
 

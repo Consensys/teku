@@ -95,6 +95,11 @@ public class SyncSourceBatch implements Batch {
   }
 
   @Override
+  public Optional<SyncSource> getSource() {
+    return currentSyncSource;
+  }
+
+  @Override
   public void markComplete() {
     complete = true;
   }

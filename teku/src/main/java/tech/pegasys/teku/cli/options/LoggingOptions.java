@@ -23,8 +23,9 @@ import tech.pegasys.teku.util.cli.VersionProvider;
 public class LoggingOptions {
 
   private static final String SEP = System.getProperty("file.separator");
-  public static final String DEFAULT_LOG_FILE =
-      StringUtils.joinWith(SEP, VersionProvider.defaultStoragePath(), "logs", "teku.log");
+  private static final String DEFAULT_LOG_DIR = VersionProvider.defaultStoragePath() + SEP + "logs";
+  public static final String DEFAULT_LOG_FILE = DEFAULT_LOG_DIR + SEP + "teku.log";
+  public static final String DEFAULT_VC_LOG_FILE = DEFAULT_LOG_DIR + SEP + "teku-validator.log";
   public static final String DEFAULT_LOG_FILE_NAME_PATTERN =
       StringUtils.joinWith(
           SEP, VersionProvider.defaultStoragePath(), "logs", "teku_%d{yyyy-MM-dd}.log");
@@ -110,6 +111,14 @@ public class LoggingOptions {
       fallbackValue = "true",
       arity = "0..1")
   private boolean logWireGossipEnabled = false;
+
+  public LoggingOptions() {
+    this(DEFAULT_LOG_FILE);
+  }
+
+  public LoggingOptions(final String defaultLogFile) {
+    this.logFile = defaultLogFile;
+  }
 
   public boolean isLogColorEnabled() {
     return logColorEnabled;

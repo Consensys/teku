@@ -60,15 +60,21 @@ public abstract class AbstractHandler implements Handler {
       SafeFuture<Optional<T>> future,
       ResultProcessor<T> resultProcessor,
       final T emptyResponse) {
+    handleOptionalResult(
+        ctx, future, resultProcessor, (__, error) -> SafeFuture.failedFuture(error), emptyResponse);
+  }
+
+  protected <T> void handleOptionalResult(
+      final Context ctx,
+      SafeFuture<Optional<T>> future,
+      ResultProcessor<T> resultProcessor,
+      ErrorProcessor errorProcessor,
+      final T emptyResponse) {
     ctx.result(
-        future.thenApplyChecked(
-            result -> {
-              if (result.isPresent()) {
-                return resultProcessor.process(ctx, result.get()).orElse(null);
-              } else {
-                return resultProcessor.process(ctx, emptyResponse).orElse(null);
-              }
-            }));
+        future
+            .thenApplyChecked(
+                result -> resultProcessor.process(ctx, result.orElse(emptyResponse)).orElse(null))
+            .exceptionallyCompose(error -> errorProcessor.handleError(ctx, error)));
   }
 
   protected <T> void handleOptionalResult(
@@ -91,6 +97,11 @@ public abstract class AbstractHandler implements Handler {
   @FunctionalInterface
   public interface ResultProcessor<T> {
     // Process result, returning an optional serialized response
-    Optional<String> process(final Context context, final T result) throws Exception;
+    Optional<String> process(Context context, T result) throws Exception;
+  }
+
+  @FunctionalInterface
+  public interface ErrorProcessor {
+    SafeFuture<String> handleError(Context context, Throwable t);
   }
 }

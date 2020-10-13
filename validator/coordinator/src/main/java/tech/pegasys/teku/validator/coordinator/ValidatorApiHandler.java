@@ -14,12 +14,14 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_beacon_proposer_index;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.getAggregatorModulo;
+import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 import static tech.pegasys.teku.util.config.Constants.GENESIS_SLOT;
 import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
@@ -43,6 +45,7 @@ import tech.pegasys.teku.core.CommitteeAssignmentUtil;
 import tech.pegasys.teku.core.StateTransition;
 import tech.pegasys.teku.core.exceptions.EpochProcessingException;
 import tech.pegasys.teku.core.exceptions.SlotProcessingException;
+import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
@@ -64,6 +67,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscrib
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.blockimport.BlockImportChannel;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.SyncState;
@@ -72,16 +76,25 @@ import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final Logger LOG = LogManager.getLogger();
+  /**
+   * Number of epochs ahead of the current head that duties can be requested. This provides some
+   * tolerance for validator clients clocks being slightly ahead while still limiting the number of
+   * empty slots that may need to be processed when calculating duties.
+   */
+  private static final int DUTY_EPOCH_TOLERANCE = 1;
+
   private final CombinedChainDataClient combinedChainDataClient;
   private final SyncStateTracker syncStateTracker;
   private final StateTransition stateTransition;
   private final BlockFactory blockFactory;
+  private final BlockImportChannel blockImportChannel;
   private final AggregatingAttestationPool attestationPool;
   private final AttestationManager attestationManager;
   private final AttestationTopicSubscriber attestationTopicSubscriber;
@@ -94,6 +107,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncStateTracker syncStateTracker,
       final StateTransition stateTransition,
       final BlockFactory blockFactory,
+      final BlockImportChannel blockImportChannel,
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
       final AttestationTopicSubscriber attestationTopicSubscriber,
@@ -104,6 +118,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncStateTracker = syncStateTracker;
     this.stateTransition = stateTransition;
     this.blockFactory = blockFactory;
+    this.blockImportChannel = blockImportChannel;
     this.attestationPool = attestationPool;
     this.attestationManager = attestationManager;
     this.attestationTopicSubscriber = attestationTopicSubscriber;
@@ -121,6 +136,24 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<UInt64>> getGenesisTime() {
     return SafeFuture.completedFuture(combinedChainDataClient.getGenesisTime());
+  }
+
+  @Override
+  public SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(
+      final List<BLSPublicKey> publicKeys) {
+    return SafeFuture.completedFuture(
+        combinedChainDataClient
+            .getBestState()
+            .map(
+                state -> {
+                  final Map<BLSPublicKey, Integer> results = new HashMap<>();
+                  publicKeys.forEach(
+                      publicKey ->
+                          ValidatorsUtil.getValidatorIndex(state, publicKey)
+                              .ifPresent(index -> results.put(publicKey, index)));
+                  return results;
+                })
+            .orElse(emptyMap()));
   }
 
   @Override
@@ -153,7 +186,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return SafeFuture.completedFuture(Optional.of(emptyList()));
     }
     if (epoch.isGreaterThan(
-        combinedChainDataClient.getCurrentEpoch().plus(Constants.MIN_SEED_LOOKAHEAD))) {
+        combinedChainDataClient
+            .getCurrentEpoch()
+            .plus(Constants.MIN_SEED_LOOKAHEAD + DUTY_EPOCH_TOLERANCE))) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
               String.format(
@@ -178,7 +213,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
-    if (epoch.isGreaterThan(combinedChainDataClient.getCurrentEpoch())) {
+    if (epoch.isGreaterThan(combinedChainDataClient.getCurrentEpoch().plus(DUTY_EPOCH_TOLERANCE))) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
               String.format(
@@ -363,9 +398,33 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void sendSignedBlock(final SignedBeaconBlock block) {
-    eventBus.post(new ProposedBlockEvent(block));
+  public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
     performanceTracker.saveProducedBlock(block);
+    eventBus.post(new ProposedBlockEvent(block));
+    return blockImportChannel
+        .importBlock(block)
+        .thenApply(
+            result -> {
+              if (result.isSuccessful()) {
+                LOG.trace(
+                    "Successfully imported proposed block: {}",
+                    () -> formatBlock(block.getSlot(), block.getRoot()));
+                return SendSignedBlockResult.success(block.getRoot());
+              } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
+                LOG.debug(
+                    "Delayed processing proposed block {} because it is from the future",
+                    formatBlock(block.getSlot(), block.getRoot()));
+                return SendSignedBlockResult.notImported(result.getFailureReason().name());
+              } else {
+                LOG.error(
+                    "Failed to import proposed block due to "
+                        + result.getFailureReason()
+                        + ": "
+                        + formatBlock(block.getSlot(), block.getRoot()),
+                    result.getFailureCause().orElse(null));
+                return SendSignedBlockResult.notImported(result.getFailureReason().name());
+              }
+            });
   }
 
   @VisibleForTesting

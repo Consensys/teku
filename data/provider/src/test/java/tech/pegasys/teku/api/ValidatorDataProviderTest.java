@@ -25,6 +25,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
@@ -46,20 +47,17 @@ import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.ValidatorDuties;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.core.results.FailedBlockImportResult;
-import tech.pegasys.teku.core.results.SuccessfulBlockImportResult;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorDataProviderTest {
@@ -70,9 +68,8 @@ public class ValidatorDataProviderTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private CombinedChainDataClient combinedChainDataClient = mock(CombinedChainDataClient.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
-  private final BlockImporter blockImporter = mock(BlockImporter.class);
   private ValidatorDataProvider provider =
-      new ValidatorDataProvider(validatorApiChannel, blockImporter, combinedChainDataClient);
+      new ValidatorDataProvider(validatorApiChannel, combinedChainDataClient);
   private final tech.pegasys.teku.datastructures.blocks.BeaconBlock blockInternal =
       dataStructureUtil.randomBeaconBlock(123);
   private final BeaconBlock block = new BeaconBlock(blockInternal);
@@ -118,7 +115,7 @@ public class ValidatorDataProviderTest {
   void getUnsignedBeaconBlockAtSlot_shouldCreateAnUnsignedBlock() {
     when(combinedChainDataClient.getCurrentSlot()).thenReturn(ZERO);
     when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal, Optional.empty()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blockInternal)));
+        .thenReturn(completedFuture(Optional.of(blockInternal)));
 
     SafeFuture<Optional<BeaconBlock>> data =
         provider.getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty());
@@ -141,7 +138,7 @@ public class ValidatorDataProviderTest {
   void getUnsignedAttestationAtSlot_shouldReturnEmptyIfBlockNotFound() {
     when(combinedChainDataClient.isStoreAvailable()).thenReturn(true);
     when(validatorApiChannel.createUnsignedAttestation(ZERO, 0))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+        .thenReturn(completedFuture(Optional.empty()));
 
     final SafeFuture<Optional<Attestation>> result =
         provider.createUnsignedAttestationAtSlot(ZERO, 0);
@@ -155,7 +152,7 @@ public class ValidatorDataProviderTest {
     final tech.pegasys.teku.datastructures.operations.Attestation internalAttestation =
         dataStructureUtil.randomAttestation();
     when(validatorApiChannel.createUnsignedAttestation(ONE, 0))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(internalAttestation)));
+        .thenReturn(completedFuture(Optional.of(internalAttestation)));
 
     final SafeFuture<Optional<Attestation>> result =
         provider.createUnsignedAttestationAtSlot(ONE, 0);
@@ -182,7 +179,7 @@ public class ValidatorDataProviderTest {
             List.of(new BLSPubKey(publicKey.toBytesCompressed())));
     when(validatorApiChannel.getDuties(smallRequest.epoch, List.of(publicKey)))
         .thenReturn(
-            SafeFuture.completedFuture(
+            completedFuture(
                 Optional.of(
                     List.of(tech.pegasys.teku.validator.api.ValidatorDuties.noDuties(publicKey)))));
 
@@ -223,7 +220,7 @@ public class ValidatorDataProviderTest {
     final UInt64 attestationSlot = UInt64.valueOf(50);
     when(validatorApiChannel.getDuties(smallRequest.epoch, List.of(publicKey)))
         .thenReturn(
-            SafeFuture.completedFuture(
+            completedFuture(
                 Optional.of(
                     List.of(
                         tech.pegasys.teku.validator.api.ValidatorDuties.withDuties(
@@ -300,11 +297,10 @@ public class ValidatorDataProviderTest {
     final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBeaconBlock =
         new tech.pegasys.teku.api.schema.SignedBeaconBlock(internalSignedBeaconBlock);
 
-    final SafeFuture<BlockImportResult> successImportResult =
-        SafeFuture.completedFuture(
-            new SuccessfulBlockImportResult(internalSignedBeaconBlock, Optional.empty()));
+    final SafeFuture<SendSignedBlockResult> successImportResult =
+        completedFuture(SendSignedBlockResult.success(internalSignedBeaconBlock.getRoot()));
 
-    when(blockImporter.importBlock(any())).thenReturn(successImportResult);
+    when(validatorApiChannel.sendSignedBlock(any())).thenReturn(successImportResult);
 
     final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
         provider.submitSignedBlock(signedBeaconBlock);
@@ -326,11 +322,10 @@ public class ValidatorDataProviderTest {
             failureReason -> {
               failReasonCount.getAndIncrement();
 
-              final SafeFuture<BlockImportResult> failImportResult =
-                  SafeFuture.completedFuture(
-                      new FailedBlockImportResult(failureReason, Optional.empty()));
+              final SafeFuture<SendSignedBlockResult> failImportResult =
+                  completedFuture(SendSignedBlockResult.notImported(failureReason.name()));
 
-              when(blockImporter.importBlock(any())).thenReturn(failImportResult);
+              when(validatorApiChannel.sendSignedBlock(any())).thenReturn(failImportResult);
 
               final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
                   provider.submitSignedBlock(signedBeaconBlock);
@@ -354,11 +349,10 @@ public class ValidatorDataProviderTest {
     final tech.pegasys.teku.api.schema.SignedBeaconBlock signedBeaconBlock =
         new tech.pegasys.teku.api.schema.SignedBeaconBlock(internalSignedBeaconBlock);
 
-    final SafeFuture<BlockImportResult> failImportResult =
-        SafeFuture.completedFuture(
-            new FailedBlockImportResult(FailureReason.INTERNAL_ERROR, Optional.empty()));
+    final SafeFuture<SendSignedBlockResult> failImportResult =
+        completedFuture(SendSignedBlockResult.rejected(FailureReason.INTERNAL_ERROR.name()));
 
-    when(blockImporter.importBlock(any())).thenReturn(failImportResult);
+    when(validatorApiChannel.sendSignedBlock(any())).thenReturn(failImportResult);
 
     final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
         provider.submitSignedBlock(signedBeaconBlock);
@@ -381,7 +375,7 @@ public class ValidatorDataProviderTest {
     AttesterDuties v1 = new AttesterDuties(BLSPublicKey.random(0), 1, 2, 3, 4, ONE);
     AttesterDuties v2 = new AttesterDuties(BLSPublicKey.random(1), 11, 12, 13, 14, ZERO);
     when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(v1, v2))));
+        .thenReturn(completedFuture(Optional.of(List.of(v1, v2))));
 
     final SafeFuture<Optional<List<AttesterDuty>>> future =
         provider.getAttesterDuties(ONE, List.of(1, 11));

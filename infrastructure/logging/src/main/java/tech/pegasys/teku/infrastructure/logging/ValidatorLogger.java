@@ -34,6 +34,19 @@ public class ValidatorLogger {
     this.log = LogManager.getLogger(name);
   }
 
+  public void connectedToBeaconNode() {
+    log.info(
+        ColorConsolePrinter.print(
+            "Validator   *** Successfully connected to beacon chain event stream", Color.GREEN));
+  }
+
+  public void beaconNodeConnectionError(final Throwable t) {
+    log.error(
+        ColorConsolePrinter.print(
+            "Validator   *** Error while connecting to beacon node event stream", Color.RED),
+        t);
+  }
+
   public void dutyCompleted(
       final String producedType,
       final UInt64 slot,

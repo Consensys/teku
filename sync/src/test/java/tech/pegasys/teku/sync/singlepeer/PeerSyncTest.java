@@ -96,6 +96,11 @@ public class PeerSyncTest extends AbstractSyncTest {
   }
 
   @Test
+  void sync_failedImport_failedWeakSubjectivityChecks() {
+    testFailedBlockImport(() -> BlockImportResult.FAILED_WEAK_SUBJECTIVITY_CHECKS, true);
+  }
+
+  @Test
   void sync_failedImport_unknownAncestry() {
     testFailedBlockImport(() -> BlockImportResult.FAILED_INVALID_ANCESTRY, false);
   }

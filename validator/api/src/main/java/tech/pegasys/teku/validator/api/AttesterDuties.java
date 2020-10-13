@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.api;
 
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -84,5 +85,17 @@ public class AttesterDuties {
 
   public UInt64 getSlot() {
     return slot;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("publicKey", publicKey)
+        .add("validatorIndex", validatorIndex)
+        .add("committeeLength", committeeLength)
+        .add("committeeIndex", committeeIndex)
+        .add("validatorCommitteeIndex", validatorCommitteeIndex)
+        .add("slot", slot)
+        .toString();
   }
 }
