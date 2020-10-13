@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.ethtests.finder.BlsTestFinder.BLS_DATA_FILE;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
@@ -56,6 +57,7 @@ public class BlsFastAggregateVerifyTestExecutor implements TestExecutor {
     private List<String> publicKeys;
 
     @JsonProperty(value = "message", required = true)
+    @JsonAlias({"messages"})
     private String message;
 
     @JsonProperty(value = "signature", required = true)
