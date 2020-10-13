@@ -19,6 +19,7 @@ import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import tech.pegasys.teku.api.schema.Validator;
@@ -64,7 +65,7 @@ public class ValidatorResponse {
     final UInt64 current_epoch = compute_epoch_at_slot(state.getSlot());
     return new ValidatorResponse(
         UInt64.valueOf(index),
-        validatorInternal.getEffective_balance(),
+        state.getBalances().get(index),
         getValidatorStatus(current_epoch, validatorInternal),
         new Validator(validatorInternal));
   }
@@ -119,5 +120,15 @@ public class ValidatorResponse {
   @Override
   public int hashCode() {
     return Objects.hash(index, balance, status, validator);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("index", index)
+        .add("balance", balance)
+        .add("status", status)
+        .add("validator", validator)
+        .toString();
   }
 }
