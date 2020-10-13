@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.logging;
 
 import static java.util.stream.Collectors.joining;
+import static tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.print;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -208,10 +209,11 @@ public class StatusLogger {
 
   public void finalizedCheckpointOutsideOfWeakSubjectivityPeriod(
       Level level, final UInt64 latestFinalizedCheckpointEpoch) {
-    log.log(
-        level,
-        "The latest finalized checkpoint at epoch {} is outside of the weak subjectivity period.  Please supply a recent weak subjectivity checkpoint using --ws-checkpoint=<BLOCK_ROOT>:<EPOCH>.",
-        latestFinalizedCheckpointEpoch);
+    final String msg =
+        String.format(
+            "The latest finalized checkpoint at epoch %s is outside of the weak subjectivity period.  Please supply a recent weak subjectivity checkpoint using --ws-checkpoint=<BLOCK_ROOT>:<EPOCH>.",
+            latestFinalizedCheckpointEpoch);
+    log.log(level, print(msg, ColorConsolePrinter.Color.RED));
   }
 
   public void chainInconsistentWithWeakSubjectivityCheckpoint(
