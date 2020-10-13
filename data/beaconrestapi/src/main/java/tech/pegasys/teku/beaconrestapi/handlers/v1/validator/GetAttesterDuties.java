@@ -117,11 +117,9 @@ public class GetAttesterDuties extends AbstractHandler implements Handler {
       final UInt64 currentEpoch = chainDataProvider.getCurrentEpoch();
       if (currentEpoch.plus(Constants.MIN_SEED_LOOKAHEAD).isLessThan(epoch)) {
         ctx.result(
-            jsonProvider.objectToJSON(
-                new BadRequest(
-                    "Cannot get attester duties for "
-                        + epoch.minus(currentEpoch)
-                        + " epochs ahead")));
+            BadRequest.badRequest(
+                jsonProvider,
+                "Cannot get attester duties for " + epoch.minus(currentEpoch) + " epochs ahead"));
         ctx.status(SC_BAD_REQUEST);
         return;
       }

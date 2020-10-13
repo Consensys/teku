@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.apiclient;
 
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -73,7 +74,7 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_FORK.getPath());
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_FORK.getPath(emptyMap()));
   }
 
   @Test
@@ -113,7 +114,7 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_GENESIS.getPath());
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_GENESIS.getPath(emptyMap()));
   }
 
   @Test
@@ -153,7 +154,7 @@ class OkHttpValidatorRestApiClientTest {
 
     final RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_VALIDATORS.getPath());
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_VALIDATORS.getPath(emptyMap()));
     // %2C is ,
     assertThat(request.getPath()).contains("?validator_id=1%2C0x1234");
   }
@@ -199,7 +200,7 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("POST");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_DUTIES.getPath());
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_DUTIES.getPath(emptyMap()));
     assertThat(request.getBody().readString(StandardCharsets.UTF_8))
         .isEqualTo(asJson(validatorDutiesRequest));
   }
@@ -260,7 +261,7 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_UNSIGNED_BLOCK.getPath());
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_UNSIGNED_BLOCK.getPath(emptyMap()));
     assertThat(request.getRequestUrl().queryParameter("slot")).isEqualTo(slot.toString());
     assertThat(request.getRequestUrl().queryParameter("randao_reveal"))
         .isEqualTo(blsSignature.toHexString());
@@ -319,7 +320,7 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("POST");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.SEND_SIGNED_BLOCK.getPath());
+    assertThat(request.getPath()).contains(ValidatorApiMethod.SEND_SIGNED_BLOCK.getPath(emptyMap()));
     assertThat(request.getBody().readString(StandardCharsets.UTF_8))
         .isEqualTo(asJson(signedBeaconBlock));
   }
@@ -376,7 +377,7 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_UNSIGNED_ATTESTATION.getPath());
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_UNSIGNED_ATTESTATION.getPath(emptyMap()));
     assertThat(request.getRequestUrl().queryParameter("slot")).isEqualTo(slot.toString());
     assertThat(request.getRequestUrl().queryParameter("committee_index"))
         .isEqualTo(String.valueOf(committeeIndex));
@@ -429,7 +430,7 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("POST");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION.getPath());
+    assertThat(request.getPath()).contains(ValidatorApiMethod.SEND_SIGNED_ATTESTATION.getPath(emptyMap()));
     assertThat(request.getBody().readString(StandardCharsets.UTF_8)).isEqualTo(asJson(attestation));
   }
 
@@ -465,7 +466,7 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_AGGREGATE.getPath());
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_AGGREGATE.getPath(emptyMap()));
     assertThat(request.getRequestUrl().queryParameter("slot")).isEqualTo(slot.toString());
     assertThat(request.getRequestUrl().queryParameter("attestation_data_root"))
         .isEqualTo(attestationHashTreeRoot.toHexString());
@@ -517,7 +518,7 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThat(request.getMethod()).isEqualTo("POST");
     assertThat(request.getPath())
-        .contains(ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF.getPath());
+        .contains(ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF.getPath(emptyMap()));
     assertThat(request.getBody().readString(StandardCharsets.UTF_8))
         .isEqualTo(asJson(signedAggregateAndProof));
   }
@@ -558,7 +559,7 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThat(request.getMethod()).isEqualTo("POST");
     assertThat(request.getPath())
-        .contains(ValidatorApiMethod.SUBSCRIBE_TO_COMMITTEE_FOR_AGGREGATION.getPath());
+        .contains(ValidatorApiMethod.SUBSCRIBE_TO_COMMITTEE_FOR_AGGREGATION.getPath(emptyMap()));
     assertThat(request.getBody().readString(StandardCharsets.UTF_8))
         .isEqualTo(asJson(expectedRequest));
   }
@@ -600,7 +601,7 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThat(request.getMethod()).isEqualTo("POST");
     assertThat(request.getPath())
-        .contains(ValidatorApiMethod.SUBSCRIBE_TO_PERSISTENT_SUBNETS.getPath());
+        .contains(ValidatorApiMethod.SUBSCRIBE_TO_PERSISTENT_SUBNETS.getPath(emptyMap()));
     assertThat(request.getBody().readString(StandardCharsets.UTF_8))
         .isEqualTo(asJson(subnetSubscriptions));
   }
