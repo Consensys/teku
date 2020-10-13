@@ -160,7 +160,7 @@ public class BlockManagerTest {
 
     incrementSlot();
     incrementSlot();
-    blockManager.onGossipedBlock(new GossipedBlockEvent(nextNextBlock));
+    blockManager.importBlockIgnoringResult(nextNextBlock);
     ignoreFuture(verify(blockImporter).importBlock(nextNextBlock));
 
     // Before nextNextBlock imports, it's parent becomes available

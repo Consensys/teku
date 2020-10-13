@@ -13,13 +13,8 @@
 
 package tech.pegasys.teku.sync.gossip;
 
-import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
-
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -29,7 +24,6 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.blockimport.BlockImportChannel;
 import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
@@ -38,6 +32,12 @@ import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 
 public class BlockManager extends Service implements SlotEventsChannel, BlockImportChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -90,12 +90,6 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
     return recentBlockFetcher.stop();
   }
 
-  @Subscribe
-  @SuppressWarnings("unused")
-  void onGossipedBlock(GossipedBlockEvent gossipedBlockEvent) {
-    importBlockIgnoringResult(gossipedBlockEvent.getBlock());
-  }
-
   @Override
   public SafeFuture<BlockImportResult> importBlock(final SignedBeaconBlock block) {
     LOG.trace("Preparing to import block: {}", () -> formatBlock(block.getSlot(), block.getRoot()));
@@ -121,7 +115,7 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
     children.forEach(this::importBlockIgnoringResult);
   }
 
-  private void importBlockIgnoringResult(final SignedBeaconBlock block) {
+  public void importBlockIgnoringResult(final SignedBeaconBlock block) {
     doImportBlock(block).reportExceptions();
   }
 

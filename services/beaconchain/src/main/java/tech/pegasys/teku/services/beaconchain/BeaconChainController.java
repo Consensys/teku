@@ -548,7 +548,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .eth2Config(eth2Config)
               .eventBus(eventBus)
               .recentChainData(recentChainData)
-              .gossipedBlockConsumer(blockManager::importBlock)
+              .gossipedBlockConsumer(blockManager::importBlockIgnoringResult)
               .gossipedAttestationConsumer(
                   attestation ->
                       attestationManager
