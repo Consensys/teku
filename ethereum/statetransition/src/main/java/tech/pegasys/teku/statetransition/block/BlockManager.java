@@ -13,8 +13,13 @@
 
 package tech.pegasys.teku.statetransition.block;
 
+import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
+
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -33,12 +38,6 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
-
 public class BlockManager extends Service implements SlotEventsChannel, BlockImportChannel {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -49,7 +48,8 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
 
   private final FutureItems<SignedBeaconBlock> futureBlocks;
   private final Set<Bytes32> invalidBlockRoots = LimitedSet.create(500);
-  private final Subscribers<ReceivedBlockListener> receivedBlockSubscribers = Subscribers.create(true);
+  private final Subscribers<ReceivedBlockListener> receivedBlockSubscribers =
+      Subscribers.create(true);
 
   BlockManager(
       final EventBus eventBus,
@@ -98,8 +98,7 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
     futureBlocks.prune(slot).forEach(this::importBlockIgnoringResult);
   }
 
-  public void subscribeToReceivedBlocks(
-          ReceivedBlockListener receivedBlockListener) {
+  public void subscribeToReceivedBlocks(ReceivedBlockListener receivedBlockListener) {
     receivedBlockSubscribers.subscribe(receivedBlockListener);
   }
 
