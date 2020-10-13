@@ -39,7 +39,9 @@ public class ValidatorClientOptions {
       return new URI(beaconNodeApiEndpoint);
     } catch (URISyntaxException e) {
       throw new InvalidConfigurationException(
-          "Invalid configuration. Beacon node API endpoint has invalid syntax", e);
+          "Invalid configuration. Beacon node API endpoint is not a valid URL: "
+              + beaconNodeApiEndpoint,
+          e);
     }
   }
 }
