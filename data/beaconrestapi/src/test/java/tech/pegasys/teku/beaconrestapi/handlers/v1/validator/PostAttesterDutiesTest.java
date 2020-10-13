@@ -33,12 +33,12 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class GetAttesterDutiesTest extends AbstractValidatorApiTest {
+public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
 
   @BeforeEach
   public void setup() {
     handler =
-        new GetAttesterDuties(
+        new PostAttesterDuties(
             chainDataProvider, syncDataProvider, validatorDataProvider, jsonProvider);
   }
 
@@ -48,7 +48,7 @@ public class GetAttesterDutiesTest extends AbstractValidatorApiTest {
     when(syncService.isSyncActive()).thenReturn(false);
     when(chainDataProvider.getCurrentEpoch()).thenReturn(UInt64.valueOf(99));
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
-    when(context.queryParamMap()).thenReturn(Map.of("index", List.of("2")));
+    when(context.body()).thenReturn("[\"2\"]");
     when(validatorDataProvider.getAttesterDuties(eq(UInt64.valueOf(100)), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
@@ -63,7 +63,7 @@ public class GetAttesterDutiesTest extends AbstractValidatorApiTest {
     when(syncService.isSyncActive()).thenReturn(false);
     when(chainDataProvider.getCurrentEpoch()).thenReturn(UInt64.valueOf(99));
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
-    when(context.queryParamMap()).thenReturn(Map.of("index", List.of("2")));
+    when(context.body()).thenReturn("[\"2\"]");
     List<AttesterDuty> duties =
         List.of(getDuty(2, 1, 2, 3, compute_start_slot_at_epoch(UInt64.valueOf(100))));
     when(validatorDataProvider.getAttesterDuties(eq(UInt64.valueOf(100)), any()))
