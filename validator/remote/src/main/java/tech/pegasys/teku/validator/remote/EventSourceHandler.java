@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.remote;
 
+import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.launchdarkly.eventsource.EventHandler;
 import com.launchdarkly.eventsource.MessageEvent;
@@ -37,7 +39,7 @@ class EventSourceHandler implements EventHandler {
 
   @Override
   public void onOpen() {
-    LOG.info("Successfully connected to beacon chain event stream");
+    VALIDATOR_LOGGER.connectedToBeaconNode();
     // We might have missed some events while connecting or reconnected so ensure the duties are
     // recalculated
     validatorTimingChannel.onPossibleMissedEvents();
@@ -94,6 +96,6 @@ class EventSourceHandler implements EventHandler {
 
   @Override
   public void onError(final Throwable t) {
-    LOG.warn("Received error from beacon node event stream", t);
+    VALIDATOR_LOGGER.beaconNodeConnectionError(t);
   }
 }
