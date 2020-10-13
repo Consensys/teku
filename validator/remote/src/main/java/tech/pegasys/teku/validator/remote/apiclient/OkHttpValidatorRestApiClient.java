@@ -28,7 +28,6 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SU
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_PERSISTENT_SUBNETS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -64,6 +63,7 @@ import tech.pegasys.teku.api.schema.ValidatorDuties;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
@@ -77,12 +77,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   private final OkHttpClient httpClient;
   private final HttpUrl baseEndpoint;
 
-  public OkHttpValidatorRestApiClient(final String baseEndpoint) {
-    this(HttpUrl.parse(baseEndpoint), new OkHttpClient());
-  }
-
-  @VisibleForTesting
-  OkHttpValidatorRestApiClient(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
+  public OkHttpValidatorRestApiClient(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
     this.baseEndpoint = baseEndpoint;
     this.httpClient = okHttpClient;
   }
@@ -135,8 +130,11 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public void sendSignedBlock(final SignedBeaconBlock beaconBlock) {
-    post(SEND_SIGNED_BLOCK, beaconBlock, null);
+  public SendSignedBlockResult sendSignedBlock(final SignedBeaconBlock beaconBlock) {
+    return post(SEND_SIGNED_BLOCK, beaconBlock, String.class)
+        .map(Bytes32::fromHexString)
+        .map(SendSignedBlockResult::success)
+        .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
   }
 
   @Override
@@ -262,8 +260,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
           }
       }
     } catch (IOException e) {
-      LOG.error("Error communicating with Beacon Node API", e);
-      throw new RuntimeException(e);
+      throw new RuntimeException("Error communicating with Beacon Node API: " + e.getMessage(), e);
     }
   }
 

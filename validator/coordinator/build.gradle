@@ -23,6 +23,7 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-config'
   implementation 'org.apache.tuweni:tuweni-ssz'
 
+  testImplementation project(':data')
   testImplementation testFixtures(project(':ethereum:datastructures'))
   testImplementation testFixtures(project(':ethereum:statetransition'))
   testImplementation testFixtures(project(':ethereum:core'))

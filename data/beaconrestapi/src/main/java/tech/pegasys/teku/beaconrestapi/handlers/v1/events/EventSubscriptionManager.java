@@ -27,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
+import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.FinalizedCheckpointEvent;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
@@ -62,7 +63,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   }
 
   public void registerClient(final SseClient sseClient) {
-    LOG.info("connected " + sseClient.hashCode());
+    LOG.trace("connected " + sseClient.hashCode());
     final List<String> allTopicsInContext =
         ListQueryParameterUtils.getParameterAsStringList(sseClient.ctx.queryParamMap(), TOPICS);
     final EventSubscriber subscriber =
@@ -71,7 +72,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
             sseClient,
             () -> {
               eventSubscribers.removeIf(sub -> sub.getSseClient().equals(sseClient));
-              LOG.info("disconnected " + sseClient.hashCode());
+              LOG.trace("disconnected " + sseClient.hashCode());
             },
             asyncRunner);
     eventSubscribers.add(subscriber);

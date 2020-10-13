@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.cli.converter.CheckpointConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -51,7 +52,8 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
     String str = getCommandLineOutput();
     assertThat(str)
         .contains(
-            "Weak subjectivity checkpoint arguments should be formatted as: <blockRoot>:<epochNumber> where blockRoot is a hex-encoded 32 byte value and epochNumber is a number in decimal format");
+            "Invalid value for option '--Xweak-subjectivity-checkpoint': "
+                + CheckpointConverter.CHECKPOINT_ERROR);
     assertThat(str).contains("To display full help:");
     assertThat(str).contains("--help");
     assertThat(result).isGreaterThan(0);

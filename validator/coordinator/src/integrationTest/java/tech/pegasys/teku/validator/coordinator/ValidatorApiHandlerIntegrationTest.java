@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.blockimport.BlockImportChannel;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -62,6 +63,7 @@ public class ValidatorApiHandlerIntegrationTest {
       mock(AttestationTopicSubscriber.class);
   private final DefaultPerformanceTracker performanceTracker =
       mock(DefaultPerformanceTracker.class);
+  private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
 
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   private final ValidatorApiHandler handler =
@@ -70,6 +72,7 @@ public class ValidatorApiHandlerIntegrationTest {
           syncStateTracker,
           stateTransition,
           blockFactory,
+          blockImportChannel,
           attestationPool,
           attestationManager,
           attestationTopicSubscriber,

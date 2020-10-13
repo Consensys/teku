@@ -18,7 +18,6 @@ dependencies {
   implementation project(':services:beaconchain')
   implementation project(':services:chainstorage')
   implementation project(':services:powchain')
-  implementation project(':services:remote-validator')
   implementation project(':services:serviceutils')
   implementation project(':services:timer')
   implementation project(':storage')

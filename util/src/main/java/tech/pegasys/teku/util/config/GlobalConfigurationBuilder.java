@@ -82,14 +82,9 @@ public class GlobalConfigurationBuilder {
   private String restApiInterface;
   private List<String> restApiHostAllowlist;
   private NetworkDefinition network;
-  private String remoteValidatorApiInterface;
-  private int remoteValidatorApiPort;
-  private int remoteValidatorApiMaxSubscribers;
-  private boolean remoteValidatorApiEnabled;
   private Path validatorsSlashingProtectionPath;
   private boolean isValidatorClient;
   private String beaconNodeApiEndpoint;
-  private String beaconNodeEventsWsEndpoint;
 
   public GlobalConfigurationBuilder setConstants(final String constants) {
     this.constants = constants;
@@ -378,26 +373,6 @@ public class GlobalConfigurationBuilder {
     return this;
   }
 
-  public GlobalConfigurationBuilder setRemoteValidatorApiInterface(final String host) {
-    this.remoteValidatorApiInterface = host;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setRemoteValidatorApiPort(final int port) {
-    this.remoteValidatorApiPort = port;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setRemoteValidatorApiMaxSubscribers(final int maxSubscribers) {
-    this.remoteValidatorApiMaxSubscribers = maxSubscribers;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setRemoteValidatorApiEnabled(final boolean enabled) {
-    this.remoteValidatorApiEnabled = enabled;
-    return this;
-  }
-
   public GlobalConfigurationBuilder setNetwork(final NetworkDefinition network) {
     this.network = network;
     return this;
@@ -416,12 +391,6 @@ public class GlobalConfigurationBuilder {
 
   public GlobalConfigurationBuilder setBeaconNodeApiEndpoint(final String beaconNodeApiEndpoint) {
     this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setBeaconNodeEventsWsEndpoint(
-      final String beaconNodeEventsWsEndpoint) {
-    this.beaconNodeEventsWsEndpoint = beaconNodeEventsWsEndpoint;
     return this;
   }
 
@@ -499,14 +468,9 @@ public class GlobalConfigurationBuilder {
         restApiEnabled,
         restApiInterface,
         restApiHostAllowlist,
-        remoteValidatorApiInterface,
-        remoteValidatorApiPort,
-        remoteValidatorApiMaxSubscribers,
-        remoteValidatorApiEnabled,
         validatorsSlashingProtectionPath,
         isValidatorClient,
-        beaconNodeApiEndpoint,
-        beaconNodeEventsWsEndpoint);
+        beaconNodeApiEndpoint);
   }
 
   private <T> T getOrDefault(final T explicitValue, final Supplier<T> predefinedNetworkValue) {

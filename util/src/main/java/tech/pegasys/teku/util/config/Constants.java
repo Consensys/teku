@@ -186,7 +186,6 @@ public class Constants {
             "mainnet",
             "minimal",
             "swift",
-            "altona",
             "medalla",
             "spadina",
             "zinken")

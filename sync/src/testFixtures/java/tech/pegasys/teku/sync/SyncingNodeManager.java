@@ -98,7 +98,7 @@ public class SyncingNodeManager {
             recentChainData, forkChoice, WeakSubjectivityValidator.lenient(), eventBus);
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
     final FutureItems<SignedBeaconBlock> futureBlocks =
-        new FutureItems<>(SignedBeaconBlock::getSlot);
+        FutureItems.create(SignedBeaconBlock::getSlot);
     final FetchRecentBlocksService recentBlockFetcher =
         FetchRecentBlocksService.create(asyncRunner, eth2Network, pendingBlocks);
     BlockManager blockManager =
