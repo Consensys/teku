@@ -16,11 +16,13 @@ package tech.pegasys.teku.beaconrestapi;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.HostAllowlistUtils.isHostAuthorized;
 
 import com.google.common.base.Throwables;
 import com.google.common.io.Resources;
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import io.javalin.http.ForbiddenResponse;
 import io.javalin.plugin.openapi.OpenApiOptions;
 import io.javalin.plugin.openapi.OpenApiPlugin;
@@ -80,13 +82,16 @@ import tech.pegasys.teku.beaconrestapi.handlers.validator.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToBeaconCommittee;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToPersistentSubnets;
+import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
+import tech.pegasys.teku.validator.api.NodeSyncingException;
 
 public class BeaconRestApi {
 
@@ -162,17 +167,30 @@ public class BeaconRestApi {
   }
 
   private void addExceptionHandlers() {
+    app.exception(ChainDataUnavailableException.class, (e, ctx) -> ctx.status(SC_NO_CONTENT));
     app.exception(
-        ChainDataUnavailableException.class,
+        NodeSyncingException.class,
         (e, ctx) -> {
-          ctx.status(SC_NO_CONTENT);
+          ctx.status(SC_SERVICE_UNAVAILABLE);
+          setErrorBody(ctx, () -> BadRequest.serviceUnavailable(jsonProvider));
         });
     // Add catch-all handler
     app.exception(
         Exception.class,
         (e, ctx) -> {
+          LOG.error("Failed to process request to URL {}", ctx.url(), e);
           ctx.status(SC_INTERNAL_SERVER_ERROR);
+          setErrorBody(
+              ctx, () -> BadRequest.internalError(jsonProvider, "An unexpected error occurred"));
         });
+  }
+
+  private void setErrorBody(final Context ctx, final ExceptionThrowingSupplier<String> body) {
+    try {
+      ctx.result(body.get());
+    } catch (final Throwable e) {
+      LOG.error("Failed to serialize internal server error response", e);
+    }
   }
 
   public BeaconRestApi(

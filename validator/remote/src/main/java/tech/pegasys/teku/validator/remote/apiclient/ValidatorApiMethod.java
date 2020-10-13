@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.remote.apiclient;
 
+import java.util.Map;
+
 public enum ValidatorApiMethod {
   GET_FORK("node/fork"),
   GET_GENESIS("eth/v1/beacon/genesis"),
@@ -36,7 +38,11 @@ public enum ValidatorApiMethod {
     this.path = path;
   }
 
-  public String getPath() {
-    return path;
+  public String getPath(final Map<String, String> urlParams) {
+    String result = path;
+    for (final Map.Entry<String, String> param : urlParams.entrySet()) {
+      result = result.replace(":" + param.getKey(), param.getValue());
+    }
+    return result;
   }
 }

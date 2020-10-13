@@ -31,13 +31,14 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.validator.api.ValidatorDuties;
+import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.duties.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
@@ -49,59 +50,68 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
           metricsSystem,
           new RetryingDutyLoader(
               asyncRunner,
-              new ValidatorApiDutyLoader(
-                  metricsSystem,
+              new AttestationDutyLoader(
                   validatorApiChannel,
                   forkProvider,
                   () -> new ScheduledDuties(dutyFactory),
-                  Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))),
+                  Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
+                  validatorIndexProvider)),
           stableSubnetSubscriber);
+
+  @BeforeEach
+  public void init() {
+    when(validatorApiChannel.getAttestationDuties(any(), any()))
+        .thenReturn(completedFuture(Optional.of(emptyList())));
+  }
 
   @Test
   public void shouldFetchDutiesForCurrentAndNextEpoch() {
+    when(validatorApiChannel.getAttestationDuties(any(), any()))
+        .thenReturn(completedFuture(Optional.of(emptyList())));
+
     dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.ONE));
 
-    verify(validatorApiChannel).getDuties(UInt64.ONE, VALIDATOR_KEYS);
-    verify(validatorApiChannel).getDuties(UInt64.valueOf(2), VALIDATOR_KEYS);
+    verify(validatorApiChannel).getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES);
+    verify(validatorApiChannel).getAttestationDuties(UInt64.valueOf(2), VALIDATOR_INDICES);
   }
 
   @Test
   public void shouldFetchDutiesForSecondEpochWhenFirstEpochReached() {
     dutyScheduler.onSlot(ZERO);
 
-    verify(validatorApiChannel).getDuties(ZERO, VALIDATOR_KEYS);
-    verify(validatorApiChannel).getDuties(UInt64.ONE, VALIDATOR_KEYS);
+    verify(validatorApiChannel).getAttestationDuties(ZERO, VALIDATOR_INDICES);
+    verify(validatorApiChannel).getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES);
 
     // Process each slot up to the start of epoch 1
     final UInt64 epoch1Start = compute_start_slot_at_epoch(UInt64.ONE);
     for (int slot = 0; slot <= epoch1Start.intValue(); slot++) {
       dutyScheduler.onSlot(UInt64.valueOf(slot));
     }
-    verify(validatorApiChannel).getDuties(UInt64.valueOf(2), VALIDATOR_KEYS);
+    verify(validatorApiChannel).getAttestationDuties(UInt64.valueOf(2), VALIDATOR_INDICES);
   }
 
   @Test
   public void shouldNotRefetchDutiesWhichHaveAlreadyBeenRetrieved() {
-    when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
+    when(validatorApiChannel.getAttestationDuties(any(), any())).thenReturn(new SafeFuture<>());
     dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.ONE));
 
-    verify(validatorApiChannel).getDuties(UInt64.ONE, VALIDATOR_KEYS);
-    verify(validatorApiChannel).getDuties(UInt64.valueOf(2), VALIDATOR_KEYS);
+    verify(validatorApiChannel).getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES);
+    verify(validatorApiChannel).getAttestationDuties(UInt64.valueOf(2), VALIDATOR_INDICES);
 
     dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(2)));
 
     // Requests the next epoch, but not the current one because we already have that
-    verify(validatorApiChannel).getDuties(UInt64.valueOf(3), VALIDATOR_KEYS);
+    verify(validatorApiChannel).getAttestationDuties(UInt64.valueOf(3), VALIDATOR_INDICES);
     verifyNoMoreInteractions(validatorApiChannel);
   }
 
   @Test
   public void shouldNotRefetchDutiesWhichHaveAlreadyBeenRetrievedDuringFirstEpoch() {
-    when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
+    when(validatorApiChannel.getAttestationDuties(any(), any())).thenReturn(new SafeFuture<>());
     dutyScheduler.onSlot(ZERO);
 
-    verify(validatorApiChannel).getDuties(ZERO, VALIDATOR_KEYS);
-    verify(validatorApiChannel).getDuties(ONE, VALIDATOR_KEYS);
+    verify(validatorApiChannel).getAttestationDuties(ZERO, VALIDATOR_INDICES);
+    verify(validatorApiChannel).getAttestationDuties(ONE, VALIDATOR_INDICES);
 
     // Second slot in epoch 0
     dutyScheduler.onSlot(ONE);
@@ -112,21 +122,21 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
 
   @Test
   public void shouldRetryWhenRequestingDutiesFails() {
-    final SafeFuture<Optional<List<ValidatorDuties>>> request1 = new SafeFuture<>();
-    final SafeFuture<Optional<List<ValidatorDuties>>> request2 = new SafeFuture<>();
-    when(validatorApiChannel.getDuties(UInt64.ONE, VALIDATOR_KEYS))
+    final SafeFuture<Optional<List<AttesterDuties>>> request1 = new SafeFuture<>();
+    final SafeFuture<Optional<List<AttesterDuties>>> request2 = new SafeFuture<>();
+    when(validatorApiChannel.getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES))
         .thenReturn(request1)
         .thenReturn(request2);
 
     dutyScheduler.onSlot(compute_start_slot_at_epoch(UInt64.ONE));
-    verify(validatorApiChannel, times(1)).getDuties(UInt64.ONE, VALIDATOR_KEYS);
+    verify(validatorApiChannel, times(1)).getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES);
 
     request1.completeExceptionally(new RuntimeException("Nope"));
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
 
     // Should retry request
-    verify(validatorApiChannel, times(2)).getDuties(UInt64.ONE, VALIDATOR_KEYS);
+    verify(validatorApiChannel, times(2)).getAttestationDuties(UInt64.ONE, VALIDATOR_INDICES);
 
     // And not have any more retries scheduled
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
@@ -139,16 +149,16 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final UInt64 nextEpoch = currentEpoch.plus(1);
     final UInt64 commonAncestorEpoch = currentEpoch.minus(2);
     final UInt64 commonAncestorSlot = compute_start_slot_at_epoch(commonAncestorEpoch);
-    when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
+    when(validatorApiChannel.getAttestationDuties(any(), any())).thenReturn(new SafeFuture<>());
     dutyScheduler.onSlot(currentSlot);
 
-    verify(validatorApiChannel).getDuties(currentEpoch, VALIDATOR_KEYS);
-    verify(validatorApiChannel).getDuties(nextEpoch, VALIDATOR_KEYS);
+    verify(validatorApiChannel).getAttestationDuties(currentEpoch, VALIDATOR_INDICES);
+    verify(validatorApiChannel).getAttestationDuties(nextEpoch, VALIDATOR_INDICES);
 
     dutyScheduler.onChainReorg(currentSlot, commonAncestorSlot);
 
-    verify(validatorApiChannel, times(2)).getDuties(currentEpoch, VALIDATOR_KEYS);
-    verify(validatorApiChannel, times(2)).getDuties(nextEpoch, VALIDATOR_KEYS);
+    verify(validatorApiChannel, times(2)).getAttestationDuties(currentEpoch, VALIDATOR_INDICES);
+    verify(validatorApiChannel, times(2)).getAttestationDuties(nextEpoch, VALIDATOR_INDICES);
     verifyNoMoreInteractions(validatorApiChannel);
   }
 
@@ -159,15 +169,15 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final UInt64 nextEpoch = currentEpoch.plus(1);
     final UInt64 commonAncestorEpoch = currentEpoch.minus(1);
     final UInt64 commonAncestorSlot = compute_start_slot_at_epoch(commonAncestorEpoch);
-    when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
+    when(validatorApiChannel.getAttestationDuties(any(), any())).thenReturn(new SafeFuture<>());
     dutyScheduler.onSlot(currentSlot);
 
-    verify(validatorApiChannel).getDuties(currentEpoch, VALIDATOR_KEYS);
-    verify(validatorApiChannel).getDuties(nextEpoch, VALIDATOR_KEYS);
+    verify(validatorApiChannel).getAttestationDuties(currentEpoch, VALIDATOR_INDICES);
+    verify(validatorApiChannel).getAttestationDuties(nextEpoch, VALIDATOR_INDICES);
 
     dutyScheduler.onChainReorg(currentSlot, commonAncestorSlot);
 
-    verify(validatorApiChannel, times(2)).getDuties(nextEpoch, VALIDATOR_KEYS);
+    verify(validatorApiChannel, times(2)).getAttestationDuties(nextEpoch, VALIDATOR_INDICES);
     verifyNoMoreInteractions(validatorApiChannel);
   }
 
@@ -177,11 +187,11 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
     final UInt64 nextEpoch = currentEpoch.plus(1);
     final UInt64 commonAncestorSlot = compute_start_slot_at_epoch(currentEpoch);
-    when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
+    when(validatorApiChannel.getAttestationDuties(any(), any())).thenReturn(new SafeFuture<>());
     dutyScheduler.onSlot(currentSlot);
 
-    verify(validatorApiChannel).getDuties(currentEpoch, VALIDATOR_KEYS);
-    verify(validatorApiChannel).getDuties(nextEpoch, VALIDATOR_KEYS);
+    verify(validatorApiChannel).getAttestationDuties(currentEpoch, VALIDATOR_INDICES);
+    verify(validatorApiChannel).getAttestationDuties(nextEpoch, VALIDATOR_INDICES);
 
     dutyScheduler.onChainReorg(currentSlot, commonAncestorSlot);
 
@@ -193,17 +203,17 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final UInt64 currentEpoch = UInt64.valueOf(5);
     final UInt64 currentSlot = compute_start_slot_at_epoch(currentEpoch);
     final UInt64 nextEpoch = currentEpoch.plus(1);
-    when(validatorApiChannel.getDuties(any(), any())).thenReturn(new SafeFuture<>());
+    when(validatorApiChannel.getAttestationDuties(any(), any())).thenReturn(new SafeFuture<>());
     dutyScheduler.onSlot(currentSlot);
 
-    verify(validatorApiChannel).getDuties(currentEpoch, VALIDATOR_KEYS);
-    verify(validatorApiChannel).getDuties(nextEpoch, VALIDATOR_KEYS);
+    verify(validatorApiChannel).getAttestationDuties(currentEpoch, VALIDATOR_INDICES);
+    verify(validatorApiChannel).getAttestationDuties(nextEpoch, VALIDATOR_INDICES);
 
     dutyScheduler.onPossibleMissedEvents();
 
     // Remembers the previous latest epoch and uses it to recalculate duties
-    verify(validatorApiChannel, times(2)).getDuties(currentEpoch, VALIDATOR_KEYS);
-    verify(validatorApiChannel, times(2)).getDuties(nextEpoch, VALIDATOR_KEYS);
+    verify(validatorApiChannel, times(2)).getAttestationDuties(currentEpoch, VALIDATOR_INDICES);
+    verify(validatorApiChannel, times(2)).getAttestationDuties(nextEpoch, VALIDATOR_INDICES);
     verifyNoMoreInteractions(validatorApiChannel);
   }
 
@@ -224,17 +234,17 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             metricsSystem,
             new RetryingDutyLoader(
                 asyncRunner,
-                new ValidatorApiDutyLoader(
-                    metricsSystem,
+                new AttestationDutyLoader(
                     validatorApiChannel,
                     forkProvider,
                     () -> scheduledDuties,
-                    Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2))),
+                    Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
+                    validatorIndexProvider)),
             stableSubnetSubscriber);
-    final SafeFuture<Optional<List<ValidatorDuties>>> epoch0Duties = new SafeFuture<>();
+    final SafeFuture<Optional<List<AttesterDuties>>> epoch0Duties = new SafeFuture<>();
 
-    when(validatorApiChannel.getDuties(eq(ZERO), any())).thenReturn(epoch0Duties);
-    when(validatorApiChannel.getDuties(eq(ONE), any()))
+    when(validatorApiChannel.getAttestationDuties(eq(ZERO), any())).thenReturn(epoch0Duties);
+    when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(emptyList())));
     dutyScheduler.onSlot(ZERO);
 
@@ -253,10 +263,9 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   @Test
   public void shouldNotPerformDutiesForSameSlotTwice() {
     final UInt64 attestationProductionSlot = UInt64.valueOf(5);
-    final ValidatorDuties validator1Duties =
-        ValidatorDuties.withDuties(
-            VALIDATOR1_KEY, 5, 3, 6, 0, List.of(), attestationProductionSlot);
-    when(validatorApiChannel.getDuties(eq(ZERO), any()))
+    final AttesterDuties validator1Duties =
+        new AttesterDuties(VALIDATOR1_KEY, 5, 10, 3, 6, attestationProductionSlot);
+    when(validatorApiChannel.getAttestationDuties(eq(ZERO), any()))
         .thenReturn(completedFuture(Optional.of(List.of(validator1Duties))));
 
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
@@ -287,25 +296,23 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final int validator2Index = 6;
     final int validator2Committee = 4;
     final int validator2CommitteePosition = 8;
-    final ValidatorDuties validator1Duties =
-        ValidatorDuties.withDuties(
+    final AttesterDuties validator1Duties =
+        new AttesterDuties(
             VALIDATOR1_KEY,
             validator1Index,
+            10,
             validator1Committee,
             validator1CommitteePosition,
-            0,
-            emptyList(),
             attestationSlot);
-    final ValidatorDuties validator2Duties =
-        ValidatorDuties.withDuties(
+    final AttesterDuties validator2Duties =
+        new AttesterDuties(
             VALIDATOR2_KEY,
             validator2Index,
+            10,
             validator2Committee,
             validator2CommitteePosition,
-            0,
-            emptyList(),
             attestationSlot);
-    when(validatorApiChannel.getDuties(eq(ZERO), any()))
+    when(validatorApiChannel.getAttestationDuties(eq(ZERO), any()))
         .thenReturn(completedFuture(Optional.of(List.of(validator1Duties, validator2Duties))));
 
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
@@ -337,25 +344,23 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final int validator2Index = 6;
     final int validator2Committee = 4;
     final int validator2CommitteePosition = 8;
-    final ValidatorDuties validator1Duties =
-        ValidatorDuties.withDuties(
+    final AttesterDuties validator1Duties =
+        new AttesterDuties(
             VALIDATOR1_KEY,
             validator1Index,
+            10,
             validator1Committee,
             validator1CommitteePosition,
-            0,
-            emptyList(),
             attestationSlot);
-    final ValidatorDuties validator2Duties =
-        ValidatorDuties.withDuties(
+    final AttesterDuties validator2Duties =
+        new AttesterDuties(
             VALIDATOR2_KEY,
             validator2Index,
+            10,
             validator2Committee,
             validator2CommitteePosition,
-            0,
-            emptyList(),
             attestationSlot);
-    when(validatorApiChannel.getDuties(eq(ZERO), any()))
+    when(validatorApiChannel.getAttestationDuties(eq(ZERO), any()))
         .thenReturn(completedFuture(Optional.of(List.of(validator1Duties, validator2Duties))));
 
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
@@ -387,25 +392,23 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final int validator2Index = 6;
     final int validator2Committee = 4;
     final int validator2CommitteePosition = 8;
-    final ValidatorDuties validator1Duties =
-        ValidatorDuties.withDuties(
+    final AttesterDuties validator1Duties =
+        new AttesterDuties(
             VALIDATOR1_KEY,
             validator1Index,
+            10,
             validator1Committee,
             validator1CommitteePosition,
-            0,
-            emptyList(),
             attestationSlot);
-    final ValidatorDuties validator2Duties =
-        ValidatorDuties.withDuties(
+    final AttesterDuties validator2Duties =
+        new AttesterDuties(
             VALIDATOR2_KEY,
             validator2Index,
+            10,
             validator2Committee,
             validator2CommitteePosition,
-            0,
-            emptyList(),
             attestationSlot);
-    when(validatorApiChannel.getDuties(eq(ZERO), any()))
+    when(validatorApiChannel.getAttestationDuties(eq(ZERO), any()))
         .thenReturn(completedFuture(Optional.of(List.of(validator1Duties, validator2Duties))));
 
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
@@ -440,25 +443,24 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final int validator2Index = 6;
     final int validator2Committee = 4;
     final int validator2CommitteePosition = 8;
-    final ValidatorDuties validator1Duties =
-        ValidatorDuties.withDuties(
+
+    final AttesterDuties validator1Duties =
+        new AttesterDuties(
             VALIDATOR1_KEY,
             validator1Index,
+            1, // Guaranteed to be an aggregator
             validator1Committee,
             validator1CommitteePosition,
-            1, // Guaranteed to be an aggregator
-            emptyList(),
             attestationSlot);
-    final ValidatorDuties validator2Duties =
-        ValidatorDuties.withDuties(
+    final AttesterDuties validator2Duties =
+        new AttesterDuties(
             VALIDATOR2_KEY,
             validator2Index,
+            1000000000, // Won't be an aggregator
             validator2Committee,
             validator2CommitteePosition,
-            100000, // Won't be an aggregator
-            emptyList(),
             attestationSlot);
-    when(validatorApiChannel.getDuties(eq(ONE), any()))
+    when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
         .thenReturn(completedFuture(Optional.of(List.of(validator1Duties, validator2Duties))));
 
     final BLSSignature validator1Signature = dataStructureUtil.randomSignature();
