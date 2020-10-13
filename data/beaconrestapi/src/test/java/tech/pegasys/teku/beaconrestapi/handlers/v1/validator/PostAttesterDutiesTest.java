@@ -37,9 +37,7 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
 
   @BeforeEach
   public void setup() {
-    handler =
-        new PostAttesterDuties(
-            chainDataProvider, syncDataProvider, validatorDataProvider, jsonProvider);
+    handler = new PostAttesterDuties(syncDataProvider, validatorDataProvider, jsonProvider);
   }
 
   @Test

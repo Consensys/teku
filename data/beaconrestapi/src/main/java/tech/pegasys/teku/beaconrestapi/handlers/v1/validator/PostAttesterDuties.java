@@ -41,7 +41,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -58,22 +57,18 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
   public static final String ROUTE = "/eth/v1/validator/duties/attester/:epoch";
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
-  private final ChainDataProvider chainDataProvider;
 
   public PostAttesterDuties(final DataProvider dataProvider, final JsonProvider jsonProvider) {
     super(jsonProvider);
     this.validatorDataProvider = dataProvider.getValidatorDataProvider();
     this.syncDataProvider = dataProvider.getSyncDataProvider();
-    this.chainDataProvider = dataProvider.getChainDataProvider();
   }
 
   PostAttesterDuties(
-      final ChainDataProvider chainDataProvider,
       final SyncDataProvider syncDataProvider,
       final ValidatorDataProvider validatorDataProvider,
       final JsonProvider jsonProvider) {
     super(jsonProvider);
-    this.chainDataProvider = chainDataProvider;
     this.validatorDataProvider = validatorDataProvider;
     this.syncDataProvider = syncDataProvider;
   }
