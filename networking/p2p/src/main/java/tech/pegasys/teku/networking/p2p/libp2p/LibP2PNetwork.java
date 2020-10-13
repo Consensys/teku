@@ -63,6 +63,7 @@ import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipWireValidator;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.teku.networking.p2p.network.NetworkConfig;
@@ -176,6 +177,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
             Base64.getUrlEncoder()
                 .withoutPadding()
                 .encodeToString(Hash.sha2_256(msg.getData().toByteArray())));
+    router.setValidator(GossipWireValidator.INSTANCE);
 
     ChannelHandler debugHandler =
         config.getWireLogsConfig().isLogWireGossip()
