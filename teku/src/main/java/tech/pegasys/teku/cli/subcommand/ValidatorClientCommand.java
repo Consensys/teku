@@ -65,7 +65,8 @@ public class ValidatorClientCommand implements Callable<Integer> {
   private InteropOptions interopOptions;
 
   @Mixin(name = "Logging")
-  private LoggingOptions loggingOptions;
+  @SuppressWarnings("FieldMayBeFinal")
+  private LoggingOptions loggingOptions = new LoggingOptions(LoggingOptions.DEFAULT_VC_LOG_FILE);
 
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
