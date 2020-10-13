@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
 import tech.pegasys.teku.bls.impl.Signature;
@@ -146,6 +147,23 @@ public class BlstSignature implements Signature {
 
   @Override
   public boolean verify(List<PublicKeyMessagePair> keysToMessages) {
+
+    List<BlstPublicKey> blstPKeys =
+        keysToMessages.stream()
+            .map(km -> (BlstPublicKey) km.getPublicKey())
+            .collect(Collectors.toList());
+
+    List<BlstPublicKey> finitePublicKeys =
+        blstPKeys.stream().filter(k -> !k.isInfinity()).collect(Collectors.toList());
+    if (finitePublicKeys.isEmpty()) {
+      return isInfinity();
+    }
+
+    if (!BLSConstants.VALID_INFINITY && finitePublicKeys.size() < blstPKeys.size()) {
+      // if the Infinity is not a valid public key then aggregating with any
+      // non-valid pubkey should result to invalid signature
+      return false;
+    }
 
     pairing ctx = new pairing();
 
