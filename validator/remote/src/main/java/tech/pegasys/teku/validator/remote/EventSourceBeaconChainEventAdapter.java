@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.remote;
 
+import static java.util.Collections.emptyMap;
+
 import com.launchdarkly.eventsource.EventSource;
 import java.util.concurrent.CountDownLatch;
 import okhttp3.HttpUrl;
@@ -39,7 +41,7 @@ public class EventSourceBeaconChainEventAdapter implements BeaconChainEventAdapt
     this.timeBasedEventAdapter = timeBasedEventAdapter;
     final HttpUrl eventSourceUrl =
         baseEndpoint.resolve(
-            ValidatorApiMethod.EVENTS.getPath()
+            ValidatorApiMethod.EVENTS.getPath(emptyMap())
                 + "?topics="
                 + EventType.head
                 + ","
