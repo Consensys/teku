@@ -39,7 +39,6 @@ public abstract class AbstractDutyLoader<D> implements DutyLoader {
     this.scheduledDutiesFactory = scheduledDutiesFactory;
     this.validators = validators;
     this.validatorIndexProvider = validatorIndexProvider;
-    // TODO: Find a new place to set the local_validator_count metric
   }
 
   @Override

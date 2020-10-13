@@ -44,7 +44,6 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
     super(scheduledDutiesFactory, validators, validatorIndexProvider);
     this.validatorApiChannel = validatorApiChannel;
     this.forkProvider = forkProvider;
-    // TODO: Find a new place to set the local_validator_count metric
   }
 
   @Override

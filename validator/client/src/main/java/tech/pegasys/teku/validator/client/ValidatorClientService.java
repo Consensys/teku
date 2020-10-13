@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -103,12 +104,24 @@ public class ValidatorClientService extends Service {
         new AttestationDutyScheduler(metricsSystem, attestationDutyLoader, stableSubnetSubscriber);
     final BlockDutyScheduler blockDutyScheduler =
         new BlockDutyScheduler(metricsSystem, blockDutyLoader);
+
+    addValidatorCountMetric(metricsSystem, validators.size());
+
     return new ValidatorClientService(
         eventChannels,
         attestationDutyScheduler,
         blockDutyScheduler,
         validatorIndexProvider,
         beaconNodeApi);
+  }
+
+  private static void addValidatorCountMetric(
+      final MetricsSystem metricsSystem, final int validatorCount) {
+    metricsSystem.createIntegerGauge(
+        TekuMetricCategory.VALIDATOR,
+        "local_validator_count",
+        "Current number of validators running in this validator client",
+        () -> validatorCount);
   }
 
   @Override
