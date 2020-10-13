@@ -13,19 +13,11 @@
 
 package tech.pegasys.teku.networking.eth2;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
-
 import com.google.common.eventbus.EventBus;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
@@ -34,7 +26,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
@@ -51,6 +43,16 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.util.config.Constants;
 
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+
 public class Eth2NetworkBuilder {
   public static final Duration DEFAULT_ETH2_RPC_PING_INTERVAL = Duration.ofSeconds(10);
   public static final int DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD = 2;
@@ -60,10 +62,11 @@ public class Eth2NetworkBuilder {
   private Eth2Config eth2Config;
   private EventBus eventBus;
   private RecentChainData recentChainData;
-  private GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer;
-  private GossipedOperationConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer;
-  private GossipedOperationConsumer<ProposerSlashing> gossipedProposerSlashingConsumer;
-  private GossipedOperationConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
+  private GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer;
+  private GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer;
+  private GossipedItemConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer;
+  private GossipedItemConsumer<ProposerSlashing> gossipedProposerSlashingConsumer;
+  private GossipedItemConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
   private ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
   private VerifiedBlockAttestationsSubscriptionProvider
       verifiedBlockAttestationsSubscriptionProvider;
@@ -124,6 +127,7 @@ public class Eth2NetworkBuilder {
         recentChainData,
         gossipEncoding,
         attestationSubnetService,
+        gossipedBlockConsumer,
         gossipedAttestationConsumer,
         gossipedAttesterSlashingConsumer,
         gossipedProposerSlashingConsumer,
@@ -163,6 +167,7 @@ public class Eth2NetworkBuilder {
     assertNotNull("chainStorageClient", recentChainData);
     assertNotNull("keyValueStore", keyValueStore);
     assertNotNull("timeProvider", timeProvider);
+    assertNotNull("gossipedBlockConsumer", gossipedBlockConsumer);
     assertNotNull("gossipedAttestationConsumer", gossipedAttestationConsumer);
     assertNotNull("gossipedAttesterSlashingConsumer", gossipedAttesterSlashingConsumer);
     assertNotNull("gossipedProposerSlashingConsumer", gossipedProposerSlashingConsumer);
@@ -235,29 +240,36 @@ public class Eth2NetworkBuilder {
     return this;
   }
 
+  public Eth2NetworkBuilder gossipedBlockConsumer(
+          final GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer) {
+    checkNotNull(gossipedAttestationConsumer);
+    this.gossipedBlockConsumer = gossipedBlockConsumer;
+    return this;
+  }
+
   public Eth2NetworkBuilder gossipedAttestationConsumer(
-      final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
+      final GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
     checkNotNull(gossipedAttestationConsumer);
     this.gossipedAttestationConsumer = gossipedAttestationConsumer;
     return this;
   }
 
   public Eth2NetworkBuilder gossipedAttesterSlashingConsumer(
-      final GossipedOperationConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer) {
+      final GossipedItemConsumer<AttesterSlashing> gossipedAttesterSlashingConsumer) {
     checkNotNull(gossipedAttesterSlashingConsumer);
     this.gossipedAttesterSlashingConsumer = gossipedAttesterSlashingConsumer;
     return this;
   }
 
   public Eth2NetworkBuilder gossipedProposerSlashingConsumer(
-      final GossipedOperationConsumer<ProposerSlashing> gossipedProposerSlashingConsumer) {
+      final GossipedItemConsumer<ProposerSlashing> gossipedProposerSlashingConsumer) {
     checkNotNull(gossipedProposerSlashingConsumer);
     this.gossipedProposerSlashingConsumer = gossipedProposerSlashingConsumer;
     return this;
   }
 
   public Eth2NetworkBuilder gossipedVoluntaryExitConsumer(
-      final GossipedOperationConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer) {
+      final GossipedItemConsumer<SignedVoluntaryExit> gossipedVoluntaryExitConsumer) {
     checkNotNull(gossipedVoluntaryExitConsumer);
     this.gossipedVoluntaryExitConsumer = gossipedVoluntaryExitConsumer;
     return this;

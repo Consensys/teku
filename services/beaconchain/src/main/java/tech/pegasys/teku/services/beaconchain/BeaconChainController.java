@@ -162,6 +162,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile OperationsReOrgManager operationsReOrgManager;
   private volatile WeakSubjectivityValidator weakSubjectivityValidator;
   private volatile PerformanceTracker performanceTracker;
+  private volatile RecentBlockFetcher recentBlockFetcher;
+  private volatile PendingPool<SignedBeaconBlock> pendingBlocks;
 
   private SyncStateTracker syncStateTracker;
   private UInt64 genesisTimeTracker = ZERO;
@@ -286,6 +288,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initGenesisHandler();
     initAttestationManager();
     initP2PNetwork();
+    initPendingBlocks();
+    initRecentBlockFetcher();
+    initBlockManager();
     initBlockManager();
     initSyncManager();
     initSlotProcessor();
@@ -295,6 +300,22 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initValidatorApiHandler();
     initRestAPI();
     initOperationsReOrgManager();
+  }
+
+  private void initPendingBlocks() {
+    LOG.debug("BeaconChainController.initPendingBlocks()");
+    pendingBlocks = PendingPool.createForBlocks();
+    eventChannels
+        .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
+  }
+
+  private void initRecentBlockFetcher() {
+    LOG.debug("BeaconChainController.initRecentBlockFetcher()");
+    if (!config.isP2pEnabled()) {
+      recentBlockFetcher = new NoopRecentBlockFetcher();
+    } else {
+      recentBlockFetcher = FetchRecentBlocksService.create(asyncRunner, p2pNetwork, pendingBlocks);
+    }
   }
 
   private void initPerformanceTracker() {
@@ -528,6 +549,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .eth2Config(eth2Config)
               .eventBus(eventBus)
               .recentChainData(recentChainData)
+              .gossipedBlockConsumer(blockManager::importBlock)
               .gossipedAttestationConsumer(
                   attestation ->
                       attestationManager
@@ -636,12 +658,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot);
-    final RecentBlockFetcher recentBlockFetcher;
-    if (!config.isP2pEnabled()) {
-      recentBlockFetcher = new NoopRecentBlockFetcher();
-    } else {
-      recentBlockFetcher = FetchRecentBlocksService.create(asyncRunner, p2pNetwork, pendingBlocks);
-    }
+
     blockManager =
         BlockManager.create(
             eventBus,
@@ -653,7 +670,6 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(BlockImportChannel.class, blockManager)
-        .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
   }
 
   public void initSyncManager() {

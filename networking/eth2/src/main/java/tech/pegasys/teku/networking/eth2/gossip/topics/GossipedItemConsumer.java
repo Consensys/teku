@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-public interface GossipedOperationConsumer<T> {
+public interface GossipedItemConsumer<T> {
   void forward(T operation);
 
-  GossipedOperationConsumer<?> NOOP = (__) -> {};
+  GossipedItemConsumer<?> NOOP = (__) -> {};
 
   @SuppressWarnings("unchecked")
-  static <T> GossipedOperationConsumer<T> noop() {
-    return (GossipedOperationConsumer<T>) NOOP;
+  static <T> GossipedItemConsumer<T> noop() {
+    return (GossipedItemConsumer<T>) NOOP;
   }
 }
