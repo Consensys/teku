@@ -46,8 +46,7 @@ import tech.pegasys.teku.util.config.NetworkDefinition;
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",
     footerHeading = "%n",
-    footer = "Teku is licensed under the Apache License 2.0",
-    hidden = true)
+    footer = "Teku is licensed under the Apache License 2.0")
 public class ValidatorClientCommand implements Callable<Integer> {
 
   @Mixin(name = "Validator")
@@ -66,7 +65,8 @@ public class ValidatorClientCommand implements Callable<Integer> {
   private InteropOptions interopOptions;
 
   @Mixin(name = "Logging")
-  private LoggingOptions loggingOptions;
+  @SuppressWarnings("FieldMayBeFinal")
+  private LoggingOptions loggingOptions = new LoggingOptions(LoggingOptions.DEFAULT_VC_LOG_FILE);
 
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
