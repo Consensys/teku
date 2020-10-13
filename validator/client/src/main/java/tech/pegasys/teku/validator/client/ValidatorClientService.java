@@ -68,12 +68,12 @@ public class ValidatorClientService extends Service {
         validatorLoader.initializeValidators(
             config.getValidatorConfig(), config.getGlobalConfiguration());
 
-    final BeaconNodeApi beaconNodeApi;
-    if (services.getConfig().isValidatorClient()) {
-      beaconNodeApi = RemoteBeaconNodeApi.create(services, asyncRunner);
-    } else {
-      beaconNodeApi = InProcessBeaconNodeApi.create(services, asyncRunner);
-    }
+    final BeaconNodeApi beaconNodeApi =
+        config
+            .getValidatorConfig()
+            .getBeaconNodeApiEndpoint()
+            .map(endpoint -> RemoteBeaconNodeApi.create(services, asyncRunner, endpoint))
+            .orElseGet(() -> InProcessBeaconNodeApi.create(services, asyncRunner));
 
     final ValidatorApiChannel validatorApiChannel = beaconNodeApi.getValidatorApi();
     final ForkProvider forkProvider = new ForkProvider(asyncRunner, validatorApiChannel);

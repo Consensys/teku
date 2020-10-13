@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
-import java.util.function.Consumer;
 import org.apache.logging.log4j.Level;
 import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
@@ -45,7 +44,6 @@ import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.cli.options.OutputOptions;
 import tech.pegasys.teku.cli.options.P2POptions;
 import tech.pegasys.teku.cli.options.StoreOptions;
-import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.cli.options.WeakSubjectivityOptions;
 import tech.pegasys.teku.cli.subcommand.DepositCommand;
@@ -102,7 +100,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private final PrintWriter outputWriter;
   private final PrintWriter errorWriter;
   private final Map<String, String> environment;
-  private final Consumer<TekuConfiguration> startAction;
+  private final StartAction startAction;
   private final MetricCategoryConverter metricCategoryConverter = new MetricCategoryConverter();
 
   // allows two pass approach to obtain optional config file
@@ -172,9 +170,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
   @Mixin(name = "REST API")
   private BeaconRestApiOptions beaconRestApiOptions;
 
-  @Mixin(name = "Validator Client")
-  private ValidatorClientOptions validatorClientOptions;
-
   @Mixin(name = "Weak Subjectivity")
   private WeakSubjectivityOptions weakSubjectivityOptions;
 
@@ -182,7 +177,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       final PrintWriter outputWriter,
       final PrintWriter errorWriter,
       final Map<String, String> environment,
-      final Consumer<TekuConfiguration> startAction) {
+      final StartAction startAction) {
     this.outputWriter = outputWriter;
     this.errorWriter = errorWriter;
     this.environment = environment;
@@ -279,7 +274,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
     try {
       setLogLevels();
       final TekuConfiguration tekuConfig = tekuConfiguration();
-      startAction.accept(tekuConfig);
+      startAction.start(tekuConfig, false);
       return 0;
     } catch (InvalidConfigurationException | DatabaseStorageException ex) {
       reportUserError(ex);
@@ -320,7 +315,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
     return this.logLevel;
   }
 
-  public Consumer<TekuConfiguration> getStartAction() {
+  public StartAction getStartAction() {
     return startAction;
   }
 
@@ -394,8 +389,11 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setRestApiDocsEnabled(beaconRestApiOptions.isRestApiDocsEnabled())
         .setRestApiEnabled(beaconRestApiOptions.isRestApiEnabled())
         .setRestApiInterface(beaconRestApiOptions.getRestApiInterface())
-        .setRestApiHostAllowlist(beaconRestApiOptions.getRestApiHostAllowlist())
-        .setValidatorClient(false)
-        .setBeaconNodeApiEndpoint(validatorClientOptions.getBeaconNodeApiEndpoint());
+        .setRestApiHostAllowlist(beaconRestApiOptions.getRestApiHostAllowlist());
+  }
+
+  @FunctionalInterface
+  public interface StartAction {
+    void start(TekuConfiguration config, boolean validatorClient);
   }
 }

@@ -78,7 +78,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
     try {
       parentCommand.setLogLevels();
       final TekuConfiguration globalConfiguration = tekuConfiguration();
-      parentCommand.getStartAction().accept(globalConfiguration);
+      parentCommand.getStartAction().start(globalConfiguration, true);
       return 0;
     } catch (InvalidConfigurationException | DatabaseStorageException ex) {
       parentCommand.reportUserError(ex);
@@ -98,6 +98,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
     final TekuConfiguration.Builder builder = TekuConfiguration.builder();
     builder.globalConfig(this::buildGlobalConfiguration);
     validatorOptions.configure(builder);
+    validatorClientOptions.configure(builder);
     return builder.build();
   }
 
@@ -124,8 +125,6 @@ public class ValidatorClientCommand implements Callable<Integer> {
         .setMetricsInterface(metricsOptions.getMetricsInterface())
         .setMetricsCategories(metricsOptions.getMetricsCategories())
         .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist())
-        .setDataPath(dataOptions.getDataPath())
-        .setValidatorClient(true)
-        .setBeaconNodeApiEndpoint(validatorClientOptions.getBeaconNodeApiEndpoint());
+        .setDataPath(dataOptions.getDataPath());
   }
 }
