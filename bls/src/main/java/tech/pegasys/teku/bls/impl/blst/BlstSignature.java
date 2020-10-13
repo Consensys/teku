@@ -69,6 +69,10 @@ public class BlstSignature implements Signature {
     List<BlstSignature> finiteSignatures =
         signatures.stream().filter(sig -> !sig.isInfinity()).collect(Collectors.toList());
 
+    if (!BLSConstants.VALID_INFINITY && finiteSignatures.size() < signatures.size()) {
+      return BlstSignature.INFINITY;
+    }
+
     Optional<BlstSignature> invalidSignature =
         finiteSignatures.stream().filter(s -> !s.isValid).findFirst();
     if (invalidSignature.isPresent()) {

@@ -28,6 +28,7 @@ public class BLSConstants {
       CURVE_ORDER_BYTES.toUnsignedBigInteger(ByteOrder.BIG_ENDIAN);
 
   public static boolean VERIFICATION_DISABLED = false;
+  public static boolean VALID_INFINITY = false;
 
   public static void disableBLSVerification() {
     VERIFICATION_DISABLED = true;
