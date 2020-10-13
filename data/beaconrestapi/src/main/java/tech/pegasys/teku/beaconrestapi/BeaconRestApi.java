@@ -70,6 +70,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetIdentity;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAggregate;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetNewBlock;
@@ -264,6 +265,7 @@ public class BeaconRestApi {
 
   private void addV1ValidatorHandlers(final DataProvider dataProvider) {
     app.get(GetAttesterDuties.ROUTE, new GetAttesterDuties(dataProvider, jsonProvider));
+    app.post(PostAttesterDuties.ROUTE, new PostAttesterDuties(dataProvider, jsonProvider));
     app.get(GetProposerDuties.ROUTE, new GetProposerDuties(dataProvider, jsonProvider));
     app.get(
         tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock.ROUTE,
