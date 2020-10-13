@@ -213,7 +213,13 @@ public class StatusLogger {
         String.format(
             "The latest finalized checkpoint at epoch %s is outside of the weak subjectivity period.  Please supply a recent weak subjectivity checkpoint using --ws-checkpoint=<BLOCK_ROOT>:<EPOCH>.",
             latestFinalizedCheckpointEpoch);
-    log.log(level, print(msg, ColorConsolePrinter.Color.RED));
+    logWithColorIfLevelGreaterThanInfo(level, msg, ColorConsolePrinter.Color.RED);
+  }
+
+  private void logWithColorIfLevelGreaterThanInfo(
+      final Level level, final String msg, final ColorConsolePrinter.Color color) {
+    final boolean useColor = level.isMoreSpecificThan(Level.INFO);
+    log.log(level, useColor ? print(msg, color) : msg);
   }
 
   public void chainInconsistentWithWeakSubjectivityCheckpoint(
