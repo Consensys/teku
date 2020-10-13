@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote;
 
+import java.net.URI;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -41,10 +42,12 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
   }
 
   public static BeaconNodeApi create(
-      final ServiceConfig serviceConfig, final AsyncRunner asyncRunner) {
+      final ServiceConfig serviceConfig,
+      final AsyncRunner asyncRunner,
+      final URI beaconNodeApiEndpoint) {
 
     final OkHttpClient okHttpClient = new OkHttpClient();
-    final HttpUrl apiEndpoint = HttpUrl.parse(serviceConfig.getConfig().getBeaconNodeApiEndpoint());
+    final HttpUrl apiEndpoint = HttpUrl.get(beaconNodeApiEndpoint);
     final OkHttpValidatorRestApiClient apiClient =
         new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient);
 

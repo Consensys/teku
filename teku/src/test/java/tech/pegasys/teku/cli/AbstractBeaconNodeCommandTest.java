@@ -23,11 +23,11 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.Collections;
-import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 
@@ -37,8 +37,7 @@ public abstract class AbstractBeaconNodeCommandTest {
   protected final PrintWriter outputWriter = new PrintWriter(stringWriter, true);
   protected final PrintWriter errorWriter = new PrintWriter(stringWriter, true);
 
-  @SuppressWarnings("unchecked")
-  final Consumer<TekuConfiguration> startAction = mock(Consumer.class);
+  final StartAction startAction = mock(StartAction.class);
 
   protected BeaconNodeCommand beaconNodeCommand =
       new BeaconNodeCommand(outputWriter, errorWriter, Collections.emptyMap(), startAction);
@@ -53,7 +52,7 @@ public abstract class AbstractBeaconNodeCommandTest {
     try {
       final ArgumentCaptor<TekuConfiguration> configCaptor =
           ArgumentCaptor.forClass(TekuConfiguration.class);
-      verify(startAction).accept(configCaptor.capture());
+      verify(startAction).start(configCaptor.capture(), false);
       assertThat(stringWriter.toString()).isEmpty();
 
       return configCaptor.getValue();

@@ -101,10 +101,6 @@ public class GlobalConfiguration implements MetricsConfig {
   private final String restApiInterface;
   private final List<String> restApiHostAllowlist;
 
-  // Validator Client
-  private final boolean isValidatorClient;
-  private final String beaconNodeApiEndpoint;
-
   public static GlobalConfigurationBuilder builder() {
     return new GlobalConfigurationBuilder();
   }
@@ -164,9 +160,7 @@ public class GlobalConfiguration implements MetricsConfig {
       final boolean restApiEnabled,
       final String restApiInterface,
       final List<String> restApiHostAllowlist,
-      final Path validatorsSlashingProtectionPath,
-      final boolean isValidatorClient,
-      final String beaconNodeApiEndpoint) {
+      final Path validatorsSlashingProtectionPath) {
     this.constants = constants;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
@@ -222,8 +216,6 @@ public class GlobalConfiguration implements MetricsConfig {
     this.restApiInterface = restApiInterface;
     this.restApiHostAllowlist = restApiHostAllowlist;
     this.validatorsSlashingProtectionPath = validatorsSlashingProtectionPath;
-    this.isValidatorClient = isValidatorClient;
-    this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
   }
 
   public String getConstants() {
@@ -457,14 +449,6 @@ public class GlobalConfiguration implements MetricsConfig {
 
   public List<String> getRestApiHostAllowlist() {
     return restApiHostAllowlist;
-  }
-
-  public boolean isValidatorClient() {
-    return isValidatorClient;
-  }
-
-  public String getBeaconNodeApiEndpoint() {
-    return beaconNodeApiEndpoint;
   }
 
   public void validate() throws IllegalArgumentException {
