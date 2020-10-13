@@ -216,29 +216,27 @@ public class StatusLogger {
     logWithColorIfLevelGreaterThanInfo(level, msg, ColorConsolePrinter.Color.RED);
   }
 
-  private void logWithColorIfLevelGreaterThanInfo(
-      final Level level, final String msg, final ColorConsolePrinter.Color color) {
-    final boolean useColor = level.isMoreSpecificThan(Level.INFO);
-    log.log(level, useColor ? print(msg, color) : msg);
-  }
-
   public void chainInconsistentWithWeakSubjectivityCheckpoint(
       final Level level,
       final Bytes32 blockRoot,
       final UInt64 blockSlot,
       final Bytes32 wsCheckpointRoot,
       final UInt64 wsCheckpointEpoch) {
-    log.log(
-        level,
-        "Block {} at slot {} is inconsistent with weak subjectivity checkpoint (root {}, epoch {})",
-        blockRoot,
-        blockSlot,
-        wsCheckpointRoot,
-        wsCheckpointEpoch);
+    final String msg =
+        String.format(
+            "Block %s at slot %s is inconsistent with weak subjectivity checkpoint (root=%s, epoch=%s)",
+            blockRoot, blockSlot, wsCheckpointRoot, wsCheckpointEpoch);
+    logWithColorIfLevelGreaterThanInfo(level, msg, ColorConsolePrinter.Color.RED);
   }
 
   public void failedToPerformWeakSubjectivityValidation(
       final Level level, final String message, final Throwable error) {
     log.log(level, "Failed to perform weak subjectivity validation: " + message, error);
+  }
+
+  private void logWithColorIfLevelGreaterThanInfo(
+      final Level level, final String msg, final ColorConsolePrinter.Color color) {
+    final boolean useColor = level.isMoreSpecificThan(Level.INFO);
+    log.log(level, useColor ? print(msg, color) : msg);
   }
 }
