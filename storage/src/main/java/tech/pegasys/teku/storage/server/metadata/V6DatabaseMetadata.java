@@ -16,6 +16,8 @@ package tech.pegasys.teku.storage.server.metadata;
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.WRITE_DOC_START_MARKER;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
+import tech.pegasys.teku.util.annotations.JsonExplicit;
 
 /**
  * Defines the configuration for a database. The configuration used when a database is created is
@@ -42,9 +45,12 @@ import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
  * database creation.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonExplicit
+@JsonInclude(Include.NON_NULL)
 public class V6DatabaseMetadata {
 
   @JsonIgnoreProperties(ignoreUnknown = true)
+  @JsonExplicit
   public static class SingleDBMetadata {
     @JsonProperty("configuration")
     private RocksDbConfiguration configuration;
@@ -66,6 +72,7 @@ public class V6DatabaseMetadata {
   }
 
   @JsonIgnoreProperties(ignoreUnknown = true)
+  @JsonExplicit
   public static class SeparateDBMetadata {
     @JsonProperty("hotDbConfiguration")
     private RocksDbConfiguration hotDbConfiguration;
