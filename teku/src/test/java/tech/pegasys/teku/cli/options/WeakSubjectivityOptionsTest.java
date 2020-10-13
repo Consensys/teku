@@ -31,7 +31,7 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
     final String checkpointParam = checkpoint.getRoot().toHexString() + ":" + checkpoint.getEpoch();
 
     final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--Xweak-subjectivity-checkpoint", checkpointParam);
+        getTekuConfigurationFromArguments("--ws-checkpoint", checkpointParam);
     assertThat(config.weakSubjectivity().getWeakSubjectivityCheckpoint()).contains(checkpoint);
   }
 
@@ -46,14 +46,13 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil();
     final Checkpoint checkpoint = dataStructureUtil.randomCheckpoint();
     final String checkpointParam = checkpoint.getRoot().toHexString() + ":";
-    final String[] args = {"--Xweak-subjectivity-checkpoint", checkpointParam};
+    final String[] args = {"--ws-checkpoint", checkpointParam};
 
     final int result = beaconNodeCommand.parse(args);
     String str = getCommandLineOutput();
     assertThat(str)
         .contains(
-            "Invalid value for option '--Xweak-subjectivity-checkpoint': "
-                + CheckpointConverter.CHECKPOINT_ERROR);
+            "Invalid value for option '--ws-checkpoint': " + CheckpointConverter.CHECKPOINT_ERROR);
     assertThat(str).contains("To display full help:");
     assertThat(str).contains("--help");
     assertThat(result).isGreaterThan(0);
@@ -62,8 +61,7 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void suppressWSPeriodChecksUntilEpoch_shouldAcceptValue() {
     final TekuConfiguration config =
-        getTekuConfigurationFromArguments(
-            "--Xweak-subjectivity-suppress-errors-until-epoch", "123");
+        getTekuConfigurationFromArguments("--Xws-suppress-errors-until-epoch", "123");
     assertThat(config.weakSubjectivity().getSuppressWSPeriodChecksUntilEpoch())
         .contains(UInt64.valueOf(123));
   }
@@ -76,12 +74,11 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void suppressWSPeriodChecksUntilEpoch_handleBadValue() {
-    final String[] args = {"--Xweak-subjectivity-suppress-errors-until-epoch", "a:b"};
+    final String[] args = {"--Xws-suppress-errors-until-epoch", "a:b"};
     final int result = beaconNodeCommand.parse(args);
 
     String str = getCommandLineOutput();
-    assertThat(str)
-        .contains("Invalid value for option '--Xweak-subjectivity-suppress-errors-until-epoch'");
+    assertThat(str).contains("Invalid value for option '--Xws-suppress-errors-until-epoch'");
     assertThat(str).contains("To display full help:");
     assertThat(str).contains("--help");
     assertThat(result).isGreaterThan(0);

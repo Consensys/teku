@@ -83,6 +83,13 @@ import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class ValidatorApiHandler implements ValidatorApiChannel {
   private static final Logger LOG = LogManager.getLogger();
+  /**
+   * Number of epochs ahead of the current head that duties can be requested. This provides some
+   * tolerance for validator clients clocks being slightly ahead while still limiting the number of
+   * empty slots that may need to be processed when calculating duties.
+   */
+  private static final int DUTY_EPOCH_TOLERANCE = 1;
+
   private final CombinedChainDataClient combinedChainDataClient;
   private final SyncStateTracker syncStateTracker;
   private final StateTransition stateTransition;
@@ -179,7 +186,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return SafeFuture.completedFuture(Optional.of(emptyList()));
     }
     if (epoch.isGreaterThan(
-        combinedChainDataClient.getCurrentEpoch().plus(Constants.MIN_SEED_LOOKAHEAD))) {
+        combinedChainDataClient
+            .getCurrentEpoch()
+            .plus(Constants.MIN_SEED_LOOKAHEAD + DUTY_EPOCH_TOLERANCE))) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
               String.format(
@@ -204,7 +213,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
-    if (epoch.isGreaterThan(combinedChainDataClient.getCurrentEpoch())) {
+    if (epoch.isGreaterThan(combinedChainDataClient.getCurrentEpoch().plus(DUTY_EPOCH_TOLERANCE))) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
               String.format(

@@ -23,7 +23,6 @@ import io.javalin.http.Handler;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public abstract class AbstractValidatorApiTest extends AbstractBeaconHandlerTest {
   protected Handler handler;
@@ -53,16 +52,5 @@ public abstract class AbstractValidatorApiTest extends AbstractBeaconHandlerTest
     handler.handle(context);
     verify(syncService, never()).isSyncActive();
     verifyStatusCode(SC_SERVICE_UNAVAILABLE);
-  }
-
-  @Test
-  public void shouldReturnBadRequestIfEpochTooFarAhead() throws Exception {
-    when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.isSyncActive()).thenReturn(false);
-    when(chainDataProvider.getCurrentEpoch()).thenReturn(UInt64.valueOf(98));
-    when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
-
-    handler.handle(context);
-    verifyStatusCode(SC_BAD_REQUEST);
   }
 }
