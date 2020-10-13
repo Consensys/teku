@@ -18,11 +18,14 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class StrictWeakSubjectivityViolationPolicy implements WeakSubjectivityViolationPolicy {
+class ExitingWeakSubjectivityViolationPolicy implements WeakSubjectivityViolationPolicy {
 
   @Override
   public void onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-      CheckpointState latestFinalizedCheckpoint, int activeValidatorCount, UInt64 currentSlot) {
+      CheckpointState latestFinalizedCheckpoint,
+      int activeValidatorCount,
+      UInt64 currentSlot,
+      final UInt64 wsPeriod) {
     exitClient();
   }
 
@@ -33,27 +36,11 @@ public class StrictWeakSubjectivityViolationPolicy implements WeakSubjectivityVi
   }
 
   @Override
-  public void onFailedToPerformValidation(final String message) {
-    exitClient();
-  }
-
-  @Override
   public void onFailedToPerformValidation(final String message, final Throwable error) {
     exitClient();
   }
 
   private void exitClient() {
     System.exit(2);
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) return true;
-    return o != null && getClass() == o.getClass();
-  }
-
-  @Override
-  public int hashCode() {
-    return getClass().hashCode();
   }
 }
