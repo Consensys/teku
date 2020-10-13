@@ -241,7 +241,7 @@ public class Eth2NetworkBuilder {
 
   public Eth2NetworkBuilder gossipedBlockConsumer(
       final GossipedItemConsumer<SignedBeaconBlock> gossipedBlockConsumer) {
-    checkNotNull(gossipedAttestationConsumer);
+    checkNotNull(gossipedBlockConsumer);
     this.gossipedBlockConsumer = gossipedBlockConsumer;
     return this;
   }
