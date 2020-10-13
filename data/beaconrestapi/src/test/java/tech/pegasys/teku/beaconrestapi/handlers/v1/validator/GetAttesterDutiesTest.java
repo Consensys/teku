@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
+import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -70,6 +72,21 @@ public class GetAttesterDutiesTest extends AbstractValidatorApiTest {
     handler.handle(context);
     GetAttesterDutiesResponse response = getResponseFromFuture(GetAttesterDutiesResponse.class);
     assertThat(response.data).isEqualTo(duties);
+  }
+
+  @Test
+  public void shouldReturnBadRequestWhenIllegalArgumentExceptionThrown() throws Exception {
+    when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
+    when(syncService.isSyncActive()).thenReturn(false);
+    when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
+    when(context.queryParamMap()).thenReturn(Map.of("index", List.of("2")));
+    when(validatorDataProvider.getAttesterDuties(UInt64.valueOf(100), List.of(2)))
+        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("Bad epoch")));
+
+    handler.handle(context);
+    verifyStatusCode(SC_BAD_REQUEST);
+    final BadRequest badRequest = getBadRequestFromFuture();
+    assertThat(badRequest).usingRecursiveComparison().isEqualTo(new BadRequest(400, "Bad epoch"));
   }
 
   AttesterDuty getDuty(
