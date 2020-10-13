@@ -19,11 +19,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_star
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -31,44 +27,48 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.time.Throttler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
-import tech.pegasys.teku.weaksubjectivity.policies.LoggingWeakSubjectivityViolationPolicy;
-import tech.pegasys.teku.weaksubjectivity.policies.StrictWeakSubjectivityViolationPolicy;
 import tech.pegasys.teku.weaksubjectivity.policies.WeakSubjectivityViolationPolicy;
 
 public class WeakSubjectivityValidator {
   private static final Logger LOG = LogManager.getLogger();
   // About a week with mainnet config
   static final long MAX_SUPPRESSED_EPOCHS = 1575;
-  private static final long SUPPRESSION_WARNING_PERIOD_IN_SLOTS = 10;
 
   private final WeakSubjectivityCalculator calculator;
-  private final List<WeakSubjectivityViolationPolicy> violationPolicies;
+  private final WeakSubjectivityViolationPolicy violationPolicy;
 
   private final WeakSubjectivityConfig config;
   private volatile Optional<UInt64> suppressWSPeriodErrorsUntilEpoch = Optional.empty();
-  private final AtomicReference<UInt64> lastSlotWithErrorLogged =
-      new AtomicReference<>(UInt64.ZERO);
+  private final Throttler<StatusLogger> wsChecksSuppressedLogger =
+      new Throttler<>(STATUS_LOG, UInt64.valueOf(10));
+  private final Throttler<StatusLogger> deferValidationLogger =
+      new Throttler<>(STATUS_LOG, UInt64.valueOf(10));
 
   WeakSubjectivityValidator(
       final WeakSubjectivityConfig config,
       WeakSubjectivityCalculator calculator,
-      List<WeakSubjectivityViolationPolicy> violationPolicies) {
+      WeakSubjectivityViolationPolicy violationPolicy) {
     this.calculator = calculator;
-    this.violationPolicies = violationPolicies;
+    this.violationPolicy = violationPolicy;
     this.config = config;
   }
 
   public static WeakSubjectivityValidator strict(final WeakSubjectivityConfig config) {
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
-    final List<WeakSubjectivityViolationPolicy> policies =
-        List.of(
-            new LoggingWeakSubjectivityViolationPolicy(Level.FATAL),
-            new StrictWeakSubjectivityViolationPolicy());
-    return new WeakSubjectivityValidator(config, calculator, policies);
+    return new WeakSubjectivityValidator(
+        config, calculator, WeakSubjectivityViolationPolicy.strict());
+  }
+
+  public static WeakSubjectivityValidator moderate(final WeakSubjectivityConfig config) {
+    final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
+    return new WeakSubjectivityValidator(
+        config, calculator, WeakSubjectivityViolationPolicy.moderate(config));
   }
 
   public static WeakSubjectivityValidator lenient() {
@@ -77,9 +77,8 @@ public class WeakSubjectivityValidator {
 
   public static WeakSubjectivityValidator lenient(final WeakSubjectivityConfig config) {
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
-    final List<WeakSubjectivityViolationPolicy> policies =
-        List.of(new LoggingWeakSubjectivityViolationPolicy(Level.TRACE));
-    return new WeakSubjectivityValidator(config, calculator, policies);
+    return new WeakSubjectivityValidator(
+        config, calculator, WeakSubjectivityViolationPolicy.lenient());
   }
 
   public Optional<Checkpoint> getWSCheckpoint() {
@@ -123,10 +122,12 @@ public class WeakSubjectivityValidator {
       final CheckpointState latestFinalizedCheckpoint, final UInt64 currentSlot) {
     if (isPriorToWSCheckpoint(latestFinalizedCheckpoint)) {
       // Defer validation until we reach the weakSubjectivity checkpoint
-      LOG.debug(
-          "Latest finalized checkpoint at epoch {} is prior to weak subjectivity checkpoint at epoch {}. Defer validation.",
-          latestFinalizedCheckpoint.getEpoch(),
-          config.getWeakSubjectivityCheckpoint().orElseThrow().getEpoch());
+      final UInt64 finalizedEpoch = latestFinalizedCheckpoint.getEpoch();
+      final UInt64 wsEpoch = config.getWeakSubjectivityCheckpoint().orElseThrow().getEpoch();
+      deferValidationLogger.invoke(
+          currentSlot,
+          l ->
+              l.warnWeakSubjectivityFinalizedCheckpointValidationDeferred(finalizedEpoch, wsEpoch));
       return;
     }
 
@@ -147,10 +148,9 @@ public class WeakSubjectivityValidator {
     final boolean withinWSPeriod = isWithinWSPeriod(latestFinalizedCheckpoint, currentSlot);
     if (!withinWSPeriod && !shouldSuppressErrors) {
       handleFinalizedCheckpointOutsideWSPeriod(latestFinalizedCheckpoint, currentSlot);
-    } else if (!withinWSPeriod
-        && currentSlot.mod(SUPPRESSION_WARNING_PERIOD_IN_SLOTS).equals(UInt64.ZERO)
-        && getAndSetLastLoggedSlot(currentSlot).isLessThan(currentSlot)) {
-      STATUS_LOG.warnWeakSubjectivityChecksSuppressed(suppressionEpoch.orElseThrow());
+    } else if (!withinWSPeriod) {
+      wsChecksSuppressedLogger.invoke(
+          currentSlot, l -> l.warnWeakSubjectivityChecksSuppressed(suppressionEpoch.orElseThrow()));
     }
   }
 
@@ -187,50 +187,25 @@ public class WeakSubjectivityValidator {
    * A catch-all handler for managing problems encountered while executing other validations
    *
    * @param message An error message
-   */
-  public void handleValidationFailure(final String message) {
-    for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
-      policy.onFailedToPerformValidation(message);
-    }
-  }
-
-  /**
-   * A catch-all handler for managing problems encountered while executing other validations
-   *
-   * @param message An error message
    * @param error The error encountered
    */
   public void handleValidationFailure(final String message, Throwable error) {
-    for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
-      policy.onFailedToPerformValidation(message, error);
-    }
+    violationPolicy.onFailedToPerformValidation(message, error);
   }
 
   private void handleFinalizedCheckpointOutsideWSPeriod(
       final CheckpointState latestFinalizedCheckpoint, final UInt64 currentSlot) {
     final int activeValidators =
         calculator.getActiveValidators(latestFinalizedCheckpoint.getState());
-    for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
-      policy.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-          latestFinalizedCheckpoint, activeValidators, currentSlot);
-    }
+    final UInt64 wsPeriod = calculator.computeWeakSubjectivityPeriod(activeValidators);
+    violationPolicy.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
+        latestFinalizedCheckpoint, activeValidators, currentSlot, wsPeriod);
   }
 
   private void handleInconsistentWsCheckpoint(final SignedBeaconBlock inconsistentBlock) {
     final Checkpoint wsCheckpoint = config.getWeakSubjectivityCheckpoint().orElseThrow();
-    for (WeakSubjectivityViolationPolicy policy : violationPolicies) {
-      policy.onChainInconsistentWithWeakSubjectivityCheckpoint(wsCheckpoint, inconsistentBlock);
-    }
-  }
-
-  private UInt64 getAndSetLastLoggedSlot(final UInt64 newSlot) {
-    return lastSlotWithErrorLogged.getAndUpdate(
-        last -> {
-          if (newSlot.isGreaterThan(last)) {
-            return newSlot;
-          }
-          return last;
-        });
+    violationPolicy.onChainInconsistentWithWeakSubjectivityCheckpoint(
+        wsCheckpoint, inconsistentBlock);
   }
 
   @VisibleForTesting
@@ -294,20 +269,5 @@ public class WeakSubjectivityValidator {
         .getWeakSubjectivityCheckpoint()
         .map(c -> checkpoint.getEpoch().equals(c.getEpoch()))
         .orElse(false);
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    final WeakSubjectivityValidator that = (WeakSubjectivityValidator) o;
-    return Objects.equals(calculator, that.calculator)
-        && Objects.equals(violationPolicies, that.violationPolicies)
-        && Objects.equals(config, that.config);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(calculator, violationPolicies, config);
   }
 }

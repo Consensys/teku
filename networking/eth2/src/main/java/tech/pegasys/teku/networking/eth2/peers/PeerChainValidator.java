@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import com.google.common.base.Throwables;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -111,8 +112,8 @@ public class PeerChainValidator {
             isValid -> {
               if (!isValid) {
                 // Short-circuit if we know the chain is invalid
-                LOG.trace(
-                    "Failed to validate peer {} against required checkpoint {}",
+                LOG.warn(
+                    "Peer {} failed validation against required checkpoint {}",
                     peer.getId(),
                     requiredCheckpoint);
                 return SafeFuture.completedFuture(isValid);
@@ -166,18 +167,35 @@ public class PeerChainValidator {
       LOG.trace(
           "Request required checkpoint block from peer {}: {}", peer.getId(), checkpointToVerify);
       return peer.requestBlockByRoot(checkpointToVerify.getRoot())
+          // Map result to an optional block
+          .thenApply(Optional::of)
+          .exceptionally(
+              err -> {
+                if (Throwables.getRootCause(err) instanceof NullPointerException) {
+                  return Optional.empty();
+                }
+                throw new RuntimeException(err);
+              })
           // When requesting block by root, there is no explicit guarantee that the block is
           // canonical.
           // So, double-check by requesting the block by slot to make sure the peer considers this
           // block canonical.
-          .thenCompose(block -> peer.requestBlockBySlot(block.getSlot()))
-          .thenApply(
-              blockBySlot -> {
-                final boolean blockMatches =
-                    blockBySlot.getRoot().equals(checkpointToVerify.getRoot());
-                requiredCheckpointVerified.set(blockMatches);
-                return blockMatches;
-              });
+          .thenCompose(
+              maybeBlock ->
+                  maybeBlock
+                      .map(
+                          b ->
+                              peer.requestBlockBySlot(b.getSlot())
+                                  .thenApply(
+                                      blockBySlot -> {
+                                        final boolean blockMatches =
+                                            blockBySlot
+                                                .getRoot()
+                                                .equals(checkpointToVerify.getRoot());
+                                        requiredCheckpointVerified.set(blockMatches);
+                                        return blockMatches;
+                                      }))
+                      .orElseGet(() -> SafeFuture.completedFuture(false)));
     }
   }
 

@@ -30,8 +30,6 @@ import tech.pegasys.teku.util.config.NetworkDefinition;
 @CommandLine.Command(
     name = "weak-subjectivity",
     description = "Commands related to weak subjectivity configuration",
-    // TODO(#2779) - Enable this command
-    hidden = true,
     showDefaultValues = true,
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,
