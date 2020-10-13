@@ -23,8 +23,10 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVA
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_VALIDATOR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.base.Throwables;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -39,7 +41,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -50,29 +51,24 @@ import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.util.config.Constants;
 
 public class PostAttesterDuties extends AbstractHandler implements Handler {
   private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/eth/v1/validator/duties/attester/:epoch";
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
-  private final ChainDataProvider chainDataProvider;
 
   public PostAttesterDuties(final DataProvider dataProvider, final JsonProvider jsonProvider) {
     super(jsonProvider);
     this.validatorDataProvider = dataProvider.getValidatorDataProvider();
     this.syncDataProvider = dataProvider.getSyncDataProvider();
-    this.chainDataProvider = dataProvider.getChainDataProvider();
   }
 
   PostAttesterDuties(
-      final ChainDataProvider chainDataProvider,
       final SyncDataProvider syncDataProvider,
       final ValidatorDataProvider validatorDataProvider,
       final JsonProvider jsonProvider) {
     super(jsonProvider);
-    this.chainDataProvider = chainDataProvider;
     this.validatorDataProvider = validatorDataProvider;
     this.syncDataProvider = syncDataProvider;
   }
@@ -112,21 +108,13 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
     final Map<String, String> parameters = ctx.pathParamMap();
     try {
       final UInt64 epoch = UInt64.valueOf(parameters.get(EPOCH));
-      final UInt64 currentEpoch = chainDataProvider.getCurrentEpoch();
-      if (currentEpoch.plus(Constants.MIN_SEED_LOOKAHEAD).isLessThan(epoch)) {
-        ctx.status(SC_BAD_REQUEST);
-        final String message =
-            "Cannot get attester duties for " + epoch.minus(currentEpoch) + " epochs ahead";
-        ctx.result(BadRequest.badRequest(jsonProvider, message));
-        return;
-      }
       final UInt64[] indexes = jsonProvider.jsonToObject(ctx.body(), UInt64[].class);
 
       SafeFuture<Optional<List<AttesterDuty>>> future =
           validatorDataProvider.getAttesterDuties(
               epoch, Arrays.stream(indexes).map(UInt64::intValue).collect(Collectors.toList()));
 
-      handleOptionalResult(ctx, future, this::handleResult, List.of());
+      handleOptionalResult(ctx, future, this::handleResult, this::handleError, List.of());
 
     } catch (NumberFormatException ex) {
       LOG.trace("Error parsing", ex);
@@ -143,5 +131,15 @@ public class PostAttesterDuties extends AbstractHandler implements Handler {
   private Optional<String> handleResult(Context ctx, final List<AttesterDuty> response)
       throws JsonProcessingException {
     return Optional.of(jsonProvider.objectToJSON(new GetAttesterDutiesResponse(response)));
+  }
+
+  private SafeFuture<String> handleError(final Context ctx, final Throwable error) {
+    final Throwable rootCause = Throwables.getRootCause(error);
+    if (rootCause instanceof IllegalArgumentException) {
+      ctx.status(SC_BAD_REQUEST);
+      return SafeFuture.of(() -> BadRequest.badRequest(jsonProvider, rootCause.getMessage()));
+    } else {
+      return failedFuture(error);
+    }
   }
 }
