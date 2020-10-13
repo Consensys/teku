@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -52,7 +53,7 @@ public abstract class AbstractBeaconNodeCommandTest {
     try {
       final ArgumentCaptor<TekuConfiguration> configCaptor =
           ArgumentCaptor.forClass(TekuConfiguration.class);
-      verify(startAction).start(configCaptor.capture(), false);
+      verify(startAction).start(configCaptor.capture(), eq(false));
       assertThat(stringWriter.toString()).isEmpty();
 
       return configCaptor.getValue();
