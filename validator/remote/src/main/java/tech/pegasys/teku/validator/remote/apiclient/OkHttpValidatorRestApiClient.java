@@ -269,11 +269,12 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
           }
         case 400:
           {
-            LOG.error(
-                "Invalid params response from Beacon Node API (url = {}, response = {})",
-                request.url(),
-                response.body().string());
-            return Optional.empty();
+            throw new IllegalArgumentException(
+                "Invalid params response from Beacon Node API (url = "
+                    + request.url()
+                    + ", response = "
+                    + response.body().string()
+                    + ")");
           }
         default:
           {
