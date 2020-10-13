@@ -46,8 +46,7 @@ import tech.pegasys.teku.util.config.NetworkDefinition;
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",
     footerHeading = "%n",
-    footer = "Teku is licensed under the Apache License 2.0",
-    hidden = true)
+    footer = "Teku is licensed under the Apache License 2.0")
 public class ValidatorClientCommand implements Callable<Integer> {
 
   @Mixin(name = "Validator")
