@@ -139,7 +139,7 @@ public class GetValidators extends AbstractHandler implements Handler {
     }
   }
 
-  private final ResultProcessor<BeaconState> getResultProcessor(
+  private ResultProcessor<BeaconState> getResultProcessor(
       final boolean activeOnly, final int pageSize, final int pageToken) {
     return (ctx, state) -> {
       final BeaconValidators result = new BeaconValidators(state, activeOnly, pageSize, pageToken);
