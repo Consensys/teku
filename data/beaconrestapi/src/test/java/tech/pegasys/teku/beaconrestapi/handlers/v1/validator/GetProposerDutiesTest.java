@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.BLSPubKey;
+import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -33,9 +35,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class GetProposerDutiesTest extends AbstractValidatorApiTest {
   @BeforeEach
   public void setup() {
-    handler =
-        new GetProposerDuties(
-            chainDataProvider, syncDataProvider, validatorDataProvider, jsonProvider);
+    handler = new GetProposerDuties(syncDataProvider, validatorDataProvider, jsonProvider);
   }
 
   @Test
@@ -53,6 +53,20 @@ public class GetProposerDutiesTest extends AbstractValidatorApiTest {
     handler.handle(context);
     GetProposerDutiesResponse response = getResponseFromFuture(GetProposerDutiesResponse.class);
     assertThat(response.data).isEqualTo(duties);
+  }
+
+  @Test
+  public void shouldReturnBadRequestWhenIllegalArgumentExceptionThrown() throws Exception {
+    when(validatorDataProvider.isStoreAvailable()).thenReturn(true);
+    when(syncService.isSyncActive()).thenReturn(false);
+    when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
+    when(validatorDataProvider.getProposerDuties(UInt64.valueOf(100)))
+        .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException("Bad epoch")));
+
+    handler.handle(context);
+    verifyStatusCode(SC_BAD_REQUEST);
+    final BadRequest badRequest = getBadRequestFromFuture();
+    assertThat(badRequest).usingRecursiveComparison().isEqualTo(new BadRequest(400, "Bad epoch"));
   }
 
   private ProposerDuty getProposerDuty(final int validatorIndex, final UInt64 slot) {

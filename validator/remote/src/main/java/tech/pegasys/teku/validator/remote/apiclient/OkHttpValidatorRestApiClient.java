@@ -39,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -56,6 +55,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -116,12 +116,10 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   @Override
   public List<AttesterDuty> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes) {
-    return get(
+    return post(
             GET_ATTESTATION_DUTIES,
             Map.of("epoch", epoch.toString()),
-            Map.of(
-                "index",
-                validatorIndexes.stream().map(Object::toString).collect(Collectors.joining(","))),
+            validatorIndexes.toArray(),
             GetAttesterDutiesResponse.class)
         .map(response -> response.data)
         .orElse(Collections.emptyList());
@@ -142,11 +140,15 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   public Optional<BeaconBlock> createUnsignedBlock(
       final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
     final Map<String, String> queryParams = new HashMap<>();
-    queryParams.put("slot", encodeQueryParam(slot));
     queryParams.put("randao_reveal", encodeQueryParam(randaoReveal));
     graffiti.ifPresent(bytes32 -> queryParams.put("graffiti", encodeQueryParam(bytes32)));
 
-    return get(GET_UNSIGNED_BLOCK, queryParams, BeaconBlock.class);
+    return get(
+            GET_UNSIGNED_BLOCK,
+            Map.of("slot", slot.toString()),
+            queryParams,
+            GetNewBlockResponse.class)
+        .map(response -> response.data);
   }
 
   @Override
@@ -222,8 +224,10 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
   private <T> Optional<T> post(
       final ValidatorApiMethod apiMethod,
+      final Map<String, String> urlParams,
       final Object requestBodyObj,
       final Class<T> responseClass) {
+    final HttpUrl.Builder httpUrlBuilder = urlBuilder(apiMethod, urlParams);
     final String requestBody;
     try {
       requestBody = jsonProvider.objectToJSON(requestBodyObj);
@@ -233,11 +237,18 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
     final Request request =
         new Request.Builder()
-            .url(urlBuilder(apiMethod, emptyMap()).build())
+            .url(httpUrlBuilder.build())
             .post(RequestBody.create(requestBody, APPLICATION_JSON))
             .build();
 
     return executeCall(request, responseClass);
+  }
+
+  private <T> Optional<T> post(
+      final ValidatorApiMethod apiMethod,
+      final Object requestBodyObj,
+      final Class<T> responseClass) {
+    return post(apiMethod, Collections.emptyMap(), requestBodyObj, responseClass);
   }
 
   private HttpUrl.Builder urlBuilder(

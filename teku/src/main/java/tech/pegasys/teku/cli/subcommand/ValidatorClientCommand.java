@@ -46,8 +46,7 @@ import tech.pegasys.teku.util.config.NetworkDefinition;
     descriptionHeading = "%nDescription:%n%n",
     optionListHeading = "%nOptions:%n",
     footerHeading = "%n",
-    footer = "Teku is licensed under the Apache License 2.0",
-    hidden = true)
+    footer = "Teku is licensed under the Apache License 2.0")
 public class ValidatorClientCommand implements Callable<Integer> {
 
   @Mixin(name = "Validator")
@@ -66,7 +65,8 @@ public class ValidatorClientCommand implements Callable<Integer> {
   private InteropOptions interopOptions;
 
   @Mixin(name = "Logging")
-  private LoggingOptions loggingOptions;
+  @SuppressWarnings("FieldMayBeFinal")
+  private LoggingOptions loggingOptions = new LoggingOptions(LoggingOptions.DEFAULT_VC_LOG_FILE);
 
   @Mixin(name = "Metrics")
   private MetricsOptions metricsOptions;
@@ -78,7 +78,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
     try {
       parentCommand.setLogLevels();
       final TekuConfiguration globalConfiguration = tekuConfiguration();
-      parentCommand.getStartAction().accept(globalConfiguration);
+      parentCommand.getStartAction().start(globalConfiguration, true);
       return 0;
     } catch (InvalidConfigurationException | DatabaseStorageException ex) {
       parentCommand.reportUserError(ex);
@@ -98,6 +98,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
     final TekuConfiguration.Builder builder = TekuConfiguration.builder();
     builder.globalConfig(this::buildGlobalConfiguration);
     validatorOptions.configure(builder);
+    validatorClientOptions.configure(builder);
     return builder.build();
   }
 
@@ -124,8 +125,6 @@ public class ValidatorClientCommand implements Callable<Integer> {
         .setMetricsInterface(metricsOptions.getMetricsInterface())
         .setMetricsCategories(metricsOptions.getMetricsCategories())
         .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist())
-        .setDataPath(dataOptions.getDataPath())
-        .setValidatorClient(true)
-        .setBeaconNodeApiEndpoint(validatorClientOptions.getBeaconNodeApiEndpoint());
+        .setDataPath(dataOptions.getDataPath());
   }
 }
