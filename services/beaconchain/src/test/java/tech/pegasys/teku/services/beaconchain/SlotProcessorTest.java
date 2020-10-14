@@ -23,8 +23,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
-import com.google.common.eventbus.EventBus;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -36,14 +34,11 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
-import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
-import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.sync.SyncService;
-import tech.pegasys.teku.util.EventSink;
 import tech.pegasys.teku.util.config.StateStorageMode;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
@@ -56,7 +51,6 @@ public class SlotProcessorTest {
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
   private final RecentChainData recentChainData = storageSystem.recentChainData();
-  private final EventBus eventBus = storageSystem.eventBus();
 
   private final SyncService syncService = mock(SyncService.class);
   private final ForkChoice forkChoice = mock(ForkChoice.class);
@@ -64,15 +58,9 @@ public class SlotProcessorTest {
   private final SlotEventsChannel slotEventsChannel = mock(SlotEventsChannel.class);
   private final SlotProcessor slotProcessor =
       new SlotProcessor(
-          recentChainData,
-          syncService,
-          forkChoice,
-          p2pNetwork,
-          slotEventsChannel,
-          eventBus,
-          eventLogger);
-  final UInt64 genesisTime = beaconState.getGenesis_time();
-  final UInt64 desiredSlot = UInt64.valueOf(100L);
+          recentChainData, syncService, forkChoice, p2pNetwork, slotEventsChannel, eventLogger);
+  private final UInt64 genesisTime = beaconState.getGenesis_time();
+  private final UInt64 desiredSlot = UInt64.valueOf(100L);
 
   @BeforeEach
   public void setup() {
@@ -177,7 +165,6 @@ public class SlotProcessorTest {
   public void onTick_shouldSkipForward() {
     final UInt64 slot = UInt64.valueOf(SLOTS_PER_EPOCH * 100L);
     slotProcessor.setOnTickSlotAttestation(slot);
-    slotProcessor.setOnTickSlotAggregate(slot);
     ArgumentCaptor<UInt64> captor = ArgumentCaptor.forClass(UInt64.class);
     when(syncService.isSyncActive()).thenReturn(false);
     when(p2pNetwork.getPeerCount()).thenReturn(1);
@@ -207,9 +194,8 @@ public class SlotProcessorTest {
   @Test
   public void onTick_shouldRunAttestationsDuringProcessing() {
     // skip the slot start
-    slotProcessor.setOnTickSlotStart(slotProcessor.getNodeSlot().getValue());
-    final List<BroadcastAttestationEvent> events =
-        EventSink.capture(eventBus, BroadcastAttestationEvent.class);
+    final UInt64 slot = slotProcessor.getNodeSlot().getValue();
+    slotProcessor.setOnTickSlotStart(slot);
     when(syncService.isSyncActive()).thenReturn(false);
 
     when(p2pNetwork.getPeerCount()).thenReturn(1);
@@ -220,39 +206,18 @@ public class SlotProcessorTest {
         .slotEvent(
             ZERO,
             recentChainData.getHeadSlot(),
-            recentChainData.getBestBlockRoot().get(),
+            recentChainData.getBestBlockRoot().orElseThrow(),
             ZERO,
             finalizedCheckpoint.getEpoch(),
             finalizedCheckpoint.getRoot(),
             1);
-    assertThat(events)
-        .containsExactly(new BroadcastAttestationEvent(slotProcessor.getNodeSlot().getValue()));
-  }
-
-  @Test
-  public void onTick_shouldRunAggregationsDuringProcessing() {
-    // skip the slot start and attestations
-    final UInt64 slot = slotProcessor.getNodeSlot().getValue();
-    slotProcessor.setOnTickSlotStart(slot);
-    slotProcessor.setOnTickSlotAttestation(slot);
-
-    final List<BroadcastAggregatesEvent> events =
-        EventSink.capture(eventBus, BroadcastAggregatesEvent.class);
-
-    when(syncService.isSyncActive()).thenReturn(false);
-
-    when(p2pNetwork.getPeerCount()).thenReturn(1);
-
-    slotProcessor.onTick(beaconState.getGenesis_time().plus(SECONDS_PER_SLOT - 1));
-    assertThat(slotProcessor.getNodeSlot().getValue()).isEqualTo(ONE);
-    assertThat(events).containsExactly(new BroadcastAggregatesEvent(slot));
+    verify(forkChoice).processHead(slot, false);
   }
 
   @Test
   void onTick_shouldExitIfUpToDate() {
     slotProcessor.setOnTickSlotStart(ZERO);
     slotProcessor.setOnTickSlotAttestation(ZERO);
-    slotProcessor.setOnTickSlotAggregate(ZERO);
     when(syncService.isSyncActive()).thenReturn(false);
     slotProcessor.onTick(beaconState.getGenesis_time());
 
@@ -268,5 +233,26 @@ public class SlotProcessorTest {
   public void setNodeSlot_shouldAlterNodeSlotValue() {
     slotProcessor.setCurrentSlot(desiredSlot);
     assertThat(slotProcessor.getNodeSlot().getValue()).isEqualTo(desiredSlot);
+  }
+
+  @Test
+  void shouldProgressThroughMultipleSlots() {
+    when(syncService.isSyncActive()).thenReturn(false);
+    when(p2pNetwork.getPeerCount()).thenReturn(1);
+
+    // Slot 0 start
+    slotProcessor.onTick(beaconState.getGenesis_time());
+    verify(slotEventsChannel).onSlot(ZERO);
+    // Attestation due
+    slotProcessor.onTick(beaconState.getGenesis_time().plus(SECONDS_PER_SLOT / 3));
+    verify(forkChoice).processHead(ZERO, false);
+
+    // Slot 2 start
+    final UInt64 slot1Start = beaconState.getGenesis_time().plus(SECONDS_PER_SLOT);
+    slotProcessor.onTick(slot1Start);
+    verify(slotEventsChannel).onSlot(ONE);
+    // Attestation due
+    slotProcessor.onTick(slot1Start.plus(SECONDS_PER_SLOT / 3));
+    verify(forkChoice).processHead(ONE, false);
   }
 }

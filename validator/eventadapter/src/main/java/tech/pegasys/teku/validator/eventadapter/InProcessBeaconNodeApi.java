@@ -45,22 +45,17 @@ public class InProcessBeaconNodeApi implements BeaconNodeApi {
     final ValidatorApiChannel validatorApiChannel =
         new MetricRecordingValidatorApiChannel(
             metricsSystem, eventChannels.getPublisher(ValidatorApiChannel.class, asyncRunner));
-    BeaconChainEventAdapter beaconChainEventAdapter;
-    if (USE_INDEPENDENT_TIMER) {
-      final ValidatorTimingChannel validatorTimingChannel =
-          eventChannels.getPublisher(ValidatorTimingChannel.class);
-      final TimeBasedEventAdapter timeBasedEventAdapter =
-          new TimeBasedEventAdapter(
-              new GenesisTimeProvider(asyncRunner, validatorApiChannel),
-              new RepeatingTaskScheduler(asyncRunner, services.getTimeProvider()),
-              services.getTimeProvider(),
-              validatorTimingChannel);
-      beaconChainEventAdapter =
-          new IndependentTimerEventChannelEventAdapter(
-              eventChannels, timeBasedEventAdapter, validatorTimingChannel);
-    } else {
-      beaconChainEventAdapter = new EventChannelBeaconChainEventAdapter(services);
-    }
+    final ValidatorTimingChannel validatorTimingChannel =
+        eventChannels.getPublisher(ValidatorTimingChannel.class);
+    final TimeBasedEventAdapter timeBasedEventAdapter =
+        new TimeBasedEventAdapter(
+            new GenesisTimeProvider(asyncRunner, validatorApiChannel),
+            new RepeatingTaskScheduler(asyncRunner, services.getTimeProvider()),
+            services.getTimeProvider(),
+            validatorTimingChannel);
+    final BeaconChainEventAdapter beaconChainEventAdapter =
+        new IndependentTimerEventChannelEventAdapter(
+            eventChannels, timeBasedEventAdapter, validatorTimingChannel);
     return new InProcessBeaconNodeApi(validatorApiChannel, beaconChainEventAdapter);
   }
 
