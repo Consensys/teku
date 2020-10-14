@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import okhttp3.OkHttpClient;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
@@ -262,8 +264,7 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThat(request.getMethod()).isEqualTo("GET");
     assertThat(request.getPath())
-        .contains(ValidatorApiMethod.GET_UNSIGNED_BLOCK.getPath(emptyMap()));
-    assertThat(request.getRequestUrl().queryParameter("slot")).isEqualTo(slot.toString());
+        .contains(ValidatorApiMethod.GET_UNSIGNED_BLOCK.getPath(Map.of("slot", "1")));
     assertThat(request.getRequestUrl().queryParameter("randao_reveal"))
         .isEqualTo(blsSignature.toHexString());
     assertThat(request.getRequestUrl().queryParameter("graffiti"))
@@ -301,7 +302,9 @@ class OkHttpValidatorRestApiClientTest {
     final BeaconBlock expectedBeaconBlock = schemaObjects.beaconBlock();
 
     mockWebServer.enqueue(
-        new MockResponse().setResponseCode(200).setBody(asJson(expectedBeaconBlock)));
+        new MockResponse()
+            .setResponseCode(200)
+            .setBody(asJson(new GetNewBlockResponse(expectedBeaconBlock))));
 
     Optional<BeaconBlock> beaconBlock = apiClient.createUnsignedBlock(slot, blsSignature, graffiti);
 

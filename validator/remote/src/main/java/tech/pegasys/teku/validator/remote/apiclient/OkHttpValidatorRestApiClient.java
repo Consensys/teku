@@ -55,6 +55,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -139,11 +140,15 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   public Optional<BeaconBlock> createUnsignedBlock(
       final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
     final Map<String, String> queryParams = new HashMap<>();
-    queryParams.put("slot", encodeQueryParam(slot));
     queryParams.put("randao_reveal", encodeQueryParam(randaoReveal));
     graffiti.ifPresent(bytes32 -> queryParams.put("graffiti", encodeQueryParam(bytes32)));
 
-    return get(GET_UNSIGNED_BLOCK, queryParams, BeaconBlock.class);
+    return get(
+            GET_UNSIGNED_BLOCK,
+            Map.of("slot", slot.toString()),
+            queryParams,
+            GetNewBlockResponse.class)
+        .map(response -> response.data);
   }
 
   @Override
