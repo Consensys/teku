@@ -13,16 +13,7 @@
 
 package tech.pegasys.teku.statetransition.block;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
-
 import com.google.common.eventbus.EventBus;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +35,16 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 
 public class BlockManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -97,7 +98,7 @@ public class BlockManagerTest {
     final SignedBeaconBlock nextBlock = localChain.createBlockAtSlot(nextSlot);
     incrementSlot();
 
-    blockManager.importBlockIgnoringResult(nextBlock);
+    blockManager.importBlock(nextBlock).join();
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
@@ -111,7 +112,7 @@ public class BlockManagerTest {
 
     incrementSlot();
     incrementSlot();
-    blockManager.importBlockIgnoringResult(nextNextBlock);
+    blockManager.importBlock(nextNextBlock).join();
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(0);
     assertThat(pendingBlocks.contains(nextNextBlock)).isTrue();
@@ -139,7 +140,7 @@ public class BlockManagerTest {
 
     incrementSlot();
     incrementSlot();
-    blockManager.importBlockIgnoringResult(nextNextBlock);
+    blockManager.importBlock(nextNextBlock).join();
     ignoreFuture(verify(blockImporter).importBlock(nextNextBlock));
 
     // Before nextNextBlock imports, it's parent becomes available
@@ -157,7 +158,7 @@ public class BlockManagerTest {
     final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock = remoteChain.createAndImportBlockAtSlot(nextSlot);
 
-    blockManager.importBlockIgnoringResult(nextBlock);
+    blockManager.importBlock(nextBlock).join();
     assertThat(pendingBlocks.size()).isEqualTo(0);
     assertThat(futureBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.contains(nextBlock)).isTrue();
@@ -172,7 +173,7 @@ public class BlockManagerTest {
     final SignedBeaconBlock nextNextBlock = remoteChain.createAndImportBlockAtSlot(nextNextSlot);
 
     incrementSlot();
-    blockManager.importBlockIgnoringResult(nextNextBlock);
+    blockManager.importBlock(nextNextBlock).join();
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(0);
     assertThat(pendingBlocks.contains(nextNextBlock)).isTrue();
@@ -210,7 +211,7 @@ public class BlockManagerTest {
     }
 
     // Gossip all blocks except the first
-    blocks.subList(1, blockCount).stream().forEach(blockManager::importBlockIgnoringResult);
+    blocks.subList(1, blockCount).stream().forEach(blockManager::importBlock);
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
 
     // Import next block, causing remaining blocks to be imported
@@ -235,15 +236,15 @@ public class BlockManagerTest {
     }
 
     // Gossip all blocks except the first
-    invalidBlockDescendants.stream().forEach(blockManager::importBlockIgnoringResult);
+    invalidBlockDescendants.stream().forEach(blockManager::importBlock);
     assertThat(pendingBlocks.size()).isEqualTo(invalidChainDepth);
 
     // Gossip next block, causing dependent blocks to be dropped when the import fails
-    blockManager.importBlockIgnoringResult(invalidBlock);
+    blockManager.importBlock(invalidBlock).join();
     assertThat(pendingBlocks.size()).isEqualTo(0);
 
     // If any invalid block is again gossiped, it should be ignored
-    invalidBlockDescendants.stream().forEach(blockManager::importBlockIgnoringResult);
+    invalidBlockDescendants.stream().forEach(blockManager::importBlock);
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
@@ -265,20 +266,20 @@ public class BlockManagerTest {
 
     // Gossip all blocks except the first two
     invalidBlockDescendants.subList(1, invalidChainDepth).stream()
-        .forEach(blockManager::importBlockIgnoringResult);
+        .forEach(blockManager::importBlock);
     assertThat(pendingBlocks.size()).isEqualTo(invalidChainDepth - 1);
 
     // Gossip invalid block, which should fail to import and be marked invalid
-    blockManager.importBlockIgnoringResult(invalidBlock);
+    blockManager.importBlock(invalidBlock);
     assertThat(pendingBlocks.size()).isEqualTo(invalidChainDepth - 1);
 
     // Gossip the child of the invalid block, which should also be marked invalid causing
     // the rest of the chain to be marked invalid and dropped
-    blockManager.importBlockIgnoringResult(invalidBlockDescendants.get(0));
+    blockManager.importBlock(invalidBlockDescendants.get(0));
     assertThat(pendingBlocks.size()).isEqualTo(0);
 
     // If any invalid block is again gossiped, it should be ignored
-    invalidBlockDescendants.stream().forEach(blockManager::importBlockIgnoringResult);
+    invalidBlockDescendants.stream().forEach(blockManager::importBlock);
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
@@ -295,7 +296,7 @@ public class BlockManagerTest {
     }
 
     // Gossip all blocks except the first
-    blocks.subList(1, blockCount).stream().forEach(blockManager::importBlockIgnoringResult);
+    blocks.subList(1, blockCount).stream().forEach(blockManager::importBlock);
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
 
     // Import next block, causing next block to be queued for import
