@@ -595,7 +595,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initAttestationPool() {
     LOG.debug("BeaconChainController.initAttestationPool()");
-    attestationPool = new AggregatingAttestationPool(new AttestationDataStateTransitionValidator());
+    attestationPool =
+        new AggregatingAttestationPool(
+            new AttestationDataStateTransitionValidator(), metricsSystem);
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
     blockImporter.subscribeToVerifiedBlockAttestations(attestationPool::removeAll);
   }
