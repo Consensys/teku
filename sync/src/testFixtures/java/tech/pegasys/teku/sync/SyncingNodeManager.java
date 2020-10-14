@@ -13,11 +13,7 @@
 
 package tech.pegasys.teku.sync;
 
-import static tech.pegasys.teku.infrastructure.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
-
 import com.google.common.eventbus.EventBus;
-import java.util.List;
-import java.util.function.Consumer;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.StateTransition;
@@ -47,6 +43,11 @@ import tech.pegasys.teku.sync.singlepeer.SinglePeerSyncService;
 import tech.pegasys.teku.sync.singlepeer.SyncManager;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
+
+import java.util.List;
+import java.util.function.Consumer;
+
+import static tech.pegasys.teku.infrastructure.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
 
 public class SyncingNodeManager {
   private final EventBus eventBus;
@@ -106,7 +107,7 @@ public class SyncingNodeManager {
             .builder()
             .eventBus(eventBus)
             .recentChainData(recentChainData)
-            .gossipedBlockConsumer(blockManager::importBlockIgnoringResult);
+            .gossipedBlockConsumer(blockManager::importBlock);
 
     configureNetwork.accept(networkBuilder);
 
