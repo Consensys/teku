@@ -38,6 +38,7 @@ public class FileBackedStorageSystemBuilder {
   private Path dataDir;
   private Path hotDir;
   private Path archiveDir;
+  private Optional<Path> v6ArchiveDir = Optional.empty();
   private long stateStorageFrequency = 1L;
 
   private FileBackedStorageSystemBuilder() {}
@@ -73,6 +74,7 @@ public class FileBackedStorageSystemBuilder {
     return create()
         .version(version)
         .dataDir(dataDir)
+        .v6ArchiveDir(v6ArchiveDir)
         .storageMode(storageMode)
         .stateStorageFrequency(stateStorageFrequency)
         .storeConfig(storeConfig);
@@ -93,6 +95,17 @@ public class FileBackedStorageSystemBuilder {
     this.dataDir = dataDir;
     this.hotDir = dataDir.resolve("hot");
     this.archiveDir = dataDir.resolve("archive");
+    return this;
+  }
+
+  private FileBackedStorageSystemBuilder v6ArchiveDir(Optional<Path> v6ArchiveDir) {
+    this.v6ArchiveDir = v6ArchiveDir;
+    return this;
+  }
+
+  public FileBackedStorageSystemBuilder v6ArchiveDir(Path v6ArchiveDir) {
+    checkNotNull(dataDir);
+    this.v6ArchiveDir = Optional.of(v6ArchiveDir.resolve("archive"));
     return this;
   }
 
@@ -118,10 +131,17 @@ public class FileBackedStorageSystemBuilder {
   }
 
   private Database createV6Database() {
+    RocksDbConfiguration hotConfigDefault =
+        v6ArchiveDir.isPresent()
+            ? RocksDbConfiguration.v5HotDefaults()
+            : RocksDbConfiguration.v6SingleDefaults();
+    Optional<RocksDbConfiguration> coldConfig =
+        v6ArchiveDir.map(dir -> RocksDbConfiguration.v5ArchiveDefaults().withDatabaseDir(dir));
+
     return RocksDbDatabase.createV6(
         new StubMetricsSystem(),
-        RocksDbConfiguration.v6SingleDefaults().withDatabaseDir(hotDir),
-        Optional.empty(),
+        hotConfigDefault.withDatabaseDir(hotDir),
+        coldConfig,
         V4SchemaHot.INSTANCE,
         V6SchemaFinalized.INSTANCE,
         storageMode,

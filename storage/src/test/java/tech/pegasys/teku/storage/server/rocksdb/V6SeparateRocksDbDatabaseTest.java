@@ -13,20 +13,32 @@
 
 package tech.pegasys.teku.storage.server.rocksdb;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.io.File;
+import java.nio.file.Path;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.storageSystem.FileBackedStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
-public class V6RocksDbDatabaseTest extends AbstractRocksDbDatabaseWithHotStatesTest {
+public class V6SeparateRocksDbDatabaseTest extends AbstractRocksDbDatabaseWithHotStatesTest {
 
   @Override
   protected StorageSystem createStorageSystem(
       final File tempDir, final StateStorageMode storageMode, final StoreConfig storeConfig) {
+    Path mainDataDir = tempDir.toPath().resolve("mainDataDir");
+    if (!mainDataDir.toFile().exists()) {
+      assertThat(mainDataDir.toFile().mkdir()).isTrue();
+    }
+    Path archDataDir = tempDir.toPath().resolve("v6arch");
+    if (!archDataDir.toFile().exists()) {
+      assertThat(archDataDir.toFile().mkdir()).isTrue();
+    }
     return FileBackedStorageSystemBuilder.create()
-        .dataDir(tempDir.toPath())
+        .dataDir(mainDataDir)
+        .v6ArchiveDir(archDataDir)
         .version(DatabaseVersion.V6)
         .storageMode(storageMode)
         .stateStorageFrequency(1L)
