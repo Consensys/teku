@@ -13,7 +13,16 @@
 
 package tech.pegasys.teku.statetransition.block;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
+
 import com.google.common.eventbus.EventBus;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,16 +44,6 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 
 public class BlockManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

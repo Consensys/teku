@@ -103,7 +103,6 @@ public class BlockPropagationIntegrationTest {
 
     // Propagate new block
     final SignedBeaconBlock newBlock = node1.chainUtil().createBlockAtSlot(currentSlot);
-    System.out.println(newBlock.getSlot());
     node1.eventBus().post(new ProposedBlockEvent(newBlock));
 
     // Verify that node2 fetches required blocks in response
