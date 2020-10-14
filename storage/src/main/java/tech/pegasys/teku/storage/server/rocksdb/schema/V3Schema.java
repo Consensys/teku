@@ -24,6 +24,7 @@ import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSeri
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.UINT64_SERIALIZER;
 import static tech.pegasys.teku.storage.server.rocksdb.serialization.RocksDbSerializer.VOTES_SERIALIZER;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
@@ -58,6 +59,18 @@ public interface V3Schema extends Schema {
   RocksDbColumn<Bytes32, UInt64> SLOTS_BY_FINALIZED_STATE_ROOT =
       RocksDbColumn.create(9, BYTES32_SERIALIZER, UINT64_SERIALIZER);
 
+  List<RocksDbColumn<?, ?>> ALL_COLUMNS =
+      List.of(
+          FINALIZED_ROOTS_BY_SLOT,
+          FINALIZED_BLOCKS_BY_ROOT,
+          FINALIZED_STATES_BY_ROOT,
+          HOT_BLOCKS_BY_ROOT,
+          CHECKPOINT_STATES,
+          VOTES,
+          DEPOSITS_FROM_BLOCK_EVENTS,
+          STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT,
+          SLOTS_BY_FINALIZED_STATE_ROOT);
+
   // Variables
   RocksDbVariable<UInt64> GENESIS_TIME = RocksDbVariable.create(1, UINT64_SERIALIZER);
   RocksDbVariable<Checkpoint> JUSTIFIED_CHECKPOINT =
@@ -73,4 +86,15 @@ public interface V3Schema extends Schema {
       RocksDbVariable.create(7, PROTO_ARRAY_SNAPSHOT_SERIALIZER);
   RocksDbVariable<Checkpoint> WEAK_SUBJECTIVITY_CHECKPOINT =
       RocksDbVariable.create(8, CHECKPOINT_SERIALIZER);
+
+  List<RocksDbVariable<?>> ALL_VARIABLES =
+      List.of(
+          GENESIS_TIME,
+          JUSTIFIED_CHECKPOINT,
+          BEST_JUSTIFIED_CHECKPOINT,
+          FINALIZED_CHECKPOINT,
+          LATEST_FINALIZED_STATE,
+          MIN_GENESIS_TIME_BLOCK,
+          PROTO_ARRAY_SNAPSHOT,
+          WEAK_SUBJECTIVITY_CHECKPOINT);
 }

@@ -71,7 +71,7 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void dataStorageCreateDbVersion_shouldDefault() {
     final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments();
-    assertThat(globalConfiguration.getDataStorageCreateDbVersion()).isEqualTo("5");
+    assertThat(globalConfiguration.getDataStorageCreateDbVersion()).isEqualTo("6");
   }
 
   @Test

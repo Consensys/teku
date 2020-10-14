@@ -19,14 +19,18 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.storage.server.metadata.DatabaseMetadata;
+import tech.pegasys.teku.storage.server.metadata.V5DatabaseMetadata;
+import tech.pegasys.teku.storage.server.metadata.V6DatabaseMetadata;
 import tech.pegasys.teku.storage.server.network.DatabaseNetwork;
 import tech.pegasys.teku.storage.server.noop.NoOpDatabase;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
 import tech.pegasys.teku.storage.server.rocksdb.RocksDbDatabase;
+import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
+import tech.pegasys.teku.storage.server.rocksdb.schema.V6SchemaFinalized;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.Eth1Address;
 import tech.pegasys.teku.util.config.StateStorageMode;
@@ -44,7 +48,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final MetricsSystem metricsSystem;
   private final File dataDirectory;
   private final File dbDirectory;
-  private final File archiveDirectory;
+  private final File v5ArchiveDirectory;
+  private final Optional<File> v6ArchiveDirectory;
   private final File dbVersionFile;
   private final StateStorageMode stateStorageMode;
   private final DatabaseVersion createDatabaseVersion;
@@ -59,6 +64,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this(
         metricsSystem,
         dataPath,
+        Optional.empty(),
         dataStorageMode,
         DatabaseVersion.DEFAULT_VERSION.getValue(),
         DEFAULT_STORAGE_FREQUENCY,
@@ -72,10 +78,30 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       final String createDatabaseVersion,
       final long stateStorageFrequency,
       final Eth1Address eth1Address) {
+    this(
+        metricsSystem,
+        dataPath,
+        Optional.empty(),
+        dataStorageMode,
+        createDatabaseVersion,
+        stateStorageFrequency,
+        eth1Address);
+  }
+
+  public VersionedDatabaseFactory(
+      final MetricsSystem metricsSystem,
+      final String dataPath,
+      final Optional<String> maybeArchiveDataPath,
+      final StateStorageMode dataStorageMode,
+      final String createDatabaseVersion,
+      final long stateStorageFrequency,
+      final Eth1Address eth1Address) {
     this.metricsSystem = metricsSystem;
     this.dataDirectory = Paths.get(dataPath).toFile();
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
-    this.archiveDirectory = this.dataDirectory.toPath().resolve(ARCHIVE_PATH).toFile();
+    this.v5ArchiveDirectory = this.dataDirectory.toPath().resolve(ARCHIVE_PATH).toFile();
+    this.v6ArchiveDirectory =
+        maybeArchiveDataPath.map(p -> Paths.get(p).resolve(ARCHIVE_PATH).toFile());
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
     this.stateStorageMode = dataStorageMode;
     this.stateStorageFrequency = stateStorageFrequency;
@@ -90,7 +116,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     LOG.info("Data directory set to: {}", dataDirectory.getAbsolutePath());
     validateDataPaths();
     final DatabaseVersion dbVersion = getDatabaseVersion();
-    createDirectories();
+    createDirectories(dbVersion);
     saveDatabaseVersion(dbVersion);
 
     Database database;
@@ -113,7 +139,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         LOG.trace(
             "Created V4 Finalized database ({}) at {}",
             dbVersion.getValue(),
-            archiveDirectory.getAbsolutePath());
+            v5ArchiveDirectory.getAbsolutePath());
         break;
       case V5:
         database = createV5Database();
@@ -124,7 +150,25 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         LOG.trace(
             "Created V5 Finalized database ({}) at {}",
             dbVersion.getValue(),
-            archiveDirectory.getAbsolutePath());
+            v5ArchiveDirectory.getAbsolutePath());
+        break;
+      case V6:
+        database = createV6Database();
+        if (v6ArchiveDirectory.isPresent()) {
+          LOG.trace(
+              "Created V6 Hot database ({}) at {}",
+              dbVersion.getValue(),
+              dbDirectory.getAbsolutePath());
+          LOG.trace(
+              "Created V6 Finalized database ({}) at {}",
+              dbVersion.getValue(),
+              v6ArchiveDirectory.get().getAbsolutePath());
+        } else {
+          LOG.trace(
+              "Created V6 Hot and Finalized database ({}) at {}",
+              dbVersion.getValue(),
+              dbDirectory.getAbsolutePath());
+        }
         break;
       default:
         throw new UnsupportedOperationException("Unhandled database version " + dbVersion);
@@ -149,7 +193,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       return RocksDbDatabase.createV4(
           metricsSystem,
           RocksDbConfiguration.v3And4Settings(dbDirectory.toPath()),
-          RocksDbConfiguration.v3And4Settings(archiveDirectory.toPath()),
+          RocksDbConfiguration.v3And4Settings(v5ArchiveDirectory.toPath()),
           stateStorageMode,
           stateStorageFrequency);
     } catch (final IOException e) {
@@ -164,13 +208,61 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
    */
   private Database createV5Database() {
     try {
-      final DatabaseMetadata metaData =
-          DatabaseMetadata.init(getMetadataFile(), DatabaseMetadata.v5Defaults());
+      final V5DatabaseMetadata metaData =
+          V5DatabaseMetadata.init(getMetadataFile(), V5DatabaseMetadata.v5Defaults());
       DatabaseNetwork.init(getNetworkFile(), Constants.GENESIS_FORK_VERSION, eth1Address);
       return RocksDbDatabase.createV4(
           metricsSystem,
           metaData.getHotDbConfiguration().withDatabaseDir(dbDirectory.toPath()),
-          metaData.getArchiveDbConfiguration().withDatabaseDir(archiveDirectory.toPath()),
+          metaData.getArchiveDbConfiguration().withDatabaseDir(v5ArchiveDirectory.toPath()),
+          stateStorageMode,
+          stateStorageFrequency);
+    } catch (final IOException e) {
+      throw new DatabaseStorageException("Failed to read metadata", e);
+    }
+  }
+
+  private Database createV6Database() {
+    try {
+      final V6DatabaseMetadata defaultMetaData;
+      if (v6ArchiveDirectory.isPresent()) {
+        defaultMetaData = V6DatabaseMetadata.separateDBDefault();
+      } else {
+        defaultMetaData = V6DatabaseMetadata.singleDBDefault();
+      }
+
+      final V6DatabaseMetadata metaData =
+          V6DatabaseMetadata.init(getMetadataFile(), defaultMetaData);
+      if (defaultMetaData.isSingleDB() != metaData.isSingleDB()) {
+        throw new DatabaseStorageException(
+            "The database was originally created as "
+                + (metaData.isSingleDB() ? "Single" : "Separate")
+                + " but now accessed as "
+                + (defaultMetaData.isSingleDB() ? "Single" : "Separate"));
+      }
+
+      DatabaseNetwork.init(getNetworkFile(), Constants.GENESIS_FORK_VERSION, eth1Address);
+
+      final RocksDbConfiguration hotOrSingleDBConfiguration =
+          metaData.isSingleDB()
+              ? metaData.getSingleDbConfiguration().get().getConfiguration()
+              : metaData.getSeparateDbConfiguration().get().getHotDbConfiguration();
+
+      final Optional<RocksDbConfiguration> finalizedConfiguration =
+          v6ArchiveDirectory.map(
+              dir ->
+                  metaData
+                      .getSeparateDbConfiguration()
+                      .get()
+                      .getArchiveDbConfiguration()
+                      .withDatabaseDir(dir.toPath()));
+
+      return RocksDbDatabase.createV6(
+          metricsSystem,
+          hotOrSingleDBConfiguration.withDatabaseDir(dbDirectory.toPath()),
+          finalizedConfiguration,
+          V4SchemaHot.INSTANCE,
+          V6SchemaFinalized.INSTANCE,
           stateStorageMode,
           stateStorageFrequency);
     } catch (final IOException e) {
@@ -195,18 +287,36 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     }
   }
 
-  private void createDirectories() {
+  private void createDirectories(DatabaseVersion dbVersion) {
     if (!dbDirectory.mkdirs() && !dbDirectory.isDirectory()) {
       throw new DatabaseStorageException(
           String.format(
               "Unable to create the path to store database files at %s",
               dbDirectory.getAbsolutePath()));
     }
-    if (!archiveDirectory.mkdirs() && !archiveDirectory.isDirectory()) {
-      throw new DatabaseStorageException(
-          String.format(
-              "Unable to create the path to store archive files at %s",
-              archiveDirectory.getAbsolutePath()));
+
+    switch (dbVersion) {
+      case V4:
+      case V5:
+        if (!v5ArchiveDirectory.mkdirs() && !v5ArchiveDirectory.isDirectory()) {
+          throw new DatabaseStorageException(
+              String.format(
+                  "Unable to create the path to store archive files at %s",
+                  v5ArchiveDirectory.getAbsolutePath()));
+        }
+        break;
+      case V6:
+        v6ArchiveDirectory.ifPresent(
+            archiveDirectory -> {
+              if (!archiveDirectory.mkdirs() && !archiveDirectory.isDirectory()) {
+                throw new DatabaseStorageException(
+                    "Unable to create the path to store archive files at "
+                        + archiveDirectory.getAbsolutePath());
+              }
+            });
+        break;
+      default:
+        // do nothing
     }
   }
 
