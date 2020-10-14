@@ -14,10 +14,12 @@
 package tech.pegasys.teku.validator.api;
 
 import java.io.File;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.status.StatusLogger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -36,6 +38,7 @@ public class ValidatorConfig {
   private final Bytes32 graffiti;
   private final boolean validatorPerformanceTrackingEnabled;
   private final boolean validatorKeystoreLockingEnabled;
+  private final Optional<URI> beaconNodeApiEndpoint;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -44,6 +47,7 @@ public class ValidatorConfig {
       final List<BLSPublicKey> validatorExternalSignerPublicKeys,
       final URL validatorExternalSignerUrl,
       final int validatorExternalSignerTimeout,
+      final Optional<URI> beaconNodeApiEndpoint,
       final Bytes32 graffiti,
       final boolean validatorPerformanceTrackingEnabled,
       final boolean validatorKeystoreLockingEnabled) {
@@ -56,6 +60,7 @@ public class ValidatorConfig {
     this.graffiti = graffiti;
     this.validatorPerformanceTrackingEnabled = validatorPerformanceTrackingEnabled;
     this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
+    this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
   }
 
   public static Builder builder() {
@@ -90,6 +95,10 @@ public class ValidatorConfig {
     return validatorExternalSignerTimeout;
   }
 
+  public Optional<URI> getBeaconNodeApiEndpoint() {
+    return beaconNodeApiEndpoint;
+  }
+
   public Bytes32 getGraffiti() {
     return graffiti;
   }
@@ -121,6 +130,7 @@ public class ValidatorConfig {
     private Bytes32 graffiti;
     private boolean validatorPerformanceTrackingEnabled;
     private boolean validatorKeystoreLockingEnabled;
+    private Optional<URI> beaconNodeApiEndpoint = Optional.empty();
 
     private Builder() {}
 
@@ -155,6 +165,11 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder beaconNodeApiEndpoint(final URI beaconNodeApiEndpoint) {
+      this.beaconNodeApiEndpoint = Optional.of(beaconNodeApiEndpoint);
+      return this;
+    }
+
     public Builder graffiti(Bytes32 graffiti) {
       this.graffiti = graffiti;
       return this;
@@ -180,6 +195,7 @@ public class ValidatorConfig {
           validatorExternalSignerPublicKeys,
           validatorExternalSignerUrl,
           validatorExternalSignerTimeout,
+          beaconNodeApiEndpoint,
           graffiti,
           validatorPerformanceTrackingEnabled,
           validatorKeystoreLockingEnabled);

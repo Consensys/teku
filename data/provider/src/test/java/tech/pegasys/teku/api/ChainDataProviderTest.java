@@ -69,6 +69,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore;
+import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.StateStorageMode;
 
 public class ChainDataProviderTest {
@@ -88,11 +89,13 @@ public class ChainDataProviderTest {
   private final CombinedChainDataClient mockCombinedChainDataClient =
       mock(CombinedChainDataClient.class);
   private final RecentChainData mockRecentChainData = mock(RecentChainData.class);
+  private UInt64 actualBalance;
 
   @BeforeEach
   public void setup() {
     slot = UInt64.valueOf(SLOTS_PER_EPOCH * 3);
-    storageSystem.chainUpdater().initializeGenesis();
+    actualBalance = UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE + 100000);
+    storageSystem.chainUpdater().initializeGenesis(true, actualBalance);
     bestBlock = storageSystem.chainUpdater().advanceChain(slot);
     storageSystem.chainUpdater().updateBestBlock(bestBlock);
 
@@ -701,7 +704,7 @@ public class ChainDataProviderTest {
         .isEqualTo(
             new ValidatorResponse(
                 ONE,
-                UInt64.valueOf("32000000000"),
+                actualBalance,
                 ValidatorStatus.active_ongoing,
                 new Validator(
                     validator.pubkey,
@@ -721,7 +724,7 @@ public class ChainDataProviderTest {
             .map(id -> ValidatorResponse.fromState(beaconStateInternal, id))
             .collect(toList());
     SafeFuture<Optional<List<ValidatorResponse>>> response =
-        provider.getValidatorsDetails(ZERO, validatorIds);
+        provider.getValidatorsDetails(slot, validatorIds);
     assertThatSafeFuture(response).isCompletedWithValue(Optional.of(expectedValidators));
   }
 }

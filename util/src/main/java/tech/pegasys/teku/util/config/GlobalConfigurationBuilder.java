@@ -83,8 +83,6 @@ public class GlobalConfigurationBuilder {
   private List<String> restApiHostAllowlist;
   private NetworkDefinition network;
   private Path validatorsSlashingProtectionPath;
-  private boolean isValidatorClient;
-  private String beaconNodeApiEndpoint;
 
   public GlobalConfigurationBuilder setConstants(final String constants) {
     this.constants = constants;
@@ -384,16 +382,6 @@ public class GlobalConfigurationBuilder {
     return this;
   }
 
-  public GlobalConfigurationBuilder setValidatorClient(final boolean isValidatorOnly) {
-    this.isValidatorClient = isValidatorOnly;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setBeaconNodeApiEndpoint(final String beaconNodeApiEndpoint) {
-    this.beaconNodeApiEndpoint = beaconNodeApiEndpoint;
-    return this;
-  }
-
   public GlobalConfiguration build() {
     if (network != null) {
       constants = getOrDefault(constants, network::getConstants);
@@ -468,9 +456,7 @@ public class GlobalConfigurationBuilder {
         restApiEnabled,
         restApiInterface,
         restApiHostAllowlist,
-        validatorsSlashingProtectionPath,
-        isValidatorClient,
-        beaconNodeApiEndpoint);
+        validatorsSlashingProtectionPath);
   }
 
   private <T> T getOrDefault(final T explicitValue, final Supplier<T> predefinedNetworkValue) {

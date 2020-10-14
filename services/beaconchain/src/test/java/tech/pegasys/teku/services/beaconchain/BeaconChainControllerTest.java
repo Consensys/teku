@@ -131,8 +131,11 @@ public class BeaconChainControllerTest {
     verify(queryChannel).getWeakSubjectivityState();
     verify(updateChannel, never()).onWeakSubjectivityUpdate(any());
 
-    final WeakSubjectivityValidator expectedValidator = WeakSubjectivityValidator.lenient();
-    assertThat(controller.getWeakSubjectivityValidator()).isEqualTo(expectedValidator);
+    final WeakSubjectivityValidator expectedValidator =
+        WeakSubjectivityValidator.moderate(WeakSubjectivityConfig.defaultConfig());
+    assertThat(controller.getWeakSubjectivityValidator())
+        .usingRecursiveComparison()
+        .isEqualTo(expectedValidator);
   }
 
   @Test
@@ -165,8 +168,10 @@ public class BeaconChainControllerTest {
             WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(cliCheckpoint));
 
     final WeakSubjectivityValidator expectedValidator =
-        WeakSubjectivityValidator.lenient(cliConfig);
-    assertThat(controller.getWeakSubjectivityValidator()).isEqualTo(expectedValidator);
+        WeakSubjectivityValidator.moderate(cliConfig);
+    assertThat(controller.getWeakSubjectivityValidator())
+        .usingRecursiveComparison()
+        .isEqualTo(expectedValidator);
   }
 
   @Test
@@ -194,7 +199,7 @@ public class BeaconChainControllerTest {
     verify(updateChannel, never()).onWeakSubjectivityUpdate(any());
 
     final WeakSubjectivityValidator expectedValidator =
-        WeakSubjectivityValidator.lenient(WeakSubjectivityConfig.from(storedState));
+        WeakSubjectivityValidator.moderate(WeakSubjectivityConfig.from(storedState));
     assertThat(controller.getWeakSubjectivityValidator())
         .usingRecursiveComparison()
         .isEqualTo(expectedValidator);
@@ -237,7 +242,7 @@ public class BeaconChainControllerTest {
             WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(cliCheckpoint));
 
     final WeakSubjectivityValidator expectedValidator =
-        WeakSubjectivityValidator.lenient(cliConfig);
+        WeakSubjectivityValidator.moderate(cliConfig);
     assertThat(controller.getWeakSubjectivityValidator())
         .usingRecursiveComparison()
         .isEqualTo(expectedValidator);
@@ -272,7 +277,9 @@ public class BeaconChainControllerTest {
     verify(updateChannel, never()).onWeakSubjectivityUpdate(any());
 
     final WeakSubjectivityValidator expectedValidator =
-        WeakSubjectivityValidator.lenient(cliConfig);
-    assertThat(controller.getWeakSubjectivityValidator()).isEqualTo(expectedValidator);
+        WeakSubjectivityValidator.moderate(cliConfig);
+    assertThat(controller.getWeakSubjectivityValidator())
+        .usingRecursiveComparison()
+        .isEqualTo(expectedValidator);
   }
 }

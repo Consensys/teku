@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.apiclient;
 
+import static java.util.Collections.emptyMap;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_AGGREGATE;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_DUTIES;
@@ -21,6 +22,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_VALIDATORS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLOCK;
@@ -49,8 +51,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
 import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
+import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -71,7 +76,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
   private static final MediaType APPLICATION_JSON =
       MediaType.parse("application/json; charset=utf-8");
-  private static final Map<String, String> EMPTY_QUERY_PARAMS = Collections.emptyMap();
+  private static final Map<String, String> EMPTY_QUERY_PARAMS = emptyMap();
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final OkHttpClient httpClient;
@@ -93,6 +98,14 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
+  public Optional<List<ValidatorResponse>> getValidators(final List<String> validatorIds) {
+    final Map<String, String> queryParams = new HashMap<>();
+    queryParams.put("validator_id", String.join(",", validatorIds));
+    return get(GET_VALIDATORS, queryParams, GetStateValidatorsResponse.class)
+        .map(response -> response.data);
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
   public List<ValidatorDuties> getDuties(final ValidatorDutiesRequest request) {
     return post(GET_DUTIES, request, ValidatorDuties[].class)
@@ -103,9 +116,10 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   @Override
   public List<AttesterDuty> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes) {
-    return get(
+    return post(
             GET_ATTESTATION_DUTIES,
-            Map.of("index", validatorIndexes.toString()),
+            Map.of("epoch", epoch.toString()),
+            validatorIndexes.toArray(),
             GetAttesterDutiesResponse.class)
         .map(response -> response.data)
         .orElse(Collections.emptyList());
@@ -113,7 +127,11 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
   @Override
   public List<ProposerDuty> getProposerDuties(final UInt64 epoch) {
-    return get(GET_PROPOSER_DUTIES, Collections.emptyMap(), GetProposerDutiesResponse.class)
+    return get(
+            GET_PROPOSER_DUTIES,
+            Map.of("epoch", epoch.toString()),
+            emptyMap(),
+            GetProposerDutiesResponse.class)
         .map(response -> response.data)
         .orElse(Collections.emptyList());
   }
@@ -122,11 +140,15 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   public Optional<BeaconBlock> createUnsignedBlock(
       final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
     final Map<String, String> queryParams = new HashMap<>();
-    queryParams.put("slot", encodeQueryParam(slot));
     queryParams.put("randao_reveal", encodeQueryParam(randaoReveal));
     graffiti.ifPresent(bytes32 -> queryParams.put("graffiti", encodeQueryParam(bytes32)));
 
-    return get(GET_UNSIGNED_BLOCK, queryParams, BeaconBlock.class);
+    return get(
+            GET_UNSIGNED_BLOCK,
+            Map.of("slot", slot.toString()),
+            queryParams,
+            GetNewBlockResponse.class)
+        .map(response -> response.data);
   }
 
   @Override
@@ -183,7 +205,15 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
       final ValidatorApiMethod apiMethod,
       final Map<String, String> queryParams,
       final Class<T> responseClass) {
-    final HttpUrl.Builder httpUrlBuilder = urlBuilder(apiMethod);
+    return get(apiMethod, emptyMap(), queryParams, responseClass);
+  }
+
+  public <T> Optional<T> get(
+      final ValidatorApiMethod apiMethod,
+      final Map<String, String> urlParams,
+      final Map<String, String> queryParams,
+      final Class<T> responseClass) {
+    final HttpUrl.Builder httpUrlBuilder = urlBuilder(apiMethod, urlParams);
     if (queryParams != null && !queryParams.isEmpty()) {
       queryParams.forEach(httpUrlBuilder::addQueryParameter);
     }
@@ -194,8 +224,10 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
   private <T> Optional<T> post(
       final ValidatorApiMethod apiMethod,
+      final Map<String, String> urlParams,
       final Object requestBodyObj,
       final Class<T> responseClass) {
+    final HttpUrl.Builder httpUrlBuilder = urlBuilder(apiMethod, urlParams);
     final String requestBody;
     try {
       requestBody = jsonProvider.objectToJSON(requestBodyObj);
@@ -205,15 +237,23 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
     final Request request =
         new Request.Builder()
-            .url(urlBuilder(apiMethod).build())
+            .url(httpUrlBuilder.build())
             .post(RequestBody.create(requestBody, APPLICATION_JSON))
             .build();
 
     return executeCall(request, responseClass);
   }
 
-  private HttpUrl.Builder urlBuilder(final ValidatorApiMethod apiMethod) {
-    return baseEndpoint.resolve(apiMethod.getPath()).newBuilder();
+  private <T> Optional<T> post(
+      final ValidatorApiMethod apiMethod,
+      final Object requestBodyObj,
+      final Class<T> responseClass) {
+    return post(apiMethod, Collections.emptyMap(), requestBodyObj, responseClass);
+  }
+
+  private HttpUrl.Builder urlBuilder(
+      final ValidatorApiMethod apiMethod, final Map<String, String> urlParams) {
+    return baseEndpoint.resolve(apiMethod.getPath(urlParams)).newBuilder();
   }
 
   private <T> Optional<T> executeCall(final Request request, final Class<T> responseClass) {
@@ -240,15 +280,19 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
           }
         case 400:
           {
-            LOG.error(
-                "Invalid params response from Beacon Node API - {}", response.body().string());
-            return Optional.empty();
+            throw new IllegalArgumentException(
+                "Invalid params response from Beacon Node API (url = "
+                    + request.url()
+                    + ", response = "
+                    + response.body().string()
+                    + ")");
           }
         default:
           {
             final String responseBody = response.body().string();
             LOG.error(
-                "Unexpected error calling Beacon Node API (status = {}, response = {})",
+                "Unexpected error calling Beacon Node API (url = {}, status = {}, response = {})",
+                request.url(),
                 response.code(),
                 responseBody);
             throw new RuntimeException(

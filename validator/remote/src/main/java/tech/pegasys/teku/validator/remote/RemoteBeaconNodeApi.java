@@ -13,12 +13,15 @@
 
 package tech.pegasys.teku.validator.remote;
 
+import java.net.URI;
+import java.util.concurrent.TimeUnit;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
@@ -41,10 +44,16 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
   }
 
   public static BeaconNodeApi create(
-      final ServiceConfig serviceConfig, final AsyncRunner asyncRunner) {
+      final ServiceConfig serviceConfig,
+      final AsyncRunner asyncRunner,
+      final URI beaconNodeApiEndpoint) {
 
-    final OkHttpClient okHttpClient = new OkHttpClient();
-    final HttpUrl apiEndpoint = HttpUrl.parse(serviceConfig.getConfig().getBeaconNodeApiEndpoint());
+    final OkHttpClient okHttpClient =
+        new OkHttpClient.Builder()
+            // We should get at least one event per slot so give the read timeout 2 slots to be safe
+            .readTimeout(Constants.SECONDS_PER_SLOT * 2, TimeUnit.SECONDS)
+            .build();
+    final HttpUrl apiEndpoint = HttpUrl.get(beaconNodeApiEndpoint);
     final OkHttpValidatorRestApiClient apiClient =
         new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient);
 

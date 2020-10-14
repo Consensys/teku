@@ -223,12 +223,18 @@ public class ChainBuilder {
   }
 
   public SignedBlockAndState generateGenesis(final UInt64 genesisTime, final boolean signDeposits) {
+    return generateGenesis(
+        genesisTime, signDeposits, UInt64.valueOf(Constants.MAX_EFFECTIVE_BALANCE));
+  }
+
+  public SignedBlockAndState generateGenesis(
+      final UInt64 genesisTime, final boolean signDeposits, final UInt64 depositAmount) {
     checkState(blocks.isEmpty(), "Genesis already created");
 
     // Generate genesis state
     final List<DepositData> initialDepositData =
         new MockStartDepositGenerator(new DepositGenerator(signDeposits))
-            .createDeposits(validatorKeys);
+            .createDeposits(validatorKeys, depositAmount);
     final BeaconState genesisState =
         new MockStartBeaconStateGenerator()
             .createInitialBeaconState(genesisTime, initialDepositData);

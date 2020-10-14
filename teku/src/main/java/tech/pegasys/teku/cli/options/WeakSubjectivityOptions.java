@@ -20,18 +20,16 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class WeakSubjectivityOptions {
-  // TODO(#2779) - Make this option public when we're ready
   @CommandLine.Option(
       converter = CheckpointConverter.class,
-      names = {"--Xweak-subjectivity-checkpoint"},
+      names = {"--ws-checkpoint"},
       paramLabel = "<BLOCK_ROOT>:<EPOCH_NUMBER>",
       description = "A recent checkpoint within the weak subjectivity period.",
-      arity = "1",
-      hidden = true)
+      arity = "1")
   private Checkpoint weakSubjectivityCheckpoint;
 
   @CommandLine.Option(
-      names = {"--Xweak-subjectivity-suppress-errors-until-epoch"},
+      names = {"--Xws-suppress-errors-until-epoch"},
       paramLabel = "<EPOCH_NUMBER>",
       description =
           "Suppress weak subjectivity finalized checkpoint errors until the supplied epoch is reached.",

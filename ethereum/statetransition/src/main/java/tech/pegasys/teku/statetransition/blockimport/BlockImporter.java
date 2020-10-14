@@ -116,12 +116,6 @@ public class BlockImporter {
               weakSubjectivityValidator.validateLatestFinalizedCheckpoint(
                   finalizedCheckpointState, currentSlot);
               return null;
-            })
-        .exceptionally(
-            err -> {
-              weakSubjectivityValidator.handleValidationFailure(
-                  "Encountered an error while trying to validate latest finalized checkpoint", err);
-              throw new RuntimeException(err);
             });
   }
 

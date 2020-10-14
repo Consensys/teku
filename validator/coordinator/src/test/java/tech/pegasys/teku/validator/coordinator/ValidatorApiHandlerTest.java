@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,11 +27,13 @@ import static tech.pegasys.teku.datastructures.util.AttestationProcessingResult.
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.eventbus.EventBus;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -323,7 +326,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getAttestationDuties_shouldFailForEpochTooFarAhead() {
-    when(chainDataClient.getCurrentEpoch()).thenReturn(UInt64.valueOf(11));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(3));
 
     final SafeFuture<Optional<List<AttesterDuties>>> result =
         validatorApiHandler.getAttestationDuties(EPOCH, List.of(1));
@@ -347,6 +350,21 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
+  public void getAttestationDuties_shouldAllowOneEpochTolerance() {
+    final BeaconState state = createStateWithActiveValidators();
+    final BLSPublicKey validator1Key = state.getValidators().get(1).getPubkey();
+    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+        .thenReturn(completedFuture(Optional.of(state)));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
+
+    final SafeFuture<Optional<List<AttesterDuties>>> result =
+        validatorApiHandler.getAttestationDuties(EPOCH, List.of(1, 32));
+    final Optional<List<AttesterDuties>> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.get())
+        .containsExactly(new AttesterDuties(validator1Key, 1, 4, 0, 1, UInt64.valueOf(108)));
+  }
+
+  @Test
   public void getProposerDuties_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
     final SafeFuture<Optional<List<ProposerDuties>>> duties =
@@ -357,7 +375,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getProposerDuties_shouldFailForEpochTooFarAhead() {
-    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(UInt64.ONE));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
 
     final SafeFuture<Optional<List<ProposerDuties>>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
@@ -371,6 +389,19 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
+
+    final SafeFuture<Optional<List<ProposerDuties>>> result =
+        validatorApiHandler.getProposerDuties(EPOCH);
+    final Optional<List<ProposerDuties>> duties = assertCompletedSuccessfully(result);
+    assertThat(duties.get().size()).isEqualTo(Constants.SLOTS_PER_EPOCH);
+  }
+
+  @Test
+  public void getProposerDuties_shouldAllowOneEpochTolerance() {
+    final BeaconState state = createStateWithActiveValidators();
+    when(chainDataClient.getLatestStateAtSlot(PREVIOUS_EPOCH_START_SLOT))
+        .thenReturn(completedFuture(Optional.of(state)));
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(1));
 
     final SafeFuture<Optional<List<ProposerDuties>>> result =
         validatorApiHandler.getProposerDuties(EPOCH);
@@ -572,6 +603,27 @@ class ValidatorApiHandlerTest {
 
     verify(attestationManager)
         .onAttestation(ValidateableAttestation.fromSignedAggregate(aggregateAndProof));
+  }
+
+  @Test
+  void getValidatorIndices_shouldReturnEmptyMapWhenBestStateNotAvailable() {
+    when(chainDataClient.getBestState()).thenReturn(Optional.empty());
+
+    assertThatSafeFuture(
+            validatorApiHandler.getValidatorIndices(List.of(dataStructureUtil.randomPublicKey())))
+        .isCompletedWithValue(emptyMap());
+  }
+
+  @Test
+  void getValidatorIndices_shouldReturnMapWithKnownValidatorsWhenBestStateAvailable() {
+    final BeaconState state = dataStructureUtil.randomBeaconState();
+    final BLSPublicKey validator0 = state.getValidators().get(0).getPubkey();
+    final BLSPublicKey unknownValidator = dataStructureUtil.randomPublicKey();
+    when(chainDataClient.getBestState()).thenReturn(Optional.of(state));
+
+    assertThatSafeFuture(
+            validatorApiHandler.getValidatorIndices(List.of(validator0, unknownValidator)))
+        .isCompletedWithValue(Map.of(validator0, 0));
   }
 
   private <T> Optional<List<T>> assertCompletedSuccessfully(
