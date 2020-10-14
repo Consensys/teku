@@ -28,6 +28,7 @@ import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilde
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
 import tech.pegasys.teku.sync.singlepeer.SinglePeerSyncService;
 import tech.pegasys.teku.sync.singlepeer.SyncManager;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
@@ -94,24 +96,29 @@ public class SyncingNodeManager {
     BlockManager blockManager =
             BlockManager.create(eventBus, pendingBlocks, futureBlocks, recentChainData, blockImporter);
 
+
     eventChannels
             .subscribe(SlotEventsChannel.class, blockManager)
+            .subscribe(BlockImportChannel.class, blockManager)
             .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
 
     final Eth2P2PNetworkBuilder networkBuilder =
-        networkFactory.builder().eventBus(eventBus).recentChainData(recentChainData).gossipedBlockConsumer((block) -> {
-          System.out.println("yooo got a block");
-        });
+        networkFactory.builder().eventBus(eventBus).recentChainData(recentChainData).gossipedBlockConsumer(blockManager::importBlockIgnoringResult);
 
     configureNetwork.accept(networkBuilder);
 
     final Eth2Network eth2Network = networkBuilder.startNetwork();
+
+    final FetchRecentBlocksService recentBlockFetcher = FetchRecentBlocksService.create(asyncRunner, eth2Network, pendingBlocks);
+    recentBlockFetcher.subscribeBlockFetched(blockManager::importBlockIgnoringResult);
+    blockManager.subscribeToReceivedBlocks(recentBlockFetcher::cancelRecentBlockRequest);
 
     SyncManager syncManager =
         SyncManager.create(
             asyncRunner, eth2Network, recentChainData, blockImporter, new NoOpMetricsSystem());
     SyncService syncService = new SinglePeerSyncService(syncManager, recentChainData);
 
+    recentBlockFetcher.start().join();
     blockManager.start().join();
     syncService.start().join();
 
