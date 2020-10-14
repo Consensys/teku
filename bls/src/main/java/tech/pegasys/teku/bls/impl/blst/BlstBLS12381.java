@@ -239,7 +239,7 @@ public class BlstBLS12381 implements BLS12381 {
       }
 
       int boolRes = blst.pairing_finalverify(ctx0, null);
-      return mergeRes && boolRes != 0;
+      return mergeRes && boolRes != 0 && !anyInvalidInfinity;
 
     } finally {
       preparedList.stream()

@@ -28,6 +28,11 @@ public class BLSConstants {
       CURVE_ORDER_BYTES.toUnsignedBigInteger(ByteOrder.BIG_ENDIAN);
 
   public static boolean VERIFICATION_DISABLED = false;
+
+  /**
+   * Temporary backward compatibility flag which enables BLS Infinity Pubkeys and Signatures
+   * verification and Zero Privkey signing
+   */
   public static boolean VALID_INFINITY = false;
 
   public static void disableBLSVerification() {

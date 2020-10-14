@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -113,6 +114,9 @@ public class MikuliBLS12381 implements BLS12381 {
     G2Point msgG2Point;
 
     MikuliSignature mikuliSignature = MikuliSignature.fromSignature(signature);
+    if (publicKeys.stream().anyMatch(k -> MikuliPublicKey.fromPublicKey(k).isInfinity())) {
+      return new MikuliInvalidBatchSemiAggregate();
+    }
 
     if (index == 0) {
       // optimization: we may omit multiplication of a single component (i.e. multiplier is 1)
@@ -151,6 +155,12 @@ public class MikuliBLS12381 implements BLS12381 {
       List<? extends PublicKey> publicKeys2,
       Bytes message2,
       Signature signature2) {
+
+    if (Stream.concat(publicKeys1.stream(), publicKeys2.stream())
+        .anyMatch(k -> MikuliPublicKey.fromPublicKey(k).isInfinity())) {
+      return new MikuliInvalidBatchSemiAggregate();
+    }
+
     G2Point sigG2Point1;
     G2Point msgG2Point1;
     if (index == 0) {
@@ -192,6 +202,10 @@ public class MikuliBLS12381 implements BLS12381 {
     if (preparedList.isEmpty()) {
       return true;
     }
+    if (preparedList.stream().anyMatch(it -> it instanceof MikuliInvalidBatchSemiAggregate)) {
+      return false;
+    }
+
     G2Point sigSum = null;
     GTPoint pairProd = null;
     for (BatchSemiAggregate semiSig : preparedList) {
@@ -218,4 +232,6 @@ public class MikuliBLS12381 implements BLS12381 {
     bigContent[0] = l;
     return new BIG(bigContent);
   }
+
+  protected static class MikuliInvalidBatchSemiAggregate implements BatchSemiAggregate {}
 }
