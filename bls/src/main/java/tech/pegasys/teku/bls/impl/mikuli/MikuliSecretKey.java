@@ -65,7 +65,7 @@ public class MikuliSecretKey implements SecretKey {
 
   @Override
   public MikuliPublicKey derivePublicKey() {
-    return new MikuliPublicKey(this);
+    return new MikuliPublicKey(Util.g1Generator.mul(getScalarValue()));
   }
 
   @Override

@@ -149,7 +149,7 @@ public class MikuliBLS12381 implements BLS12381 {
    * @return the aggregated signature
    */
   public static MikuliSignature aggregate(List<MikuliSignature> signatures) {
-    return new MikuliSignature(MikuliSignature.aggregate(signatures));
+    return MikuliSignature.aggregate(signatures);
   }
 
   /**
@@ -159,7 +159,7 @@ public class MikuliBLS12381 implements BLS12381 {
    * @return the aggregated signature
    */
   public static MikuliSignature aggregate(Stream<MikuliSignature> signatures) {
-    return new MikuliSignature(MikuliSignature.aggregate(signatures));
+    return MikuliSignature.aggregate(signatures);
   }
 
   /**
