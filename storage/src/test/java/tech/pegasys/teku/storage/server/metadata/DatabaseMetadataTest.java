@@ -14,7 +14,7 @@
 package tech.pegasys.teku.storage.server.metadata;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.storage.server.metadata.DatabaseMetadata.HOT_DB_CONFIGURATION_KEY;
+import static tech.pegasys.teku.storage.server.metadata.V5DatabaseMetadata.HOT_DB_CONFIGURATION_KEY;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
@@ -33,15 +33,16 @@ class DatabaseMetadataTest {
   void shouldCreateMetadataFile(@TempDir final File tempDir) throws Exception {
     final File metadataFile = new File(tempDir, "metadata.yml");
     assertThat(metadataFile).doesNotExist();
-    final DatabaseMetadata expectedMetadata = DatabaseMetadata.v5Defaults();
-    final DatabaseMetadata loadedMetadata = DatabaseMetadata.init(metadataFile, expectedMetadata);
+    final V5DatabaseMetadata expectedMetadata = V5DatabaseMetadata.v5Defaults();
+    final V5DatabaseMetadata loadedMetadata =
+        V5DatabaseMetadata.init(metadataFile, expectedMetadata);
 
     assertMetadataEquals(loadedMetadata, expectedMetadata);
     assertThat(metadataFile).exists();
 
     // And should reload those settings now that the file exists
-    final DatabaseMetadata reloadedData =
-        DatabaseMetadata.init(metadataFile, new DatabaseMetadata());
+    final V5DatabaseMetadata reloadedData =
+        V5DatabaseMetadata.init(metadataFile, new V5DatabaseMetadata());
     assertMetadataEquals(reloadedData, expectedMetadata);
   }
 
@@ -49,8 +50,8 @@ class DatabaseMetadataTest {
   @SuppressWarnings("unchecked")
   void shouldNotStoreValuesThatAreSafeToChange(@TempDir final File tempDir) throws Exception {
     final File metadataFile = new File(tempDir, "metadata.yml");
-    final DatabaseMetadata expectedMetadata = DatabaseMetadata.v5Defaults();
-    DatabaseMetadata.init(metadataFile, expectedMetadata);
+    final V5DatabaseMetadata expectedMetadata = V5DatabaseMetadata.v5Defaults();
+    V5DatabaseMetadata.init(metadataFile, expectedMetadata);
     final Map<String, Object> metadata = loadMetaData(metadataFile);
     final Map<String, Object> hotConfig =
         (Map<String, Object>) metadata.get(HOT_DB_CONFIGURATION_KEY);
@@ -65,8 +66,8 @@ class DatabaseMetadataTest {
         ImmutableMap.of(HOT_DB_CONFIGURATION_KEY, ImmutableMap.of("maxOpenFiles", 1234)),
         metadataFile);
 
-    final DatabaseMetadata result =
-        DatabaseMetadata.init(metadataFile, DatabaseMetadata.v5Defaults());
+    final V5DatabaseMetadata result =
+        V5DatabaseMetadata.init(metadataFile, V5DatabaseMetadata.v5Defaults());
     assertThat(result.getHotDbConfiguration().getMaxOpenFiles()).isEqualTo(1234);
   }
 
@@ -76,13 +77,47 @@ class DatabaseMetadataTest {
     writeMetaData(ImmutableMap.of(HOT_DB_CONFIGURATION_KEY, Collections.emptyMap()), metadataFile);
     final RocksDbConfiguration defaultConfiguration = new RocksDbConfiguration();
 
-    final DatabaseMetadata result =
-        DatabaseMetadata.init(metadataFile, DatabaseMetadata.v5Defaults());
+    final V5DatabaseMetadata result =
+        V5DatabaseMetadata.init(metadataFile, V5DatabaseMetadata.v5Defaults());
     assertThat(result.getHotDbConfiguration().getMaxOpenFiles())
         .isEqualTo(defaultConfiguration.getMaxOpenFiles());
     assertThat(result.getArchiveDbConfiguration()).isNotNull();
     assertThat(result.getArchiveDbConfiguration())
         .isEqualToComparingFieldByField(defaultConfiguration);
+  }
+
+  @Test
+  void shouldCreateV6SingleMetadataFile(@TempDir final File tempDir) throws Exception {
+    final File metadataFile = new File(tempDir, "metadata.yml");
+    assertThat(metadataFile).doesNotExist();
+    final V6DatabaseMetadata expectedMetadata = V6DatabaseMetadata.singleDBDefault();
+    final V6DatabaseMetadata loadedMetadata =
+        V6DatabaseMetadata.init(metadataFile, expectedMetadata);
+
+    assertThat(loadedMetadata).usingRecursiveComparison().isEqualTo(expectedMetadata);
+    assertThat(metadataFile).exists();
+
+    // And should reload those settings now that the file exists
+    final V6DatabaseMetadata reloadedData =
+        V6DatabaseMetadata.init(metadataFile, new V6DatabaseMetadata());
+    assertThat(reloadedData).usingRecursiveComparison().isEqualTo(expectedMetadata);
+  }
+
+  @Test
+  void shouldCreateV6SeparateMetadataFile(@TempDir final File tempDir) throws Exception {
+    final File metadataFile = new File(tempDir, "metadata.yml");
+    assertThat(metadataFile).doesNotExist();
+    final V6DatabaseMetadata expectedMetadata = V6DatabaseMetadata.separateDBDefault();
+    final V6DatabaseMetadata loadedMetadata =
+        V6DatabaseMetadata.init(metadataFile, expectedMetadata);
+
+    assertThat(loadedMetadata).usingRecursiveComparison().isEqualTo(expectedMetadata);
+    assertThat(metadataFile).exists();
+
+    // And should reload those settings now that the file exists
+    final V6DatabaseMetadata reloadedData =
+        V6DatabaseMetadata.init(metadataFile, new V6DatabaseMetadata());
+    assertThat(reloadedData).usingRecursiveComparison().isEqualTo(expectedMetadata);
   }
 
   private Map<String, Object> loadMetaData(final File metadataFile) throws java.io.IOException {
@@ -98,7 +133,7 @@ class DatabaseMetadataTest {
   }
 
   private void assertMetadataEquals(
-      final DatabaseMetadata actual, final DatabaseMetadata expected) {
+      final V5DatabaseMetadata actual, final V5DatabaseMetadata expected) {
     assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
   }
 }

@@ -15,7 +15,11 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.cli.options.BeaconRestApiOptions.DEFAULT_REST_API_PORT;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.util.config.InvalidConfigurationException;
 
 public class ValidatorClientOptions {
 
@@ -26,7 +30,18 @@ public class ValidatorClientOptions {
       arity = "1")
   private String beaconNodeApiEndpoint = "http://127.0.0.1:" + DEFAULT_REST_API_PORT;
 
-  public String getBeaconNodeApiEndpoint() {
-    return beaconNodeApiEndpoint;
+  public void configure(TekuConfiguration.Builder builder) {
+    builder.validator(config -> config.beaconNodeApiEndpoint(parseApiEndpoint()));
+  }
+
+  private URI parseApiEndpoint() {
+    try {
+      return new URI(beaconNodeApiEndpoint);
+    } catch (URISyntaxException e) {
+      throw new InvalidConfigurationException(
+          "Invalid configuration. Beacon node API endpoint is not a valid URL: "
+              + beaconNodeApiEndpoint,
+          e);
+    }
   }
 }

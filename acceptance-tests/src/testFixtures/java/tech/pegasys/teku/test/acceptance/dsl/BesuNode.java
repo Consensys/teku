@@ -24,7 +24,7 @@ public class BesuNode extends Node {
   private static final int JSON_RPC_PORT = 8545;
 
   public BesuNode(final Network network) {
-    super(network, "hyperledger/besu:1.3.6", LOG);
+    super(network, "hyperledger/besu:1.5.5", LOG);
     container
         .withExposedPorts(JSON_RPC_PORT)
         .withLogConsumer(frame -> LOG.debug(frame.getUtf8String().trim()))
@@ -36,7 +36,7 @@ public class BesuNode extends Node {
             "--rpc-http-port",
             Integer.toString(JSON_RPC_PORT),
             "--rpc-http-cors-origins=*",
-            "--host-whitelist=*",
+            "--host-allowlist=*",
             "--miner-enabled",
             "--miner-coinbase",
             "0xfe3b557e8fb62b89f4916b721be55ceb828dbd73",

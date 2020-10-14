@@ -387,8 +387,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                         b -> b.weakSubjectivityCheckpoint(storedState.getCheckpoint()));
               }
 
-              // TODO(#2779) - make this validator strict when it is fully fleshed out
-              weakSubjectivityValidator = WeakSubjectivityValidator.lenient(wsConfig);
+              weakSubjectivityValidator = WeakSubjectivityValidator.moderate(wsConfig);
               return configToPersist;
             })
         .thenCompose(
@@ -583,12 +582,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void initSlotProcessor() {
     slotProcessor =
         new SlotProcessor(
-            recentChainData,
-            syncService,
-            forkChoice,
-            p2pNetwork,
-            slotEventsChannelPublisher,
-            eventBus);
+            recentChainData, syncService, forkChoice, p2pNetwork, slotEventsChannelPublisher);
   }
 
   @VisibleForTesting
