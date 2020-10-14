@@ -26,6 +26,8 @@ public class SeparateServiceDataDirLayout implements DataDirLayout {
 
   private static final List<String> BEACON_FILES_TO_MIGRATE =
       List.of("archive", "db", "db.version", "kvstore", "metadata.yml", "network.yml");
+  static final String BEACON_DATA_DIR_NAME = "beacon";
+  static final String VALIDATOR_DATA_DIR_NAME = "validator";
   private final Path baseDir;
   private final Path beaconNodeDataDir;
   private final Path validatorDataDir;
@@ -35,8 +37,9 @@ public class SeparateServiceDataDirLayout implements DataDirLayout {
       final Optional<Path> beaconDataDirectory,
       final Optional<Path> validatorDataDirectory) {
     this.baseDir = baseDir;
-    beaconNodeDataDir = beaconDataDirectory.orElseGet(() -> baseDir.resolve("beacon"));
-    validatorDataDir = validatorDataDirectory.orElseGet(() -> baseDir.resolve("validator"));
+    beaconNodeDataDir = beaconDataDirectory.orElseGet(() -> baseDir.resolve(BEACON_DATA_DIR_NAME));
+    validatorDataDir =
+        validatorDataDirectory.orElseGet(() -> baseDir.resolve(VALIDATOR_DATA_DIR_NAME));
   }
 
   public void migrateIfNecessary() throws IOException {
@@ -67,7 +70,7 @@ public class SeparateServiceDataDirLayout implements DataDirLayout {
     }
 
     if (baseDir.resolve("validators").toFile().exists()) {
-      Files.move(baseDir.resolve("validators"), baseDir.resolve("validator"));
+      Files.move(baseDir.resolve("validators"), baseDir.resolve(VALIDATOR_DATA_DIR_NAME));
     }
   }
 
