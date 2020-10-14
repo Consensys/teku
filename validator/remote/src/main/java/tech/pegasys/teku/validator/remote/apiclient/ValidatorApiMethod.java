@@ -19,7 +19,6 @@ public enum ValidatorApiMethod {
   GET_FORK("node/fork"),
   GET_GENESIS("eth/v1/beacon/genesis"),
   GET_VALIDATORS("eth/v1/beacon/states/head/validators"),
-  GET_DUTIES("validator/duties"),
   GET_UNSIGNED_BLOCK("validator/block"),
   SEND_SIGNED_BLOCK("validator/block"),
   GET_UNSIGNED_ATTESTATION("validator/attestation"),

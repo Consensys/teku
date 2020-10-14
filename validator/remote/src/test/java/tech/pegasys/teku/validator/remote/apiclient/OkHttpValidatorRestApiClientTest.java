@@ -42,8 +42,6 @@ import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
-import tech.pegasys.teku.api.schema.ValidatorDuties;
-import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
@@ -187,65 +185,6 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThat(result).isPresent();
     assertThat(result.get()).usingRecursiveComparison().isEqualTo(expected);
-  }
-
-  @Test
-  public void getDuties_MakesExpectedRequest() throws Exception {
-    final ValidatorDutiesRequest validatorDutiesRequest = schemaObjects.validatorDutiesRequest();
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
-
-    apiClient.getDuties(validatorDutiesRequest);
-
-    RecordedRequest request = mockWebServer.takeRequest();
-
-    assertThat(request.getMethod()).isEqualTo("POST");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_DUTIES.getPath(emptyMap()));
-    assertThat(request.getBody().readString(StandardCharsets.UTF_8))
-        .isEqualTo(asJson(validatorDutiesRequest));
-  }
-
-  @Test
-  public void getDuties_WhenServerError_ThrowsRuntimeException() {
-    final ValidatorDutiesRequest validatorDutiesRequest = schemaObjects.validatorDutiesRequest();
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(500));
-
-    assertThatThrownBy(() -> apiClient.getDuties(validatorDutiesRequest))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Unexpected response from Beacon Node API");
-  }
-
-  @Test
-  public void getDuties_WhenBadRequest_ReturnsEmpty() {
-    final ValidatorDutiesRequest validatorDutiesRequest = schemaObjects.validatorDutiesRequest();
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(404));
-
-    assertThat(apiClient.getDuties(validatorDutiesRequest)).isEmpty();
-  }
-
-  @Test
-  public void getDuties_WhenNoContent_ReturnsEmpty() {
-    final ValidatorDutiesRequest validatorDutiesRequest = schemaObjects.validatorDutiesRequest();
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
-
-    assertThat(apiClient.getDuties(validatorDutiesRequest)).isEmpty();
-  }
-
-  @Test
-  public void getDuties_WhenSuccess_ReturnsValidatorDuties() {
-    final ValidatorDutiesRequest validatorDutiesRequest = schemaObjects.validatorDutiesRequest();
-    final ValidatorDuties validatorDuties = schemaObjects.validatorDuties();
-
-    mockWebServer.enqueue(
-        new MockResponse().setResponseCode(200).setBody(asJson(List.of(validatorDuties))));
-
-    List<ValidatorDuties> duties = apiClient.getDuties(validatorDutiesRequest);
-
-    assertThat(duties).hasSize(1);
-    assertThat(duties).first().usingRecursiveComparison().isEqualTo(validatorDuties);
   }
 
   @Test

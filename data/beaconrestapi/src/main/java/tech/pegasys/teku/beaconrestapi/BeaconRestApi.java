@@ -79,7 +79,6 @@ import tech.pegasys.teku.beaconrestapi.handlers.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAggregateAndProof;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostBlock;
-import tech.pegasys.teku.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToBeaconCommittee;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToPersistentSubnets;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
@@ -344,7 +343,6 @@ public class BeaconRestApi {
     app.post(
         PostBlock.ROUTE,
         new PostBlock(validatorDataProvider, dataProvider.getSyncDataProvider(), jsonProvider));
-    app.post(PostDuties.ROUTE, new PostDuties(validatorDataProvider, jsonProvider));
     app.post(
         PostAggregateAndProof.ROUTE,
         new PostAggregateAndProof(validatorDataProvider, jsonProvider));

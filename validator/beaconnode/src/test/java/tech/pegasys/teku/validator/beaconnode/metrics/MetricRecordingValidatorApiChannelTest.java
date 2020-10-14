@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -154,11 +153,6 @@ class MetricRecordingValidatorApiChannelTest {
             ValidatorApiChannel::getGenesisTime,
             MetricRecordingValidatorApiChannel.GENESIS_TIME_REQUESTS_COUNTER_NAME,
             dataStructureUtil.randomUInt64()),
-        requestDataTest(
-            "getDuties",
-            channel -> channel.getDuties(slot, Collections.emptyList()),
-            MetricRecordingValidatorApiChannel.DUTIES_REQUESTS_COUNTER_NAME,
-            Collections.emptyList()),
         requestDataTest(
             "createUnsignedBlock",
             channel -> channel.createUnsignedBlock(slot, signature, Optional.empty()),

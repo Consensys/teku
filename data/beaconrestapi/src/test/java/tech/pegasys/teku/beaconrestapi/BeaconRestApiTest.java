@@ -47,7 +47,6 @@ import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAggregate;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAggregateAndProof;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostBlock;
-import tech.pegasys.teku.beaconrestapi.handlers.validator.PostDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToBeaconCommittee;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostSubscribeToPersistentSubnets;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -173,11 +172,6 @@ class BeaconRestApiTest {
   @Test
   public void shouldHaveValidatorBlockEndpoint() {
     verify(app).post(eq(PostBlock.ROUTE), any(PostBlock.class));
-  }
-
-  @Test
-  public void shouldHaveValidatorDutiesEndpoint() {
-    verify(app).post(eq(PostDuties.ROUTE), any(PostDuties.class));
   }
 
   @Test
