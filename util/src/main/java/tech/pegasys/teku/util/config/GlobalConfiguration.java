@@ -407,7 +407,7 @@ public class GlobalConfiguration implements MetricsConfig {
     return metricsHostAllowlist;
   }
 
-  public String getDataPath() {
+  public String getBaseDataPath() {
     return dataPath;
   }
 

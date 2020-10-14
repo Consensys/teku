@@ -28,7 +28,7 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
   public void dataPath_shouldReadFromConfigurationFile() {
     final GlobalConfiguration globalConfiguration =
         getGlobalConfigurationFromFile("dataOptions_config.yaml");
-    assertThat(globalConfiguration.getDataPath()).isEqualTo(TEST_PATH);
+    assertThat(globalConfiguration.getBaseDataPath()).isEqualTo(TEST_PATH);
     assertThat(globalConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
     assertThat(globalConfiguration.getDataStorageCreateDbVersion()).isEqualTo("4");
     assertThat(globalConfiguration.getDataStorageFrequency()).isEqualTo(128L);
@@ -52,7 +52,7 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
   public void dataPath_shouldAcceptNonDefaultValues() {
     final GlobalConfiguration globalConfiguration =
         getGlobalConfigurationFromArguments("--data-path", TEST_PATH);
-    assertThat(globalConfiguration.getDataPath()).isEqualTo(TEST_PATH);
+    assertThat(globalConfiguration.getBaseDataPath()).isEqualTo(TEST_PATH);
   }
 
   @Test

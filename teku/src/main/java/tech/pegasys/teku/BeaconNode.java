@@ -92,7 +92,7 @@ public class BeaconNode implements Node {
     }
 
     this.serviceController = new BeaconNodeServiceController(tekuConfig, serviceConfig);
-    STATUS_LOG.dataPathSet(serviceConfig.getConfig().getDataPath());
+    STATUS_LOG.beaconDataPathSet(serviceConfig.getDataDirLayout().getBeaconDataDirectory());
   }
 
   @Override

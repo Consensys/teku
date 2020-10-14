@@ -21,7 +21,7 @@ public class DataOptions {
   @Option(
       names = {"--data-path"},
       paramLabel = "<FILENAME>",
-      description = "Path to output data files",
+      description = "Path to the base directory to store output files",
       arity = "1")
   private String dataPath = defaultDataPath();
 
@@ -30,6 +30,6 @@ public class DataOptions {
   }
 
   private static String defaultDataPath() {
-    return VersionProvider.defaultStoragePath() + System.getProperty("file.separator") + "data";
+    return VersionProvider.defaultStoragePath();
   }
 }

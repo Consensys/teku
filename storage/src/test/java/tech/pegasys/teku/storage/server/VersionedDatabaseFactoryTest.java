@@ -39,7 +39,7 @@ public class VersionedDatabaseFactoryTest {
   public void createDatabase_fromEmptyDataDir() throws Exception {
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, eth1Address);
+            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
 
@@ -54,7 +54,7 @@ public class VersionedDatabaseFactoryTest {
 
     final VersionedDatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, eth1Address);
+            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
     }
@@ -65,7 +65,7 @@ public class VersionedDatabaseFactoryTest {
   public void createDatabase_asV4Database() throws Exception {
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, "4", 1L, eth1Address);
+            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, "4", 1L, eth1Address);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
       assertDbVersionSaved(dataDir, DatabaseVersion.V4);
@@ -80,7 +80,7 @@ public class VersionedDatabaseFactoryTest {
   public void createDatabase_asV5Database() throws Exception {
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, "5", 1L, eth1Address);
+            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, "5", 1L, eth1Address);
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
       assertDbVersionSaved(dataDir, DatabaseVersion.V5);
@@ -101,7 +101,7 @@ public class VersionedDatabaseFactoryTest {
 
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, eth1Address);
+            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("Unrecognized database version: bla");
@@ -113,7 +113,7 @@ public class VersionedDatabaseFactoryTest {
 
     final DatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, eth1Address);
+            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, eth1Address);
     assertThatThrownBy(dbFactory::createDatabase)
         .isInstanceOf(DatabaseStorageException.class)
         .hasMessageContaining("No database version file was found");
@@ -124,7 +124,7 @@ public class VersionedDatabaseFactoryTest {
     createDbDirectory(dataDir);
     final VersionedDatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, "4", 1L, eth1Address);
+            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, "4", 1L, eth1Address);
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V4);
   }
 
@@ -133,7 +133,7 @@ public class VersionedDatabaseFactoryTest {
     createDbDirectory(dataDir);
     final VersionedDatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir.toString(), DATA_STORAGE_MODE, "3.0", 1L, eth1Address);
+            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, "3.0", 1L, eth1Address);
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V3);
   }
 

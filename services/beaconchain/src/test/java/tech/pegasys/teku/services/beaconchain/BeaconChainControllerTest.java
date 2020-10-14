@@ -21,7 +21,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,6 +36,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
@@ -54,13 +54,15 @@ public class BeaconChainControllerTest {
   private final EventChannels eventChannels = mock(EventChannels.class);
   private final AtomicReference<GlobalConfiguration> globalConfig =
       new AtomicReference<>(GlobalConfiguration.builder().build());
-  @TempDir public File dataDir;
+  @TempDir public Path dataDir;
 
   @BeforeEach
   public void setup() {
     when(serviceConfig.getConfig()).thenAnswer(__ -> globalConfig.get());
     when(eventChannels.getPublisher(any())).thenReturn(mock(SlotEventsChannel.class));
     when(serviceConfig.getEventChannels()).thenReturn(eventChannels);
+    when(serviceConfig.getDataDirLayout())
+        .thenReturn(DataDirLayout.createFrom(dataDir, Optional.of(dataDir), Optional.empty()));
   }
 
   private BeaconChainConfiguration beaconChainConfiguration() {
@@ -70,9 +72,6 @@ public class BeaconChainControllerTest {
 
   @Test
   void getP2pPrivateKeyBytes_generatedKeyTest() throws IOException {
-    GlobalConfiguration globalConfiguration =
-        GlobalConfiguration.builder().setDataPath(dataDir.getCanonicalPath()).build();
-    globalConfig.set(globalConfiguration);
     BeaconChainController controller =
         new BeaconChainController(serviceConfig, beaconChainConfiguration());
 
@@ -96,14 +95,11 @@ public class BeaconChainControllerTest {
     assertThat(generatedAnotherPK).isNotEqualTo(generatedPK);
 
     // check that user supplied private key file has precedence over generated file
-    Path customPKFile = dataDir.toPath().resolve("customPK.hex");
+    Path customPKFile = dataDir.resolve("customPK.hex");
     Files.writeString(customPKFile, generatedPK.toHexString());
 
     GlobalConfiguration globalConfiguration1 =
-        GlobalConfiguration.builder()
-            .setDataPath(dataDir.getCanonicalPath())
-            .setP2pPrivateKeyFile(customPKFile.toString())
-            .build();
+        GlobalConfiguration.builder().setP2pPrivateKeyFile(customPKFile.toString()).build();
     globalConfig.set(globalConfiguration1);
     BeaconChainController controller1 =
         new BeaconChainController(serviceConfig, beaconChainConfiguration());

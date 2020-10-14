@@ -83,7 +83,7 @@ public class ValidatorNode implements Node {
     Constants.setConstants(globalConfig.getConstants());
 
     this.serviceController = new ValidatorNodeServiceController(tekuConfig, serviceConfig);
-    STATUS_LOG.dataPathSet(serviceConfig.getConfig().getDataPath());
+    STATUS_LOG.validatorDataPathSet(serviceConfig.getDataDirLayout().getValidatorDataDirectory());
   }
 
   @Override

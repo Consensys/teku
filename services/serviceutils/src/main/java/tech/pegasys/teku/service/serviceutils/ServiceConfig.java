@@ -14,11 +14,14 @@
 package tech.pegasys.teku.service.serviceutils;
 
 import com.google.common.eventbus.EventBus;
+import java.nio.file.Path;
+import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class ServiceConfig {
@@ -29,6 +32,7 @@ public class ServiceConfig {
   private final EventChannels eventChannels;
   private final MetricsSystem metricsSystem;
   private final GlobalConfiguration config;
+  private final DataDirLayout dataDirLayout;
 
   public ServiceConfig(
       final AsyncRunnerFactory asyncRunnerFactory,
@@ -43,6 +47,9 @@ public class ServiceConfig {
     this.eventChannels = eventChannels;
     this.metricsSystem = metricsSystem;
     this.config = config;
+    this.dataDirLayout =
+        DataDirLayout.createFrom(
+            Path.of(config.getBaseDataPath()), Optional.empty(), Optional.empty());
   }
 
   public TimeProvider getTimeProvider() {
@@ -64,6 +71,10 @@ public class ServiceConfig {
 
   public MetricsSystem getMetricsSystem() {
     return metricsSystem;
+  }
+
+  public DataDirLayout getDataDirLayout() {
+    return dataDirLayout;
   }
 
   public AsyncRunner createAsyncRunner(final String name) {
