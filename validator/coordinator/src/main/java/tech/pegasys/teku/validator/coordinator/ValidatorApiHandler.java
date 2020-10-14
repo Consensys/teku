@@ -245,6 +245,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+    performanceTracker.reportBlockProductionAttempt(compute_epoch_at_slot(slot));
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -272,6 +273,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<Attestation>> createUnsignedAttestation(
       final UInt64 slot, final int committeeIndex) {
+    performanceTracker.reportAttestationProductionAttempt(compute_epoch_at_slot(slot));
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }

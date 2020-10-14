@@ -134,6 +134,7 @@ public class AttestationProductionDuty implements Duty {
             signedAttestation ->
                 validatorApiChannel.sendSignedAttestation(
                     signedAttestation, Optional.of(validator.getValidatorIndex())))
+        // TODO: here we report succes for the attestation yet we don't know if it was successful.
         .thenApply(__ -> DutyResult.success(attestation.getData().getBeacon_block_root()));
   }
 
