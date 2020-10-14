@@ -26,6 +26,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
+import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 
 /**
  * Maintains an aggregated collection of attestations which all share the same {@link
@@ -46,6 +47,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
 
   private final AttestationData attestationData;
   private final Bytes32 committeeShufflingSeed;
+  private final Bitlist seenAggregationBits = Attestation.createEmptyAggregationBits();
 
   public MatchingDataAttestationGroup(
       final AttestationData attestationData, final Bytes32 committeeShufflingSeed) {
@@ -59,11 +61,16 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
 
   /**
    * Adds an attestation to this group. When possible, the attestation will be aggregated with
-   * others during iteration.
+   * others during iteration. Ignores attestations with no new, unseen aggregation bits.
    *
    * @param attestation the attestation to add
+   * @return True if the attestation was added, false otherwise
    */
   public boolean add(final ValidateableAttestation attestation) {
+    if (seenAggregationBits.isSuperSetOf(attestation.getAttestation().getAggregation_bits())) {
+      // We've already seen these aggregation bits
+      return false;
+    }
     return attestationsByValidatorCount
         .computeIfAbsent(
             attestation.getAttestation().getAggregation_bits().getBitCount(),
@@ -100,15 +107,21 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
   }
 
   /**
-   * Removes any attestation from this group whose validators are all included in the specified
-   * attestation. Attestations that include some but not all validators in the specified attestation
-   * are not removed.
+   * Updates {@code seenAggregationBits} and removes any attestation from this group whose
+   * aggregation bits have all been seen.
    *
    * <p>This is well suited for removing attestations that have been included in a block.
    *
    * @param attestation the attestation to logically remove from the pool.
    */
   public int remove(final Attestation attestation) {
+    final Bitlist newAggregationBits = getUnseenAggregationBitsFromAttestation(attestation);
+    if (newAggregationBits.getBitCount() == 0) {
+      // We've already seen and filtered out all of these bits, nothing to do
+      return 0;
+    }
+    seenAggregationBits.setAllBits(newAggregationBits);
+
     final Collection<Set<ValidateableAttestation>> attestationSets =
         attestationsByValidatorCount.values();
     int numRemoved = 0;
@@ -117,9 +130,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
       for (Iterator<ValidateableAttestation> iterator = candidates.iterator();
           iterator.hasNext(); ) {
         ValidateableAttestation candidate = iterator.next();
-        if (attestation
-            .getAggregation_bits()
-            .isSuperSetOf(candidate.getAttestation().getAggregation_bits())) {
+        if (seenAggregationBits.isSuperSetOf(candidate.getAttestation().getAggregation_bits())) {
           iterator.remove();
           numRemoved++;
         }
@@ -129,6 +140,21 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
       }
     }
     return numRemoved;
+  }
+
+  private Bitlist getUnseenAggregationBitsFromAttestation(final Attestation attestation) {
+    final Bitlist newBits = attestation.getAggregation_bits().copy();
+    // Unset bits we've already seen
+    newBits
+        .getAllSetBits()
+        .forEach(
+            index -> {
+              if (seenAggregationBits.getBit(index)) {
+                newBits.setBit(index, false);
+              }
+            });
+
+    return newBits;
   }
 
   public Bytes32 getCommitteeShufflingSeed() {
