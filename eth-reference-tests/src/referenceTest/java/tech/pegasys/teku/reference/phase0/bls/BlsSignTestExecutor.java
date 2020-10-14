@@ -25,12 +25,11 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.phase0.TestExecutor;
 
-public class BlsSignTestExecutor implements TestExecutor {
+public class BlsSignTestExecutor extends BlsTestExecutor {
 
   @Override
-  public void runTest(final TestDefinition testDefinition) throws Throwable {
+  public void runTestImpl(final TestDefinition testDefinition) throws Throwable {
     final Data data = loadYaml(testDefinition, BLS_DATA_FILE, Data.class);
     final BLSSecretKey privateKey = data.input.getPrivateKey();
     final Bytes message = data.input.getMessage();
