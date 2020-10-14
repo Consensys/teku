@@ -27,7 +27,6 @@ import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
 import tech.pegasys.teku.statetransition.events.attestation.BroadcastAggregatesEvent;
-import tech.pegasys.teku.statetransition.events.attestation.BroadcastAttestationEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
@@ -202,8 +201,6 @@ public class SlotProcessor {
                                 finalizedCheckpoint.getEpoch(),
                                 finalizedCheckpoint.getRoot(),
                                 p2pNetwork.getPeerCount())));
-
-    this.eventBus.post(new BroadcastAttestationEvent(nodeSlot.getValue()));
   }
 
   private void processSlotAggregate() {
