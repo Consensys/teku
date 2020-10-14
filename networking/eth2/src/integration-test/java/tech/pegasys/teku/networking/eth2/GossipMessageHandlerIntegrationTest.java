@@ -13,15 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
-import static tech.pegasys.teku.infrastructure.async.Waiter.ensureConditionRemainsMet;
-import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -41,6 +32,18 @@ import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilde
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.computeSubnetForAttestation;
+import static tech.pegasys.teku.infrastructure.async.Waiter.ensureConditionRemainsMet;
+import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
+
 public class GossipMessageHandlerIntegrationTest {
 
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(3);
@@ -57,18 +60,24 @@ public class GossipMessageHandlerIntegrationTest {
       final String testName, GossipEncoding gossipEncoding) throws Exception {
     final UInt64 blockSlot = UInt64.valueOf(2L);
 
-    final Consumer<Eth2P2PNetworkBuilder> networkBuilder = b -> b.gossipEncoding(gossipEncoding);
 
     // Setup network 1
+    final Consumer<Eth2P2PNetworkBuilder> networkBuilder = b -> b.gossipEncoding(gossipEncoding);
     NodeManager node1 = createNodeManager(networkBuilder);
     node1.chainUtil().setSlot(blockSlot);
 
     // Setup network 2
-    NodeManager node2 = createNodeManager(networkBuilder);
+    Set<SignedBeaconBlock> node2ReceivedBlocks = new HashSet<>();
+    final Consumer<Eth2P2PNetworkBuilder> networkBuilder2 =
+            b -> b.gossipEncoding(gossipEncoding).gossipedBlockConsumer(node2ReceivedBlocks::add);
+    NodeManager node2 = createNodeManager(networkBuilder2);
     node2.chainUtil().setSlot(blockSlot);
 
     // Setup network 3
-    NodeManager node3 = createNodeManager(networkBuilder);
+    Set<SignedBeaconBlock> node3ReceivedBlocks = new HashSet<>();
+    final Consumer<Eth2P2PNetworkBuilder> networkBuilder3 =
+            b -> b.gossipEncoding(gossipEncoding).gossipedBlockConsumer(node3ReceivedBlocks::add);
+    NodeManager node3 = createNodeManager(networkBuilder3);
     node2.chainUtil().setSlot(blockSlot);
 
     // Connect networks 1 -> 2 -> 3
@@ -88,15 +97,11 @@ public class GossipMessageHandlerIntegrationTest {
     final SignedBeaconBlock newBlock = node1.chainUtil().createBlockAtSlot(blockSlot);
     node1.eventBus().post(new ProposedBlockEvent(newBlock));
 
-    // Listen for new block event to arrive on networks 2 and 3
-    final GossipedBlockCollector network2Blocks = new GossipedBlockCollector(node2.eventBus());
-    final GossipedBlockCollector network3Blocks = new GossipedBlockCollector(node3.eventBus());
-
     // Verify the expected block was gossiped across the network
     Waiter.waitFor(
         () -> {
-          assertThat(network2Blocks.getBlocks()).containsExactly(newBlock);
-          assertThat(network3Blocks.getBlocks()).containsExactly(newBlock);
+          assertThat(node2ReceivedBlocks).containsExactly(newBlock);
+          assertThat(node3ReceivedBlocks).containsExactly(newBlock);
         });
   }
 
