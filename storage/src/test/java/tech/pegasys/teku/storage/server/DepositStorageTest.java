@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -66,6 +67,11 @@ public class DepositStorageTest {
 
     storageSystem.chainUpdater().initializeGenesis();
     depositStorage = storageSystem.createDepositStorage(true);
+  }
+
+  @AfterEach
+  void cleanUp() throws Exception {
+    database.close();
   }
 
   @ParameterizedTest(name = "{0}")

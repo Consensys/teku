@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.core;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -48,9 +51,13 @@ public class RocksDbInstanceFactory {
       final MetricsSystem metricsSystem,
       final MetricCategory metricCategory,
       final RocksDbConfiguration configuration,
-      final Class<? extends Schema> schema)
+      final Collection<RocksDbColumn<?, ?>> columns)
       throws DatabaseStorageException {
     // Track resources that need to be closed
+
+    checkArgument(
+        columns.stream().map(RocksDbColumn::getId).distinct().count() == columns.size(),
+        "Column IDs are not distinct");
 
     // Create options
     final TransactionDBOptions txOptions = new TransactionDBOptions();
@@ -64,10 +71,9 @@ public class RocksDbInstanceFactory {
             List.of(txOptions, dbOptions, columnFamilyOptions, rocksDbStats, blockCache));
 
     List<ColumnFamilyDescriptor> columnDescriptors =
-        createColumnFamilyDescriptors(schema, columnFamilyOptions);
+        createColumnFamilyDescriptors(columns, columnFamilyOptions);
     Map<Bytes, RocksDbColumn<?, ?>> columnsById =
-        Schema.streamColumns(schema)
-            .collect(Collectors.toMap(RocksDbColumn::getId, Function.identity()));
+        columns.stream().collect(Collectors.toMap(RocksDbColumn::getId, Function.identity()));
 
     try {
       // columnHandles will be filled when the db is opened
@@ -148,9 +154,10 @@ public class RocksDbInstanceFactory {
   }
 
   private static List<ColumnFamilyDescriptor> createColumnFamilyDescriptors(
-      final Class<? extends Schema> schema, final ColumnFamilyOptions columnFamilyOptions) {
+      final Collection<RocksDbColumn<?, ?>> columns,
+      final ColumnFamilyOptions columnFamilyOptions) {
     List<ColumnFamilyDescriptor> columnDescriptors =
-        Schema.streamColumns(schema)
+        columns.stream()
             .map(
                 col -> new ColumnFamilyDescriptor(col.getId().toArrayUnsafe(), columnFamilyOptions))
             .collect(Collectors.toList());

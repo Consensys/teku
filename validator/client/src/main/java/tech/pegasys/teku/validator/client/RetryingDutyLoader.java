@@ -43,6 +43,7 @@ public class RetryingDutyLoader implements DutyLoader {
 
   private SafeFuture<ScheduledDuties> requestDuties(
       final UInt64 epoch, final SafeFuture<ScheduledDuties> cancellable) {
+    LOG.trace("Request duties for epoch {}", epoch);
     return delegate
         .loadDutiesForEpoch(epoch)
         .exceptionallyCompose(
@@ -67,8 +68,9 @@ public class RetryingDutyLoader implements DutyLoader {
                         + ". Retrying after delay.",
                     error);
               }
+              // Short delay before retrying as loading duties is very time sensitive
               return asyncRunner.runAfterDelay(
-                  () -> requestDuties(epoch, cancellable), 5, TimeUnit.SECONDS);
+                  () -> requestDuties(epoch, cancellable), 1, TimeUnit.SECONDS);
             });
   }
 }

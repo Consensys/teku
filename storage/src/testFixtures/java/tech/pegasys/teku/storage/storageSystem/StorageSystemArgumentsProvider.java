@@ -66,6 +66,14 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
                     .stateStorageFrequency(storageFrequency)
                     .build());
         storageSystems.put(
+            describeStorage("v6 (in-memory)", storageFrequency),
+            (dataPath) ->
+                InMemoryStorageSystemBuilder.create()
+                    .version(DatabaseVersion.V6)
+                    .storageMode(mode)
+                    .stateStorageFrequency(storageFrequency)
+                    .build());
+        storageSystems.put(
             describeStorage("v4 (file-backed)", storageFrequency),
             (dataPath) ->
                 FileBackedStorageSystemBuilder.create()
@@ -79,6 +87,15 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
             (dataPath) ->
                 FileBackedStorageSystemBuilder.create()
                     .version(DatabaseVersion.V5)
+                    .dataDir(dataPath)
+                    .storageMode(mode)
+                    .stateStorageFrequency(storageFrequency)
+                    .build());
+        storageSystems.put(
+            describeStorage("v6 (file-backed)", storageFrequency),
+            (dataPath) ->
+                FileBackedStorageSystemBuilder.create()
+                    .version(DatabaseVersion.V6)
                     .dataDir(dataPath)
                     .storageMode(mode)
                     .stateStorageFrequency(storageFrequency)

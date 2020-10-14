@@ -13,111 +13,55 @@
 
 package tech.pegasys.teku.validator.client;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
-import tech.pegasys.teku.validator.api.ValidatorDuties;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
-class ValidatorApiDutyLoader implements DutyLoader {
+public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
+
   private static final Logger LOG = LogManager.getLogger();
   private final ValidatorApiChannel validatorApiChannel;
   private final ForkProvider forkProvider;
-  private final Supplier<ScheduledDuties> scheduledDutiesFactory;
-  private final Map<BLSPublicKey, Validator> validators;
 
-  ValidatorApiDutyLoader(
-      final MetricsSystem metricsSystem,
+  public AttestationDutyLoader(
       final ValidatorApiChannel validatorApiChannel,
       final ForkProvider forkProvider,
       final Supplier<ScheduledDuties> scheduledDutiesFactory,
-      final Map<BLSPublicKey, Validator> validators) {
+      final Map<BLSPublicKey, Validator> validators,
+      final ValidatorIndexProvider validatorIndexProvider) {
+    super(scheduledDutiesFactory, validators, validatorIndexProvider);
     this.validatorApiChannel = validatorApiChannel;
     this.forkProvider = forkProvider;
-    this.scheduledDutiesFactory = scheduledDutiesFactory;
-    this.validators = validators;
-    metricsSystem.createIntegerGauge(
-        TekuMetricCategory.VALIDATOR,
-        "local_validator_count",
-        "Current number of validators running in this validator client",
-        this.validators::size);
   }
 
   @Override
-  public SafeFuture<ScheduledDuties> loadDutiesForEpoch(final UInt64 epoch) {
-    return requestAndScheduleDutiesForEpoch(epoch);
+  protected SafeFuture<Optional<List<AttesterDuties>>> requestDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndices) {
+    return validatorApiChannel.getAttestationDuties(epoch, validatorIndices);
   }
 
-  private SafeFuture<ScheduledDuties> requestAndScheduleDutiesForEpoch(final UInt64 epoch) {
-    LOG.trace("Requesting duties for epoch {}", epoch);
-    final ScheduledDuties scheduledDuties = scheduledDutiesFactory.get();
-    return validatorApiChannel
-        .getDuties(epoch, validators.keySet())
-        .thenApply(
-            maybeDuties ->
-                maybeDuties.orElseThrow(
-                    () ->
-                        new NodeDataUnavailableException(
-                            "Duties could not be calculated because chain data was not yet available")))
-        .thenCompose(duties -> scheduleAllDuties(scheduledDuties, duties))
-        .thenApply(__ -> scheduledDuties);
-  }
+  @Override
+  protected SafeFuture<Void> scheduleDuties(
+      final ScheduledDuties scheduledDuties, final AttesterDuties duty) {
+    final int attestationCommitteeIndex = duty.getCommitteeIndex();
+    final int attestationCommitteePosition = duty.getValidatorCommitteeIndex();
+    final int validatorIndex = duty.getValidatorIndex();
+    final Validator validator = validators.get(duty.getPublicKey());
+    final UInt64 slot = duty.getSlot();
+    final int aggregatorModulo = CommitteeUtil.getAggregatorModulo(duty.getCommitteeLength());
 
-  private SafeFuture<Void> scheduleAllDuties(
-      final ScheduledDuties scheduledDuties, final List<ValidatorDuties> duties) {
-    return SafeFuture.allOf(
-        duties.stream()
-            .map(validatorDuties -> scheduleDuties(scheduledDuties, validatorDuties))
-            .toArray(SafeFuture[]::new));
-  }
-
-  private SafeFuture<Void> scheduleDuties(
-      final ScheduledDuties scheduledDuties, final ValidatorDuties validatorDuties) {
-    LOG.trace("Got validator duties: {}", validatorDuties);
-    final Validator validator = validators.get(validatorDuties.getPublicKey());
-    return validatorDuties
-        .getDuties()
-        .map(
-            duties -> {
-              duties
-                  .getBlockProposalSlots()
-                  .forEach(slot -> scheduleBlockProduction(scheduledDuties, validator, slot));
-              return scheduleAttestationDuties(
-                  scheduledDuties,
-                  duties.getAttestationCommitteeIndex(),
-                  duties.getAttestationCommitteePosition(),
-                  duties.getValidatorIndex(),
-                  validator,
-                  duties.getAttestationSlot(),
-                  duties.getAggregatorModulo());
-            })
-        .orElse(SafeFuture.COMPLETE);
-  }
-
-  private void scheduleBlockProduction(
-      final ScheduledDuties scheduledDuties, final Validator validator, final UInt64 slot) {
-    scheduledDuties.scheduleBlockProduction(slot, validator);
-  }
-
-  private SafeFuture<Void> scheduleAttestationDuties(
-      final ScheduledDuties scheduledDuties,
-      final int attestationCommitteeIndex,
-      final int attestationCommitteePosition,
-      final int validatorIndex,
-      final Validator validator,
-      final UInt64 slot,
-      final int aggregatorModulo) {
     final SafeFuture<Optional<Attestation>> unsignedAttestationFuture =
         scheduleAttestationProduction(
             scheduledDuties,

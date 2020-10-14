@@ -19,8 +19,6 @@ import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 @CommandLine.Command(
     name = "admin",
     description = "Holds advanced tools for node admins",
-    // TODO(#2779) - Enable this command
-    hidden = true,
     showDefaultValues = true,
     abbreviateSynopsis = true,
     mixinStandardHelpOptions = true,

@@ -13,40 +13,14 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.schema;
 
-import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.stream.Stream;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 
 public interface Schema {
   Bytes DEFAULT_COLUMN_ID = Bytes.wrap("default".getBytes(StandardCharsets.UTF_8));
 
-  static Stream<RocksDbColumn<?, ?>> streamColumns(Class<? extends Schema> schema) {
-    return Arrays.stream(schema.getDeclaredFields())
-        .filter(f -> Modifier.isStatic(f.getModifiers()))
-        .filter(f -> f.getType() == RocksDbColumn.class)
-        .map(
-            f -> {
-              try {
-                return (RocksDbColumn<?, ?>) f.get(null);
-              } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-              }
-            });
-  }
+  List<RocksDbColumn<?, ?>> getAllColumns();
 
-  static Stream<RocksDbVariable<?>> streamVariables(Class<? extends Schema> schema) {
-    return Arrays.stream(schema.getDeclaredFields())
-        .filter(f -> Modifier.isStatic(f.getModifiers()))
-        .filter(f -> f.getType() == RocksDbVariable.class)
-        .map(
-            f -> {
-              try {
-                return (RocksDbVariable<?>) f.get(null);
-              } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-              }
-            });
-  }
+  List<RocksDbVariable<?>> getAllVariables();
 }

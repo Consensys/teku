@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.server.rocksdb;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_FINALIZED_DB;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.STORAGE_HOT_DB;
 import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
@@ -23,6 +24,7 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +67,9 @@ import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbProtoArrayDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V3RocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V4FinalizedRocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V4HotRocksDbDao;
+import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
+import tech.pegasys.teku.storage.server.rocksdb.schema.SchemaFinalized;
+import tech.pegasys.teku.storage.server.rocksdb.schema.SchemaHot;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
@@ -87,7 +92,8 @@ public class RocksDbDatabase implements Database {
       final RocksDbConfiguration configuration,
       final StateStorageMode stateStorageMode) {
     final RocksDbAccessor db =
-        RocksDbInstanceFactory.create(metricsSystem, STORAGE_HOT_DB, configuration, V3Schema.class);
+        RocksDbInstanceFactory.create(
+            metricsSystem, STORAGE_HOT_DB, configuration, V3Schema.ALL_COLUMNS);
     return createV3(metricsSystem, db, stateStorageMode);
   }
 
@@ -99,11 +105,53 @@ public class RocksDbDatabase implements Database {
       final long stateStorageFrequency) {
     final RocksDbAccessor hotDb =
         RocksDbInstanceFactory.create(
-            metricsSystem, STORAGE_HOT_DB, hotConfiguration, V4SchemaHot.class);
+            metricsSystem, STORAGE_HOT_DB, hotConfiguration, V4SchemaHot.INSTANCE.getAllColumns());
     final RocksDbAccessor finalizedDb =
         RocksDbInstanceFactory.create(
-            metricsSystem, STORAGE_FINALIZED_DB, finalizedConfiguration, V4SchemaFinalized.class);
+            metricsSystem,
+            STORAGE_FINALIZED_DB,
+            finalizedConfiguration,
+            V4SchemaFinalized.INSTANCE.getAllColumns());
     return createV4(metricsSystem, hotDb, finalizedDb, stateStorageMode, stateStorageFrequency);
+  }
+
+  public static Database createV6(
+      final MetricsSystem metricsSystem,
+      final RocksDbConfiguration hotConfiguration,
+      final Optional<RocksDbConfiguration> finalizedConfiguration,
+      final SchemaHot schemaHot,
+      final SchemaFinalized schemaFinalized,
+      final StateStorageMode stateStorageMode,
+      final long stateStorageFrequency) {
+    final RocksDbAccessor hotDb;
+    final RocksDbAccessor finalizedDb;
+
+    if (finalizedConfiguration.isPresent()) {
+      hotDb =
+          RocksDbInstanceFactory.create(
+              metricsSystem, STORAGE_HOT_DB, hotConfiguration, schemaHot.getAllColumns());
+      finalizedDb =
+          RocksDbInstanceFactory.create(
+              metricsSystem,
+              STORAGE_FINALIZED_DB,
+              finalizedConfiguration.get(),
+              schemaFinalized.getAllColumns());
+    } else {
+
+      ArrayList<RocksDbColumn<?, ?>> allColumns = new ArrayList<>(schemaHot.getAllColumns());
+      allColumns.addAll(schemaFinalized.getAllColumns());
+      finalizedDb =
+          RocksDbInstanceFactory.create(metricsSystem, STORAGE, hotConfiguration, allColumns);
+      hotDb = finalizedDb;
+    }
+    return createV6(
+        metricsSystem,
+        hotDb,
+        finalizedDb,
+        schemaHot,
+        schemaFinalized,
+        stateStorageMode,
+        stateStorageFrequency);
   }
 
   static Database createV3(
@@ -120,9 +168,23 @@ public class RocksDbDatabase implements Database {
       final RocksDbAccessor finalizedDb,
       final StateStorageMode stateStorageMode,
       final long stateStorageFrequency) {
-    final V4HotRocksDbDao dao = new V4HotRocksDbDao(hotDb);
+    final V4HotRocksDbDao dao = new V4HotRocksDbDao(hotDb, V4SchemaHot.INSTANCE);
     final V4FinalizedRocksDbDao finalizedDbDao =
-        new V4FinalizedRocksDbDao(finalizedDb, stateStorageFrequency);
+        new V4FinalizedRocksDbDao(finalizedDb, V4SchemaFinalized.INSTANCE, stateStorageFrequency);
+    return new RocksDbDatabase(metricsSystem, dao, finalizedDbDao, dao, dao, stateStorageMode);
+  }
+
+  static Database createV6(
+      final MetricsSystem metricsSystem,
+      final RocksDbAccessor hotDb,
+      final RocksDbAccessor finalizedDb,
+      final SchemaHot schemaHot,
+      final SchemaFinalized schemaFinalized,
+      final StateStorageMode stateStorageMode,
+      final long stateStorageFrequency) {
+    final V4HotRocksDbDao dao = new V4HotRocksDbDao(hotDb, schemaHot);
+    final V4FinalizedRocksDbDao finalizedDbDao =
+        new V4FinalizedRocksDbDao(finalizedDb, schemaFinalized, stateStorageFrequency);
     return new RocksDbDatabase(metricsSystem, dao, finalizedDbDao, dao, dao, stateStorageMode);
   }
 
