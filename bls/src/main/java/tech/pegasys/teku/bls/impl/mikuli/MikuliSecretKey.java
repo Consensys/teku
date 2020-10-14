@@ -20,6 +20,7 @@ import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.bls.impl.SecretKey;
 import tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve;
@@ -34,7 +35,7 @@ public class MikuliSecretKey implements SecretKey {
    * @return a new SecretKey object
    */
   public static MikuliSecretKey fromBytes(Bytes32 bytes) {
-    return new MikuliSecretKey(new Scalar(BIG.fromBytes(bytes.toArrayUnsafe())));
+    return new MikuliSecretKey(new Scalar(BIG.fromBytes(Bytes48.leftPad(bytes).toArrayUnsafe())));
   }
 
   private final Scalar scalarValue;

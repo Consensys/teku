@@ -67,8 +67,7 @@ public interface BLS12381 {
    *     but throw on later usage. Use {@link PublicKey#forceValidation()} if need to immediately
    *     ensure input validity
    */
-  PublicKey publicKeyFromCompressed(Bytes48 compressedPublicKeyBytes)
-      throws DeserializeException;
+  PublicKey publicKeyFromCompressed(Bytes48 compressedPublicKeyBytes) throws DeserializeException;
 
   /**
    * Decode a signature from its <em>compressed</em> form serialized representation.

@@ -129,7 +129,8 @@ public final class G2Point implements Group<G2Point> {
 
   public static G2Point fromBytes(Bytes bytes) {
     if (bytes.size() != 4 * fpPointSize) {
-      throw new DeserializeException("Expected " + 4 * fpPointSize + " bytes but received " + bytes.size());
+      throw new DeserializeException(
+          "Expected " + 4 * fpPointSize + " bytes but received " + bytes.size());
     }
     return new G2Point(ECP2.fromBytes(bytes.toArrayUnsafe()));
   }
@@ -145,7 +146,8 @@ public final class G2Point implements Group<G2Point> {
    */
   public static G2Point fromBytesCompressed(Bytes bytes) {
     if (bytes.size() != 2 * fpPointSize) {
-      throw new DeserializeException("Expected " + 2 * fpPointSize + " bytes but received " + bytes.size());
+      throw new DeserializeException(
+          "Expected " + 2 * fpPointSize + " bytes but received " + bytes.size());
     }
     byte[] xImBytes = bytes.slice(0, fpPointSize).toArray();
     byte[] xReBytes = bytes.slice(fpPointSize, fpPointSize).toArray();

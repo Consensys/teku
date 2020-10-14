@@ -72,7 +72,8 @@ public final class G1Point implements Group<G1Point> {
    */
   public static G1Point fromBytesCompressed(Bytes bytes) {
     if (bytes.size() != fpPointSize) {
-      throw new DeserializeException("Expected " + fpPointSize + " bytes but received " + bytes.size());
+      throw new DeserializeException(
+          "Expected " + fpPointSize + " bytes but received " + bytes.size());
     }
     byte[] xBytes = bytes.toArray();
 

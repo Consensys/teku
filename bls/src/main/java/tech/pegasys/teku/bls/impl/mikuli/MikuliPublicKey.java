@@ -106,8 +106,7 @@ public final class MikuliPublicKey implements PublicKey {
   }
 
   @Override
-  public void forceValidation() throws IllegalArgumentException {
-  }
+  public void forceValidation() throws IllegalArgumentException {}
 
   @Override
   public String toString() {

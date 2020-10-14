@@ -183,8 +183,8 @@ public class MikuliBLS12381 implements BLS12381 {
    * pairing and exponentiation
    *
    * @param preparedList the list of instances returned by {@link #prepareBatchVerify(int, List,
-   *     Bytes, Signature)} or {@link #prepareBatchVerify2(int, List, Bytes, Signature, List, Bytes, Signature)}
-   *     or mixed from both
+   *     Bytes, Signature)} or {@link #prepareBatchVerify2(int, List, Bytes, Signature, List, Bytes,
+   *     Signature)} or mixed from both
    * @return True if the verification is successful, false otherwise
    */
   @Override

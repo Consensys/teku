@@ -381,12 +381,13 @@ public class BLS {
       LOG.warn("Skipping bls verification.");
       return true;
     }
-    List<BatchSemiAggregate> nonInvalidAggregates = preparedSignatures.stream()
-        .filter(it -> !(it instanceof InvalidBatchSemiAggregate))
-        .collect(Collectors.toList());
+    List<BatchSemiAggregate> validAggregates =
+        preparedSignatures.stream()
+            .filter(it -> !(it instanceof InvalidBatchSemiAggregate))
+            .collect(Collectors.toList());
     // completeBatchVerify() call is needed in any case since associated resources could be released
-    boolean verifyResult = getBlsImpl().completeBatchVerify(nonInvalidAggregates);
-    boolean noInvalidAggregates = nonInvalidAggregates.size() == preparedSignatures.size();
+    boolean verifyResult = getBlsImpl().completeBatchVerify(validAggregates);
+    boolean noInvalidAggregates = validAggregates.size() == preparedSignatures.size();
     return verifyResult && noInvalidAggregates;
   }
 

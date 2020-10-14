@@ -155,5 +155,4 @@ abstract class BLSSignatureTest {
         BLSSignature.fromBytesCompressed(Bytes.fromHexString("22".repeat(96)));
     assertNotEquals(signature1, signature2);
   }
-
 }
