@@ -24,15 +24,11 @@ import pubsub.pb.Rpc.RPC;
  */
 public class GossipWireValidator implements PubsubMessageValidator {
 
-  public static final GossipWireValidator INSTANCE = new GossipWireValidator();
-
   public static class InvalidGossipMessageException extends IllegalArgumentException {
     public InvalidGossipMessageException(String s) {
       super(s);
     }
   }
-
-  private GossipWireValidator() {}
 
   @Override
   public void validate(@NotNull RPC rpc) throws InvalidGossipMessageException {

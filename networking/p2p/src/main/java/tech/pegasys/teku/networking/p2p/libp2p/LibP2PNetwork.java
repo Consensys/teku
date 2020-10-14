@@ -31,6 +31,7 @@ import io.libp2p.etc.types.ByteArrayExtKt;
 import io.libp2p.mux.mplex.MplexStreamMuxer;
 import io.libp2p.protocol.Identify;
 import io.libp2p.protocol.Ping;
+import io.libp2p.pubsub.PubsubMessageValidator;
 import io.libp2p.pubsub.gossip.Gossip;
 import io.libp2p.pubsub.gossip.GossipParams;
 import io.libp2p.pubsub.gossip.GossipRouter;
@@ -79,6 +80,7 @@ import tech.pegasys.teku.util.cli.VersionProvider;
 public class LibP2PNetwork implements P2PNetwork<Peer> {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final PubsubMessageValidator STRICT_FIELDS_VALIDATOR = new GossipWireValidator();
   private static Function0<Long> NULL_SEQNO_GENERATOR = () -> null;
 
   private final PrivKey privKey;
@@ -177,7 +179,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
             Base64.getUrlEncoder()
                 .withoutPadding()
                 .encodeToString(Hash.sha2_256(msg.getData().toByteArray())));
-    router.setValidator(GossipWireValidator.INSTANCE);
+    router.setValidator(STRICT_FIELDS_VALIDATOR);
 
     ChannelHandler debugHandler =
         config.getWireLogsConfig().isLogWireGossip()
