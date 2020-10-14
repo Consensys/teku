@@ -50,11 +50,13 @@ class TimeBasedEventAdapterTest {
     when(genesisTimeProvider.getGenesisTime()).thenReturn(genesisTimeFuture);
 
     final SafeFuture<Void> startResult = eventAdapter.start();
-    assertThat(startResult).isNotDone();
+    // Returned future completes immediately so startup can complete pre-genesis
+    assertThat(startResult).isCompleted();
+    // But no slot timings have been scheduled yet
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
 
+    // Once we get the genesis time, we can schedule the slot events
     genesisTimeFuture.complete(UInt64.ONE);
-    assertThat(startResult).isCompleted();
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
   }
 
