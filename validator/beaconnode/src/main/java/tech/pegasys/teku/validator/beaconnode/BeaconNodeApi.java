@@ -18,8 +18,6 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public interface BeaconNodeApi {
 
-  boolean USE_INDEPENDENT_TIMER = false;
-
   SafeFuture<Void> subscribeToEvents();
 
   SafeFuture<Void> unsubscribeFromEvents();
