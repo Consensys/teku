@@ -14,13 +14,11 @@
 package tech.pegasys.teku.bls.impl.mikuli;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
@@ -40,18 +38,7 @@ public class MikuliSignature implements Signature {
    * @return Signature
    */
   public static MikuliSignature aggregate(List<MikuliSignature> signatures) {
-    return aggregate(signatures.stream());
-  }
-
-  /**
-   * Aggregates a stream of Signatures, returning the signature that corresponds to G2 point at
-   * infinity if list is empty.
-   *
-   * @param signatures The stream of signatures to aggregate
-   * @return Signature
-   */
-  public static MikuliSignature aggregate(Stream<MikuliSignature> signatures) {
-    return signatures
+    return signatures.stream()
         .reduce(MikuliSignature::combine)
         .orElseGet(() -> new MikuliSignature(new G2Point()));
   }
@@ -67,7 +54,7 @@ public class MikuliSignature implements Signature {
         bytes.size() == COMPRESSED_SIG_SIZE,
         "Expected " + COMPRESSED_SIG_SIZE + " bytes of input but got %s",
         bytes.size());
-    return new MikuliSignature(parseSignatureBytes(bytes));
+    return new MikuliSignature(G2Point.fromBytesCompressed(bytes));
   }
 
   static MikuliSignature fromSignature(Signature signature) {
@@ -77,26 +64,6 @@ public class MikuliSignature implements Signature {
       return MikuliSignature.fromBytesCompressed(signature.toBytesCompressed());
     }
   }
-
-  /**
-   * Create a random signature for testing
-   *
-   * @param entropy to seed the key pair generation
-   * @return a random, valid signature
-   */
-  public static MikuliSignature random(int entropy) {
-    MikuliKeyPair keyPair = MikuliKeyPair.random(entropy);
-    byte[] message = "Hello, world!".getBytes(UTF_8);
-    return MikuliBLS12381.sign(keyPair.getSecretKey(), Bytes.wrap(message));
-  }
-
-  private static G2Point parseSignatureBytes(Bytes signatureBytes) {
-    checkArgument(
-        signatureBytes.size() == COMPRESSED_SIG_SIZE,
-        "Expected " + COMPRESSED_SIG_SIZE + " bytes but got " + signatureBytes.size());
-    return G2Point.fromBytesCompressed(signatureBytes);
-  }
-
 
   private final G2Point point;
 

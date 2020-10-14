@@ -21,7 +21,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -89,7 +88,7 @@ public class MikuliBLS12381 implements BLS12381 {
 
   @Override
   public SecretKey secretKeyFromBytes(Bytes32 secretKeyBytes) {
-    return MikuliSecretKey.fromBytes(Bytes48.leftPad(secretKeyBytes));
+    return MikuliSecretKey.fromBytes(secretKeyBytes);
   }
 
   @Override
@@ -149,16 +148,6 @@ public class MikuliBLS12381 implements BLS12381 {
    * @return the aggregated signature
    */
   public static MikuliSignature aggregate(List<MikuliSignature> signatures) {
-    return MikuliSignature.aggregate(signatures);
-  }
-
-  /**
-   * Aggregates a stream of signatures into a single signature using BLS magic.
-   *
-   * @param signatures the stream of signatures to be aggregated
-   * @return the aggregated signature
-   */
-  public static MikuliSignature aggregate(Stream<MikuliSignature> signatures) {
     return MikuliSignature.aggregate(signatures);
   }
 

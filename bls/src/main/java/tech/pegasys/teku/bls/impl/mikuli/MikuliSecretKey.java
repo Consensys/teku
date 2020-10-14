@@ -19,7 +19,6 @@ import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.impl.SecretKey;
 import tech.pegasys.teku.bls.impl.Signature;
 
@@ -27,22 +26,12 @@ import tech.pegasys.teku.bls.impl.Signature;
 public class MikuliSecretKey implements SecretKey {
 
   /**
-   * Create a private key from a byte array
-   *
-   * @param bytes the bytes of the private key
-   * @return a new SecretKey object
-   */
-  public static MikuliSecretKey fromBytes(byte[] bytes) {
-    return fromBytes(Bytes48.wrap(bytes));
-  }
-
-  /**
    * Create a private key from bytes
    *
    * @param bytes the bytes of the private key
    * @return a new SecretKey object
    */
-  public static MikuliSecretKey fromBytes(Bytes48 bytes) {
+  public static MikuliSecretKey fromBytes(Bytes32 bytes) {
     return new MikuliSecretKey(new Scalar(BIG.fromBytes(bytes.toArrayUnsafe())));
   }
 
