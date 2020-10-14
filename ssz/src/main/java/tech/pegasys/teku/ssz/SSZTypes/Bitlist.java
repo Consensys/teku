@@ -52,6 +52,11 @@ public class Bitlist {
     data.set(i);
   }
 
+  public void setBit(final int i, final boolean value) {
+    checkElementIndex(i, size);
+    data.set(i, value);
+  }
+
   public void setBits(int... indexes) {
     for (int i : indexes) {
       setBit(i);
@@ -73,6 +78,10 @@ public class Bitlist {
 
   public boolean isSuperSetOf(final Bitlist other) {
     return other.streamAllSetBits().allMatch(this::getBit);
+  }
+
+  public long countMatchingBits(final Bitlist other) {
+    return other.streamAllSetBits().filter(this::getBit).count();
   }
 
   public List<Integer> getAllSetBits() {

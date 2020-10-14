@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.statetransition.attestation;
 
-import java.util.Collection;
+import static java.lang.StrictMath.toIntExact;
+
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
@@ -71,10 +75,9 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
       // We've already seen these aggregation bits
       return false;
     }
+    final int unseenAggregationBits = countUnseenAggregationBits(attestation.getAttestation());
     return attestationsByValidatorCount
-        .computeIfAbsent(
-            attestation.getAttestation().getAggregation_bits().getBitCount(),
-            count -> new HashSet<>())
+        .computeIfAbsent(unseenAggregationBits, count -> new HashSet<>())
         .add(attestation);
   }
 
@@ -119,30 +122,89 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
    * @param attestation the attestation to logically remove from the pool.
    */
   public int remove(final Attestation attestation) {
-    if (seenAggregationBits.isSuperSetOf(attestation.getAggregation_bits())) {
+    final Bitlist newAggregationBits = getUnseenAggregationBitsFromAttestation(attestation);
+    if (newAggregationBits.getBitCount() == 0) {
       // We've already seen and filtered out all of these bits, nothing to do
       return 0;
     }
-    seenAggregationBits.setAllBits(attestation.getAggregation_bits());
+    seenAggregationBits.setAllBits(newAggregationBits);
 
-    final Collection<Set<ValidateableAttestation>> attestationSets =
-        attestationsByValidatorCount.values();
+    final Map<Integer, Set<ValidateableAttestation>> attestationsToReprioritize = new HashMap<>();
+    final Set<Map.Entry<Integer, Set<ValidateableAttestation>>> attestationEntries =
+        attestationsByValidatorCount.entrySet();
     int numRemoved = 0;
-    for (Iterator<Set<ValidateableAttestation>> i = attestationSets.iterator(); i.hasNext(); ) {
-      final Set<ValidateableAttestation> candidates = i.next();
+    for (Iterator<Map.Entry<Integer, Set<ValidateableAttestation>>> i =
+            attestationEntries.iterator();
+        i.hasNext(); ) {
+      final Map.Entry<Integer, Set<ValidateableAttestation>> entry = i.next();
+      final int currentValidatorCount = entry.getKey();
+      final Set<ValidateableAttestation> candidates = entry.getValue();
       for (Iterator<ValidateableAttestation> iterator = candidates.iterator();
           iterator.hasNext(); ) {
         ValidateableAttestation candidate = iterator.next();
         if (seenAggregationBits.isSuperSetOf(candidate.getAttestation().getAggregation_bits())) {
           iterator.remove();
           numRemoved++;
+        } else if (newAggregationBits.intersects(
+            candidate.getAttestation().getAggregation_bits())) {
+          attestationsToReprioritize
+              .computeIfAbsent(currentValidatorCount, __ -> new HashSet<>())
+              .add(candidate);
         }
       }
       if (candidates.isEmpty()) {
         i.remove();
       }
     }
+
+    // Reprioritize attestations based on new validator count
+    reprioritizeAttestations(attestationsToReprioritize);
+
     return numRemoved;
+  }
+
+  private void reprioritizeAttestations(
+      final Map<Integer, Set<ValidateableAttestation>> attestationsToReprioritize) {
+    attestationsToReprioritize.keySet().stream()
+        .sorted(Comparator.reverseOrder())
+        .forEach(
+            oldValidatorCount -> {
+              final Set<ValidateableAttestation> attestations =
+                  attestationsToReprioritize.get(oldValidatorCount);
+              final Set<ValidateableAttestation> attestationsByOldCount =
+                  attestationsByValidatorCount.getOrDefault(
+                      oldValidatorCount, Collections.emptySet());
+
+              // Remove attestations and re-add so that the priority is recalculated
+              attestationsByOldCount.removeAll(attestations);
+              attestations.forEach(this::add);
+
+              // We're processing in reverse order so items should only move to lower values
+              // So, should we safe to remove here
+              if (attestationsByOldCount.isEmpty()) {
+                attestationsByValidatorCount.remove(oldValidatorCount);
+              }
+            });
+  }
+
+  private int countUnseenAggregationBits(final Attestation attestation) {
+    final long seenBits = seenAggregationBits.countMatchingBits(attestation.getAggregation_bits());
+    return toIntExact(attestation.getAggregation_bits().getBitCount() - seenBits);
+  }
+
+  private Bitlist getUnseenAggregationBitsFromAttestation(final Attestation attestation) {
+    final Bitlist newBits = attestation.getAggregation_bits().copy();
+    // Unset bits we've already seen
+    newBits
+        .getAllSetBits()
+        .forEach(
+            index -> {
+              if (seenAggregationBits.getBit(index)) {
+                newBits.setBit(index, false);
+              }
+            });
+
+    return newBits;
   }
 
   public Bytes32 getCommitteeShufflingSeed() {
