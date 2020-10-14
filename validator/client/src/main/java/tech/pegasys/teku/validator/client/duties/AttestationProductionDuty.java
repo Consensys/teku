@@ -13,15 +13,6 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
-import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -34,6 +25,16 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+
+import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
 public class AttestationProductionDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
@@ -134,7 +135,6 @@ public class AttestationProductionDuty implements Duty {
             signedAttestation ->
                 validatorApiChannel.sendSignedAttestation(
                     signedAttestation, Optional.of(validator.getValidatorIndex())))
-        // TODO: here we report succes for the attestation yet we don't know if it was successful.
         .thenApply(__ -> DutyResult.success(attestation.getData().getBeacon_block_root()));
   }
 
