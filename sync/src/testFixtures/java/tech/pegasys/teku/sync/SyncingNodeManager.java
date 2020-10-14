@@ -13,7 +13,11 @@
 
 package tech.pegasys.teku.sync;
 
+import static tech.pegasys.teku.infrastructure.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
+
 import com.google.common.eventbus.EventBus;
+import java.util.List;
+import java.util.function.Consumer;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.core.StateTransition;
@@ -43,11 +47,6 @@ import tech.pegasys.teku.sync.singlepeer.SinglePeerSyncService;
 import tech.pegasys.teku.sync.singlepeer.SyncManager;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
-
-import java.util.List;
-import java.util.function.Consumer;
-
-import static tech.pegasys.teku.infrastructure.events.TestExceptionHandler.TEST_EXCEPTION_HANDLER;
 
 public class SyncingNodeManager {
   private final EventBus eventBus;
@@ -87,29 +86,34 @@ public class SyncingNodeManager {
     chainUtil.initializeStorage();
 
     ForkChoice forkChoice =
-            new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
+        new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
     BlockImporter blockImporter =
-            new BlockImporter(
-                    recentChainData, forkChoice, WeakSubjectivityValidator.lenient(), eventBus);
+        new BlockImporter(
+            recentChainData, forkChoice, WeakSubjectivityValidator.lenient(), eventBus);
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
-    final FutureItems<SignedBeaconBlock> futureBlocks = FutureItems.create(SignedBeaconBlock::getSlot);
+    final FutureItems<SignedBeaconBlock> futureBlocks =
+        FutureItems.create(SignedBeaconBlock::getSlot);
     BlockManager blockManager =
-            BlockManager.create(eventBus, pendingBlocks, futureBlocks, recentChainData, blockImporter);
-
+        BlockManager.create(eventBus, pendingBlocks, futureBlocks, recentChainData, blockImporter);
 
     eventChannels
-            .subscribe(SlotEventsChannel.class, blockManager)
-            .subscribe(BlockImportChannel.class, blockManager)
-            .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
+        .subscribe(SlotEventsChannel.class, blockManager)
+        .subscribe(BlockImportChannel.class, blockManager)
+        .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
 
     final Eth2P2PNetworkBuilder networkBuilder =
-        networkFactory.builder().eventBus(eventBus).recentChainData(recentChainData).gossipedBlockConsumer(blockManager::importBlockIgnoringResult);
+        networkFactory
+            .builder()
+            .eventBus(eventBus)
+            .recentChainData(recentChainData)
+            .gossipedBlockConsumer(blockManager::importBlockIgnoringResult);
 
     configureNetwork.accept(networkBuilder);
 
     final Eth2Network eth2Network = networkBuilder.startNetwork();
 
-    final FetchRecentBlocksService recentBlockFetcher = FetchRecentBlocksService.create(asyncRunner, eth2Network, pendingBlocks);
+    final FetchRecentBlocksService recentBlockFetcher =
+        FetchRecentBlocksService.create(asyncRunner, eth2Network, pendingBlocks);
     recentBlockFetcher.subscribeBlockFetched(blockManager::importBlockIgnoringResult);
     blockManager.subscribeToReceivedBlocks(recentBlockFetcher::cancelRecentBlockRequest);
 
