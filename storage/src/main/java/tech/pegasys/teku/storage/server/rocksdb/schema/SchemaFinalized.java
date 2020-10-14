@@ -13,14 +13,17 @@
 
 package tech.pegasys.teku.storage.server.rocksdb.schema;
 
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface Schema {
-  Bytes DEFAULT_COLUMN_ID = Bytes.wrap("default".getBytes(StandardCharsets.UTF_8));
+public interface SchemaFinalized extends Schema {
+  RocksDbColumn<Bytes32, UInt64> getColumnSlotsByFinalizedRoot();
 
-  List<RocksDbColumn<?, ?>> getAllColumns();
+  RocksDbColumn<UInt64, SignedBeaconBlock> getColumnFinalizedBlocksBySlot();
 
-  List<RocksDbVariable<?>> getAllVariables();
+  RocksDbColumn<UInt64, BeaconState> getColumnFinalizedStatesBySlot();
+
+  RocksDbColumn<Bytes32, UInt64> getColumnSlotsByFinalizedStateRoot();
 }

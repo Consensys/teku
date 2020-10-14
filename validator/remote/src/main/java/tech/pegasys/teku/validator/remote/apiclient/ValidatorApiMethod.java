@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.validator.remote.apiclient;
 
+import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.util.Map;
 
 public enum ValidatorApiMethod {
@@ -20,7 +23,7 @@ public enum ValidatorApiMethod {
   GET_GENESIS("eth/v1/beacon/genesis"),
   GET_VALIDATORS("eth/v1/beacon/states/head/validators"),
   GET_DUTIES("validator/duties"),
-  GET_UNSIGNED_BLOCK("validator/block"),
+  GET_UNSIGNED_BLOCK("eth/v1/validator/blocks/:slot"),
   SEND_SIGNED_BLOCK("eth/v1/beacon/blocks"),
   GET_UNSIGNED_ATTESTATION("validator/attestation"),
   SEND_SIGNED_ATTESTATION("validator/attestation"),
@@ -41,7 +44,7 @@ public enum ValidatorApiMethod {
   public String getPath(final Map<String, String> urlParams) {
     String result = path;
     for (final Map.Entry<String, String> param : urlParams.entrySet()) {
-      result = result.replace(":" + param.getKey(), param.getValue());
+      result = result.replace(":" + param.getKey(), encode(param.getValue(), UTF_8));
     }
     return result;
   }
