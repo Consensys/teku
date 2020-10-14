@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
+import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.bls.impl.DeserializeException;
 import tech.pegasys.teku.bls.impl.PublicKey;
 
@@ -33,10 +34,10 @@ public final class MikuliPublicKey implements PublicKey {
    * @param keys The list of public keys to aggregate
    * @return PublicKey The public key
    */
-  public static MikuliPublicKey aggregate(List<MikuliPublicKey> keys) {
+  public static MikuliPublicKey aggregate(List<? extends PublicKey> keys) {
     return keys.isEmpty()
         ? new MikuliPublicKey(new G1Point())
-        : keys.stream().reduce(MikuliPublicKey::combine).get();
+        : keys.stream().map(MikuliPublicKey::fromPublicKey).reduce(MikuliPublicKey::combine).get();
   }
 
   /**
@@ -79,6 +80,10 @@ public final class MikuliPublicKey implements PublicKey {
   }
 
   public MikuliPublicKey combine(MikuliPublicKey pk) {
+    if (!BLSConstants.VALID_INFINITY) {
+      if (this.isInfinity()) return this;
+      if (pk.isInfinity()) return pk;
+    }
     return new MikuliPublicKey(point.add(pk.point));
   }
 
@@ -102,7 +107,6 @@ public final class MikuliPublicKey implements PublicKey {
 
   @Override
   public void forceValidation() throws IllegalArgumentException {
-    g1Point();
   }
 
   @Override

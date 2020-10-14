@@ -32,8 +32,7 @@ class MikuliBLS12381Test extends BLS12381Test {
   @Test
   void signingWithZeroSecretKeyGivesPointAtInfinity() {
     MikuliSecretKey secretKey = new MikuliSecretKey(new Scalar(new BIG(0)));
-    MikuliSignature sig =
-        MikuliBLS12381.sign(secretKey, Bytes.wrap("Hello, world!".getBytes(UTF_8)));
+    MikuliSignature sig = secretKey.sign(Bytes.wrap("Hello, world!".getBytes(UTF_8)));
     assertTrue(sig.g2Point().ecp2Point().is_infinity());
   }
 
@@ -43,6 +42,6 @@ class MikuliBLS12381Test extends BLS12381Test {
     MikuliPublicKey infPubKey = new MikuliPublicKey(new G1Point());
     MikuliSignature infSignature = new MikuliSignature(new G2Point());
 
-    assertTrue(MikuliBLS12381.verify(infPubKey, message, infSignature));
+    assertTrue(infSignature.verify(infPubKey, message));
   }
 }

@@ -14,13 +14,15 @@
 package tech.pegasys.teku.bls.impl.mikuli;
 
 import static org.apache.milagro.amcl.BLS381.BIG.MODBYTES;
+import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve.hashToG2;
 
 import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.bls.impl.SecretKey;
-import tech.pegasys.teku.bls.impl.Signature;
+import tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve;
 
 /** This class represents a BLS12-381 private key. */
 public class MikuliSecretKey implements SecretKey {
@@ -41,10 +43,6 @@ public class MikuliSecretKey implements SecretKey {
     this.scalarValue = value;
   }
 
-  public G2Point sign(G2Point message) {
-    return message.mul(scalarValue);
-  }
-
   @Override
   public Bytes32 toBytes() {
     byte[] bytea = new byte[MODBYTES];
@@ -58,13 +56,19 @@ public class MikuliSecretKey implements SecretKey {
   }
 
   @Override
-  public Signature sign(Bytes message) {
-    return MikuliBLS12381.sign(this, message);
+  public MikuliSignature sign(Bytes message) {
+    return sign(message, HashToCurve.ETH2_DST);
   }
 
   @Override
-  public Signature sign(Bytes message, Bytes dst) {
-    return MikuliBLS12381.sign(this, message, dst);
+  public MikuliSignature sign(Bytes message, Bytes dst) {
+    if (!BLSConstants.VALID_INFINITY && scalarValue.isZero()) {
+      throw new IllegalArgumentException("Signing with zero private key is prohibited");
+    } else {
+      G2Point hashInGroup2 = new G2Point(hashToG2(message, dst));
+      G2Point signaturePoint = hashInGroup2.mul(scalarValue);
+      return new MikuliSignature(signaturePoint);
+    }
   }
 
   public Scalar getScalarValue() {

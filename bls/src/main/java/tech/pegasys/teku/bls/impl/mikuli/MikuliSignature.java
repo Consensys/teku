@@ -14,15 +14,17 @@
 package tech.pegasys.teku.bls.impl.mikuli;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve.hashToG2;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
 import tech.pegasys.teku.bls.impl.Signature;
+import tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve;
 
 /** This class represents a Signature on G2 */
 public class MikuliSignature implements Signature {
@@ -87,23 +89,32 @@ public class MikuliSignature implements Signature {
 
   @Override
   public boolean verify(List<PublicKeyMessagePair> keysToMessages) {
-    return MikuliBLS12381.aggregateVerify(
+    if (keysToMessages.stream().map(PublicKeyMessagePair::getMessage).distinct().count()
+        != keysToMessages.size()) {
+      // duplicate messages found
+      return false;
+    }
+
+    List<G2Point> hashesInG2 =
+        keysToMessages.stream()
+            .map(km -> new G2Point(hashToG2(km.getMessage())))
+            .collect(Collectors.toList());
+    return aggregateVerify(
         keysToMessages.stream()
             .map(km -> MikuliPublicKey.fromPublicKey(km.getPublicKey()))
-            .collect(toList()),
-        keysToMessages.stream().map(PublicKeyMessagePair::getMessage).collect(toList()),
-        this);
+            .collect(Collectors.toList()),
+        hashesInG2);
   }
 
   @Override
   public boolean verify(List<PublicKey> publicKeys, Bytes message) {
-    return MikuliBLS12381.fastAggregateVerify(
-        publicKeys.stream().map(MikuliPublicKey::fromPublicKey).collect(toList()), message, this);
+    return verify(MikuliPublicKey.aggregate(publicKeys), message, HashToCurve.ETH2_DST);
   }
 
   @Override
   public boolean verify(PublicKey publicKey, Bytes message, Bytes dst) {
-    return MikuliBLS12381.coreVerify(MikuliPublicKey.fromPublicKey(publicKey), message, this, dst);
+    G2Point hashInGroup2 = new G2Point(hashToG2(message, dst));
+    return verify(MikuliPublicKey.fromPublicKey(publicKey), hashInGroup2);
   }
 
   /**
@@ -113,7 +124,7 @@ public class MikuliSignature implements Signature {
    * @param hashInG2 The G2 point corresponding to the message data to verify, not null
    * @return True if the verification is successful, false otherwise
    */
-  public boolean verify(MikuliPublicKey publicKey, G2Point hashInG2) {
+  private boolean verify(MikuliPublicKey publicKey, G2Point hashInG2) {
     try {
       GTPoint e = AtePairing.pair2(publicKey.g1Point(), hashInG2, g1GeneratorNeg, point);
       return e.isunity();
@@ -129,7 +140,7 @@ public class MikuliSignature implements Signature {
    * @param hashesInG2 The list of G2 point corresponding to the messages to verify, not null
    * @return True if the verification is successful, false otherwise
    */
-  public boolean aggregateVerify(List<MikuliPublicKey> publicKeys, List<G2Point> hashesInG2) {
+  private boolean aggregateVerify(List<MikuliPublicKey> publicKeys, List<G2Point> hashesInG2) {
     checkArgument(
         publicKeys.size() == hashesInG2.size(),
         "List of public keys and list of messages differ in length");
