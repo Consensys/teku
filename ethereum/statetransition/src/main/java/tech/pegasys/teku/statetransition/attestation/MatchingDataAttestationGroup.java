@@ -115,12 +115,11 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
    * @param attestation the attestation to logically remove from the pool.
    */
   public int remove(final Attestation attestation) {
-    final Bitlist newAggregationBits = getUnseenAggregationBitsFromAttestation(attestation);
-    if (newAggregationBits.getBitCount() == 0) {
+    if (seenAggregationBits.isSuperSetOf(attestation.getAggregation_bits())) {
       // We've already seen and filtered out all of these bits, nothing to do
       return 0;
     }
-    seenAggregationBits.setAllBits(newAggregationBits);
+    seenAggregationBits.setAllBits(attestation.getAggregation_bits());
 
     final Collection<Set<ValidateableAttestation>> attestationSets =
         attestationsByValidatorCount.values();
@@ -140,21 +139,6 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
       }
     }
     return numRemoved;
-  }
-
-  private Bitlist getUnseenAggregationBitsFromAttestation(final Attestation attestation) {
-    final Bitlist newBits = attestation.getAggregation_bits().copy();
-    // Unset bits we've already seen
-    newBits
-        .getAllSetBits()
-        .forEach(
-            index -> {
-              if (seenAggregationBits.getBit(index)) {
-                newBits.setBit(index, false);
-              }
-            });
-
-    return newBits;
   }
 
   public Bytes32 getCommitteeShufflingSeed() {
