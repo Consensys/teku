@@ -32,71 +32,73 @@ import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
 import tech.pegasys.teku.storage.server.rocksdb.core.ColumnEntry;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor;
 import tech.pegasys.teku.storage.server.rocksdb.core.RocksDbAccessor.RocksDbTransaction;
-import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
+import tech.pegasys.teku.storage.server.rocksdb.schema.SchemaHot;
 
 public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbProtoArrayDao {
   // Persistent data
   private final RocksDbAccessor db;
+  private final SchemaHot schema;
 
-  public V4HotRocksDbDao(final RocksDbAccessor db) {
+  public V4HotRocksDbDao(final RocksDbAccessor db, final SchemaHot schema) {
     this.db = db;
+    this.schema = schema;
   }
 
   @Override
   public Optional<UInt64> getGenesisTime() {
-    return db.get(V4SchemaHot.GENESIS_TIME);
+    return db.get(schema.getVariableGenesisTime());
   }
 
   @Override
   public Optional<Checkpoint> getJustifiedCheckpoint() {
-    return db.get(V4SchemaHot.JUSTIFIED_CHECKPOINT);
+    return db.get(schema.getVariableJustifiedCheckpoint());
   }
 
   @Override
   public Optional<Checkpoint> getBestJustifiedCheckpoint() {
-    return db.get(V4SchemaHot.BEST_JUSTIFIED_CHECKPOINT);
+    return db.get(schema.getVariableBestJustifiedCheckpoint());
   }
 
   @Override
   public Optional<Checkpoint> getFinalizedCheckpoint() {
-    return db.get(V4SchemaHot.FINALIZED_CHECKPOINT);
+    return db.get(schema.getVariableFinalizedCheckpoint());
   }
 
   @Override
   public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 root) {
-    return db.get(V4SchemaHot.HOT_BLOCKS_BY_ROOT, root);
+    return db.get(schema.getColumnHotBlocksByRoot(), root);
   }
 
   @Override
   public Optional<BeaconState> getHotState(final Bytes32 root) {
-    return db.get(V4SchemaHot.HOT_STATES_BY_ROOT, root);
+    return db.get(schema.getColumnHotStatesByRoot(), root);
   }
 
   @Override
   @MustBeClosed
   public Stream<SignedBeaconBlock> streamHotBlocks() {
-    return db.stream(V4SchemaHot.HOT_BLOCKS_BY_ROOT).map(ColumnEntry::getValue);
+    return db.stream(schema.getColumnHotBlocksByRoot()).map(ColumnEntry::getValue);
   }
 
   @Override
   public Optional<BeaconState> getLatestFinalizedState() {
-    return db.get(V4SchemaHot.LATEST_FINALIZED_STATE);
+    return db.get(schema.getVariableLatestFinalizedState());
   }
 
   @Override
   public Optional<Checkpoint> getWeakSubjectivityCheckpoint() {
-    return db.get(V4SchemaHot.WEAK_SUBJECTIVITY_CHECKPOINT);
+    return db.get(schema.getVariableWeakSubjectivityCheckpoint());
   }
 
   @Override
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks() {
-    return db.getAll(V4SchemaHot.HOT_BLOCKS_BY_ROOT);
+    return db.getAll(schema.getColumnHotBlocksByRoot());
   }
 
   @Override
   public List<Bytes32> getStateRootsBeforeSlot(final UInt64 slot) {
     try (Stream<ColumnEntry<Bytes32, SlotAndBlockRoot>> stream =
-        db.stream(V4SchemaHot.STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT)) {
+        db.stream(schema.getColumnStateRootToSlotAndBlockRoot())) {
       return stream
           .filter((column) -> column.getValue().getSlot().compareTo(slot) < 0)
           .map(ColumnEntry::getKey)
@@ -106,46 +108,46 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
 
   @Override
   public Optional<SlotAndBlockRoot> getSlotAndBlockRootFromStateRoot(final Bytes32 stateRoot) {
-    return db.get(V4SchemaHot.STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT, stateRoot);
+    return db.get(schema.getColumnStateRootToSlotAndBlockRoot(), stateRoot);
   }
 
   @Override
   public Map<UInt64, VoteTracker> getVotes() {
-    return db.getAll(V4SchemaHot.VOTES);
+    return db.getAll(schema.getColumnVotes());
   }
 
   @Override
   @MustBeClosed
   public Stream<DepositsFromBlockEvent> streamDepositsFromBlocks() {
-    return db.stream(V4SchemaHot.DEPOSITS_FROM_BLOCK_EVENTS).map(ColumnEntry::getValue);
+    return db.stream(schema.getColumnDepositsFromBlockEvents()).map(ColumnEntry::getValue);
   }
 
   @Override
   public Optional<MinGenesisTimeBlockEvent> getMinGenesisTimeBlock() {
-    return db.get(V4SchemaHot.MIN_GENESIS_TIME_BLOCK);
+    return db.get(schema.getVariableMinGenesisTimeBlock());
   }
 
   @Override
   public Optional<ProtoArraySnapshot> getProtoArraySnapshot() {
-    return db.get(V4SchemaHot.PROTO_ARRAY_SNAPSHOT);
+    return db.get(schema.getVariableProtoArraySnapshot());
   }
 
   @Override
   @MustBeClosed
   public HotUpdater hotUpdater() {
-    return new V4HotUpdater(db);
+    return new V4HotUpdater(db, schema);
   }
 
   @Override
   @MustBeClosed
   public Eth1Updater eth1Updater() {
-    return new V4HotUpdater(db);
+    return new V4HotUpdater(db, schema);
   }
 
   @Override
   @MustBeClosed
   public ProtoArrayUpdater protoArrayUpdater() {
-    return new V4HotUpdater(db);
+    return new V4HotUpdater(db, schema);
   }
 
   @Override
@@ -156,55 +158,57 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
   private static class V4HotUpdater implements HotUpdater, Eth1Updater, ProtoArrayUpdater {
 
     private final RocksDbTransaction transaction;
+    private final SchemaHot schema;
 
-    V4HotUpdater(final RocksDbAccessor db) {
+    V4HotUpdater(final RocksDbAccessor db, final SchemaHot schema) {
       this.transaction = db.startTransaction();
+      this.schema = schema;
     }
 
     @Override
     public void setGenesisTime(final UInt64 genesisTime) {
-      transaction.put(V4SchemaHot.GENESIS_TIME, genesisTime);
+      transaction.put(schema.getVariableGenesisTime(), genesisTime);
     }
 
     @Override
     public void setJustifiedCheckpoint(final Checkpoint checkpoint) {
-      transaction.put(V4SchemaHot.JUSTIFIED_CHECKPOINT, checkpoint);
+      transaction.put(schema.getVariableJustifiedCheckpoint(), checkpoint);
     }
 
     @Override
     public void setBestJustifiedCheckpoint(final Checkpoint checkpoint) {
-      transaction.put(V4SchemaHot.BEST_JUSTIFIED_CHECKPOINT, checkpoint);
+      transaction.put(schema.getVariableBestJustifiedCheckpoint(), checkpoint);
     }
 
     @Override
     public void setFinalizedCheckpoint(final Checkpoint checkpoint) {
-      transaction.put(V4SchemaHot.FINALIZED_CHECKPOINT, checkpoint);
+      transaction.put(schema.getVariableFinalizedCheckpoint(), checkpoint);
     }
 
     @Override
     public void setWeakSubjectivityCheckpoint(Checkpoint checkpoint) {
-      transaction.put(V4SchemaHot.WEAK_SUBJECTIVITY_CHECKPOINT, checkpoint);
+      transaction.put(schema.getVariableWeakSubjectivityCheckpoint(), checkpoint);
     }
 
     @Override
     public void clearWeakSubjectivityCheckpoint() {
-      transaction.delete(V4SchemaHot.WEAK_SUBJECTIVITY_CHECKPOINT);
+      transaction.delete(schema.getVariableWeakSubjectivityCheckpoint());
     }
 
     @Override
     public void setLatestFinalizedState(final BeaconState state) {
-      transaction.put(V4SchemaHot.LATEST_FINALIZED_STATE, state);
+      transaction.put(schema.getVariableLatestFinalizedState(), state);
     }
 
     @Override
     public void addHotBlock(final SignedBeaconBlock block) {
       final Bytes32 blockRoot = block.getRoot();
-      transaction.put(V4SchemaHot.HOT_BLOCKS_BY_ROOT, blockRoot, block);
+      transaction.put(schema.getColumnHotBlocksByRoot(), blockRoot, block);
     }
 
     @Override
     public void addHotState(final Bytes32 blockRoot, final BeaconState state) {
-      transaction.put(V4SchemaHot.HOT_STATES_BY_ROOT, blockRoot, state);
+      transaction.put(schema.getColumnHotStatesByRoot(), blockRoot, state);
     }
 
     @Override
@@ -213,46 +217,46 @@ public class V4HotRocksDbDao implements RocksDbHotDao, RocksDbEth1Dao, RocksDbPr
       stateRootToSlotAndBlockRootMap.forEach(
           (stateRoot, slotAndBlockRoot) ->
               transaction.put(
-                  V4SchemaHot.STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT, stateRoot, slotAndBlockRoot));
+                  schema.getColumnStateRootToSlotAndBlockRoot(), stateRoot, slotAndBlockRoot));
     }
 
     @Override
     public void pruneHotStateRoots(final List<Bytes32> stateRoots) {
       stateRoots.stream()
           .forEach(
-              (root) -> transaction.delete(V4SchemaHot.STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT, root));
+              (root) -> transaction.delete(schema.getColumnStateRootToSlotAndBlockRoot(), root));
     }
 
     @Override
     public void addVotes(final Map<UInt64, VoteTracker> votes) {
       votes.forEach(
-          (validatorIndex, vote) -> transaction.put(V4SchemaHot.VOTES, validatorIndex, vote));
+          (validatorIndex, vote) -> transaction.put(schema.getColumnVotes(), validatorIndex, vote));
     }
 
     @Override
     public void deleteHotBlock(final Bytes32 blockRoot) {
-      transaction.delete(V4SchemaHot.HOT_BLOCKS_BY_ROOT, blockRoot);
+      transaction.delete(schema.getColumnHotBlocksByRoot(), blockRoot);
       deleteHotState(blockRoot);
     }
 
     @Override
     public void deleteHotState(final Bytes32 blockRoot) {
-      transaction.delete(V4SchemaHot.HOT_STATES_BY_ROOT, blockRoot);
+      transaction.delete(schema.getColumnHotStatesByRoot(), blockRoot);
     }
 
     @Override
     public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
-      transaction.put(V4SchemaHot.MIN_GENESIS_TIME_BLOCK, event);
+      transaction.put(schema.getVariableMinGenesisTimeBlock(), event);
     }
 
     @Override
     public void addDepositsFromBlockEvent(final DepositsFromBlockEvent event) {
-      transaction.put(V4SchemaHot.DEPOSITS_FROM_BLOCK_EVENTS, event.getBlockNumber(), event);
+      transaction.put(schema.getColumnDepositsFromBlockEvents(), event.getBlockNumber(), event);
     }
 
     @Override
     public void putProtoArraySnapshot(ProtoArraySnapshot newProtoArray) {
-      transaction.put(V4SchemaHot.PROTO_ARRAY_SNAPSHOT, newProtoArray);
+      transaction.put(schema.getVariableProtoArraySnapshot(), newProtoArray);
     }
 
     @Override

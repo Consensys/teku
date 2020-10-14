@@ -16,8 +16,10 @@ package tech.pegasys.teku.storage.server.rocksdb.core;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -31,7 +33,6 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbVariable;
-import tech.pegasys.teku.storage.server.rocksdb.schema.Schema;
 
 public class MockRocksDbInstance implements RocksDbAccessor {
   private final Set<RocksDbColumn<?, ?>> columns;
@@ -43,12 +44,12 @@ public class MockRocksDbInstance implements RocksDbAccessor {
   private AtomicBoolean closed = new AtomicBoolean(false);
 
   public MockRocksDbInstance(
-      Set<RocksDbColumn<?, ?>> columns,
-      Set<RocksDbVariable<?>> variables,
+      Collection<RocksDbColumn<?, ?>> columns,
+      Collection<RocksDbVariable<?>> variables,
       final Map<RocksDbColumn<?, ?>, NavigableMap<Bytes, Bytes>> columnData,
       final Map<RocksDbVariable<?>, Bytes> variableData) {
-    this.columns = columns;
-    this.variables = variables;
+    this.columns = new HashSet<>(columns);
+    this.variables = new HashSet<>(variables);
     this.columnData = columnData;
     this.variableData = variableData;
   }
@@ -61,11 +62,8 @@ public class MockRocksDbInstance implements RocksDbAccessor {
     }
   }
 
-  public static MockRocksDbInstance createEmpty(final Class<? extends Schema> schema) {
-    final Set<RocksDbColumn<?, ?>> columns =
-        Schema.streamColumns(schema).collect(Collectors.toSet());
-    final Set<RocksDbVariable<?>> variables =
-        Schema.streamVariables(schema).collect(Collectors.toSet());
+  public static MockRocksDbInstance createEmpty(
+      final Collection<RocksDbColumn<?, ?>> columns, List<RocksDbVariable<?>> variables) {
     checkArgument(columns.size() > 0, "No columns attached to schema");
 
     final Map<RocksDbColumn<?, ?>, NavigableMap<Bytes, Bytes>> columnData =
