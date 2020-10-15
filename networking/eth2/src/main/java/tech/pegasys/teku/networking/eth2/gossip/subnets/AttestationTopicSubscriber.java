@@ -24,19 +24,15 @@ import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
-import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.time.channels.SlotEventsChannel;
 
 public class AttestationTopicSubscriber implements SlotEventsChannel {
   private final Map<Integer, UInt64> subnetIdToUnsubscribeSlot = new HashMap<>();
   private final Set<Integer> persistentSubnetIdSet = new HashSet<>();
   private final Eth2Network eth2Network;
-  private final RecentChainData recentChainData;
 
-  public AttestationTopicSubscriber(
-      final Eth2Network eth2Network, final RecentChainData recentChainData) {
+  public AttestationTopicSubscriber(final Eth2Network eth2Network) {
     this.eth2Network = eth2Network;
-    this.recentChainData = recentChainData;
   }
 
   public void subscribeToCommitteeForAggregation(
