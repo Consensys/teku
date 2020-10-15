@@ -74,7 +74,7 @@ class RpcResponseCallback<TResponse> implements ResponseCallback<TResponse> {
     if (error instanceof PeerDisconnectedException) {
       LOG.trace("Not sending RPC response as peer has already disconnected");
       // But close the stream just to be completely sure we don't leak any resources.
-      rpcStream.close().reportExceptions();
+      rpcStream.closeAbruptly().reportExceptions();
     } else {
       completeWithErrorResponse(new ServerErrorException());
     }

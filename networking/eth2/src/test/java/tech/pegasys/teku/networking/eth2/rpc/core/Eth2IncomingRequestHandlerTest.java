@@ -80,19 +80,19 @@ public abstract class Eth2IncomingRequestHandlerTest
     asyncRunner.executeQueuedActions();
     // verify non-error response
     verify(rpcStream).writeBytes(argThat(bytes -> bytes.get(0) == 0));
-    verify(rpcStream).close();
+    verify(rpcStream).closeAbruptly();
   }
 
   @Test
   public void shouldCloseStreamIfRequestNotReceivedInTime() {
-    verify(rpcStream, never()).close();
+    verify(rpcStream, never()).closeAbruptly();
     verify(rpcStream, never()).closeWriteStream();
 
     // When timeout completes, we should close stream
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
     asyncRunner.executeQueuedActions();
 
-    verify(rpcStream).close();
+    verify(rpcStream).closeAbruptly();
     verify(rpcStream, never()).closeWriteStream();
   }
 
@@ -106,7 +106,7 @@ public abstract class Eth2IncomingRequestHandlerTest
     assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
     asyncRunner.executeQueuedActions();
     asyncRunner.executeQueuedActions();
-    verify(rpcStream, never()).close();
+    verify(rpcStream, never()).closeAbruptly();
   }
 
   public static class Eth2IncomingRequestHandlerTest_ssz extends Eth2IncomingRequestHandlerTest {

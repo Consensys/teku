@@ -95,7 +95,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
 
     assertThat(finishedProcessingFuture).isCompletedWithValue(null);
-    verify(rpcStream).close();
+    verify(rpcStream).closeAbruptly();
     assertThat(blocks.size()).isEqualTo(3);
   }
 
@@ -125,7 +125,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
 
     assertThat(finishedProcessingFuture).isCompletedExceptionally();
-    verify(rpcStream, atLeastOnce()).close();
+    verify(rpcStream, atLeastOnce()).closeAbruptly();
     assertThat(blocks.size()).isEqualTo(maxChunks - 1);
     assertThatThrownBy(finishedProcessingFuture::get).hasRootCause(error);
   }
@@ -143,7 +143,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     asyncRequestRunner.waitForExactly(1);
     Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
 
-    verify(rpcStream).close();
+    verify(rpcStream).closeAbruptly();
     assertThat(blocks.size()).isEqualTo(1);
     assertThat(finishedProcessingFuture).isCompletedExceptionally();
   }
@@ -169,7 +169,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     timeoutRunner.executeUntilDone();
     Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
 
-    verify(rpcStream).close();
+    verify(rpcStream).closeAbruptly();
     assertThat(blocks.size()).isEqualTo(2);
     assertThat(finishedProcessingFuture).isCompletedExceptionally();
     assertThatThrownBy(finishedProcessingFuture::get)
@@ -180,19 +180,19 @@ public abstract class Eth2OutgoingRequestHandlerTest
   public void disconnectsIfInitialBytesAreNotReceivedInTime() {
     sendInitialPayload();
     verify(rpcStream).closeWriteStream();
-    verify(rpcStream, never()).close();
+    verify(rpcStream, never()).closeAbruptly();
 
     // Run async tasks
     timeProvider.advanceTimeByMillis(RpcTimeouts.TTFB_TIMEOUT.toMillis());
     timeoutRunner.executeDueActions();
-    verify(rpcStream).close();
+    verify(rpcStream).closeAbruptly();
   }
 
   @Test
   public void doesNotDisconnectIfInitialBytesAreReceivedInTime() throws Exception {
     sendInitialPayload();
     verify(rpcStream).closeWriteStream();
-    verify(rpcStream, never()).close();
+    verify(rpcStream, never()).closeAbruptly();
 
     // Deliver some bytes just in time
     timeProvider.advanceTimeByMillis(RpcTimeouts.TTFB_TIMEOUT.toMillis() - 1);
@@ -202,7 +202,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     // Go past the time the first bytes should have been received and check it doesn't timeout
     timeProvider.advanceTimeByMillis(10);
     timeoutRunner.executeDueActions();
-    verify(rpcStream, never()).close();
+    verify(rpcStream, never()).closeAbruptly();
   }
 
   @Test
@@ -214,7 +214,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     // Run timeouts
     timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis());
     timeoutRunner.executeDueActions();
-    verify(rpcStream).close();
+    verify(rpcStream).closeAbruptly();
   }
 
   @Test
@@ -229,7 +229,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     // the second chunk and ensure the timeout never fires.
     timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis() - 1);
     timeoutRunner.executeDueActions();
-    verify(rpcStream, never()).close();
+    verify(rpcStream, never()).closeAbruptly();
   }
 
   @Test
@@ -244,7 +244,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     // Run timeouts
     timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis());
     timeoutRunner.executeDueActions();
-    verify(rpcStream).close();
+    verify(rpcStream).closeAbruptly();
   }
 
   @Test
@@ -266,7 +266,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     // the third chunk and ensure the timeout never fires.
     timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis() - 1);
     timeoutRunner.executeDueActions();
-    verify(rpcStream, never()).close();
+    verify(rpcStream, never()).closeAbruptly();
     assertThat(blocks.size()).isEqualTo(2);
   }
 

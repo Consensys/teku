@@ -119,7 +119,7 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
                     "Failed to receive incoming request data within {} sec for method {}. Close stream.",
                     timeout.getSeconds(),
                     method);
-                stream.close().reportExceptions();
+                stream.closeAbruptly().reportExceptions();
               }
             })
         .reportExceptions();

@@ -136,7 +136,7 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
       return;
     }
     if (rpcStream != null) {
-      rpcStream.close().reportExceptions();
+      rpcStream.closeAbruptly().reportExceptions();
     }
     responseProcessor
         .finishProcessing()
@@ -169,7 +169,7 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
     }
 
     LOG.trace("Cancel request: {}", error.getMessage());
-    rpcStream.close().reportExceptions();
+    rpcStream.closeAbruptly().reportExceptions();
     responseProcessor.finishProcessing().always(() -> responseStream.completeWithError(error));
   }
 
