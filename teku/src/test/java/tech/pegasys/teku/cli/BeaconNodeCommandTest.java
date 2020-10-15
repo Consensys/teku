@@ -260,7 +260,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       "--Xinterop-genesis-time", "1",
       "--Xinterop-owned-validator-start-index", "0",
       "--Xinterop-owned-validator-count", "64",
-      "--initial-state", "",
+      "--genesis-state", "",
       "--Xinterop-number-of-validators", "64",
       "--Xinterop-enabled", "true",
       "--eth1-deposit-contract-address", "0x77f7bED277449F51505a4C54550B074030d989bC",

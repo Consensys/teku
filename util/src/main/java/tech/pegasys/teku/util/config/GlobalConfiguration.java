@@ -25,7 +25,7 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsConfig;
 public class GlobalConfiguration implements MetricsConfig {
   // Network
   private final String constants;
-  private final String initialState;
+  private final String genesisState;
   private final Integer startupTargetPeerCount;
   private final Integer startupTimeoutSeconds;
   private final Integer peerRateLimit;
@@ -122,7 +122,7 @@ public class GlobalConfiguration implements MetricsConfig {
       final Integer interopGenesisTime,
       final int interopOwnedValidatorStartIndex,
       final int interopOwnedValidatorCount,
-      final String initialState,
+      final String genesisState,
       final int interopNumberOfValidators,
       final boolean interopEnabled,
       final Eth1Address eth1DepositContractAddress,
@@ -175,7 +175,7 @@ public class GlobalConfiguration implements MetricsConfig {
     this.interopGenesisTime = interopGenesisTime;
     this.interopOwnedValidatorStartIndex = interopOwnedValidatorStartIndex;
     this.interopOwnedValidatorCount = interopOwnedValidatorCount;
-    this.initialState = initialState;
+    this.genesisState = genesisState;
     this.interopNumberOfValidators = interopNumberOfValidators;
     this.interopEnabled = interopEnabled;
     this.eth1DepositContractAddress = eth1DepositContractAddress;
@@ -301,8 +301,8 @@ public class GlobalConfiguration implements MetricsConfig {
     return interopOwnedValidatorCount;
   }
 
-  public String getInitialState() {
-    return initialState == null || initialState.isEmpty() ? null : initialState;
+  public String getGenesisState() {
+    return genesisState == null || genesisState.isEmpty() ? null : genesisState;
   }
 
   public int getInteropNumberOfValidators() {

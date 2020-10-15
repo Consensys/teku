@@ -269,8 +269,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               this.recentChainData = client;
               if (recentChainData.isPreGenesis()) {
                 // Set up genesis
-                if (config.getInitialState() != null) {
-                  setupInitialState();
+                if (config.getGenesisState() != null) {
+                  setupGenesisState();
                 } else if (config.isInteropEnabled()) {
                   setupInteropState();
                 } else if (config.isEth1Enabled()) {
@@ -505,7 +505,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void initGenesisHandler() {
-    if (config.isInteropEnabled() || config.getInitialState() != null) {
+    if (config.isInteropEnabled() || config.getGenesisState() != null) {
       // We're manually setting genesis, so don't spin up the genesis handler
       return;
     }
@@ -726,11 +726,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initializeGenesis(interopState);
   }
 
-  private void setupInitialState() {
+  private void setupGenesisState() {
     try {
-      STATUS_LOG.loadingGenesisFile(config.getInitialState());
-      final BeaconState initialState = StartupUtil.loadBeaconState(config.getInitialState());
-      initializeGenesis(initialState);
+      STATUS_LOG.loadingGenesisFile(config.getGenesisState());
+      final BeaconState genesisState = StartupUtil.loadBeaconState(config.getGenesisState());
+      initializeGenesis(genesisState);
     } catch (final IOException e) {
       throw new IllegalStateException("Failed to load initial state", e);
     }

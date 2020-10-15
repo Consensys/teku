@@ -47,7 +47,7 @@ public class GlobalConfigurationBuilder {
   private Integer interopGenesisTime;
   private int interopOwnedValidatorStartIndex;
   private int interopOwnedValidatorCount;
-  private String initialState;
+  private String genesisState;
   private int interopNumberOfValidators;
   private boolean interopEnabled;
   private Eth1Address eth1DepositContractAddress;
@@ -191,8 +191,8 @@ public class GlobalConfigurationBuilder {
     return this;
   }
 
-  public GlobalConfigurationBuilder setInitialState(final String initialState) {
-    this.initialState = initialState;
+  public GlobalConfigurationBuilder setGenesisState(final String genesisState) {
+    this.genesisState = genesisState;
     return this;
   }
 
@@ -370,7 +370,7 @@ public class GlobalConfigurationBuilder {
   public GlobalConfiguration build() {
     if (network != null) {
       constants = getOrDefault(constants, network::getConstants);
-      initialState = getOrOptionalDefault(initialState, network::getInitialState);
+      genesisState = getOrOptionalDefault(genesisState, network::getGenesisState);
       startupTargetPeerCount =
           getOrDefault(startupTargetPeerCount, network::getStartupTargetPeerCount);
       startupTimeoutSeconds =
@@ -408,7 +408,7 @@ public class GlobalConfigurationBuilder {
         interopGenesisTime,
         interopOwnedValidatorStartIndex,
         interopOwnedValidatorCount,
-        initialState,
+        genesisState,
         interopNumberOfValidators,
         interopEnabled,
         eth1DepositContractAddress,
