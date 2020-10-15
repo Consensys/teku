@@ -15,12 +15,10 @@ package tech.pegasys.teku.cli.subcommand.admin;
 
 import static tech.pegasys.teku.infrastructure.logging.SubCommandLogger.SUB_COMMAND_LOG;
 
-import java.nio.file.Path;
-import java.util.Optional;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
-import tech.pegasys.teku.cli.options.DataOptions;
+import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.DataStorageOptions;
 import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -62,7 +60,7 @@ public class WeakSubjectivityCommand implements Runnable {
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
   public int clearWeakSubjectivityState(
-      @CommandLine.Mixin final DataOptions dataOptions,
+      @CommandLine.Mixin final BeaconNodeDataOptions dataOptions,
       @CommandLine.Mixin final DataStorageOptions dataStorageOptions,
       @CommandLine.Mixin final NetworkOptions networkOptions)
       throws Exception {
@@ -93,7 +91,7 @@ public class WeakSubjectivityCommand implements Runnable {
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
   public int displayWeakSubjectivityState(
-      @CommandLine.Mixin final DataOptions dataOptions,
+      @CommandLine.Mixin final BeaconNodeDataOptions dataOptions,
       @CommandLine.Mixin final DataStorageOptions dataStorageOptions,
       @CommandLine.Mixin final NetworkOptions networkOptions)
       throws Exception {
@@ -105,15 +103,13 @@ public class WeakSubjectivityCommand implements Runnable {
   }
 
   private Database createDatabase(
-      final DataOptions dataOptions,
+      final BeaconNodeDataOptions dataOptions,
       final DataStorageOptions dataStorageOptions,
       final NetworkOptions networkOptions) {
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
-            DataDirLayout.createFrom(
-                    Path.of(dataOptions.getDataPath()), Optional.empty(), Optional.empty())
-                .getBeaconDataDirectory(),
+            DataDirLayout.createFrom(dataOptions.getDataConfig()).getBeaconDataDirectory(),
             dataStorageOptions.getDataStorageMode(),
             NetworkDefinition.fromCliArg(networkOptions.getNetwork())
                 .getEth1DepositContractAddress()

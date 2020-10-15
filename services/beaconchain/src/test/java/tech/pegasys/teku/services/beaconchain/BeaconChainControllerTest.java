@@ -36,6 +36,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -62,7 +63,9 @@ public class BeaconChainControllerTest {
     when(eventChannels.getPublisher(any())).thenReturn(mock(SlotEventsChannel.class));
     when(serviceConfig.getEventChannels()).thenReturn(eventChannels);
     when(serviceConfig.getDataDirLayout())
-        .thenReturn(DataDirLayout.createFrom(dataDir, Optional.of(dataDir), Optional.empty()));
+        .thenReturn(
+            DataDirLayout.createFrom(
+                DataConfig.builder().dataBasePath(dataDir).beaconDataPath(dataDir).build()));
   }
 
   private BeaconChainConfiguration beaconChainConfiguration() {

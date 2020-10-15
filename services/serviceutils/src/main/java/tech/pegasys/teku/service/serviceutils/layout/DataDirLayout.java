@@ -16,16 +16,14 @@ package tech.pegasys.teku.service.serviceutils.layout;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
-import java.util.Optional;
 
 public interface DataDirLayout {
-  static DataDirLayout createFrom(
-      final Path dataDirectory,
-      final Optional<Path> beaconDataDirectory,
-      final Optional<Path> validatorDataDirectory) {
+  static DataDirLayout createFrom(final DataConfig dataConfig) {
     final SeparateServiceDataDirLayout layout =
         new SeparateServiceDataDirLayout(
-            dataDirectory, beaconDataDirectory, validatorDataDirectory);
+            dataConfig.getDataBasePath(),
+            dataConfig.getBeaconDataPath(),
+            dataConfig.getValidatorDataPath());
     try {
       layout.migrateIfNecessary();
     } catch (final IOException e) {

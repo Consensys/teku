@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.util.config;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -54,9 +53,6 @@ public class GlobalConfiguration implements MetricsConfig {
   private final int interopNumberOfValidators;
   private final boolean interopEnabled;
 
-  // Validator
-  private final Path validatorsSlashingProtectionPath;
-
   // Deposit
   private final Eth1Address eth1DepositContractAddress;
   private final String eth1Endpoint;
@@ -85,7 +81,6 @@ public class GlobalConfiguration implements MetricsConfig {
   private final List<String> metricsHostAllowlist;
 
   // Database
-  private final String dataPath;
   private final StateStorageMode dataStorageMode;
   private final long dataStorageFrequency;
   private final String dataStorageCreateDbVersion;
@@ -149,7 +144,6 @@ public class GlobalConfiguration implements MetricsConfig {
       final String metricsInterface,
       final List<String> metricsCategories,
       final List<String> metricsHostAllowlist,
-      final String dataPath,
       final StateStorageMode dataStorageMode,
       final long dataStorageFrequency,
       final String dataStorageCreateDbVersion,
@@ -159,8 +153,7 @@ public class GlobalConfiguration implements MetricsConfig {
       final boolean restApiDocsEnabled,
       final boolean restApiEnabled,
       final String restApiInterface,
-      final List<String> restApiHostAllowlist,
-      final Path validatorsSlashingProtectionPath) {
+      final List<String> restApiHostAllowlist) {
     this.constants = constants;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
@@ -204,7 +197,6 @@ public class GlobalConfiguration implements MetricsConfig {
     this.metricsInterface = metricsInterface;
     this.metricsCategories = metricsCategories;
     this.metricsHostAllowlist = metricsHostAllowlist;
-    this.dataPath = dataPath;
     this.dataStorageMode = dataStorageMode;
     this.dataStorageFrequency = dataStorageFrequency;
     this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
@@ -215,7 +207,6 @@ public class GlobalConfiguration implements MetricsConfig {
     this.restApiEnabled = restApiEnabled;
     this.restApiInterface = restApiInterface;
     this.restApiHostAllowlist = restApiHostAllowlist;
-    this.validatorsSlashingProtectionPath = validatorsSlashingProtectionPath;
   }
 
   public String getConstants() {
@@ -407,10 +398,6 @@ public class GlobalConfiguration implements MetricsConfig {
     return metricsHostAllowlist;
   }
 
-  public String getBaseDataPath() {
-    return dataPath;
-  }
-
   public StateStorageMode getDataStorageMode() {
     return dataStorageMode;
   }
@@ -459,9 +446,5 @@ public class GlobalConfiguration implements MetricsConfig {
               "Invalid configuration. Interop number of validators [%d] must be greater than or equal to [%d]",
               interopNumberOfValidators, Constants.SLOTS_PER_EPOCH));
     }
-  }
-
-  public Path getValidatorsSlashingProtectionPath() {
-    return validatorsSlashingProtectionPath;
   }
 }

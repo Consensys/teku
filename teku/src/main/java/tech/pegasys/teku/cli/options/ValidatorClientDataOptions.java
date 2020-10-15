@@ -14,33 +14,22 @@
 package tech.pegasys.teku.cli.options;
 
 import java.nio.file.Path;
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
-import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
-import tech.pegasys.teku.util.cli.VersionProvider;
 
-public abstract class DataOptions {
+public class ValidatorClientDataOptions extends DataOptions {
 
   @Option(
-      names = {"--data-base-path", "--data-path"},
+      names = {"--data-validator-path"},
       paramLabel = "<FILENAME>",
-      description = "Path to the base directory to store output files",
+      description = "Path to the directory to store validator client data. Defaults to ",
+      showDefaultValue = Visibility.NEVER,
       arity = "1")
-  private Path dataBasePath = defaultDataPath();
+  private Path dataValidatorPath;
 
-  public DataConfig getDataConfig() {
-    return configure(DataConfig.builder()).build();
-  }
-
-  public void configure(TekuConfiguration.Builder builder) {
-    builder.data(this::configure);
-  }
-
+  @Override
   protected DataConfig.Builder configure(final DataConfig.Builder config) {
-    return config.dataBasePath(dataBasePath);
-  }
-
-  private static Path defaultDataPath() {
-    return Path.of(VersionProvider.defaultStoragePath());
+    return super.configure(config).validatorDataPath(dataValidatorPath);
   }
 }

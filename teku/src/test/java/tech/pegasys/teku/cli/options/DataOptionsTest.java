@@ -17,18 +17,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.util.config.StateStorageMode.ARCHIVE;
 import static tech.pegasys.teku.util.config.StateStorageMode.PRUNE;
 
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
+import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 
 public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
-  private static final String TEST_PATH = "/tmp/teku";
+  private static final Path TEST_PATH = Path.of("/tmp/teku");
 
   @Test
   public void dataPath_shouldReadFromConfigurationFile() {
-    final GlobalConfiguration globalConfiguration =
-        getGlobalConfigurationFromFile("dataOptions_config.yaml");
-    assertThat(globalConfiguration.getBaseDataPath()).isEqualTo(TEST_PATH);
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromFile("dataOptions_config.yaml");
+    final GlobalConfiguration globalConfiguration = tekuConfiguration.global();
+    assertThat(tekuConfiguration.dataConfig().getDataBasePath()).isEqualTo(TEST_PATH);
     assertThat(globalConfiguration.getDataStorageMode()).isEqualTo(ARCHIVE);
     assertThat(globalConfiguration.getDataStorageCreateDbVersion()).isEqualTo("4");
     assertThat(globalConfiguration.getDataStorageFrequency()).isEqualTo(128L);
@@ -50,9 +53,9 @@ public class DataOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void dataPath_shouldAcceptNonDefaultValues() {
-    final GlobalConfiguration globalConfiguration =
-        getGlobalConfigurationFromArguments("--data-path", TEST_PATH);
-    assertThat(globalConfiguration.getBaseDataPath()).isEqualTo(TEST_PATH);
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--data-path", TEST_PATH.toString());
+    assertThat(config.dataConfig().getDataBasePath()).isEqualTo(TEST_PATH);
   }
 
   @Test

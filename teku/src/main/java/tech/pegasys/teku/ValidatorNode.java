@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.ValidatorNodeServiceController;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.Constants;
@@ -78,7 +79,8 @@ public class ValidatorNode implements Node {
             eventBus,
             eventChannels,
             metricsSystem,
-            globalConfig);
+            globalConfig,
+            DataDirLayout.createFrom(tekuConfig.dataConfig()));
     tekuConfig.validate();
     Constants.setConstants(globalConfig.getConstants());
 

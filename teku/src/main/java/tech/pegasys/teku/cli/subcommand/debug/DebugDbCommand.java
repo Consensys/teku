@@ -25,7 +25,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
-import tech.pegasys.teku.cli.options.DataOptions;
+import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.DataStorageOptions;
 import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.core.lookup.BlockProvider;
@@ -75,7 +75,7 @@ public class DebugDbCommand implements Runnable {
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
   public int getDeposits(
-      @Mixin final DataOptions dataOptions,
+      @Mixin final BeaconNodeDataOptions dataOptions,
       @Mixin final DataStorageOptions dataStorageOptions,
       @Mixin final NetworkOptions networkOptions)
       throws Exception {
@@ -101,7 +101,7 @@ public class DebugDbCommand implements Runnable {
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
   public int getFinalizedState(
-      @Mixin final DataOptions dataOptions,
+      @Mixin final BeaconNodeDataOptions dataOptions,
       @Mixin final DataStorageOptions dataStorageOptions,
       @Mixin final NetworkOptions networkOptions,
       @Option(
@@ -137,7 +137,7 @@ public class DebugDbCommand implements Runnable {
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
   public int getLatestFinalizedState(
-      @Mixin final DataOptions dataOptions,
+      @Mixin final BeaconNodeDataOptions dataOptions,
       @Mixin final DataStorageOptions dataStorageOptions,
       @Mixin final NetworkOptions networkOptions,
       @Option(
@@ -182,7 +182,7 @@ public class DebugDbCommand implements Runnable {
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
   public int getForkChoiceSnapshot(
-      @Mixin final DataOptions dataOptions,
+      @Mixin final BeaconNodeDataOptions dataOptions,
       @Mixin final DataStorageOptions dataStorageOptions,
       @Mixin final NetworkOptions networkOptions,
       @Option(
@@ -215,15 +215,13 @@ public class DebugDbCommand implements Runnable {
   }
 
   private Database createDatabase(
-      final DataOptions dataOptions,
+      final BeaconNodeDataOptions dataOptions,
       final DataStorageOptions dataStorageOptions,
       final NetworkOptions networkOptions) {
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
-            DataDirLayout.createFrom(
-                    Path.of(dataOptions.getDataPath()), Optional.empty(), Optional.empty())
-                .getBeaconDataDirectory(),
+            DataDirLayout.createFrom(dataOptions.getDataConfig()).getBeaconDataDirectory(),
             dataStorageOptions.getDataStorageMode(),
             NetworkDefinition.fromCliArg(networkOptions.getNetwork())
                 .getEth1DepositContractAddress()
