@@ -23,7 +23,8 @@ public class ValidatorClientDataOptions extends DataOptions {
   @Option(
       names = {"--data-validator-path"},
       paramLabel = "<FILENAME>",
-      description = "Path to the directory to store validator client data. Defaults to ",
+      description =
+          "Path to validator client data\n  Default: <data-base-path>/validator",
       showDefaultValue = Visibility.NEVER,
       arity = "1")
   private Path dataValidatorPath;

@@ -22,7 +22,8 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   @Option(
       names = {"--data-beacon-path"},
       paramLabel = "<FILENAME>",
-      description = "Path to the directory to store beacon node data",
+      description =
+          "Path to beacon node data\n  Default: <data-base-path>/beacon",
       arity = "1")
   private Path dataBeaconPath;
 

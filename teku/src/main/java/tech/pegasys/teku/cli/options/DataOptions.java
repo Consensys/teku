@@ -24,7 +24,7 @@ public abstract class DataOptions {
   @Option(
       names = {"--data-base-path", "--data-path"},
       paramLabel = "<FILENAME>",
-      description = "Path to the base directory to store output files",
+      description = "Path to the base directory for storage",
       arity = "1")
   private Path dataBasePath = defaultDataPath();
 
