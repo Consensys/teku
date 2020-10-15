@@ -51,6 +51,7 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
@@ -134,8 +135,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getGenesisTime() {
-    return SafeFuture.completedFuture(combinedChainDataClient.getGenesisTime());
+  public SafeFuture<Optional<GenesisData>> getGenesisData() {
+    return SafeFuture.completedFuture(combinedChainDataClient.getGenesisData());
   }
 
   @Override

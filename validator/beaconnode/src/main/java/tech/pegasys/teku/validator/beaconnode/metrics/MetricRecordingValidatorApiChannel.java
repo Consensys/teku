@@ -25,6 +25,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
@@ -173,8 +174,8 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getGenesisTime() {
-    return countRequest(delegate.getGenesisTime(), genesisTimeRequestCounter);
+  public SafeFuture<Optional<GenesisData>> getGenesisData() {
+    return countRequest(delegate.getGenesisData(), genesisTimeRequestCounter);
   }
 
   @Override

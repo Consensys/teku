@@ -113,16 +113,18 @@ class RemoteValidatorApiHandlerTest {
                         dataStructureUtil.randomBytes32(),
                         dataStructureUtil.randomBytes4()))));
 
-    SafeFuture<Optional<UInt64>> future = apiHandler.getGenesisTime();
+    SafeFuture<Optional<tech.pegasys.teku.datastructures.genesis.GenesisData>> future =
+        apiHandler.getGenesisData();
 
-    assertThat(unwrapToValue(future)).isEqualTo(genesisTime);
+    assertThat(unwrapToValue(future).getGenesisTime()).isEqualTo(genesisTime);
   }
 
   @Test
   public void getGenesisTime_WhenNotPresent_ReturnsEmpty() {
     when(apiClient.getGenesis()).thenReturn(Optional.empty());
 
-    SafeFuture<Optional<UInt64>> future = apiHandler.getGenesisTime();
+    SafeFuture<Optional<tech.pegasys.teku.datastructures.genesis.GenesisData>> future =
+        apiHandler.getGenesisData();
 
     assertThat(unwrapToOptional(future)).isNotPresent();
   }
