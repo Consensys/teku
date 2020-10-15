@@ -23,7 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 
 public class Root {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public Bytes32 root;
+  public final Bytes32 root;
 
   @JsonCreator
   public Root(@JsonProperty("root") final Bytes32 root) {
