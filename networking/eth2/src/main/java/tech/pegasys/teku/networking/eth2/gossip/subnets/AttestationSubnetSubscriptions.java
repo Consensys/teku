@@ -24,7 +24,7 @@ import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.SingleAttestationTopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
@@ -39,7 +39,7 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
   private final GossipEncoding gossipEncoding;
   private final AttestationValidator attestationValidator;
   private final RecentChainData recentChainData;
-  private final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer;
+  private final GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer;
 
   private final Map<Integer, TopicChannel> subnetIdToTopicChannel = new HashMap<>();
 
@@ -49,7 +49,7 @@ public class AttestationSubnetSubscriptions implements AutoCloseable {
       final GossipEncoding gossipEncoding,
       final AttestationValidator attestationValidator,
       final RecentChainData recentChainData,
-      final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
+      final GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
     this.asyncRunner = asyncRunner;
     this.gossipNetwork = gossipNetwork;
     this.gossipEncoding = gossipEncoding;

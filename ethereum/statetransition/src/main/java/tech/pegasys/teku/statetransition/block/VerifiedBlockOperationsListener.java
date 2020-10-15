@@ -11,11 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics;
+package tech.pegasys.teku.statetransition.block;
 
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
+import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 
-public interface VerifiedBlockAttestationsSubscriptionProvider {
-  void subscribe(VerifiedBlockOperationsListener<Attestation> verifiedBlockOperationsListener);
+public interface VerifiedBlockOperationsListener<T> {
+  void onOperationsFromBlock(SSZList<T> operations);
 }

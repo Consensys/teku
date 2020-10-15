@@ -53,8 +53,8 @@ public class SingleAttestationTopicHandlerTest {
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
 
   @SuppressWarnings("unchecked")
-  private final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer =
-      mock(GossipedOperationConsumer.class);
+  private final GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer =
+      mock(GossipedItemConsumer.class);
 
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData =

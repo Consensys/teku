@@ -44,8 +44,7 @@ public class AttesterSlashingTopicHandlerTest {
   private final EventBus eventBus = mock(EventBus.class);
 
   @SuppressWarnings("unchecked")
-  private final GossipedOperationConsumer<AttesterSlashing> consumer =
-      mock(GossipedOperationConsumer.class);
+  private final GossipedItemConsumer<AttesterSlashing> consumer = mock(GossipedItemConsumer.class);
 
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;

@@ -32,7 +32,9 @@ import tech.pegasys.teku.networking.eth2.Eth2NetworkFactory.Eth2P2PNetworkBuilde
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.statetransition.util.FutureItems;
@@ -40,7 +42,6 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.sync.gossip.BlockManager;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
 import tech.pegasys.teku.sync.singlepeer.SinglePeerSyncService;
 import tech.pegasys.teku.sync.singlepeer.SyncManager;
@@ -70,6 +71,7 @@ public class SyncingNodeManager {
     this.syncService = syncService;
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   public static SyncingNodeManager create(
       final AsyncRunner asyncRunner,
       Eth2NetworkFactory networkFactory,
@@ -84,13 +86,6 @@ public class SyncingNodeManager {
     final BeaconChainUtil chainUtil = BeaconChainUtil.create(recentChainData, validatorKeys);
     chainUtil.initializeStorage();
 
-    final Eth2P2PNetworkBuilder networkBuilder =
-        networkFactory.builder().eventBus(eventBus).recentChainData(recentChainData);
-
-    configureNetwork.accept(networkBuilder);
-
-    final Eth2Network eth2Network = networkBuilder.startNetwork();
-
     ForkChoice forkChoice =
         new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
     BlockImporter blockImporter =
@@ -99,26 +94,36 @@ public class SyncingNodeManager {
     final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot);
+    BlockManager blockManager =
+        BlockManager.create(eventBus, pendingBlocks, futureBlocks, recentChainData, blockImporter);
+
+    eventChannels
+        .subscribe(SlotEventsChannel.class, blockManager)
+        .subscribe(BlockImportChannel.class, blockManager)
+        .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
+
+    final Eth2P2PNetworkBuilder networkBuilder =
+        networkFactory
+            .builder()
+            .eventBus(eventBus)
+            .recentChainData(recentChainData)
+            .gossipedBlockConsumer(blockManager::importBlock);
+
+    configureNetwork.accept(networkBuilder);
+
+    final Eth2Network eth2Network = networkBuilder.startNetwork();
+
     final FetchRecentBlocksService recentBlockFetcher =
         FetchRecentBlocksService.create(asyncRunner, eth2Network, pendingBlocks);
-    BlockManager blockManager =
-        BlockManager.create(
-            eventBus,
-            pendingBlocks,
-            futureBlocks,
-            recentBlockFetcher,
-            recentChainData,
-            blockImporter);
+    recentBlockFetcher.subscribeBlockFetched(blockManager::importBlock);
+    blockManager.subscribeToReceivedBlocks(recentBlockFetcher::cancelRecentBlockRequest);
 
     SyncManager syncManager =
         SyncManager.create(
             asyncRunner, eth2Network, recentChainData, blockImporter, new NoOpMetricsSystem());
     SyncService syncService = new SinglePeerSyncService(syncManager, recentChainData);
 
-    eventChannels
-        .subscribe(SlotEventsChannel.class, blockManager)
-        .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
-
+    recentBlockFetcher.start().join();
     blockManager.start().join();
     syncService.start().join();
 
@@ -147,7 +152,7 @@ public class SyncingNodeManager {
     return eth2Network;
   }
 
-  public RecentChainData storageClient() {
+  public RecentChainData recentChainData() {
     return storageClient;
   }
 
