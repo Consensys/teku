@@ -18,10 +18,11 @@ import java.nio.file.Path;
 import org.apache.logging.log4j.util.Strings;
 import picocli.CommandLine;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
-import tech.pegasys.teku.cli.options.DataOptions;
+import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.data.SlashingProtectionExporter;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
+import tech.pegasys.teku.validator.client.ValidatorClientService;
 
 @CommandLine.Command(
     name = "export",
@@ -38,7 +39,7 @@ public class ExportCommand implements Runnable {
   public static final SubCommandLogger SUB_COMMAND_LOG = new SubCommandLogger();
 
   @CommandLine.Mixin(name = "Data")
-  private DataOptions dataOptions;
+  private ValidatorClientDataOptions dataOptions;
 
   @CommandLine.Option(
       names = {"--to"},
@@ -51,7 +52,7 @@ public class ExportCommand implements Runnable {
   @Override
   public void run() {
 
-    final Path slashProtectionPath = tekuConfiguration().getValidatorsSlashingProtectionPath();
+    final Path slashProtectionPath = getSlashingProtectionPath(dataOptions);
     verifySlashingProtectionPathExists(slashProtectionPath);
 
     SlashingProtectionExporter slashingProtectionExporter =
@@ -78,7 +79,8 @@ public class ExportCommand implements Runnable {
     }
   }
 
-  private GlobalConfiguration tekuConfiguration() {
-    return GlobalConfiguration.builder().setDataPath(dataOptions.getDataPath()).build();
+  private Path getSlashingProtectionPath(final ValidatorClientDataOptions dataOptions) {
+    final DataDirLayout dataDirLayout = DataDirLayout.createFrom(dataOptions.getDataConfig());
+    return ValidatorClientService.getSlashingProtectionPath(dataDirLayout);
   }
 }

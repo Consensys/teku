@@ -159,8 +159,18 @@ public class StatusLogger {
     log.info("ETH1 block satisfying minimum genesis time found");
   }
 
-  public void dataPathSet(final String dataPath) {
-    log.info("Using data path: {}", dataPath);
+  public void migratingDataDirectory(final Path dataPath) {
+    log.info(
+        "Migrating data directory layout under {} to separate beacon node and validator data",
+        dataPath.toAbsolutePath());
+  }
+
+  public void beaconDataPathSet(final Path dataPath) {
+    log.info("Storing beacon chain data in: {}", dataPath.toAbsolutePath());
+  }
+
+  public void validatorDataPathSet(final Path dataPath) {
+    log.info("Storing validator data in: {}", dataPath.toAbsolutePath());
   }
 
   public void eth1ServiceDown(final long interval) {
