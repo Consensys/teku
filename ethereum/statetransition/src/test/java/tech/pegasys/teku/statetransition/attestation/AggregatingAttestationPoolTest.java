@@ -24,6 +24,7 @@ import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.Optional;
 import java.util.stream.IntStream;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,7 +48,7 @@ class AggregatingAttestationPoolTest {
       mock(AttestationDataStateTransitionValidator.class);
 
   private final AggregatingAttestationPool aggregatingPool =
-      new AggregatingAttestationPool(attestationDataValidator);
+      new AggregatingAttestationPool(attestationDataValidator, new NoOpMetricsSystem());
 
   private final AttestationForkChecker forkChecker = mock(AttestationForkChecker.class);
 

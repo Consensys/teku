@@ -19,7 +19,7 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.Validator;
@@ -40,16 +40,21 @@ public class ScheduledDuties {
     blockProductionDuties.put(slot, dutyFactory.createBlockProductionDuty(slot, validator));
   }
 
-  public synchronized SafeFuture<Optional<Attestation>> scheduleAttestationProduction(
+  public synchronized SafeFuture<Optional<AttestationData>> scheduleAttestationProduction(
       final UInt64 slot,
       final Validator validator,
       final int attestationCommitteeIndex,
       final int attestationCommitteePosition,
+      final int attestationCommitteeSize,
       final int validatorIndex) {
     return attestationProductionDuties
         .computeIfAbsent(slot, dutyFactory::createAttestationProductionDuty)
         .addValidator(
-            validator, attestationCommitteeIndex, attestationCommitteePosition, validatorIndex);
+            validator,
+            attestationCommitteeIndex,
+            attestationCommitteePosition,
+            validatorIndex,
+            attestationCommitteeSize);
   }
 
   public synchronized void scheduleAggregationDuties(
@@ -58,7 +63,7 @@ public class ScheduledDuties {
       final int validatorIndex,
       final BLSSignature slotSignature,
       final int attestationCommitteeIndex,
-      final SafeFuture<Optional<Attestation>> unsignedAttestationFuture) {
+      final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture) {
     aggregationDuties
         .computeIfAbsent(slot, dutyFactory::createAggregationDuty)
         .addValidator(

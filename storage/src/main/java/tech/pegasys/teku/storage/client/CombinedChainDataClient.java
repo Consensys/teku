@@ -35,6 +35,7 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
@@ -400,5 +401,9 @@ public class CombinedChainDataClient {
   public SafeFuture<Optional<UInt64>> getSlotByStateRoot(final Bytes32 stateRoot) {
     return getStateByStateRoot(stateRoot)
         .thenApply(maybeState -> maybeState.map(BeaconState::getSlot));
+  }
+
+  public Optional<GenesisData> getGenesisData() {
+    return recentChainData.getGenesisData();
   }
 }

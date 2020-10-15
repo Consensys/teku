@@ -55,6 +55,7 @@ public class GetAttestation implements Handler {
   }
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get an unsigned attestation for a slot from the current state.",
@@ -72,7 +73,8 @@ public class GetAttestation implements Handler {
       },
       description =
           "Returns an unsigned attestation for the block at the specified non-finalized slot.\n\n"
-              + "This endpoint is not protected against slashing. Signing the returned attestation can result in a slashable offence.",
+              + "This endpoint is not protected against slashing. Signing the returned attestation can result in a slashable offence.\n"
+              + "Deprecated - use `/eth/v1/validator/attestation_data` instead.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,

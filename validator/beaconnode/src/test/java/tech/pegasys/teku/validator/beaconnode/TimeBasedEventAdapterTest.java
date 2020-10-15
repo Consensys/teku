@@ -32,7 +32,7 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 class TimeBasedEventAdapterTest {
 
-  private final GenesisTimeProvider genesisTimeProvider = mock(GenesisTimeProvider.class);
+  private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
   private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);
 
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100);
@@ -42,12 +42,12 @@ class TimeBasedEventAdapterTest {
 
   private final TimeBasedEventAdapter eventAdapter =
       new TimeBasedEventAdapter(
-          genesisTimeProvider, repeatingTaskScheduler, timeProvider, validatorTimingChannel);
+          genesisDataProvider, repeatingTaskScheduler, timeProvider, validatorTimingChannel);
 
   @Test
   void shouldScheduleEventsOnceGenesisIsKnown() {
     final SafeFuture<UInt64> genesisTimeFuture = new SafeFuture<>();
-    when(genesisTimeProvider.getGenesisTime()).thenReturn(genesisTimeFuture);
+    when(genesisDataProvider.getGenesisTime()).thenReturn(genesisTimeFuture);
 
     final SafeFuture<Void> startResult = eventAdapter.start();
     // Returned future completes immediately so startup can complete pre-genesis
@@ -63,7 +63,7 @@ class TimeBasedEventAdapterTest {
   @Test
   void shouldScheduleSlotStartEventsStartingFromNextSlot() {
     final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisTimeProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
+    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
     final int nextSlot = 26;
     final UInt64 firstSlotToFire = UInt64.valueOf(nextSlot);
     final int timeUntilNextSlot = Constants.SECONDS_PER_SLOT / 2;
@@ -86,7 +86,7 @@ class TimeBasedEventAdapterTest {
   @Test
   void shouldScheduleAggregateEventsStartingFromNextSlot() {
     final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisTimeProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
+    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
     final int nextSlot = 25;
     // Starting time is before the aggregation for the current slot should happen, but should still
     // wait until the next slot to start
