@@ -346,7 +346,7 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.getAttestationDuties(EPOCH, List.of(1, 32));
     final Optional<List<AttesterDuties>> duties = assertCompletedSuccessfully(result);
     assertThat(duties.get())
-        .containsExactly(new AttesterDuties(validator1Key, 1, 4, 0, 1, UInt64.valueOf(108)));
+        .containsExactly(new AttesterDuties(validator1Key, 1, 4, 0, 1, 1, UInt64.valueOf(108)));
   }
 
   @Test
@@ -361,7 +361,7 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.getAttestationDuties(EPOCH, List.of(1, 32));
     final Optional<List<AttesterDuties>> duties = assertCompletedSuccessfully(result);
     assertThat(duties.get())
-        .containsExactly(new AttesterDuties(validator1Key, 1, 4, 0, 1, UInt64.valueOf(108)));
+        .containsExactly(new AttesterDuties(validator1Key, 1, 4, 0, 1, 1, UInt64.valueOf(108)));
   }
 
   @Test

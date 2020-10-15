@@ -256,6 +256,7 @@ public class ValidatorDataProvider {
         UInt64.valueOf(duties.getValidatorIndex()),
         UInt64.valueOf(duties.getCommitteeIndex()),
         UInt64.valueOf(duties.getCommitteeLength()),
+        UInt64.valueOf(duties.getCommiteesAtSlot()),
         UInt64.valueOf(duties.getValidatorCommitteeIndex()),
         duties.getSlot());
   }
