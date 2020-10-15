@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -95,6 +96,50 @@ public class VersionedDatabaseFactoryTest {
   }
 
   @Test
+  public void createDatabase_asV6DatabaseSingle() throws Exception {
+    final DatabaseFactory dbFactory =
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, "6", 1L, eth1Address);
+    try (final Database db = dbFactory.createDatabase()) {
+      assertThat(db).isNotNull();
+      assertDbVersionSaved(dataDir, DatabaseVersion.V6);
+    }
+    final File dbDirectory = new File(dataDir.toFile(), VersionedDatabaseFactory.DB_PATH);
+    final File metadataFile =
+        new File(dataDir.toFile(), VersionedDatabaseFactory.METADATA_FILENAME);
+    assertThat(dbDirectory).exists();
+    assertThat(metadataFile).exists();
+  }
+
+  @Test
+  public void createDatabase_asV6DatabaseSeparate() throws Exception {
+    Path mainDataDir = dataDir.resolve("hot");
+    Path coldDataDir = dataDir.resolve("cold");
+    final DatabaseFactory dbFactory =
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(),
+            mainDataDir,
+            Optional.of(coldDataDir),
+            DATA_STORAGE_MODE,
+            "6",
+            1L,
+            eth1Address);
+
+    try (final Database db = dbFactory.createDatabase()) {
+      assertThat(db).isNotNull();
+      assertDbVersionSaved(mainDataDir, DatabaseVersion.V6);
+    }
+    final File dbDirectory = new File(mainDataDir.toFile(), VersionedDatabaseFactory.DB_PATH);
+    final File coldDirectory =
+        new File(coldDataDir.toFile(), VersionedDatabaseFactory.ARCHIVE_PATH);
+    final File metadataFile =
+        new File(mainDataDir.toFile(), VersionedDatabaseFactory.METADATA_FILENAME);
+    assertThat(dbDirectory).exists();
+    assertThat(coldDirectory).exists();
+    assertThat(metadataFile).exists();
+  }
+
+  @Test
   public void createDatabase_invalidVersionFile() throws Exception {
     createDbDirectory(dataDir);
     createVersionFile(dataDir, "bla");
@@ -129,12 +174,81 @@ public class VersionedDatabaseFactoryTest {
   }
 
   @Test
+  public void createDatabase_shouldAllowV5Database() {
+    createDbDirectory(dataDir);
+    final VersionedDatabaseFactory dbFactory =
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, "5", 1L, eth1Address);
+    assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V5);
+  }
+
+  @Test
   public void createDatabase_shouldAllowV3Database() {
     createDbDirectory(dataDir);
     final VersionedDatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
             new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, "3.0", 1L, eth1Address);
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V3);
+  }
+
+  @Test
+  public void dontAllowToCreateSeparateFromSingle() throws Exception {
+    final DatabaseFactory dbFactorySingle =
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(),
+            dataDir,
+            Optional.empty(),
+            DATA_STORAGE_MODE,
+            "6",
+            1L,
+            eth1Address);
+    try (Database db = dbFactorySingle.createDatabase()) {}
+
+    final DatabaseFactory dbFactorySeparate =
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(),
+            dataDir,
+            Optional.of(dataDir.resolve("cold")),
+            DATA_STORAGE_MODE,
+            "6",
+            1L,
+            eth1Address);
+
+    assertThatThrownBy(
+            () -> {
+              try (Database db = dbFactorySeparate.createDatabase()) {}
+            })
+        .isInstanceOf(DatabaseStorageException.class);
+  }
+
+  @Test
+  public void dontAllowToCreateSingleFromSeparate() throws Exception {
+    final DatabaseFactory dbFactorySeparate =
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(),
+            dataDir,
+            Optional.of(dataDir.resolve("cold")),
+            DATA_STORAGE_MODE,
+            "6",
+            1L,
+            eth1Address);
+    try (Database db = dbFactorySeparate.createDatabase()) {}
+
+    final DatabaseFactory dbFactorySingle =
+        new VersionedDatabaseFactory(
+            new StubMetricsSystem(),
+            dataDir,
+            Optional.empty(),
+            DATA_STORAGE_MODE,
+            "6",
+            1L,
+            eth1Address);
+
+    assertThatThrownBy(
+            () -> {
+              try (Database db = dbFactorySingle.createDatabase()) {}
+            })
+        .isInstanceOf(DatabaseStorageException.class);
   }
 
   private void createDbDirectory(final Path dataPath) {
