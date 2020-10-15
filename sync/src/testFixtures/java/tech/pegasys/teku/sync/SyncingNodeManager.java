@@ -71,6 +71,7 @@ public class SyncingNodeManager {
     this.syncService = syncService;
   }
 
+  @SupressWarnings("FutureReturnValueIgnored")
   public static SyncingNodeManager create(
       final AsyncRunner asyncRunner,
       Eth2NetworkFactory networkFactory,
