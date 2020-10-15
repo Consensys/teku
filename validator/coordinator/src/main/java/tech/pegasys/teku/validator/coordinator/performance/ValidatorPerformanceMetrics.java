@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 public class ValidatorPerformanceMetrics {
 
   // Attestation Performance Metrics
+  private final SettableGauge numberOfExpectedAttestations;
   private final SettableGauge numberOfProducedAttestations;
   private final SettableGauge numberOfIncludedAttestations;
   private final SettableGauge inclusionDistanceMax;
@@ -29,12 +30,19 @@ public class ValidatorPerformanceMetrics {
   private final SettableGauge correctHeadBlockCount;
 
   // Block Performance Metrics
+  private final SettableGauge numberOfExpectedBlocks;
   private final SettableGauge numberOfProducedBlocks;
   private final SettableGauge numberOfIncludedBlocks;
 
   public ValidatorPerformanceMetrics(final MetricsSystem metricsSystem) {
 
     // Attestation Performance Metrics
+    numberOfExpectedAttestations =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.VALIDATOR_PERFORMANCE,
+            "expected_attestations",
+            "Number of expected attestations");
     numberOfProducedAttestations =
         SettableGauge.create(
             metricsSystem,
@@ -79,6 +87,12 @@ public class ValidatorPerformanceMetrics {
             "Correct head block count");
 
     // Block Performance Metrics
+    numberOfExpectedBlocks =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.VALIDATOR_PERFORMANCE,
+            "expected_blocks",
+            "Number of expected blocks");
     numberOfIncludedBlocks =
         SettableGauge.create(
             metricsSystem,
@@ -95,6 +109,7 @@ public class ValidatorPerformanceMetrics {
 
   public void updateAttestationPerformanceMetrics(
       final AttestationPerformance attestationPerformance) {
+    numberOfExpectedAttestations.set(attestationPerformance.numberOfExpectedAttestations);
     numberOfProducedAttestations.set(attestationPerformance.numberOfProducedAttestations);
     numberOfIncludedAttestations.set(attestationPerformance.numberOfIncludedAttestations);
     inclusionDistanceMax.set(attestationPerformance.inclusionDistanceMax);
@@ -105,6 +120,7 @@ public class ValidatorPerformanceMetrics {
   }
 
   public void updateBlockPerformanceMetrics(final BlockPerformance blockPerformance) {
+    numberOfExpectedBlocks.set(blockPerformance.numberOfExpectedBlocks);
     numberOfProducedBlocks.set(blockPerformance.numberOfProducedBlocks);
     numberOfIncludedBlocks.set(blockPerformance.numberOfIncludedBlocks);
   }

@@ -25,6 +25,7 @@ public class ValidatorPerformanceMetricsTest {
   public final ValidatorPerformanceMetrics validatorPerformanceMetrics =
       new ValidatorPerformanceMetrics(metricsSystem);
 
+  private final int NUMBER_OF_EXPECTED_ATTESTATIONS = 55;
   private final int NUMBER_OF_PRODUCED_ATTESTATIONS = 50;
   private final int NUMBER_OF_INCLUDED_ATTESTATIONS = 30;
   private final int INCLUSION_DISTANCE_MAX = 15;
@@ -33,11 +34,13 @@ public class ValidatorPerformanceMetricsTest {
   private final int CORRECT_TARGET_COUNT = 20;
   private final int CORRECT_HEAD_BLOCK_COUNT = 14;
 
+  private final int NUMBER_OF_EXPECTED_BLOCKS = 55;
   private final int NUMBER_OF_PRODUCED_BLOCKS = 5;
   private final int NUMBER_OF_INCLUDED_BLOCKS = 3;
 
   private final AttestationPerformance attestationPerformance =
       new AttestationPerformance(
+          NUMBER_OF_EXPECTED_ATTESTATIONS,
           NUMBER_OF_PRODUCED_ATTESTATIONS,
           NUMBER_OF_INCLUDED_ATTESTATIONS,
           INCLUSION_DISTANCE_MAX,
@@ -47,12 +50,19 @@ public class ValidatorPerformanceMetricsTest {
           CORRECT_HEAD_BLOCK_COUNT);
 
   private final BlockPerformance blockPerformance =
-      new BlockPerformance(NUMBER_OF_PRODUCED_BLOCKS, NUMBER_OF_INCLUDED_BLOCKS);
+      new BlockPerformance(
+          NUMBER_OF_EXPECTED_BLOCKS, NUMBER_OF_PRODUCED_BLOCKS, NUMBER_OF_INCLUDED_BLOCKS);
 
   @BeforeEach
   void setUp() {
     validatorPerformanceMetrics.updateAttestationPerformanceMetrics(attestationPerformance);
     validatorPerformanceMetrics.updateBlockPerformanceMetrics(blockPerformance);
+  }
+
+  @Test
+  void getExpectedAttestations() {
+    assertThat(metricsSystem.getGauge(VALIDATOR_PERFORMANCE, "expected_attestations").getValue())
+        .isEqualTo(NUMBER_OF_EXPECTED_ATTESTATIONS);
   }
 
   @Test
@@ -96,6 +106,12 @@ public class ValidatorPerformanceMetricsTest {
   void getCorrectHeadBlockCount() {
     assertThat(metricsSystem.getGauge(VALIDATOR_PERFORMANCE, "correct_head_block_count").getValue())
         .isEqualTo(CORRECT_HEAD_BLOCK_COUNT);
+  }
+
+  @Test
+  void getExpectedBlocks() {
+    assertThat(metricsSystem.getGauge(VALIDATOR_PERFORMANCE, "expected_blocks").getValue())
+        .isEqualTo(NUMBER_OF_EXPECTED_BLOCKS);
   }
 
   @Test

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync.gossip;
+package tech.pegasys.teku.statetransition.block;
 
 import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 
@@ -25,14 +25,13 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.results.BlockImportResult;
 import tech.pegasys.teku.core.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.statetransition.blockimport.BlockImportChannel;
-import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -48,52 +47,42 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
 
   private final FutureItems<SignedBeaconBlock> futureBlocks;
-  private final RecentBlockFetcher recentBlockFetcher;
   private final Set<Bytes32> invalidBlockRoots = LimitedSet.create(500);
+  private final Subscribers<ReceivedBlockListener> receivedBlockSubscribers =
+      Subscribers.create(true);
 
   BlockManager(
       final EventBus eventBus,
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
-      final FutureItems<SignedBeaconBlock> futureBlocks,
-      final RecentBlockFetcher recentBlockFetcher) {
+      final FutureItems<SignedBeaconBlock> futureBlocks) {
     this.eventBus = eventBus;
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
     this.pendingBlocks = pendingBlocks;
     this.futureBlocks = futureBlocks;
-    this.recentBlockFetcher = recentBlockFetcher;
   }
 
   public static BlockManager create(
       final EventBus eventBus,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
-      final RecentBlockFetcher recentBlockFetcher,
       final RecentChainData recentChainData,
       final BlockImporter blockImporter) {
-    return new BlockManager(
-        eventBus, recentChainData, blockImporter, pendingBlocks, futureBlocks, recentBlockFetcher);
+    return new BlockManager(eventBus, recentChainData, blockImporter, pendingBlocks, futureBlocks);
   }
 
   @Override
   public SafeFuture<?> doStart() {
     this.eventBus.register(this);
-    recentBlockFetcher.subscribeBlockFetched(this::importBlockIgnoringResult);
-    return recentBlockFetcher.start();
+    return SafeFuture.COMPLETE;
   }
 
   @Override
   protected SafeFuture<?> doStop() {
     eventBus.unregister(this);
-    return recentBlockFetcher.stop();
-  }
-
-  @Subscribe
-  @SuppressWarnings("unused")
-  void onGossipedBlock(GossipedBlockEvent gossipedBlockEvent) {
-    importBlockIgnoringResult(gossipedBlockEvent.getBlock());
+    return SafeFuture.COMPLETE;
   }
 
   @Override
@@ -107,6 +96,14 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
     pendingBlocks.onSlot(slot);
     futureBlocks.onSlot(slot);
     futureBlocks.prune(slot).forEach(this::importBlockIgnoringResult);
+  }
+
+  public void subscribeToReceivedBlocks(ReceivedBlockListener receivedBlockListener) {
+    receivedBlockSubscribers.subscribe(receivedBlockListener);
+  }
+
+  private void notifyReceivedBlockSubscribers(SignedBeaconBlock signedBeaconBlock) {
+    receivedBlockSubscribers.forEach(s -> s.accept(signedBeaconBlock.getRoot()));
   }
 
   @Subscribe
@@ -126,7 +123,7 @@ public class BlockManager extends Service implements SlotEventsChannel, BlockImp
   }
 
   private SafeFuture<BlockImportResult> doImportBlock(final SignedBeaconBlock block) {
-    recentBlockFetcher.cancelRecentBlockRequest(block.getRoot());
+    notifyReceivedBlockSubscribers(block);
     if (!shouldImportBlock(block)) {
       return SafeFuture.completedFuture(BlockImportResult.knownBlock(block));
     }

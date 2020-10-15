@@ -32,14 +32,14 @@ public class ProposerSlashingTopicHandler
   private final ProposerSlashingValidator validator;
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
-  private final GossipedOperationConsumer<ProposerSlashing> consumer;
+  private final GossipedItemConsumer<ProposerSlashing> consumer;
 
   public ProposerSlashingTopicHandler(
       final AsyncRunner asyncRunner,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final ProposerSlashingValidator validator,
-      final GossipedOperationConsumer<ProposerSlashing> consumer) {
+      final GossipedItemConsumer<ProposerSlashing> consumer) {
     super(asyncRunner);
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();

@@ -32,7 +32,7 @@ public class SingleAttestationTopicHandler
   private final int subnetId;
   private final AttestationValidator validator;
   private final GossipEncoding gossipEncoding;
-  private final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer;
+  private final GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer;
   private final Bytes4 forkDigest;
 
   public SingleAttestationTopicHandler(
@@ -41,7 +41,7 @@ public class SingleAttestationTopicHandler
       final ForkInfo forkInfo,
       final int subnetId,
       final AttestationValidator validator,
-      final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
+      final GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer) {
     super(asyncRunner);
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();
