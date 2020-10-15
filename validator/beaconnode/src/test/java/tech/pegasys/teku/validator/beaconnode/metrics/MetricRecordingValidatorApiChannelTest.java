@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.beaconnode.metrics;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -118,8 +119,7 @@ class MetricRecordingValidatorApiChannelTest {
     return Stream.of(
         noResponseTest(
             "subscribeToBeaconCommitteeForAggregation",
-            channel ->
-                channel.subscribeToBeaconCommittee(2, 1, UInt64.valueOf(3), UInt64.ZERO, true),
+            channel -> channel.subscribeToBeaconCommittee(emptyList()),
             MetricRecordingValidatorApiChannel.AGGREGATION_SUBSCRIPTION_COUNTER_NAME),
         noResponseTest(
             "subscribeToPersistentSubnets",

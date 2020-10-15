@@ -71,6 +71,7 @@ import tech.pegasys.teku.sync.SyncState;
 import tech.pegasys.teku.sync.SyncStateTracker;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -535,7 +536,9 @@ class ValidatorApiHandlerTest {
     final UInt64 aggregationSlot = UInt64.valueOf(13);
     final UInt64 committeesAtSlot = UInt64.valueOf(10);
     validatorApiHandler.subscribeToBeaconCommittee(
-        1, committeeIndex, committeesAtSlot, aggregationSlot, true);
+        List.of(
+            new CommitteeSubscriptionRequest(
+                1, committeeIndex, committeesAtSlot, aggregationSlot, true)));
 
     verify(attestationTopicSubscriptions)
         .subscribeToCommitteeForAggregation(committeeIndex, committeesAtSlot, aggregationSlot);

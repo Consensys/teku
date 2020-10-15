@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.validator.client.duties.DutyResult.combine;
 
 import com.google.common.base.MoreObjects;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -78,7 +80,13 @@ public class AggregationDuty implements Duty {
         attestationCommitteeIndex,
         committeeIndex -> {
           validatorApiChannel.subscribeToBeaconCommittee(
-              validatorIndex, committeeIndex, UInt64.valueOf(committeesAtSlot), slot, true);
+              List.of(
+                  new CommitteeSubscriptionRequest(
+                      validatorIndex,
+                      committeeIndex,
+                      UInt64.valueOf(committeesAtSlot),
+                      slot,
+                      true)));
           return new CommitteeAggregator(
               validator,
               UInt64.valueOf(validatorIndex),

@@ -15,8 +15,6 @@ package tech.pegasys.teku.validator.client.duties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -28,6 +26,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +42,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -95,7 +95,9 @@ class AggregationDutyTest {
         new SafeFuture<>());
     verify(validatorApiChannel)
         .subscribeToBeaconCommittee(
-            validatorIndex, committeeIndex, UInt64.valueOf(committeesAtSlot), SLOT, true);
+            List.of(
+                new CommitteeSubscriptionRequest(
+                    validatorIndex, committeeIndex, UInt64.valueOf(committeesAtSlot), SLOT, true)));
   }
 
   @Test
@@ -119,7 +121,9 @@ class AggregationDutyTest {
 
     verify(validatorApiChannel, times(1))
         .subscribeToBeaconCommittee(
-            1, committeeIndex, UInt64.valueOf(committeesAtSlot), SLOT, true);
+            List.of(
+                new CommitteeSubscriptionRequest(
+                    1, committeeIndex, UInt64.valueOf(committeesAtSlot), SLOT, true)));
   }
 
   @Test
@@ -270,8 +274,7 @@ class AggregationDutyTest {
         2,
         10,
         completedFuture(Optional.empty()));
-    verify(validatorApiChannel)
-        .subscribeToBeaconCommittee(anyInt(), anyInt(), any(), any(), anyBoolean());
+    verify(validatorApiChannel).subscribeToBeaconCommittee(any());
 
     performAndReportDuty();
 

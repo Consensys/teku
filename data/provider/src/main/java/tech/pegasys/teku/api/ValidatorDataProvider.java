@@ -47,6 +47,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties.Duties;
@@ -216,7 +217,9 @@ public class ValidatorDataProvider {
               final UInt64 committeesAtSlot =
                   get_committee_count_per_slot(state, compute_epoch_at_slot(slot));
               validatorApiChannel.subscribeToBeaconCommittee(
-                  0, request.committee_index, committeesAtSlot, slot, true);
+                  List.of(
+                      new CommitteeSubscriptionRequest(
+                          0, request.committee_index, committeesAtSlot, slot, true)));
             });
   }
 
