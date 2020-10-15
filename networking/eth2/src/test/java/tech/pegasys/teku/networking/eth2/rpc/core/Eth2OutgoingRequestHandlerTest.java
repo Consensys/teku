@@ -295,7 +295,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
   }
 
   private void complete() {
-    reqHandler.complete(nodeId, rpcStream);
+    reqHandler.readComplete(nodeId, rpcStream);
   }
 
   public static class Eth2OutgoingRequestHandlerTest_ssz extends Eth2OutgoingRequestHandlerTest {

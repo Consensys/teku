@@ -79,7 +79,7 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
   }
 
   @Override
-  public void complete(NodeId nodeId, RpcStream rpcStream) {
+  public void readComplete(NodeId nodeId, RpcStream rpcStream) {
     try {
       Optional<Eth2Peer> peer = peerLookup.getConnectedPeer(nodeId);
       requestDecoder
@@ -92,6 +92,11 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
       new RpcResponseCallback<>(rpcStream, rpcEncoder).completeWithErrorResponse(e);
       LOG.debug("RPC Request stream closed prematurely", e);
     }
+  }
+
+  @Override
+  public void closed(NodeId nodeId, RpcStream rpcStream) {
+
   }
 
   private void handleRequest(

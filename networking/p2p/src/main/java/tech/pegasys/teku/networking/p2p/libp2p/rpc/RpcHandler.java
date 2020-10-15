@@ -181,7 +181,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
       if (evt instanceof RemoteWriteClosed && rpcRequestHandler != null) {
         try {
-          rpcRequestHandler.complete(nodeId, rpcStream);
+          rpcRequestHandler.readComplete(nodeId, rpcStream);
         } finally {
           rpcRequestHandler = null;
         }
@@ -192,7 +192,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     void close() {
       if (rpcRequestHandler != null) {
         try {
-          rpcRequestHandler.complete(nodeId, rpcStream);
+          rpcRequestHandler.readComplete(nodeId, rpcStream);
         } catch (Exception e) {
           LOG.trace("Exception completing RpcRequestHandler", e);
         }
@@ -200,7 +200,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       }
 
       if (rpcStream != null) {
-        rpcStream.close().reportExceptions();
+        rpcStream.closeAbruptly().reportExceptions();
       }
 
       // We're listening for the result of the close future above, so we can ignore this future

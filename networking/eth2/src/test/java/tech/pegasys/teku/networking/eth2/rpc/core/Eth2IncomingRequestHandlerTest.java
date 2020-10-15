@@ -76,7 +76,7 @@ public abstract class Eth2IncomingRequestHandlerTest
   public void testEmptyRequestMessage() {
     Eth2IncomingRequestHandler<EmptyMessage, MetadataMessage> requestHandler =
         beaconChainMethods.getMetadata().createIncomingRequestHandler();
-    requestHandler.complete(nodeId, rpcStream);
+    requestHandler.readComplete(nodeId, rpcStream);
     asyncRunner.executeQueuedActions();
     // verify non-error response
     verify(rpcStream).writeBytes(argThat(bytes -> bytes.get(0) == 0));

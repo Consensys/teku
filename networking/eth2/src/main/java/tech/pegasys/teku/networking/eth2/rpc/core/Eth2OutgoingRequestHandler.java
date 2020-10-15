@@ -111,13 +111,18 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
   }
 
   @Override
-  public void complete(NodeId nodeId, RpcStream rpcStream) {
+  public void readComplete(NodeId nodeId, RpcStream rpcStream) {
     try {
       responseDecoder.complete();
       completeRequest(rpcStream);
     } catch (RpcException e) {
       cancelRequest(rpcStream, e);
     }
+  }
+
+  @Override
+  public void closed(NodeId nodeId, RpcStream rpcStream) {
+
   }
 
   private void onFirstByteReceived() {
