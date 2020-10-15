@@ -24,6 +24,7 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
@@ -55,6 +56,8 @@ public interface ValidatorRestApiClient {
   SendSignedBlockResult sendSignedBlock(SignedBeaconBlock beaconBlock);
 
   Optional<Attestation> createUnsignedAttestation(UInt64 slot, int committeeIndex);
+
+  Optional<AttestationData> createAttestationData(UInt64 slot, int committeeIndex);
 
   void sendSignedAttestation(Attestation attestation);
 

@@ -38,6 +38,7 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
@@ -212,6 +213,16 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
             apiClient
                 .createUnsignedAttestation(slot, committeeIndex)
                 .map(tech.pegasys.teku.api.schema.Attestation::asInternalAttestation));
+  }
+
+  @Override
+  public SafeFuture<Optional<AttestationData>> createAttestationData(
+      final UInt64 slot, final int committeeIndex) {
+    return asyncRunner.runAsync(
+        () ->
+            apiClient
+                .createAttestationData(slot, committeeIndex)
+                .map(tech.pegasys.teku.api.schema.AttestationData::asInternalAttestationData));
   }
 
   @Override
