@@ -306,6 +306,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             });
   }
 
+  @Override
+  public SafeFuture<Optional<AttestationData>> createAttestationData(
+      final UInt64 slot, final int committeeIndex) {
+    return createUnsignedAttestation(slot, committeeIndex)
+        .thenApply(maybeAttestation -> maybeAttestation.map(Attestation::getData));
+  }
+
   private Attestation createAttestation(
       final BeaconBlock block,
       final BeaconState state,

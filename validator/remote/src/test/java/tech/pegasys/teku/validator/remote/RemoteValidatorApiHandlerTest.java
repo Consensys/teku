@@ -51,6 +51,7 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -387,6 +388,29 @@ class RemoteValidatorApiHandlerTest {
     SafeFuture<Optional<Attestation>> future = apiHandler.createUnsignedAttestation(UInt64.ONE, 0);
 
     assertThat(unwrapToValue(future)).usingRecursiveComparison().isEqualTo(attestation);
+  }
+
+  @Test
+  public void createAttestationData_WhenNone_ReturnsEmpty() {
+    when(apiClient.createAttestationData(any(), anyInt())).thenReturn(Optional.empty());
+
+    SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(UInt64.ONE, 0);
+
+    assertThat(unwrapToOptional(future)).isEmpty();
+  }
+
+  @Test
+  public void createAttestationData_WhenFound_ReturnsAttestation() {
+    final Attestation attestation = dataStructureUtil.randomAttestation();
+    final tech.pegasys.teku.api.schema.AttestationData schemaAttestationData =
+        new tech.pegasys.teku.api.schema.AttestationData(attestation.getData());
+
+    when(apiClient.createAttestationData(eq(UInt64.ONE), eq(0)))
+        .thenReturn(Optional.of(schemaAttestationData));
+
+    SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(UInt64.ONE, 0);
+
+    assertThat(unwrapToValue(future)).usingRecursiveComparison().isEqualTo(attestation.getData());
   }
 
   @Test
