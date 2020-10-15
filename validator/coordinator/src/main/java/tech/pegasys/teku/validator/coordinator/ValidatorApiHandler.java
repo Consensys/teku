@@ -526,6 +526,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BeaconState state, final UInt64 epoch, final Integer validatorIndex) {
     try {
       final BLSPublicKey pkey = state.getValidators().get(validatorIndex).getPubkey();
+      final UInt64 committeeCountPerSlot = get_committee_count_per_slot(state, epoch);
       return CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex)
           .map(
               committeeAssignment ->
@@ -534,6 +535,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                       validatorIndex,
                       committeeAssignment.getCommittee().size(),
                       committeeAssignment.getCommitteeIndex().intValue(),
+                      committeeCountPerSlot.intValue(),
                       committeeAssignment.getCommittee().indexOf(validatorIndex),
                       committeeAssignment.getSlot()));
     } catch (IndexOutOfBoundsException ex) {
