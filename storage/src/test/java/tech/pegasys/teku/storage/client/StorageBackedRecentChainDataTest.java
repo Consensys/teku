@@ -145,8 +145,7 @@ public class StorageBackedRecentChainDataTest {
                 AnchorPoint.fromGenesisState(INITIAL_STATE))
             .storeConfig(storeConfig)
             .build();
-    final SafeFuture<Void> initialized = client.get().initializeFromGenesis(INITIAL_STATE);
-    assertThat(initialized).isCompleted();
+    client.get().initializeFromGenesis(INITIAL_STATE);
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
     StoreAssertions.assertStoresMatch(client.get().getStore(), genesisStore);
@@ -239,9 +238,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client.getStore()).isNotNull();
 
     // With a store set, we shouldn't be allowed to overwrite the store by setting the genesis state
-    final SafeFuture<Void> initialized = client.initializeFromGenesis(INITIAL_STATE);
-    assertThat(initialized).isCompletedExceptionally();
-    assertThatThrownBy(initialized::get)
+    assertThatThrownBy(() -> client.initializeFromGenesis(INITIAL_STATE))
         .hasCauseInstanceOf(IllegalStateException.class)
         .hasMessageContaining("Failed to set genesis state: store has already been initialized");
   }

@@ -67,8 +67,7 @@ class ForkChoiceTest {
 
   @BeforeEach
   public void setup() {
-    final SafeFuture<Void> initialized = recentChainData.initializeFromGenesis(genesis.getState());
-    assertThat(initialized).isCompleted();
+    recentChainData.initializeFromGenesis(genesis.getState());
 
     storageSystem
         .chainUpdater()

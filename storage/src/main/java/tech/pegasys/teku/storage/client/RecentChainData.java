@@ -121,7 +121,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     bestBlockInitialized.always(runnable);
   }
 
-  public SafeFuture<Void> initializeFromGenesis(final BeaconState genesisState) {
+  public void initializeFromGenesis(final BeaconState genesisState) {
     final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisState);
     final UpdatableStore store =
         StoreBuilder.forkChoiceStoreBuilder(
@@ -141,9 +141,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     // The genesis state is by definition finalized so just get the root from there.
     final SignedBlockAndState headBlock = store.getLatestFinalizedBlockAndState();
     updateHead(headBlock.getRoot(), headBlock.getSlot());
-
-    // TODO - return void
-    return SafeFuture.COMPLETE;
   }
 
   public UInt64 getGenesisTime() {

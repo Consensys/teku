@@ -724,16 +724,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void initializeGenesis(final BeaconState genesisState) {
-    recentChainData
-        .initializeFromGenesis(genesisState)
-        .thenAccept(
-            __ -> {
-              EVENT_LOG.genesisEvent(
-                  genesisState.hashTreeRoot(),
-                  recentChainData.getBestBlockRoot().orElseThrow(),
-                  genesisState.getGenesis_time());
-            })
-        .reportExceptions();
+    recentChainData.initializeFromGenesis(genesisState);
+
+    EVENT_LOG.genesisEvent(
+        genesisState.hashTreeRoot(),
+        recentChainData.getBestBlockRoot().orElseThrow(),
+        genesisState.getGenesis_time());
   }
 
   private void onStoreInitialized() {
