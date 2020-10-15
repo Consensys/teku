@@ -140,7 +140,7 @@ public class BlockManagerTest {
 
     incrementSlot();
     incrementSlot();
-    blockManager.importBlock(nextNextBlock).join();
+    blockManager.importBlock(nextNextBlock);
     ignoreFuture(verify(blockImporter).importBlock(nextNextBlock));
 
     // Before nextNextBlock imports, it's parent becomes available
