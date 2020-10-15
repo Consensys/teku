@@ -13,6 +13,13 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
 import tech.pegasys.teku.api.schema.BeaconState;
@@ -21,21 +28,14 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-import java.util.Map;
-import java.util.Optional;
-
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-
 public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {
   final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   final BeaconState state = new BeaconState(dataStructureUtil.randomBeaconState());
 
   @Test
   public void shouldReturnUnavailableWhenStoreNotAvailable() throws Exception {
-    final GetStateFinalityCheckpoints handler = new GetStateFinalityCheckpoints(chainDataProvider, jsonProvider);
+    final GetStateFinalityCheckpoints handler =
+        new GetStateFinalityCheckpoints(chainDataProvider, jsonProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(false);
 
     handler.handle(context);
@@ -44,16 +44,18 @@ public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {
 
   @Test
   public void shouldReturnFinalityCheckpointsInfo() throws Exception {
-    final GetStateFinalityCheckpoints handler = new GetStateFinalityCheckpoints(chainDataProvider, jsonProvider);
+    final GetStateFinalityCheckpoints handler =
+        new GetStateFinalityCheckpoints(chainDataProvider, jsonProvider);
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(chainDataProvider.stateParameterToSlot("head")).thenReturn(Optional.of(UInt64.ONE));
     when(chainDataProvider.getStateAtSlot(any()))
-            .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
 
     handler.handle(context);
 
-    final GetStateFinalityCheckpointsResponse response = getResponseFromFuture(GetStateFinalityCheckpointsResponse.class);
+    final GetStateFinalityCheckpointsResponse response =
+        getResponseFromFuture(GetStateFinalityCheckpointsResponse.class);
     assertThat(state.previous_justified_checkpoint).isEqualTo(response.data.previous_justified);
     assertThat(state.current_justified_checkpoint).isEqualTo(response.data.current_justified);
     assertThat(state.finalized_checkpoint).isEqualTo(response.data.finalized);
