@@ -303,12 +303,14 @@ class RemoteValidatorApiHandlerTest {
     final int committeeLength = 2;
     final int committeeIndex = 1;
     final int validatorCommitteeIndex = 3;
+    final int committeesAtSlot = 15;
     final AttesterDuty schemaValidatorDuties =
         new AttesterDuty(
             new BLSPubKey(blsPublicKey),
             UInt64.valueOf(validatorIndex),
             UInt64.valueOf(committeeIndex),
             UInt64.valueOf(committeeLength),
+            UInt64.valueOf(committeesAtSlot),
             UInt64.valueOf(validatorCommitteeIndex),
             UInt64.ZERO);
     final AttesterDuties expectedValidatorDuties =
@@ -317,6 +319,7 @@ class RemoteValidatorApiHandlerTest {
             validatorIndex,
             committeeLength,
             committeeIndex,
+            committeesAtSlot,
             validatorCommitteeIndex,
             UInt64.ZERO);
 
@@ -581,7 +584,7 @@ class RemoteValidatorApiHandlerTest {
 
     final Set<tech.pegasys.teku.api.schema.SubnetSubscription> request = argumentCaptor.getValue();
     assertThat(request).hasSize(1);
-    assertThat(request.stream().findFirst().get())
+    assertThat(request.stream().findFirst().orElseThrow())
         .usingRecursiveComparison()
         .isEqualTo(schemaSubnetSubscription);
   }
