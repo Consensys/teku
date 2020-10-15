@@ -74,7 +74,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
         ((RocksDbDatabase) database).createMemoryStore(() -> 0L);
     assertThat(storeBuilder).isNotEmpty();
 
-    final SafeFuture<UpdatableStore> storeFuture =
+    final UpdatableStore store =
         storeBuilder
             .get()
             .asyncRunner(mock(AsyncRunner.class))
@@ -82,8 +82,7 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
             .stateProvider(mock(StateAndBlockProvider.class))
             .build();
 
-    assertThat(storeFuture).isCompleted();
-    assertThat(storeFuture.join().getTime()).isEqualTo(genesisTime);
+    assertThat(store.getTime()).isEqualTo(genesisTime);
   }
 
   @Test
