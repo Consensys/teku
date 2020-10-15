@@ -11,22 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.validator;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsInt;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64;
 
-import com.google.common.base.Throwables;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
@@ -35,60 +36,60 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
+import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.api.response.v1.validator.GetAttestationDataResponse;
 import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
-public class GetAttestation implements Handler {
-  public static final String ROUTE = "/validator/attestation";
+public class GetAttestationData extends AbstractHandler {
+  public static final String ROUTE = "/eth/v1/validator/attestation_data";
 
   private final ValidatorDataProvider provider;
-  private final JsonProvider jsonProvider;
 
-  public GetAttestation(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
-    this.jsonProvider = jsonProvider;
+  public GetAttestationData(final DataProvider provider, final JsonProvider jsonProvider) {
+    this(provider.getValidatorDataProvider(), jsonProvider);
+  }
+
+  public GetAttestationData(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
+    super(jsonProvider);
     this.provider = provider;
   }
 
   @OpenApi(
-      deprecated = true,
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get an unsigned attestation for a slot from the current state.",
-      tags = {TAG_VALIDATOR},
+      summary = "Produce an AttestationData",
+      tags = {TAG_V1_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       queryParams = {
         @OpenApiParam(
             name = SLOT,
-            description = "`uint64` Non-finalized slot for which to create the attestation.",
+            description = "`uint64` The slot for which an attestation data should be created.",
             required = true),
         @OpenApiParam(
             name = COMMITTEE_INDEX,
             type = Integer.class,
-            description = "`Integer` Index of the committee making the attestation.",
+            description =
+                "`Integer` The committee index for which an attestation data should be created.",
             required = true)
       },
       description =
-          "Returns an unsigned attestation for the block at the specified non-finalized slot.\n\n"
-              + "This endpoint is not protected against slashing. Signing the returned attestation can result in a slashable offence.\n"
-              + "Deprecated - use `/eth/v1/validator/attestation_data` instead.",
+          "Returns attestation data for the block at the specified non-finalized slot.\n\n"
+              + "This endpoint is not protected against slashing. Signing the returned attestation data can result in a slashable offence.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = Attestation.class),
-            description =
-                "Returns an attestation object with a blank signature. The `signature` field should be replaced by a valid signature."),
+            content = @OpenApiContent(from = GetAttestationDataResponse.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied"),
-        @OpenApiResponse(
-            status = RES_NOT_FOUND,
-            description = "An attestation could not be created for the specified slot.")
+        @OpenApiResponse(status = RES_INTERNAL_ERROR),
+        @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
       })
   @Override
   public void handle(Context ctx) throws Exception {
-
     try {
       final Map<String, List<String>> parameters = ctx.queryParamMap();
       if (parameters.size() < 2) {
@@ -102,32 +103,17 @@ public class GetAttestation implements Handler {
             String.format("'%s' needs to be greater than or equal to 0.", COMMITTEE_INDEX));
       }
 
-      ctx.result(
-          provider
-              .createUnsignedAttestationAtSlot(slot, committeeIndex)
-              .thenApplyChecked(optionalAttestation -> serializeResult(ctx, optionalAttestation))
-              .exceptionallyCompose(error -> handleError(ctx, error)));
+      final SafeFuture<Optional<Attestation>> future =
+          provider.createUnsignedAttestationAtSlot(slot, committeeIndex);
+      handleOptionalResult(ctx, future, this::processResult, SC_BAD_REQUEST);
     } catch (final IllegalArgumentException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
     }
   }
 
-  private String serializeResult(final Context ctx, final Optional<Attestation> optionalAttestation)
-      throws com.fasterxml.jackson.core.JsonProcessingException {
-    if (optionalAttestation.isPresent()) {
-      return jsonProvider.objectToJSON(optionalAttestation.get());
-    } else {
-      ctx.status(SC_NOT_FOUND);
-      return "";
-    }
-  }
-
-  private CompletionStage<String> handleError(final Context ctx, final Throwable error) {
-    if (Throwables.getRootCause(error) instanceof IllegalArgumentException) {
-      ctx.status(SC_BAD_REQUEST);
-      return SafeFuture.of(() -> jsonProvider.objectToJSON(new BadRequest(error.getMessage())));
-    }
-    return SafeFuture.failedFuture(error);
+  private Optional<String> processResult(final Context ctx, final Attestation attestation)
+      throws JsonProcessingException {
+    return Optional.of(jsonProvider.objectToJSON(attestation.data));
   }
 }
