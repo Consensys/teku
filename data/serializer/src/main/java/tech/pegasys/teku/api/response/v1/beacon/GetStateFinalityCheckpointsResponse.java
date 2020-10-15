@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class GetStateFinalityCheckpointsResponse {
 
+  @JsonProperty("data")
   public final FinalityCheckpointsResponse data;
 
   @JsonCreator

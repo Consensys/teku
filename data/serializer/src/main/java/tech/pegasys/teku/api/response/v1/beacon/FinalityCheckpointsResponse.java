@@ -16,9 +16,9 @@ public class FinalityCheckpointsResponse {
 
   @JsonCreator
   public FinalityCheckpointsResponse(
-          @JsonProperty Checkpoint previous_justified,
-          @JsonProperty Checkpoint current_justified,
-          @JsonProperty Checkpoint finalized) {
+          @JsonProperty("previous_justified") Checkpoint previous_justified,
+          @JsonProperty("current_justified") Checkpoint current_justified,
+          @JsonProperty("finalized") Checkpoint finalized) {
     this.previous_justified = previous_justified;
     this.current_justified = current_justified;
     this.finalized = finalized;

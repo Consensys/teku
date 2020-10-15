@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
+import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 
 public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {
   final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  final Bytes32 root = dataStructureUtil.randomBytes32();
+  final BeaconState state = new BeaconState(dataStructureUtil.randomBeaconState());
 
   @Test
   public void shouldReturnUnavailableWhenStoreNotAvailable() throws Exception {
@@ -43,17 +43,19 @@ public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {
   }
 
   @Test
-  public void shouldReturnRootInfo() throws Exception {
+  public void shouldReturnFinalityCheckpointsInfo() throws Exception {
     final GetStateFinalityCheckpoints handler = new GetStateFinalityCheckpoints(chainDataProvider, jsonProvider);
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(chainDataProvider.stateParameterToSlot("head")).thenReturn(Optional.of(UInt64.ONE));
-    when(chainDataProvider.getStateRootAtSlot(any()))
-            .thenReturn(SafeFuture.completedFuture(Optional.of(root)));
+    when(chainDataProvider.getStateAtSlot(any()))
+            .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
 
     handler.handle(context);
 
-    final GetStateRootResponse response = getResponseFromFuture(GetStateRootResponse.class);
-    assertThat(root).isEqualTo(response.data.root);
+    final GetStateFinalityCheckpointsResponse response = getResponseFromFuture(GetStateFinalityCheckpointsResponse.class);
+    assertThat(state.previous_justified_checkpoint).isEqualTo(response.data.previous_justified);
+    assertThat(state.current_justified_checkpoint).isEqualTo(response.data.current_justified);
+    assertThat(state.finalized_checkpoint).isEqualTo(response.data.finalized);
   }
 }
