@@ -26,7 +26,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import java.util.Collections;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
@@ -35,7 +34,6 @@ class AttestationTopicSubscriberTest {
 
   private static final UInt64 COMMITTEES_AT_SLOT = UInt64.valueOf(20);
   private final Eth2Network eth2Network = mock(Eth2Network.class);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   private final AttestationTopicSubscriber subscriber = new AttestationTopicSubscriber(eth2Network);
 
