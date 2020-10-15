@@ -142,6 +142,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private final AsyncRunner networkAsyncRunner;
   private final AsyncRunnerFactory asyncRunnerFactory;
   private final AsyncRunner eventAsyncRunner;
+  private final Path beaconDataDirectory;
 
   private volatile ForkChoice forkChoice;
   private volatile StateTransition stateTransition;
@@ -174,7 +175,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
     this.beaconConfig = beaconConfig;
     this.config = serviceConfig.getConfig();
-    asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
+    this.beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
+    this.asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
     this.asyncRunner = serviceConfig.createAsyncRunner("beaconchain");
     this.eventAsyncRunner = serviceConfig.createAsyncRunner("events", 10);
     this.networkAsyncRunner = serviceConfig.createAsyncRunner("p2p", 10);
@@ -519,7 +521,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
       this.p2pNetwork = new NoOpEth2Network();
     } else {
       final KeyValueStore<String, Bytes> keyValueStore =
-          new FileKeyValueStore(Path.of(config.getDataPath(), KEY_VALUE_STORE_SUBDIRECTORY));
+          new FileKeyValueStore(beaconDataDirectory.resolve(KEY_VALUE_STORE_SUBDIRECTORY));
       final PrivKey pk =
           KeyKt.unmarshalPrivateKey(getP2pPrivateKeyBytes(keyValueStore).toArrayUnsafe());
       final NetworkConfig p2pConfig =
@@ -626,7 +628,9 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initAttestationPool() {
     LOG.debug("BeaconChainController.initAttestationPool()");
-    attestationPool = new AggregatingAttestationPool(new AttestationDataStateTransitionValidator());
+    attestationPool =
+        new AggregatingAttestationPool(
+            new AttestationDataStateTransitionValidator(), metricsSystem);
     eventChannels.subscribe(SlotEventsChannel.class, attestationPool);
     blockImporter.subscribeToVerifiedBlockAttestations(attestationPool::removeAll);
   }

@@ -13,58 +13,68 @@
 
 package tech.pegasys.teku.validator.beaconnode;
 
-import static tech.pegasys.teku.util.config.Constants.GENESIS_TIME_RETRY_DELAY_SECONDS;
+import static tech.pegasys.teku.util.config.Constants.GENESIS_DATA_RETRY_DELAY_SECONDS;
 
 import com.google.common.base.Suppliers;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
-public class GenesisTimeProvider {
+public class GenesisDataProvider {
   private static final Logger LOG = LogManager.getLogger();
   private final ValidatorApiChannel validatorApiChannel;
   private final AsyncRunner asyncRunner;
-  private final Supplier<SafeFuture<UInt64>> genesisTime =
-      Suppliers.memoize(this::fetchGenesisTime);
+  private final Supplier<SafeFuture<GenesisData>> genesisData =
+      Suppliers.memoize(this::fetchGenesisData);
 
-  public GenesisTimeProvider(
+  public GenesisDataProvider(
       final AsyncRunner asyncRunner, final ValidatorApiChannel validatorApiChannel) {
     this.validatorApiChannel = validatorApiChannel;
     this.asyncRunner = asyncRunner;
   }
 
-  public SafeFuture<UInt64> getGenesisTime() {
-    return genesisTime.get();
+  public SafeFuture<GenesisData> getGenesisData() {
+    return genesisData.get();
   }
 
-  private SafeFuture<UInt64> fetchGenesisTime() {
-    return requestGenesisTime()
+  public SafeFuture<UInt64> getGenesisTime() {
+    return genesisData.get().thenApply(GenesisData::getGenesisTime);
+  }
+
+  public SafeFuture<Bytes32> getGenesisValidatorsRoot() {
+    return genesisData.get().thenApply(GenesisData::getGenesisValidatorsRoot);
+  }
+
+  private SafeFuture<GenesisData> fetchGenesisData() {
+    return requestGenesisData()
         .exceptionallyCompose(
             error -> {
-              LOG.error("Failed to retrieve genesis time. Retrying after delay", error);
+              LOG.error("Failed to retrieve genesis data. Retrying after delay", error);
               return asyncRunner.runAfterDelay(
-                  this::fetchGenesisTime, GENESIS_TIME_RETRY_DELAY_SECONDS, TimeUnit.SECONDS);
+                  this::fetchGenesisData, GENESIS_DATA_RETRY_DELAY_SECONDS, TimeUnit.SECONDS);
             });
   }
 
-  public SafeFuture<UInt64> requestGenesisTime() {
+  private SafeFuture<GenesisData> requestGenesisData() {
     return validatorApiChannel
-        .getGenesisTime()
+        .getGenesisData()
         .thenCompose(
-            maybeGenesisTime ->
-                maybeGenesisTime
+            maybeGenesisData ->
+                maybeGenesisData
                     .map(SafeFuture::completedFuture)
                     .orElseGet(
                         () -> {
-                          LOG.info("Waiting for genesis time to be known");
+                          LOG.info("Waiting for genesis data to be known");
                           return asyncRunner.runAfterDelay(
-                              this::requestGenesisTime,
-                              GENESIS_TIME_RETRY_DELAY_SECONDS,
+                              this::requestGenesisData,
+                              GENESIS_DATA_RETRY_DELAY_SECONDS,
                               TimeUnit.SECONDS);
                         }));
   }

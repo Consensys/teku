@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.remote.apiclient;
 
 import static java.util.Collections.emptyMap;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_AGGREGATE;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DATA;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_FORK;
@@ -59,6 +60,7 @@ import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
@@ -167,6 +169,16 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     queryParams.put("committee_index", String.valueOf(committeeIndex));
 
     return get(GET_UNSIGNED_ATTESTATION, queryParams, Attestation.class);
+  }
+
+  @Override
+  public Optional<AttestationData> createAttestationData(
+      final UInt64 slot, final int committeeIndex) {
+    final Map<String, String> queryParams = new HashMap<>();
+    queryParams.put("slot", encodeQueryParam(slot));
+    queryParams.put("committee_index", String.valueOf(committeeIndex));
+
+    return get(GET_ATTESTATION_DATA, queryParams, AttestationData.class);
   }
 
   @Override

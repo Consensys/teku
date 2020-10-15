@@ -26,7 +26,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
-import tech.pegasys.teku.validator.beaconnode.GenesisTimeProvider;
+import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.beaconnode.TimeBasedEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
@@ -69,7 +69,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             apiEndpoint,
             okHttpClient,
             new TimeBasedEventAdapter(
-                new GenesisTimeProvider(asyncRunner, validatorApiChannel),
+                new GenesisDataProvider(asyncRunner, validatorApiChannel),
                 new RepeatingTaskScheduler(asyncRunner, serviceConfig.getTimeProvider()),
                 serviceConfig.getTimeProvider(),
                 validatorTimingChannel),

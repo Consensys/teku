@@ -321,6 +321,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   private TekuConfiguration.Builder expectedConfigurationBuilder() {
     return TekuConfiguration.builder()
         .globalConfig(this::buildExpectedGlobalConfiguration)
+        .data(b -> b.dataBasePath(dataPath))
         .validator(
             b -> b.validatorExternalSignerTimeout(1000).validatorKeystoreLockingEnabled(true));
   }
@@ -362,7 +363,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN)
         .setLogIncludeEventsEnabled(true)
         .setLogIncludeValidatorDutiesEnabled(true)
-        .setDataPath(dataPath.toString())
         .setDataStorageMode(PRUNE)
         .setDataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
         .setDataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION.getValue())

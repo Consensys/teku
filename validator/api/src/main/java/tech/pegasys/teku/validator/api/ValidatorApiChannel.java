@@ -23,7 +23,9 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
@@ -34,7 +36,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<Optional<ForkInfo>> getForkInfo();
 
-  SafeFuture<Optional<UInt64>> getGenesisTime();
+  SafeFuture<Optional<GenesisData>> getGenesisData();
 
   SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(final List<BLSPublicKey> publicKeys);
 
@@ -50,6 +52,8 @@ public interface ValidatorApiChannel extends ChannelInterface {
       UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);
 
   SafeFuture<Optional<Attestation>> createUnsignedAttestation(UInt64 slot, int committeeIndex);
+
+  SafeFuture<Optional<AttestationData>> createAttestationData(UInt64 slot, int committeeIndex);
 
   SafeFuture<Optional<Attestation>> createAggregate(Bytes32 attestationHashTreeRoot);
 
