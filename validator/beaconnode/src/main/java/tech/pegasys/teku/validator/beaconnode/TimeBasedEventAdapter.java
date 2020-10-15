@@ -19,6 +19,7 @@ import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -30,25 +31,25 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
   private final long oneThirdSlotSeconds = SECONDS_PER_SLOT / 3;
   private final long twoThirdSlotSeconds = oneThirdSlotSeconds * 2;
 
-  private final GenesisTimeProvider genesisTimeProvider;
+  private final GenesisDataProvider genesisDataProvider;
   private final RepeatingTaskScheduler taskScheduler;
   private final TimeProvider timeProvider;
   private final ValidatorTimingChannel validatorTimingChannel;
   private UInt64 genesisTime;
 
   public TimeBasedEventAdapter(
-      final GenesisTimeProvider genesisTimeProvider,
+      final GenesisDataProvider genesisDataProvider,
       final RepeatingTaskScheduler taskScheduler,
       final TimeProvider timeProvider,
       final ValidatorTimingChannel validatorTimingChannel) {
-    this.genesisTimeProvider = genesisTimeProvider;
+    this.genesisDataProvider = genesisDataProvider;
     this.taskScheduler = taskScheduler;
     this.timeProvider = timeProvider;
     this.validatorTimingChannel = validatorTimingChannel;
   }
 
-  void start(final UInt64 genesisTime) {
-    this.genesisTime = genesisTime;
+  void start(final GenesisData genesisData) {
+    this.genesisTime = genesisData.getGenesisTime();
     final UInt64 currentSlot = getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
     final UInt64 nextSlotStartTime = getSlotStartTime(currentSlot.plus(1), genesisTime);
     taskScheduler.scheduleRepeatingEvent(
@@ -87,7 +88,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
   public SafeFuture<Void> start() {
     // Don't wait for the genesis time to be available before considering startup complete
     // The beacon node may not be available or genesis may not yet be known.
-    genesisTimeProvider.getGenesisTime().thenAccept(this::start).reportExceptions();
+    genesisDataProvider.getGenesisData().thenAccept(this::start).reportExceptions();
     return SafeFuture.COMPLETE;
   }
 
