@@ -107,23 +107,4 @@ class GenesisDataProviderTest {
     verify(validatorApiChannel, times(2)).getGenesisData();
     assertThat(result).isCompletedWithValue(GENESIS_TIME);
   }
-
-  @Test
-  void shouldRetryWhenGenesisValidatorsRootIsNotYetKnown() {
-    when(validatorApiChannel.getGenesisData())
-        .thenReturn(completedFuture(Optional.empty()))
-        .thenReturn(
-            completedFuture(Optional.of(new GenesisData(GENESIS_TIME, GENESIS_VALIDATORS_ROOT))));
-
-    // First request fails
-    final SafeFuture<Bytes32> result = genesisDataProvider.getGenesisValidatorsRoot();
-    verify(validatorApiChannel).getGenesisData();
-    assertThat(result).isNotDone();
-    Assertions.assertThat(asyncRunner.hasDelayedActions()).isTrue();
-
-    // Retry is scheduled.
-    asyncRunner.executeQueuedActions();
-    verify(validatorApiChannel, times(2)).getGenesisData();
-    assertThat(result).isCompletedWithValue(GENESIS_VALIDATORS_ROOT);
-  }
 }

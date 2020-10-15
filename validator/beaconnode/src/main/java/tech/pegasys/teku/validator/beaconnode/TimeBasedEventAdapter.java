@@ -19,7 +19,6 @@ import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.timed.RepeatingTaskScheduler;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -48,8 +47,8 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
     this.validatorTimingChannel = validatorTimingChannel;
   }
 
-  void start(final GenesisData genesisData) {
-    this.genesisTime = genesisData.getGenesisTime();
+  void start(final UInt64 genesisTime) {
+    this.genesisTime = genesisTime;
     final UInt64 currentSlot = getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
     final UInt64 nextSlotStartTime = getSlotStartTime(currentSlot.plus(1), genesisTime);
     taskScheduler.scheduleRepeatingEvent(
@@ -88,7 +87,7 @@ public class TimeBasedEventAdapter implements BeaconChainEventAdapter {
   public SafeFuture<Void> start() {
     // Don't wait for the genesis time to be available before considering startup complete
     // The beacon node may not be available or genesis may not yet be known.
-    genesisDataProvider.getGenesisData().thenAccept(this::start).reportExceptions();
+    genesisDataProvider.getGenesisTime().thenAccept(this::start).reportExceptions();
     return SafeFuture.COMPLETE;
   }
 
