@@ -35,6 +35,7 @@ import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.Fork;
@@ -145,6 +146,15 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public UInt64 getGenesisTime() {
     return genesisTime;
+  }
+
+  public Optional<GenesisData> getGenesisData() {
+    if (isPreGenesis() || isPreForkChoice()) {
+      return Optional.empty();
+    }
+
+    return getBestState()
+        .map(state -> new GenesisData(state.getGenesis_time(), state.getGenesis_validators_root()));
   }
 
   public boolean isPreGenesis() {

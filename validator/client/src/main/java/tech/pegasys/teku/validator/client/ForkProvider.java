@@ -53,7 +53,7 @@ public class ForkProvider {
             });
   }
 
-  public SafeFuture<ForkInfo> requestForkInfo() {
+  private SafeFuture<ForkInfo> requestForkInfo() {
     return validatorApiChannel
         .getForkInfo()
         .thenCompose(

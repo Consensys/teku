@@ -36,6 +36,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.Fork;
@@ -70,15 +71,21 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
     return asyncRunner.runAsync(() -> apiClient.getFork().map(this::mapGetForkResponse));
   }
 
+  @Override
+  public SafeFuture<Optional<GenesisData>> getGenesisData() {
+    return asyncRunner.runAsync(
+        () ->
+            apiClient
+                .getGenesis()
+                .map(
+                    response ->
+                        new GenesisData(
+                            response.data.genesisTime, response.data.genesisValidatorsRoot)));
+  }
+
   private ForkInfo mapGetForkResponse(final GetForkResponse response) {
     final Fork fork = new Fork(response.previous_version, response.current_version, response.epoch);
     return new ForkInfo(fork, response.genesis_validators_root);
-  }
-
-  @Override
-  public SafeFuture<Optional<UInt64>> getGenesisTime() {
-    return asyncRunner.runAsync(
-        () -> apiClient.getGenesis().map(response -> response.data.genesisTime));
   }
 
   @Override
