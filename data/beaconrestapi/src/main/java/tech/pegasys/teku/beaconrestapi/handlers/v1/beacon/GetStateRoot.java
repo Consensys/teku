@@ -1,16 +1,3 @@
-/*
- * Copyright 2020 ConsenSys AG.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
- * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations under the License.
- */
-
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,11 +10,12 @@ import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
-import tech.pegasys.teku.api.schema.Fork;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
+import tech.pegasys.teku.api.schema.Root;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -50,52 +38,51 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
-public class GetStateFork extends AbstractHandler implements Handler {
+public class GetStateRoot extends AbstractHandler implements Handler {
   private static final Logger LOG = LogManager.getLogger();
-  public static final String ROUTE = "/eth/v1/beacon/states/:state_id/fork";
+  public static final String ROUTE = "/eth/v1/beacon/states/:state_id/root";
   private final ChainDataProvider chainDataProvider;
 
-  public GetStateFork(final DataProvider dataProvider, final JsonProvider jsonProvider) {
+  public GetStateRoot(final DataProvider dataProvider, final JsonProvider jsonProvider) {
     super(jsonProvider);
     this.chainDataProvider = dataProvider.getChainDataProvider();
   }
 
-  GetStateFork(final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
+  GetStateRoot(final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
     super(jsonProvider);
     this.chainDataProvider = chainDataProvider;
   }
 
   @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.GET,
-      summary = "Get state fork",
-      tags = {TAG_V1_BEACON, TAG_VALIDATOR_REQUIRED},
-      description = "Returns Fork object for state with given 'stateId'.",
-      pathParams = {
-        @OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION),
-      },
-      responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = GetStateForkResponse.class)),
-        @OpenApiResponse(status = RES_BAD_REQUEST),
-        @OpenApiResponse(status = RES_NOT_FOUND),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR),
-        @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
-      })
+          path = ROUTE,
+          method = HttpMethod.GET,
+          summary = "Get state root",
+          tags = { TAG_V1_BEACON },
+          description = "Calculates HashTreeRoot for state with given 'stateId'. If stateId is root, same value will be returned.",
+          pathParams = {
+                  @OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION)
+          },
+          responses = {
+                  @OpenApiResponse(
+                          status = RES_OK,
+                          content = @OpenApiContent(from = GetStateRootResponse.class)),
+                  @OpenApiResponse(status = RES_BAD_REQUEST),
+                  @OpenApiResponse(status = RES_NOT_FOUND),
+                  @OpenApiResponse(status = RES_INTERNAL_ERROR),
+                  @OpenApiResponse(status = RES_SERVICE_UNAVAILABLE, description = SERVICE_UNAVAILABLE)
+          })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     final Map<String, String> pathParams = ctx.pathParamMap();
     try {
       final Optional<UInt64> maybeSlot =
-          chainDataProvider.stateParameterToSlot(pathParams.get(PARAM_STATE_ID));
+              chainDataProvider.stateParameterToSlot(pathParams.get(PARAM_STATE_ID));
       if (maybeSlot.isEmpty()) {
         ctx.status(SC_NOT_FOUND);
         return;
       }
-      SafeFuture<Optional<Fork>> future = chainDataProvider.getForkAtSlot(maybeSlot.get());
+      SafeFuture<Optional<Bytes32>> future = chainDataProvider.getStateRootAtSlot(maybeSlot.get());
       handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
     } catch (ChainDataUnavailableException ex) {
       LOG.trace(ex);
@@ -107,8 +94,8 @@ public class GetStateFork extends AbstractHandler implements Handler {
     }
   }
 
-  private Optional<String> handleResult(Context ctx, final Fork response)
-      throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetStateForkResponse(response)));
+  private Optional<String> handleResult(Context ctx, final Bytes32 response)
+          throws JsonProcessingException {
+    return Optional.of(jsonProvider.objectToJSON(new GetStateRootResponse(new Root(response))));
   }
 }

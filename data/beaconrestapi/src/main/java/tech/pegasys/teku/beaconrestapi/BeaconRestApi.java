@@ -13,12 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
-import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.HostAllowlistUtils.isHostAuthorized;
-
 import com.google.common.base.Throwables;
 import com.google.common.io.Resources;
 import io.javalin.Javalin;
@@ -30,9 +24,6 @@ import io.javalin.plugin.openapi.jackson.JacksonModelConverterFactory;
 import io.javalin.plugin.openapi.ui.SwaggerOptions;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
-import java.io.IOException;
-import java.net.BindException;
-import java.nio.charset.Charset;
 import kotlin.text.Charsets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -93,6 +84,16 @@ import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.InvalidConfigurationException;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
+
+import java.io.IOException;
+import java.net.BindException;
+import java.nio.charset.Charset;
+
+import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.beaconrestapi.HostAllowlistUtils.isHostAuthorized;
 
 public class BeaconRestApi {
 
@@ -295,6 +296,7 @@ public class BeaconRestApi {
 
   private void addV1BeaconHandlers(final DataProvider dataProvider) {
     app.get(GetGenesis.ROUTE, new GetGenesis(dataProvider, jsonProvider));
+    app.get(tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRoot.ROUTE, new tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRoot(dataProvider, jsonProvider));
     app.get(GetStateFork.ROUTE, new GetStateFork(dataProvider, jsonProvider));
     app.get(GetStateValidator.ROUTE, new GetStateValidator(dataProvider, jsonProvider));
     app.get(GetStateValidators.ROUTE, new GetStateValidators(dataProvider, jsonProvider));
