@@ -99,8 +99,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
-    final UpdatableStore expectedStore =
-        genesisStoreBuilder.storeConfig(storeConfig).build().join();
+    final UpdatableStore expectedStore = genesisStoreBuilder.storeConfig(storeConfig).build();
     StoreAssertions.assertStoresMatch(client.get().getStore(), expectedStore);
   }
 
@@ -145,8 +144,7 @@ public class StorageBackedRecentChainDataTest {
                 StateAndBlockProvider.NOOP,
                 AnchorPoint.fromGenesisState(INITIAL_STATE))
             .storeConfig(storeConfig)
-            .build()
-            .join();
+            .build();
     final SafeFuture<Void> initialized = client.get().initializeFromGenesis(INITIAL_STATE);
     assertThat(initialized).isCompleted();
     assertStoreInitialized(client.get());
@@ -195,7 +193,7 @@ public class StorageBackedRecentChainDataTest {
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());
     assertStoreIsSet(client.get());
-    StoreAssertions.assertStoresMatch(client.get().getStore(), genesisStoreBuilder.build().join());
+    StoreAssertions.assertStoresMatch(client.get().getStore(), genesisStoreBuilder.build());
   }
 
   @Test
