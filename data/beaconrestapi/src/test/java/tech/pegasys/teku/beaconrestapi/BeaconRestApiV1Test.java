@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRoot;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFinalityCheckpoints;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
@@ -123,7 +123,7 @@ public class BeaconRestApiV1Test {
 
   @Test
   public void shouldHaveGetStateRootEndpoint() {
-    verify(app).get(eq(GetStateRoot.ROUTE), any(GetStateRoot.class));
+    verify(app).get(eq(GetStateFinalityCheckpoints.ROUTE), any(GetStateFinalityCheckpoints.class));
   }
 
   @Test
