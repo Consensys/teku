@@ -21,7 +21,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -47,9 +46,8 @@ class TimeBasedEventAdapterTest {
 
   @Test
   void shouldScheduleEventsOnceGenesisIsKnown() {
-    final SafeFuture<tech.pegasys.teku.datastructures.genesis.GenesisData> genesisDataSafeFuture =
-        new SafeFuture<>();
-    when(genesisDataProvider.getGenesisData()).thenReturn(genesisDataSafeFuture);
+    final SafeFuture<UInt64> genesisTimeFuture = new SafeFuture<>();
+    when(genesisDataProvider.getGenesisTime()).thenReturn(genesisTimeFuture);
 
     final SafeFuture<Void> startResult = eventAdapter.start();
     // Returned future completes immediately so startup can complete pre-genesis
@@ -58,19 +56,14 @@ class TimeBasedEventAdapterTest {
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
 
     // Once we get the genesis time, we can schedule the slot events
-    genesisDataSafeFuture.complete(
-        new tech.pegasys.teku.datastructures.genesis.GenesisData(UInt64.ONE, Bytes32.ZERO));
+    genesisTimeFuture.complete(UInt64.ONE);
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
   }
 
   @Test
   void shouldScheduleSlotStartEventsStartingFromNextSlot() {
     final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisData())
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new tech.pegasys.teku.datastructures.genesis.GenesisData(
-                    genesisTime, Bytes32.ZERO)));
+    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
     final int nextSlot = 26;
     final UInt64 firstSlotToFire = UInt64.valueOf(nextSlot);
     final int timeUntilNextSlot = Constants.SECONDS_PER_SLOT / 2;
@@ -93,11 +86,7 @@ class TimeBasedEventAdapterTest {
   @Test
   void shouldScheduleAggregateEventsStartingFromNextSlot() {
     final UInt64 genesisTime = timeProvider.getTimeInSeconds();
-    when(genesisDataProvider.getGenesisData())
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new tech.pegasys.teku.datastructures.genesis.GenesisData(
-                    genesisTime, Bytes32.ZERO)));
+    when(genesisDataProvider.getGenesisTime()).thenReturn(SafeFuture.completedFuture(genesisTime));
     final int nextSlot = 25;
     // Starting time is before the aggregation for the current slot should happen, but should still
     // wait until the next slot to start
