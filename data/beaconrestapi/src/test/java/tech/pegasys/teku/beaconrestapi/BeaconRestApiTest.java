@@ -44,6 +44,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.node.GetFork;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetGenesisTime;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttestationData;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.GetAggregate;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostAggregateAndProof;
 import tech.pegasys.teku.beaconrestapi.handlers.validator.PostBlock;
@@ -207,6 +208,11 @@ class BeaconRestApiTest {
         .post(
             eq(PostSubscribeToPersistentSubnets.ROUTE),
             any(PostSubscribeToPersistentSubnets.class));
+  }
+
+  @Test
+  public void shouldHaveGetAttestationDataEndpoint() {
+    verify(app).get(eq(GetAttestationData.ROUTE), any(GetAttestationData.class));
   }
 
   @Test
