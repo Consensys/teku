@@ -11,13 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.blockimport;
+package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.events.ChannelInterface;
+public interface GossipedItemConsumer<T> {
+  void forward(T operation);
 
-public interface BlockImportChannel extends ChannelInterface {
-  SafeFuture<BlockImportResult> importBlock(SignedBeaconBlock block);
+  GossipedItemConsumer<?> NOOP = (__) -> {};
+
+  @SuppressWarnings("unchecked")
+  static <T> GossipedItemConsumer<T> noop() {
+    return (GossipedItemConsumer<T>) NOOP;
+  }
 }

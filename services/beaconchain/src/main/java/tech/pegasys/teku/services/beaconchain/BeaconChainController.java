@@ -77,8 +77,9 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.blockimport.BlockImportChannel;
-import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceExecutor;
 import tech.pegasys.teku.statetransition.forkchoice.SingleThreadedForkChoiceExecutor;
@@ -99,7 +100,6 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncStateTracker;
-import tech.pegasys.teku.sync.gossip.BlockManager;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
 import tech.pegasys.teku.sync.gossip.NoopRecentBlockFetcher;
 import tech.pegasys.teku.sync.gossip.RecentBlockFetcher;
@@ -163,6 +163,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile OperationsReOrgManager operationsReOrgManager;
   private volatile WeakSubjectivityValidator weakSubjectivityValidator;
   private volatile PerformanceTracker performanceTracker;
+  private volatile RecentBlockFetcher recentBlockFetcher;
+  private volatile PendingPool<SignedBeaconBlock> pendingBlocks;
 
   private SyncStateTracker syncStateTracker;
   private UInt64 genesisTimeTracker = ZERO;
@@ -195,9 +197,16 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void startServices() {
+    recentBlockFetcher.subscribeBlockFetched(
+        (block) ->
+            blockManager
+                .importBlock(block)
+                .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
+    blockManager.subscribeToReceivedBlocks(recentBlockFetcher::cancelRecentBlockRequest);
     SafeFuture.allOfFailFast(
             attestationManager.start(),
             p2pNetwork.start(),
+            recentBlockFetcher.start(),
             blockManager.start(),
             syncService.start(),
             syncStateTracker.start())
@@ -287,8 +296,10 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initDepositProvider();
     initGenesisHandler();
     initAttestationManager();
-    initP2PNetwork();
+    initPendingBlocks();
     initBlockManager();
+    initP2PNetwork();
+    initRecentBlockFetcher();
     initSyncManager();
     initSlotProcessor();
     initMetrics();
@@ -297,6 +308,21 @@ public class BeaconChainController extends Service implements TimeTickChannel {
     initValidatorApiHandler();
     initRestAPI();
     initOperationsReOrgManager();
+  }
+
+  private void initPendingBlocks() {
+    LOG.debug("BeaconChainController.initPendingBlocks()");
+    pendingBlocks = PendingPool.createForBlocks();
+    eventChannels.subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
+  }
+
+  private void initRecentBlockFetcher() {
+    LOG.debug("BeaconChainController.initRecentBlockFetcher()");
+    if (!config.isP2pEnabled()) {
+      recentBlockFetcher = new NoopRecentBlockFetcher();
+    } else {
+      recentBlockFetcher = FetchRecentBlocksService.create(asyncRunner, p2pNetwork, pendingBlocks);
+    }
   }
 
   private void initPerformanceTracker() {
@@ -529,6 +555,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
               .eth2Config(eth2Config)
               .eventBus(eventBus)
               .recentChainData(recentChainData)
+              .gossipedBlockConsumer(
+                  block ->
+                      blockManager
+                          .importBlock(block)
+                          .finish(err -> LOG.error("Failed to process gossiped block.", err)))
               .gossipedAttestationConsumer(
                   attestation ->
                       attestationManager
@@ -631,27 +662,13 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   public void initBlockManager() {
     LOG.debug("BeaconChainController.initBlockManager()");
-    final PendingPool<SignedBeaconBlock> pendingBlocks = PendingPool.createForBlocks();
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot);
-    final RecentBlockFetcher recentBlockFetcher;
-    if (!config.isP2pEnabled()) {
-      recentBlockFetcher = new NoopRecentBlockFetcher();
-    } else {
-      recentBlockFetcher = FetchRecentBlocksService.create(asyncRunner, p2pNetwork, pendingBlocks);
-    }
     blockManager =
-        BlockManager.create(
-            eventBus,
-            pendingBlocks,
-            futureBlocks,
-            recentBlockFetcher,
-            recentChainData,
-            blockImporter);
+        BlockManager.create(eventBus, pendingBlocks, futureBlocks, recentChainData, blockImporter);
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
-        .subscribe(BlockImportChannel.class, blockManager)
-        .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
+        .subscribe(BlockImportChannel.class, blockManager);
   }
 
   public void initSyncManager() {
