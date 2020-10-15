@@ -54,7 +54,7 @@ import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.StartupUtil;
+import tech.pegasys.teku.datastructures.util.StateLoader;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -729,7 +729,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private void setupGenesisState() {
     try {
       STATUS_LOG.loadingGenesisFile(config.getGenesisState());
-      final BeaconState genesisState = StartupUtil.loadBeaconState(config.getGenesisState());
+      final BeaconState genesisState = StateLoader.load(config.getGenesisState());
       initializeGenesis(genesisState);
     } catch (final IOException e) {
       throw new IllegalStateException("Failed to load initial state", e);

@@ -19,8 +19,8 @@ import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.BeaconStateImpl;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 
-public class StartupUtil {
-  public static BeaconState loadBeaconState(final String source) throws IOException {
+public class StateLoader {
+  public static BeaconState load(final String source) throws IOException {
     return SimpleOffsetSerializer.deserialize(
         ResourceLoader.urlOrFile()
             .loadBytes(source)
