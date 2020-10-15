@@ -239,7 +239,7 @@ public class StorageBackedRecentChainDataTest {
 
     // With a store set, we shouldn't be allowed to overwrite the store by setting the genesis state
     assertThatThrownBy(() -> client.initializeFromGenesis(INITIAL_STATE))
-        .hasCauseInstanceOf(IllegalStateException.class)
+        .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining("Failed to set genesis state: store has already been initialized");
   }
 }
