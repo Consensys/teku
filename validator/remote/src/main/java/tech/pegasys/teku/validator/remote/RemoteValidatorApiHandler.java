@@ -283,12 +283,17 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToBeaconCommitteeForAggregation(
-      final int committeeIndex, final UInt64 aggregationSlot) {
+  public void subscribeToBeaconCommittee(
+      final int validatorIndex,
+      final int committeeIndex,
+      final UInt64 committeesAtSlot,
+      final UInt64 slot,
+      final boolean isAggregator) {
     asyncRunner
         .runAsync(
             () ->
-                apiClient.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot))
+                apiClient.subscribeToBeaconCommittee(
+                    validatorIndex, committeeIndex, committeesAtSlot, slot, isAggregator))
         .finish(
             error -> LOG.error("Failed to subscribe to beacon committee for aggregation", error));
   }

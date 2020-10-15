@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doThrow;
 
@@ -48,7 +49,7 @@ public class PostSubscribeToBeaconCommitteeIntegrationTest
 
     doThrow(new RuntimeException())
         .when(validatorApiChannel)
-        .subscribeToBeaconCommitteeForAggregation(anyInt(), any());
+        .subscribeToBeaconCommittee(anyInt(), anyInt(), any(), any(), anyBoolean());
 
     Response response =
         post(PostSubscribeToBeaconCommittee.ROUTE, jsonProvider.objectToJSON(request));

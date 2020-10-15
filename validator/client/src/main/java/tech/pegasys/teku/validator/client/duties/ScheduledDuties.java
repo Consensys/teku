@@ -63,6 +63,7 @@ public class ScheduledDuties {
       final int validatorIndex,
       final BLSSignature slotSignature,
       final int attestationCommitteeIndex,
+      final int committeesAtSlot,
       final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture) {
     aggregationDuties
         .computeIfAbsent(slot, dutyFactory::createAggregationDuty)
@@ -71,6 +72,7 @@ public class ScheduledDuties {
             validatorIndex,
             slotSignature,
             attestationCommitteeIndex,
+            committeesAtSlot,
             unsignedAttestationFuture);
   }
 

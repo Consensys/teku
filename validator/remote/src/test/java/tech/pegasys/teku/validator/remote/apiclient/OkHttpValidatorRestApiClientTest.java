@@ -624,7 +624,8 @@ class OkHttpValidatorRestApiClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    apiClient.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot);
+    apiClient.subscribeToBeaconCommittee(
+        1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true);
 
     RecordedRequest request = mockWebServer.takeRequest();
 
@@ -645,7 +646,8 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThatThrownBy(
             () ->
-                apiClient.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot))
+                apiClient.subscribeToBeaconCommittee(
+                    1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -658,7 +660,8 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThatThrownBy(
             () ->
-                apiClient.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot))
+                apiClient.subscribeToBeaconCommittee(
+                    1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
   }

@@ -232,10 +232,15 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToBeaconCommitteeForAggregation(
-      final int committeeIndex, final UInt64 aggregationSlot) {
+  public void subscribeToBeaconCommittee(
+      final int validatorIndex,
+      final int committeeIndex,
+      final UInt64 committeesAtSlot,
+      final UInt64 slot,
+      final boolean isAggregator) {
     subscribeAggregationRequestCounter.inc();
-    delegate.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot);
+    delegate.subscribeToBeaconCommittee(
+        validatorIndex, committeeIndex, committeesAtSlot, slot, isAggregator);
   }
 
   @Override

@@ -72,11 +72,13 @@ public class AggregationDuty implements Duty {
       final int validatorIndex,
       final BLSSignature proof,
       final int attestationCommitteeIndex,
+      final int committeesAtSlot,
       final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture) {
     aggregatorsByCommitteeIndex.computeIfAbsent(
         attestationCommitteeIndex,
         committeeIndex -> {
-          validatorApiChannel.subscribeToBeaconCommitteeForAggregation(committeeIndex, slot);
+          validatorApiChannel.subscribeToBeaconCommittee(
+              validatorIndex, committeeIndex, UInt64.valueOf(committeesAtSlot), slot, true);
           return new CommitteeAggregator(
               validator,
               UInt64.valueOf(validatorIndex),

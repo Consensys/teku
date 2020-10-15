@@ -118,7 +118,8 @@ class MetricRecordingValidatorApiChannelTest {
     return Stream.of(
         noResponseTest(
             "subscribeToBeaconCommitteeForAggregation",
-            channel -> channel.subscribeToBeaconCommitteeForAggregation(1, UInt64.ZERO),
+            channel ->
+                channel.subscribeToBeaconCommittee(2, 1, UInt64.valueOf(3), UInt64.ZERO, true),
             MetricRecordingValidatorApiChannel.AGGREGATION_SUBSCRIPTION_COUNTER_NAME),
         noResponseTest(
             "subscribeToPersistentSubnets",

@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -40,21 +39,11 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
     this.recentChainData = recentChainData;
   }
 
-  public synchronized void subscribeToCommitteeForAggregation(
-      final int committeeIndex, final UInt64 aggregationSlot) {
-    recentChainData
-        .getBestState()
-        // No point aggregating for historic slots and we can't calculate the subnet ID
-        .filter(state -> state.getSlot().compareTo(aggregationSlot) <= 0)
-        .ifPresent(
-            state -> subscribeToCommitteeForAggregation(state, committeeIndex, aggregationSlot));
-  }
-
-  private void subscribeToCommitteeForAggregation(
-      final BeaconState state, final int committeeIndex, final UInt64 aggregationSlot) {
+  public void subscribeToCommitteeForAggregation(
+      final int committeeIndex, final UInt64 committeesAtSlot, final UInt64 aggregationSlot) {
     final int subnetId =
         CommitteeUtil.computeSubnetForCommittee(
-            state, aggregationSlot, UInt64.valueOf(committeeIndex));
+            aggregationSlot, UInt64.valueOf(committeeIndex), committeesAtSlot);
     final UInt64 currentUnsubscriptionSlot = subnetIdToUnsubscribeSlot.getOrDefault(subnetId, ZERO);
     if (currentUnsubscriptionSlot.equals(ZERO)) {
       eth2Network.subscribeToAttestationSubnetId(subnetId);
