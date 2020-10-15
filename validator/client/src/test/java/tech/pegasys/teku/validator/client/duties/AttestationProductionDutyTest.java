@@ -79,7 +79,7 @@ class AttestationProductionDutyTest {
   @Test
   public void shouldFailWhenUnsignedAttestationCanNotBeCreated() {
     final Validator validator = createValidator();
-    when(validatorApiChannel.createUnsignedAttestation(SLOT, 0))
+    when(validatorApiChannel.createAttestationData(SLOT, 0))
         .thenReturn(completedFuture(Optional.empty()));
 
     final SafeFuture<Optional<AttestationData>> attestationFuture =
@@ -113,7 +113,11 @@ class AttestationProductionDutyTest {
             validator1, validator1CommitteeIndex, validator1CommitteePosition, 10, 11);
     final SafeFuture<Optional<AttestationData>> attestationResult2 =
         duty.addValidator(
-            validator2, validator2CommitteeIndex, validator2CommitteePosition, 10, 11);
+            validator2,
+            validator2CommitteeIndex,
+            validator2CommitteePosition,
+            10,
+            validator2CommitteeSize);
 
     performAndReportDuty();
 
@@ -139,7 +143,7 @@ class AttestationProductionDutyTest {
     final int validator2CommitteePosition = 3;
     final int validator2CommitteeSize = 12;
     final RuntimeException failure = new RuntimeException("Golly gee");
-    when(validatorApiChannel.createUnsignedAttestation(SLOT, validator1CommitteeIndex))
+    when(validatorApiChannel.createAttestationData(SLOT, validator1CommitteeIndex))
         .thenReturn(failedFuture(failure));
     final AttestationData attestationData = expectCreateAttestationData(validator2CommitteeIndex);
     final Attestation expectedAttestation =
@@ -151,7 +155,11 @@ class AttestationProductionDutyTest {
             validator1, validator1CommitteeIndex, validator1CommitteePosition, 10, 11);
     final SafeFuture<Optional<AttestationData>> attestationResult2 =
         duty.addValidator(
-            validator2, validator2CommitteeIndex, validator2CommitteePosition, 10, 11);
+            validator2,
+            validator2CommitteeIndex,
+            validator2CommitteePosition,
+            10,
+            validator2CommitteeSize);
 
     performAndReportDuty();
 
@@ -231,7 +239,7 @@ class AttestationProductionDutyTest {
   @Test
   public void shouldCreateAttestationForMultipleValidatorsInSameCommittee() {
     final int committeeIndex = 3;
-    final int committeeSize = 3;
+    final int committeeSize = 33;
     final int validator1CommitteePosition = 6;
     final int validator2CommitteePosition = 2;
     final int validator3CommitteePosition = 5;
@@ -269,7 +277,7 @@ class AttestationProductionDutyTest {
     verify(validatorApiChannel).sendSignedAttestation(expectedAttestation3, Optional.of(10));
 
     // Should have only needed to create one unsigned attestation and reused it for each validator
-    verify(validatorApiChannel, times(1)).createUnsignedAttestation(any(), anyInt());
+    verify(validatorApiChannel, times(1)).createAttestationData(any(), anyInt());
     verify(validatorLogger)
         .dutyCompleted(
             duty.getProducedType(), SLOT, 3, Set.of(attestationData.getBeacon_block_root()));
@@ -321,7 +329,7 @@ class AttestationProductionDutyTest {
     verify(validatorApiChannel).sendSignedAttestation(expectedAttestation3, Optional.of(10));
 
     // Need to create an unsigned attestation for each committee
-    verify(validatorApiChannel, times(2)).createUnsignedAttestation(any(), anyInt());
+    verify(validatorApiChannel, times(2)).createAttestationData(any(), anyInt());
     verify(validatorLogger)
         .dutyCompleted(
             duty.getProducedType(),
