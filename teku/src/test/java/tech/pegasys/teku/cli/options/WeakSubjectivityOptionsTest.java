@@ -83,4 +83,17 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(str).contains("--help");
     assertThat(result).isGreaterThan(0);
   }
+
+  @Test
+  public void weakSubjectivityState_shouldAcceptValue() {
+    final String value = "state.ssz";
+    final TekuConfiguration config = getTekuConfigurationFromArguments("--ws-state", value);
+    assertThat(config.weakSubjectivity().getWeakSubjectivityStateResource()).contains(value);
+  }
+
+  @Test
+  public void weakSubjectivityState_shouldDefault() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.weakSubjectivity().getWeakSubjectivityStateResource()).isEmpty();
+  }
 }

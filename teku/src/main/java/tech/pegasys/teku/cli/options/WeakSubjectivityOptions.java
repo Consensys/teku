@@ -21,6 +21,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class WeakSubjectivityOptions {
   @CommandLine.Option(
+      names = {"--ws-state"},
+      paramLabel = "<STRING>",
+      description =
+          "A recent state within the weak subjectivity period.  This value should be a file or URL pointing to an SSZ encoded state.",
+      arity = "1")
+  private String weakSubjectivityState;
+
+  @CommandLine.Option(
       converter = CheckpointConverter.class,
       names = {"--ws-checkpoint"},
       paramLabel = "<BLOCK_ROOT>:<EPOCH_NUMBER>",
@@ -40,6 +48,9 @@ public class WeakSubjectivityOptions {
   public TekuConfiguration.Builder configure(TekuConfiguration.Builder builder) {
     return builder.weakSubjectivity(
         wsBuilder -> {
+          if (weakSubjectivityState != null) {
+            wsBuilder.weakSubjectivityStateResource(weakSubjectivityState);
+          }
           if (weakSubjectivityCheckpoint != null) {
             wsBuilder.weakSubjectivityCheckpoint(weakSubjectivityCheckpoint);
           }
