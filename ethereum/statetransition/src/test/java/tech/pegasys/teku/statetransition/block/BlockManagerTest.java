@@ -45,6 +45,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public class BlockManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(2);
