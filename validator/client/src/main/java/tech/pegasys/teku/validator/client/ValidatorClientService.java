@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
@@ -60,7 +61,7 @@ public class ValidatorClientService extends Service {
     final EventChannels eventChannels = services.getEventChannels();
     final MetricsSystem metricsSystem = services.getMetricsSystem();
     final AsyncRunner asyncRunner = services.createAsyncRunner("validator");
-    final Path slashingProtectionPath = services.getConfig().getValidatorsSlashingProtectionPath();
+    final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
     final SlashingProtector slashingProtector =
         new SlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
     final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector, asyncRunner);
@@ -113,6 +114,10 @@ public class ValidatorClientService extends Service {
         blockDutyScheduler,
         validatorIndexProvider,
         beaconNodeApi);
+  }
+
+  public static Path getSlashingProtectionPath(final DataDirLayout dataDirLayout) {
+    return dataDirLayout.getValidatorDataDirectory().resolve("slashprotection");
   }
 
   private static void addValidatorCountMetric(
