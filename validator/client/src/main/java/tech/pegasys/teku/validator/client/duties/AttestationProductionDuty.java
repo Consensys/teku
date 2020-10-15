@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.duties;
 
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
+import static tech.pegasys.teku.util.config.Constants.MAX_VALIDATORS_PER_COMMITTEE;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -59,16 +61,17 @@ public class AttestationProductionDuty implements Duty {
    * @param committeePosition the validator's position within the committee
    * @return a future which will be completed with the unsigned attestation for the committee.
    */
-  public SafeFuture<Optional<Attestation>> addValidator(
+  public SafeFuture<Optional<AttestationData>> addValidator(
       final Validator validator,
       final int attestationCommitteeIndex,
       final int committeePosition,
-      final int validatorIndex) {
+      final int validatorIndex,
+      final int committeeSize) {
     final Committee committee =
         validatorsByCommitteeIndex.computeIfAbsent(
             attestationCommitteeIndex, key -> new Committee());
-    committee.addValidator(validator, committeePosition, validatorIndex);
-    return committee.attestationFuture;
+    committee.addValidator(validator, committeePosition, validatorIndex, committeeSize);
+    return committee.attestationDataFuture;
   }
 
   @Override
@@ -96,64 +99,70 @@ public class AttestationProductionDuty implements Duty {
 
   private SafeFuture<DutyResult> produceAttestationsForCommittee(
       final ForkInfo forkInfo, final int committeeIndex, final Committee committee) {
-    final SafeFuture<Optional<Attestation>> unsignedAttestationFuture =
-        validatorApiChannel.createUnsignedAttestation(slot, committeeIndex);
-    unsignedAttestationFuture.propagateTo(committee.attestationFuture);
+    final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture =
+        validatorApiChannel.createAttestationData(slot, committeeIndex);
+    unsignedAttestationFuture.propagateTo(committee.attestationDataFuture);
     return unsignedAttestationFuture.thenCompose(
         maybeUnsignedAttestation ->
             maybeUnsignedAttestation
-                .map(attestation -> signAttestationsForCommittee(forkInfo, committee, attestation))
+                .map(
+                    attestationData ->
+                        signAttestationsForCommittee(forkInfo, committee, attestationData))
                 .orElseGet(
-                    () -> {
-                      return failedFuture(
-                          new IllegalStateException(
-                              "Unable to produce attestation for slot "
-                                  + slot
-                                  + " with committee "
-                                  + committeeIndex
-                                  + " because chain data was unavailable"));
-                    }));
+                    () ->
+                        failedFuture(
+                            new IllegalStateException(
+                                "Unable to produce attestation for slot "
+                                    + slot
+                                    + " with committee "
+                                    + committeeIndex
+                                    + " because chain data was unavailable"))));
   }
 
   private SafeFuture<DutyResult> signAttestationsForCommittee(
-      final ForkInfo forkInfo, final Committee validators, final Attestation attestation) {
+      final ForkInfo forkInfo, final Committee validators, final AttestationData attestationData) {
     return DutyResult.combine(
         validators.forEach(
-            validator -> signAttestationForValidator(forkInfo, attestation, validator)));
+            validator -> signAttestationForValidator(forkInfo, attestationData, validator)));
   }
 
   private SafeFuture<DutyResult> signAttestationForValidator(
       final ForkInfo forkInfo,
-      final Attestation attestation,
+      final AttestationData attestationData,
       final ValidatorWithCommitteePositionAndIndex validator) {
     return validator
         .getSigner()
-        .signAttestationData(attestation.getData(), forkInfo)
-        .thenApply(signature -> createSignedAttestation(attestation, validator, signature))
+        .signAttestationData(attestationData, forkInfo)
+        .thenApply(signature -> createSignedAttestation(attestationData, validator, signature))
         .thenAccept(
             signedAttestation ->
                 validatorApiChannel.sendSignedAttestation(
                     signedAttestation, Optional.of(validator.getValidatorIndex())))
-        .thenApply(__ -> DutyResult.success(attestation.getData().getBeacon_block_root()));
+        .thenApply(__ -> DutyResult.success(attestationData.getBeacon_block_root()));
   }
 
   private Attestation createSignedAttestation(
-      final Attestation attestation,
+      final AttestationData attestationData,
       final ValidatorWithCommitteePositionAndIndex validator,
       final BLSSignature signature) {
-    final Bitlist aggregationBits = new Bitlist(attestation.getAggregation_bits());
+    final Bitlist aggregationBits =
+        new Bitlist(validator.getCommitteeSize(), MAX_VALIDATORS_PER_COMMITTEE);
     aggregationBits.setBit(validator.getCommitteePosition());
-    return new Attestation(aggregationBits, attestation.getData(), signature);
+    return new Attestation(aggregationBits, attestationData, signature);
   }
 
   private static class Committee {
     private final List<ValidatorWithCommitteePositionAndIndex> validators = new ArrayList<>();
-    private final SafeFuture<Optional<Attestation>> attestationFuture = new SafeFuture<>();
+    private final SafeFuture<Optional<AttestationData>> attestationDataFuture = new SafeFuture<>();
 
     public synchronized void addValidator(
-        final Validator validator, final int committeePosition, final int validatorIndex) {
+        final Validator validator,
+        final int committeePosition,
+        final int validatorIndex,
+        final int committeeSize) {
       validators.add(
-          new ValidatorWithCommitteePositionAndIndex(validator, committeePosition, validatorIndex));
+          new ValidatorWithCommitteePositionAndIndex(
+              validator, committeePosition, validatorIndex, committeeSize));
     }
 
     public synchronized <T> List<SafeFuture<T>> forEach(
@@ -171,12 +180,17 @@ public class AttestationProductionDuty implements Duty {
     private final Validator validator;
     private final int committeePosition;
     private final int validatorIndex;
+    private final int committeeSize;
 
     private ValidatorWithCommitteePositionAndIndex(
-        final Validator validator, final int committeePosition, final int validatorIndex) {
+        final Validator validator,
+        final int committeePosition,
+        final int validatorIndex,
+        final int committeeSize) {
       this.validator = validator;
       this.committeePosition = committeePosition;
       this.validatorIndex = validatorIndex;
+      this.committeeSize = committeeSize;
     }
 
     public Signer getSigner() {
@@ -189,6 +203,10 @@ public class AttestationProductionDuty implements Duty {
 
     public int getValidatorIndex() {
       return validatorIndex;
+    }
+
+    public int getCommitteeSize() {
+      return committeeSize;
     }
 
     @Override
