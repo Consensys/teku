@@ -33,8 +33,8 @@ import picocli.CommandLine.Unmatched;
 import tech.pegasys.teku.cli.converter.LogTypeConverter;
 import tech.pegasys.teku.cli.converter.MetricCategoryConverter;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
+import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.BeaconRestApiOptions;
-import tech.pegasys.teku.cli.options.DataOptions;
 import tech.pegasys.teku.cli.options.DataStorageOptions;
 import tech.pegasys.teku.cli.options.DepositOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
@@ -159,7 +159,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   private MetricsOptions metricsOptions;
 
   @Mixin(name = "Data")
-  private DataOptions dataOptions;
+  private BeaconNodeDataOptions dataOptions;
 
   @Mixin(name = "Data Storage")
   private DataStorageOptions dataStorageOptions;
@@ -326,6 +326,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       builder.globalConfig(this::buildGlobalConfiguration);
       weakSubjectivityOptions.configure(builder);
       validatorOptions.configure(builder);
+      dataOptions.configure(builder);
 
       return builder.build();
     } catch (IllegalArgumentException e) {
@@ -378,7 +379,6 @@ public class BeaconNodeCommand implements Callable<Integer> {
         .setMetricsInterface(metricsOptions.getMetricsInterface())
         .setMetricsCategories(metricsOptions.getMetricsCategories())
         .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist())
-        .setDataPath(dataOptions.getDataPath())
         .setDataStorageMode(dataStorageOptions.getDataStorageMode())
         .setDataStorageFrequency(dataStorageOptions.getDataStorageFrequency())
         .setDataStorageCreateDbVersion(dataStorageOptions.getCreateDbVersion())

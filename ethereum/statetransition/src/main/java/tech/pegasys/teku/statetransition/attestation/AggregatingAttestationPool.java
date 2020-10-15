@@ -28,12 +28,15 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.core.operationvalidators.AttestationDataStateTransitionValidator;
 import tech.pegasys.teku.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlockBodyLists;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
@@ -52,10 +55,18 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
   private final NavigableMap<UInt64, Set<Bytes>> dataHashBySlot = new TreeMap<>();
   private final AttestationDataStateTransitionValidator attestationDataValidator;
   private final AtomicInteger size = new AtomicInteger(0);
+  private final SettableGauge sizeGauge;
 
   public AggregatingAttestationPool(
-      final AttestationDataStateTransitionValidator attestationDataValidator) {
+      final AttestationDataStateTransitionValidator attestationDataValidator,
+      final MetricsSystem metricsSystem) {
     this.attestationDataValidator = attestationDataValidator;
+    this.sizeGauge =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "attestation_pool_size",
+            "The number of attestations available to be included in proposed blocks");
   }
 
   public synchronized void add(final ValidateableAttestation attestation) {
@@ -76,7 +87,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
                                         "ValidateableAttestation does not have a randao mix."))))
             .add(attestation);
     if (add) {
-      size.incrementAndGet();
+      updateSize(1);
     }
     dataHashBySlot
         .computeIfAbsent(attestationData.getSlot(), slot -> new HashSet<>())
@@ -109,11 +120,16 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
       return;
     }
     final int numRemoved = attestations.remove(attestation);
-    size.addAndGet(-numRemoved);
+    updateSize(-numRemoved);
     if (attestations.isEmpty()) {
       attestationGroupByDataHash.remove(dataRoot);
       removeFromSlotMappings(attestationData.getSlot(), dataRoot);
     }
+  }
+
+  private void updateSize(final int delta) {
+    final int currentSize = size.addAndGet(delta);
+    sizeGauge.set(currentSize);
   }
 
   private void removeFromSlotMappings(final UInt64 slot, final Bytes32 dataRoot) {

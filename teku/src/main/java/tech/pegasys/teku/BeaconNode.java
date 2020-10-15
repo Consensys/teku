@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.BeaconNodeServiceController;
 import tech.pegasys.teku.util.cli.VersionProvider;
 import tech.pegasys.teku.util.config.Constants;
@@ -80,7 +81,8 @@ public class BeaconNode implements Node {
             eventBus,
             eventChannels,
             metricsSystem,
-            globalConfig);
+            globalConfig,
+            DataDirLayout.createFrom(tekuConfig.dataConfig()));
     tekuConfig.validate();
     Constants.setConstants(globalConfig.getConstants());
 
@@ -92,7 +94,7 @@ public class BeaconNode implements Node {
     }
 
     this.serviceController = new BeaconNodeServiceController(tekuConfig, serviceConfig);
-    STATUS_LOG.dataPathSet(serviceConfig.getConfig().getDataPath());
+    STATUS_LOG.beaconDataPathSet(serviceConfig.getDataDirLayout().getBeaconDataDirectory());
   }
 
   @Override

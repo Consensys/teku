@@ -44,7 +44,7 @@ import tech.pegasys.teku.storage.server.rocksdb.RocksDbConfiguration;
  * database creation.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class DatabaseMetadata {
+public class V5DatabaseMetadata {
 
   @VisibleForTesting static final String HOT_DB_CONFIGURATION_KEY = "hotDbConfiguration";
 
@@ -54,8 +54,8 @@ public class DatabaseMetadata {
   @JsonProperty("archiveDbConfiguration")
   private RocksDbConfiguration archiveDbConfiguration = new RocksDbConfiguration();
 
-  public static DatabaseMetadata v5Defaults() {
-    final DatabaseMetadata metadata = new DatabaseMetadata();
+  public static V5DatabaseMetadata v5Defaults() {
+    final V5DatabaseMetadata metadata = new V5DatabaseMetadata();
     metadata.hotDbConfiguration = RocksDbConfiguration.v5HotDefaults();
     metadata.archiveDbConfiguration = RocksDbConfiguration.v5ArchiveDefaults();
     return metadata;
@@ -69,14 +69,14 @@ public class DatabaseMetadata {
     return archiveDbConfiguration;
   }
 
-  public static DatabaseMetadata init(final File source, final DatabaseMetadata defaultValue)
+  public static V5DatabaseMetadata init(final File source, final V5DatabaseMetadata defaultValue)
       throws IOException {
     final ObjectMapper objectMapper =
         new ObjectMapper(new YAMLFactory().disable(WRITE_DOC_START_MARKER));
     if (source.exists()) {
-      return objectMapper.readerFor(DatabaseMetadata.class).readValue(source);
+      return objectMapper.readerFor(V5DatabaseMetadata.class).readValue(source);
     } else {
-      objectMapper.writerFor(DatabaseMetadata.class).writeValue(source, defaultValue);
+      objectMapper.writerFor(V5DatabaseMetadata.class).writeValue(source, defaultValue);
       return defaultValue;
     }
   }

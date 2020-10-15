@@ -19,9 +19,10 @@ public enum DatabaseVersion {
   NOOP("noop"),
   V3("3.0"),
   V4("4"),
-  V5("5");
+  V5("5"),
+  V6("6");
 
-  public static final DatabaseVersion DEFAULT_VERSION = DatabaseVersion.V5;
+  public static final DatabaseVersion DEFAULT_VERSION = DatabaseVersion.V6;
   private String value;
 
   DatabaseVersion(final String value) {
