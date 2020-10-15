@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.util.config;
 
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -70,7 +69,6 @@ public class GlobalConfigurationBuilder {
   private String metricsInterface;
   private List<String> metricsCategories;
   private List<String> metricsHostAllowlist;
-  private String dataPath;
   private StateStorageMode dataStorageMode;
   private String dataStorageCreateDbVersion;
   private int hotStatePersistenceFrequencyInEpochs;
@@ -82,7 +80,6 @@ public class GlobalConfigurationBuilder {
   private String restApiInterface;
   private List<String> restApiHostAllowlist;
   private NetworkDefinition network;
-  private Path validatorsSlashingProtectionPath;
 
   public GlobalConfigurationBuilder setConstants(final String constants) {
     this.constants = constants;
@@ -311,12 +308,6 @@ public class GlobalConfigurationBuilder {
     return this;
   }
 
-  public GlobalConfigurationBuilder setDataPath(final String dataPath) {
-    this.dataPath = dataPath;
-    this.setValidatorsSlashingProtectionPath(Path.of(dataPath, "validators", "slashprotection"));
-    return this;
-  }
-
   public GlobalConfigurationBuilder setDataStorageMode(final StateStorageMode dataStorageMode) {
     this.dataStorageMode = dataStorageMode;
     return this;
@@ -373,12 +364,6 @@ public class GlobalConfigurationBuilder {
 
   public GlobalConfigurationBuilder setNetwork(final NetworkDefinition network) {
     this.network = network;
-    return this;
-  }
-
-  public GlobalConfigurationBuilder setValidatorsSlashingProtectionPath(
-      final Path validatorsSlashingProtectionPath) {
-    this.validatorsSlashingProtectionPath = validatorsSlashingProtectionPath;
     return this;
   }
 
@@ -445,7 +430,6 @@ public class GlobalConfigurationBuilder {
         metricsInterface,
         metricsCategories,
         metricsHostAllowlist,
-        dataPath,
         dataStorageMode,
         dataStorageFrequency,
         dataStorageCreateDbVersion,
@@ -455,8 +439,7 @@ public class GlobalConfigurationBuilder {
         restApiDocsEnabled,
         restApiEnabled,
         restApiInterface,
-        restApiHostAllowlist,
-        validatorsSlashingProtectionPath);
+        restApiHostAllowlist);
   }
 
   private <T> T getOrDefault(final T explicitValue, final Supplier<T> predefinedNetworkValue) {

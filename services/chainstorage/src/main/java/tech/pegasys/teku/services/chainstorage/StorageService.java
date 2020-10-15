@@ -47,7 +47,7 @@ public class StorageService extends Service {
           final VersionedDatabaseFactory dbFactory =
               new VersionedDatabaseFactory(
                   serviceConfig.getMetricsSystem(),
-                  serviceConfig.getConfig().getDataPath(),
+                  serviceConfig.getDataDirLayout().getBeaconDataDirectory(),
                   Optional.empty(),
                   serviceConfig.getConfig().getDataStorageMode(),
                   serviceConfig.getConfig().getDataStorageCreateDbVersion(),

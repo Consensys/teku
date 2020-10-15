@@ -14,6 +14,7 @@
 package tech.pegasys.teku.config;
 
 import java.util.function.Consumer;
+import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.services.beaconchain.BeaconChainConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 import tech.pegasys.teku.util.config.GlobalConfigurationBuilder;
@@ -24,18 +25,21 @@ import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 public class TekuConfiguration {
   private final GlobalConfiguration globalConfiguration;
   private final WeakSubjectivityConfig weakSubjectivityConfig;
+  private final DataConfig dataConfig;
   private final BeaconChainConfiguration beaconChainConfig;
   private final ValidatorClientConfiguration validatorClientConfig;
 
   private TekuConfiguration(
       GlobalConfiguration globalConfiguration,
       WeakSubjectivityConfig weakSubjectivityConfig,
-      final ValidatorConfig validatorConfig) {
+      final ValidatorConfig validatorConfig,
+      final DataConfig dataConfig) {
     this.globalConfiguration = globalConfiguration;
     this.weakSubjectivityConfig = weakSubjectivityConfig;
+    this.dataConfig = dataConfig;
     this.beaconChainConfig = new BeaconChainConfiguration(weakSubjectivityConfig, validatorConfig);
     this.validatorClientConfig =
-        new ValidatorClientConfiguration(globalConfiguration, validatorConfig);
+        new ValidatorClientConfiguration(globalConfiguration, validatorConfig, dataConfig);
   }
 
   public static Builder builder() {
@@ -58,16 +62,21 @@ public class TekuConfiguration {
     return validatorClientConfig;
   }
 
+  public DataConfig dataConfig() {
+    return dataConfig;
+  }
+
   public void validate() {
     globalConfiguration.validate();
   }
 
   public static class Builder {
-    private GlobalConfigurationBuilder globalConfigurationBuilder =
+    private final GlobalConfigurationBuilder globalConfigurationBuilder =
         new GlobalConfigurationBuilder();
-    private WeakSubjectivityConfig.Builder weakSubjectivityBuilder =
+    private final WeakSubjectivityConfig.Builder weakSubjectivityBuilder =
         WeakSubjectivityConfig.builder();
-    private ValidatorConfig.Builder validatorConfigBuilder = ValidatorConfig.builder();
+    private final ValidatorConfig.Builder validatorConfigBuilder = ValidatorConfig.builder();
+    private final DataConfig.Builder dataConfigBuilder = DataConfig.builder();
 
     private Builder() {}
 
@@ -75,7 +84,8 @@ public class TekuConfiguration {
       return new TekuConfiguration(
           globalConfigurationBuilder.build(),
           weakSubjectivityBuilder.build(),
-          validatorConfigBuilder.build());
+          validatorConfigBuilder.build(),
+          dataConfigBuilder.build());
     }
 
     public Builder globalConfig(final Consumer<GlobalConfigurationBuilder> globalConfigConsumer) {
@@ -91,6 +101,11 @@ public class TekuConfiguration {
 
     public Builder validator(final Consumer<ValidatorConfig.Builder> validatorConfigConsumer) {
       validatorConfigConsumer.accept(validatorConfigBuilder);
+      return this;
+    }
+
+    public Builder data(final Consumer<DataConfig.Builder> dataConfigConsumer) {
+      dataConfigConsumer.accept(dataConfigBuilder);
       return this;
     }
   }
