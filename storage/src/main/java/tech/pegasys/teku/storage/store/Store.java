@@ -134,7 +134,7 @@ class Store implements UpdatableStore {
             blockProvider);
   }
 
-  public static SafeFuture<UpdatableStore> create(
+  public static UpdatableStore create(
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final BlockProvider blockProvider,
@@ -174,23 +174,22 @@ class Store implements UpdatableStore {
       LOG.warn("Ignoring {} non-canonical blocks", childToParentRoot.size() - blockTree.size());
     }
 
-    return SafeFuture.completedFuture(
-        new Store(
-            metricsSystem,
-            config.getHotStatePersistenceFrequencyInEpochs(),
-            blockProvider,
-            stateAndBlockProvider,
-            stateTaskQueue,
-            time,
-            genesisTime,
-            justifiedCheckpoint,
-            finalizedCheckpoint,
-            bestJustifiedCheckpoint,
-            blockTree,
-            finalizedBlockAndState,
-            votes,
-            blocks,
-            checkpointStateTaskQueue));
+    return new Store(
+        metricsSystem,
+        config.getHotStatePersistenceFrequencyInEpochs(),
+        blockProvider,
+        stateAndBlockProvider,
+        stateTaskQueue,
+        time,
+        genesisTime,
+        justifiedCheckpoint,
+        finalizedCheckpoint,
+        bestJustifiedCheckpoint,
+        blockTree,
+        finalizedBlockAndState,
+        votes,
+        blocks,
+        checkpointStateTaskQueue);
   }
 
   /**
