@@ -63,7 +63,7 @@ public class GetAttestationData extends AbstractHandler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Produce an AttestationData.",
+      summary = "Produce an AttestationData",
       tags = {TAG_V1_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       queryParams = {
         @OpenApiParam(
