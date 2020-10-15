@@ -61,8 +61,7 @@ public class ValidatorClientService extends Service {
     final EventChannels eventChannels = services.getEventChannels();
     final MetricsSystem metricsSystem = services.getMetricsSystem();
     final AsyncRunner asyncRunner = services.createAsyncRunner("validator");
-    final DataDirLayout dataDirLayout = DataDirLayout.createFrom(config.getDataConfig());
-    final Path slashingProtectionPath = getSlashingProtectionPath(dataDirLayout);
+    final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
     final SlashingProtector slashingProtector =
         new SlashingProtector(new SyncDataAccessor(), slashingProtectionPath);
     final ValidatorLoader validatorLoader = new ValidatorLoader(slashingProtector, asyncRunner);
