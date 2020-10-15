@@ -171,6 +171,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
             .gossipHistoryLength(config.getGossipConfig().getHistory())
             .heartbeatInterval(config.getGossipConfig().getHeartbeatInterval())
             .floodPublish(true)
+            .seenTTL(config.getGossipConfig().getSeenTTL())
             .build();
 
     GossipRouter router = new GossipRouter(gossipParams);
