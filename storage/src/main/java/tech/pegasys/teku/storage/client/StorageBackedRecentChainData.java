@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.client;
 
-import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -36,6 +35,7 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.StoreConfig;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.config.Constants;
 
 public class StorageBackedRecentChainData extends RecentChainData {
@@ -137,25 +137,25 @@ public class StorageBackedRecentChainData extends RecentChainData {
 
   private SafeFuture<RecentChainData> processStoreFuture(
       SafeFuture<Optional<StoreBuilder>> storeFuture) {
-    return storeFuture.thenCompose(
+    return storeFuture.thenApply(
         maybeStoreBuilder -> {
           if (maybeStoreBuilder.isEmpty()) {
             STATUS_LOG.finishInitializingChainData();
-            return completedFuture(this);
+            return this;
           }
-          return maybeStoreBuilder
-              .get()
-              .asyncRunner(asyncRunner)
-              .blockProvider(blockProvider)
-              .stateProvider(stateProvider)
-              .storeConfig(storeConfig)
-              .build()
-              .thenApply(
-                  store -> {
-                    setStore(store);
-                    STATUS_LOG.finishInitializingChainData();
-                    return this;
-                  });
+
+          final UpdatableStore store =
+              maybeStoreBuilder
+                  .get()
+                  .asyncRunner(asyncRunner)
+                  .blockProvider(blockProvider)
+                  .stateProvider(stateProvider)
+                  .storeConfig(storeConfig)
+                  .build();
+
+          setStore(store);
+          STATUS_LOG.finishInitializingChainData();
+          return this;
         });
   }
 

@@ -20,6 +20,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
+import tech.pegasys.teku.bls.BLSConstants;
+import tech.pegasys.teku.bls.impl.DeserializeException;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.blst.swig.BLST_ERROR;
 import tech.pegasys.teku.bls.impl.blst.swig.blst;
@@ -73,7 +75,7 @@ public class BlstPublicKey implements PublicKey {
       return new BlstPublicKey(ecPoint);
     } else {
       ecPoint.delete();
-      throw new IllegalArgumentException("Invalid PublicKey bytes: " + compressed);
+      throw new DeserializeException("Invalid PublicKey bytes: " + compressed);
     }
   }
 
@@ -83,7 +85,12 @@ public class BlstPublicKey implements PublicKey {
     List<BlstPublicKey> finitePublicKeys =
         publicKeys.stream().filter(pk -> !pk.isInfinity()).collect(Collectors.toList());
     if (finitePublicKeys.isEmpty()) {
-      return BlstPublicKey.INFINITY;
+      return INFINITY;
+    }
+    if (!BLSConstants.VALID_INFINITY && finitePublicKeys.size() < publicKeys.size()) {
+      // if the Infinity is not a valid public key then aggregating with any
+      // non-valid pubkey should result to a non-valid pubkey
+      return INFINITY;
     }
 
     p1 sum = new p1();

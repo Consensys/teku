@@ -63,7 +63,7 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
     when(context.pathParamMap()).thenReturn(Map.of("epoch", "100"));
     when(context.body()).thenReturn("[\"2\"]");
     List<AttesterDuty> duties =
-        List.of(getDuty(2, 1, 2, 3, compute_start_slot_at_epoch(UInt64.valueOf(100))));
+        List.of(getDuty(2, 1, 2, 10, 3, compute_start_slot_at_epoch(UInt64.valueOf(100))));
     when(validatorDataProvider.getAttesterDuties(eq(UInt64.valueOf(100)), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(duties)));
 
@@ -91,6 +91,7 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
       final long validatorIndex,
       final long committeeIndex,
       final long committeeLength,
+      final int committeesAtSlot,
       final long validatorCommitteeIndex,
       final UInt64 slot) {
     return new AttesterDuty(
@@ -98,6 +99,7 @@ public class PostAttesterDutiesTest extends AbstractValidatorApiTest {
         UInt64.valueOf(validatorIndex),
         UInt64.valueOf(committeeIndex),
         UInt64.valueOf(committeeLength),
+        UInt64.valueOf(committeesAtSlot),
         UInt64.valueOf(validatorCommitteeIndex),
         slot);
   }

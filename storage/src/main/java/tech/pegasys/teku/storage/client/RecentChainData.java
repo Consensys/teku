@@ -121,27 +121,26 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     bestBlockInitialized.always(runnable);
   }
 
-  public SafeFuture<Void> initializeFromGenesis(final BeaconState genesisState) {
+  public void initializeFromGenesis(final BeaconState genesisState) {
     final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisState);
-    return StoreBuilder.forkChoiceStoreBuilder(
-            asyncRunner, metricsSystem, blockProvider, stateProvider, genesis)
-        .storeConfig(storeConfig)
-        .build()
-        .thenAccept(
-            store -> {
-              final boolean result = setStore(store);
-              if (!result) {
-                throw new IllegalStateException(
-                    "Failed to set genesis state: store has already been initialized");
-              }
+    final UpdatableStore store =
+        StoreBuilder.forkChoiceStoreBuilder(
+                asyncRunner, metricsSystem, blockProvider, stateProvider, genesis)
+            .storeConfig(storeConfig)
+            .build();
 
-              storageUpdateChannel.onGenesis(genesis);
-              eventBus.post(genesis);
+    final boolean result = setStore(store);
+    if (!result) {
+      throw new IllegalStateException(
+          "Failed to set genesis state: store has already been initialized");
+    }
 
-              // The genesis state is by definition finalized so just get the root from there.
-              final SignedBlockAndState headBlock = store.getLatestFinalizedBlockAndState();
-              updateHead(headBlock.getRoot(), headBlock.getSlot());
-            });
+    storageUpdateChannel.onGenesis(genesis);
+    eventBus.post(genesis);
+
+    // The genesis state is by definition finalized so just get the root from there.
+    final SignedBlockAndState headBlock = store.getLatestFinalizedBlockAndState();
+    updateHead(headBlock.getRoot(), headBlock.getSlot());
   }
 
   public UInt64 getGenesisTime() {

@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
@@ -41,12 +40,12 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.Fork;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -68,8 +67,14 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<ForkInfo>> getForkInfo() {
-    return asyncRunner.runAsync(() -> apiClient.getFork().map(this::mapGetForkResponse));
+  public SafeFuture<Optional<Fork>> getFork() {
+    return asyncRunner.runAsync(
+        () ->
+            apiClient
+                .getFork()
+                .map(
+                    result ->
+                        new Fork(result.previous_version, result.current_version, result.epoch)));
   }
 
   @Override
@@ -82,11 +87,6 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                     response ->
                         new GenesisData(
                             response.data.genesisTime, response.data.genesisValidatorsRoot)));
-  }
-
-  private ForkInfo mapGetForkResponse(final GetForkResponse response) {
-    final Fork fork = new Fork(response.previous_version, response.current_version, response.epoch);
-    return new ForkInfo(fork, response.genesis_validators_root);
   }
 
   @Override
@@ -189,6 +189,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
         attesterDuty.validatorIndex.intValue(),
         attesterDuty.committeeLength.intValue(),
         attesterDuty.committeeIndex.intValue(),
+        attesterDuty.committeesAtSlot.intValue(),
         attesterDuty.validatorCommitteeIndex.intValue(),
         attesterDuty.slot);
   }
@@ -282,12 +283,9 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToBeaconCommitteeForAggregation(
-      final int committeeIndex, final UInt64 aggregationSlot) {
+  public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
     asyncRunner
-        .runAsync(
-            () ->
-                apiClient.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot))
+        .runAsync(() -> apiClient.subscribeToBeaconCommittee(requests))
         .finish(
             error -> LOG.error("Failed to subscribe to beacon committee for aggregation", error));
   }

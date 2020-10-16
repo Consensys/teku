@@ -11,13 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.blockimport;
+package tech.pegasys.teku.api.response.v1.validator;
 
-import tech.pegasys.teku.core.results.BlockImportResult;
-import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.events.ChannelInterface;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import tech.pegasys.teku.api.schema.Attestation;
 
-public interface BlockImportChannel extends ChannelInterface {
-  SafeFuture<BlockImportResult> importBlock(SignedBeaconBlock block);
+public class GetAggregatedAttestationResponse {
+  @JsonProperty("data")
+  public final Attestation data;
+
+  @JsonCreator
+  public GetAggregatedAttestationResponse(@JsonProperty("data") final Attestation data) {
+    this.data = data;
+  }
+
+  public Attestation getData() {
+    return data;
+  }
 }

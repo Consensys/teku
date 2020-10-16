@@ -38,7 +38,7 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
+import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService.SyncSubscriber;
 import tech.pegasys.teku.sync.SyncingStatus;

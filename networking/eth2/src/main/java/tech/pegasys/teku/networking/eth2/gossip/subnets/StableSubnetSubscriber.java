@@ -11,9 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client;
+package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import static java.lang.Integer.min;
+import static java.util.Collections.emptySet;
 import static tech.pegasys.teku.util.config.Constants.ATTESTATION_SUBNET_COUNT;
 import static tech.pegasys.teku.util.config.Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION;
 import static tech.pegasys.teku.util.config.Constants.RANDOM_SUBNETS_PER_VALIDATOR;
@@ -28,13 +29,15 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.IntStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class StableSubnetSubscriber {
+  private static final Logger LOG = LogManager.getLogger();
 
-  private final ValidatorApiChannel validatorApiChannel;
+  private final AttestationTopicSubscriber persistentSubnetSubscriber;
   private final Set<Integer> availableSubnetIndices = new HashSet<>();
   private final NavigableSet<SubnetSubscription> subnetSubscriptions =
       new TreeSet<>(
@@ -42,12 +45,11 @@ public class StableSubnetSubscriber {
               .thenComparing(SubnetSubscription::getSubnetId));
   private final Random random;
 
-  private volatile int validatorCount;
+  private volatile int validatorCount = 0;
 
   public StableSubnetSubscriber(
-      ValidatorApiChannel validatorApiChannel, Random random, int validatorCount) {
-    this.validatorApiChannel = validatorApiChannel;
-    this.validatorCount = validatorCount;
+      final AttestationTopicSubscriber persistentSubnetSubscriber, final Random random) {
+    this.persistentSubnetSubscriber = persistentSubnetSubscriber;
     this.random = random;
     IntStream.range(0, ATTESTATION_SUBNET_COUNT).forEach(availableSubnetIndices::add);
   }
@@ -71,7 +73,7 @@ public class StableSubnetSubscriber {
     Set<SubnetSubscription> newSubnetSubscriptions =
         adjustNumberOfSubscriptionsToNumberOfValidators(slot, validatorCount);
     if (!newSubnetSubscriptions.isEmpty()) {
-      validatorApiChannel.subscribeToPersistentSubnets(newSubnetSubscriptions);
+      persistentSubnetSubscriber.subscribeToPersistentSubnets(newSubnetSubscriptions);
     }
   }
 
@@ -90,6 +92,13 @@ public class StableSubnetSubscriber {
     int totalNumberOfSubscriptions =
         min(ATTESTATION_SUBNET_COUNT, RANDOM_SUBNETS_PER_VALIDATOR * validatorCount);
 
+    if (subnetSubscriptions.size() == totalNumberOfSubscriptions) {
+      return emptySet();
+    }
+    LOG.info(
+        "Updating number of persistent subnet subscriptions from {} to {}",
+        subnetSubscriptions.size(),
+        totalNumberOfSubscriptions);
     Set<SubnetSubscription> newSubnetSubscriptions = new HashSet<>();
 
     while (subnetSubscriptions.size() != totalNumberOfSubscriptions) {
@@ -106,7 +115,7 @@ public class StableSubnetSubscriber {
    * Subscribes to a new random subnetId, if any subnetID is available. Returns the new
    * SubnetSubscription object.
    *
-   * @param currentSlot
+   * @param currentSlot the current slot
    */
   private SubnetSubscription subscribeToNewRandomSubnet(UInt64 currentSlot) {
     int newSubnetId =

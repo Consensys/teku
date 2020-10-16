@@ -342,7 +342,7 @@ balances: [32000000000, 32000000000, 32000000000, 32000000000, 32000000000, 3200
   32000000000, 32000000000, 32000000000, 32000000000, 32000000000, 32000000000, 32000000000,
   32000000000, 32000000000, 32062500000, 32000000000, 32000000000, 32000000000, 32000000000,
   32000000000, 32000000000, 32000000000, 32000000000, 32000000000, 32000000000, 32000000000,
-  32000000000, 31000000000]
+  32000000000, 31500000000]
 randao_mixes: ['0xdadadadadadadadadadadadadadadadadadadadadadadadadadadadadadadada',
   '0xdadadadadadadadadadadadadadadadadadadadadadadadadadadadadadadada', '0xdadadadadadadadadadadadadadadadadadadadadadadadadadadadadadadada',
   '0xdadadadadadadadadadadadadadadadadadadadadadadadadadadadadadadada', '0xdadadadadadadadadadadadadadadadadadadadadadadadadadadadadadadada',
