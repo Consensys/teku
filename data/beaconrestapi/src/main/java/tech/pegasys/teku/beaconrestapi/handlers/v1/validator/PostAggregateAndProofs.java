@@ -19,7 +19,8 @@ import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.http.Context;
@@ -56,9 +57,10 @@ public class PostAggregateAndProofs implements Handler {
       path = ROUTE,
       method = HttpMethod.POST,
       summary = "Publish aggregate and proofs",
-      tags = {TAG_VALIDATOR},
+      tags = {TAG_V1_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       requestBody =
-          @OpenApiRequestBody(content = {@OpenApiContent(from = SignedAggregateAndProof.class)}),
+          @OpenApiRequestBody(
+              content = {@OpenApiContent(from = SignedAggregateAndProof.class, isArray = true)}),
       description =
           "Verifies given aggregate and proofs and publishes it on appropriate gossipsub topic.",
       responses = {
