@@ -87,6 +87,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
       assertThat(finishedProcessingFuture).isNotDone();
     }
     complete();
+    close();
 
     asyncRequestRunner.waitForExactly(maxChunks - 1);
     assertThat(finishedProcessingFuture).isNotDone();
@@ -98,6 +99,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     assertThat(finishedProcessingFuture).isCompletedWithValue(null);
     assertThat(reqHandler.getState()).isIn(State.CLOSED, State.READ_COMPLETE);
     assertThat(blocks.size()).isEqualTo(3);
+    verify(rpcStream, never()).closeAbruptly();
   }
 
   @Test
@@ -110,6 +112,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
       assertThat(finishedProcessingFuture).isNotDone();
     }
     complete();
+    close();
 
     asyncRequestRunner.waitForExactly(maxChunks - 1);
     assertThat(finishedProcessingFuture).isNotDone();
@@ -140,6 +143,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     assertThat(finishedProcessingFuture).isNotDone();
     deliverError();
     complete();
+    close();
 
     asyncRequestRunner.waitForExactly(1);
     Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
@@ -165,6 +169,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
       }
     }
     complete();
+    close();
 
     asyncRequestRunner.waitForExactly(maxChunks - 1);
     timeoutRunner.executeUntilDone();
@@ -249,6 +254,23 @@ public abstract class Eth2OutgoingRequestHandlerTest
   }
 
   @Test
+  public void abortsWhenNoReadComplete() throws Exception {
+    sendInitialPayload();
+
+    timeProvider.advanceTimeByMillis(100);
+    for (int i = 0; i < maxChunks; i++) {
+      deliverChunk(i);
+    }
+
+    asyncRequestRunner.executeQueuedActions();
+
+    // Run timeouts
+    timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis());
+    timeoutRunner.executeDueActions();
+    verify(rpcStream).closeAbruptly();
+  }
+
+  @Test
   public void doNotDisconnectsIfSecondChunkReceivedInTime() throws Exception {
     sendInitialPayload();
 
@@ -297,6 +319,10 @@ public abstract class Eth2OutgoingRequestHandlerTest
 
   private void complete() {
     reqHandler.readComplete(nodeId, rpcStream);
+  }
+
+  private void close() {
+    reqHandler.closed(nodeId, rpcStream);
   }
 
   public static class Eth2OutgoingRequestHandlerTest_ssz extends Eth2OutgoingRequestHandlerTest {
