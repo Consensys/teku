@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +28,7 @@ import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
@@ -75,7 +78,6 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
             duty.getCommitteeIndex(),
             duty.getValidatorCommitteeIndex(),
             duty.getCommitteeLength(),
-            duty.getCommiteesAtSlot(),
             duty.getValidatorIndex(),
             validator,
             duty.getSlot());
@@ -96,7 +98,6 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
       final int attestationCommitteeIndex,
       final int attestationCommitteePosition,
       final int attestationCommitteeSize,
-      final int committeesAtSlot,
       final int validatorIndex,
       final Validator validator,
       final UInt64 slot) {
@@ -106,7 +107,6 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
         attestationCommitteeIndex,
         attestationCommitteePosition,
         attestationCommitteeSize,
-        committeesAtSlot,
         validatorIndex);
   }
 
@@ -124,14 +124,21 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
         .thenCompose(forkInfo -> validator.getSigner().signAggregationSlot(slot, forkInfo))
         .thenAccept(
             slotSignature -> {
-              if (CommitteeUtil.isAggregator(slotSignature, aggregatorModulo)) {
+              final boolean isAggregator = isAggregator(slotSignature, aggregatorModulo);
+              beaconCommitteeSubscriptions.subscribeToBeaconCommittee(
+                  new CommitteeSubscriptionRequest(
+                      validatorIndex,
+                      attestationCommitteeIndex,
+                      UInt64.valueOf(committeesAtSlot),
+                      slot,
+                      isAggregator));
+              if (isAggregator) {
                 scheduledDuties.scheduleAggregationDuties(
                     slot,
                     validator,
                     validatorIndex,
                     slotSignature,
                     attestationCommitteeIndex,
-                    committeesAtSlot,
                     unsignedAttestationFuture);
               }
             })

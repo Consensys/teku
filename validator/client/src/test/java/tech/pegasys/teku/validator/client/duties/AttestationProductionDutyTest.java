@@ -42,7 +42,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -56,12 +55,9 @@ class AttestationProductionDutyTest {
   private final ForkProvider forkProvider = mock(ForkProvider.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
-  private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
-      mock(BeaconCommitteeSubscriptions.class);
 
   private final AttestationProductionDuty duty =
-      new AttestationProductionDuty(
-          SLOT, forkProvider, validatorApiChannel, beaconCommitteeSubscriptions);
+      new AttestationProductionDuty(SLOT, forkProvider, validatorApiChannel);
 
   @BeforeEach
   public void setUp() {
@@ -81,29 +77,13 @@ class AttestationProductionDutyTest {
   }
 
   @Test
-  void shouldSubscribeToBeaconCommittee() {
-    final Validator validator = createValidator();
-    final int committeesAtSlot = 20;
-    final int committeeIndex = 0;
-    final int validatorIndex = 10;
-    assertThat(
-            duty.addValidator(validator, committeeIndex, 5, committeesAtSlot, validatorIndex, 11))
-        .isNotDone();
-
-    verify(beaconCommitteeSubscriptions)
-        .subscribeToBeaconCommittee(
-            new CommitteeSubscriptionRequest(
-                validatorIndex, committeeIndex, UInt64.valueOf(committeesAtSlot), SLOT, false));
-  }
-
-  @Test
   public void shouldFailWhenUnsignedAttestationCanNotBeCreated() {
     final Validator validator = createValidator();
     when(validatorApiChannel.createAttestationData(SLOT, 0))
         .thenReturn(completedFuture(Optional.empty()));
 
     final SafeFuture<Optional<AttestationData>> attestationFuture =
-        duty.addValidator(validator, 0, 5, 20, 10, 11);
+        duty.addValidator(validator, 0, 5, 10, 11);
     performAndReportDuty();
 
     assertThat(attestationFuture).isCompletedWithValue(Optional.empty());
@@ -130,13 +110,12 @@ class AttestationProductionDutyTest {
 
     final SafeFuture<Optional<AttestationData>> attestationResult1 =
         duty.addValidator(
-            validator1, validator1CommitteeIndex, validator1CommitteePosition, 20, 10, 11);
+            validator1, validator1CommitteeIndex, validator1CommitteePosition, 10, 11);
     final SafeFuture<Optional<AttestationData>> attestationResult2 =
         duty.addValidator(
             validator2,
             validator2CommitteeIndex,
             validator2CommitteePosition,
-            20,
             10,
             validator2CommitteeSize);
 
@@ -173,13 +152,12 @@ class AttestationProductionDutyTest {
 
     final SafeFuture<Optional<AttestationData>> attestationResult1 =
         duty.addValidator(
-            validator1, validator1CommitteeIndex, validator1CommitteePosition, 20, 10, 11);
+            validator1, validator1CommitteeIndex, validator1CommitteePosition, 10, 11);
     final SafeFuture<Optional<AttestationData>> attestationResult2 =
         duty.addValidator(
             validator2,
             validator2CommitteeIndex,
             validator2CommitteePosition,
-            20,
             10,
             validator2CommitteeSize);
 
@@ -217,20 +195,10 @@ class AttestationProductionDutyTest {
 
     final SafeFuture<Optional<AttestationData>> attestationResult1 =
         duty.addValidator(
-            validator1,
-            committeeIndex,
-            validator1CommitteePosition,
-            20,
-            10,
-            validator1CommitteeSize);
+            validator1, committeeIndex, validator1CommitteePosition, 10, validator1CommitteeSize);
     final SafeFuture<Optional<AttestationData>> attestationResult2 =
         duty.addValidator(
-            validator2,
-            committeeIndex,
-            validator2CommitteePosition,
-            20,
-            10,
-            validator2CommitteeSize);
+            validator2, committeeIndex, validator2CommitteePosition, 10, validator2CommitteeSize);
 
     performAndReportDuty();
     assertThat(attestationResult1).isCompletedWithValue(Optional.of(attestationData));
@@ -257,7 +225,7 @@ class AttestationProductionDutyTest {
         expectSignAttestation(validator, committeePosition, committeeSize, attestationData);
 
     final SafeFuture<Optional<AttestationData>> attestationResult =
-        duty.addValidator(validator, committeeIndex, committeePosition, 20, 10, committeeSize);
+        duty.addValidator(validator, committeeIndex, committeePosition, 10, committeeSize);
     performAndReportDuty();
     assertThat(attestationResult).isCompletedWithValue(Optional.of(attestationData));
 
@@ -292,13 +260,13 @@ class AttestationProductionDutyTest {
 
     final SafeFuture<Optional<AttestationData>> attestationResult1 =
         duty.addValidator(
-            validator1, committeeIndex, validator1CommitteePosition, 20, 10, committeeSize);
+            validator1, committeeIndex, validator1CommitteePosition, 10, committeeSize);
     final SafeFuture<Optional<AttestationData>> attestationResult2 =
         duty.addValidator(
-            validator2, committeeIndex, validator2CommitteePosition, 20, 10, committeeSize);
+            validator2, committeeIndex, validator2CommitteePosition, 10, committeeSize);
     final SafeFuture<Optional<AttestationData>> attestationResult3 =
         duty.addValidator(
-            validator3, committeeIndex, validator3CommitteePosition, 20, 10, committeeSize);
+            validator3, committeeIndex, validator3CommitteePosition, 10, committeeSize);
     performAndReportDuty();
     assertThat(attestationResult1).isCompletedWithValue(Optional.of(attestationData));
     assertThat(attestationResult2).isCompletedWithValue(Optional.of(attestationData));
@@ -343,13 +311,13 @@ class AttestationProductionDutyTest {
 
     final SafeFuture<Optional<AttestationData>> attestationResult1 =
         duty.addValidator(
-            validator1, committeeIndex1, validator1CommitteePosition, 20, 10, committeeSize1);
+            validator1, committeeIndex1, validator1CommitteePosition, 10, committeeSize1);
     final SafeFuture<Optional<AttestationData>> attestationResult2 =
         duty.addValidator(
-            validator2, committeeIndex2, validator2CommitteePosition, 20, 10, committeeSize2);
+            validator2, committeeIndex2, validator2CommitteePosition, 10, committeeSize2);
     final SafeFuture<Optional<AttestationData>> attestationResult3 =
         duty.addValidator(
-            validator3, committeeIndex1, validator3CommitteePosition, 20, 10, committeeSize1);
+            validator3, committeeIndex1, validator3CommitteePosition, 10, committeeSize1);
 
     performAndReportDuty();
     assertThat(attestationResult1).isCompletedWithValue(Optional.of(unsignedAttestation1));
