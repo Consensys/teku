@@ -37,6 +37,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAggregateAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttestationData;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock;
@@ -165,6 +166,11 @@ public class BeaconRestApiV1Test {
   @Test
   public void shouldHavePostAttestationDataEndpoint() {
     verify(app).post(eq(PostAttesterDuties.ROUTE), any(PostAttesterDuties.class));
+  }
+
+  @Test
+  public void shouldHaveGetAggregateAttestationEndpoint() {
+    verify(app).get(eq(GetAggregateAttestation.ROUTE), any(GetAggregateAttestation.class));
   }
 
   @Test

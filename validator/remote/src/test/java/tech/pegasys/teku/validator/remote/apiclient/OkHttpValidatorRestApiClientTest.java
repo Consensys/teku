@@ -37,6 +37,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
@@ -572,7 +573,9 @@ class OkHttpValidatorRestApiClientTest {
     final Attestation expectedAttestation = schemaObjects.attestation();
 
     mockWebServer.enqueue(
-        new MockResponse().setResponseCode(200).setBody(asJson(expectedAttestation)));
+        new MockResponse()
+            .setResponseCode(200)
+            .setBody(asJson(new GetAggregatedAttestationResponse(expectedAttestation))));
 
     final Optional<Attestation> attestation = apiClient.createAggregate(attestationHashTreeRoot);
 
