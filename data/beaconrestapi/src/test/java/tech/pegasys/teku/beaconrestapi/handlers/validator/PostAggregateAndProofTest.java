@@ -90,13 +90,13 @@ class PostAggregateAndProofTest {
 
     handler.handle(context);
 
-    ArgumentCaptor<tech.pegasys.teku.api.schema.SignedAggregateAndProof> captor =
-        ArgumentCaptor.forClass(tech.pegasys.teku.api.schema.SignedAggregateAndProof.class);
+    ArgumentCaptor<List<tech.pegasys.teku.api.schema.SignedAggregateAndProof>> captor =
+        ArgumentCaptor.forClass(List.class);
 
-    verify(provider).sendAggregateAndProofs(List.of(captor.capture()));
+    verify(provider).sendAggregateAndProofs(captor.capture());
     verify(context).status(SC_OK);
 
-    assertThat(jsonProvider.objectToJSON(captor.getValue()))
+    assertThat(jsonProvider.objectToJSON(captor.getValue().get(0)))
         .isEqualTo(signedAggregateAndProofAsJson);
   }
 }
