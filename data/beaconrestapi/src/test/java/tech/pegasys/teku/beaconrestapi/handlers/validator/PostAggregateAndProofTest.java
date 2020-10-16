@@ -77,6 +77,7 @@ class PostAggregateAndProofTest {
     verify(context).status(SC_INTERNAL_SERVER_ERROR);
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void shouldReturnSuccessWhenSendAggregateAndProofSucceeds() throws Exception {
     final SignedAggregateAndProof signedAggregateAndProof =
