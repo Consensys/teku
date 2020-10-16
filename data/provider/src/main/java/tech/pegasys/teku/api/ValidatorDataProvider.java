@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
+import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -203,6 +204,20 @@ public class ValidatorDataProvider {
   public void sendAggregateAndProof(SignedAggregateAndProof aggregateAndProof) {
     validatorApiChannel.sendAggregateAndProof(
         aggregateAndProof.asInternalSignedAggregateAndProof());
+  }
+
+  public void subscribeToBeaconCommittee(final List<BeaconCommitteeSubscriptionRequest> requests) {
+    validatorApiChannel.subscribeToBeaconCommittee(
+        requests.stream()
+            .map(
+                request ->
+                    new CommitteeSubscriptionRequest(
+                        request.validator_index,
+                        request.committee_index,
+                        request.committees_at_slot,
+                        request.slot,
+                        request.is_aggregator))
+            .collect(toList()));
   }
 
   public void subscribeToBeaconCommitteeForAggregation(

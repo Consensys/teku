@@ -33,6 +33,7 @@ import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.ValidatorDuties;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public interface ValidatorRestApiClient {
@@ -65,12 +66,7 @@ public interface ValidatorRestApiClient {
 
   void sendAggregateAndProof(SignedAggregateAndProof signedAggregateAndProof);
 
-  void subscribeToBeaconCommittee(
-      int validatorIndex,
-      int committeeIndex,
-      UInt64 committeesAtSlot,
-      UInt64 slot,
-      boolean isAggregator);
+  void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 
   void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 }
