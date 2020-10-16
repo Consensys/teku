@@ -13,23 +13,34 @@
 
 package tech.pegasys.teku.cli.options;
 
+import java.nio.file.Path;
 import picocli.CommandLine.Option;
+import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
 import tech.pegasys.teku.util.cli.VersionProvider;
 
-public class DataOptions {
+public abstract class DataOptions {
 
   @Option(
-      names = {"--data-path"},
+      names = {"--data-base-path", "--data-path"},
       paramLabel = "<FILENAME>",
-      description = "Path to output data files",
+      description = "Path to the base directory for storage",
       arity = "1")
-  private String dataPath = defaultDataPath();
+  private Path dataBasePath = defaultDataPath();
 
-  public String getDataPath() {
-    return dataPath;
+  public DataConfig getDataConfig() {
+    return configure(DataConfig.builder()).build();
   }
 
-  private static String defaultDataPath() {
-    return VersionProvider.defaultStoragePath() + System.getProperty("file.separator") + "data";
+  public void configure(TekuConfiguration.Builder builder) {
+    builder.data(this::configure);
+  }
+
+  protected DataConfig.Builder configure(final DataConfig.Builder config) {
+    return config.dataBasePath(dataBasePath);
+  }
+
+  private static Path defaultDataPath() {
+    return Path.of(VersionProvider.defaultStoragePath());
   }
 }

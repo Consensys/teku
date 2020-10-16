@@ -25,7 +25,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
-import tech.pegasys.teku.cli.options.DataOptions;
+import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.DataStorageOptions;
 import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.core.lookup.BlockProvider;
@@ -37,6 +37,7 @@ import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.ScheduledExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
@@ -74,7 +75,7 @@ public class DebugDbCommand implements Runnable {
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
   public int getDeposits(
-      @Mixin final DataOptions dataOptions,
+      @Mixin final BeaconNodeDataOptions dataOptions,
       @Mixin final DataStorageOptions dataStorageOptions,
       @Mixin final NetworkOptions networkOptions)
       throws Exception {
@@ -100,7 +101,7 @@ public class DebugDbCommand implements Runnable {
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
   public int getFinalizedState(
-      @Mixin final DataOptions dataOptions,
+      @Mixin final BeaconNodeDataOptions dataOptions,
       @Mixin final DataStorageOptions dataStorageOptions,
       @Mixin final NetworkOptions networkOptions,
       @Option(
@@ -136,7 +137,7 @@ public class DebugDbCommand implements Runnable {
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
   public int getLatestFinalizedState(
-      @Mixin final DataOptions dataOptions,
+      @Mixin final BeaconNodeDataOptions dataOptions,
       @Mixin final DataStorageOptions dataStorageOptions,
       @Mixin final NetworkOptions networkOptions,
       @Option(
@@ -156,11 +157,7 @@ public class DebugDbCommand implements Runnable {
               .createMemoryStore()
               .map(
                   builder ->
-                      builder
-                          .blockProvider(BlockProvider.NOOP)
-                          .asyncRunner(asyncRunner)
-                          .build()
-                          .join())
+                      builder.blockProvider(BlockProvider.NOOP).asyncRunner(asyncRunner).build())
               .map(store -> store.getLatestFinalizedBlockAndState().getState());
       return writeState(outputFile, state);
     } finally {
@@ -181,7 +178,7 @@ public class DebugDbCommand implements Runnable {
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
   public int getForkChoiceSnapshot(
-      @Mixin final DataOptions dataOptions,
+      @Mixin final BeaconNodeDataOptions dataOptions,
       @Mixin final DataStorageOptions dataStorageOptions,
       @Mixin final NetworkOptions networkOptions,
       @Option(
@@ -214,13 +211,13 @@ public class DebugDbCommand implements Runnable {
   }
 
   private Database createDatabase(
-      final DataOptions dataOptions,
+      final BeaconNodeDataOptions dataOptions,
       final DataStorageOptions dataStorageOptions,
       final NetworkOptions networkOptions) {
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
-            dataOptions.getDataPath(),
+            DataDirLayout.createFrom(dataOptions.getDataConfig()).getBeaconDataDirectory(),
             dataStorageOptions.getDataStorageMode(),
             NetworkDefinition.fromCliArg(networkOptions.getNetwork())
                 .getEth1DepositContractAddress()

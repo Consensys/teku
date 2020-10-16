@@ -99,7 +99,7 @@ public class WeakSubjectivityValidator {
     }
 
     return chainData
-        .getBlockInEffectAtSlot(wsCheckpoint.getEpochStartSlot())
+        .getFinalizedBlockInEffectAtSlot(wsCheckpoint.getEpochStartSlot())
         .thenAccept(
             maybeBlock -> {
               // We must have a block at this slot because we know this epoch is finalized

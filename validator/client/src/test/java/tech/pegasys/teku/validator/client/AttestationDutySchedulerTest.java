@@ -34,7 +34,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -42,9 +42,12 @@ import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.duties.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.AttestationProductionDuty;
+import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
 public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
+  private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
+      mock(BeaconCommitteeSubscriptions.class);
   private final AttestationDutyScheduler dutyScheduler =
       new AttestationDutyScheduler(
           metricsSystem,
@@ -55,8 +58,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
                   forkProvider,
                   () -> new ScheduledDuties(dutyFactory),
                   Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
-                  validatorIndexProvider)),
-          stableSubnetSubscriber);
+                  validatorIndexProvider,
+                  beaconCommitteeSubscriptions)));
 
   @BeforeEach
   public void init() {
@@ -239,8 +242,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
                     forkProvider,
                     () -> scheduledDuties,
                     Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
-                    validatorIndexProvider)),
-            stableSubnetSubscriber);
+                    validatorIndexProvider,
+                    beaconCommitteeSubscriptions)));
     final SafeFuture<Optional<List<AttesterDuties>>> epoch0Duties = new SafeFuture<>();
 
     when(validatorApiChannel.getAttestationDuties(eq(ZERO), any())).thenReturn(epoch0Duties);
@@ -263,8 +266,10 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   @Test
   public void shouldNotPerformDutiesForSameSlotTwice() {
     final UInt64 attestationProductionSlot = UInt64.valueOf(5);
+    final int committeesAtSlot = 15;
     final AttesterDuties validator1Duties =
-        new AttesterDuties(VALIDATOR1_KEY, 5, 10, 3, 6, attestationProductionSlot);
+        new AttesterDuties(
+            VALIDATOR1_KEY, 5, 10, 3, committeesAtSlot, 6, attestationProductionSlot);
     when(validatorApiChannel.getAttestationDuties(eq(ZERO), any()))
         .thenReturn(completedFuture(Optional.of(List.of(validator1Duties))));
 
@@ -275,7 +280,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
 
     // Load duties
     dutyScheduler.onSlot(compute_start_slot_at_epoch(ZERO));
-    verify(attestationDuty).addValidator(validator1, 3, 6, 5);
+    verify(attestationDuty).addValidator(validator1, 3, 6, 5, 10);
 
     // Execute
     dutyScheduler.onAttestationCreationDue(attestationProductionSlot);
@@ -293,23 +298,28 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final int validator1Index = 5;
     final int validator1Committee = 3;
     final int validator1CommitteePosition = 9;
+    final int validator1CommitteeSize = 10;
     final int validator2Index = 6;
     final int validator2Committee = 4;
     final int validator2CommitteePosition = 8;
+    final int validator2CommitteeSize = 11;
+    final int committeesAtSlot = 15;
     final AttesterDuties validator1Duties =
         new AttesterDuties(
             VALIDATOR1_KEY,
             validator1Index,
-            10,
+            validator1CommitteeSize,
             validator1Committee,
+            committeesAtSlot,
             validator1CommitteePosition,
             attestationSlot);
     final AttesterDuties validator2Duties =
         new AttesterDuties(
             VALIDATOR2_KEY,
             validator2Index,
-            10,
+            validator2CommitteeSize,
             validator2Committee,
+            committeesAtSlot,
             validator2CommitteePosition,
             attestationSlot);
     when(validatorApiChannel.getAttestationDuties(eq(ZERO), any()))
@@ -325,10 +335,18 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     // Both validators should be scheduled to create an attestation in the same slot
     verify(attestationDuty)
         .addValidator(
-            validator1, validator1Committee, validator1CommitteePosition, validator1Index);
+            validator1,
+            validator1Committee,
+            validator1CommitteePosition,
+            validator1Index,
+            validator1CommitteeSize);
     verify(attestationDuty)
         .addValidator(
-            validator2, validator2Committee, validator2CommitteePosition, validator2Index);
+            validator2,
+            validator2Committee,
+            validator2CommitteePosition,
+            validator2Index,
+            validator2CommitteeSize);
 
     // Execute
     dutyScheduler.onAttestationCreationDue(attestationSlot);
@@ -341,23 +359,28 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final int validator1Index = 5;
     final int validator1Committee = 3;
     final int validator1CommitteePosition = 9;
+    final int validator1CommitteeSize = 10;
     final int validator2Index = 6;
     final int validator2Committee = 4;
     final int validator2CommitteePosition = 8;
+    final int validator2CommitteeSize = 11;
+    final int committeesAtSlot = 15;
     final AttesterDuties validator1Duties =
         new AttesterDuties(
             VALIDATOR1_KEY,
             validator1Index,
-            10,
+            validator1CommitteeSize,
             validator1Committee,
+            committeesAtSlot,
             validator1CommitteePosition,
             attestationSlot);
     final AttesterDuties validator2Duties =
         new AttesterDuties(
             VALIDATOR2_KEY,
             validator2Index,
-            10,
+            validator2CommitteeSize,
             validator2Committee,
+            committeesAtSlot,
             validator2CommitteePosition,
             attestationSlot);
     when(validatorApiChannel.getAttestationDuties(eq(ZERO), any()))
@@ -373,10 +396,18 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     // Both validators should be scheduled to create an attestation in the same slot
     verify(attestationDuty)
         .addValidator(
-            validator1, validator1Committee, validator1CommitteePosition, validator1Index);
+            validator1,
+            validator1Committee,
+            validator1CommitteePosition,
+            validator1Index,
+            validator1CommitteeSize);
     verify(attestationDuty)
         .addValidator(
-            validator2, validator2Committee, validator2CommitteePosition, validator2Index);
+            validator2,
+            validator2Committee,
+            validator2CommitteePosition,
+            validator2Index,
+            validator2CommitteeSize);
 
     // Execute
     dutyScheduler.onAttestationCreationDue(attestationSlot);
@@ -389,23 +420,28 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final int validator1Index = 5;
     final int validator1Committee = 3;
     final int validator1CommitteePosition = 9;
+    final int validator1CommitteeSize = 10;
     final int validator2Index = 6;
     final int validator2Committee = 4;
     final int validator2CommitteePosition = 8;
+    final int validator2CommitteeSize = 11;
+    final int committeesAtSlot = 15;
     final AttesterDuties validator1Duties =
         new AttesterDuties(
             VALIDATOR1_KEY,
             validator1Index,
-            10,
+            validator1CommitteeSize,
             validator1Committee,
+            committeesAtSlot,
             validator1CommitteePosition,
             attestationSlot);
     final AttesterDuties validator2Duties =
         new AttesterDuties(
             VALIDATOR2_KEY,
             validator2Index,
-            10,
+            validator2CommitteeSize,
             validator2Committee,
+            committeesAtSlot,
             validator2CommitteePosition,
             attestationSlot);
     when(validatorApiChannel.getAttestationDuties(eq(ZERO), any()))
@@ -421,10 +457,18 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     // Both validators should be scheduled to create an attestation in the same slot
     verify(attestationDuty)
         .addValidator(
-            validator1, validator1Committee, validator1CommitteePosition, validator1Index);
+            validator1,
+            validator1Committee,
+            validator1CommitteePosition,
+            validator1Index,
+            validator1CommitteeSize);
     verify(attestationDuty)
         .addValidator(
-            validator2, validator2Committee, validator2CommitteePosition, validator2Index);
+            validator2,
+            validator2Committee,
+            validator2CommitteePosition,
+            validator2Index,
+            validator2CommitteeSize);
 
     // Execute
     dutyScheduler.onAttestationCreationDue(attestationSlot);
@@ -440,24 +484,29 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     final int validator1Index = 5;
     final int validator1Committee = 3;
     final int validator1CommitteePosition = 9;
+    final int validator1CommitteeSize = 1; // Guaranteed to be an aggregator
     final int validator2Index = 6;
     final int validator2Committee = 4;
     final int validator2CommitteePosition = 8;
+    final int validator2CommitteeSize = 1000000000; // Won't be an aggregator
+    final int committeesAtSlot = 15;
 
     final AttesterDuties validator1Duties =
         new AttesterDuties(
             VALIDATOR1_KEY,
             validator1Index,
-            1, // Guaranteed to be an aggregator
+            validator1CommitteeSize,
             validator1Committee,
+            committeesAtSlot,
             validator1CommitteePosition,
             attestationSlot);
     final AttesterDuties validator2Duties =
         new AttesterDuties(
             VALIDATOR2_KEY,
             validator2Index,
-            1000000000, // Won't be an aggregator
+            validator2CommitteeSize,
             validator2Committee,
+            committeesAtSlot,
             validator2CommitteePosition,
             attestationSlot);
     when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
@@ -469,14 +518,18 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     when(validator2.getSigner().signAggregationSlot(attestationSlot, fork))
         .thenReturn(completedFuture(dataStructureUtil.randomSignature()));
 
-    final SafeFuture<Optional<Attestation>> unsignedAttestationFuture = new SafeFuture<>();
+    final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture = new SafeFuture<>();
     final AggregationDuty aggregationDuty = mock(AggregationDuty.class);
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
     when(dutyFactory.createAttestationProductionDuty(attestationSlot)).thenReturn(attestationDuty);
     when(dutyFactory.createAggregationDuty(attestationSlot)).thenReturn(aggregationDuty);
     when(aggregationDuty.performDuty()).thenReturn(new SafeFuture<>());
     when(attestationDuty.addValidator(
-            validator1, validator1Committee, validator1CommitteePosition, validator1Index))
+            validator1,
+            validator1Committee,
+            validator1CommitteePosition,
+            validator1Index,
+            validator1CommitteeSize))
         .thenReturn(unsignedAttestationFuture);
 
     // Load duties

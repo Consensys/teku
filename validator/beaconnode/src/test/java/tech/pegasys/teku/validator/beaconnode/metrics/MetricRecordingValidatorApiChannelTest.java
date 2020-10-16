@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.beaconnode.metrics;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -24,11 +25,13 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
+import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -116,7 +119,7 @@ class MetricRecordingValidatorApiChannelTest {
     return Stream.of(
         noResponseTest(
             "subscribeToBeaconCommitteeForAggregation",
-            channel -> channel.subscribeToBeaconCommitteeForAggregation(1, UInt64.ZERO),
+            channel -> channel.subscribeToBeaconCommittee(emptyList()),
             MetricRecordingValidatorApiChannel.AGGREGATION_SUBSCRIPTION_COUNTER_NAME),
         noResponseTest(
             "subscribeToPersistentSubnets",
@@ -146,14 +149,14 @@ class MetricRecordingValidatorApiChannelTest {
     return Stream.of(
         requestDataTest(
             "getForkInfo",
-            ValidatorApiChannel::getForkInfo,
+            ValidatorApiChannel::getFork,
             MetricRecordingValidatorApiChannel.FORK_REQUESTS_COUNTER_NAME,
-            dataStructureUtil.randomForkInfo()),
+            dataStructureUtil.randomFork()),
         requestDataTest(
-            "getGenesisTime",
-            ValidatorApiChannel::getGenesisTime,
+            "getGenesisData",
+            ValidatorApiChannel::getGenesisData,
             MetricRecordingValidatorApiChannel.GENESIS_TIME_REQUESTS_COUNTER_NAME,
-            dataStructureUtil.randomUInt64()),
+            new GenesisData(dataStructureUtil.randomUInt64(), Bytes32.random())),
         requestDataTest(
             "getDuties",
             channel -> channel.getDuties(slot, Collections.emptyList()),

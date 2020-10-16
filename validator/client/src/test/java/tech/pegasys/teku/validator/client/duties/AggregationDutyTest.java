@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.client.duties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -35,6 +34,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
 import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
@@ -80,40 +80,20 @@ class AggregationDutyTest {
   }
 
   @Test
-  public void shouldSubscribeToCommitteeTopicWhenNewCommitteeAdded() {
-    final int committeeIndex = 2;
-    duty.addValidator(
-        validator1, 1, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
-    verify(validatorApiChannel).subscribeToBeaconCommitteeForAggregation(committeeIndex, SLOT);
-  }
-
-  @Test
-  public void shouldNotSubscribeToCommitteeTopicWhenAdditionalValidatorAdded() {
-    final int committeeIndex = 2;
-    duty.addValidator(
-        validator1, 1, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
-    duty.addValidator(
-        validator2, 2, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
-
-    verify(validatorApiChannel, times(1))
-        .subscribeToBeaconCommitteeForAggregation(committeeIndex, SLOT);
-  }
-
-  @Test
   public void shouldProduceAggregateAndProof() {
     final int validatorIndex = 1;
     final int attestationCommitteeIndex = 2;
     final BLSSignature proof = dataStructureUtil.randomSignature();
-    final Attestation unsignedAttestation = dataStructureUtil.randomAttestation();
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final Attestation aggregate = dataStructureUtil.randomAttestation();
     duty.addValidator(
         validator1,
         validatorIndex,
         proof,
         attestationCommitteeIndex,
-        completedFuture(Optional.of(unsignedAttestation)));
+        completedFuture(Optional.of(attestationData)));
 
-    when(validatorApiChannel.createAggregate(unsignedAttestation.getData().hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(attestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(aggregate)));
 
     final AggregateAndProof expectedAggregateAndProof =
@@ -139,8 +119,8 @@ class AggregationDutyTest {
     final int validator2CommitteeIndex = 0;
     final BLSSignature validator2Proof = dataStructureUtil.randomSignature();
 
-    final Attestation committee1UnsignedAttestation = dataStructureUtil.randomAttestation();
-    final Attestation committee2UnsignedAttestation = dataStructureUtil.randomAttestation();
+    final AttestationData committee1AttestationData = dataStructureUtil.randomAttestationData();
+    final AttestationData committee2AttestationData = dataStructureUtil.randomAttestationData();
     final Attestation committee1Aggregate = dataStructureUtil.randomAttestation();
     final Attestation committee2Aggregate = dataStructureUtil.randomAttestation();
     duty.addValidator(
@@ -148,19 +128,17 @@ class AggregationDutyTest {
         validator1Index,
         validator1Proof,
         validator1CommitteeIndex,
-        completedFuture(Optional.of(committee1UnsignedAttestation)));
+        completedFuture(Optional.of(committee1AttestationData)));
     duty.addValidator(
         validator2,
         validator2Index,
         validator2Proof,
         validator2CommitteeIndex,
-        completedFuture(Optional.of(committee2UnsignedAttestation)));
+        completedFuture(Optional.of(committee2AttestationData)));
 
-    when(validatorApiChannel.createAggregate(
-            committee1UnsignedAttestation.getData().hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(committee1AttestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(committee1Aggregate)));
-    when(validatorApiChannel.createAggregate(
-            committee2UnsignedAttestation.getData().hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(committee2AttestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(committee2Aggregate)));
 
     final AggregateAndProof aggregateAndProof1 =
@@ -197,22 +175,22 @@ class AggregationDutyTest {
     final int validator2Index = 6;
     final BLSSignature validator2Proof = dataStructureUtil.randomSignature();
 
-    final Attestation unsignedAttestation = dataStructureUtil.randomAttestation();
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     final Attestation aggregate = dataStructureUtil.randomAttestation();
     duty.addValidator(
         validator1,
         validator1Index,
         validator1Proof,
         committeeIndex,
-        completedFuture(Optional.of(unsignedAttestation)));
+        completedFuture(Optional.of(attestationData)));
     duty.addValidator(
         validator2,
         validator2Index,
         validator2Proof,
         committeeIndex,
-        completedFuture(Optional.of(unsignedAttestation)));
+        completedFuture(Optional.of(attestationData)));
 
-    when(validatorApiChannel.createAggregate(unsignedAttestation.getData().hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(attestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(aggregate)));
 
     final AggregateAndProof aggregateAndProof =
@@ -234,10 +212,9 @@ class AggregationDutyTest {
   }
 
   @Test
-  public void shouldFailWhenUnsignedAttestationNotCreated() {
+  public void shouldFailWhenAttestationDataNotCreated() {
     duty.addValidator(
         validator1, 1, dataStructureUtil.randomSignature(), 2, completedFuture(Optional.empty()));
-    verify(validatorApiChannel).subscribeToBeaconCommitteeForAggregation(anyInt(), any());
 
     performAndReportDuty();
 
@@ -247,7 +224,7 @@ class AggregationDutyTest {
   }
 
   @Test
-  public void shouldFailWhenUnsignedAttestationCompletesExceptionally() {
+  public void shouldFailWhenAttestationDataCompletesExceptionally() {
     final RuntimeException exception = new RuntimeException("Doh!");
     duty.addValidator(
         validator1, 1, dataStructureUtil.randomSignature(), 2, failedFuture(exception));
@@ -260,14 +237,14 @@ class AggregationDutyTest {
 
   @Test
   public void shouldReportWhenAggregateNotCreated() {
-    final Attestation unsignedAttestation = dataStructureUtil.randomAttestation();
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     duty.addValidator(
         validator1,
         1,
         dataStructureUtil.randomSignature(),
         2,
-        completedFuture(Optional.of(unsignedAttestation)));
-    when(validatorApiChannel.createAggregate(unsignedAttestation.getData().hashTreeRoot()))
+        completedFuture(Optional.of(attestationData)));
+    when(validatorApiChannel.createAggregate(attestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.empty()));
 
     assertThat(duty.performDuty()).isCompleted();
@@ -279,14 +256,14 @@ class AggregationDutyTest {
   @Test
   public void shouldFailWhenAggregateFails() {
     final Exception exception = new RuntimeException("Whoops");
-    final Attestation unsignedAttestation = dataStructureUtil.randomAttestation();
+    final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     duty.addValidator(
         validator1,
         1,
         dataStructureUtil.randomSignature(),
         2,
-        completedFuture(Optional.of(unsignedAttestation)));
-    when(validatorApiChannel.createAggregate(unsignedAttestation.getData().hashTreeRoot()))
+        completedFuture(Optional.of(attestationData)));
+    when(validatorApiChannel.createAggregate(attestationData.hashTreeRoot()))
         .thenReturn(failedFuture(exception));
 
     performAndReportDuty();

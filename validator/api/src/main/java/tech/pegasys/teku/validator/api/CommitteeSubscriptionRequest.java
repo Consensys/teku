@@ -17,21 +17,45 @@ import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class BeaconCommitteeSubscription {
-  private final int committeeIndex;
-  private final UInt64 slot;
+public class CommitteeSubscriptionRequest {
 
-  public BeaconCommitteeSubscription(final int committeeIndex, final UInt64 slot) {
+  private final int validatorIndex;
+  private final int committeeIndex;
+  private final UInt64 committeesAtSlot;
+  private final UInt64 slot;
+  private final boolean isAggregator;
+
+  public CommitteeSubscriptionRequest(
+      final int validatorIndex,
+      final int committeeIndex,
+      final UInt64 committeesAtSlot,
+      final UInt64 slot,
+      final boolean isAggregator) {
+    this.validatorIndex = validatorIndex;
     this.committeeIndex = committeeIndex;
+    this.committeesAtSlot = committeesAtSlot;
     this.slot = slot;
+    this.isAggregator = isAggregator;
+  }
+
+  public int getValidatorIndex() {
+    return validatorIndex;
   }
 
   public int getCommitteeIndex() {
     return committeeIndex;
   }
 
+  public UInt64 getCommitteesAtSlot() {
+    return committeesAtSlot;
+  }
+
   public UInt64 getSlot() {
     return slot;
+  }
+
+  public boolean isAggregator() {
+    return isAggregator;
   }
 
   @Override
@@ -42,20 +66,27 @@ public class BeaconCommitteeSubscription {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final BeaconCommitteeSubscription that = (BeaconCommitteeSubscription) o;
-    return committeeIndex == that.committeeIndex && Objects.equals(slot, that.slot);
+    final CommitteeSubscriptionRequest that = (CommitteeSubscriptionRequest) o;
+    return validatorIndex == that.validatorIndex
+        && committeeIndex == that.committeeIndex
+        && isAggregator == that.isAggregator
+        && Objects.equals(committeesAtSlot, that.committeesAtSlot)
+        && Objects.equals(slot, that.slot);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(committeeIndex, slot);
+    return Objects.hash(validatorIndex, committeeIndex, committeesAtSlot, slot, isAggregator);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
+        .add("validatorIndex", validatorIndex)
         .add("committeeIndex", committeeIndex)
+        .add("committeesAtSlot", committeesAtSlot)
         .add("slot", slot)
+        .add("isAggregator", isAggregator)
         .toString();
   }
 }

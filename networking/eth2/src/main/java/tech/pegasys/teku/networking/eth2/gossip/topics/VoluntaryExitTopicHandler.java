@@ -32,14 +32,14 @@ public class VoluntaryExitTopicHandler
   private final VoluntaryExitValidator validator;
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
-  private final GossipedOperationConsumer<SignedVoluntaryExit> consumer;
+  private final GossipedItemConsumer<SignedVoluntaryExit> consumer;
 
   public VoluntaryExitTopicHandler(
       final AsyncRunner asyncRunner,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final VoluntaryExitValidator validator,
-      final GossipedOperationConsumer<SignedVoluntaryExit> consumer) {
+      final GossipedItemConsumer<SignedVoluntaryExit> consumer) {
     super(asyncRunner);
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkInfo.getForkDigest();

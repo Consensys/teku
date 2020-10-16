@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.remote.apiclient;
 
 import static java.util.Collections.emptyMap;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_AGGREGATE;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DATA;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_FORK;
@@ -26,7 +27,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLOCK;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_COMMITTEE_FOR_AGGREGATION;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_PERSISTENT_SUBNETS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -48,19 +49,22 @@ import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
-import tech.pegasys.teku.api.response.GetForkResponse;
+import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
+import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
+import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
@@ -68,6 +72,7 @@ import tech.pegasys.teku.api.schema.ValidatorDuties;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
@@ -88,8 +93,9 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public Optional<GetForkResponse> getFork() {
-    return get(GET_FORK, EMPTY_QUERY_PARAMS, GetForkResponse.class);
+  public Optional<Fork> getFork() {
+    return get(GET_FORK, Map.of("state_id", "head"), EMPTY_QUERY_PARAMS, GetStateForkResponse.class)
+        .map(GetStateForkResponse::getData);
   }
 
   @Override
@@ -170,6 +176,16 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
+  public Optional<AttestationData> createAttestationData(
+      final UInt64 slot, final int committeeIndex) {
+    final Map<String, String> queryParams = new HashMap<>();
+    queryParams.put("slot", encodeQueryParam(slot));
+    queryParams.put("committee_index", String.valueOf(committeeIndex));
+
+    return get(GET_ATTESTATION_DATA, queryParams, AttestationData.class);
+  }
+
+  @Override
   public void sendSignedAttestation(final Attestation attestation) {
     post(SEND_SIGNED_ATTESTATION, attestation, null);
   }
@@ -180,20 +196,29 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     queryParams.put("slot", encodeQueryParam(UInt64.ZERO));
     queryParams.put("attestation_data_root", encodeQueryParam(attestationHashTreeRoot));
 
-    return get(GET_AGGREGATE, queryParams, Attestation.class);
+    return get(GET_AGGREGATE, queryParams, GetAggregatedAttestationResponse.class)
+        .map(result -> result.data);
   }
 
   @Override
   public void sendAggregateAndProof(final SignedAggregateAndProof signedAggregateAndProof) {
-    post(SEND_SIGNED_AGGREGATE_AND_PROOF, signedAggregateAndProof, null);
+    post(SEND_SIGNED_AGGREGATE_AND_PROOF, List.of(signedAggregateAndProof), null);
   }
 
   @Override
-  public void subscribeToBeaconCommitteeForAggregation(
-      final int committeeIndex, final UInt64 aggregationSlot) {
-    final SubscribeToBeaconCommitteeRequest request =
-        new SubscribeToBeaconCommitteeRequest(committeeIndex, aggregationSlot);
-    post(SUBSCRIBE_TO_COMMITTEE_FOR_AGGREGATION, request, null);
+  public void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests) {
+    final BeaconCommitteeSubscriptionRequest[] body =
+        requests.stream()
+            .map(
+                request ->
+                    new BeaconCommitteeSubscriptionRequest(
+                        request.getValidatorIndex(),
+                        request.getCommitteeIndex(),
+                        request.getCommitteesAtSlot(),
+                        request.getSlot(),
+                        request.isAggregator()))
+            .toArray(BeaconCommitteeSubscriptionRequest[]::new);
+    post(SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET, body, null);
   }
 
   @Override
