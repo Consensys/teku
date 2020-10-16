@@ -557,19 +557,14 @@ class RemoteValidatorApiHandlerTest {
     final UInt64 aggregationSlot = UInt64.ONE;
     final boolean isAggregator = true;
     final UInt64 committeesAtSlot = UInt64.valueOf(23);
-    apiHandler.subscribeToBeaconCommittee(
+    final List<CommitteeSubscriptionRequest> requests =
         List.of(
             new CommitteeSubscriptionRequest(
-                validatorIndex, committeeIndex, committeesAtSlot, aggregationSlot, isAggregator)));
+                validatorIndex, committeeIndex, committeesAtSlot, aggregationSlot, isAggregator));
+    apiHandler.subscribeToBeaconCommittee(requests);
     asyncRunner.executeQueuedActions();
 
-    verify(apiClient)
-        .subscribeToBeaconCommittee(
-            eq(validatorIndex),
-            eq(committeeIndex),
-            eq(committeesAtSlot),
-            eq(aggregationSlot),
-            eq(isAggregator));
+    verify(apiClient).subscribeToBeaconCommittee(requests);
   }
 
   @Test

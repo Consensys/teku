@@ -68,9 +68,9 @@ class ScheduledDutiesTest {
     when(dutyFactory.createAttestationProductionDuty(ONE)).thenReturn(duty1);
     when(dutyFactory.createAttestationProductionDuty(TWO)).thenReturn(duty2);
 
-    ignoreFuture(duties.scheduleAttestationProduction(ZERO, validator, 0, 0, 10, 5));
-    ignoreFuture(duties.scheduleAttestationProduction(ONE, validator, 0, 0, 10, 5));
-    ignoreFuture(duties.scheduleAttestationProduction(TWO, validator, 0, 0, 10, 5));
+    ignoreFuture(duties.scheduleAttestationProduction(ZERO, validator, 0, 0, 10, 20, 5));
+    ignoreFuture(duties.scheduleAttestationProduction(ONE, validator, 0, 0, 10, 20, 5));
+    ignoreFuture(duties.scheduleAttestationProduction(TWO, validator, 0, 0, 10, 20, 5));
 
     duties.produceAttestations(ONE);
     verify(duty1).performDuty();
