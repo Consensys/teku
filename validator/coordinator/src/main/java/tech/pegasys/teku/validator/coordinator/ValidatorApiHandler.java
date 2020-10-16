@@ -56,7 +56,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
@@ -130,9 +130,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<ForkInfo>> getForkInfo() {
+  public SafeFuture<Optional<Fork>> getFork() {
     return SafeFuture.completedFuture(
-        combinedChainDataClient.getBestState().map(BeaconState::getForkInfo));
+        combinedChainDataClient.getBestState().map(BeaconState::getFork));
   }
 
   @Override

@@ -33,8 +33,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
-import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
@@ -42,6 +42,7 @@ import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
+import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
@@ -77,7 +78,8 @@ class OkHttpValidatorRestApiClientTest {
     RecordedRequest request = mockWebServer.takeRequest();
 
     assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_FORK.getPath(emptyMap()));
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.GET_FORK.getPath(Map.of("state_id", "head")));
   }
 
   @Test
@@ -98,14 +100,15 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void getFork_WhenSuccess_ReturnsForkResponse() {
-    final GetForkResponse getForkResponse = schemaObjects.getForkResponse();
+    final GetStateForkResponse getStateForkResponse = schemaObjects.getStateForkResponse();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody(asJson(getForkResponse)));
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(200).setBody(asJson(getStateForkResponse)));
 
-    Optional<GetForkResponse> fork = apiClient.getFork();
+    Optional<Fork> fork = apiClient.getFork();
 
     assertThat(fork).isPresent();
-    assertThat(fork.get()).usingRecursiveComparison().isEqualTo(getForkResponse);
+    assertThat(fork.get()).isEqualTo(getStateForkResponse.data);
   }
 
   @Test
