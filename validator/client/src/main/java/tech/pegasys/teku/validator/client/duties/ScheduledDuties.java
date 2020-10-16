@@ -46,7 +46,6 @@ public class ScheduledDuties {
       final int attestationCommitteeIndex,
       final int attestationCommitteePosition,
       final int attestationCommitteeSize,
-      final int committeesAtSlot,
       final int validatorIndex) {
     return attestationProductionDuties
         .computeIfAbsent(slot, dutyFactory::createAttestationProductionDuty)
@@ -54,7 +53,6 @@ public class ScheduledDuties {
             validator,
             attestationCommitteeIndex,
             attestationCommitteePosition,
-            committeesAtSlot,
             validatorIndex,
             attestationCommitteeSize);
   }
@@ -65,7 +63,6 @@ public class ScheduledDuties {
       final int validatorIndex,
       final BLSSignature slotSignature,
       final int attestationCommitteeIndex,
-      final int committeesAtSlot,
       final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture) {
     aggregationDuties
         .computeIfAbsent(slot, dutyFactory::createAggregationDuty)
@@ -74,7 +71,6 @@ public class ScheduledDuties {
             validatorIndex,
             slotSignature,
             attestationCommitteeIndex,
-            committeesAtSlot,
             unsignedAttestationFuture);
   }
 

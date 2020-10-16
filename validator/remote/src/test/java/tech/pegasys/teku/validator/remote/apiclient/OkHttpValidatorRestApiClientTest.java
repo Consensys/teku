@@ -597,7 +597,7 @@ class OkHttpValidatorRestApiClientTest {
     assertThat(request.getPath())
         .contains(ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF.getPath(emptyMap()));
     assertThat(request.getBody().readString(StandardCharsets.UTF_8))
-        .isEqualTo(asJson(signedAggregateAndProof));
+        .isEqualTo(asJson(List.of(signedAggregateAndProof)));
   }
 
   @Test

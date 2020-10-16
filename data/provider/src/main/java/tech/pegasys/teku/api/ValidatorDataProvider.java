@@ -19,6 +19,7 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
+import static tech.pegasys.teku.validator.api.ValidatorApiChannel.UKNOWN_VALIDATOR_ID;
 
 import java.util.Collections;
 import java.util.List;
@@ -201,9 +202,10 @@ public class ValidatorDataProvider {
         .thenApply(maybeAttestation -> maybeAttestation.map(Attestation::new));
   }
 
-  public void sendAggregateAndProof(SignedAggregateAndProof aggregateAndProof) {
-    validatorApiChannel.sendAggregateAndProof(
-        aggregateAndProof.asInternalSignedAggregateAndProof());
+  public void sendAggregateAndProofs(List<SignedAggregateAndProof> aggregateAndProofs) {
+    aggregateAndProofs.stream()
+        .map(SignedAggregateAndProof::asInternalSignedAggregateAndProof)
+        .forEach(validatorApiChannel::sendAggregateAndProof);
   }
 
   public void subscribeToBeaconCommittee(final List<BeaconCommitteeSubscriptionRequest> requests) {
@@ -234,7 +236,11 @@ public class ValidatorDataProvider {
               validatorApiChannel.subscribeToBeaconCommittee(
                   List.of(
                       new CommitteeSubscriptionRequest(
-                          0, request.committee_index, committeesAtSlot, slot, true)));
+                          UKNOWN_VALIDATOR_ID,
+                          request.committee_index,
+                          committeesAtSlot,
+                          slot,
+                          true)));
             });
   }
 

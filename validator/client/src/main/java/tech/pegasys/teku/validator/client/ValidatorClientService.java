@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.client;
 
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.Random;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.core.signatures.SlashingProtector;
@@ -88,7 +87,7 @@ public class ValidatorClientService extends Service {
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
     final ValidatorDutyFactory validatorDutyFactory =
-        new ValidatorDutyFactory(forkProvider, validatorApiChannel, beaconCommitteeSubscriptions);
+        new ValidatorDutyFactory(forkProvider, validatorApiChannel);
     final DutyLoader attestationDutyLoader =
         new RetryingDutyLoader(
             asyncRunner,
@@ -107,10 +106,8 @@ public class ValidatorClientService extends Service {
                 () -> new ScheduledDuties(validatorDutyFactory),
                 validators,
                 validatorIndexProvider));
-    final StableSubnetSubscriber stableSubnetSubscriber =
-        new StableSubnetSubscriber(validatorApiChannel, new Random(), validators.size());
     final AttestationDutyScheduler attestationDutyScheduler =
-        new AttestationDutyScheduler(metricsSystem, attestationDutyLoader, stableSubnetSubscriber);
+        new AttestationDutyScheduler(metricsSystem, attestationDutyLoader);
     final BlockDutyScheduler blockDutyScheduler =
         new BlockDutyScheduler(metricsSystem, blockDutyLoader);
 
