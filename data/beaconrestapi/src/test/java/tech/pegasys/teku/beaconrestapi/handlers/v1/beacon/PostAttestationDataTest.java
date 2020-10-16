@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.validator;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,16 +27,16 @@ import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.provider.JsonProvider;
 
-public class PostAttestationTest {
+public class PostAttestationDataTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private Context context = mock(Context.class);
   private ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
   private final JsonProvider jsonProvider = new JsonProvider();
-  private PostAttestation handler;
+  private PostAttestationData handler;
 
   @BeforeEach
   public void setup() {
-    handler = new PostAttestation(provider, jsonProvider);
+    handler = new PostAttestationData(provider, jsonProvider);
   }
 
   @Test
@@ -45,7 +45,7 @@ public class PostAttestationTest {
     when(context.body()).thenReturn(jsonProvider.objectToJSON(attestation));
     handler.handle(context);
 
-    verify(context).status(SC_NO_CONTENT);
+    verify(context).status(SC_OK);
   }
 
   @Test

@@ -87,7 +87,7 @@ public class ValidatorClientService extends Service {
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
     final ValidatorDutyFactory validatorDutyFactory =
-        new ValidatorDutyFactory(forkProvider, validatorApiChannel, beaconCommitteeSubscriptions);
+        new ValidatorDutyFactory(forkProvider, validatorApiChannel);
     final DutyLoader attestationDutyLoader =
         new RetryingDutyLoader(
             asyncRunner,

@@ -33,7 +33,6 @@ import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
-import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -44,17 +43,14 @@ public class AttestationProductionDuty implements Duty {
   private final UInt64 slot;
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
-  private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions;
 
   public AttestationProductionDuty(
       final UInt64 slot,
       final ForkProvider forkProvider,
-      final ValidatorApiChannel validatorApiChannel,
-      final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions) {
+      final ValidatorApiChannel validatorApiChannel) {
     this.slot = slot;
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
-    this.beaconCommitteeSubscriptions = beaconCommitteeSubscriptions;
   }
 
   /**
@@ -63,7 +59,6 @@ public class AttestationProductionDuty implements Duty {
    * @param validator the validator to produce an attestation
    * @param attestationCommitteeIndex the committee index for the validator
    * @param committeePosition the validator's position within the committee
-   * @param committeesAtSlot the number of committees at this duty's slot
    * @param validatorIndex the index of the validator
    * @param committeeSize the number of validators in the committee
    * @return a future which will be completed with the unsigned attestation for the committee.
@@ -72,16 +67,8 @@ public class AttestationProductionDuty implements Duty {
       final Validator validator,
       final int attestationCommitteeIndex,
       final int committeePosition,
-      final int committeesAtSlot,
       final int validatorIndex,
       final int committeeSize) {
-    beaconCommitteeSubscriptions.subscribeToBeaconCommittee(
-        new CommitteeSubscriptionRequest(
-            validatorIndex,
-            attestationCommitteeIndex,
-            UInt64.valueOf(committeesAtSlot),
-            slot,
-            false));
     final Committee committee =
         validatorsByCommitteeIndex.computeIfAbsent(
             attestationCommitteeIndex, key -> new Committee());
