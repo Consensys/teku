@@ -235,7 +235,11 @@ public class ValidatorDataProvider {
               validatorApiChannel.subscribeToBeaconCommittee(
                   List.of(
                       new CommitteeSubscriptionRequest(
-                          UKNOWN_VALIDATOR_ID, request.committee_index, committeesAtSlot, slot, true)));
+                          UKNOWN_VALIDATOR_ID,
+                          request.committee_index,
+                          committeesAtSlot,
+                          slot,
+                          true)));
             });
   }
 
