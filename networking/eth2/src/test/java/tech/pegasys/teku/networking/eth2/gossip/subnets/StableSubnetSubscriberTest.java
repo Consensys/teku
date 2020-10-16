@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client;
+package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -25,26 +25,32 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
-import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 @SuppressWarnings("unchecked")
 public class StableSubnetSubscriberTest {
+  private final AttestationTopicSubscriber validatorApiChannel =
+      mock(AttestationTopicSubscriber.class);
+
   @BeforeEach
   void setUp() {
     Constants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION = 5;
   }
 
+  @AfterEach
+  void tearDown() {
+    Constants.setConstants("minimal");
+  }
+
   @Test
   void shouldCreateEnoughSubscriptionsAtStart() {
-    ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
-    StableSubnetSubscriber stableSubnetSubscriber =
-        new StableSubnetSubscriber(validatorApiChannel, new Random(), 2);
+    StableSubnetSubscriber stableSubnetSubscriber = createStableSubnetSubscriber(2);
 
     stableSubnetSubscriber.onSlot(ZERO);
     ArgumentCaptor<Set<SubnetSubscription>> subnetSubcriptions = ArgumentCaptor.forClass(Set.class);
@@ -57,9 +63,7 @@ public class StableSubnetSubscriberTest {
 
   @Test
   void shouldNotNotifyAnyChangeWhenNumberOfValidatorsDecrease() {
-    ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
-    StableSubnetSubscriber stableSubnetSubscriber =
-        new StableSubnetSubscriber(validatorApiChannel, new Random(), 2);
+    StableSubnetSubscriber stableSubnetSubscriber = createStableSubnetSubscriber(2);
     ArgumentCaptor<Set<SubnetSubscription>> subnetSubcriptions = ArgumentCaptor.forClass(Set.class);
 
     stableSubnetSubscriber.onSlot(ZERO);
@@ -76,9 +80,7 @@ public class StableSubnetSubscriberTest {
 
   @Test
   void shouldIncreaseNumberOfSubscriptionsWhenNumberOfValidatorsIncrease() {
-    ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
-    StableSubnetSubscriber stableSubnetSubscriber =
-        new StableSubnetSubscriber(validatorApiChannel, new Random(), 0);
+    StableSubnetSubscriber stableSubnetSubscriber = createStableSubnetSubscriber(0);
 
     stableSubnetSubscriber.onSlot(ZERO);
     verifyNoInteractions(validatorApiChannel);
@@ -96,10 +98,8 @@ public class StableSubnetSubscriberTest {
 
   @Test
   void shouldSubscribeToAllSubnetsWhenNecessary() {
-    ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
     StableSubnetSubscriber stableSubnetSubscriber =
-        new StableSubnetSubscriber(
-            validatorApiChannel, new Random(), Constants.ATTESTATION_SUBNET_COUNT + 2);
+        createStableSubnetSubscriber(Constants.ATTESTATION_SUBNET_COUNT + 2);
 
     UInt64 slot = UInt64.valueOf(15);
     stableSubnetSubscriber.onSlot(slot);
@@ -113,10 +113,8 @@ public class StableSubnetSubscriberTest {
 
   @Test
   void shouldStaySubscribedToAllSubnetsEvenIfValidatorNumberIsDecreased() {
-    ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
     StableSubnetSubscriber stableSubnetSubscriber =
-        new StableSubnetSubscriber(
-            validatorApiChannel, new Random(), Constants.ATTESTATION_SUBNET_COUNT + 8);
+        createStableSubnetSubscriber(Constants.ATTESTATION_SUBNET_COUNT + 8);
 
     stableSubnetSubscriber.onSlot(ZERO);
 
@@ -133,10 +131,7 @@ public class StableSubnetSubscriberTest {
 
   @Test
   void shouldReplaceExpiredSubscriptionsWithNewOnes() {
-    ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
-
-    StableSubnetSubscriber stableSubnetSubscriber =
-        new StableSubnetSubscriber(validatorApiChannel, new Random(), 1);
+    StableSubnetSubscriber stableSubnetSubscriber = createStableSubnetSubscriber(1);
 
     stableSubnetSubscriber.onSlot(UInt64.valueOf(0));
 
@@ -170,10 +165,8 @@ public class StableSubnetSubscriberTest {
 
   @Test
   void shouldGenerateLargeNumberOfSubscriptionsAndCheckTheyreAllCorrect() {
-    ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
     StableSubnetSubscriber stableSubnetSubscriber =
-        new StableSubnetSubscriber(
-            validatorApiChannel, new Random(), Constants.ATTESTATION_SUBNET_COUNT);
+        createStableSubnetSubscriber(Constants.ATTESTATION_SUBNET_COUNT);
 
     stableSubnetSubscriber.onSlot(ZERO);
 
@@ -206,5 +199,12 @@ public class StableSubnetSubscriberTest {
             .map(SubnetSubscription::getSubnetId)
             .collect(Collectors.toSet());
     assertThat(subnetSubscriptions).hasSameSizeAs(subnetIds);
+  }
+
+  private StableSubnetSubscriber createStableSubnetSubscriber(final int validatorCount) {
+    final StableSubnetSubscriber subscriber =
+        new StableSubnetSubscriber(validatorApiChannel, new Random(13241234L));
+    subscriber.updateValidatorCount(validatorCount);
+    return subscriber;
   }
 }

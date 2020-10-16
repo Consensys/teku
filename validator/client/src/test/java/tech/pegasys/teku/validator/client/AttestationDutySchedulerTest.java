@@ -59,8 +59,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
                   () -> new ScheduledDuties(dutyFactory),
                   Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
                   validatorIndexProvider,
-                  beaconCommitteeSubscriptions)),
-          stableSubnetSubscriber);
+                  beaconCommitteeSubscriptions)));
 
   @BeforeEach
   public void init() {
@@ -244,8 +243,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
                     () -> scheduledDuties,
                     Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2),
                     validatorIndexProvider,
-                    beaconCommitteeSubscriptions)),
-            stableSubnetSubscriber);
+                    beaconCommitteeSubscriptions)));
     final SafeFuture<Optional<List<AttesterDuties>>> epoch0Duties = new SafeFuture<>();
 
     when(validatorApiChannel.getAttestationDuties(eq(ZERO), any())).thenReturn(epoch0Duties);

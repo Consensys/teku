@@ -61,6 +61,7 @@ public class ValidatorApiHandlerIntegrationTest {
   private final AttestationManager attestationManager = mock(AttestationManager.class);
   private final AttestationTopicSubscriber attestationTopicSubscriber =
       mock(AttestationTopicSubscriber.class);
+  private final ActiveValidatorTracker activeValidatorTracker = mock(ActiveValidatorTracker.class);
   private final DefaultPerformanceTracker performanceTracker =
       mock(DefaultPerformanceTracker.class);
   private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
@@ -76,6 +77,7 @@ public class ValidatorApiHandlerIntegrationTest {
           attestationPool,
           attestationManager,
           attestationTopicSubscriber,
+          activeValidatorTracker,
           eventBus,
           mock(DutyMetrics.class),
           performanceTracker);
