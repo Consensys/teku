@@ -177,7 +177,6 @@ public class BeaconRestApiV1Test {
   @Test
   public void shouldHavePostAggregateAndProofsEndpoint() {
     verify(app).post(eq(PostAggregateAndProofs.ROUTE), any(PostAggregateAndProofs.class));
-
   }
 
   @Test
