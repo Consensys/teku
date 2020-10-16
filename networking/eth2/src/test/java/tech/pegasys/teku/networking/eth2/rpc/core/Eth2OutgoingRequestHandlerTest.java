@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
+import tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler.State;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppendedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ServerErrorException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -95,7 +96,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
     Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
 
     assertThat(finishedProcessingFuture).isCompletedWithValue(null);
-    verify(rpcStream).closeAbruptly();
+    assertThat(reqHandler.getState()).isIn(State.CLOSED, State.READ_COMPLETE);
     assertThat(blocks.size()).isEqualTo(3);
   }
 

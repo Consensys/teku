@@ -95,9 +95,7 @@ public class Eth2IncomingRequestHandler<TRequest extends RpcRequest, TResponse>
   }
 
   @Override
-  public void closed(NodeId nodeId, RpcStream rpcStream) {
-
-  }
+  public void closed(NodeId nodeId, RpcStream rpcStream) {}
 
   private void handleRequest(
       Optional<Eth2Peer> peer, TRequest request, ResponseCallback<TResponse> callback) {
