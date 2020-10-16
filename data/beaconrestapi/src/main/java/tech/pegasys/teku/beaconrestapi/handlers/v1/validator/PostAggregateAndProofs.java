@@ -11,10 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.validator;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
+import static java.util.Arrays.asList;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
@@ -29,55 +29,54 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiRequestBody;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
+import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.provider.JsonProvider;
 
-public class PostAggregateAndProof implements Handler {
+public class PostAggregateAndProofs implements Handler {
 
-  public static final String ROUTE = "/validator/aggregate_and_proofs";
+  public static final String ROUTE = "/eth/v1/validator/aggregate_and_proofs";
 
   private final ValidatorDataProvider provider;
   private final JsonProvider jsonProvider;
 
-  public PostAggregateAndProof(
+  public PostAggregateAndProofs(final DataProvider provider, final JsonProvider jsonProvider) {
+    this(provider.getValidatorDataProvider(), jsonProvider);
+  }
+
+  public PostAggregateAndProofs(
       final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
     this.provider = provider;
   }
 
   @OpenApi(
-      deprecated = true,
       path = ROUTE,
       method = HttpMethod.POST,
-      summary =
-          "Verifies given aggregate and proof and publishes it on appropriate gossipsub topic.",
+      summary = "Publish aggregate and proofs",
       tags = {TAG_VALIDATOR},
       requestBody =
           @OpenApiRequestBody(content = {@OpenApiContent(from = SignedAggregateAndProof.class)}),
       description =
-          "Aggregates all attestations matching given attestation data root and slot.\n"
-              + "Deprecated - use `/eth/v1/validator/aggregate_and_proofs` instead.",
+          "Verifies given aggregate and proofs and publishes it on appropriate gossipsub topic.",
       responses = {
-        @OpenApiResponse(status = RES_OK, description = "Successfully processed attestation."),
+        @OpenApiResponse(status = RES_OK, description = "Successfully published aggregate."),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied."),
         @OpenApiResponse(status = RES_INTERNAL_ERROR, description = "Beacon node internal error.")
       })
   @Override
   public void handle(Context ctx) throws Exception {
     try {
-      final SignedAggregateAndProof signedAggregateAndProof =
-          jsonProvider.jsonToObject(ctx.body(), SignedAggregateAndProof.class);
+      final SignedAggregateAndProof[] signedAggregateAndProofs =
+          jsonProvider.jsonToObject(ctx.body(), SignedAggregateAndProof[].class);
 
-      provider.sendAggregateAndProofs(List.of(signedAggregateAndProof));
+      provider.sendAggregateAndProofs(asList(signedAggregateAndProofs));
       ctx.status(SC_OK);
     } catch (final JsonMappingException e) {
       ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
       ctx.status(SC_BAD_REQUEST);
-    } catch (Exception e) {
-      ctx.status(SC_INTERNAL_SERVER_ERROR);
     }
   }
 }

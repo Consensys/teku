@@ -201,9 +201,10 @@ public class ValidatorDataProvider {
         .thenApply(maybeAttestation -> maybeAttestation.map(Attestation::new));
   }
 
-  public void sendAggregateAndProof(SignedAggregateAndProof aggregateAndProof) {
-    validatorApiChannel.sendAggregateAndProof(
-        aggregateAndProof.asInternalSignedAggregateAndProof());
+  public void sendAggregateAndProofs(List<SignedAggregateAndProof> aggregateAndProofs) {
+    aggregateAndProofs.stream()
+        .map(SignedAggregateAndProof::asInternalSignedAggregateAndProof)
+        .forEach(validatorApiChannel::sendAggregateAndProof);
   }
 
   public void subscribeToBeaconCommittee(final List<BeaconCommitteeSubscriptionRequest> requests) {

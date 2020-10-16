@@ -11,14 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.validator;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -34,7 +31,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
-class PostAggregateAndProofTest {
+class PostAggregateAndProofsTest {
 
   @SuppressWarnings({"unchecked", "unused"})
   private final ArgumentCaptor<SafeFuture<String>> args = ArgumentCaptor.forClass(SafeFuture.class);
@@ -46,11 +43,11 @@ class PostAggregateAndProofTest {
   private final ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
   private final JsonProvider jsonProvider = new JsonProvider();
 
-  private PostAggregateAndProof handler;
+  private PostAggregateAndProofs handler;
 
   @BeforeEach
   public void beforeEach() {
-    handler = new PostAggregateAndProof(provider, jsonProvider);
+    handler = new PostAggregateAndProofs(provider, jsonProvider);
   }
 
   @Test
@@ -61,39 +58,25 @@ class PostAggregateAndProofTest {
     verify(context).status(SC_BAD_REQUEST);
   }
 
-  @Test
-  public void shouldReturnServerErrorWhenFutureHasUnmappedException() throws Exception {
-    final SignedAggregateAndProof signedAggregateAndProof =
-        dataStructureUtil.randomSignedAggregateAndProof();
-
-    final tech.pegasys.teku.api.schema.SignedAggregateAndProof schemaSignedAggregateAndProof =
-        new tech.pegasys.teku.api.schema.SignedAggregateAndProof(signedAggregateAndProof);
-
-    when(context.body()).thenReturn(jsonProvider.objectToJSON(schemaSignedAggregateAndProof));
-    doThrow(new RuntimeException()).when(provider).sendAggregateAndProofs(any());
-
-    handler.handle(context);
-
-    verify(context).status(SC_INTERNAL_SERVER_ERROR);
-  }
-
+  @SuppressWarnings("unchecked")
   @Test
   public void shouldReturnSuccessWhenSendAggregateAndProofSucceeds() throws Exception {
     final SignedAggregateAndProof signedAggregateAndProof =
         dataStructureUtil.randomSignedAggregateAndProof();
 
-    final tech.pegasys.teku.api.schema.SignedAggregateAndProof schemaSignedAggregateAndProof =
-        new tech.pegasys.teku.api.schema.SignedAggregateAndProof(signedAggregateAndProof);
+    final tech.pegasys.teku.api.schema.SignedAggregateAndProof[] schemaSignedAggregateAndProof = {
+      new tech.pegasys.teku.api.schema.SignedAggregateAndProof(signedAggregateAndProof)
+    };
 
     String signedAggregateAndProofAsJson = jsonProvider.objectToJSON(schemaSignedAggregateAndProof);
     when(context.body()).thenReturn(signedAggregateAndProofAsJson);
 
     handler.handle(context);
 
-    ArgumentCaptor<tech.pegasys.teku.api.schema.SignedAggregateAndProof> captor =
-        ArgumentCaptor.forClass(tech.pegasys.teku.api.schema.SignedAggregateAndProof.class);
+    ArgumentCaptor<List<tech.pegasys.teku.api.schema.SignedAggregateAndProof>> captor =
+        ArgumentCaptor.forClass(List.class);
 
-    verify(provider).sendAggregateAndProofs(List.of(captor.capture()));
+    verify(provider).sendAggregateAndProofs(captor.capture());
     verify(context).status(SC_OK);
 
     assertThat(jsonProvider.objectToJSON(captor.getValue()))
