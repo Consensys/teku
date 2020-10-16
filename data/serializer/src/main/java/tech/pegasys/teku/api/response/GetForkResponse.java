@@ -50,6 +50,14 @@ public class GetForkResponse {
     this.genesis_validators_root = genesis_validators_root;
   }
 
+  public GetForkResponse(
+      final tech.pegasys.teku.api.schema.Fork fork, final Bytes32 genesis_validators_root) {
+    this.previous_version = fork.previous_version;
+    this.current_version = fork.current_version;
+    this.epoch = fork.epoch;
+    this.genesis_validators_root = genesis_validators_root;
+  }
+
   public GetForkResponse(final ForkInfo forkInfo) {
     final Fork fork = forkInfo.getFork();
     if (fork != null) {

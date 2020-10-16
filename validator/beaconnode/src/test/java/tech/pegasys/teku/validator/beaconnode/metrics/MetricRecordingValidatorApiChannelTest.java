@@ -148,9 +148,9 @@ class MetricRecordingValidatorApiChannelTest {
     return Stream.of(
         requestDataTest(
             "getForkInfo",
-            ValidatorApiChannel::getForkInfo,
+            ValidatorApiChannel::getFork,
             MetricRecordingValidatorApiChannel.FORK_REQUESTS_COUNTER_NAME,
-            dataStructureUtil.randomForkInfo()),
+            dataStructureUtil.randomFork()),
         requestDataTest(
             "getGenesisData",
             ValidatorApiChannel::getGenesisData,

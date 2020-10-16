@@ -517,7 +517,7 @@ class ValidatorApiHandlerTest {
   public void getFork_shouldReturnEmptyWhenHeadStateNotAvailable() {
     when(chainDataClient.getBestState()).thenReturn(Optional.empty());
 
-    assertThat(validatorApiHandler.getForkInfo()).isCompletedWithValue(Optional.empty());
+    assertThat(validatorApiHandler.getFork()).isCompletedWithValue(Optional.empty());
   }
 
   @Test
@@ -525,8 +525,7 @@ class ValidatorApiHandlerTest {
     final BeaconState state = dataStructureUtil.randomBeaconState();
     when(chainDataClient.getBestState()).thenReturn(Optional.of(state));
 
-    assertThat(validatorApiHandler.getForkInfo())
-        .isCompletedWithValue(Optional.of(state.getForkInfo()));
+    assertThat(validatorApiHandler.getFork()).isCompletedWithValue(Optional.of(state.getFork()));
   }
 
   @Test
