@@ -11,19 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.validator;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NO_CONTENT;
+import static javax.servlet.http.HttpServletResponse.SC_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.INVALID_BODY_SUPPLIED;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NO_CONTENT;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
@@ -32,51 +32,48 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.provider.JsonProvider;
 
-public class PostAttestation implements Handler {
-  public static final String ROUTE = "/validator/attestation";
-
+public class PostAttestationData extends AbstractHandler {
+  public static final String ROUTE = "/eth/v1/beacon/pool/attestations";
   private final ValidatorDataProvider provider;
-  private final JsonProvider jsonProvider;
 
-  public PostAttestation(final DataProvider dataProvider, final JsonProvider jsonProvider) {
-    this(dataProvider.getValidatorDataProvider(), jsonProvider);
+  public PostAttestationData(final DataProvider provider, final JsonProvider jsonProvider) {
+    this(provider.getValidatorDataProvider(), jsonProvider);
   }
 
-  public PostAttestation(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
-    this.jsonProvider = jsonProvider;
+  public PostAttestationData(
+      final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
+    super(jsonProvider);
     this.provider = provider;
   }
 
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.POST,
-      deprecated = true,
       summary = "Submit a signed attestation",
-      tags = {TAG_VALIDATOR},
+      tags = {TAG_V1_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = Attestation.class)}),
       description =
           "Submit a signed attestation to the beacon node to be validated and submitted if valid.\n\n"
-              + "This endpoint does not protected against slashing. Signing the attestation can result in a slashable offence.\n\n"
-              + "Deprecated - use `/eth/v1/validator/attestation_data` instead.",
+              + "This endpoint does not protected against slashing.",
       responses = {
         @OpenApiResponse(
-            status = RES_NO_CONTENT,
+            status = RES_OK,
             description = "The Attestation was accepted, validated, and submitted"),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = INVALID_BODY_SUPPLIED),
         @OpenApiResponse(status = RES_INTERNAL_ERROR)
       })
   @Override
-  public void handle(Context ctx) throws Exception {
-
+  public void handle(final Context ctx) throws Exception {
     try {
       Attestation attestation = jsonProvider.jsonToObject(ctx.body(), Attestation.class);
       provider.submitAttestation(attestation);
-      ctx.status(SC_NO_CONTENT);
+      ctx.status(SC_OK);
     } catch (final IllegalArgumentException | JsonMappingException e) {
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(e.getMessage())));
+      ctx.result(BadRequest.badRequest(jsonProvider, e.getMessage()));
       ctx.status(SC_BAD_REQUEST);
     }
   }

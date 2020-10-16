@@ -163,6 +163,11 @@ public class BeaconRestApiV1Test {
   }
 
   @Test
+  public void shouldHavePostAttestationDataEndpoint() {
+    verify(app).post(eq(PostAttesterDuties.ROUTE), any(PostAttesterDuties.class));
+  }
+
+  @Test
   public void shouldHavePostSubscribeToBeaconCommitteeSubnetEndpoint() {
     verify(app)
         .post(
