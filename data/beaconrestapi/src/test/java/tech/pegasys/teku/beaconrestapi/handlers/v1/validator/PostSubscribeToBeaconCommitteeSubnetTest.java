@@ -35,7 +35,7 @@ class PostSubscribeToBeaconCommitteeSubnetTest {
   private final ValidatorDataProvider provider = mock(ValidatorDataProvider.class);
   private final JsonProvider jsonProvider = new JsonProvider();
 
-  private PostSubscribeToBeaconCommitteeSubnet handler =
+  private final PostSubscribeToBeaconCommitteeSubnet handler =
       new PostSubscribeToBeaconCommitteeSubnet(provider, jsonProvider);
 
   @Test
