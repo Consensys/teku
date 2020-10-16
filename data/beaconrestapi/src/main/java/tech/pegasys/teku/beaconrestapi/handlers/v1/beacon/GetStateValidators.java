@@ -13,6 +13,29 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import io.javalin.core.util.Header;
+import io.javalin.http.Context;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
+import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
+import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
+
+import java.util.List;
+import java.util.Optional;
+
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
@@ -28,34 +51,11 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILAB
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
-import io.javalin.core.util.Header;
-import io.javalin.http.Context;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.api.ChainDataProvider;
-import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
-import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
-
 public class GetStateValidators extends AbstractHandler {
   private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/eth/v1/beacon/states/:state_id/validators";
 
+  private final StateValidatorsUtil stateValidatorsUtil = new StateValidatorsUtil();
   private final ChainDataProvider provider;
 
   public GetStateValidators(final DataProvider dataProvider, final JsonProvider jsonProvider) {
@@ -93,9 +93,9 @@ public class GetStateValidators extends AbstractHandler {
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     try {
-      final UInt64 slot = parseSlotParam(ctx);
+      final UInt64 slot = stateValidatorsUtil.parseSlotParam(provider, ctx);
 
-      final List<Integer> validatorIndices = parseValidatorsParam(ctx);
+      final List<Integer> validatorIndices = stateValidatorsUtil.parseValidatorsParam(provider, ctx);
 
       SafeFuture<Optional<GetStateValidatorsResponse>> future =
           provider
@@ -119,17 +119,4 @@ public class GetStateValidators extends AbstractHandler {
     }
   }
 
-  private List<Integer> parseValidatorsParam(final Context ctx) {
-    return ListQueryParameterUtils.getParameterAsStringList(ctx.queryParamMap(), PARAM_VALIDATOR_ID)
-        .stream()
-        .flatMap(
-            validatorParameter -> provider.validatorParameterToIndex(validatorParameter).stream())
-        .collect(Collectors.toList());
-  }
-
-  private UInt64 parseSlotParam(final Context ctx) {
-    return provider
-        .stateParameterToSlot(ctx.pathParamMap().get(PARAM_STATE_ID))
-        .orElseThrow(ChainDataUnavailableException::new);
-  }
 }
