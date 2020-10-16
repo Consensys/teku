@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.validator;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
@@ -23,7 +23,8 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_FORBIDDEN;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_VALIDATOR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsBytes32;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64;
 
@@ -40,22 +41,27 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.beaconrestapi.schema.ErrorResponse;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.provider.JsonProvider;
 
-public class GetAggregate implements Handler {
-
-  public static final String ROUTE = "/validator/aggregate_attestation";
-
+public class GetAggregateAttestation extends AbstractHandler implements Handler {
+  public static final String ROUTE = "/eth/v1/validator/aggregate_attestation";
   private final ValidatorDataProvider provider;
-  private final JsonProvider jsonProvider;
 
-  public GetAggregate(final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
-    this.jsonProvider = jsonProvider;
+  public GetAggregateAttestation(final DataProvider dataProvider, final JsonProvider jsonProvider) {
+    this(dataProvider.getValidatorDataProvider(), jsonProvider);
+  }
+
+  public GetAggregateAttestation(
+      final ValidatorDataProvider provider, final JsonProvider jsonProvider) {
+    super(jsonProvider);
     this.provider = provider;
   }
 
@@ -64,10 +70,8 @@ public class GetAggregate implements Handler {
       method = HttpMethod.GET,
       deprecated = true,
       summary = "Get aggregated attestations",
-      description =
-          "Aggregates all attestations matching given attestation data root and slot.\n\n"
-              + "Deprecated - use `/eth/v1/validator/aggregate_attestation` instead.",
-      tags = {TAG_VALIDATOR},
+      description = "Aggregates all attestations matching given attestation data root and slot.",
+      tags = {TAG_V1_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       queryParams = {
         @OpenApiParam(
             name = ATTESTATION_DATA_ROOT,
@@ -82,7 +86,7 @@ public class GetAggregate implements Handler {
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = Attestation.class, isArray = true),
+            content = @OpenApiContent(from = GetAggregatedAttestationResponse.class),
             description =
                 "Returns aggregated `Attestation` object with same `AttestationData` root."),
         @OpenApiResponse(status = RES_BAD_REQUEST, description = "Invalid parameter supplied"),
@@ -120,7 +124,8 @@ public class GetAggregate implements Handler {
       throws com.fasterxml.jackson.core.JsonProcessingException {
     if (optionalAttestation.isPresent()) {
       ctx.status(SC_OK);
-      return jsonProvider.objectToJSON(optionalAttestation.get());
+      return jsonProvider.objectToJSON(
+          new GetAggregatedAttestationResponse(optionalAttestation.get()));
     } else {
       ctx.status(SC_NOT_FOUND);
       return "";

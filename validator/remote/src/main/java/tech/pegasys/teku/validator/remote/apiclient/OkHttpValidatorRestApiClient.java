@@ -55,6 +55,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
+import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
@@ -195,7 +196,8 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     queryParams.put("slot", encodeQueryParam(UInt64.ZERO));
     queryParams.put("attestation_data_root", encodeQueryParam(attestationHashTreeRoot));
 
-    return get(GET_AGGREGATE, queryParams, Attestation.class);
+    return get(GET_AGGREGATE, queryParams, GetAggregatedAttestationResponse.class)
+        .map(result -> result.data);
   }
 
   @Override
