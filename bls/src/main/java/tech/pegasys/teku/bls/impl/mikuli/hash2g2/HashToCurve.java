@@ -46,7 +46,7 @@ public class HashToCurve {
 
   // The ciphersuite defined in the Eth2 specification which also serves as domain separation tag
   // https://github.com/ethereum/eth2.0-specs/blob/v0.12.0/specs/phase0/beacon-chain.md#bls-signatures
-  private static final Bytes ETH2_DST =
+  public static final Bytes ETH2_DST =
       Bytes.wrap("BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_POP_".getBytes(StandardCharsets.US_ASCII));
 
   /**

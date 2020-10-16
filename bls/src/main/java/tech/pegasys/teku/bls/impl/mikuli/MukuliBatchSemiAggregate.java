@@ -16,13 +16,13 @@ package tech.pegasys.teku.bls.impl.mikuli;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BatchSemiAggregate;
+import tech.pegasys.teku.bls.impl.Signature;
 
 /**
  * Opaque data class which contains intermediate calculation results for batch BLS verification
  *
- * @see MikuliBLS12381#prepareBatchVerify(int, List, Bytes, MikuliSignature)
- * @see MikuliBLS12381#prepareBatchVerify2(int, List, Bytes, MikuliSignature, List, Bytes,
- *     MikuliSignature)
+ * @see MikuliBLS12381#prepareBatchVerify(int, List, Bytes, Signature)
+ * @see MikuliBLS12381#prepareBatchVerify2(int, List, Bytes, Signature, List, Bytes, Signature)
  * @see MikuliBLS12381#completeBatchVerify(List)
  */
 public final class MukuliBatchSemiAggregate implements BatchSemiAggregate {
