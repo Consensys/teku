@@ -160,4 +160,9 @@ public class BeaconRestApiV1Test {
   public void shouldHaveGetAttestationDataEndpoint() {
     verify(app).get(eq(GetAttestationData.ROUTE), any(GetAttestationData.class));
   }
+
+  @Test
+  public void shouldHavePostAttestationDataEndpoint() {
+    verify(app).post(eq(PostAttesterDuties.ROUTE), any(PostAttesterDuties.class));
+  }
 }
