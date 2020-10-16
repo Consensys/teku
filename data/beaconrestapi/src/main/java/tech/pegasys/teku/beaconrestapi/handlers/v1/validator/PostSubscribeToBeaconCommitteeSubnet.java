@@ -58,7 +58,7 @@ public class PostSubscribeToBeaconCommitteeSubnet extends AbstractHandler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.POST,
-      summary = "Signal beacon node to prepare for a committee subnet",
+      summary = "Subscribe to a committee subnet",
       tags = {TAG_V1_VALIDATOR, TAG_VALIDATOR_REQUIRED},
       requestBody =
           @OpenApiRequestBody(
