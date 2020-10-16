@@ -68,9 +68,9 @@ class ScheduledDutiesTest {
     when(dutyFactory.createAttestationProductionDuty(ONE)).thenReturn(duty1);
     when(dutyFactory.createAttestationProductionDuty(TWO)).thenReturn(duty2);
 
-    ignoreFuture(duties.scheduleAttestationProduction(ZERO, validator, 0, 0, 10));
-    ignoreFuture(duties.scheduleAttestationProduction(ONE, validator, 0, 0, 10));
-    ignoreFuture(duties.scheduleAttestationProduction(TWO, validator, 0, 0, 10));
+    ignoreFuture(duties.scheduleAttestationProduction(ZERO, validator, 0, 0, 10, 5));
+    ignoreFuture(duties.scheduleAttestationProduction(ONE, validator, 0, 0, 10, 5));
+    ignoreFuture(duties.scheduleAttestationProduction(TWO, validator, 0, 0, 10, 5));
 
     duties.produceAttestations(ONE);
     verify(duty1).performDuty();
@@ -94,11 +94,11 @@ class ScheduledDutiesTest {
     when(dutyFactory.createAggregationDuty(TWO)).thenReturn(duty2);
 
     duties.scheduleAggregationDuties(
-        ZERO, validator, 0, BLSSignature.empty(), 0, new SafeFuture<>());
+        ZERO, validator, 0, BLSSignature.empty(), 0, 10, new SafeFuture<>());
     duties.scheduleAggregationDuties(
-        ONE, validator, 0, BLSSignature.empty(), 0, new SafeFuture<>());
+        ONE, validator, 0, BLSSignature.empty(), 0, 10, new SafeFuture<>());
     duties.scheduleAggregationDuties(
-        TWO, validator, 0, BLSSignature.empty(), 0, new SafeFuture<>());
+        TWO, validator, 0, BLSSignature.empty(), 0, 10, new SafeFuture<>());
 
     duties.performAggregation(ONE);
     verify(duty1).performDuty();

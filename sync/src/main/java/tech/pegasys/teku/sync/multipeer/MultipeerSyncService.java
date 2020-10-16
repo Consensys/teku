@@ -25,7 +25,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
+import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncingStatus;

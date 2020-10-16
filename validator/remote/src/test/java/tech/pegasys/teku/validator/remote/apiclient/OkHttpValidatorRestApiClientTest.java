@@ -39,6 +39,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetNewBlockResponse;
 import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.Fork;
@@ -432,6 +433,63 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
+  public void createAttestationData_MakesExpectedRequest() throws Exception {
+    final UInt64 slot = UInt64.ONE;
+    final int committeeIndex = 1;
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+
+    apiClient.createAttestationData(slot, committeeIndex);
+
+    RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getMethod()).isEqualTo("GET");
+    assertThat(request.getPath())
+        .contains(ValidatorApiMethod.GET_ATTESTATION_DATA.getPath(emptyMap()));
+    assertThat(request.getRequestUrl().queryParameter("slot")).isEqualTo(slot.toString());
+    assertThat(request.getRequestUrl().queryParameter("committee_index"))
+        .isEqualTo(String.valueOf(committeeIndex));
+  }
+
+  @Test
+  public void createAttestationData_WhenBadRequest_ThrowsIllegalArgumentException() {
+    final UInt64 slot = UInt64.ONE;
+    final int committeeIndex = 1;
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(400));
+
+    assertThatThrownBy(() -> apiClient.createAttestationData(slot, committeeIndex))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void createAttestationData_WhenNotFound_ReturnsEmpty() {
+    final UInt64 slot = UInt64.ONE;
+    final int committeeIndex = 1;
+
+    // An attestation could not be created for the specified slot
+    mockWebServer.enqueue(new MockResponse().setResponseCode(404));
+
+    assertThat(apiClient.createAttestationData(slot, committeeIndex)).isEmpty();
+  }
+
+  @Test
+  public void createAttestationData_WhenSuccess_ReturnsAttestation() {
+    final UInt64 slot = UInt64.ONE;
+    final int committeeIndex = 1;
+    final AttestationData expectedAttestationData = schemaObjects.attestation().data;
+
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(200).setBody(asJson(expectedAttestationData)));
+
+    Optional<AttestationData> attestationData =
+        apiClient.createAttestationData(slot, committeeIndex);
+
+    assertThat(attestationData).isPresent();
+    assertThat(attestationData.get()).usingRecursiveComparison().isEqualTo(expectedAttestationData);
+  }
+
+  @Test
   public void sendSignedAttestation_MakesExpectedRequest() throws Exception {
     final Attestation attestation = schemaObjects.attestation();
 
@@ -569,7 +627,8 @@ class OkHttpValidatorRestApiClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    apiClient.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot);
+    apiClient.subscribeToBeaconCommittee(
+        1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true);
 
     RecordedRequest request = mockWebServer.takeRequest();
 
@@ -590,7 +649,8 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThatThrownBy(
             () ->
-                apiClient.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot))
+                apiClient.subscribeToBeaconCommittee(
+                    1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -603,7 +663,8 @@ class OkHttpValidatorRestApiClientTest {
 
     assertThatThrownBy(
             () ->
-                apiClient.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot))
+                apiClient.subscribeToBeaconCommittee(
+                    1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
   }

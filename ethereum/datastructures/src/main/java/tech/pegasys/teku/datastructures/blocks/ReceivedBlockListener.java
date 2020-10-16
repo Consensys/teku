@@ -11,15 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip.topics;
+package tech.pegasys.teku.datastructures.blocks;
 
-public interface GossipedOperationConsumer<T> {
-  void forward(T operation);
+import org.apache.tuweni.bytes.Bytes32;
 
-  GossipedOperationConsumer<?> NOOP = (__) -> {};
-
-  @SuppressWarnings("unchecked")
-  static <T> GossipedOperationConsumer<T> noop() {
-    return (GossipedOperationConsumer<T>) NOOP;
-  }
+public interface ReceivedBlockListener {
+  void accept(Bytes32 blockRoot);
 }

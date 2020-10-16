@@ -64,13 +64,14 @@ import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.blockimport.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.SyncState;
 import tech.pegasys.teku.sync.SyncStateTracker;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -346,7 +347,7 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.getAttestationDuties(EPOCH, List.of(1, 32));
     final Optional<List<AttesterDuties>> duties = assertCompletedSuccessfully(result);
     assertThat(duties.get())
-        .containsExactly(new AttesterDuties(validator1Key, 1, 4, 0, 1, UInt64.valueOf(108)));
+        .containsExactly(new AttesterDuties(validator1Key, 1, 4, 0, 1, 1, UInt64.valueOf(108)));
   }
 
   @Test
@@ -361,7 +362,7 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.getAttestationDuties(EPOCH, List.of(1, 32));
     final Optional<List<AttesterDuties>> duties = assertCompletedSuccessfully(result);
     assertThat(duties.get())
-        .containsExactly(new AttesterDuties(validator1Key, 1, 4, 0, 1, UInt64.valueOf(108)));
+        .containsExactly(new AttesterDuties(validator1Key, 1, 4, 0, 1, 1, UInt64.valueOf(108)));
   }
 
   @Test
@@ -532,10 +533,14 @@ class ValidatorApiHandlerTest {
   public void subscribeToBeaconCommittee_shouldSubscribeViaAttestationTopicSubscriptions() {
     final int committeeIndex = 10;
     final UInt64 aggregationSlot = UInt64.valueOf(13);
-    validatorApiHandler.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot);
+    final UInt64 committeesAtSlot = UInt64.valueOf(10);
+    validatorApiHandler.subscribeToBeaconCommittee(
+        List.of(
+            new CommitteeSubscriptionRequest(
+                1, committeeIndex, committeesAtSlot, aggregationSlot, true)));
 
     verify(attestationTopicSubscriptions)
-        .subscribeToCommitteeForAggregation(committeeIndex, aggregationSlot);
+        .subscribeToCommitteeForAggregation(committeeIndex, committeesAtSlot, aggregationSlot);
   }
 
   @Test

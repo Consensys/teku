@@ -15,65 +15,47 @@ package tech.pegasys.teku.validator.api;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class AttesterDuties {
+public class CommitteeSubscriptionRequest {
 
-  private final BLSPublicKey publicKey;
   private final int validatorIndex;
-  private final int committeeLength;
-  /** the committee index of the committee that includes the specified validator */
   private final int committeeIndex;
-
-  private final int commiteesAtSlot;
-  // index of the validator in the committee
-  private final int validatorCommitteeIndex;
+  private final UInt64 committeesAtSlot;
   private final UInt64 slot;
+  private final boolean isAggregator;
 
-  public AttesterDuties(
-      final BLSPublicKey publicKey,
+  public CommitteeSubscriptionRequest(
       final int validatorIndex,
-      final int committeeLength,
       final int committeeIndex,
-      final int commiteesAtSlot,
-      final int validatorCommitteeIndex,
-      final UInt64 slot) {
-    this.publicKey = publicKey;
+      final UInt64 committeesAtSlot,
+      final UInt64 slot,
+      final boolean isAggregator) {
     this.validatorIndex = validatorIndex;
-    this.committeeLength = committeeLength;
     this.committeeIndex = committeeIndex;
-    this.commiteesAtSlot = commiteesAtSlot;
-    this.validatorCommitteeIndex = validatorCommitteeIndex;
+    this.committeesAtSlot = committeesAtSlot;
     this.slot = slot;
-  }
-
-  public BLSPublicKey getPublicKey() {
-    return publicKey;
+    this.isAggregator = isAggregator;
   }
 
   public int getValidatorIndex() {
     return validatorIndex;
   }
 
-  public int getCommitteeLength() {
-    return committeeLength;
-  }
-
   public int getCommitteeIndex() {
     return committeeIndex;
   }
 
-  public int getCommiteesAtSlot() {
-    return commiteesAtSlot;
-  }
-
-  public int getValidatorCommitteeIndex() {
-    return validatorCommitteeIndex;
+  public UInt64 getCommitteesAtSlot() {
+    return committeesAtSlot;
   }
 
   public UInt64 getSlot() {
     return slot;
+  }
+
+  public boolean isAggregator() {
+    return isAggregator;
   }
 
   @Override
@@ -84,38 +66,27 @@ public class AttesterDuties {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final AttesterDuties that = (AttesterDuties) o;
+    final CommitteeSubscriptionRequest that = (CommitteeSubscriptionRequest) o;
     return validatorIndex == that.validatorIndex
-        && committeeLength == that.committeeLength
         && committeeIndex == that.committeeIndex
-        && commiteesAtSlot == that.commiteesAtSlot
-        && validatorCommitteeIndex == that.validatorCommitteeIndex
-        && Objects.equals(publicKey, that.publicKey)
+        && isAggregator == that.isAggregator
+        && Objects.equals(committeesAtSlot, that.committeesAtSlot)
         && Objects.equals(slot, that.slot);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(
-        publicKey,
-        validatorIndex,
-        committeeLength,
-        committeeIndex,
-        commiteesAtSlot,
-        validatorCommitteeIndex,
-        slot);
+    return Objects.hash(validatorIndex, committeeIndex, committeesAtSlot, slot, isAggregator);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("publicKey", publicKey)
         .add("validatorIndex", validatorIndex)
-        .add("committeeLength", committeeLength)
         .add("committeeIndex", committeeIndex)
-        .add("commiteesAtSlot", commiteesAtSlot)
-        .add("validatorCommitteeIndex", validatorCommitteeIndex)
+        .add("committeesAtSlot", committeesAtSlot)
         .add("slot", slot)
+        .add("isAggregator", isAggregator)
         .toString();
   }
 }

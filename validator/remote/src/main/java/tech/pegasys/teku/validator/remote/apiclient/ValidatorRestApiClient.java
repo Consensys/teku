@@ -23,6 +23,7 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.AttesterDuty;
 import tech.pegasys.teku.api.response.v1.validator.ProposerDuty;
 import tech.pegasys.teku.api.schema.Attestation;
+import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.Fork;
@@ -56,13 +57,20 @@ public interface ValidatorRestApiClient {
 
   Optional<Attestation> createUnsignedAttestation(UInt64 slot, int committeeIndex);
 
+  Optional<AttestationData> createAttestationData(UInt64 slot, int committeeIndex);
+
   void sendSignedAttestation(Attestation attestation);
 
   Optional<Attestation> createAggregate(Bytes32 attestationHashTreeRoot);
 
   void sendAggregateAndProof(SignedAggregateAndProof signedAggregateAndProof);
 
-  void subscribeToBeaconCommitteeForAggregation(int committeeIndex, UInt64 aggregationSlot);
+  void subscribeToBeaconCommittee(
+      int validatorIndex,
+      int committeeIndex,
+      UInt64 committeesAtSlot,
+      UInt64 slot,
+      boolean isAggregator);
 
   void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 }

@@ -13,9 +13,13 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import tech.pegasys.teku.datastructures.operations.Attestation;
-import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
+public interface GossipedItemConsumer<T> {
+  void forward(T operation);
 
-public interface VerifiedBlockAttestationsSubscriptionProvider {
-  void subscribe(VerifiedBlockOperationsListener<Attestation> verifiedBlockOperationsListener);
+  GossipedItemConsumer<?> NOOP = (__) -> {};
+
+  @SuppressWarnings("unchecked")
+  static <T> GossipedItemConsumer<T> noop() {
+    return (GossipedItemConsumer<T>) NOOP;
+  }
 }

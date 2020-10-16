@@ -29,5 +29,11 @@ public class NoOpPerformanceTracker implements PerformanceTracker {
   public void saveProducedBlock(SignedBeaconBlock block) {}
 
   @Override
+  public void reportAttestationProductionAttempt(UInt64 epoch) {}
+
+  @Override
+  public void reportBlockProductionAttempt(UInt64 epoch) {}
+
+  @Override
   public void onSlot(UInt64 slot) {}
 }

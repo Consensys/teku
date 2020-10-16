@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -62,11 +62,12 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
     final UInt64 slot = duty.getSlot();
     final int aggregatorModulo = CommitteeUtil.getAggregatorModulo(duty.getCommitteeLength());
 
-    final SafeFuture<Optional<Attestation>> unsignedAttestationFuture =
+    final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture =
         scheduleAttestationProduction(
             scheduledDuties,
             attestationCommitteeIndex,
             attestationCommitteePosition,
+            duty.getCommitteeLength(),
             validatorIndex,
             validator,
             slot);
@@ -74,6 +75,7 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
     return scheduleAggregation(
         scheduledDuties,
         attestationCommitteeIndex,
+        duty.getCommiteesAtSlot(),
         validatorIndex,
         validator,
         slot,
@@ -81,25 +83,32 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
         unsignedAttestationFuture);
   }
 
-  private SafeFuture<Optional<Attestation>> scheduleAttestationProduction(
+  private SafeFuture<Optional<AttestationData>> scheduleAttestationProduction(
       final ScheduledDuties scheduledDuties,
       final int attestationCommitteeIndex,
       final int attestationCommitteePosition,
+      final int attestationCommitteeSize,
       final int validatorIndex,
       final Validator validator,
       final UInt64 slot) {
     return scheduledDuties.scheduleAttestationProduction(
-        slot, validator, attestationCommitteeIndex, attestationCommitteePosition, validatorIndex);
+        slot,
+        validator,
+        attestationCommitteeIndex,
+        attestationCommitteePosition,
+        attestationCommitteeSize,
+        validatorIndex);
   }
 
   private SafeFuture<Void> scheduleAggregation(
       final ScheduledDuties scheduledDuties,
       final int attestationCommitteeIndex,
+      final int committeesAtSlot,
       final int validatorIndex,
       final Validator validator,
       final UInt64 slot,
       final int aggregatorModulo,
-      final SafeFuture<Optional<Attestation>> unsignedAttestationFuture) {
+      final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture) {
     return forkProvider
         .getForkInfo()
         .thenCompose(forkInfo -> validator.getSigner().signAggregationSlot(slot, forkInfo))
@@ -112,6 +121,7 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
                     validatorIndex,
                     slotSignature,
                     attestationCommitteeIndex,
+                    committeesAtSlot,
                     unsignedAttestationFuture);
               }
             })

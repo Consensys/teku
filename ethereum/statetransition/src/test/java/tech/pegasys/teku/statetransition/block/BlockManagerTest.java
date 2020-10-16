@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.sync.gossip;
+package tech.pegasys.teku.statetransition.block;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -35,10 +35,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.gossip.events.GossipedBlockEvent;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.ImportedBlocks;
-import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.SyncForkChoiceExecutor;
 import tech.pegasys.teku.statetransition.util.FutureItems;
@@ -48,6 +45,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 public class BlockManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(2);
@@ -60,7 +58,6 @@ public class BlockManagerTest {
       PendingPool.createForBlocks(historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
   private final FutureItems<SignedBeaconBlock> futureBlocks =
       FutureItems.create(SignedBeaconBlock::getSlot);
-  private final FetchRecentBlocksService recentBlockFetcher = mock(FetchRecentBlocksService.class);
 
   private final RecentChainData localRecentChainData =
       MemoryOnlyRecentChainData.create(localEventBus);
@@ -72,19 +69,13 @@ public class BlockManagerTest {
       BeaconChainUtil.create(remoteRecentChainData, validatorKeys);
   private final ForkChoice forkChoice =
       new ForkChoice(new SyncForkChoiceExecutor(), localRecentChainData, new StateTransition());
-  private final ImportedBlocks importedBlocks = new ImportedBlocks(localEventBus);
 
   private final BlockImporter blockImporter =
       new BlockImporter(
           localRecentChainData, forkChoice, WeakSubjectivityValidator.lenient(), localEventBus);
   private final BlockManager blockManager =
       new BlockManager(
-          localEventBus,
-          localRecentChainData,
-          blockImporter,
-          pendingBlocks,
-          futureBlocks,
-          recentBlockFetcher);
+          localEventBus, localRecentChainData, blockImporter, pendingBlocks, futureBlocks);
 
   private final UInt64 genesisSlot = UInt64.valueOf(Constants.GENESIS_SLOT);
   private UInt64 currentSlot = genesisSlot;
@@ -93,31 +84,26 @@ public class BlockManagerTest {
   public void setup() {
     localChain.initializeStorage();
     remoteChain.initializeStorage();
-    when(recentBlockFetcher.start()).thenReturn(SafeFuture.completedFuture(null));
-    when(recentBlockFetcher.stop()).thenReturn(SafeFuture.completedFuture(null));
     assertThat(blockManager.start()).isCompleted();
   }
 
   @AfterEach
   public void cleanup() throws Exception {
     assertThat(blockManager.stop()).isCompleted();
-    importedBlocks.close();
   }
 
   @Test
-  public void onGossipedBlock_shouldImport() throws Exception {
+  public void shouldImport() throws Exception {
     final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock = localChain.createBlockAtSlot(nextSlot);
     incrementSlot();
 
-    assertThat(importedBlocks.get()).isEmpty();
-    localEventBus.post(new GossipedBlockEvent(nextBlock));
-    assertThat(importedBlocks.get()).containsExactly(nextBlock);
+    blockManager.importBlock(nextBlock).join();
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
   @Test
-  public void onGossipedBlock_unattachedBlock() throws Exception {
+  public void shouldPutUnattachedBlockToPending() throws Exception {
     final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
     final UInt64 nextNextSlot = nextSlot.plus(UInt64.ONE);
     // Create 2 blocks
@@ -126,8 +112,7 @@ public class BlockManagerTest {
 
     incrementSlot();
     incrementSlot();
-    localEventBus.post(new GossipedBlockEvent(nextNextBlock));
-    assertThat(importedBlocks.get()).isEmpty();
+    blockManager.importBlock(nextNextBlock).join();
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(0);
     assertThat(pendingBlocks.contains(nextNextBlock)).isTrue();
@@ -139,12 +124,7 @@ public class BlockManagerTest {
     final RecentChainData localRecentChainData = mock(RecentChainData.class);
     final BlockManager blockManager =
         new BlockManager(
-            localEventBus,
-            localRecentChainData,
-            blockImporter,
-            pendingBlocks,
-            futureBlocks,
-            recentBlockFetcher);
+            localEventBus, localRecentChainData, blockImporter, pendingBlocks, futureBlocks);
     assertThat(blockManager.start()).isCompleted();
 
     final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
@@ -160,7 +140,7 @@ public class BlockManagerTest {
 
     incrementSlot();
     incrementSlot();
-    blockManager.onGossipedBlock(new GossipedBlockEvent(nextNextBlock));
+    blockManager.importBlock(nextNextBlock);
     ignoreFuture(verify(blockImporter).importBlock(nextNextBlock));
 
     // Before nextNextBlock imports, it's parent becomes available
@@ -178,8 +158,7 @@ public class BlockManagerTest {
     final UInt64 nextSlot = genesisSlot.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock = remoteChain.createAndImportBlockAtSlot(nextSlot);
 
-    localEventBus.post(new GossipedBlockEvent(nextBlock));
-    assertThat(importedBlocks.get()).isEmpty();
+    blockManager.importBlock(nextBlock).join();
     assertThat(pendingBlocks.size()).isEqualTo(0);
     assertThat(futureBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.contains(nextBlock)).isTrue();
@@ -194,8 +173,7 @@ public class BlockManagerTest {
     final SignedBeaconBlock nextNextBlock = remoteChain.createAndImportBlockAtSlot(nextNextSlot);
 
     incrementSlot();
-    localEventBus.post(new GossipedBlockEvent(nextNextBlock));
-    assertThat(importedBlocks.get()).isEmpty();
+    blockManager.importBlock(nextNextBlock).join();
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(0);
     assertThat(pendingBlocks.contains(nextNextBlock)).isTrue();
@@ -207,9 +185,7 @@ public class BlockManagerTest {
     final SignedBeaconBlock nextBlock = localChain.createBlockAtSlot(nextSlot);
     incrementSlot();
 
-    assertThat(importedBlocks.get()).isEmpty();
     assertThat(blockManager.importBlock(nextBlock)).isCompleted();
-    assertThat(importedBlocks.get()).containsExactly(nextBlock);
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
@@ -219,7 +195,6 @@ public class BlockManagerTest {
     final SignedBeaconBlock nextBlock = remoteChain.createAndImportBlockAtSlot(nextSlot);
 
     assertThat(blockManager.importBlock(nextBlock)).isCompleted();
-    assertThat(importedBlocks.get()).isEmpty();
     assertThat(pendingBlocks.size()).isEqualTo(0);
     assertThat(futureBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.contains(nextBlock)).isTrue();
@@ -236,15 +211,11 @@ public class BlockManagerTest {
     }
 
     // Gossip all blocks except the first
-    blocks.subList(1, blockCount).stream()
-        .map(GossipedBlockEvent::new)
-        .forEach(localEventBus::post);
-    assertThat(importedBlocks.get()).isEmpty();
+    blocks.subList(1, blockCount).stream().forEach(blockManager::importBlock);
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
 
     // Import next block, causing remaining blocks to be imported
     assertThat(blockImporter.importBlock(blocks.get(0)).get().isSuccessful()).isTrue();
-    assertThat(importedBlocks.get()).containsExactlyElementsOf(blocks);
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
@@ -265,18 +236,15 @@ public class BlockManagerTest {
     }
 
     // Gossip all blocks except the first
-    invalidBlockDescendants.stream().map(GossipedBlockEvent::new).forEach(localEventBus::post);
-    assertThat(importedBlocks.get()).isEmpty();
+    invalidBlockDescendants.stream().forEach(blockManager::importBlock);
     assertThat(pendingBlocks.size()).isEqualTo(invalidChainDepth);
 
     // Gossip next block, causing dependent blocks to be dropped when the import fails
-    localEventBus.post(new GossipedBlockEvent(invalidBlock));
-    assertThat(importedBlocks.get()).isEmpty();
+    blockManager.importBlock(invalidBlock).join();
     assertThat(pendingBlocks.size()).isEqualTo(0);
 
     // If any invalid block is again gossiped, it should be ignored
-    invalidBlockDescendants.stream().map(GossipedBlockEvent::new).forEach(localEventBus::post);
-    assertThat(importedBlocks.get()).isEmpty();
+    invalidBlockDescendants.stream().forEach(blockManager::importBlock);
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
@@ -298,25 +266,20 @@ public class BlockManagerTest {
 
     // Gossip all blocks except the first two
     invalidBlockDescendants.subList(1, invalidChainDepth).stream()
-        .map(GossipedBlockEvent::new)
-        .forEach(localEventBus::post);
-    assertThat(importedBlocks.get()).isEmpty();
+        .forEach(blockManager::importBlock);
     assertThat(pendingBlocks.size()).isEqualTo(invalidChainDepth - 1);
 
     // Gossip invalid block, which should fail to import and be marked invalid
-    localEventBus.post(new GossipedBlockEvent(invalidBlock));
-    assertThat(importedBlocks.get()).isEmpty();
+    blockManager.importBlock(invalidBlock);
     assertThat(pendingBlocks.size()).isEqualTo(invalidChainDepth - 1);
 
     // Gossip the child of the invalid block, which should also be marked invalid causing
     // the rest of the chain to be marked invalid and dropped
-    localEventBus.post(new GossipedBlockEvent(invalidBlockDescendants.get(0)));
-    assertThat(importedBlocks.get()).isEmpty();
+    blockManager.importBlock(invalidBlockDescendants.get(0));
     assertThat(pendingBlocks.size()).isEqualTo(0);
 
     // If any invalid block is again gossiped, it should be ignored
-    invalidBlockDescendants.stream().map(GossipedBlockEvent::new).forEach(localEventBus::post);
-    assertThat(importedBlocks.get()).isEmpty();
+    invalidBlockDescendants.stream().forEach(blockManager::importBlock);
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
@@ -333,28 +296,22 @@ public class BlockManagerTest {
     }
 
     // Gossip all blocks except the first
-    blocks.subList(1, blockCount).stream()
-        .map(GossipedBlockEvent::new)
-        .forEach(localEventBus::post);
-    assertThat(importedBlocks.get()).isEmpty();
+    blocks.subList(1, blockCount).stream().forEach(blockManager::importBlock);
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
 
     // Import next block, causing next block to be queued for import
     final SignedBeaconBlock firstBlock = blocks.get(0);
     assertThat(blockImporter.importBlock(firstBlock).get().isSuccessful()).isTrue();
-    assertThat(importedBlocks.get()).containsExactly(firstBlock);
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(1);
 
     // Increment slot so that we can import the next block
     incrementSlot();
-    assertThat(importedBlocks.get()).containsExactly(firstBlock, blocks.get(1));
     assertThat(pendingBlocks.size()).isEqualTo(0);
     assertThat(futureBlocks.size()).isEqualTo(1);
 
     // Increment slot so that we can import the next block
     incrementSlot();
-    assertThat(importedBlocks.get()).containsExactlyElementsOf(blocks);
     assertThat(pendingBlocks.size()).isEqualTo(0);
     assertThat(futureBlocks.size()).isEqualTo(0);
   }

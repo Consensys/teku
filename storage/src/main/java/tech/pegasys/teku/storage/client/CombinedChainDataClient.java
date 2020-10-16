@@ -137,6 +137,11 @@ public class CombinedChainDataClient {
     return historicalChainData.getLatestFinalizedBlockAtSlot(slot);
   }
 
+  public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockInEffectAtSlot(
+      final UInt64 slot) {
+    return historicalChainData.getLatestFinalizedBlockAtSlot(slot);
+  }
+
   public SafeFuture<Optional<BeaconBlockAndState>> getBlockAndStateInEffectAtSlot(
       final UInt64 slot) {
     return getSignedBlockAndStateInEffectAtSlot(slot)

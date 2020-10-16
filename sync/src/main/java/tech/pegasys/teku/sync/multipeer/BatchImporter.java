@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
-import tech.pegasys.teku.statetransition.blockimport.BlockImporter;
+import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.sync.multipeer.batches.Batch;
 
 public class BatchImporter {

@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.validator.client.duties.DutyResult.combine;
 
 import com.google.common.base.MoreObjects;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -64,19 +66,27 @@ public class AggregationDuty implements Duty {
    * @param proof the validator's slot signature proving it is the aggregator
    * @param attestationCommitteeIndex the committee index to aggregate
    * @param unsignedAttestationFuture the future returned by {@link
-   *     AttestationProductionDuty#addValidator(Validator, int, int, int)} which completes with the
-   *     unsigned attestation for this committee and slot.
+   *     AttestationProductionDuty#addValidator(Validator, int, int, int, int)} which completes with
+   *     the unsigned attestation for this committee and slot.
    */
   public void addValidator(
       final Validator validator,
       final int validatorIndex,
       final BLSSignature proof,
       final int attestationCommitteeIndex,
-      final SafeFuture<Optional<Attestation>> unsignedAttestationFuture) {
+      final int committeesAtSlot,
+      final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture) {
     aggregatorsByCommitteeIndex.computeIfAbsent(
         attestationCommitteeIndex,
         committeeIndex -> {
-          validatorApiChannel.subscribeToBeaconCommitteeForAggregation(committeeIndex, slot);
+          validatorApiChannel.subscribeToBeaconCommittee(
+              List.of(
+                  new CommitteeSubscriptionRequest(
+                      validatorIndex,
+                      committeeIndex,
+                      UInt64.valueOf(committeesAtSlot),
+                      slot,
+                      true)));
           return new CommitteeAggregator(
               validator,
               UInt64.valueOf(validatorIndex),
@@ -103,14 +113,12 @@ public class AggregationDuty implements Duty {
   }
 
   public CompletionStage<Optional<Attestation>> createAggregate(
-      final Optional<Attestation> maybeAttestation) {
+      final Optional<AttestationData> maybeAttestation) {
     final AttestationData attestationData =
-        maybeAttestation
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Unable to perform aggregation for committee because no attestation was produced"))
-            .getData();
+        maybeAttestation.orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Unable to perform aggregation for committee because no attestation was produced"));
     return validatorApiChannel.createAggregate(attestationData.hashTreeRoot());
   }
 
@@ -148,14 +156,14 @@ public class AggregationDuty implements Duty {
     private final UInt64 validatorIndex;
     private final int attestationCommitteeIndex;
     private final BLSSignature proof;
-    private final SafeFuture<Optional<Attestation>> unsignedAttestationFuture;
+    private final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture;
 
     private CommitteeAggregator(
         final Validator validator,
         final UInt64 validatorIndex,
         final int attestationCommitteeIndex,
         final BLSSignature proof,
-        final SafeFuture<Optional<Attestation>> unsignedAttestationFuture) {
+        final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture) {
       this.validator = validator;
       this.validatorIndex = validatorIndex;
       this.attestationCommitteeIndex = attestationCommitteeIndex;

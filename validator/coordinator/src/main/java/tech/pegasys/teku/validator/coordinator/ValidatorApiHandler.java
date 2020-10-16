@@ -68,13 +68,14 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscrib
 import tech.pegasys.teku.ssz.SSZTypes.Bitlist;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.blockimport.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.events.block.ProposedBlockEvent;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.sync.SyncState;
 import tech.pegasys.teku.sync.SyncStateTracker;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -246,6 +247,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+    performanceTracker.reportBlockProductionAttempt(compute_epoch_at_slot(slot));
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -273,6 +275,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<Attestation>> createUnsignedAttestation(
       final UInt64 slot, final int committeeIndex) {
+    performanceTracker.reportAttestationProductionAttempt(compute_epoch_at_slot(slot));
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -305,6 +308,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                 return SafeFuture.completedFuture(Optional.of(attestation));
               }
             });
+  }
+
+  @Override
+  public SafeFuture<Optional<AttestationData>> createAttestationData(
+      final UInt64 slot, final int committeeIndex) {
+    return createUnsignedAttestation(slot, committeeIndex)
+        .thenApply(maybeAttestation -> maybeAttestation.map(Attestation::getData));
   }
 
   private Attestation createAttestation(
@@ -344,9 +354,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToBeaconCommitteeForAggregation(
-      final int committeeIndex, final UInt64 aggregationSlot) {
-    attestationTopicSubscriber.subscribeToCommitteeForAggregation(committeeIndex, aggregationSlot);
+  public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
+    requests.forEach(
+        request -> {
+          if (request.isAggregator()) {
+            attestationTopicSubscriber.subscribeToCommitteeForAggregation(
+                request.getCommitteeIndex(), request.getCommitteesAtSlot(), request.getSlot());
+          }
+        });
   }
 
   @Override
@@ -517,6 +532,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BeaconState state, final UInt64 epoch, final Integer validatorIndex) {
     try {
       final BLSPublicKey pkey = state.getValidators().get(validatorIndex).getPubkey();
+      final UInt64 committeeCountPerSlot = get_committee_count_per_slot(state, epoch);
       return CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex)
           .map(
               committeeAssignment ->
@@ -525,6 +541,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                       validatorIndex,
                       committeeAssignment.getCommittee().size(),
                       committeeAssignment.getCommitteeIndex().intValue(),
+                      committeeCountPerSlot.intValue(),
                       committeeAssignment.getCommittee().indexOf(validatorIndex),
                       committeeAssignment.getSlot()));
     } catch (IndexOutOfBoundsException ex) {

@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscriptions;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedOperationConsumer;
+import tech.pegasys.teku.networking.eth2.gossip.topics.GossipedItemConsumer;
 import tech.pegasys.teku.networking.eth2.gossip.topics.TopicNames;
 import tech.pegasys.teku.networking.eth2.gossip.topics.validation.AttestationValidator;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
@@ -49,8 +49,8 @@ public class AttestationGossipManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   @SuppressWarnings("unchecked")
-  private final GossipedOperationConsumer<ValidateableAttestation> gossipedAttestationConsumer =
-      mock(GossipedOperationConsumer.class);
+  private final GossipedItemConsumer<ValidateableAttestation> gossipedAttestationConsumer =
+      mock(GossipedItemConsumer.class);
 
   private final AttestationValidator attestationValidator = mock(AttestationValidator.class);
   private final RecentChainData recentChainData =
