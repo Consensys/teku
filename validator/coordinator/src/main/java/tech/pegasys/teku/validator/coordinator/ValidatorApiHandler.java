@@ -100,6 +100,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final AggregatingAttestationPool attestationPool;
   private final AttestationManager attestationManager;
   private final AttestationTopicSubscriber attestationTopicSubscriber;
+  private final ActiveValidatorTracker activeValidatorTracker;
   private final EventBus eventBus;
   private final DutyMetrics dutyMetrics;
   private final PerformanceTracker performanceTracker;
@@ -113,6 +114,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
       final AttestationTopicSubscriber attestationTopicSubscriber,
+      final ActiveValidatorTracker activeValidatorTracker,
       final EventBus eventBus,
       final DutyMetrics dutyMetrics,
       final PerformanceTracker performanceTracker) {
@@ -124,6 +126,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.attestationPool = attestationPool;
     this.attestationManager = attestationManager;
     this.attestationTopicSubscriber = attestationTopicSubscriber;
+    this.activeValidatorTracker = activeValidatorTracker;
     this.eventBus = eventBus;
     this.dutyMetrics = dutyMetrics;
     this.performanceTracker = performanceTracker;
@@ -360,6 +363,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
           if (request.isAggregator()) {
             attestationTopicSubscriber.subscribeToCommitteeForAggregation(
                 request.getCommitteeIndex(), request.getCommitteesAtSlot(), request.getSlot());
+
+            // The old subscription API can't provide the validator ID so until it can be removed,
+            // don't track validators from those calls - they should use the old API to subscribe to
+            // persistent subnets.
+            if (request.getValidatorIndex() != UKNOWN_VALIDATOR_ID) {
+              activeValidatorTracker.onCommitteeSubscriptionRequest(
+                  request.getValidatorIndex(), request.getSlot());
+            }
           }
         });
   }
