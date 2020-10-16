@@ -27,7 +27,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_ATTESTATION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLOCK;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_COMMITTEE_FOR_AGGREGATION;
+import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SUBSCRIBE_TO_PERSISTENT_SUBNETS;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -49,7 +49,7 @@ import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.request.SubscribeToBeaconCommitteeRequest;
+import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
@@ -71,6 +71,7 @@ import tech.pegasys.teku.api.schema.ValidatorDuties;
 import tech.pegasys.teku.api.schema.ValidatorDutiesRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
@@ -203,15 +204,19 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public void subscribeToBeaconCommittee(
-      final int validatorIndex,
-      final int committeeIndex,
-      final UInt64 committeesAtSlot,
-      final UInt64 slot,
-      final boolean isAggregator) {
-    final SubscribeToBeaconCommitteeRequest request =
-        new SubscribeToBeaconCommitteeRequest(committeeIndex, slot);
-    post(SUBSCRIBE_TO_COMMITTEE_FOR_AGGREGATION, request, null);
+  public void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests) {
+    final BeaconCommitteeSubscriptionRequest[] body =
+        requests.stream()
+            .map(
+                request ->
+                    new BeaconCommitteeSubscriptionRequest(
+                        request.getValidatorIndex(),
+                        request.getCommitteeIndex(),
+                        request.getCommitteesAtSlot(),
+                        request.getSlot(),
+                        request.isAggregator()))
+            .toArray(BeaconCommitteeSubscriptionRequest[]::new);
+    post(SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET, body, null);
   }
 
   @Override
