@@ -43,7 +43,6 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Checkpoint;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
@@ -81,7 +80,7 @@ public class GetStateFinalityCheckpoints extends AbstractHandler implements Hand
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = GetStateRootResponse.class)),
+            content = @OpenApiContent(from = GetStateFinalityCheckpointsResponse.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_NOT_FOUND),
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
