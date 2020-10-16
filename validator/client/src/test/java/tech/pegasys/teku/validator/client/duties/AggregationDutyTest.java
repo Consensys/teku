@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.client.duties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -78,26 +77,6 @@ class AggregationDutyTest {
   public void shouldBeCompleteWhenNoValidatorsAdded() {
     performAndReportDuty();
     verifyNoInteractions(validatorApiChannel, validatorLogger);
-  }
-
-  @Test
-  public void shouldSubscribeToCommitteeTopicWhenNewCommitteeAdded() {
-    final int committeeIndex = 2;
-    duty.addValidator(
-        validator1, 1, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
-    verify(validatorApiChannel).subscribeToBeaconCommitteeForAggregation(committeeIndex, SLOT);
-  }
-
-  @Test
-  public void shouldNotSubscribeToCommitteeTopicWhenAdditionalValidatorAdded() {
-    final int committeeIndex = 2;
-    duty.addValidator(
-        validator1, 1, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
-    duty.addValidator(
-        validator2, 2, dataStructureUtil.randomSignature(), committeeIndex, new SafeFuture<>());
-
-    verify(validatorApiChannel, times(1))
-        .subscribeToBeaconCommitteeForAggregation(committeeIndex, SLOT);
   }
 
   @Test
@@ -236,7 +215,6 @@ class AggregationDutyTest {
   public void shouldFailWhenAttestationDataNotCreated() {
     duty.addValidator(
         validator1, 1, dataStructureUtil.randomSignature(), 2, completedFuture(Optional.empty()));
-    verify(validatorApiChannel).subscribeToBeaconCommitteeForAggregation(anyInt(), any());
 
     performAndReportDuty();
 

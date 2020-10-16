@@ -81,7 +81,7 @@ public class ProfilingRun {
       EventBus localEventBus = mock(EventBus.class);
       RecentChainData recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
       BeaconChainUtil localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
-      recentChainData.initializeFromGenesis(initialState).join();
+      recentChainData.initializeFromGenesis(initialState);
       ForkChoice forkChoice =
           new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());
       BlockImporter blockImporter =
@@ -151,7 +151,7 @@ public class ProfilingRun {
       EventBus localEventBus = mock(EventBus.class);
       RecentChainData recentChainData = MemoryOnlyRecentChainData.create(localEventBus);
       BeaconChainUtil localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
-      recentChainData.initializeFromGenesis(initialState).join();
+      recentChainData.initializeFromGenesis(initialState);
       initialState = null;
       ForkChoice forkChoice =
           new ForkChoice(new SyncForkChoiceExecutor(), recentChainData, new StateTransition());

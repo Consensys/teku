@@ -37,7 +37,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
@@ -53,7 +52,7 @@ import tech.pegasys.teku.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -61,6 +60,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
@@ -84,19 +84,17 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   public void getForkInfo_WhenPresent_ReturnsValue() {
-    final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
-    when(apiClient.getFork()).thenReturn(Optional.of(new GetForkResponse(forkInfo)));
+    final Fork fork = dataStructureUtil.randomFork();
+    when(apiClient.getFork()).thenReturn(Optional.of(new tech.pegasys.teku.api.schema.Fork(fork)));
+    SafeFuture<Optional<Fork>> future = apiHandler.getFork();
 
-    SafeFuture<Optional<ForkInfo>> future = apiHandler.getForkInfo();
-
-    assertThat(unwrapToValue(future)).usingRecursiveComparison().isEqualTo(forkInfo);
+    assertThat(unwrapToValue(future)).isEqualTo(fork);
   }
 
   @Test
   public void getForkInfo_WhenNotPresent_ReturnsEmpty() {
     when(apiClient.getFork()).thenReturn(Optional.empty());
-
-    SafeFuture<Optional<ForkInfo>> future = apiHandler.getForkInfo();
+    SafeFuture<Optional<Fork>> future = apiHandler.getFork();
 
     assertThat(unwrapToOptional(future)).isNotPresent();
   }
@@ -554,14 +552,19 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   public void subscribeToBeaconCommitteeForAggregation_InvokeApi() {
+    final int validatorIndex = 3;
     final int committeeIndex = 1;
     final UInt64 aggregationSlot = UInt64.ONE;
-
-    apiHandler.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot);
+    final boolean isAggregator = true;
+    final UInt64 committeesAtSlot = UInt64.valueOf(23);
+    final List<CommitteeSubscriptionRequest> requests =
+        List.of(
+            new CommitteeSubscriptionRequest(
+                validatorIndex, committeeIndex, committeesAtSlot, aggregationSlot, isAggregator));
+    apiHandler.subscribeToBeaconCommittee(requests);
     asyncRunner.executeQueuedActions();
 
-    verify(apiClient)
-        .subscribeToBeaconCommitteeForAggregation(eq(committeeIndex), eq(aggregationSlot));
+    verify(apiClient).subscribeToBeaconCommittee(requests);
   }
 
   @Test

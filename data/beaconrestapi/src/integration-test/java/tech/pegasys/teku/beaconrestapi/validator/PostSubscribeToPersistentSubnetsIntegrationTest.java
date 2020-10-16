@@ -15,7 +15,6 @@ package tech.pegasys.teku.beaconrestapi.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doThrow;
 
 import okhttp3.Response;
@@ -46,9 +45,7 @@ public class PostSubscribeToPersistentSubnetsIntegrationTest
     final SubscribeToBeaconCommitteeRequest request =
         new SubscribeToBeaconCommitteeRequest(1, UInt64.ONE);
 
-    doThrow(new RuntimeException())
-        .when(validatorApiChannel)
-        .subscribeToBeaconCommitteeForAggregation(anyInt(), any());
+    doThrow(new RuntimeException()).when(validatorApiChannel).subscribeToBeaconCommittee(any());
 
     Response response =
         post(PostSubscribeToBeaconCommittee.ROUTE, jsonProvider.objectToJSON(request));

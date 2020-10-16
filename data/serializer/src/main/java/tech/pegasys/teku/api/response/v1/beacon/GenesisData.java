@@ -75,4 +75,8 @@ public class GenesisData {
         .add("genesisForkVersion", genesisForkVersion)
         .toString();
   }
+
+  public Bytes32 getGenesisValidatorsRoot() {
+    return genesisValidatorsRoot;
+  }
 }

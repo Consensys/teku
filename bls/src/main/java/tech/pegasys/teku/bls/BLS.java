@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.impl.BLS12381;
+import tech.pegasys.teku.bls.impl.DeserializeException;
 import tech.pegasys.teku.bls.impl.PublicKey;
 import tech.pegasys.teku.bls.impl.PublicKeyMessagePair;
 import tech.pegasys.teku.bls.impl.blst.BlstBLS12381;
@@ -96,7 +97,11 @@ public class BLS {
       LOG.warn("Skipping bls verification.");
       return true;
     }
-    return signature.getSignature().verify(publicKey.getPublicKey(), message);
+    try {
+      return signature.getSignature().verify(publicKey.getPublicKey(), message);
+    } catch (DeserializeException e) {
+      return false;
+    }
   }
 
   /**
@@ -151,7 +156,11 @@ public class BLS {
                 messages.stream(),
                 (pk, msg) -> new PublicKeyMessagePair(pk.getPublicKey(), msg))
             .collect(Collectors.toList());
-    return signature.getSignature().verify(publicKeyMessagePairs);
+    try {
+      return signature.getSignature().verify(publicKeyMessagePairs);
+    } catch (DeserializeException e) {
+      return false;
+    }
   }
 
   /**
@@ -176,7 +185,11 @@ public class BLS {
     if (publicKeys.isEmpty()) return false;
     List<PublicKey> publicKeyObjects =
         publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
-    return signature.getSignature().verify(publicKeyObjects, message);
+    try {
+      return signature.getSignature().verify(publicKeyObjects, message);
+    } catch (DeserializeException e) {
+      return false;
+    }
   }
 
   /*
@@ -314,12 +327,16 @@ public class BLS {
    */
   public static BatchSemiAggregate prepareBatchVerify(
       int index, List<BLSPublicKey> publicKeys, Bytes message, BLSSignature signature) {
-    return getBlsImpl()
-        .prepareBatchVerify(
-            index,
-            publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
-            message,
-            signature.getSignature());
+    try {
+      return getBlsImpl()
+          .prepareBatchVerify(
+              index,
+              publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
+              message,
+              signature.getSignature());
+    } catch (DeserializeException e) {
+      return new InvalidBatchSemiAggregate();
+    }
   }
 
   /**
@@ -337,15 +354,19 @@ public class BLS {
       List<BLSPublicKey> publicKeys2,
       Bytes message2,
       BLSSignature signature2) {
-    return getBlsImpl()
-        .prepareBatchVerify2(
-            index,
-            publicKeys1.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
-            message1,
-            signature1.getSignature(),
-            publicKeys2.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
-            message2,
-            signature2.getSignature());
+    try {
+      return getBlsImpl()
+          .prepareBatchVerify2(
+              index,
+              publicKeys1.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
+              message1,
+              signature1.getSignature(),
+              publicKeys2.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
+              message2,
+              signature2.getSignature());
+    } catch (DeserializeException e) {
+      return new InvalidBatchSemiAggregate();
+    }
   }
 
   /**
@@ -360,7 +381,14 @@ public class BLS {
       LOG.warn("Skipping bls verification.");
       return true;
     }
-    return getBlsImpl().completeBatchVerify(preparedSignatures);
+    List<BatchSemiAggregate> validAggregates =
+        preparedSignatures.stream()
+            .filter(it -> !(it instanceof InvalidBatchSemiAggregate))
+            .collect(Collectors.toList());
+    // completeBatchVerify() call is needed in any case since associated resources could be released
+    boolean verifyResult = getBlsImpl().completeBatchVerify(validAggregates);
+    boolean noInvalidAggregates = validAggregates.size() == preparedSignatures.size();
+    return verifyResult && noInvalidAggregates;
   }
 
   /*
@@ -400,4 +428,6 @@ public class BLS {
   static BLS12381 getBlsImpl() {
     return BLS_IMPL;
   }
+
+  private static class InvalidBatchSemiAggregate implements BatchSemiAggregate {}
 }

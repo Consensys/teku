@@ -68,7 +68,7 @@ public class ChainUpdater {
       final boolean signDeposits, final UInt64 depositAmount) {
     final SignedBlockAndState genesis =
         chainBuilder.generateGenesis(UInt64.ZERO, signDeposits, depositAmount);
-    assertThat(recentChainData.initializeFromGenesis(genesis.getState())).isCompleted();
+    recentChainData.initializeFromGenesis(genesis.getState());
     return genesis;
   }
 

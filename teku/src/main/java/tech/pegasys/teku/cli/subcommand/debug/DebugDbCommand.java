@@ -157,11 +157,7 @@ public class DebugDbCommand implements Runnable {
               .createMemoryStore()
               .map(
                   builder ->
-                      builder
-                          .blockProvider(BlockProvider.NOOP)
-                          .asyncRunner(asyncRunner)
-                          .build()
-                          .join())
+                      builder.blockProvider(BlockProvider.NOOP).asyncRunner(asyncRunner).build())
               .map(store -> store.getLatestFinalizedBlockAndState().getState());
       return writeState(outputFile, state);
     } finally {
