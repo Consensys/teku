@@ -175,26 +175,26 @@ public class RpcHandler implements ProtocolBinding<Controller> {
 
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) {
-      onChannelClosed(ctx);
+      onChannelClosed();
     }
 
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
       if (evt instanceof RemoteWriteClosed) {
-        onRemoteWriteClosed(ctx);
+        onRemoteWriteClosed();
       }
     }
 
-    private void onRemoteWriteClosed(ChannelHandlerContext ctx) {
+    private void onRemoteWriteClosed() {
       if (!readCompleted && rpcRequestHandler != null) {
         readCompleted = true;
         rpcRequestHandler.readComplete(nodeId, rpcStream);
       }
     }
 
-    private void onChannelClosed(ChannelHandlerContext ctx) {
+    private void onChannelClosed() {
       try {
-        onRemoteWriteClosed(ctx);
+        onRemoteWriteClosed();
         rpcRequestHandler.closed(nodeId, rpcStream);
       } finally {
         rpcRequestHandler = null;
