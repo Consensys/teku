@@ -152,4 +152,4 @@ DOMAIN_AGGREGATE_AND_PROOF: 0x06000000
 
 # Custom constants
 # ---------------------------------------------------------------
-BLS_INFINITY_VALID: 1
+BLS_INFINITY_VALID: true

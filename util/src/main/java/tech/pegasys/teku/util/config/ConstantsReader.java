@@ -37,6 +37,7 @@ class ConstantsReader {
           .put(String.class, Function.identity())
           .put(Bytes.class, toString(Bytes::fromHexString))
           .put(Bytes4.class, toString(Bytes4::fromHexString))
+          .put(boolean.class, toString(Boolean::valueOf))
           .build();
 
   @SuppressWarnings("unchecked")

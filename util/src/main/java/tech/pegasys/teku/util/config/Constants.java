@@ -172,7 +172,7 @@ public class Constants {
   // Custom
   // Temporary BLS backward compatibility flag
   // Set to 1 if required BLS to be pre rc-1 spec compatible
-  public static int BLS_INFINITY_VALID = 0;
+  public static boolean BLS_INFINITY_VALID = false;
 
   static {
     setConstants("minimal");
@@ -181,7 +181,7 @@ public class Constants {
   public static void setConstants(final String source) {
     try (final InputStream input = createInputStream(source)) {
       ConstantsReader.loadConstantsFrom(input);
-      BLSConstants.VALID_INFINITY = BLS_INFINITY_VALID > 0;
+      BLSConstants.VALID_INFINITY = BLS_INFINITY_VALID;
     } catch (IOException e) {
       throw new IllegalArgumentException("Failed to load constants from " + source, e);
     }
