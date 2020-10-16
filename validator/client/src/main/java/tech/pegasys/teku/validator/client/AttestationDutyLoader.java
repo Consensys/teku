@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
 public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
@@ -34,16 +35,19 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
   private static final Logger LOG = LogManager.getLogger();
   private final ValidatorApiChannel validatorApiChannel;
   private final ForkProvider forkProvider;
+  private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions;
 
   public AttestationDutyLoader(
       final ValidatorApiChannel validatorApiChannel,
       final ForkProvider forkProvider,
       final Supplier<ScheduledDuties> scheduledDutiesFactory,
       final Map<BLSPublicKey, Validator> validators,
-      final ValidatorIndexProvider validatorIndexProvider) {
+      final ValidatorIndexProvider validatorIndexProvider,
+      final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions) {
     super(scheduledDutiesFactory, validators, validatorIndexProvider);
     this.validatorApiChannel = validatorApiChannel;
     this.forkProvider = forkProvider;
+    this.beaconCommitteeSubscriptions = beaconCommitteeSubscriptions;
   }
 
   @Override
@@ -53,32 +57,36 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
   }
 
   @Override
+  protected SafeFuture<Void> scheduleAllDuties(
+      final ScheduledDuties scheduledDuties, final List<AttesterDuties> duties) {
+    return super.scheduleAllDuties(scheduledDuties, duties)
+        .alwaysRun(beaconCommitteeSubscriptions::sendRequests);
+  }
+
+  @Override
   protected SafeFuture<Void> scheduleDuties(
       final ScheduledDuties scheduledDuties, final AttesterDuties duty) {
-    final int attestationCommitteeIndex = duty.getCommitteeIndex();
-    final int attestationCommitteePosition = duty.getValidatorCommitteeIndex();
-    final int validatorIndex = duty.getValidatorIndex();
     final Validator validator = validators.get(duty.getPublicKey());
-    final UInt64 slot = duty.getSlot();
     final int aggregatorModulo = CommitteeUtil.getAggregatorModulo(duty.getCommitteeLength());
 
     final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture =
         scheduleAttestationProduction(
             scheduledDuties,
-            attestationCommitteeIndex,
-            attestationCommitteePosition,
+            duty.getCommitteeIndex(),
+            duty.getValidatorCommitteeIndex(),
             duty.getCommitteeLength(),
-            validatorIndex,
+            duty.getCommiteesAtSlot(),
+            duty.getValidatorIndex(),
             validator,
-            slot);
+            duty.getSlot());
 
     return scheduleAggregation(
         scheduledDuties,
-        attestationCommitteeIndex,
+        duty.getCommitteeIndex(),
         duty.getCommiteesAtSlot(),
-        validatorIndex,
+        duty.getValidatorIndex(),
         validator,
-        slot,
+        duty.getSlot(),
         aggregatorModulo,
         unsignedAttestationFuture);
   }
@@ -88,6 +96,7 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
       final int attestationCommitteeIndex,
       final int attestationCommitteePosition,
       final int attestationCommitteeSize,
+      final int committeesAtSlot,
       final int validatorIndex,
       final Validator validator,
       final UInt64 slot) {
@@ -97,6 +106,7 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
         attestationCommitteeIndex,
         attestationCommitteePosition,
         attestationCommitteeSize,
+        committeesAtSlot,
         validatorIndex);
   }
 

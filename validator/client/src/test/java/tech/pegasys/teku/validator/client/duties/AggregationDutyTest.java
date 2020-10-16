@@ -26,7 +26,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,9 +60,12 @@ class AggregationDutyTest {
   private final Validator validator2 =
       new Validator(dataStructureUtil.randomPublicKey(), signer2, Optional.empty());
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
+  private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
+      mock(BeaconCommitteeSubscriptions.class);
 
   private final AggregationDuty duty =
-      new AggregationDuty(SLOT, validatorApiChannel, forkProvider, validatorLogger);
+      new AggregationDuty(
+          SLOT, validatorApiChannel, forkProvider, validatorLogger, beaconCommitteeSubscriptions);
 
   @BeforeEach
   public void setUp() {
@@ -93,15 +95,14 @@ class AggregationDutyTest {
         committeeIndex,
         committeesAtSlot,
         new SafeFuture<>());
-    verify(validatorApiChannel)
+    verify(beaconCommitteeSubscriptions)
         .subscribeToBeaconCommittee(
-            List.of(
-                new CommitteeSubscriptionRequest(
-                    validatorIndex, committeeIndex, UInt64.valueOf(committeesAtSlot), SLOT, true)));
+            new CommitteeSubscriptionRequest(
+                validatorIndex, committeeIndex, UInt64.valueOf(committeesAtSlot), SLOT, true));
   }
 
   @Test
-  public void shouldNotSubscribeToCommitteeTopicWhenAdditionalValidatorAdded() {
+  public void shouldSubscribeToCommitteeTopicWhenAdditionalValidatorAdded() {
     final int committeeIndex = 2;
     final int committeesAtSlot = 10;
     duty.addValidator(
@@ -119,11 +120,14 @@ class AggregationDutyTest {
         committeesAtSlot,
         new SafeFuture<>());
 
-    verify(validatorApiChannel, times(1))
+    verify(beaconCommitteeSubscriptions)
         .subscribeToBeaconCommittee(
-            List.of(
-                new CommitteeSubscriptionRequest(
-                    1, committeeIndex, UInt64.valueOf(committeesAtSlot), SLOT, true)));
+            new CommitteeSubscriptionRequest(
+                1, committeeIndex, UInt64.valueOf(committeesAtSlot), SLOT, true));
+    verify(beaconCommitteeSubscriptions)
+        .subscribeToBeaconCommittee(
+            new CommitteeSubscriptionRequest(
+                2, committeeIndex, UInt64.valueOf(committeesAtSlot), SLOT, true));
   }
 
   @Test
@@ -274,7 +278,7 @@ class AggregationDutyTest {
         2,
         10,
         completedFuture(Optional.empty()));
-    verify(validatorApiChannel).subscribeToBeaconCommittee(any());
+    verify(beaconCommitteeSubscriptions).subscribeToBeaconCommittee(any());
 
     performAndReportDuty();
 

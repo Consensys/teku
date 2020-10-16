@@ -46,6 +46,7 @@ public class ScheduledDuties {
       final int attestationCommitteeIndex,
       final int attestationCommitteePosition,
       final int attestationCommitteeSize,
+      final int committeesAtSlot,
       final int validatorIndex) {
     return attestationProductionDuties
         .computeIfAbsent(slot, dutyFactory::createAttestationProductionDuty)
@@ -53,6 +54,7 @@ public class ScheduledDuties {
             validator,
             attestationCommitteeIndex,
             attestationCommitteePosition,
+            committeesAtSlot,
             validatorIndex,
             attestationCommitteeSize);
   }

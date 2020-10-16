@@ -23,11 +23,15 @@ import tech.pegasys.teku.validator.client.Validator;
 public class ValidatorDutyFactory {
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
+  private final BeaconCommitteeSubscriptions beaconCommitteeSubscription;
 
   public ValidatorDutyFactory(
-      final ForkProvider forkProvider, final ValidatorApiChannel validatorApiChannel) {
+      final ForkProvider forkProvider,
+      final ValidatorApiChannel validatorApiChannel,
+      final BeaconCommitteeSubscriptions beaconCommitteeSubscription) {
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
+    this.beaconCommitteeSubscription = beaconCommitteeSubscription;
   }
 
   public BlockProductionDuty createBlockProductionDuty(
@@ -36,10 +40,12 @@ public class ValidatorDutyFactory {
   }
 
   public AttestationProductionDuty createAttestationProductionDuty(final UInt64 slot) {
-    return new AttestationProductionDuty(slot, forkProvider, validatorApiChannel);
+    return new AttestationProductionDuty(
+        slot, forkProvider, validatorApiChannel, beaconCommitteeSubscription);
   }
 
   public AggregationDuty createAggregationDuty(final UInt64 slot) {
-    return new AggregationDuty(slot, validatorApiChannel, forkProvider, VALIDATOR_LOGGER);
+    return new AggregationDuty(
+        slot, validatorApiChannel, forkProvider, VALIDATOR_LOGGER, beaconCommitteeSubscription);
   }
 }
