@@ -14,6 +14,7 @@
 package tech.pegasys.teku.reference.phase0.bls;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.ethtests.finder.BlsTestFinder.BLS_DATA_FILE;
 import static tech.pegasys.teku.reference.phase0.TestDataUtils.loadYaml;
 
@@ -24,18 +25,22 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
-import tech.pegasys.teku.reference.phase0.TestExecutor;
 
-public class BlsSignTestExecutor implements TestExecutor {
+public class BlsSignTestExecutor extends BlsTestExecutor {
 
   @Override
-  public void runTest(final TestDefinition testDefinition) throws Throwable {
+  public void runTestImpl(final TestDefinition testDefinition) throws Throwable {
     final Data data = loadYaml(testDefinition, BLS_DATA_FILE, Data.class);
     final BLSSecretKey privateKey = data.input.getPrivateKey();
     final Bytes message = data.input.getMessage();
     final BLSSignature expectedResult = data.getOutput();
 
-    assertThat(BLS.sign(privateKey, message)).isEqualTo(expectedResult);
+    if (expectedResult == null) {
+      assertThatThrownBy(() -> BLS.sign(privateKey, message))
+          .isInstanceOf(IllegalArgumentException.class);
+    } else {
+      assertThat(BLS.sign(privateKey, message)).isEqualTo(expectedResult);
+    }
   }
 
   private static class Data {
@@ -46,7 +51,7 @@ public class BlsSignTestExecutor implements TestExecutor {
     private String output;
 
     public BLSSignature getOutput() {
-      return BlsTests.parseSignature(output);
+      return output != null ? BlsTests.parseSignature(output) : null;
     }
   }
 

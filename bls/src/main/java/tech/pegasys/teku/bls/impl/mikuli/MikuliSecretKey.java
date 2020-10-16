@@ -14,27 +14,19 @@
 package tech.pegasys.teku.bls.impl.mikuli;
 
 import static org.apache.milagro.amcl.BLS381.BIG.MODBYTES;
+import static tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve.hashToG2;
 
 import java.util.Objects;
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
+import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.bls.impl.SecretKey;
-import tech.pegasys.teku.bls.impl.Signature;
+import tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve;
 
 /** This class represents a BLS12-381 private key. */
 public class MikuliSecretKey implements SecretKey {
-
-  /**
-   * Create a private key from a byte array
-   *
-   * @param bytes the bytes of the private key
-   * @return a new SecretKey object
-   */
-  public static MikuliSecretKey fromBytes(byte[] bytes) {
-    return fromBytes(Bytes48.wrap(bytes));
-  }
 
   /**
    * Create a private key from bytes
@@ -42,18 +34,14 @@ public class MikuliSecretKey implements SecretKey {
    * @param bytes the bytes of the private key
    * @return a new SecretKey object
    */
-  public static MikuliSecretKey fromBytes(Bytes48 bytes) {
-    return new MikuliSecretKey(new Scalar(BIG.fromBytes(bytes.toArrayUnsafe())));
+  public static MikuliSecretKey fromBytes(Bytes32 bytes) {
+    return new MikuliSecretKey(new Scalar(BIG.fromBytes(Bytes48.leftPad(bytes).toArrayUnsafe())));
   }
 
   private final Scalar scalarValue;
 
   public MikuliSecretKey(Scalar value) {
     this.scalarValue = value;
-  }
-
-  public G2Point sign(G2Point message) {
-    return message.mul(scalarValue);
   }
 
   @Override
@@ -65,17 +53,23 @@ public class MikuliSecretKey implements SecretKey {
 
   @Override
   public MikuliPublicKey derivePublicKey() {
-    return new MikuliPublicKey(this);
+    return new MikuliPublicKey(Util.g1Generator.mul(getScalarValue()));
   }
 
   @Override
-  public Signature sign(Bytes message) {
-    return MikuliBLS12381.sign(this, message);
+  public MikuliSignature sign(Bytes message) {
+    return sign(message, HashToCurve.ETH2_DST);
   }
 
   @Override
-  public Signature sign(Bytes message, Bytes dst) {
-    return MikuliBLS12381.sign(this, message, dst);
+  public MikuliSignature sign(Bytes message, Bytes dst) {
+    if (!BLSConstants.VALID_INFINITY && scalarValue.isZero()) {
+      throw new IllegalArgumentException("Signing with zero private key is prohibited");
+    } else {
+      G2Point hashInGroup2 = new G2Point(hashToG2(message, dst));
+      G2Point signaturePoint = hashInGroup2.mul(scalarValue);
+      return new MikuliSignature(signaturePoint);
+    }
   }
 
   public Scalar getScalarValue() {

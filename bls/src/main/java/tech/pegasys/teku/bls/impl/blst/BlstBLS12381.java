@@ -24,6 +24,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
+import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.bls.BatchSemiAggregate;
 import tech.pegasys.teku.bls.impl.BLS12381;
 import tech.pegasys.teku.bls.impl.KeyPair;
@@ -70,6 +71,14 @@ public class BlstBLS12381 implements BLS12381 {
   }
 
   public static BlstSignature sign(BlstSecretKey secretKey, Bytes message, Bytes dst) {
+    if (secretKey.isZero()) {
+      if (BLSConstants.VALID_INFINITY) {
+        return BlstSignature.INFINITY;
+      } else {
+        throw new IllegalArgumentException("Signing with zero private key is prohibited");
+      }
+    }
+
     p2 hash = HashToCurve.hashToG2(message, dst);
     p2 p2Signature = new p2();
     try {
@@ -90,6 +99,10 @@ public class BlstBLS12381 implements BLS12381 {
 
   public static boolean verify(
       BlstPublicKey publicKey, Bytes message, BlstSignature signature, Bytes dst) {
+    if (!BLSConstants.VALID_INFINITY && publicKey.isInfinity()) {
+      return false;
+    }
+
     if (publicKey.isInfinity() || signature.isInfinity()) {
       return publicKey.isInfinity() && signature.isInfinity();
     }
@@ -143,6 +156,10 @@ public class BlstBLS12381 implements BLS12381 {
 
     BlstPublicKey aggrPubKey = aggregatePublicKeys(publicKeys);
     BlstSignature blstSignature = (BlstSignature) signature;
+    if (!BLSConstants.VALID_INFINITY && aggrPubKey.isInfinity()) {
+      return new BlstInfiniteSemiAggregate(false);
+    }
+
     if (aggrPubKey.isInfinity() || blstSignature.isInfinity()) {
       return new BlstInfiniteSemiAggregate(aggrPubKey.isInfinity() && blstSignature.isInfinity());
     }
@@ -222,7 +239,7 @@ public class BlstBLS12381 implements BLS12381 {
       }
 
       int boolRes = blst.pairing_finalverify(ctx0, null);
-      return mergeRes && boolRes != 0;
+      return mergeRes && boolRes != 0 && !anyInvalidInfinity;
 
     } finally {
       preparedList.stream()

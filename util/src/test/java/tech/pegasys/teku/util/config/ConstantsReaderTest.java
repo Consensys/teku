@@ -24,7 +24,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ConstantsReaderTest {
-  private static final List<String> ZERO_FIELDS = List.of("GENESIS_SLOT", "GENESIS_EPOCH");
+  private static final List<String> ZERO_FIELDS =
+      List.of("GENESIS_SLOT", "GENESIS_EPOCH", "BLS_INFINITY_VALID");
 
   @AfterEach
   public void tearDown() {
