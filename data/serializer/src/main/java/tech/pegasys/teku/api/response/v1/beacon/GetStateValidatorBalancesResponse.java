@@ -22,7 +22,8 @@ public class GetStateValidatorBalancesResponse {
   public final List<ValidatorBalanceResponse> data;
 
   @JsonCreator
-  public GetStateValidatorBalancesResponse(@JsonProperty("data") final List<ValidatorBalanceResponse> data) {
+  public GetStateValidatorBalancesResponse(
+      @JsonProperty("data") final List<ValidatorBalanceResponse> data) {
     this.data = data;
   }
 }

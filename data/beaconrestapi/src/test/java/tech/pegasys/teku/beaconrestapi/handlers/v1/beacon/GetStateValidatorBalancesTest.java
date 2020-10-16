@@ -13,6 +13,13 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorBalancesResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
@@ -21,22 +28,12 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-
 public class GetStateValidatorBalancesTest extends AbstractBeaconHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
   private final GetStateValidatorBalances handler =
-          new GetStateValidatorBalances(chainDataProvider, jsonProvider);
+      new GetStateValidatorBalances(chainDataProvider, jsonProvider);
   private final ValidatorBalanceResponse validatorBalanceResponse =
-          new ValidatorBalanceResponse(
-                  ONE,
-                  UInt64.valueOf("32000000000"));
+      new ValidatorBalanceResponse(ONE, UInt64.valueOf("32000000000"));
 
   @Test
   public void shouldGetValidatorFromState() throws Exception {
@@ -46,12 +43,13 @@ public class GetStateValidatorBalancesTest extends AbstractBeaconHandlerTest {
     when(chainDataProvider.stateParameterToSlot("head")).thenReturn(Optional.of(slot));
     for (int i = 1; i <= 4; i++) {
       when(chainDataProvider.validatorParameterToIndex(Integer.toString(i)))
-              .thenReturn(Optional.of(i));
+          .thenReturn(Optional.of(i));
     }
     when(chainDataProvider.getValidatorsBalances(slot, List.of(1, 2, 3, 4)))
-            .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(validatorBalanceResponse))));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(validatorBalanceResponse))));
     handler.handle(context);
-    GetStateValidatorBalancesResponse response = getResponseFromFuture(GetStateValidatorBalancesResponse.class);
+    GetStateValidatorBalancesResponse response =
+        getResponseFromFuture(GetStateValidatorBalancesResponse.class);
     assertThat(response.data).isEqualTo(List.of(validatorBalanceResponse));
   }
 }
