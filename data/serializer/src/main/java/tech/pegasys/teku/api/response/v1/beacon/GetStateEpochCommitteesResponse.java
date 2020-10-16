@@ -17,13 +17,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
-public class GetStateValidatorBalancesResponse {
+public class GetStateEpochCommitteesResponse {
   @JsonProperty("data")
-  public final List<ValidatorBalanceResponse> data;
+  public final List<EpochCommitteeResponse> data;
 
   @JsonCreator
-  public GetStateValidatorBalancesResponse(
-      @JsonProperty("data") final List<ValidatorBalanceResponse> data) {
+  public GetStateEpochCommitteesResponse(
+      @JsonProperty("data") final List<EpochCommitteeResponse> data) {
     this.data = data;
   }
 }

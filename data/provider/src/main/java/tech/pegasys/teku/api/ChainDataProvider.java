@@ -13,9 +13,18 @@
 
 package tech.pegasys.teku.api;
 
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.api.DataProviderFailures.chainUnavailable;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+
+import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.response.GetForkResponse;
+import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -39,15 +48,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
-
-import java.util.List;
-import java.util.Optional;
-
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.api.DataProviderFailures.chainUnavailable;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 public class ChainDataProvider {
   private final CombinedChainDataClient combinedChainDataClient;
@@ -109,6 +109,48 @@ public class ChainDataProvider {
                         combinedChainDataClient
                             .getCommitteesFromState(checkpointState.getState(), epoch).stream()
                             .map(Committee::new)
+                            .collect(toList())));
+  }
+
+  public SafeFuture<Optional<List<EpochCommitteeResponse>>> getCommitteesAtEpochV1(
+      final UInt64 stateSlot,
+      final UInt64 epoch,
+      final Optional<UInt64> maybeSlot,
+      final Optional<Integer> maybeIndex) {
+    if (!combinedChainDataClient.isChainDataFullyAvailable()) {
+      return chainUnavailable();
+    }
+
+    final UInt64 earliestQueryableSlot =
+        CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
+    if (recentChainData.getHeadSlot().isLessThan(earliestQueryableSlot)) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+
+    if (stateSlot.isLessThan(earliestQueryableSlot)) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+
+    return combinedChainDataClient
+        .getStateAtSlotExact(stateSlot)
+        .thenApply(
+            maybeResult ->
+                maybeResult.map(
+                    state ->
+                        combinedChainDataClient.getCommitteesFromState(state, epoch).stream()
+                            .filter(
+                                committee ->
+                                    maybeSlot
+                                        .map(slot -> committee.getSlot().equals(slot))
+                                        .orElse(true))
+                            .filter(
+                                committee ->
+                                    maybeIndex
+                                        .map(
+                                            index ->
+                                                committee.getCommitteeIndex().intValue() == index)
+                                        .orElse(true))
+                            .map(EpochCommitteeResponse::new)
                             .collect(toList())));
   }
 
@@ -361,7 +403,7 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<List<ValidatorBalanceResponse>>> getValidatorsBalances(
-          final UInt64 slot, final List<Integer> validatorIndices) {
+      final UInt64 slot, final List<Integer> validatorIndices) {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
     }
@@ -371,8 +413,9 @@ public class ChainDataProvider {
     }
 
     return combinedChainDataClient
-            .getStateAtSlotExact(slot)
-            .thenApply(maybeState -> maybeState.map(state -> getValidatorBalances(validatorIndices, state)));
+        .getStateAtSlotExact(slot)
+        .thenApply(
+            maybeState -> maybeState.map(state -> getValidatorBalances(validatorIndices, state)));
   }
 
   private List<ValidatorResponse> getValidators(
@@ -384,11 +427,11 @@ public class ChainDataProvider {
   }
 
   private List<ValidatorBalanceResponse> getValidatorBalances(
-          final List<Integer> validatorIndices,
-          final tech.pegasys.teku.datastructures.state.BeaconState state) {
+      final List<Integer> validatorIndices,
+      final tech.pegasys.teku.datastructures.state.BeaconState state) {
     return validatorIndices.stream()
-            .map(index -> ValidatorBalanceResponse.fromState(state, index))
-            .collect(toList());
+        .map(index -> ValidatorBalanceResponse.fromState(state, index))
+        .collect(toList());
   }
 
   public Optional<Bytes32> getStateRootFromBlockRoot(final Bytes32 blockRoot) {

@@ -13,6 +13,12 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.google.common.eventbus.EventBus;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinServer;
@@ -20,6 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateEpochCommittees;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFinalityCheckpoints;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
@@ -46,12 +53,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 public class BeaconRestApiV1Test {
   private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(new EventBus());
   private final CombinedChainDataClient combinedChainDataClient =
@@ -61,7 +62,7 @@ public class BeaconRestApiV1Test {
   private final SyncService syncService = mock(SyncService.class);
   private final EventChannels eventChannels = mock(EventChannels.class);
   private static final Integer THE_PORT = 12345;
-  private AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
+  private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
 
   @BeforeEach
   public void setup() {
@@ -150,6 +151,11 @@ public class BeaconRestApiV1Test {
   @Test
   public void shouldHaveGetStateValidatorBalancesEndpoint() {
     verify(app).get(eq(GetStateValidatorBalances.ROUTE), any(GetStateValidatorBalances.class));
+  }
+
+  @Test
+  public void shouldHaveGetStateEpochCommitteesEndpoint() {
+    verify(app).get(eq(GetStateEpochCommittees.ROUTE), any(GetStateEpochCommittees.class));
   }
 
   @Test
