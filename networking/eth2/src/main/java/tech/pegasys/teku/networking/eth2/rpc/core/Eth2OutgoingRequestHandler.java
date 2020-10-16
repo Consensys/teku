@@ -202,14 +202,19 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
             })
         .exceptionally(
             (err) -> {
-              abortRequest(rpcStream, err);
+              abortRequest(rpcStream, err, true);
               return null;
             })
         .reportExceptions();
   }
 
   private void abortRequest(final RpcStream rpcStream, Throwable error) {
-    if (!transferToState(ABORTED, List.of(INITIAL, EXPECT_DATA, DATA_COMPLETED, READ_COMPLETE))) {
+    abortRequest(rpcStream, error, false);
+  }
+
+  private void abortRequest(final RpcStream rpcStream, Throwable error, final boolean force) {
+    if (!transferToState(ABORTED, List.of(INITIAL, EXPECT_DATA, DATA_COMPLETED, READ_COMPLETE))
+        && !force) {
       return;
     }
 
