@@ -17,7 +17,6 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.validator.client.duties.DutyResult.combine;
 
 import com.google.common.base.MoreObjects;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,16 +44,19 @@ public class AggregationDuty implements Duty {
   private final ValidatorApiChannel validatorApiChannel;
   private final ForkProvider forkProvider;
   private final ValidatorLogger validatorLogger;
+  private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions;
 
   public AggregationDuty(
       final UInt64 slot,
       final ValidatorApiChannel validatorApiChannel,
       final ForkProvider forkProvider,
-      final ValidatorLogger validatorLogger) {
+      final ValidatorLogger validatorLogger,
+      final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions) {
     this.slot = slot;
     this.validatorApiChannel = validatorApiChannel;
     this.forkProvider = forkProvider;
     this.validatorLogger = validatorLogger;
+    this.beaconCommitteeSubscriptions = beaconCommitteeSubscriptions;
   }
 
   /**
@@ -66,8 +68,8 @@ public class AggregationDuty implements Duty {
    * @param proof the validator's slot signature proving it is the aggregator
    * @param attestationCommitteeIndex the committee index to aggregate
    * @param unsignedAttestationFuture the future returned by {@link
-   *     AttestationProductionDuty#addValidator(Validator, int, int, int, int)} which completes with
-   *     the unsigned attestation for this committee and slot.
+   *     AttestationProductionDuty#addValidator(Validator, int, int, int, int, int)} which completes
+   *     with the unsigned attestation for this committee and slot.
    */
   public void addValidator(
       final Validator validator,
@@ -76,24 +78,23 @@ public class AggregationDuty implements Duty {
       final int attestationCommitteeIndex,
       final int committeesAtSlot,
       final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture) {
+    beaconCommitteeSubscriptions.subscribeToBeaconCommittee(
+        new CommitteeSubscriptionRequest(
+            validatorIndex,
+            attestationCommitteeIndex,
+            UInt64.valueOf(committeesAtSlot),
+            slot,
+            true));
+
     aggregatorsByCommitteeIndex.computeIfAbsent(
         attestationCommitteeIndex,
-        committeeIndex -> {
-          validatorApiChannel.subscribeToBeaconCommittee(
-              List.of(
-                  new CommitteeSubscriptionRequest(
-                      validatorIndex,
-                      committeeIndex,
-                      UInt64.valueOf(committeesAtSlot),
-                      slot,
-                      true)));
-          return new CommitteeAggregator(
-              validator,
-              UInt64.valueOf(validatorIndex),
-              attestationCommitteeIndex,
-              proof,
-              unsignedAttestationFuture);
-        });
+        committeeIndex ->
+            new CommitteeAggregator(
+                validator,
+                UInt64.valueOf(validatorIndex),
+                attestationCommitteeIndex,
+                proof,
+                unsignedAttestationFuture));
   }
 
   @Override

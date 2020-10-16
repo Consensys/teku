@@ -30,6 +30,7 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
+import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.ValidatorDutyFactory;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
@@ -80,8 +81,10 @@ public class ValidatorClientService extends Service {
     final ForkProvider forkProvider = new ForkProvider(asyncRunner, validatorApiChannel);
     final ValidatorIndexProvider validatorIndexProvider =
         new ValidatorIndexProvider(validators.keySet(), validatorApiChannel);
+    final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
+        new BeaconCommitteeSubscriptions(validatorApiChannel);
     final ValidatorDutyFactory validatorDutyFactory =
-        new ValidatorDutyFactory(forkProvider, validatorApiChannel);
+        new ValidatorDutyFactory(forkProvider, validatorApiChannel, beaconCommitteeSubscriptions);
     final DutyLoader attestationDutyLoader =
         new RetryingDutyLoader(
             asyncRunner,
@@ -90,7 +93,8 @@ public class ValidatorClientService extends Service {
                 forkProvider,
                 () -> new ScheduledDuties(validatorDutyFactory),
                 validators,
-                validatorIndexProvider));
+                validatorIndexProvider,
+                beaconCommitteeSubscriptions));
     final DutyLoader blockDutyLoader =
         new RetryingDutyLoader(
             asyncRunner,
