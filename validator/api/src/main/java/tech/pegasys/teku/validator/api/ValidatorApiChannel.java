@@ -34,6 +34,8 @@ import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface ValidatorApiChannel extends ChannelInterface {
+  int UKNOWN_VALIDATOR_ID = -1;
+
   SafeFuture<Optional<Fork>> getFork();
 
   SafeFuture<Optional<GenesisData>> getGenesisData();

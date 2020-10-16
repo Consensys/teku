@@ -363,8 +363,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
           if (request.isAggregator()) {
             attestationTopicSubscriber.subscribeToCommitteeForAggregation(
                 request.getCommitteeIndex(), request.getCommitteesAtSlot(), request.getSlot());
-            activeValidatorTracker.onCommitteeSubscriptionRequest(
-                request.getValidatorIndex(), request.getSlot());
+
+            // The old subscription API can't provide the validator ID so until it can be removed,
+            // don't track validators from those calls - they should use the old API to subscribe to
+            // persistent subnets.
+            if (request.getValidatorIndex() != UKNOWN_VALIDATOR_ID) {
+              activeValidatorTracker.onCommitteeSubscriptionRequest(
+                  request.getValidatorIndex(), request.getSlot());
+            }
           }
         });
   }
