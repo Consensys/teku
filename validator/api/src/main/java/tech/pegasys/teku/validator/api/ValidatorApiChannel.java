@@ -57,7 +57,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<Attestation>> createAggregate(Bytes32 attestationHashTreeRoot);
 
-  void subscribeToBeaconCommitteeForAggregation(int committeeIndex, UInt64 aggregationSlot);
+  void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 
   void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 

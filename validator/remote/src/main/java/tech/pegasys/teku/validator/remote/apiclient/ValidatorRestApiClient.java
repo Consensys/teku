@@ -65,7 +65,12 @@ public interface ValidatorRestApiClient {
 
   void sendAggregateAndProof(SignedAggregateAndProof signedAggregateAndProof);
 
-  void subscribeToBeaconCommitteeForAggregation(int committeeIndex, UInt64 aggregationSlot);
+  void subscribeToBeaconCommittee(
+      int validatorIndex,
+      int committeeIndex,
+      UInt64 committeesAtSlot,
+      UInt64 slot,
+      boolean isAggregator);
 
   void subscribeToPersistentSubnets(Set<SubnetSubscription> subnetSubscriptions);
 }

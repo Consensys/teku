@@ -61,6 +61,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
@@ -554,14 +555,24 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   public void subscribeToBeaconCommitteeForAggregation_InvokeApi() {
+    final int validatorIndex = 3;
     final int committeeIndex = 1;
     final UInt64 aggregationSlot = UInt64.ONE;
-
-    apiHandler.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot);
+    final boolean isAggregator = true;
+    final UInt64 committeesAtSlot = UInt64.valueOf(23);
+    apiHandler.subscribeToBeaconCommittee(
+        List.of(
+            new CommitteeSubscriptionRequest(
+                validatorIndex, committeeIndex, committeesAtSlot, aggregationSlot, isAggregator)));
     asyncRunner.executeQueuedActions();
 
     verify(apiClient)
-        .subscribeToBeaconCommitteeForAggregation(eq(committeeIndex), eq(aggregationSlot));
+        .subscribeToBeaconCommittee(
+            eq(validatorIndex),
+            eq(committeeIndex),
+            eq(committeesAtSlot),
+            eq(aggregationSlot),
+            eq(isAggregator));
   }
 
   @Test

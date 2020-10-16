@@ -75,6 +75,7 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
     return scheduleAggregation(
         scheduledDuties,
         attestationCommitteeIndex,
+        duty.getCommiteesAtSlot(),
         validatorIndex,
         validator,
         slot,
@@ -102,6 +103,7 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
   private SafeFuture<Void> scheduleAggregation(
       final ScheduledDuties scheduledDuties,
       final int attestationCommitteeIndex,
+      final int committeesAtSlot,
       final int validatorIndex,
       final Validator validator,
       final UInt64 slot,
@@ -119,6 +121,7 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
                     validatorIndex,
                     slotSignature,
                     attestationCommitteeIndex,
+                    committeesAtSlot,
                     unsignedAttestationFuture);
               }
             })

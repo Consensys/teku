@@ -540,6 +540,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             validator1Index,
             validator1Signature,
             validator1Committee,
+            committeesAtSlot,
             unsignedAttestationFuture);
     verifyNoMoreInteractions(aggregationDuty);
 

@@ -16,6 +16,8 @@ package tech.pegasys.teku.api;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.get_committee_count_per_slot;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.Collections;
@@ -45,6 +47,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties.Duties;
@@ -204,8 +207,20 @@ public class ValidatorDataProvider {
 
   public void subscribeToBeaconCommitteeForAggregation(
       final SubscribeToBeaconCommitteeRequest request) {
-    validatorApiChannel.subscribeToBeaconCommitteeForAggregation(
-        request.committee_index, request.aggregation_slot);
+    final UInt64 slot = request.aggregation_slot;
+    combinedChainDataClient
+        .getBestState()
+        // No point aggregating for historic slots and we can't calculate the subnet ID
+        .filter(state -> state.getSlot().compareTo(slot) <= 0)
+        .ifPresent(
+            state -> {
+              final UInt64 committeesAtSlot =
+                  get_committee_count_per_slot(state, compute_epoch_at_slot(slot));
+              validatorApiChannel.subscribeToBeaconCommittee(
+                  List.of(
+                      new CommitteeSubscriptionRequest(
+                          0, request.committee_index, committeesAtSlot, slot, true)));
+            });
   }
 
   public void subscribeToPersistentSubnets(final List<SubnetSubscription> subnetSubscriptions) {

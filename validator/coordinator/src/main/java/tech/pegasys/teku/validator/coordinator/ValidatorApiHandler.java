@@ -75,6 +75,7 @@ import tech.pegasys.teku.sync.SyncState;
 import tech.pegasys.teku.sync.SyncStateTracker;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -353,9 +354,14 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToBeaconCommitteeForAggregation(
-      final int committeeIndex, final UInt64 aggregationSlot) {
-    attestationTopicSubscriber.subscribeToCommitteeForAggregation(committeeIndex, aggregationSlot);
+  public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
+    requests.forEach(
+        request -> {
+          if (request.isAggregator()) {
+            attestationTopicSubscriber.subscribeToCommitteeForAggregation(
+                request.getCommitteeIndex(), request.getCommitteesAtSlot(), request.getSlot());
+          }
+        });
   }
 
   @Override
