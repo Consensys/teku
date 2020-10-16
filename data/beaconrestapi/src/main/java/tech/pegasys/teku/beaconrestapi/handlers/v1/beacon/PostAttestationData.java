@@ -58,7 +58,7 @@ public class PostAttestationData extends AbstractHandler {
       requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = Attestation.class)}),
       description =
           "Submit a signed attestation to the beacon node to be validated and submitted if valid.\n\n"
-              + "This endpoint does not protected against slashing. Signing the attestation can result in a slashable offence.",
+              + "This endpoint does not protected against slashing.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,

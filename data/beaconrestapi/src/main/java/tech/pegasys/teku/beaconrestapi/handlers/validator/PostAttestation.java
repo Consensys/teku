@@ -53,6 +53,7 @@ public class PostAttestation implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.POST,
+      deprecated = true,
       summary = "Submit a signed attestation",
       tags = {TAG_VALIDATOR},
       requestBody = @OpenApiRequestBody(content = {@OpenApiContent(from = Attestation.class)}),
