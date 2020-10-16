@@ -94,11 +94,11 @@ class ScheduledDutiesTest {
     when(dutyFactory.createAggregationDuty(TWO)).thenReturn(duty2);
 
     duties.scheduleAggregationDuties(
-        ZERO, validator, 0, BLSSignature.empty(), 0, new SafeFuture<>());
+        ZERO, validator, 0, BLSSignature.empty(), 0, 10, new SafeFuture<>());
     duties.scheduleAggregationDuties(
-        ONE, validator, 0, BLSSignature.empty(), 0, new SafeFuture<>());
+        ONE, validator, 0, BLSSignature.empty(), 0, 10, new SafeFuture<>());
     duties.scheduleAggregationDuties(
-        TWO, validator, 0, BLSSignature.empty(), 0, new SafeFuture<>());
+        TWO, validator, 0, BLSSignature.empty(), 0, 10, new SafeFuture<>());
 
     duties.performAggregation(ONE);
     verify(duty1).performDuty();

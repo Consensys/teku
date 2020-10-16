@@ -471,7 +471,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             eth1DataCache,
             VersionProvider.getDefaultGraffiti());
     final AttestationTopicSubscriber attestationTopicSubscriber =
-        new AttestationTopicSubscriber(p2pNetwork, recentChainData);
+        new AttestationTopicSubscriber(p2pNetwork);
     final BlockImportChannel blockImportChannel =
         eventChannels.getPublisher(BlockImportChannel.class, asyncRunner);
     final ValidatorApiHandler validatorApiHandler =

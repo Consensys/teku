@@ -201,10 +201,14 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public void subscribeToBeaconCommitteeForAggregation(
-      final int committeeIndex, final UInt64 aggregationSlot) {
+  public void subscribeToBeaconCommittee(
+      final int validatorIndex,
+      final int committeeIndex,
+      final UInt64 committeesAtSlot,
+      final UInt64 slot,
+      final boolean isAggregator) {
     final SubscribeToBeaconCommitteeRequest request =
-        new SubscribeToBeaconCommitteeRequest(committeeIndex, aggregationSlot);
+        new SubscribeToBeaconCommitteeRequest(committeeIndex, slot);
     post(SUBSCRIBE_TO_COMMITTEE_FOR_AGGREGATION, request, null);
   }
 

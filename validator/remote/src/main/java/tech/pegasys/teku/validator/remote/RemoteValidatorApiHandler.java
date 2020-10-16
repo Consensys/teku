@@ -47,6 +47,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -283,12 +284,18 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToBeaconCommitteeForAggregation(
-      final int committeeIndex, final UInt64 aggregationSlot) {
+  public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
     asyncRunner
         .runAsync(
             () ->
-                apiClient.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot))
+                requests.forEach(
+                    request ->
+                        apiClient.subscribeToBeaconCommittee(
+                            request.getValidatorIndex(),
+                            request.getCommitteeIndex(),
+                            request.getCommitteesAtSlot(),
+                            request.getSlot(),
+                            request.isAggregator())))
         .finish(
             error -> LOG.error("Failed to subscribe to beacon committee for aggregation", error));
   }
