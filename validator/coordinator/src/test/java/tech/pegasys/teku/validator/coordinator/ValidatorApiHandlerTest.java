@@ -93,6 +93,7 @@ class ValidatorApiHandlerTest {
   private final AttestationManager attestationManager = mock(AttestationManager.class);
   private final AttestationTopicSubscriber attestationTopicSubscriptions =
       mock(AttestationTopicSubscriber.class);
+  private final ActiveValidatorTracker activeValidatorTracker = mock(ActiveValidatorTracker.class);
   private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
   private final EventBus eventBus = mock(EventBus.class);
   private final DefaultPerformanceTracker performanceTracker =
@@ -108,6 +109,7 @@ class ValidatorApiHandlerTest {
           attestationPool,
           attestationManager,
           attestationTopicSubscriptions,
+          activeValidatorTracker,
           eventBus,
           mock(DutyMetrics.class),
           performanceTracker);
@@ -534,13 +536,15 @@ class ValidatorApiHandlerTest {
     final int committeeIndex = 10;
     final UInt64 aggregationSlot = UInt64.valueOf(13);
     final UInt64 committeesAtSlot = UInt64.valueOf(10);
+    final int validatorIndex = 1;
     validatorApiHandler.subscribeToBeaconCommittee(
         List.of(
             new CommitteeSubscriptionRequest(
-                1, committeeIndex, committeesAtSlot, aggregationSlot, true)));
+                validatorIndex, committeeIndex, committeesAtSlot, aggregationSlot, true)));
 
     verify(attestationTopicSubscriptions)
         .subscribeToCommitteeForAggregation(committeeIndex, committeesAtSlot, aggregationSlot);
+    verify(activeValidatorTracker).onCommitteeSubscriptionRequest(validatorIndex, aggregationSlot);
   }
 
   @Test
