@@ -19,7 +19,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.util.Map;
 
 public enum ValidatorApiMethod {
-  GET_FORK("/eth/v1/beacon/states/:state_id/fork"),
+  GET_FORK("eth/v1/beacon/states/:state_id/fork"),
   GET_GENESIS("eth/v1/beacon/genesis"),
   GET_VALIDATORS("eth/v1/beacon/states/head/validators"),
   GET_DUTIES("validator/duties"),
@@ -28,7 +28,7 @@ public enum ValidatorApiMethod {
   GET_UNSIGNED_ATTESTATION("validator/attestation"),
   GET_ATTESTATION_DATA("eth/v1/validator/attestation_data"),
   SEND_SIGNED_ATTESTATION("eth/v1/beacon/pool/attestations"),
-  GET_AGGREGATE("validator/aggregate_attestation"),
+  GET_AGGREGATE("eth/v1/validator/aggregate_attestation"),
   SEND_SIGNED_AGGREGATE_AND_PROOF("/eth/v1/validator/aggregate_and_proofs"),
   SUBSCRIBE_TO_BEACON_COMMITTEE_SUBNET("eth/v1/validator/beacon_committee_subscriptions"),
   SUBSCRIBE_TO_PERSISTENT_SUBNETS("validator/persistent_subnets_subscription"),
