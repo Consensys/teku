@@ -71,7 +71,7 @@ public class GetStateValidators extends AbstractHandler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get validators from state",
-      tags = {TAG_V1_BEACON, TAG_VALIDATOR_REQUIRED},
+      tags = {TAG_V1_BEACON},
       description = "Returns filterable list of validators with their balance, status and index.",
       pathParams = {
         @OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION),
