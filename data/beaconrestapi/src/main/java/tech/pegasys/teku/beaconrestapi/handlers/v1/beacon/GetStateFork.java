@@ -71,7 +71,7 @@ public class GetStateFork extends AbstractHandler implements Handler {
       method = HttpMethod.GET,
       summary = "Get state fork",
       tags = {TAG_V1_BEACON, TAG_VALIDATOR_REQUIRED},
-      description = "Returns Fork object for state with given 'stateId'.",
+      description = "Returns Fork object for state with given 'state_id'.",
       pathParams = {
         @OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION),
       },
