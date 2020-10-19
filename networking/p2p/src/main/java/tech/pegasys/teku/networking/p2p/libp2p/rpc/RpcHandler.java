@@ -120,6 +120,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     private final P2PChannel p2pChannel;
     private RpcRequestHandler rpcRequestHandler;
     private RpcStream rpcStream;
+    private boolean readCompleted = false;
 
     protected final SafeFuture<Controller> activeFuture = new SafeFuture<>();
 
@@ -169,40 +170,39 @@ public class RpcHandler implements ProtocolBinding<Controller> {
       LOG.error("Unhandled error while processes req/response", cause);
       final IllegalStateException exception = new IllegalStateException("Channel exception", cause);
       activeFuture.completeExceptionally(exception);
-      close();
+      closeAbruptly();
     }
 
     @Override
-    public void handlerRemoved(ChannelHandlerContext ctx) throws IllegalArgumentException {
-      close();
+    public void handlerRemoved(ChannelHandlerContext ctx) {
+      onChannelClosed();
     }
 
     @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-      if (evt instanceof RemoteWriteClosed && rpcRequestHandler != null) {
-        try {
-          rpcRequestHandler.complete(nodeId, rpcStream);
-        } finally {
-          rpcRequestHandler = null;
-        }
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+      if (evt instanceof RemoteWriteClosed) {
+        onRemoteWriteClosed();
+      }
+    }
+
+    private void onRemoteWriteClosed() {
+      if (!readCompleted && rpcRequestHandler != null) {
+        readCompleted = true;
+        rpcRequestHandler.readComplete(nodeId, rpcStream);
+      }
+    }
+
+    private void onChannelClosed() {
+      try {
+        onRemoteWriteClosed();
+        rpcRequestHandler.closed(nodeId, rpcStream);
+      } finally {
+        rpcRequestHandler = null;
       }
     }
 
     @VisibleForTesting
-    void close() {
-      if (rpcRequestHandler != null) {
-        try {
-          rpcRequestHandler.complete(nodeId, rpcStream);
-        } catch (Exception e) {
-          LOG.trace("Exception completing RpcRequestHandler", e);
-        }
-        rpcRequestHandler = null;
-      }
-
-      if (rpcStream != null) {
-        rpcStream.close().reportExceptions();
-      }
-
+    void closeAbruptly() {
       // We're listening for the result of the close future above, so we can ignore this future
       ignoreFuture(p2pChannel.close());
 
