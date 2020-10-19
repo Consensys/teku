@@ -51,7 +51,7 @@ public class LibP2PRpcStream implements RpcStream {
   }
 
   @Override
-  public SafeFuture<Void> close() {
+  public SafeFuture<Void> closeAbruptly() {
     writeStreamClosed.set(true);
     return SafeFuture.of(p2pChannel.close()).thenApply((res) -> null);
   }

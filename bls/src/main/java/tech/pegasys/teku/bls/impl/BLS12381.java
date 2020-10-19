@@ -62,13 +62,12 @@ public interface BLS12381 {
    * @return a public key. Note that implementation may lazily evaluate passed bytes so the method
    *     may not immediately fail if the supplied bytes are invalid. Use {@link
    *     PublicKey#forceValidation()} to validate immediately
-   * @throws IllegalArgumentException If the supplied bytes are not a valid public key However if
+   * @throws DeserializeException If the supplied bytes are not a valid public key However if
    *     implementing class lazily parses bytes the exception might not be thrown on invalid input
    *     but throw on later usage. Use {@link PublicKey#forceValidation()} if need to immediately
    *     ensure input validity
    */
-  PublicKey publicKeyFromCompressed(Bytes48 compressedPublicKeyBytes)
-      throws IllegalArgumentException;
+  PublicKey publicKeyFromCompressed(Bytes48 compressedPublicKeyBytes) throws DeserializeException;
 
   /**
    * Decode a signature from its <em>compressed</em> form serialized representation.

@@ -37,11 +37,14 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeerById;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAggregateAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttestationData;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttesterDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndProofs;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeaconCommitteeSubnet;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -159,5 +162,28 @@ public class BeaconRestApiV1Test {
   @Test
   public void shouldHaveGetAttestationDataEndpoint() {
     verify(app).get(eq(GetAttestationData.ROUTE), any(GetAttestationData.class));
+  }
+
+  @Test
+  public void shouldHavePostAttestationDataEndpoint() {
+    verify(app).post(eq(PostAttesterDuties.ROUTE), any(PostAttesterDuties.class));
+  }
+
+  @Test
+  public void shouldHaveGetAggregateAttestationEndpoint() {
+    verify(app).get(eq(GetAggregateAttestation.ROUTE), any(GetAggregateAttestation.class));
+  }
+
+  @Test
+  public void shouldHavePostAggregateAndProofsEndpoint() {
+    verify(app).post(eq(PostAggregateAndProofs.ROUTE), any(PostAggregateAndProofs.class));
+  }
+
+  @Test
+  public void shouldHavePostSubscribeToBeaconCommitteeSubnetEndpoint() {
+    verify(app)
+        .post(
+            eq(PostSubscribeToBeaconCommitteeSubnet.ROUTE),
+            any(PostSubscribeToBeaconCommitteeSubnet.class));
   }
 }

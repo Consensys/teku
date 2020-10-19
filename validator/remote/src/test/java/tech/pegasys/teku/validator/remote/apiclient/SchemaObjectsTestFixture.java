@@ -14,15 +14,16 @@
 package tech.pegasys.teku.validator.remote.apiclient;
 
 import java.util.List;
-import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlock;
+import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
@@ -38,8 +39,8 @@ public class SchemaObjectsTestFixture {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
-  public GetForkResponse getForkResponse() {
-    return new GetForkResponse(dataStructureUtil.randomForkInfo());
+  public GetStateForkResponse getStateForkResponse() {
+    return new GetStateForkResponse(new Fork(dataStructureUtil.randomFork()));
   }
 
   public GetGenesisResponse getGenesisResponse() {
