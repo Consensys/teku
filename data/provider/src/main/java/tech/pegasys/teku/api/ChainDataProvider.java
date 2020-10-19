@@ -27,6 +27,7 @@ import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
+import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BeaconChainHead;
@@ -162,6 +163,31 @@ public class ChainDataProvider {
         .thenApply(block -> block.map(GetBlockResponse::new));
   }
 
+  public SafeFuture<Optional<BlockHeader>> getBlockHeaderByBlockId(final String slotParameter) {
+    if (!isStoreAvailable()) {
+      return chainUnavailable();
+    }
+
+    final Optional<UInt64> maybeSlot = blockParameterToSlot(slotParameter);
+    if (maybeSlot.isEmpty()) {
+      return getBlockHeaderByBlockRoot(Bytes32.fromHexString(slotParameter));
+    }
+
+    final UInt64 slot = maybeSlot.get();
+    return combinedChainDataClient
+        .getBlockAtSlotExact(slot)
+        .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
+  }
+
+  // because this is called after attempting to match a block to a slot, this function
+  // will only ever be run for non canonical blocks. if made public, it will have to be updated to
+  // first check that the block doesnt have a slot, before it can make that assumption.
+  private SafeFuture<Optional<BlockHeader>> getBlockHeaderByBlockRoot(final Bytes32 blockRoot) {
+    return combinedChainDataClient
+        .getBlockByBlockRoot(blockRoot)
+        .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, false)));
+  }
+
   public boolean isStoreAvailable() {
     return combinedChainDataClient.isStoreAvailable();
   }
@@ -269,6 +295,37 @@ public class ChainDataProvider {
       throw new ChainDataUnavailableException();
     }
     return recentChainData.getHeadBlockAndState().map(BeaconChainHead::new);
+  }
+
+  public Optional<UInt64> blockParameterToSlot(final String pathParam) {
+    if (!isStoreAvailable()) {
+      throw new ChainDataUnavailableException();
+    }
+    try {
+      switch (pathParam) {
+        case ("head"):
+          return recentChainData.getCurrentSlot();
+        case ("genesis"):
+          return Optional.of(UInt64.ZERO);
+        case ("finalized"):
+          return recentChainData.getFinalizedCheckpoint().map(Checkpoint::getEpochStartSlot);
+      }
+      if (pathParam.toLowerCase().startsWith("0x")) {
+        // block root
+        Bytes32 blockRoot = Bytes32.fromHexString(pathParam);
+        return combinedChainDataClient.getSlotByBlockRoot(blockRoot).join();
+      } else {
+        final UInt64 slot = UInt64.valueOf(pathParam);
+        final UInt64 headSlot = recentChainData.getHeadSlot();
+        if (slot.isGreaterThan(headSlot)) {
+          throw new IllegalArgumentException(
+              String.format("Invalid block: %s is beyond head slot %s", slot, headSlot));
+        }
+        return Optional.of(UInt64.valueOf(pathParam));
+      }
+    } catch (NumberFormatException ex) {
+      throw new IllegalArgumentException(String.format("Invalid block: %s", pathParam));
+    }
   }
 
   /**
