@@ -408,11 +408,6 @@ public class CombinedChainDataClient {
         .thenApply(maybeState -> maybeState.map(BeaconState::getSlot));
   }
 
-  public SafeFuture<Optional<UInt64>> getSlotByBlockRoot(final Bytes32 blockRoot) {
-    return getBlockByBlockRoot(blockRoot)
-        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot));
-  }
-
   public Optional<GenesisData> getGenesisData() {
     return recentChainData.getGenesisData();
   }
