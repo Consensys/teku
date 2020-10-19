@@ -22,7 +22,7 @@ public enum DatabaseVersion {
   V5("5"),
   V6("6");
 
-  public static final DatabaseVersion DEFAULT_VERSION = DatabaseVersion.V6;
+  public static final DatabaseVersion DEFAULT_VERSION = DatabaseVersion.V5;
   private String value;
 
   DatabaseVersion(final String value) {
