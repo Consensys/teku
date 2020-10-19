@@ -25,7 +25,6 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -42,8 +41,11 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
-import tech.pegasys.teku.api.schema.Fork;
+import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
+import tech.pegasys.teku.api.schema.BeaconState;
+import tech.pegasys.teku.api.schema.Checkpoint;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -51,17 +53,19 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
-public class GetStateFork extends AbstractHandler implements Handler {
+public class GetStateFinalityCheckpoints extends AbstractHandler implements Handler {
   private static final Logger LOG = LogManager.getLogger();
-  public static final String ROUTE = "/eth/v1/beacon/states/:state_id/fork";
+  public static final String ROUTE = "/eth/v1/beacon/states/:state_id/finality_checkpoints";
   private final ChainDataProvider chainDataProvider;
 
-  public GetStateFork(final DataProvider dataProvider, final JsonProvider jsonProvider) {
+  public GetStateFinalityCheckpoints(
+      final DataProvider dataProvider, final JsonProvider jsonProvider) {
     super(jsonProvider);
     this.chainDataProvider = dataProvider.getChainDataProvider();
   }
 
-  GetStateFork(final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
+  GetStateFinalityCheckpoints(
+      final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
     super(jsonProvider);
     this.chainDataProvider = chainDataProvider;
   }
@@ -69,16 +73,15 @@ public class GetStateFork extends AbstractHandler implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get state fork",
-      tags = {TAG_V1_BEACON, TAG_VALIDATOR_REQUIRED},
-      description = "Returns Fork object for state with given 'state_id'.",
-      pathParams = {
-        @OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION),
-      },
+      summary = "Get state finality checkpoints",
+      tags = {TAG_V1_BEACON},
+      description =
+          "Returns finality checkpoints for state with given 'stateId'. In case finality is not yet achieved, checkpoint should return epoch 0 and ZERO_HASH as root.",
+      pathParams = {@OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION)},
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = GetStateForkResponse.class)),
+            content = @OpenApiContent(from = GetStateRootResponse.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_NOT_FOUND),
         @OpenApiResponse(status = RES_INTERNAL_ERROR),
@@ -94,7 +97,7 @@ public class GetStateFork extends AbstractHandler implements Handler {
         ctx.status(SC_NOT_FOUND);
         return;
       }
-      SafeFuture<Optional<Fork>> future = chainDataProvider.getForkAtSlot(maybeSlot.get());
+      SafeFuture<Optional<BeaconState>> future = chainDataProvider.getStateAtSlot(maybeSlot.get());
       handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
     } catch (ChainDataUnavailableException ex) {
       LOG.trace(ex);
@@ -106,8 +109,16 @@ public class GetStateFork extends AbstractHandler implements Handler {
     }
   }
 
-  private Optional<String> handleResult(Context ctx, final Fork response)
+  private Optional<String> handleResult(Context ctx, final BeaconState response)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetStateForkResponse(response)));
+    boolean isFinalized = response.finalized_checkpoint.epoch.isGreaterThan(UInt64.ZERO);
+    FinalityCheckpointsResponse finalityCheckpointsResponse =
+        new FinalityCheckpointsResponse(
+            isFinalized ? response.previous_justified_checkpoint : Checkpoint.EMPTY,
+            isFinalized ? response.current_justified_checkpoint : Checkpoint.EMPTY,
+            isFinalized ? response.finalized_checkpoint : Checkpoint.EMPTY);
+    return Optional.of(
+        jsonProvider.objectToJSON(
+            new GetStateFinalityCheckpointsResponse(finalityCheckpointsResponse)));
   }
 }
