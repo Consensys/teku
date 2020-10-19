@@ -33,7 +33,7 @@ public class StoreOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   public void hotStatePersistenceFrequency_shouldSetDefaultValue() {
     final GlobalConfiguration globalConfiguration = getGlobalConfigurationFromArguments();
-    assertThat(globalConfiguration.getHotStatePersistenceFrequencyInEpochs()).isEqualTo(1);
+    assertThat(globalConfiguration.getHotStatePersistenceFrequencyInEpochs()).isEqualTo(2);
   }
 
   @Test

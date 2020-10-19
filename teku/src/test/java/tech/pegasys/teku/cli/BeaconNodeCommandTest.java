@@ -366,7 +366,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .setDataStorageMode(PRUNE)
         .setDataStorageFrequency(VersionedDatabaseFactory.DEFAULT_STORAGE_FREQUENCY)
         .setDataStorageCreateDbVersion(DatabaseVersion.DEFAULT_VERSION.getValue())
-        .setHotStatePersistenceFrequencyInEpochs(1)
+        .setHotStatePersistenceFrequencyInEpochs(2)
         .setIsBlockProcessingAtStartupDisabled(true)
         .setRestApiPort(5051)
         .setRestApiDocsEnabled(false)
