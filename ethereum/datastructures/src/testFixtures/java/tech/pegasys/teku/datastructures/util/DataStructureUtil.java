@@ -198,7 +198,11 @@ public final class DataStructureUtil {
   }
 
   public SlotAndBlockRoot randomSlotAndBlockRoot() {
-    return new SlotAndBlockRoot(randomUInt64(), randomBytes32());
+    return randomSlotAndBlockRoot(randomUInt64());
+  }
+
+  public SlotAndBlockRoot randomSlotAndBlockRoot(final UInt64 slot) {
+    return new SlotAndBlockRoot(slot, randomBytes32());
   }
 
   public Checkpoint randomCheckpoint() {
