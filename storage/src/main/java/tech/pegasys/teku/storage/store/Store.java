@@ -462,11 +462,49 @@ class Store implements UpdatableStore {
       return EmptyStoreResults.EMPTY_STATE_GENERATION_TASK;
     }
 
+    // Create a hash tree from the finalized root to the target state
+    // Capture the latest epoch boundary root along the way
+    final HashTree.Builder treeBuilder = HashTree.builder();
+    final AtomicReference<Bytes32> latestEpochBoundary = new AtomicReference<>();
+    readLock.lock();
+    try {
+      blockTree
+          .getHashTree()
+          .processHashesInChain(
+              blockRoot,
+              (root, parent) -> {
+                treeBuilder.childAndParentRoots(root, parent);
+                if (shouldPersistState(blockTree, root)) {
+                  latestEpochBoundary.compareAndExchange(null, root);
+                }
+              });
+      treeBuilder.rootHash(finalizedBlockAndState.getRoot());
+    } finally {
+      readLock.unlock();
+    }
+
+    return SafeFuture.completedFuture(
+        Optional.of(
+            new StateGenerationTask(
+                blockRoot,
+                treeBuilder.build(),
+                () -> getStateGenerationTaskBaseState(blockRoot),
+                Optional.ofNullable(latestEpochBoundary.get()),
+                blockProvider,
+                stateAndBlockProvider)));
+  }
+
+  private SafeFuture<Optional<SignedBlockAndState>> getStateGenerationTaskBaseState(
+      final Bytes32 blockRoot) {
+    if (!containsBlock(blockRoot)) {
+      // If we don't have the corresponding block, we can't possibly regenerate the state
+      return EmptyStoreResults.EMPTY_BLOCK_AND_STATE_FUTURE;
+    }
+
     // Accumulate blocks hashes until we find our base state to build from
     final HashTree.Builder treeBuilder = HashTree.builder();
     final AtomicReference<Bytes32> baseBlockRoot = new AtomicReference<>();
     final AtomicReference<BeaconState> baseState = new AtomicReference<>();
-    final AtomicReference<Bytes32> latestEpochBoundary = new AtomicReference<>();
     readLock.lock();
     try {
       blockTree
@@ -476,9 +514,6 @@ class Store implements UpdatableStore {
               (root, parent) -> {
                 treeBuilder.childAndParentRoots(root, parent);
                 final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
-                if (blockState.isEmpty() && shouldPersistState(blockTree, root)) {
-                  latestEpochBoundary.compareAndExchange(null, root);
-                }
                 blockState.ifPresent(
                     (state) -> {
                       // We found a base state
@@ -499,7 +534,7 @@ class Store implements UpdatableStore {
       final SignedBlockAndState finalized = getLatestFinalizedBlockAndState();
       if (!treeBuilder.contains(finalized.getRoot())) {
         // We must have finalized a new block while processing and moved past our target root
-        return EmptyStoreResults.EMPTY_STATE_GENERATION_TASK;
+        return EmptyStoreResults.EMPTY_BLOCK_AND_STATE_FUTURE;
       }
       baseBlockRoot.set(finalized.getRoot());
       baseState.set(finalized.getState());
@@ -511,20 +546,7 @@ class Store implements UpdatableStore {
 
     // Regenerate state
     return baseBlock.thenApply(
-        maybeBlock ->
-            maybeBlock.map(
-                block -> {
-                  final SignedBlockAndState baseBlockAndState =
-                      new SignedBlockAndState(block, baseState.get());
-                  final HashTree tree = treeBuilder.build();
-                  return new StateGenerationTask(
-                      blockRoot,
-                      tree,
-                      baseBlockAndState,
-                      Optional.ofNullable(latestEpochBoundary.get()),
-                      blockProvider,
-                      stateAndBlockProvider);
-                }));
+        maybeBlock -> maybeBlock.map(block -> new SignedBlockAndState(block, baseState.get())));
   }
 
   boolean shouldPersistState(final BlockTree blockTree, final Bytes32 root) {

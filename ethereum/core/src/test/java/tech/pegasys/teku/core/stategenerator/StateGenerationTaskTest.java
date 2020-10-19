@@ -126,7 +126,7 @@ class StateGenerationTaskTest {
     return new StateGenerationTask(
         endBlock.getRoot(),
         tree,
-        startBlockAndState,
+        () -> SafeFuture.completedFuture(Optional.of(startBlockAndState)),
         epochBoundaryRoot,
         blockProvider,
         chainBuilder.getStateAndBlockProvider());

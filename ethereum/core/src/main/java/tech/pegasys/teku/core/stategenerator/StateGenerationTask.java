@@ -13,9 +13,8 @@
 
 package tech.pegasys.teku.core.stategenerator;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,7 +29,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 public class StateGenerationTask implements CacheableTask<Bytes32, SignedBlockAndState> {
   private static final Logger LOG = LogManager.getLogger();
   private final HashTree tree;
-  private final SignedBlockAndState baseBlockAndState;
+  private final Supplier<SafeFuture<Optional<SignedBlockAndState>>> baseBlockAndState;
   protected final Optional<Bytes32> epochBoundaryRoot;
   private final BlockProvider blockProvider;
   protected final StateAndBlockProvider stateAndBlockProvider;
@@ -39,13 +38,10 @@ public class StateGenerationTask implements CacheableTask<Bytes32, SignedBlockAn
   public StateGenerationTask(
       final Bytes32 blockRoot,
       final HashTree tree,
-      final SignedBlockAndState baseBlockAndState,
+      final Supplier<SafeFuture<Optional<SignedBlockAndState>>> baseBlockAndState,
       final Optional<Bytes32> epochBoundaryRoot,
       final BlockProvider blockProvider,
       final StateAndBlockProvider stateAndBlockProvider) {
-    checkArgument(
-        tree.getRootHash().equals(baseBlockAndState.getRoot()),
-        "Tree must be rooted at the base block");
     this.tree = tree;
     this.baseBlockAndState = baseBlockAndState;
     this.epochBoundaryRoot = epochBoundaryRoot;
@@ -87,7 +83,7 @@ public class StateGenerationTask implements CacheableTask<Bytes32, SignedBlockAn
     return new StateGenerationTask(
         blockRoot,
         treeFromAncestor,
-        newBaseBlockAndState,
+        () -> SafeFuture.completedFuture(Optional.of(newBaseBlockAndState)),
         epochBoundaryRoot.filter(treeFromAncestor::contains),
         blockProvider,
         stateAndBlockProvider);
@@ -110,14 +106,24 @@ public class StateGenerationTask implements CacheableTask<Bytes32, SignedBlockAn
 
   @Override
   public SafeFuture<Optional<SignedBlockAndState>> performTask() {
-    return resolveAgainstLatestEpochBoundary()
-        .thenCompose(StateGenerationTask::regenerateState)
-        .thenApply(Optional::of);
+    return resolveAgainstLatestEpochBoundary().thenCompose(StateGenerationTask::regenerateState);
   }
 
-  protected SafeFuture<SignedBlockAndState> regenerateState() {
-    final StateGenerator stateGenerator =
-        StateGenerator.create(tree, baseBlockAndState, blockProvider);
-    return stateGenerator.regenerateStateForBlock(blockRoot);
+  protected SafeFuture<Optional<SignedBlockAndState>> regenerateState() {
+    return baseBlockAndState
+        .get()
+        .thenCompose(
+            maybeBase -> {
+              if (maybeBase.isEmpty()) {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+              final SignedBlockAndState base = maybeBase.get();
+              return StateGenerator.create(
+                      tree.withRoot(base.getRoot()).block(base.getBlock()).build(),
+                      base,
+                      blockProvider)
+                  .regenerateStateForBlock(blockRoot)
+                  .thenApply(Optional::of);
+            });
   }
 }
