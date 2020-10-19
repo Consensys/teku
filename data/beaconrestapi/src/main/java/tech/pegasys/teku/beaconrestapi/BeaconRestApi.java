@@ -310,7 +310,10 @@ public class BeaconRestApi {
     app.get(GetStateValidators.ROUTE, new GetStateValidators(dataProvider, jsonProvider));
     app.get(
         GetStateValidatorBalances.ROUTE, new GetStateValidatorBalances(dataProvider, jsonProvider));
-    app.get(GetStateEpochCommittees.ROUTE, new GetStateEpochCommittees(dataProvider, jsonProvider));
+    GetStateEpochCommittees getStateEpochCommittees =
+        new GetStateEpochCommittees(dataProvider, jsonProvider);
+    app.get(GetStateEpochCommittees.ROUTE_WITH_EPOCH_PARAM, getStateEpochCommittees);
+    app.get(GetStateEpochCommittees.ROUTE_WITHOUT_EPOCH_PARAM, getStateEpochCommittees);
     app.post(
         tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock(

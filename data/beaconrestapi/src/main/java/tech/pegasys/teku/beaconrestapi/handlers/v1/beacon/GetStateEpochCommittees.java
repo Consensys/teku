@@ -61,7 +61,10 @@ import tech.pegasys.teku.util.config.Constants;
 
 public class GetStateEpochCommittees extends AbstractHandler implements Handler {
   private static final Logger LOG = LogManager.getLogger();
-  public static final String ROUTE = "/eth/v1/beacon/states/:state_id/committees/:epoch";
+  public static final String ROUTE_WITH_EPOCH_PARAM =
+      "/eth/v1/beacon/states/:state_id/committees/:epoch";
+  public static final String ROUTE_WITHOUT_EPOCH_PARAM =
+      "/eth/v1/beacon/states/:state_id/committees/";
 
   private final ChainDataProvider provider;
   private final StateValidatorsUtil stateValidatorsUtil = new StateValidatorsUtil();
@@ -78,7 +81,7 @@ public class GetStateEpochCommittees extends AbstractHandler implements Handler 
   }
 
   @OpenApi(
-      path = ROUTE,
+      path = ROUTE_WITH_EPOCH_PARAM,
       method = HttpMethod.GET,
       summary = "Get all committees for epoch",
       tags = {TAG_V1_BEACON},
