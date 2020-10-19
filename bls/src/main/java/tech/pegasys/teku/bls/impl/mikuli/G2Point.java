@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.bls.impl.mikuli;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Objects;
 import java.util.Random;
@@ -23,6 +21,7 @@ import org.apache.milagro.amcl.BLS381.ECP2;
 import org.apache.milagro.amcl.BLS381.FP2;
 import org.apache.milagro.amcl.BLS381.ROM;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.bls.impl.DeserializeException;
 import tech.pegasys.teku.bls.impl.mikuli.hash2g2.HashToCurve;
 
 /**
@@ -129,8 +128,10 @@ public final class G2Point implements Group<G2Point> {
   }
 
   public static G2Point fromBytes(Bytes bytes) {
-    checkArgument(
-        bytes.size() == 4 * fpPointSize, "Expected 192 bytes, received %s.", bytes.size());
+    if (bytes.size() != 4 * fpPointSize) {
+      throw new DeserializeException(
+          "Expected " + 4 * fpPointSize + " bytes but received " + bytes.size());
+    }
     return new G2Point(ECP2.fromBytes(bytes.toArrayUnsafe()));
   }
 
@@ -144,11 +145,10 @@ public final class G2Point implements Group<G2Point> {
    * @return the point
    */
   public static G2Point fromBytesCompressed(Bytes bytes) {
-    checkArgument(
-        bytes.size() == 2 * fpPointSize,
-        "Expected %s bytes but received %s",
-        2 * fpPointSize,
-        bytes.size());
+    if (bytes.size() != 2 * fpPointSize) {
+      throw new DeserializeException(
+          "Expected " + 2 * fpPointSize + " bytes but received " + bytes.size());
+    }
     byte[] xImBytes = bytes.slice(0, fpPointSize).toArray();
     byte[] xReBytes = bytes.slice(fpPointSize, fpPointSize).toArray();
 
@@ -158,11 +158,11 @@ public final class G2Point implements Group<G2Point> {
     xImBytes[0] &= (byte) 31;
 
     if ((xReBytes[0] & (byte) 224) != 0) {
-      throw new IllegalArgumentException("The input has non-zero a2, b2 or c2 flag on xRe");
+      throw new DeserializeException("The input has non-zero a2, b2 or c2 flag on xRe");
     }
 
     if (!cIn) {
-      throw new IllegalArgumentException("The serialized input does not have the C flag set.");
+      throw new DeserializeException("The serialized input does not have the C flag set.");
     }
 
     if (bIn) {
@@ -171,7 +171,7 @@ public final class G2Point implements Group<G2Point> {
         return new G2Point();
       } else {
         // The input is malformed
-        throw new IllegalArgumentException(
+        throw new DeserializeException(
             "The serialized input has B flag set, but A flag is set, or X is non-zero.");
       }
     }
@@ -183,18 +183,18 @@ public final class G2Point implements Group<G2Point> {
     BIG xReBig = BIG.fromBytes(xReBytes);
     BIG modulus = new BIG(ROM.Modulus);
     if (BIG.comp(modulus, xReBig) <= 0 || BIG.comp(modulus, xImBig) <= 0) {
-      throw new IllegalArgumentException(
+      throw new DeserializeException(
           "The deserialized X real or imaginary coordinate is too large.");
     }
 
     ECP2 point = new ECP2(new FP2(xReBig, xImBig));
 
     if (point.is_infinity()) {
-      throw new IllegalArgumentException("X coordinate is not on the curve.");
+      throw new DeserializeException("X coordinate is not on the curve.");
     }
 
     if (!isInGroup(point)) {
-      throw new IllegalArgumentException("The deserialized point is not in the G2 subgroup.");
+      throw new DeserializeException("The deserialized point is not in the G2 subgroup.");
     }
 
     // Did we get the right branch of the sqrt?

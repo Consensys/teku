@@ -62,7 +62,11 @@ public class GetAggregate implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Aggregates all attestations matching given attestation data root and slot.",
+      deprecated = true,
+      summary = "Get aggregated attestations",
+      description =
+          "Aggregates all attestations matching given attestation data root and slot.\n\n"
+              + "Deprecated - use `/eth/v1/validator/aggregate_attestation` instead.",
       tags = {TAG_VALIDATOR},
       queryParams = {
         @OpenApiParam(
@@ -75,7 +79,6 @@ public class GetAggregate implements Handler {
             description = "`uint64` Non-finalized slot for which to create the aggregation.",
             required = true)
       },
-      description = "Aggregates all attestations matching given attestation data root and slot.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,

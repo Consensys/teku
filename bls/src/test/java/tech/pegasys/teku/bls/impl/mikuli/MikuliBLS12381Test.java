@@ -14,7 +14,8 @@
 package tech.pegasys.teku.bls.impl.mikuli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.apache.milagro.amcl.BLS381.BIG;
 import org.apache.tuweni.bytes.Bytes;
@@ -30,19 +31,19 @@ class MikuliBLS12381Test extends BLS12381Test {
   }
 
   @Test
-  void signingWithZeroSecretKeyGivesPointAtInfinity() {
+  void signingWithZeroSecretKeyThrows() {
     MikuliSecretKey secretKey = new MikuliSecretKey(new Scalar(new BIG(0)));
-    MikuliSignature sig =
-        MikuliBLS12381.sign(secretKey, Bytes.wrap("Hello, world!".getBytes(UTF_8)));
-    assertTrue(sig.g2Point().ecp2Point().is_infinity());
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> secretKey.sign(Bytes.wrap("Hello, world!".getBytes(UTF_8))));
   }
 
   @Test
-  void verifyingWithPointsAtInfinityAlwaysSucceeds() {
+  void verifyingWithPointsAtInfinityFails() {
     Bytes message = Bytes.wrap("Hello, world!".getBytes(UTF_8));
     MikuliPublicKey infPubKey = new MikuliPublicKey(new G1Point());
     MikuliSignature infSignature = new MikuliSignature(new G2Point());
 
-    assertTrue(MikuliBLS12381.verify(infPubKey, message, infSignature));
+    assertFalse(infSignature.verify(infPubKey, message));
   }
 }

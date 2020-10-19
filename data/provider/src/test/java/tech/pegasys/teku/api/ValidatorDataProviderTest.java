@@ -372,8 +372,8 @@ public class ValidatorDataProviderTest {
 
   @Test
   public void getAttesterDuties_shouldReturnDutiesForKnownValidator() {
-    AttesterDuties v1 = new AttesterDuties(BLSPublicKey.random(0), 1, 2, 3, 4, ONE);
-    AttesterDuties v2 = new AttesterDuties(BLSPublicKey.random(1), 11, 12, 13, 14, ZERO);
+    AttesterDuties v1 = new AttesterDuties(BLSPublicKey.random(0), 1, 2, 3, 15, 4, ONE);
+    AttesterDuties v2 = new AttesterDuties(BLSPublicKey.random(1), 11, 12, 13, 15, 14, ZERO);
     when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
         .thenReturn(completedFuture(Optional.of(List.of(v1, v2))));
 
@@ -392,6 +392,7 @@ public class ValidatorDataProviderTest {
         UInt64.valueOf(duties.getValidatorIndex()),
         UInt64.valueOf(duties.getCommitteeIndex()),
         UInt64.valueOf(duties.getCommitteeLength()),
+        UInt64.valueOf(duties.getCommiteesAtSlot()),
         UInt64.valueOf(duties.getValidatorCommitteeIndex()),
         duties.getSlot());
   }

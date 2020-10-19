@@ -25,14 +25,17 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.datastructures.operations.Attestation;
+import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -54,6 +57,8 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       "beacon_node_unsigned_block_requests_total";
   public static final String UNSIGNED_ATTESTATION_REQUEST_COUNTER_NAME =
       "beacon_node_unsigned_attestation_requests_total";
+  public static final String ATTESTATION_DATA_REQUEST_COUNTER_NAME =
+      "beacon_node_attestation_data_requests_total";
   public static final String AGGREGATE_REQUESTS_COUNTER_NAME =
       "beacon_node_aggregate_requests_total";
   public static final String AGGREGATION_SUBSCRIPTION_COUNTER_NAME =
@@ -73,6 +78,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   private final BeaconChainRequestCounter proposerDutiesRequestCounter;
   private final BeaconChainRequestCounter unsignedBlockRequestsCounter;
   private final BeaconChainRequestCounter unsignedAttestationRequestsCounter;
+  private final BeaconChainRequestCounter attestationDataRequestsCounter;
   private final BeaconChainRequestCounter aggregateRequestsCounter;
   private final Counter getValidatorIndicesRequestCounter;
   private final Counter subscribeAggregationRequestCounter;
@@ -121,6 +127,11 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             metricsSystem,
             UNSIGNED_ATTESTATION_REQUEST_COUNTER_NAME,
             "Counter recording the number of requests for unsigned attestations");
+    attestationDataRequestsCounter =
+        BeaconChainRequestCounter.create(
+            metricsSystem,
+            ATTESTATION_DATA_REQUEST_COUNTER_NAME,
+            "Counter recording the number of requests for attestation data");
     aggregateRequestsCounter =
         BeaconChainRequestCounter.create(
             metricsSystem,
@@ -159,13 +170,13 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<ForkInfo>> getForkInfo() {
-    return countRequest(delegate.getForkInfo(), forkInfoRequestCounter);
+  public SafeFuture<Optional<Fork>> getFork() {
+    return countRequest(delegate.getFork(), forkInfoRequestCounter);
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getGenesisTime() {
-    return countRequest(delegate.getGenesisTime(), genesisTimeRequestCounter);
+  public SafeFuture<Optional<GenesisData>> getGenesisData() {
+    return countRequest(delegate.getGenesisData(), genesisTimeRequestCounter);
   }
 
   @Override
@@ -209,16 +220,22 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
+  public SafeFuture<Optional<AttestationData>> createAttestationData(
+      final UInt64 slot, final int committeeIndex) {
+    return countRequest(
+        delegate.createAttestationData(slot, committeeIndex), attestationDataRequestsCounter);
+  }
+
+  @Override
   public SafeFuture<Optional<Attestation>> createAggregate(final Bytes32 attestationHashTreeRoot) {
     return countRequest(
         delegate.createAggregate(attestationHashTreeRoot), aggregateRequestsCounter);
   }
 
   @Override
-  public void subscribeToBeaconCommitteeForAggregation(
-      final int committeeIndex, final UInt64 aggregationSlot) {
+  public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
     subscribeAggregationRequestCounter.inc();
-    delegate.subscribeToBeaconCommitteeForAggregation(committeeIndex, aggregationSlot);
+    delegate.subscribeToBeaconCommittee(requests);
   }
 
   @Override

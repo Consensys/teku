@@ -17,7 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -58,7 +58,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
-      final String dataPath,
+      final Path dataPath,
       final StateStorageMode dataStorageMode,
       final Eth1Address depositContractAddress) {
     this(
@@ -73,7 +73,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
-      final String dataPath,
+      final Path dataPath,
       final StateStorageMode dataStorageMode,
       final String createDatabaseVersion,
       final long stateStorageFrequency,
@@ -90,18 +90,17 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   public VersionedDatabaseFactory(
       final MetricsSystem metricsSystem,
-      final String dataPath,
-      final Optional<String> maybeArchiveDataPath,
+      final Path dataPath,
+      final Optional<Path> maybeArchiveDataPath,
       final StateStorageMode dataStorageMode,
       final String createDatabaseVersion,
       final long stateStorageFrequency,
       final Eth1Address eth1Address) {
     this.metricsSystem = metricsSystem;
-    this.dataDirectory = Paths.get(dataPath).toFile();
+    this.dataDirectory = dataPath.toFile();
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
     this.v5ArchiveDirectory = this.dataDirectory.toPath().resolve(ARCHIVE_PATH).toFile();
-    this.v6ArchiveDirectory =
-        maybeArchiveDataPath.map(p -> Paths.get(p).resolve(ARCHIVE_PATH).toFile());
+    this.v6ArchiveDirectory = maybeArchiveDataPath.map(p -> p.resolve(ARCHIVE_PATH).toFile());
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
     this.stateStorageMode = dataStorageMode;
     this.stateStorageFrequency = stateStorageFrequency;
@@ -113,7 +112,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
 
   @Override
   public Database createDatabase() {
-    LOG.info("Data directory set to: {}", dataDirectory.getAbsolutePath());
+    LOG.info("Beacon data directory set to: {}", dataDirectory.getAbsolutePath());
     validateDataPaths();
     final DatabaseVersion dbVersion = getDatabaseVersion();
     createDirectories(dbVersion);
@@ -123,31 +122,31 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     switch (dbVersion) {
       case NOOP:
         database = new NoOpDatabase();
-        LOG.trace("Created no-op database");
+        LOG.info("Created no-op database");
         break;
       case V3:
         database = createV3Database();
-        LOG.trace(
+        LOG.info(
             "Created V3 database ({}) at {}", dbVersion.getValue(), dbDirectory.getAbsolutePath());
         break;
       case V4:
         database = createV4Database();
-        LOG.trace(
+        LOG.info(
             "Created V4 Hot database ({}) at {}",
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
-        LOG.trace(
+        LOG.info(
             "Created V4 Finalized database ({}) at {}",
             dbVersion.getValue(),
             v5ArchiveDirectory.getAbsolutePath());
         break;
       case V5:
         database = createV5Database();
-        LOG.trace(
+        LOG.info(
             "Created V5 Hot database ({}) at {}",
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
-        LOG.trace(
+        LOG.info(
             "Created V5 Finalized database ({}) at {}",
             dbVersion.getValue(),
             v5ArchiveDirectory.getAbsolutePath());
@@ -155,16 +154,16 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       case V6:
         database = createV6Database();
         if (v6ArchiveDirectory.isPresent()) {
-          LOG.trace(
+          LOG.info(
               "Created V6 Hot database ({}) at {}",
               dbVersion.getValue(),
               dbDirectory.getAbsolutePath());
-          LOG.trace(
+          LOG.info(
               "Created V6 Finalized database ({}) at {}",
               dbVersion.getValue(),
               v6ArchiveDirectory.get().getAbsolutePath());
         } else {
-          LOG.trace(
+          LOG.info(
               "Created V6 Hot and Finalized database ({}) at {}",
               dbVersion.getValue(),
               dbDirectory.getAbsolutePath());

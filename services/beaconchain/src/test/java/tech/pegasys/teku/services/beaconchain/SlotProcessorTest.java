@@ -30,7 +30,6 @@ import tech.pegasys.teku.core.ForkChoiceUtil;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2Network;
@@ -64,8 +63,7 @@ public class SlotProcessorTest {
 
   @BeforeEach
   public void setup() {
-    final SafeFuture<Void> initialized = recentChainData.initializeFromGenesis(beaconState);
-    assertThat(initialized).isCompleted();
+    recentChainData.initializeFromGenesis(beaconState);
   }
 
   @Test

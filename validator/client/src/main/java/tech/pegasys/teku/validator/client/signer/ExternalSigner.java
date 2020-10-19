@@ -50,7 +50,8 @@ public class ExternalSigner implements Signer {
   private final URL signingServiceUrl;
   private final BLSPublicKey blsPublicKey;
   private final Duration timeout;
-  private final HttpClient httpClient = HttpClient.newHttpClient();
+  private final HttpClient httpClient =
+      HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
 
   public ExternalSigner(
       final URL signingServiceUrl, final BLSPublicKey blsPublicKey, final Duration timeout) {

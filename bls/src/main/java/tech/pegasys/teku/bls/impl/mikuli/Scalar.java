@@ -34,6 +34,10 @@ public final class Scalar {
     value().imul(0);
   }
 
+  public boolean isZero() {
+    return value.nbits() == 0;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;

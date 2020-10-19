@@ -21,11 +21,11 @@ import picocli.CommandLine.Mixin;
 import picocli.CommandLine.ParentCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
-import tech.pegasys.teku.cli.options.DataOptions;
 import tech.pegasys.teku.cli.options.InteropOptions;
 import tech.pegasys.teku.cli.options.LoggingOptions;
 import tech.pegasys.teku.cli.options.MetricsOptions;
 import tech.pegasys.teku.cli.options.NetworkOptions;
+import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -59,7 +59,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
   private NetworkOptions networkOptions;
 
   @Mixin(name = "Data")
-  private DataOptions dataOptions;
+  private ValidatorClientDataOptions dataOptions;
 
   @Mixin(name = "Interop")
   private InteropOptions interopOptions;
@@ -99,6 +99,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
     builder.globalConfig(this::buildGlobalConfiguration);
     validatorOptions.configure(builder);
     validatorClientOptions.configure(builder);
+    dataOptions.configure(builder);
     return builder.build();
   }
 
@@ -124,7 +125,6 @@ public class ValidatorClientCommand implements Callable<Integer> {
         .setMetricsPort(metricsOptions.getMetricsPort())
         .setMetricsInterface(metricsOptions.getMetricsInterface())
         .setMetricsCategories(metricsOptions.getMetricsCategories())
-        .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist())
-        .setDataPath(dataOptions.getDataPath());
+        .setMetricsHostAllowlist(metricsOptions.getMetricsHostAllowlist());
   }
 }
