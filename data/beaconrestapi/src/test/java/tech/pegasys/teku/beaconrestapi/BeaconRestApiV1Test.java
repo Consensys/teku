@@ -107,8 +107,12 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(GetStateValidators.ROUTE, GetStateValidators.class))
         .add(Arguments.of(GetStateFinalityCheckpoints.ROUTE, GetStateFinalityCheckpoints.class))
         .add(Arguments.of(GetStateValidatorBalances.ROUTE, GetStateValidatorBalances.class))
-        .add(Arguments.of(GetStateEpochCommittees.ROUTE_WITH_EPOCH_PARAM, GetStateEpochCommittees.class))
-        .add(Arguments.of(GetStateEpochCommittees.ROUTE_WITHOUT_EPOCH_PARAM, GetStateEpochCommittees.class))
+        .add(
+            Arguments.of(
+                GetStateEpochCommittees.ROUTE_WITH_EPOCH_PARAM, GetStateEpochCommittees.class))
+        .add(
+            Arguments.of(
+                GetStateEpochCommittees.ROUTE_WITHOUT_EPOCH_PARAM, GetStateEpochCommittees.class));
 
     // events
     builder.add(Arguments.of(GetEvents.ROUTE, GetEvents.class));
