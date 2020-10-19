@@ -85,7 +85,7 @@ class ConstantsReaderTest {
     assertAllFieldsSet();
   }
 
-  private static Stream<Arguments> knownNetworks() {
+  static Stream<Arguments> knownNetworks() {
     return Stream.of(Constants.NETWORK_DEFINITIONS).map(Arguments::of);
   }
 
