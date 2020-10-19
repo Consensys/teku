@@ -13,14 +13,6 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.BLOCK_PERFORMANCE_EVALUATION_INTERVAL;
-
-import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +31,16 @@ import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.Constants;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.ATTESTATION_INCLUSION_RANGE;
+import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.BLOCK_PERFORMANCE_EVALUATION_INTERVAL;
 
 public class PerformanceTrackerTest {
 
@@ -291,6 +293,17 @@ public class PerformanceTrackerTest {
     performanceTracker.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(2)));
     AttestationPerformance expectedAttestationPerformance =
         new AttestationPerformance(2, 2, 2, 1, 1, 1, 2, 2);
+    verify(log).performance(expectedAttestationPerformance.toString());
+  }
+
+  @Test
+  void shouldReportExpectedAttestationOnlyForTheGivenEpoch() {
+    performanceTracker.reportAttestationProductionAttempt(UInt64.valueOf(1));
+    performanceTracker.reportAttestationProductionAttempt(UInt64.valueOf(2));
+    performanceTracker.reportAttestationProductionAttempt(UInt64.valueOf(3));
+    performanceTracker.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(2).plus(ATTESTATION_INCLUSION_RANGE)));
+    AttestationPerformance expectedAttestationPerformance =
+            new AttestationPerformance(1, 0, 0, 0, 0, 0, 0, 0);
     verify(log).performance(expectedAttestationPerformance.toString());
   }
 

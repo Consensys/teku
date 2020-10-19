@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.validator.coordinator.performance;
 
-import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.getPercentage;
-
 import com.google.common.base.Objects;
+
+import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.getPercentage;
 
 public class AttestationPerformance {
   final int numberOfExpectedAttestations;
@@ -46,8 +46,8 @@ public class AttestationPerformance {
     this.correctHeadBlockCount = correctHeadBlockCount;
   }
 
-  public static AttestationPerformance empty() {
-    return new AttestationPerformance(0, 0, 0, 0, 0, 0, 0, 0);
+  public static AttestationPerformance empty(int numberOfExpectedAttestations) {
+    return new AttestationPerformance(numberOfExpectedAttestations, 0, 0, 0, 0, 0, 0, 0);
   }
 
   @Override
