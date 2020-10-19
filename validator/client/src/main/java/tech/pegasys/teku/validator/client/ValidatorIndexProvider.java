@@ -55,7 +55,7 @@ public class ValidatorIndexProvider {
             })
         .orTimeout(30, TimeUnit.SECONDS)
         .whenComplete((result, error) -> requestInProgress.set(false))
-        .finish(error -> LOG.error("Failed to load validator indexes.", error));
+        .finish(error -> LOG.debug("Failed to load validator indexes.", error));
   }
 
   public Optional<Integer> getValidatorIndex(final BLSPublicKey publicKey) {
