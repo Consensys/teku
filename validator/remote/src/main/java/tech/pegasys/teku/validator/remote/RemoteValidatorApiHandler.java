@@ -234,7 +234,6 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
     asyncRunner
         .runAsync(() -> apiClient.sendSignedAttestation(schemaAttestation))
         .finish(error -> LOG.error("Failed to send signed attestation", error));
-    ;
   }
 
   @Override

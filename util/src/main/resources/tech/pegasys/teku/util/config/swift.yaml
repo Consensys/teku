@@ -5,6 +5,7 @@
 # SLOTS_PER_EPOCH is 4 instead of 8
 # MIN_GENESIS_ACTIVE_VALIDATOR_COUNT is 4 instead of 64
 
+CONFIG_NAME: "swift"
 
 # Misc
 # ---------------------------------------------------------------
@@ -132,6 +133,7 @@ PROPOSER_REWARD_QUOTIENT: 8
 INACTIVITY_PENALTY_QUOTIENT: 16777216
 # 2**5 (= 32)
 MIN_SLASHING_PENALTY_QUOTIENT: 32
+PROPORTIONAL_SLASHING_MULTIPLIER: 3
 
 
 # Max operations per block
