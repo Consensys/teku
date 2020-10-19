@@ -550,61 +550,6 @@ class Store implements UpdatableStore {
     return Optional.of(new BlockRootAndState(baseBlockRoot.get(), baseState.get()));
   }
 
-  private SafeFuture<Optional<SignedBlockAndState>> getStateGenerationTaskBaseState(
-      final Bytes32 blockRoot) {
-    if (!containsBlock(blockRoot)) {
-      // If we don't have the corresponding block, we can't possibly regenerate the state
-      return EmptyStoreResults.EMPTY_BLOCK_AND_STATE_FUTURE;
-    }
-
-    // Accumulate blocks hashes until we find our base state to build from
-    final HashTree.Builder treeBuilder = HashTree.builder();
-    final AtomicReference<Bytes32> baseBlockRoot = new AtomicReference<>();
-    final AtomicReference<BeaconState> baseState = new AtomicReference<>();
-    readLock.lock();
-    try {
-      blockTree
-          .getHashTree()
-          .processHashesInChainWhile(
-              blockRoot,
-              (root, parent) -> {
-                treeBuilder.childAndParentRoots(root, parent);
-                final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
-                blockState.ifPresent(
-                    (state) -> {
-                      // We found a base state
-                      treeBuilder.rootHash(root);
-                      baseBlockRoot.set(root);
-                      baseState.set(state);
-                    });
-                return blockState.isEmpty();
-              });
-    } finally {
-      readLock.unlock();
-    }
-
-    final SafeFuture<Optional<SignedBeaconBlock>> baseBlock;
-    if (baseBlockRoot.get() == null) {
-      // If we haven't found a base state yet, we must have walked back to the latest finalized
-      // block, check here for the base state
-      final SignedBlockAndState finalized = getLatestFinalizedBlockAndState();
-      if (!treeBuilder.contains(finalized.getRoot())) {
-        // We must have finalized a new block while processing and moved past our target root
-        return EmptyStoreResults.EMPTY_BLOCK_AND_STATE_FUTURE;
-      }
-      baseBlockRoot.set(finalized.getRoot());
-      baseState.set(finalized.getState());
-      baseBlock = SafeFuture.completedFuture(Optional.of(finalized.getBlock()));
-      treeBuilder.rootHash(finalized.getRoot());
-    } else {
-      baseBlock = retrieveSignedBlock(baseBlockRoot.get());
-    }
-
-    // Regenerate state
-    return baseBlock.thenApply(
-        maybeBlock -> maybeBlock.map(block -> new SignedBlockAndState(block, baseState.get())));
-  }
-
   boolean shouldPersistState(final BlockTree blockTree, final Bytes32 root) {
     return hotStatePersistenceFrequencyInEpochs > 0
         && blockTree.isRootAtNthEpochBoundary(root, hotStatePersistenceFrequencyInEpochs);
