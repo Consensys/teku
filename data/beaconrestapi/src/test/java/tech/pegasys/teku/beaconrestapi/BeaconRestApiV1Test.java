@@ -31,9 +31,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateEpochCommittees;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFinalityCheckpoints;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidatorBalances;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
@@ -101,7 +104,15 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(GetStateFork.ROUTE, GetStateFork.class))
         .add(Arguments.of(GetStateRoot.ROUTE, GetStateRoot.class))
         .add(Arguments.of(GetStateValidator.ROUTE, GetStateValidator.class))
-        .add(Arguments.of(GetStateValidators.ROUTE, GetStateValidators.class));
+        .add(Arguments.of(GetStateValidators.ROUTE, GetStateValidators.class))
+        .add(Arguments.of(GetStateFinalityCheckpoints.ROUTE, GetStateFinalityCheckpoints.class))
+        .add(Arguments.of(GetStateValidatorBalances.ROUTE, GetStateValidatorBalances.class))
+        .add(
+            Arguments.of(
+                GetStateEpochCommittees.ROUTE_WITH_EPOCH_PARAM, GetStateEpochCommittees.class))
+        .add(
+            Arguments.of(
+                GetStateEpochCommittees.ROUTE_WITHOUT_EPOCH_PARAM, GetStateEpochCommittees.class));
 
     // events
     builder.add(Arguments.of(GetEvents.ROUTE, GetEvents.class));
