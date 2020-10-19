@@ -50,7 +50,6 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateEpochCommitteesResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
 import tech.pegasys.teku.api.schema.BeaconHead;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
@@ -89,16 +88,13 @@ public class GetStateEpochCommittees extends AbstractHandler implements Handler 
         @OpenApiParam(name = PARAM_EPOCH, description = PARAM_EPOCH_DESCRIPTION)
       },
       queryParams = {
-        @OpenApiParam(
-            name = COMMITTEE_INDEX,
-            description = COMMITTEE_INDEX_QUERY_DESCRIPTION,
-            isRepeatable = false),
-        @OpenApiParam(name = SLOT, description = SLOT_QUERY_DESCRIPTION, isRepeatable = false)
+        @OpenApiParam(name = COMMITTEE_INDEX, description = COMMITTEE_INDEX_QUERY_DESCRIPTION),
+        @OpenApiParam(name = SLOT, description = SLOT_QUERY_DESCRIPTION)
       },
       responses = {
         @OpenApiResponse(
             status = RES_OK,
-            content = @OpenApiContent(from = GetStateRootResponse.class)),
+            content = @OpenApiContent(from = GetStateEpochCommitteesResponse.class)),
         @OpenApiResponse(status = RES_BAD_REQUEST),
         @OpenApiResponse(status = RES_NOT_FOUND),
         @OpenApiResponse(status = RES_INTERNAL_ERROR),

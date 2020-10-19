@@ -21,6 +21,7 @@ import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoc
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.response.GetForkResponse;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.api.schema.PublicKeyException;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
+import tech.pegasys.teku.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.datastructures.state.ForkInfo;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
@@ -131,6 +133,13 @@ public class ChainDataProvider {
       return SafeFuture.completedFuture(Optional.empty());
     }
 
+    final Predicate<CommitteeAssignment> filterForSlot =
+        (committee) -> maybeSlot.map(slot -> committee.getSlot().equals(slot)).orElse(true);
+
+    final Predicate<CommitteeAssignment> filterForCommitteeIndex =
+        (committee) ->
+            maybeIndex.map(index -> committee.getCommitteeIndex().intValue() == index).orElse(true);
+
     return combinedChainDataClient
         .getStateAtSlotExact(stateSlot)
         .thenApply(
@@ -138,18 +147,8 @@ public class ChainDataProvider {
                 maybeResult.map(
                     state ->
                         combinedChainDataClient.getCommitteesFromState(state, epoch).stream()
-                            .filter(
-                                committee ->
-                                    maybeSlot
-                                        .map(slot -> committee.getSlot().equals(slot))
-                                        .orElse(true))
-                            .filter(
-                                committee ->
-                                    maybeIndex
-                                        .map(
-                                            index ->
-                                                committee.getCommitteeIndex().intValue() == index)
-                                        .orElse(true))
+                            .filter(filterForSlot)
+                            .filter(filterForCommitteeIndex)
                             .map(EpochCommitteeResponse::new)
                             .collect(toList())));
   }
