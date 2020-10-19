@@ -41,15 +41,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.response.GetForkResponse;
+import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.BLSPubKey;
+import tech.pegasys.teku.api.schema.BLSSignature;
+import tech.pegasys.teku.api.schema.BeaconBlockHeader;
 import tech.pegasys.teku.api.schema.BeaconHead;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.BeaconValidators;
 import tech.pegasys.teku.api.schema.Committee;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.SignedBeaconBlockHeader;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.ValidatorWithIndex;
 import tech.pegasys.teku.api.schema.ValidatorsRequest;
@@ -692,6 +696,74 @@ public class ChainDataProviderTest {
     final Bytes4 FORK_ONE = Bytes4.fromHexString("0x00000001");
     final Optional<Fork> expectedResult = Optional.of(new Fork(FORK_ONE, FORK_ONE, ZERO));
     assertThat(provider.getForkAtSlot(ONE).join()).isEqualTo(expectedResult);
+  }
+
+  @Test
+  public void blockParameterToSlot_shouldRejectInvalidInput() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    assertThrows(IllegalArgumentException.class, () -> provider.blockParameterToSlot("headt"));
+  }
+
+  @Test
+  public void blockParameterToSlot_shouldThrowWhenStoreNotFound() {
+    final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
+    assertThrows(ChainDataUnavailableException.class, () -> provider.blockParameterToSlot("1"));
+  }
+
+  @Test
+  public void blockParameterToSlot_shouldParseBlockRoot() {
+    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElse(Bytes32.ZERO);
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    Optional<UInt64> result = provider.blockParameterToSlot(blockRoot.toHexString());
+    assertThat(result.isPresent()).isTrue();
+    assertThat(result.get()).isEqualTo(recentChainData.getHeadBlock().get().getSlot());
+  }
+
+  @Test
+  public void blockParameterToSlot_shouldFindHeadBlock() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    Optional<UInt64> result = provider.blockParameterToSlot("head");
+    assertThat(result.isPresent()).isTrue();
+    assertThat(result.get()).isEqualTo(recentChainData.getHeadBlock().get().getSlot());
+  }
+
+  @Test
+  public void blockParameterToSlot_shouldFindGenesisBlock() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    Optional<UInt64> result = provider.blockParameterToSlot("genesis");
+    assertThat(result.isPresent()).isTrue();
+    assertThat(result.get()).isEqualTo(ZERO);
+  }
+
+  @Test
+  public void getBlockHeaderByBlockId_shouldGetHeadBlock()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+    final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock block =
+        combinedChainDataClient.getBestBlock().get();
+    BlockHeader result = provider.getBlockHeaderByBlockId("head").get().get();
+    final BeaconBlockHeader beaconBlockHeader =
+        new BeaconBlockHeader(
+            block.getSlot(),
+            block.getMessage().getProposer_index(),
+            block.getParent_root(),
+            block.getStateRoot(),
+            block.getRoot());
+    final BlockHeader expected =
+        new BlockHeader(
+            block.getRoot(),
+            true,
+            new SignedBeaconBlockHeader(beaconBlockHeader, new BLSSignature(block.getSignature())));
+
+    assertThat(result).isEqualTo(expected);
   }
 
   private void assertValidatorRespondsWithCorrectValidatorAtHead(

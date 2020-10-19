@@ -11,18 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.p2p.rpc;
+package tech.pegasys.teku.api.response.v1.beacon;
 
-import io.netty.buffer.ByteBuf;
-import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
-public interface RpcRequestHandler {
+public class GetStateEpochCommitteesResponse {
+  @JsonProperty("data")
+  public final List<EpochCommitteeResponse> data;
 
-  void active(final NodeId nodeId, final RpcStream rpcStream);
-
-  void processData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf data);
-
-  void readComplete(final NodeId nodeId, final RpcStream rpcStream);
-
-  void closed(final NodeId nodeId, final RpcStream rpcStream);
+  @JsonCreator
+  public GetStateEpochCommitteesResponse(
+      @JsonProperty("data") final List<EpochCommitteeResponse> data) {
+    this.data = data;
+  }
 }

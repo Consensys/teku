@@ -64,6 +64,18 @@ public class RestApiConstants {
   public static final String ROOT_QUERY_DESCRIPTION = "`Bytes32 Hex` Block root to query.";
   public static final String STATE_ROOT_QUERY_DESCRIPTION = "`Bytes32 Hex` Block root to query.";
 
+  public static final String COMMITTEE_INDEX_QUERY = "index";
+  public static final String COMMITTEE_INDEX_QUERY_DESCRIPTION =
+      "`string` Committee index to query.";
+
+  public static final String PARAM_BLOCK_ID = "block_id";
+  public static final String PARAM_BLOCK_ID_DESCRIPTION =
+      "Block identifier. Can be one of: "
+          + "\"head\" (canonical head in node's view), "
+          + "\"genesis\", "
+          + "\"finalized\", "
+          + "&lt;slot&gt;, "
+          + "&lt;hex encoded blockRoot with 0x prefix&gt;.";
   public static final String PARAM_STATE_ID = "state_id";
   public static final String PARAM_STATE_ID_DESCRIPTION =
       "State identifier. Can be one of: "
@@ -77,4 +89,7 @@ public class RestApiConstants {
   public static final String PARAM_VALIDATOR_ID = "validator_id";
   public static final String PARAM_VALIDATOR_DESCRIPTION =
       "Either hex encoded public key (with 0x prefix) or validator index";
+  public static final String PARAM_EPOCH = "epoch";
+  public static final String PARAM_EPOCH_DESCRIPTION =
+      "Epoch for which to calculate committees. Defaults to beacon state epoch.";
 }

@@ -25,7 +25,7 @@ public interface RpcStream {
    *
    * @return A future completing when the stream is closed.
    */
-  SafeFuture<Void> close();
+  SafeFuture<Void> closeAbruptly();
 
   /**
    * Close the write side of the stream. When both sides of the stream close their write stream, the
