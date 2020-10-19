@@ -3,6 +3,8 @@
 # Some of these constants may still change before the launch of Phase 0.
 
 
+CONFIG_NAME: "medalla"
+
 # Misc
 # ---------------------------------------------------------------
 # 2**6 (= 64)
@@ -51,6 +53,8 @@ SECONDS_PER_ETH1_BLOCK: 14
 
 # Deposit contract
 # ---------------------------------------------------------------
+DEPOSIT_CHAIN_ID: 5
+DEPOSIT_NETWORK_ID: 5
 # **TBD**
 DEPOSIT_CONTRACT_ADDRESS: 0x07b39F4fDE4A38bACe212b546dAc87C58DfE3fDC
 
@@ -96,8 +100,6 @@ SLOTS_PER_HISTORICAL_ROOT: 8192
 MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256
 # 2**8 (= 256) epochs ~27 hours
 SHARD_COMMITTEE_PERIOD: 256
-# 2**6 (= 64) epochs ~7 hours
-MAX_EPOCHS_PER_CROSSLINK: 64
 # 2**2 (= 4) epochs 25.6 minutes
 MIN_EPOCHS_TO_INACTIVITY_PENALTY: 4
 
@@ -126,6 +128,7 @@ PROPOSER_REWARD_QUOTIENT: 8
 INACTIVITY_PENALTY_QUOTIENT: 16777216
 # 2**5 (= 32)
 MIN_SLASHING_PENALTY_QUOTIENT: 32
+PROPORTIONAL_SLASHING_MULTIPLIER: 3
 
 
 # Max operations per block
@@ -151,3 +154,7 @@ DOMAIN_DEPOSIT: 0x03000000
 DOMAIN_VOLUNTARY_EXIT: 0x04000000
 DOMAIN_SELECTION_PROOF: 0x05000000
 DOMAIN_AGGREGATE_AND_PROOF: 0x06000000
+
+# Custom constants
+# ---------------------------------------------------------------
+BLS_INFINITY_VALID: true

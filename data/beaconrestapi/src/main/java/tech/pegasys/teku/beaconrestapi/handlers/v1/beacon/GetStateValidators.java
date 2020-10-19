@@ -26,7 +26,6 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
@@ -70,7 +69,7 @@ public class GetStateValidators extends AbstractHandler {
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get validators from state",
-      tags = {TAG_V1_BEACON, TAG_VALIDATOR_REQUIRED},
+      tags = {TAG_V1_BEACON},
       description = "Returns filterable list of validators with their balance, status and index.",
       pathParams = {
         @OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION),

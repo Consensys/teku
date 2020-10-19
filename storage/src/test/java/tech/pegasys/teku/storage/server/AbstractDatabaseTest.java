@@ -895,7 +895,7 @@ public abstract class AbstractDatabaseTest {
   }
 
   protected void initGenesis() {
-    recentChainData.initializeFromGenesis(genesisBlockAndState.getState()).join();
+    recentChainData.initializeFromGenesis(genesisBlockAndState.getState());
     store = recentChainData.getStore();
   }
 

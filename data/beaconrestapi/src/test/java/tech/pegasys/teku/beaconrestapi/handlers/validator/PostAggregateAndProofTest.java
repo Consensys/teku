@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.javalin.http.Context;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -69,13 +70,14 @@ class PostAggregateAndProofTest {
         new tech.pegasys.teku.api.schema.SignedAggregateAndProof(signedAggregateAndProof);
 
     when(context.body()).thenReturn(jsonProvider.objectToJSON(schemaSignedAggregateAndProof));
-    doThrow(new RuntimeException()).when(provider).sendAggregateAndProof(any());
+    doThrow(new RuntimeException()).when(provider).sendAggregateAndProofs(any());
 
     handler.handle(context);
 
     verify(context).status(SC_INTERNAL_SERVER_ERROR);
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void shouldReturnSuccessWhenSendAggregateAndProofSucceeds() throws Exception {
     final SignedAggregateAndProof signedAggregateAndProof =
@@ -89,13 +91,13 @@ class PostAggregateAndProofTest {
 
     handler.handle(context);
 
-    ArgumentCaptor<tech.pegasys.teku.api.schema.SignedAggregateAndProof> captor =
-        ArgumentCaptor.forClass(tech.pegasys.teku.api.schema.SignedAggregateAndProof.class);
+    ArgumentCaptor<List<tech.pegasys.teku.api.schema.SignedAggregateAndProof>> captor =
+        ArgumentCaptor.forClass(List.class);
 
-    verify(provider).sendAggregateAndProof(captor.capture());
+    verify(provider).sendAggregateAndProofs(captor.capture());
     verify(context).status(SC_OK);
 
-    assertThat(jsonProvider.objectToJSON(captor.getValue()))
+    assertThat(jsonProvider.objectToJSON(captor.getValue().get(0)))
         .isEqualTo(signedAggregateAndProofAsJson);
   }
 }

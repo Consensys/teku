@@ -48,6 +48,7 @@ public class PostSubscribeToBeaconCommittee implements Handler {
   }
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.POST,
       summary = "Subscribe beacon node to committee attestation subnet.",
@@ -59,8 +60,9 @@ public class PostSubscribeToBeaconCommittee implements Handler {
           "After Beacon node receives this request it has to:\n"
               + "- add subnet to ENR\n"
               + "- announce subnet topic subscription on gossipsub\n"
-              + "- search using discv5 for peers related to this subnet and replace current peers with those ones if neccessary\n"
-              + "- aggregate attestations received on that subnet\n",
+              + "- search using discv5 for peers related to this subnet and replace current peers with those ones if necessary\n"
+              + "- aggregate attestations received on that subnet\n"
+              + "Deprecated - use `/eth/v1/validator/beacon_committee_subscriptions` instead.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,

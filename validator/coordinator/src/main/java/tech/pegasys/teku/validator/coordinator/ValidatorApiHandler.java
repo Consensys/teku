@@ -56,7 +56,7 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttestationData;
 import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.ForkInfo;
+import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.util.AttestationUtil;
 import tech.pegasys.teku.datastructures.util.CommitteeUtil;
 import tech.pegasys.teku.datastructures.util.ValidatorsUtil;
@@ -75,6 +75,7 @@ import tech.pegasys.teku.sync.SyncState;
 import tech.pegasys.teku.sync.SyncStateTracker;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.validator.api.AttesterDuties;
+import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -99,6 +100,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final AggregatingAttestationPool attestationPool;
   private final AttestationManager attestationManager;
   private final AttestationTopicSubscriber attestationTopicSubscriber;
+  private final ActiveValidatorTracker activeValidatorTracker;
   private final EventBus eventBus;
   private final DutyMetrics dutyMetrics;
   private final PerformanceTracker performanceTracker;
@@ -112,6 +114,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
       final AttestationTopicSubscriber attestationTopicSubscriber,
+      final ActiveValidatorTracker activeValidatorTracker,
       final EventBus eventBus,
       final DutyMetrics dutyMetrics,
       final PerformanceTracker performanceTracker) {
@@ -123,15 +126,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.attestationPool = attestationPool;
     this.attestationManager = attestationManager;
     this.attestationTopicSubscriber = attestationTopicSubscriber;
+    this.activeValidatorTracker = activeValidatorTracker;
     this.eventBus = eventBus;
     this.dutyMetrics = dutyMetrics;
     this.performanceTracker = performanceTracker;
   }
 
   @Override
-  public SafeFuture<Optional<ForkInfo>> getForkInfo() {
+  public SafeFuture<Optional<Fork>> getFork() {
     return SafeFuture.completedFuture(
-        combinedChainDataClient.getBestState().map(BeaconState::getForkInfo));
+        combinedChainDataClient.getBestState().map(BeaconState::getFork));
   }
 
   @Override
@@ -353,9 +357,22 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public void subscribeToBeaconCommitteeForAggregation(
-      final int committeeIndex, final UInt64 aggregationSlot) {
-    attestationTopicSubscriber.subscribeToCommitteeForAggregation(committeeIndex, aggregationSlot);
+  public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
+    requests.forEach(
+        request -> {
+          if (request.isAggregator()) {
+            attestationTopicSubscriber.subscribeToCommitteeForAggregation(
+                request.getCommitteeIndex(), request.getCommitteesAtSlot(), request.getSlot());
+
+            // The old subscription API can't provide the validator ID so until it can be removed,
+            // don't track validators from those calls - they should use the old API to subscribe to
+            // persistent subnets.
+            if (request.getValidatorIndex() != UKNOWN_VALIDATOR_ID) {
+              activeValidatorTracker.onCommitteeSubscriptionRequest(
+                  request.getValidatorIndex(), request.getSlot());
+            }
+          }
+        });
   }
 
   @Override
@@ -526,6 +543,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BeaconState state, final UInt64 epoch, final Integer validatorIndex) {
     try {
       final BLSPublicKey pkey = state.getValidators().get(validatorIndex).getPubkey();
+      final UInt64 committeeCountPerSlot = get_committee_count_per_slot(state, epoch);
       return CommitteeAssignmentUtil.get_committee_assignment(state, epoch, validatorIndex)
           .map(
               committeeAssignment ->
@@ -534,6 +552,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                       validatorIndex,
                       committeeAssignment.getCommittee().size(),
                       committeeAssignment.getCommitteeIndex().intValue(),
+                      committeeCountPerSlot.intValue(),
                       committeeAssignment.getCommittee().indexOf(validatorIndex),
                       committeeAssignment.getSlot()));
     } catch (IndexOutOfBoundsException ex) {

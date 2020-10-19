@@ -29,6 +29,12 @@ public class BLSConstants {
 
   public static boolean VERIFICATION_DISABLED = false;
 
+  /**
+   * Temporary backward compatibility flag which enables BLS Infinity Pubkeys and Signatures
+   * verification and Zero Privkey signing
+   */
+  public static boolean VALID_INFINITY = false;
+
   public static void disableBLSVerification() {
     VERIFICATION_DISABLED = true;
   }

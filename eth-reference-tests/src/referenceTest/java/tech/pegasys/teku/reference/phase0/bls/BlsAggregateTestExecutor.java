@@ -24,12 +24,11 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.phase0.TestDataUtils;
-import tech.pegasys.teku.reference.phase0.TestExecutor;
 
-public class BlsAggregateTestExecutor implements TestExecutor {
+public class BlsAggregateTestExecutor extends BlsTestExecutor {
 
   @Override
-  public void runTest(final TestDefinition testDefinition) throws Throwable {
+  public void runTestImpl(final TestDefinition testDefinition) throws Throwable {
     final Data data = TestDataUtils.loadYaml(testDefinition, BLS_DATA_FILE, Data.class);
     final List<BLSSignature> signatures = data.getInput();
     final BLSSignature expectedSignature = data.getOutput();
