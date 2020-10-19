@@ -21,6 +21,8 @@ import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.RpcErrorMessage;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
@@ -32,6 +34,8 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
  * @param <T>
  */
 public class RpcResponseDecoder<T> {
+  private static final Logger LOG = LogManager.getLogger();
+
   private Optional<Integer> respCodeMaybe = Optional.empty();
   private Optional<RpcByteBufDecoder<T>> payloadDecoder = Optional.empty();
   private Optional<RpcByteBufDecoder<RpcErrorMessage>> errorDecoder = Optional.empty();
@@ -96,19 +100,29 @@ public class RpcResponseDecoder<T> {
     }
   }
 
-  public void complete() throws RpcException {
-    if (payloadDecoder.isPresent()) {
-      payloadDecoder.get().complete();
+  public void close() {
+    try {
+      complete();
+    } catch (RpcException e) {
+      // decoders should release any resources despite throwing exception
+      LOG.trace("Ignoring any complete() exceptions when close(): %s", e);
     }
-    if (errorDecoder.isPresent()) {
-      errorDecoder.get().complete();
+  }
+
+  public void complete() throws RpcException {
+    try {
+      if (payloadDecoder.isPresent()) {
+        payloadDecoder.get().complete();
+        payloadDecoder = Optional.empty();
+      }
+    } finally {
+      if (errorDecoder.isPresent()) {
+        errorDecoder.get().complete();
+        errorDecoder = Optional.empty();
+      }
     }
     if (respCodeMaybe.isPresent()) {
       throw new PayloadTruncatedException();
     }
-  }
-
-  public interface FirstByteReceivedListener {
-    void onFirstByteReceived();
   }
 }

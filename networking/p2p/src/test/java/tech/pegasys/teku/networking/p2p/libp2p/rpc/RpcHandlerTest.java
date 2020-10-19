@@ -82,7 +82,7 @@ public class RpcHandlerTest {
     writeFuture.complete(null);
 
     verify(stream, never()).close();
-    verify(controller, never()).close();
+    verify(controller, never()).closeAbruptly();
     assertThat(future).isCompletedWithValue(rpcStream);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
 
@@ -90,7 +90,7 @@ public class RpcHandlerTest {
     closeFuture.complete(null);
 
     verify(stream, never()).close();
-    verify(controller, never()).close();
+    verify(controller, never()).closeAbruptly();
     assertThat(future).isCompletedWithValue(rpcStream);
     assertThat(closeFuture.getNumberOfDependents()).isEqualTo(0);
   }
