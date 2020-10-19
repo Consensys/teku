@@ -155,7 +155,13 @@ public class BeaconRestApiV1Test {
 
   @Test
   public void shouldHaveGetStateEpochCommitteesEndpoint() {
-    verify(app).get(eq(GetStateEpochCommittees.ROUTE), any(GetStateEpochCommittees.class));
+    verify(app)
+        .get(
+            eq(GetStateEpochCommittees.ROUTE_WITH_EPOCH_PARAM), any(GetStateEpochCommittees.class));
+    verify(app)
+        .get(
+            eq(GetStateEpochCommittees.ROUTE_WITHOUT_EPOCH_PARAM),
+            any(GetStateEpochCommittees.class));
   }
 
   @Test
