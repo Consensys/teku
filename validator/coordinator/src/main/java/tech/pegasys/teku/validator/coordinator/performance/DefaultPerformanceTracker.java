@@ -168,7 +168,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
     int numberOfAttestationProductionAttempts =
         attestationProductionAttemptsByEpoch
-            .subMap(analyzedEpoch, true, analysisRangeEndEpoch, false).values().stream()
+            .subMap(analyzedEpoch, true, analyzedEpoch.plus(1), false).values().stream()
             .mapToInt(AtomicInteger::get)
             .sum();
 
@@ -245,7 +245,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
             inclusionDistanceStatistics.getAverage(),
             correctTargetCount,
             correctHeadBlockCount)
-        : AttestationPerformance.empty();
+        : AttestationPerformance.empty(numberOfAttestationProductionAttempts);
   }
 
   private Set<BeaconBlock> getBlocksInEpochs(UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
