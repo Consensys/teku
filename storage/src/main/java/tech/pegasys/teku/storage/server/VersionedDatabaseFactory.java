@@ -122,31 +122,31 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     switch (dbVersion) {
       case NOOP:
         database = new NoOpDatabase();
-        LOG.trace("Created no-op database");
+        LOG.info("Created no-op database");
         break;
       case V3:
         database = createV3Database();
-        LOG.trace(
+        LOG.info(
             "Created V3 database ({}) at {}", dbVersion.getValue(), dbDirectory.getAbsolutePath());
         break;
       case V4:
         database = createV4Database();
-        LOG.trace(
+        LOG.info(
             "Created V4 Hot database ({}) at {}",
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
-        LOG.trace(
+        LOG.info(
             "Created V4 Finalized database ({}) at {}",
             dbVersion.getValue(),
             v5ArchiveDirectory.getAbsolutePath());
         break;
       case V5:
         database = createV5Database();
-        LOG.trace(
+        LOG.info(
             "Created V5 Hot database ({}) at {}",
             dbVersion.getValue(),
             dbDirectory.getAbsolutePath());
-        LOG.trace(
+        LOG.info(
             "Created V5 Finalized database ({}) at {}",
             dbVersion.getValue(),
             v5ArchiveDirectory.getAbsolutePath());
@@ -154,16 +154,16 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       case V6:
         database = createV6Database();
         if (v6ArchiveDirectory.isPresent()) {
-          LOG.trace(
+          LOG.info(
               "Created V6 Hot database ({}) at {}",
               dbVersion.getValue(),
               dbDirectory.getAbsolutePath());
-          LOG.trace(
+          LOG.info(
               "Created V6 Finalized database ({}) at {}",
               dbVersion.getValue(),
               v6ArchiveDirectory.get().getAbsolutePath());
         } else {
-          LOG.trace(
+          LOG.info(
               "Created V6 Hot and Finalized database ({}) at {}",
               dbVersion.getValue(),
               dbDirectory.getAbsolutePath());
