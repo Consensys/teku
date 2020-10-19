@@ -64,6 +64,14 @@ public class RestApiConstants {
   public static final String ROOT_QUERY_DESCRIPTION = "`Bytes32 Hex` Block root to query.";
   public static final String STATE_ROOT_QUERY_DESCRIPTION = "`Bytes32 Hex` Block root to query.";
 
+  public static final String PARAM_BLOCK_ID = "block_id";
+  public static final String PARAM_BLOCK_ID_DESCRIPTION =
+      "Block identifier. Can be one of: "
+          + "\"head\" (canonical head in node's view), "
+          + "\"genesis\", "
+          + "\"finalized\", "
+          + "&lt;slot&gt;, "
+          + "&lt;hex encoded blockRoot with 0x prefix&gt;.";
   public static final String PARAM_STATE_ID = "state_id";
   public static final String PARAM_STATE_ID_DESCRIPTION =
       "State identifier. Can be one of: "
