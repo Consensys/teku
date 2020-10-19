@@ -3,6 +3,8 @@
 # Some of these constants may still change before the launch of Phase 0.
 
 
+CONFIG_NAME: "medalla"
+
 # Misc
 # ---------------------------------------------------------------
 # 2**6 (= 64)
@@ -51,6 +53,8 @@ SECONDS_PER_ETH1_BLOCK: 14
 
 # Deposit contract
 # ---------------------------------------------------------------
+DEPOSIT_CHAIN_ID: 5
+DEPOSIT_NETWORK_ID: 5
 # **TBD**
 DEPOSIT_CONTRACT_ADDRESS: 0x07b39F4fDE4A38bACe212b546dAc87C58DfE3fDC
 
@@ -124,6 +128,7 @@ PROPOSER_REWARD_QUOTIENT: 8
 INACTIVITY_PENALTY_QUOTIENT: 16777216
 # 2**5 (= 32)
 MIN_SLASHING_PENALTY_QUOTIENT: 32
+PROPORTIONAL_SLASHING_MULTIPLIER: 3
 
 
 # Max operations per block
