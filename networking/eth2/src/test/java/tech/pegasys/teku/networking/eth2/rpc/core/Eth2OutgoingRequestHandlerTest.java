@@ -271,6 +271,21 @@ public abstract class Eth2OutgoingRequestHandlerTest
   }
 
   @Test
+  public void shouldCompleteExceptionallyWhenClosedWithTruncatedMessage() {
+    sendInitialPayload();
+
+    timeProvider.advanceTimeByMillis(100);
+    final Bytes chunkBytes = chunks.get(0);
+    deliverBytes(chunkBytes.slice(0, chunkBytes.size() - 1));
+
+    asyncRequestRunner.executeQueuedActions();
+
+    complete();
+
+    assertThat(finishedProcessingFuture).isCompletedExceptionally();
+  }
+
+  @Test
   public void doNotDisconnectsIfSecondChunkReceivedInTime() throws Exception {
     sendInitialPayload();
 

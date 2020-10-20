@@ -106,6 +106,10 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
     return attestationsByValidatorCount.isEmpty();
   }
 
+  public long size() {
+    return attestationsByValidatorCount.values().stream().map(Set::size).reduce(0, Integer::sum);
+  }
+
   /**
    * Updates {@code seenAggregationBits} and removes any attestation from this group whose
    * aggregation bits have all been seen.
