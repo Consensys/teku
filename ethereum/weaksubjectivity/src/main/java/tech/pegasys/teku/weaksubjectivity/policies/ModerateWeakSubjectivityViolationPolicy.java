@@ -16,12 +16,16 @@ package tech.pegasys.teku.weaksubjectivity.policies;
 import java.util.List;
 import org.apache.logging.log4j.Level;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
+import tech.pegasys.teku.infrastructure.logging.WeakSubjectivityLogger;
 import tech.pegasys.teku.infrastructure.time.Throttler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ModerateWeakSubjectivityViolationPolicy extends CompoundWeakSubjectivityViolationPolicy {
   private final Throttler<WeakSubjectivityViolationPolicy> warningPolicy =
-      new Throttler<>(new LoggingWeakSubjectivityViolationPolicy(Level.WARN), UInt64.valueOf(10));
+      new Throttler<>(
+          new LoggingWeakSubjectivityViolationPolicy(
+              WeakSubjectivityLogger.createFileLogger(), Level.INFO),
+          UInt64.valueOf(50));
 
   public ModerateWeakSubjectivityViolationPolicy() {
     super(List.of(WeakSubjectivityViolationPolicy.strict()));
