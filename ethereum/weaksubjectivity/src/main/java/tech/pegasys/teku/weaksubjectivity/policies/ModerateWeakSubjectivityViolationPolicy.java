@@ -36,17 +36,11 @@ class ModerateWeakSubjectivityViolationPolicy extends CompoundWeakSubjectivityVi
       final int activeValidatorCount,
       final UInt64 currentSlot,
       final UInt64 wsPeriod) {
-    if (config.getWeakSubjectivityCheckpoint().isPresent()) {
-      // If WS checkpoint is set, run strict check
-      super.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-          latestFinalizedCheckpoint, activeValidatorCount, currentSlot, wsPeriod);
-    } else {
-      // Otherwise, warn periodically
-      warningPolicy.invoke(
-          currentSlot,
-          p ->
-              p.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
-                  latestFinalizedCheckpoint, activeValidatorCount, currentSlot, wsPeriod));
-    }
+    // Warn periodically
+    warningPolicy.invoke(
+        currentSlot,
+        p ->
+            p.onFinalizedCheckpointOutsideOfWeakSubjectivityPeriod(
+                latestFinalizedCheckpoint, activeValidatorCount, currentSlot, wsPeriod));
   }
 }

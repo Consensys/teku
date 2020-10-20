@@ -110,6 +110,15 @@ public class WeakSubjectivityValidator {
             });
   }
 
+  public Optional<UInt64> getWSPeriod(final CheckpointState latestFinalizedCheckpoint) {
+    if (isPriorToWSCheckpoint(latestFinalizedCheckpoint)) {
+      return Optional.empty();
+    }
+
+    return Optional.of(
+        calculator.computeWeakSubjectivityPeriod(latestFinalizedCheckpoint.getState()));
+  }
+
   /**
    * Validates that the latest finalized checkpoint is within the weak subjectivity period, given
    * the current slot based on clock time. If validation fails, configured policies are run to

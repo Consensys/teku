@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.statetransition.block;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.eventbus.EventBus;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,9 +28,11 @@ import tech.pegasys.teku.datastructures.operations.Attestation;
 import tech.pegasys.teku.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -49,6 +54,9 @@ public class BlockImporter {
       proposerSlashingSubscribers = Subscribers.create(true);
   private final Subscribers<VerifiedBlockOperationsListener<SignedVoluntaryExit>>
       voluntaryExitSubscribers = Subscribers.create(true);
+
+  private final AtomicReference<CheckpointState> latestFinalizedCheckpointState =
+      new AtomicReference<>(null);
 
   public BlockImporter(
       final RecentChainData recentChainData,
@@ -74,7 +82,7 @@ public class BlockImporter {
       return SafeFuture.completedFuture(BlockImportResult.FAILED_WEAK_SUBJECTIVITY_CHECKS);
     }
 
-    return validateFinalizedCheckpointIsWithinWeakSubjectivityPeriod()
+    return validateWeakSubjectivityPeriod()
         .thenCompose(__ -> recentChainData.retrieveBlockState(block.getParent_root()))
         .thenCompose(preState -> forkChoice.onBlock(block, preState))
         .thenApply(
@@ -108,15 +116,47 @@ public class BlockImporter {
             });
   }
 
-  private SafeFuture<?> validateFinalizedCheckpointIsWithinWeakSubjectivityPeriod() {
-    return SafeFuture.of(() -> recentChainData.getStore().retrieveFinalizedCheckpointAndState())
+  private SafeFuture<?> validateWeakSubjectivityPeriod() {
+    return getLatestCheckpointState()
         .thenCombine(
             SafeFuture.of(() -> recentChainData.getCurrentSlot().orElseThrow()),
             (finalizedCheckpointState, currentSlot) -> {
+              // While the node is online, we can defer to fork-choice to choose the right chain.
+              // If we have a recent chain head, skip validation since it appears we're online and
+              // processing new blocks.
+              final Optional<UInt64> wsPeriod =
+                  weakSubjectivityValidator.getWSPeriod(finalizedCheckpointState);
+              final UInt64 headSlot = recentChainData.getHeadSlot();
+              if (wsPeriod
+                  .map(wsp -> headSlot.plus(wsp).isGreaterThanOrEqualTo(currentSlot))
+                  .orElse(false)) {
+                return null;
+              }
+
               weakSubjectivityValidator.validateLatestFinalizedCheckpoint(
                   finalizedCheckpointState, currentSlot);
               return null;
             });
+  }
+
+  @VisibleForTesting
+  SafeFuture<CheckpointState> getLatestCheckpointState() {
+    final CheckpointState finalizedCheckpoint = latestFinalizedCheckpointState.get();
+    if (finalizedCheckpoint != null
+        && recentChainData
+            .getStore()
+            .getLatestFinalizedBlockAndState()
+            .getRoot()
+            .equals(finalizedCheckpoint.getRoot())) {
+      return SafeFuture.completedFuture(finalizedCheckpoint);
+    }
+
+    return SafeFuture.of(() -> recentChainData.getStore().retrieveFinalizedCheckpointAndState())
+        .thenApply(
+            updatedCheckpoint ->
+                latestFinalizedCheckpointState.updateAndGet(
+                    curVal ->
+                        Objects.equals(curVal, finalizedCheckpoint) ? updatedCheckpoint : curVal));
   }
 
   private void notifyBlockOperationSubscribers(SignedBeaconBlock block) {
