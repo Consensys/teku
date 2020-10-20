@@ -100,6 +100,7 @@ import tech.pegasys.teku.storage.store.FileKeyValueStore;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
+import tech.pegasys.teku.sync.CoalescingChainHeadChannel;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncStateTracker;
 import tech.pegasys.teku.sync.gossip.FetchRecentBlocksService;
@@ -168,6 +169,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   private volatile PerformanceTracker performanceTracker;
   private volatile RecentBlockFetcher recentBlockFetcher;
   private volatile PendingPool<SignedBeaconBlock> pendingBlocks;
+  private volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
 
   private SyncStateTracker syncStateTracker;
   private UInt64 genesisTimeTracker = ZERO;
@@ -249,6 +251,8 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             .hotStatePersistenceFrequencyInEpochs(config.getHotStatePersistenceFrequencyInEpochs())
             .disableBlockProcessingAtStartup(config.isBlockProcessingAtStartupDisabled())
             .build();
+    coalescingChainHeadChannel =
+        new CoalescingChainHeadChannel(eventChannels.getPublisher(ChainHeadChannel.class));
     return StorageBackedRecentChainData.create(
             metricsSystem,
             storeConfig,
@@ -257,7 +261,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
             eventChannels.getPublisher(StorageUpdateChannel.class, asyncRunner),
             eventChannels.getPublisher(ProtoArrayStorageChannel.class, asyncRunner),
             eventChannels.getPublisher(FinalizedCheckpointChannel.class, asyncRunner),
-            eventChannels.getPublisher(ChainHeadChannel.class),
+            coalescingChainHeadChannel,
             eventBus)
         .thenAccept(
             client -> {
@@ -697,6 +701,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
           SinglePeerSyncServiceFactory.create(
               metricsSystem, asyncRunner, p2pNetwork, recentChainData, blockImporter);
     }
+    syncService.subscribeToSyncChanges(coalescingChainHeadChannel);
   }
 
   private void initOperationsReOrgManager() {
