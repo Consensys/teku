@@ -170,7 +170,7 @@ public class ChainDataProvider {
 
     final Optional<UInt64> maybeSlot = blockParameterToSlot(slotParameter);
     if (maybeSlot.isEmpty()) {
-      return getBlockHeaderByBlockRoot(Bytes32.fromHexString(slotParameter));
+      return SafeFuture.completedFuture(Optional.empty());
     }
 
     final UInt64 slot = maybeSlot.get();
