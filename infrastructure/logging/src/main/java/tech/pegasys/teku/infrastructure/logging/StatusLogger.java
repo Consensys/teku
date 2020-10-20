@@ -251,4 +251,12 @@ public class StatusLogger {
     final boolean useColor = level.isMoreSpecificThan(Level.INFO);
     log.log(level, useColor ? print(msg, color) : msg);
   }
+
+  public void eth1DepositChainIdMismatch(int expectedChainId, int eth1ChainId) {
+    log.log(
+        Level.ERROR,
+        "PLEASE CHECK YOUR ETH1 NODE | Wrong Eth1 chain id (expected={}, actual={})",
+        expectedChainId,
+        eth1ChainId);
+  }
 }
