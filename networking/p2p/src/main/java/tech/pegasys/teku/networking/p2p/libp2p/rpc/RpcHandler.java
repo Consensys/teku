@@ -29,7 +29,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -118,7 +120,7 @@ public class RpcHandler implements ProtocolBinding<Controller> {
   static class Controller extends SimpleChannelInboundHandler<ByteBuf> {
     private final NodeId nodeId;
     private final P2PChannel p2pChannel;
-    private RpcRequestHandler rpcRequestHandler;
+    private Optional<RpcRequestHandler> rpcRequestHandler = Optional.empty();
     private RpcStream rpcStream;
     private boolean readCompleted = false;
 
@@ -141,14 +143,14 @@ public class RpcHandler implements ProtocolBinding<Controller> {
 
     @Override
     protected void channelRead0(final ChannelHandlerContext ctx, final ByteBuf msg) {
-      rpcRequestHandler.processData(nodeId, rpcStream, msg);
+      runHandler(h -> h.processData(nodeId, rpcStream, msg));
     }
 
     public void setRequestHandler(RpcRequestHandler rpcRequestHandler) {
-      if (this.rpcRequestHandler != null) {
+      if (this.rpcRequestHandler.isPresent()) {
         throw new IllegalStateException("Attempt to set an already set data handler");
       }
-      this.rpcRequestHandler = rpcRequestHandler;
+      this.rpcRequestHandler = Optional.of(rpcRequestHandler);
 
       activeFuture.finish(
           () -> {
@@ -186,19 +188,23 @@ public class RpcHandler implements ProtocolBinding<Controller> {
     }
 
     private void onRemoteWriteClosed() {
-      if (!readCompleted && rpcRequestHandler != null) {
+      if (!readCompleted) {
         readCompleted = true;
-        rpcRequestHandler.readComplete(nodeId, rpcStream);
+        runHandler(h -> h.readComplete(nodeId, rpcStream));
       }
     }
 
     private void onChannelClosed() {
       try {
         onRemoteWriteClosed();
-        rpcRequestHandler.closed(nodeId, rpcStream);
+        runHandler(h -> h.closed(nodeId, rpcStream));
       } finally {
-        rpcRequestHandler = null;
+        rpcRequestHandler = Optional.empty();
       }
+    }
+
+    private void runHandler(final Consumer<RpcRequestHandler> action) {
+      rpcRequestHandler.ifPresentOrElse(action, this::closeAbruptly);
     }
 
     @VisibleForTesting
