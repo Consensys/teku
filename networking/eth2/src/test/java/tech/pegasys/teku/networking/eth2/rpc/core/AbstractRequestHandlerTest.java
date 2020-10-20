@@ -68,7 +68,7 @@ abstract class AbstractRequestHandlerTest<T extends RpcRequestHandler> {
 
     reqHandler = createRequestHandler(beaconChainMethods);
 
-    lenient().when(rpcStream.close()).thenReturn(SafeFuture.COMPLETE);
+    lenient().when(rpcStream.closeAbruptly()).thenReturn(SafeFuture.COMPLETE);
     lenient().when(rpcStream.closeWriteStream()).thenReturn(SafeFuture.COMPLETE);
     lenient().when(rpcStream.writeBytes(any())).thenReturn(SafeFuture.COMPLETE);
     lenient().when(peerLookup.getConnectedPeer(nodeId)).thenReturn(Optional.of(peer));

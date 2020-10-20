@@ -23,7 +23,7 @@ public class StoreOptions {
       description =
           "How frequently to persist hot states in epochs.  A value less than or equal to zero disables hot state persistence.",
       arity = "1")
-  private int hotStatePersistenceFrequencyInEpochs = 1;
+  private int hotStatePersistenceFrequencyInEpochs = 2;
 
   @Option(
       hidden = true,

@@ -68,7 +68,6 @@ public class GetAggregateAttestation extends AbstractHandler implements Handler 
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      deprecated = true,
       summary = "Get aggregated attestations",
       description = "Aggregates all attestations matching given attestation data root and slot.",
       tags = {TAG_V1_VALIDATOR, TAG_VALIDATOR_REQUIRED},

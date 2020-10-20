@@ -26,11 +26,15 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 
 public class Constants {
 
+  static final String[] NETWORK_DEFINITIONS = {
+    "mainnet", "minimal", "swift", "medalla", "spadina", "zinken"
+  };
+
   // Non-configurable constants
-  public static UInt64 FAR_FUTURE_EPOCH = UInt64.MAX_VALUE;
-  public static UInt64 BASE_REWARDS_PER_EPOCH = UInt64.valueOf(4);
-  public static int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
-  public static int JUSTIFICATION_BITS_LENGTH = 4;
+  public static final UInt64 FAR_FUTURE_EPOCH = UInt64.MAX_VALUE;
+  public static final UInt64 BASE_REWARDS_PER_EPOCH = UInt64.valueOf(4);
+  public static final int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
+  public static final int JUSTIFICATION_BITS_LENGTH = 4;
 
   public static String CONFIG_NAME;
 
@@ -46,7 +50,7 @@ public class Constants {
   public static UInt64 HYSTERESIS_QUOTIENT;
   public static UInt64 HYSTERESIS_DOWNWARD_MULTIPLIER;
   public static UInt64 HYSTERESIS_UPWARD_MULTIPLIER;
-  public static int PROPORTIONAL_SLASHING_MULTIPLIER = 3;
+  public static int PROPORTIONAL_SLASHING_MULTIPLIER;
   public static final int MAX_REQUEST_BLOCKS = 1024;
 
   // Gwei values
@@ -107,10 +111,6 @@ public class Constants {
   public static int TARGET_AGGREGATORS_PER_COMMITTEE = 16;
   public static UInt64 SECONDS_PER_ETH1_BLOCK = UInt64.valueOf(14L);
 
-  // Deposit
-  public static String DEPOSIT_NORMAL = "normal";
-  public static String DEPOSIT_TEST = "test";
-
   // Fork Choice
   public static int SAFE_SLOTS_TO_UPDATE_JUSTIFIED = 8;
 
@@ -128,7 +128,7 @@ public class Constants {
   public static Bytes DEPOSIT_CONTRACT_ADDRESS =
       Bytes.fromHexString("0x1234567890123456789012345678901234567890");
 
-  public static UInt64 BYTES_PER_LENGTH_OFFSET = UInt64.valueOf(4L);
+  public static final UInt64 BYTES_PER_LENGTH_OFFSET = UInt64.valueOf(4L);
 
   public static UInt64 ETH1_FOLLOW_DISTANCE = UInt64.valueOf(1024);
 
@@ -189,14 +189,7 @@ public class Constants {
 
   private static InputStream createInputStream(final String source) throws IOException {
     return ResourceLoader.classpathUrlOrFile(
-            Constants.class,
-            name -> name + ".yaml",
-            "mainnet",
-            "minimal",
-            "swift",
-            "medalla",
-            "spadina",
-            "zinken")
+            Constants.class, name -> name + ".yaml", NETWORK_DEFINITIONS)
         .load(source)
         .orElseThrow(() -> new FileNotFoundException("Could not load constants from " + source));
   }

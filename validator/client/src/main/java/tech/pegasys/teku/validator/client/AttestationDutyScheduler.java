@@ -32,11 +32,6 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
   }
 
   @Override
-  public void onSlot(final UInt64 slot) {
-    super.onSlot(slot);
-  }
-
-  @Override
   public void onAttestationCreationDue(final UInt64 slot) {
     // Check slot being null for the edge case of genesis slot (i.e. slot 0)
     if (lastAttestationCreationSlot != null && slot.compareTo(lastAttestationCreationSlot) <= 0) {

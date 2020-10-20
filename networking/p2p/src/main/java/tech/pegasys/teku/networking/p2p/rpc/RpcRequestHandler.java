@@ -22,5 +22,7 @@ public interface RpcRequestHandler {
 
   void processData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf data);
 
-  void complete(final NodeId nodeId, final RpcStream rpcStream);
+  void readComplete(final NodeId nodeId, final RpcStream rpcStream);
+
+  void closed(final NodeId nodeId, final RpcStream rpcStream);
 }
