@@ -106,7 +106,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   @Override
   public Optional<List<ValidatorResponse>> getValidators(final List<String> validatorIds) {
     final Map<String, String> queryParams = new HashMap<>();
-    queryParams.put("validator_id", String.join(",", validatorIds));
+    queryParams.put("id", String.join(",", validatorIds));
     return get(GET_VALIDATORS, queryParams, GetStateValidatorsResponse.class)
         .map(response -> response.data);
   }
