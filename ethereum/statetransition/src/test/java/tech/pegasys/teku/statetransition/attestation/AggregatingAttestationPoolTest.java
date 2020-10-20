@@ -207,6 +207,7 @@ class AggregatingAttestationPoolTest {
     final Attestation preserveAttestation =
         addAttestationFromValidators(preserveAttestationData, 2);
 
+    assertThat(aggregatingPool.getSize()).isEqualTo(2);
     aggregatingPool.onSlot(
         pruneAttestationData
             .getSlot()
@@ -217,6 +218,7 @@ class AggregatingAttestationPoolTest {
             aggregatingPool.getAttestationsForBlock(
                 dataStructureUtil.randomBeaconState(), forkChecker))
         .containsOnly(preserveAttestation);
+    assertThat(aggregatingPool.getSize()).isEqualTo(1);
   }
 
   @Test
