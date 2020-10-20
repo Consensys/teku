@@ -46,6 +46,9 @@ public class ValidatorIndexProvider {
     if (!requestInProgress.compareAndSet(false, true)) {
       return;
     }
+    if (unknownValidators.isEmpty()) {
+      return;
+    }
     validatorApiChannel
         .getValidatorIndices(unknownValidators)
         .thenAccept(
