@@ -46,8 +46,8 @@ public class AttestationPerformance {
     this.correctHeadBlockCount = correctHeadBlockCount;
   }
 
-  public static AttestationPerformance empty() {
-    return new AttestationPerformance(0, 0, 0, 0, 0, 0, 0, 0);
+  public static AttestationPerformance empty(int numberOfExpectedAttestations) {
+    return new AttestationPerformance(numberOfExpectedAttestations, 0, 0, 0, 0, 0, 0, 0);
   }
 
   @Override

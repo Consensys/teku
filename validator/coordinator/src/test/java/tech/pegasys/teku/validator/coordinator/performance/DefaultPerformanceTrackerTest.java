@@ -18,6 +18,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.ATTESTATION_INCLUSION_RANGE;
 import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.BLOCK_PERFORMANCE_EVALUATION_INTERVAL;
 
 import java.util.List;
@@ -40,7 +41,7 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.util.config.Constants;
 
-public class PerformanceTrackerTest {
+public class DefaultPerformanceTrackerTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(64);
 
@@ -135,8 +136,10 @@ public class PerformanceTrackerTest {
     chainUpdater.saveBlock(blockAndState2);
     chainUpdater.updateBestBlock(blockAndState2);
 
-    performanceTracker.reportAttestationProductionAttempt(compute_epoch_at_slot(UInt64.valueOf(2)));
-    performanceTracker.reportAttestationProductionAttempt(compute_epoch_at_slot(UInt64.valueOf(4)));
+    performanceTracker.reportAttestationProductionAttempt(
+        compute_epoch_at_slot(attestation1.getData().getSlot()));
+    performanceTracker.reportAttestationProductionAttempt(
+        compute_epoch_at_slot(attestation2.getData().getSlot()));
     performanceTracker.saveProducedAttestation(attestation1);
     performanceTracker.saveProducedAttestation(attestation2);
     performanceTracker.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(2)));
@@ -170,8 +173,10 @@ public class PerformanceTrackerTest {
     chainUpdater.saveBlock(blockAndState2);
     chainUpdater.updateBestBlock(blockAndState2);
 
-    performanceTracker.reportAttestationProductionAttempt(compute_epoch_at_slot(UInt64.valueOf(8)));
-    performanceTracker.reportAttestationProductionAttempt(compute_epoch_at_slot(UInt64.valueOf(9)));
+    performanceTracker.reportAttestationProductionAttempt(
+        compute_epoch_at_slot(attestation1.getData().getSlot()));
+    performanceTracker.reportAttestationProductionAttempt(
+        compute_epoch_at_slot(attestation2.getData().getSlot()));
     performanceTracker.saveProducedAttestation(attestation1);
     performanceTracker.saveProducedAttestation(attestation2);
     performanceTracker.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(4)));
@@ -207,8 +212,10 @@ public class PerformanceTrackerTest {
     chainUpdater.saveBlock(blockAndState2);
     chainUpdater.updateBestBlock(blockAndState2);
 
-    performanceTracker.reportAttestationProductionAttempt(compute_epoch_at_slot(UInt64.valueOf(9)));
-    performanceTracker.reportAttestationProductionAttempt(compute_epoch_at_slot(UInt64.valueOf(9)));
+    performanceTracker.reportAttestationProductionAttempt(
+        compute_epoch_at_slot(attestation1.getData().getSlot()));
+    performanceTracker.reportAttestationProductionAttempt(
+        compute_epoch_at_slot(attestation2.getData().getSlot()));
     performanceTracker.saveProducedAttestation(attestation1);
     performanceTracker.saveProducedAttestation(attestation2);
     performanceTracker.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(4)));
@@ -254,7 +261,8 @@ public class PerformanceTrackerTest {
     chainUpdater.saveBlock(blockAndState2);
     chainUpdater.updateBestBlock(blockAndState2);
 
-    performanceTracker.reportAttestationProductionAttempt(compute_epoch_at_slot(UInt64.valueOf(1)));
+    performanceTracker.reportAttestationProductionAttempt(
+        compute_epoch_at_slot(attestation1.getData().getSlot()));
     performanceTracker.saveProducedAttestation(attestation1);
     performanceTracker.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(2)));
     AttestationPerformance expectedAttestationPerformance =
@@ -284,13 +292,27 @@ public class PerformanceTrackerTest {
     chainUpdater.saveBlock(blockAndState1);
     chainUpdater.updateBestBlock(blockAndState1);
 
-    performanceTracker.reportAttestationProductionAttempt(compute_epoch_at_slot(UInt64.valueOf(1)));
-    performanceTracker.reportAttestationProductionAttempt(compute_epoch_at_slot(UInt64.valueOf(1)));
+    performanceTracker.reportAttestationProductionAttempt(
+        compute_epoch_at_slot(attestation1.getData().getSlot()));
+    performanceTracker.reportAttestationProductionAttempt(
+        compute_epoch_at_slot(attestation2.getData().getSlot()));
     performanceTracker.saveProducedAttestation(attestation1);
     performanceTracker.saveProducedAttestation(attestation2);
     performanceTracker.onSlot(compute_start_slot_at_epoch(UInt64.valueOf(2)));
     AttestationPerformance expectedAttestationPerformance =
         new AttestationPerformance(2, 2, 2, 1, 1, 1, 2, 2);
+    verify(log).performance(expectedAttestationPerformance.toString());
+  }
+
+  @Test
+  void shouldReportExpectedAttestationOnlyForTheGivenEpoch() {
+    performanceTracker.reportAttestationProductionAttempt(UInt64.valueOf(1));
+    performanceTracker.reportAttestationProductionAttempt(UInt64.valueOf(2));
+    performanceTracker.reportAttestationProductionAttempt(UInt64.valueOf(3));
+    performanceTracker.onSlot(
+        compute_start_slot_at_epoch(UInt64.valueOf(2).plus(ATTESTATION_INCLUSION_RANGE)));
+    AttestationPerformance expectedAttestationPerformance =
+        new AttestationPerformance(1, 0, 0, 0, 0, 0, 0, 0);
     verify(log).performance(expectedAttestationPerformance.toString());
   }
 
