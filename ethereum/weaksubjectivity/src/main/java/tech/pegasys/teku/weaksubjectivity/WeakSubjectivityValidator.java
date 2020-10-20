@@ -68,7 +68,7 @@ public class WeakSubjectivityValidator {
   public static WeakSubjectivityValidator moderate(final WeakSubjectivityConfig config) {
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     return new WeakSubjectivityValidator(
-        config, calculator, WeakSubjectivityViolationPolicy.moderate(config));
+        config, calculator, WeakSubjectivityViolationPolicy.moderate());
   }
 
   public static WeakSubjectivityValidator lenient() {

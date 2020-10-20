@@ -452,7 +452,7 @@ public class BlockImporterTest {
   @Test
   public void importBlock_nonFinalizingChain_skipWSPChecks() throws Exception {
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
-    final SignedBlockAndState genesis = storageSystem.chainUpdater().initializeGenesis();
+    storageSystem.chainUpdater().initializeGenesis();
     final ForkChoice forkChoice =
         new ForkChoice(
             new SyncForkChoiceExecutor(), storageSystem.recentChainData(), new StateTransition());

@@ -18,16 +18,13 @@ import org.apache.logging.log4j.Level;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.time.Throttler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 class ModerateWeakSubjectivityViolationPolicy extends CompoundWeakSubjectivityViolationPolicy {
-  private final WeakSubjectivityConfig config;
   private final Throttler<WeakSubjectivityViolationPolicy> warningPolicy =
       new Throttler<>(new LoggingWeakSubjectivityViolationPolicy(Level.WARN), UInt64.valueOf(10));
 
-  public ModerateWeakSubjectivityViolationPolicy(final WeakSubjectivityConfig config) {
+  public ModerateWeakSubjectivityViolationPolicy() {
     super(List.of(WeakSubjectivityViolationPolicy.strict()));
-    this.config = config;
   }
 
   @Override
