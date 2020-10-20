@@ -108,32 +108,28 @@ class LengthPrefixedPayloadDecoder<T> implements RpcByteBufDecoder<T> {
       throw new IllegalStateException("Trying to reuse disposable LengthPrefixedPayloadDecoder");
     }
     disposed = true;
-    RpcException err = null;
-    if (varIntDecoder.isPresent()) {
-      try {
-        varIntDecoder.get().complete();
-      } catch (Exception e) {
-        // ignore any exception, call complete() just to release resources
-      }
-      // if varIntDecoder exists then payload length was not read completely
-      err = new MessageTruncatedException();
-    }
-    if (decompressor.isPresent()) {
-      try {
-        decompressor.get().complete();
-      } catch (CompressionException e) {
-        // ignore any exception, call complete() just to release resources
-      }
-      // if decompressor still exists then not enough data was fed to it
-      err = new PayloadTruncatedException();
-    }
-    if (!decoded && err == null) {
-      err = new MessageTruncatedException();
-    }
 
-    if (err != null) {
-      throw err;
+    try {
+      if (varIntDecoder.isPresent()) {
+        // if varIntDecoder exists then payload length was not read completely
+        throw new MessageTruncatedException();
+      }
+      if (decompressor.isPresent()) {
+        // if decompressor still exists then not enough data was fed to it
+        throw new PayloadTruncatedException();
+      }
+      if (!decoded) {
+        throw new MessageTruncatedException();
+      }
+    } finally {
+      close();
     }
+  }
+
+  @Override
+  public void close() {
+    varIntDecoder.ifPresent(AbstractByteBufDecoder::close);
+    decompressor.ifPresent(ByteBufDecoder::close);
   }
 
   /** Decode the length-prefix header, which contains the length of the uncompressed payload */
