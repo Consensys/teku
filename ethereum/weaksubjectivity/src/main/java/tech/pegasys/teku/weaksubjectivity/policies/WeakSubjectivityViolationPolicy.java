@@ -18,12 +18,14 @@ import org.apache.logging.log4j.Level;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
+import tech.pegasys.teku.infrastructure.logging.WeakSubjectivityLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface WeakSubjectivityViolationPolicy {
 
   static WeakSubjectivityViolationPolicy lenient() {
-    return new LoggingWeakSubjectivityViolationPolicy(Level.TRACE);
+    return new LoggingWeakSubjectivityViolationPolicy(
+        WeakSubjectivityLogger.createFileLogger(), Level.TRACE);
   }
 
   static WeakSubjectivityViolationPolicy moderate() {
@@ -33,7 +35,8 @@ public interface WeakSubjectivityViolationPolicy {
   static WeakSubjectivityViolationPolicy strict() {
     return new CompoundWeakSubjectivityViolationPolicy(
         List.of(
-            new LoggingWeakSubjectivityViolationPolicy(Level.FATAL),
+            new LoggingWeakSubjectivityViolationPolicy(
+                WeakSubjectivityLogger.createConsoleLogger(), Level.FATAL),
             new ExitingWeakSubjectivityViolationPolicy()));
   }
 
