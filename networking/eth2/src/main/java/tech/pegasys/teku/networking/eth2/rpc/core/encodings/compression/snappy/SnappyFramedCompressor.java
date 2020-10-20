@@ -96,10 +96,10 @@ public class SnappyFramedCompressor implements Compressor {
     public void complete() throws CompressionException {
       try {
         if (broken) {
-            throw new CompressionException("Compressed stream is broken");
+          throw new CompressionException("Compressed stream is broken");
         }
         if (disposed) {
-            throw new DisposedDecompressorException();
+          throw new DisposedDecompressorException();
         }
         disposed = true;
         boolean unreturnedFrames = !decodedSnappyFrames.isEmpty();
