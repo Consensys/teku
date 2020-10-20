@@ -95,6 +95,11 @@ public class BatchChain implements Iterable<Batch> {
     batches.clear();
   }
 
+  public void replace(final Batch batchToReplace, final Batch batch) {
+    batches.remove(batchToReplace);
+    batches.add(batch);
+  }
+
   public Optional<Batch> last() {
     return batches.isEmpty() ? Optional.empty() : Optional.of(batches.last());
   }
