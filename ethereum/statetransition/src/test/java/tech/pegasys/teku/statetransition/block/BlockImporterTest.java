@@ -423,13 +423,14 @@ public class BlockImporterTest {
 
     // Set current time to be several WSP's ahead of finalized checkpoint
     final UInt64 wsPeriod = UInt64.valueOf(10);
+    final UInt64 wsPeriodInSlots = wsPeriod.times(Constants.SLOTS_PER_EPOCH);
     when(weakSubjectivityValidator.getWSPeriod(any())).thenReturn(Optional.of(wsPeriod));
-    final UInt64 currentSlot = compute_start_slot_at_epoch(wsPeriod).times(3).plus(1);
+    final UInt64 currentSlot = wsPeriodInSlots.times(3).plus(1);
     storageSystem.chainUpdater().setCurrentSlot(currentSlot);
 
     // Add a recent block
     final SignedBlockAndState recentBlock =
-        storageSystem.chainUpdater().advanceChain(currentSlot.minus(wsPeriod).minus(1));
+        storageSystem.chainUpdater().advanceChain(currentSlot.minus(wsPeriodInSlots).minus(1));
     storageSystem.chainUpdater().updateBestBlock(recentBlock);
 
     // Import block new block
@@ -464,13 +465,14 @@ public class BlockImporterTest {
 
     // Set current time to be several WSP's ahead of finalized checkpoint
     final UInt64 wsPeriod = UInt64.valueOf(10);
+    final UInt64 wsPeriodInSlots = wsPeriod.times(Constants.SLOTS_PER_EPOCH);
     when(weakSubjectivityValidator.getWSPeriod(any())).thenReturn(Optional.of(wsPeriod));
-    final UInt64 currentSlot = compute_start_slot_at_epoch(wsPeriod).times(3).plus(1);
+    final UInt64 currentSlot = wsPeriodInSlots.times(3).plus(1);
     storageSystem.chainUpdater().setCurrentSlot(currentSlot);
 
     // Add a recent block
     final SignedBlockAndState recentBlock =
-        storageSystem.chainUpdater().advanceChain(currentSlot.minus(wsPeriod));
+        storageSystem.chainUpdater().advanceChain(currentSlot.minus(wsPeriodInSlots));
     storageSystem.chainUpdater().updateBestBlock(recentBlock);
 
     // Import block new block

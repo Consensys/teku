@@ -37,6 +37,7 @@ import tech.pegasys.teku.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.statetransition.events.block.ImportedBlockEvent;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 public class BlockImporter {
@@ -124,10 +125,12 @@ public class BlockImporter {
               // While the node is online, we can defer to fork-choice to choose the right chain.
               // If we have a recent chain head, skip validation since it appears we're online and
               // processing new blocks.
-              final Optional<UInt64> wsPeriod =
-                  weakSubjectivityValidator.getWSPeriod(finalizedCheckpointState);
+              final Optional<UInt64> wsPeriodInSlots =
+                  weakSubjectivityValidator
+                      .getWSPeriod(finalizedCheckpointState)
+                      .map(epochs -> epochs.times(Constants.SLOTS_PER_EPOCH));
               final UInt64 headSlot = recentChainData.getHeadSlot();
-              if (wsPeriod
+              if (wsPeriodInSlots
                   .map(wsp -> headSlot.plus(wsp).isGreaterThanOrEqualTo(currentSlot))
                   .orElse(false)) {
                 return null;
