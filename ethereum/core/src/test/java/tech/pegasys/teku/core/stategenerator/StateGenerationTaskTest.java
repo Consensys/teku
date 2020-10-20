@@ -37,6 +37,8 @@ import tech.pegasys.teku.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 class StateGenerationTaskTest {
+
+  private static final int REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS = 0;
   private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
   private TrackingBlockProvider blockProvider;
 
@@ -140,7 +142,8 @@ class StateGenerationTaskTest {
                         startBlockAndState.getRoot(), startBlockAndState.getState())),
             chainBuilder.getStateAndBlockProvider(),
             blockProvider,
-            Optional.empty()));
+            Optional.empty(),
+            REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS));
   }
 
   private static class TrackingBlockProvider implements BlockProvider {
