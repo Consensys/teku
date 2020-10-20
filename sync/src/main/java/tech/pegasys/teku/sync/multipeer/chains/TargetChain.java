@@ -39,7 +39,7 @@ public class TargetChain {
     peers.remove(peer);
   }
 
-  int getPeerCount() {
+  public int getPeerCount() {
     return peers.size();
   }
 

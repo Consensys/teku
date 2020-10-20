@@ -137,4 +137,28 @@ class BatchDataRequesterTest {
             batchDataRequester.fillRetrievingQueue(
                 targetChain, commonAncestorSlot, requestCompleteCallback));
   }
+
+  @Test
+  void shouldReplaceBatchesFromOldChainsWithNoPeers() {
+    final TargetChain oldTargetChain =
+        TargetChainTestUtil.chainWith(
+            new SlotAndBlockRoot(UInt64.valueOf(500), dataStructureUtil.randomBytes32()));
+
+    final Batch oldBatch1 = batchFactory.createBatch(oldTargetChain, UInt64.ZERO, BATCH_SIZE);
+    final Batch oldBatch2 = batchFactory.createBatch(oldTargetChain, BATCH_SIZE, BATCH_SIZE);
+    batchChain.add(oldBatch1);
+    batchChain.add(oldBatch2);
+
+    fillQueue(ZERO);
+
+    assertThat(batchChain).doesNotContain(oldBatch1, oldBatch2);
+
+    // Check that the original two batches have been replaced by new ones from the new chain
+    final List<Batch> batches = batchChain.stream().collect(toList());
+    assertThat(batches).hasSizeGreaterThan(2);
+    assertThatBatch(batches.get(0)).hasRange(0, 49);
+    assertThatBatch(batches.get(0)).hasTargetChain(targetChain);
+    assertThatBatch(batches.get(1)).hasRange(50, 99);
+    assertThatBatch(batches.get(1)).hasTargetChain(targetChain);
+  }
 }
