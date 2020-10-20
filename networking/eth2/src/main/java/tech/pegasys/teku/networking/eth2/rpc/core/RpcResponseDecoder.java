@@ -25,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.PayloadTruncatedException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.RpcErrorMessage;
+import tech.pegasys.teku.networking.eth2.rpc.core.encodings.ByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcByteBufDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 
@@ -101,12 +102,8 @@ public class RpcResponseDecoder<T> {
   }
 
   public void close() {
-    try {
-      complete();
-    } catch (RpcException e) {
-      // decoders should release any resources despite throwing exception
-      LOG.trace("Ignoring any complete() exceptions when close(): %s", e);
-    }
+    payloadDecoder.ifPresent(ByteBufDecoder::close);
+    errorDecoder.ifPresent(ByteBufDecoder::close);
   }
 
   public void complete() throws RpcException {

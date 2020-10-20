@@ -47,6 +47,11 @@ public class NoopCompressor implements Compressor {
       decoder.complete();
       disposed = true;
     }
+
+    @Override
+    public void close() {
+      decoder.close();
+    }
   }
 
   @Override

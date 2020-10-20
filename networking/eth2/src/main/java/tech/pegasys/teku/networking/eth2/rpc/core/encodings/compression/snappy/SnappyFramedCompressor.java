@@ -88,13 +88,7 @@ public class SnappyFramedCompressor implements Compressor {
           }
         } catch (Exception e) {
           broken = true;
-          try {
-            snappyFrameDecoder.complete();
-          } catch (Exception ex) {
-            LOG.trace("Failed to complete snappy frame decoding", ex);
-          }
-          decodedSnappyFrames.forEach(ReferenceCounted::release);
-          decodedSnappyFrames.clear();
+          close();
           throw e;
         }
       }
@@ -103,16 +97,24 @@ public class SnappyFramedCompressor implements Compressor {
 
     @Override
     public void complete() throws CompressionException {
-      if (broken) throw new CompressionException("Compressed stream is broken");
-      if (disposed) throw new DisposedDecompressorException();
-      disposed = true;
-      boolean unreturnedFrames = !decodedSnappyFrames.isEmpty();
+      try {
+        if (broken) throw new CompressionException("Compressed stream is broken");
+        if (disposed) throw new DisposedDecompressorException();
+        disposed = true;
+        boolean unreturnedFrames = !decodedSnappyFrames.isEmpty();
+        if (unreturnedFrames) {
+          throw new PayloadSmallerThanExpectedException("Unread uncompressed frames on complete");
+        }
+      } finally {
+        close();
+      }
+    }
+
+    @Override
+    public void close() {
       decodedSnappyFrames.forEach(ReferenceCounted::release);
       decodedSnappyFrames.clear();
-      snappyFrameDecoder.complete();
-      if (unreturnedFrames) {
-        throw new PayloadSmallerThanExpectedException("Unread uncompressed frames on complete");
-      }
+      snappyFrameDecoder.close();
     }
   }
 
