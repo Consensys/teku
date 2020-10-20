@@ -9,6 +9,55 @@ we recommend most users use the latest `master` branch of Teku.
 - `--validators-key-files` and `--validators-key-password-files` have been replaced by `--validator-keys`. The old arguments still work but will be removed in a future release.
 - Validator subcommands for generating and registering validators are now deprecated and will be removed in a future release to encourage the use of the Eth2 Launchpad, which is the most secure way of generating keys and sending deposits.
 
+## 0.12.11
+
+### Additions and Improvements
+- Teku now supports running the validator client as a separate process via the `teku validator-client` subcommand. The in-process validator client is still supported. 
+  
+  **IMPORTANT**: Ensure validator keys are only passed as arguments to *either* the beacon node or the validator client but never both at the same time.
+- Migrates to a new directory structure for data storage to provide clear separation between beacon node and validator files. Existing databases will be automatically migrated.
+- Improved management of states to reduce on-heap memory usage during long periods of non-finalization.
+- Head update and chain reorg events are no longer published during sync. A single coalesced event is published when sync completes.
+- Reduced database growth rate during periods of non-finalization. State snapshots are only stored every two epochs instead of each epoch. This can be further adjusted with `--Xhot-state-persistence-frequency`.
+- New standard REST API endpoints:
+  - `/eth/v1/beacon/headers/{block_id}`
+  - `/eth/v1/beacon/states/:state_id/committees/`
+  - `/eth/v1/beacon/states/:state_id/committees/:epoch`
+  - `/eth/v1/beacon/states/:state_id/finality_checkpoints`
+  - `/eth/v1/beacon/states/:state_id/validators`
+  - `/eth/v1/beacon/states/:state_id/validator_balances`
+  - `/eth/v1/validator/aggregate_attestation`
+  - `/eth/v1/validator/aggregate_and_proofs`
+  - `/eth/v1/validator/beacon_committee_subscriptions`
+  - `/eth/v1/validator/attestation_data`
+  - `/eth/v1/beacon/pool/attestations`
+  - `/eth/v1/beacon/states/:state_id/root`
+  - `/eth/v1/beacon/blocks`
+  - `/eth/v1/validator/blocks/{slot}`
+- `/eth/v1/validator/duties/attester/:epoch` now includes the `committees_at_slot` value.
+- `/eth/v1/validator/duties/attester/:epoch` now supports using the `POST` method to specify validator IDs, avoiding URL length limits.
+- The beacon node now automatically manages persistent subnet subscriptions based on the requests to `/eth/v1/validator/beacon_committee_subscriptions` endpoint
+- Log to the console if the ETH1 node's chain ID doesn't match the expected value from the ETH2 network definition. This alerts users if the ETH1 node is sync'd to the wrong ETH1 network. Thanks to @systemfreund.
+- Performance tracker reports now include information on duties which could not be performed due to an error.
+- Added support for v1.0.0-rc.0 of the beacon chain spec.
+- Added a `beacon_attestation_pool_size` metric to report the number of attestations held in the attestation pool.
+- `StrictNoSign` requirements are now enforced on gossip messages. Messages with `from`, `signature` or `seqno` fields will be rejected.
+- Removed support for `onyx` and `altona` options to the `--network` command line option. These networks used an older, incompatible version of the beacon chain spec and have been shut down.
+- The `--config-file` option can now be used to provide options for all subcommands.
+- 
+
+
+### Bug Fixes
+- Fixed "Unhandled error while processes req/response" `NullPointerException`. 
+- Fixed issue where performance tracker logs counted attestations twice.
+- Force external signer connections to use HTTP1.1. HTTP2 connections were regularly failing in Azure.
+- Fixed incompatibility with Lighthouse caused by sending an unexpected `RESET` after both sides of a stream were closed.
+- Fixed `NoSuchElementException` when checking weak subjectivity checkpoints.
+- Fixed issue where REST API reported a 500 internal server error when syncing instead of 503.
+- Fixed issue where REST APIs returning validator information incorrectly used the effective balance instead of the actual balance.
+
+ 
+
 ## 0.12.10
 
 ### Additions and Improvements
