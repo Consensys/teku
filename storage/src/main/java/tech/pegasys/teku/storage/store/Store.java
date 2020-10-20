@@ -498,7 +498,7 @@ class Store implements UpdatableStore {
                     () -> getClosestAvailableBlockRootAndState(blockRoot),
                     stateAndBlockProvider,
                     blockProvider,
-                    Optional.empty()))));
+                    Optional.empty(), hotStatePersistenceFrequencyInEpochs))));
   }
 
   private Optional<BlockRootAndState> getClosestAvailableBlockRootAndState(
