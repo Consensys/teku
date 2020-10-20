@@ -37,11 +37,14 @@ import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.core.stategenerator.CachingTaskQueue;
 import tech.pegasys.teku.core.stategenerator.CheckpointStateTask;
 import tech.pegasys.teku.core.stategenerator.StateGenerationTask;
+import tech.pegasys.teku.core.stategenerator.StateRegenerationBaseSelector;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.datastructures.state.BeaconState;
+import tech.pegasys.teku.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -462,11 +465,54 @@ class Store implements UpdatableStore {
       return EmptyStoreResults.EMPTY_STATE_GENERATION_TASK;
     }
 
+    // Create a hash tree from the finalized root to the target state
+    // Capture the latest epoch boundary root along the way
+    final HashTree.Builder treeBuilder = HashTree.builder();
+    final AtomicReference<SlotAndBlockRoot> latestEpochBoundary = new AtomicReference<>();
+    readLock.lock();
+    try {
+      blockTree
+          .getHashTree()
+          .processHashesInChain(
+              blockRoot,
+              (root, parent) -> {
+                treeBuilder.childAndParentRoots(root, parent);
+                if (shouldPersistState(blockTree, root)) {
+                  latestEpochBoundary.compareAndExchange(
+                      null, new SlotAndBlockRoot(blockTree.getSlot(root), root));
+                }
+              });
+      treeBuilder.rootHash(finalizedBlockAndState.getRoot());
+    } finally {
+      readLock.unlock();
+    }
+
+    return SafeFuture.completedFuture(
+        Optional.of(
+            new StateGenerationTask(
+                blockRoot,
+                treeBuilder.build(),
+                blockProvider,
+                new StateRegenerationBaseSelector(
+                    Optional.ofNullable(latestEpochBoundary.get()),
+                    () -> getClosestAvailableBlockRootAndState(blockRoot),
+                    stateAndBlockProvider,
+                    blockProvider,
+                    Optional.empty(),
+                    hotStatePersistenceFrequencyInEpochs))));
+  }
+
+  private Optional<BlockRootAndState> getClosestAvailableBlockRootAndState(
+      final Bytes32 blockRoot) {
+    if (!containsBlock(blockRoot)) {
+      // If we don't have the corresponding block, we can't possibly regenerate the state
+      return Optional.empty();
+    }
+
     // Accumulate blocks hashes until we find our base state to build from
     final HashTree.Builder treeBuilder = HashTree.builder();
     final AtomicReference<Bytes32> baseBlockRoot = new AtomicReference<>();
     final AtomicReference<BeaconState> baseState = new AtomicReference<>();
-    final AtomicReference<Bytes32> latestEpochBoundary = new AtomicReference<>();
     readLock.lock();
     try {
       blockTree
@@ -476,9 +522,6 @@ class Store implements UpdatableStore {
               (root, parent) -> {
                 treeBuilder.childAndParentRoots(root, parent);
                 final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
-                if (blockState.isEmpty() && shouldPersistState(blockTree, root)) {
-                  latestEpochBoundary.compareAndExchange(null, root);
-                }
                 blockState.ifPresent(
                     (state) -> {
                       // We found a base state
@@ -492,39 +535,20 @@ class Store implements UpdatableStore {
       readLock.unlock();
     }
 
-    final SafeFuture<Optional<SignedBeaconBlock>> baseBlock;
     if (baseBlockRoot.get() == null) {
       // If we haven't found a base state yet, we must have walked back to the latest finalized
       // block, check here for the base state
       final SignedBlockAndState finalized = getLatestFinalizedBlockAndState();
       if (!treeBuilder.contains(finalized.getRoot())) {
         // We must have finalized a new block while processing and moved past our target root
-        return EmptyStoreResults.EMPTY_STATE_GENERATION_TASK;
+        return Optional.empty();
       }
       baseBlockRoot.set(finalized.getRoot());
       baseState.set(finalized.getState());
-      baseBlock = SafeFuture.completedFuture(Optional.of(finalized.getBlock()));
       treeBuilder.rootHash(finalized.getRoot());
-    } else {
-      baseBlock = retrieveSignedBlock(baseBlockRoot.get());
     }
 
-    // Regenerate state
-    return baseBlock.thenApply(
-        maybeBlock ->
-            maybeBlock.map(
-                block -> {
-                  final SignedBlockAndState baseBlockAndState =
-                      new SignedBlockAndState(block, baseState.get());
-                  final HashTree tree = treeBuilder.build();
-                  return new StateGenerationTask(
-                      blockRoot,
-                      tree,
-                      baseBlockAndState,
-                      Optional.ofNullable(latestEpochBoundary.get()),
-                      blockProvider,
-                      stateAndBlockProvider);
-                }));
+    return Optional.of(new BlockRootAndState(baseBlockRoot.get(), baseState.get()));
   }
 
   boolean shouldPersistState(final BlockTree blockTree, final Bytes32 root) {

@@ -16,41 +16,24 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.util.config.Constants.FAR_FUTURE_EPOCH;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.api.schema.Validator;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorBalancesResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class GetStateValidatorsTest extends AbstractBeaconHandlerTest {
+public class GetStateValidatorBalancesTest extends AbstractBeaconHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
-  private final GetStateValidators handler =
-      new GetStateValidators(chainDataProvider, jsonProvider);
-  private final Validator validator = new Validator(dataStructureUtil.randomValidator());
-  private final ValidatorResponse validatorResponse =
-      new ValidatorResponse(
-          ONE,
-          UInt64.valueOf("32000000000"),
-          ValidatorStatus.active_ongoing,
-          new Validator(
-              validator.pubkey,
-              validator.withdrawal_credentials,
-              UInt64.valueOf("32000000000"),
-              false,
-              ZERO,
-              ZERO,
-              FAR_FUTURE_EPOCH,
-              FAR_FUTURE_EPOCH));
+  private final GetStateValidatorBalances handler =
+      new GetStateValidatorBalances(chainDataProvider, jsonProvider);
+  private final ValidatorBalanceResponse validatorBalanceResponse =
+      new ValidatorBalanceResponse(ONE, UInt64.valueOf("32000000000"));
 
   @Test
   public void shouldGetValidatorFromState() throws Exception {
@@ -62,10 +45,11 @@ public class GetStateValidatorsTest extends AbstractBeaconHandlerTest {
       when(chainDataProvider.validatorParameterToIndex(Integer.toString(i)))
           .thenReturn(Optional.of(i));
     }
-    when(chainDataProvider.getValidatorsDetails(slot, List.of(1, 2, 3, 4)))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(validatorResponse))));
+    when(chainDataProvider.getValidatorsBalances(slot, List.of(1, 2, 3, 4)))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(validatorBalanceResponse))));
     handler.handle(context);
-    GetStateValidatorsResponse response = getResponseFromFuture(GetStateValidatorsResponse.class);
-    assertThat(response.data).isEqualTo(List.of(validatorResponse));
+    GetStateValidatorBalancesResponse response =
+        getResponseFromFuture(GetStateValidatorBalancesResponse.class);
+    assertThat(response.data).isEqualTo(List.of(validatorBalanceResponse));
   }
 }
