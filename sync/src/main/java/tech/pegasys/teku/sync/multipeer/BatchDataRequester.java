@@ -98,7 +98,7 @@ public class BatchDataRequester {
     firstStrandedBatch.ifPresent(
         strandedBatch -> {
           // We have at least one batch from an old chain which no longer has any target peers to
-          // request data from. Remove all batch from that one to where the new chain starts and
+          // request data from. Remove all batches from that one to where the new chain starts and
           // replace with batches from the new chain.
           final List<Batch> batchesToReplace =
               activeBatches.batchesAfterInclusive(strandedBatch).stream()
