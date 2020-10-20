@@ -65,9 +65,19 @@ public abstract class AbstractByteBufDecoder<TMessage, TException extends Except
 
   @Override
   public void complete() throws TException {
+    try {
+      if (compositeByteBuf.isReadable()) {
+        throwUnprocessedDataException(compositeByteBuf.readableBytes());
+      }
+    } finally {
+      close();
+    }
+  }
+
+  @Override
+  public void close() {
     if (compositeByteBuf.isReadable()) {
       compositeByteBuf.release();
-      throwUnprocessedDataException(compositeByteBuf.readableBytes());
     }
   }
 

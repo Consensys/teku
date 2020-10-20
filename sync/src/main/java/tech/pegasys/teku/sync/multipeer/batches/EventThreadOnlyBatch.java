@@ -44,6 +44,12 @@ public class EventThreadOnlyBatch implements Batch {
   }
 
   @Override
+  public UInt64 getCount() {
+    eventThread.checkOnEventThread();
+    return delegate.getCount();
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getFirstBlock() {
     eventThread.checkOnEventThread();
     return delegate.getFirstBlock();

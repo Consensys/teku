@@ -70,7 +70,7 @@ public class WeakSubjectivityValidator {
   public static WeakSubjectivityValidator moderate(final WeakSubjectivityConfig config) {
     final WeakSubjectivityCalculator calculator = WeakSubjectivityCalculator.create(config);
     return new WeakSubjectivityValidator(
-        config, calculator, WeakSubjectivityViolationPolicy.moderate(config));
+        config, calculator, WeakSubjectivityViolationPolicy.moderate());
   }
 
   public static WeakSubjectivityValidator lenient() {
@@ -110,6 +110,15 @@ public class WeakSubjectivityValidator {
                 handleInconsistentWsCheckpoint(blockAtCheckpointSlot);
               }
             });
+  }
+
+  public Optional<UInt64> getWSPeriod(final CheckpointState latestFinalizedCheckpoint) {
+    if (isPriorToWSCheckpoint(latestFinalizedCheckpoint)) {
+      return Optional.empty();
+    }
+
+    return Optional.of(
+        calculator.computeWeakSubjectivityPeriod(latestFinalizedCheckpoint.getState()));
   }
 
   /**

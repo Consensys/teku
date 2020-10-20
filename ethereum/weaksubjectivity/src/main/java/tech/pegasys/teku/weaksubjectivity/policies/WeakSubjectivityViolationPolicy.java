@@ -20,7 +20,6 @@ import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.state.CheckpointState;
 import tech.pegasys.teku.infrastructure.logging.WeakSubjectivityLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public interface WeakSubjectivityViolationPolicy {
 
@@ -29,8 +28,8 @@ public interface WeakSubjectivityViolationPolicy {
         WeakSubjectivityLogger.createFileLogger(), Level.TRACE);
   }
 
-  static WeakSubjectivityViolationPolicy moderate(final WeakSubjectivityConfig config) {
-    return new ModerateWeakSubjectivityViolationPolicy(config);
+  static WeakSubjectivityViolationPolicy moderate() {
+    return new ModerateWeakSubjectivityViolationPolicy();
   }
 
   static WeakSubjectivityViolationPolicy strict() {

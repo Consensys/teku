@@ -218,12 +218,15 @@ public class Eth2OutgoingRequestHandler<TRequest extends RpcRequest, TResponse>
       return;
     }
 
-    // releasing any resources
-    responseDecoder.close();
-
     LOG.trace("Abort request: {}", error.getMessage());
-    rpcStream.closeAbruptly().reportExceptions();
-    responseProcessor.finishProcessing().always(() -> responseStream.completeWithError(error));
+
+    // releasing any resources
+    try {
+      responseDecoder.close();
+      rpcStream.closeAbruptly().reportExceptions();
+    } finally {
+      responseProcessor.finishProcessing().always(() -> responseStream.completeWithError(error));
+    }
   }
 
   private void ensureFirstBytesArriveWithinTimeLimit(final RpcStream stream) {
