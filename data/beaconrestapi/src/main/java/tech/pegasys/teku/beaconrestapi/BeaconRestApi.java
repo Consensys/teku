@@ -310,6 +310,10 @@ public class BeaconRestApi {
 
   private void addV1BeaconHandlers(final DataProvider dataProvider) {
     app.get(GetBlockHeader.ROUTE, new GetBlockHeader(dataProvider, jsonProvider));
+    app.get(
+        tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlock.ROUTE,
+        new tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlock(
+            dataProvider, jsonProvider));
     app.get(GetGenesis.ROUTE, new GetGenesis(dataProvider, jsonProvider));
     app.get(
         tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRoot.ROUTE,

@@ -163,6 +163,21 @@ public class ChainDataProvider {
         .thenApply(block -> block.map(GetBlockResponse::new));
   }
 
+  public SafeFuture<Optional<SignedBeaconBlock>> getBlockBySlotV1(final String slotParameter) {
+    if (!isStoreAvailable()) {
+      return chainUnavailable();
+    }
+
+    final Optional<UInt64> maybeSlot = blockParameterToSlot(slotParameter);
+    if (maybeSlot.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+
+    return combinedChainDataClient
+        .getBlockInEffectAtSlot(maybeSlot.get())
+        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::new));
+  }
+
   public SafeFuture<Optional<BlockHeader>> getBlockHeaderByBlockId(final String slotParameter) {
     if (!isStoreAvailable()) {
       return chainUnavailable();
