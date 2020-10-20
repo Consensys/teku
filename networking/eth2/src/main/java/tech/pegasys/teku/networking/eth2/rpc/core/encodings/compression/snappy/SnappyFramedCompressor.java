@@ -19,8 +19,6 @@ import io.netty.util.ReferenceCounted;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.Compressor;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptions.CompressionException;
@@ -30,7 +28,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.exceptio
 
 /** Implements snappy compression using the "framed" / streaming format. */
 public class SnappyFramedCompressor implements Compressor {
-  private static final Logger LOG = LogManager.getLogger();
 
   private class SnappyFramedDecompressor implements Decompressor {
     private final SnappyFrameDecoder snappyFrameDecoder = new SnappyFrameDecoder();
