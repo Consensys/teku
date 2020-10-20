@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_ID;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_VALIDATOR_ID;
 
 import io.javalin.http.Context;
 import java.util.List;
@@ -27,8 +27,7 @@ import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 public class StateValidatorsUtil {
 
   public List<Integer> parseValidatorsParam(final ChainDataProvider provider, final Context ctx) {
-    return ListQueryParameterUtils.getParameterAsStringList(ctx.queryParamMap(), PARAM_VALIDATOR_ID)
-        .stream()
+    return ListQueryParameterUtils.getParameterAsStringList(ctx.queryParamMap(), PARAM_ID).stream()
         .flatMap(
             validatorParameter -> provider.validatorParameterToIndex(validatorParameter).stream())
         .collect(Collectors.toList());

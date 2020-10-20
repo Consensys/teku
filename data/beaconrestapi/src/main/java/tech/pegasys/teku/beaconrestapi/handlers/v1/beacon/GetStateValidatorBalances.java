@@ -16,10 +16,10 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_ID;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_VALIDATOR_DESCRIPTION;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_VALIDATOR_ID;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
@@ -80,7 +80,7 @@ public class GetStateValidatorBalances extends AbstractHandler implements Handle
       pathParams = {@OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION)},
       queryParams = {
         @OpenApiParam(
-            name = PARAM_VALIDATOR_ID,
+            name = PARAM_ID,
             description = PARAM_VALIDATOR_DESCRIPTION,
             isRepeatable = true)
       },
