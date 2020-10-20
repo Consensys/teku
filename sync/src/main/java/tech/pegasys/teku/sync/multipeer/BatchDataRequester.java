@@ -93,7 +93,7 @@ public class BatchDataRequester {
   private void replaceBatchesFromOldChainsWithNoSources(final TargetChain targetChain) {
     final Optional<Batch> firstStrandedBatch =
         activeBatches.stream()
-            .filter(batch -> fromOldChainWithNoPeers(targetChain, batch))
+            .filter(batch -> incompleteBatchFromOldChainWithNoPeers(targetChain, batch))
             .findFirst();
     firstStrandedBatch.ifPresent(
         strandedBatch -> {
@@ -113,8 +113,10 @@ public class BatchDataRequester {
         });
   }
 
-  private boolean fromOldChainWithNoPeers(final TargetChain targetChain, final Batch batch) {
-    return !batch.getTargetChain().equals(targetChain)
+  private boolean incompleteBatchFromOldChainWithNoPeers(
+      final TargetChain targetChain, final Batch batch) {
+    return !batch.isComplete()
+        && !batch.getTargetChain().equals(targetChain)
         && batch.getTargetChain().getPeerCount() == 0;
   }
 

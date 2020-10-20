@@ -146,8 +146,10 @@ class BatchDataRequesterTest {
 
     final Batch oldBatch1 = batchFactory.createBatch(oldTargetChain, UInt64.ZERO, BATCH_SIZE);
     final Batch oldBatch2 = batchFactory.createBatch(oldTargetChain, BATCH_SIZE, BATCH_SIZE);
+    final Batch newBatch = batchFactory.createBatch(targetChain, BATCH_SIZE.times(2), BATCH_SIZE);
     batchChain.add(oldBatch1);
     batchChain.add(oldBatch2);
+    batchChain.add(newBatch);
 
     fillQueue(ZERO);
 
@@ -155,10 +157,38 @@ class BatchDataRequesterTest {
 
     // Check that the original two batches have been replaced by new ones from the new chain
     final List<Batch> batches = batchChain.stream().collect(toList());
-    assertThat(batches).hasSizeGreaterThan(2);
+    assertThat(batches).hasSizeGreaterThan(3);
     assertThatBatch(batches.get(0)).hasRange(0, 49);
     assertThatBatch(batches.get(0)).hasTargetChain(targetChain);
     assertThatBatch(batches.get(1)).hasRange(50, 99);
+    assertThatBatch(batches.get(1)).hasTargetChain(targetChain);
+
+    // Batch from new chain should not be replaced
+    assertThatBatch(batches.get(2)).isSameAs(newBatch);
+  }
+
+  @Test
+  void shouldNotReplaceCompleteBatchesFromOldChainsWithNoPeers() {
+    final TargetChain oldTargetChain =
+        TargetChainTestUtil.chainWith(
+            new SlotAndBlockRoot(UInt64.valueOf(500), dataStructureUtil.randomBytes32()));
+
+    final Batch oldBatch1 = batchFactory.createBatch(oldTargetChain, UInt64.ZERO, BATCH_SIZE);
+    oldBatch1.markComplete();
+    final Batch oldBatch2 = batchFactory.createBatch(oldTargetChain, BATCH_SIZE, BATCH_SIZE);
+    batchChain.add(oldBatch1);
+    batchChain.add(oldBatch2);
+
+    fillQueue(ZERO);
+
+    assertThat(batchChain).doesNotContain(oldBatch2);
+
+    final List<Batch> batches = batchChain.stream().collect(toList());
+    assertThat(batches).hasSizeGreaterThan(2);
+    // First batch was complete so shouldn't be replaced
+    assertThatBatch(batches.get(0)).isSameAs(oldBatch1);
+
+    // Second batch was incomplete so should be replaced
     assertThatBatch(batches.get(1)).hasTargetChain(targetChain);
   }
 }
