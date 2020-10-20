@@ -42,7 +42,7 @@ abstract class TreeNodeImpl implements TreeNode {
         return false;
       }
       LeafNode otherLeaf = (LeafNode) o;
-      return Objects.equals(getRoot(), otherLeaf);
+      return Objects.equals(getRoot(), otherLeaf.getRoot());
     }
 
     @Override
