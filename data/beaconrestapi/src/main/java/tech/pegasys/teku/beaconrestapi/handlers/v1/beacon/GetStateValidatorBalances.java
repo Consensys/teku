@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_ID;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
@@ -49,11 +47,9 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorBalancesResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 public class GetStateValidatorBalances extends AbstractHandler implements Handler {
   private static final Logger LOG = LogManager.getLogger();
@@ -98,27 +94,17 @@ public class GetStateValidatorBalances extends AbstractHandler implements Handle
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    try {
-      final Supplier<List<Integer>> getValidatorIndices =
-          () -> stateValidatorsUtil.parseValidatorsParam(chainDataProvider, ctx);
+    final Supplier<List<Integer>> getValidatorIndices =
+        () -> stateValidatorsUtil.parseValidatorsParam(chainDataProvider, ctx);
 
-      final Function<Bytes32, SafeFuture<Optional<List<ValidatorBalanceResponse>>>> rootHandler =
-          (root) ->
-              chainDataProvider.getValidatorsBalancesByStateRoot(root, getValidatorIndices.get());
-      final Function<UInt64, SafeFuture<Optional<List<ValidatorBalanceResponse>>>> slotHandler =
-          (slot) -> chainDataProvider.getValidatorsBalancesBySlot(slot, getValidatorIndices.get());
+    final Function<Bytes32, SafeFuture<Optional<List<ValidatorBalanceResponse>>>> rootHandler =
+        (root) ->
+            chainDataProvider.getValidatorsBalancesByStateRoot(root, getValidatorIndices.get());
+    final Function<UInt64, SafeFuture<Optional<List<ValidatorBalanceResponse>>>> slotHandler =
+        (slot) -> chainDataProvider.getValidatorsBalancesBySlot(slot, getValidatorIndices.get());
 
-      processStateEndpointRequest(
-          chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
-    } catch (ChainDataUnavailableException ex) {
-      LOG.trace(ex);
-      ctx.status(SC_SERVICE_UNAVAILABLE);
-      ctx.result(BadRequest.serviceUnavailable(jsonProvider));
-    } catch (IllegalArgumentException ex) {
-      LOG.trace(ex);
-      ctx.status(SC_BAD_REQUEST);
-      ctx.result(BadRequest.badRequest(jsonProvider, ex.getMessage()));
-    }
+    processStateEndpointRequest(
+        chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
   }
 
   private Optional<String> handleResult(Context ctx, final List<ValidatorBalanceResponse> response)

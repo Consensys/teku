@@ -43,6 +43,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -104,19 +105,21 @@ public class GetStateEpochCommittees extends AbstractHandler implements Handler 
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final UInt64 epoch =
-        parseEpochPathParam(chainDataProvider, ctx).orElse(chainDataProvider.getCurrentEpoch());
+    final Supplier<UInt64> epochParamSupplier =
+        () ->
+            parseEpochPathParam(chainDataProvider, ctx).orElse(chainDataProvider.getCurrentEpoch());
     final Optional<UInt64> slotQueryParam = parseSlotQueryParam(chainDataProvider, ctx);
-    final Optional<Integer> indexQueryParam = parseIndexQueryParam(ctx);
+    final Supplier<Optional<Integer>> indexQueryParamSupplier = () -> parseIndexQueryParam(ctx);
+
     final Function<Bytes32, SafeFuture<Optional<List<EpochCommitteeResponse>>>> rootHandler =
         (root) ->
             chainDataProvider.getCommitteesAtEpochByStateRoot(
-                root, epoch, slotQueryParam, indexQueryParam);
-
+                root, epochParamSupplier.get(), slotQueryParam, indexQueryParamSupplier.get());
     final Function<UInt64, SafeFuture<Optional<List<EpochCommitteeResponse>>>> slotHandler =
         (slot) ->
             chainDataProvider.getCommitteesAtEpochBySlotV1(
-                slot, epoch, slotQueryParam, indexQueryParam);
+                slot, epochParamSupplier.get(), slotQueryParam, indexQueryParamSupplier.get());
+
     processStateEndpointRequest(
         chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
   }

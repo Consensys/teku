@@ -89,6 +89,7 @@ public class GetStateFinalityCheckpoints extends AbstractHandler implements Hand
         chainDataProvider::getStateByStateRootV1;
     final Function<UInt64, SafeFuture<Optional<BeaconState>>> slotHandler =
         chainDataProvider::getStateBySlot;
+
     processStateEndpointRequest(
         chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
   }
