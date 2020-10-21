@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -28,6 +30,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -92,19 +95,28 @@ public class GetStateFork extends AbstractHandler implements Handler {
     try {
       chainDataProvider.requireStoreAvailable();
       String stateIdParam = pathParams.get(PARAM_STATE_ID);
+      checkArgument(stateIdParam != null, "State_id argument could not be find.");
+
       final Optional<Bytes32> maybeRoot = ParameterUtils.getPotentialRoot(stateIdParam);
       SafeFuture<Optional<Fork>> future;
       if (maybeRoot.isPresent()) {
         future = chainDataProvider.getForkAtStateRoot(maybeRoot.get());
+        handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
       } else {
         final Optional<UInt64> maybeSlot = chainDataProvider.stateParameterToSlot(stateIdParam);
         if (maybeSlot.isEmpty()) {
           ctx.status(SC_NOT_FOUND);
           return;
         }
-        future = chainDataProvider.getForkAtSlot(maybeSlot.get());
+        UInt64 slot = maybeSlot.get();
+        future = chainDataProvider.getForkAtSlot(slot);
+        ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(chainDataProvider, slot));
+        if (chainDataProvider.isFinalized(slot)) {
+          handlePossiblyGoneResult(ctx, future, this::handleResult);
+        } else {
+          handlePossiblyMissingResult(ctx, future, this::handleResult);
+        }
       }
-      handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
     } catch (ChainDataUnavailableException ex) {
       LOG.trace(ex);
       ctx.status(SC_SERVICE_UNAVAILABLE);

@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -27,6 +29,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILAB
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
@@ -73,7 +76,7 @@ public class GetStateRoot extends AbstractHandler implements Handler {
       summary = "Get state root",
       tags = {TAG_V1_BEACON},
       description =
-          "Calculates HashTreeRoot for state with given 'stateId'. If stateId is root, same value will be returned.",
+          "Calculates HashTreeRoot for state with given 'state_id'. If stateId is root, same value will be returned.",
       pathParams = {@OpenApiParam(name = PARAM_STATE_ID, description = PARAM_STATE_ID_DESCRIPTION)},
       responses = {
         @OpenApiResponse(
@@ -90,10 +93,13 @@ public class GetStateRoot extends AbstractHandler implements Handler {
     try {
       chainDataProvider.requireStoreAvailable();
       String stateIdParam = pathParams.get(PARAM_STATE_ID);
+      checkArgument(stateIdParam != null, "State_id argument could not be find.");
+
       final Optional<Bytes32> maybeRoot = ParameterUtils.getPotentialRoot(stateIdParam);
       SafeFuture<Optional<Bytes32>> future;
       if (maybeRoot.isPresent()) {
         future = SafeFuture.completedFuture(maybeRoot);
+        handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
       } else {
         final Optional<UInt64> maybeSlot =
             chainDataProvider.stateParameterToSlot(pathParams.get(PARAM_STATE_ID));
@@ -101,7 +107,14 @@ public class GetStateRoot extends AbstractHandler implements Handler {
           ctx.status(SC_NOT_FOUND);
           return;
         }
-        future = chainDataProvider.getStateRootAtSlotV1(maybeSlot.get());
+        UInt64 slot = maybeSlot.get();
+        future = chainDataProvider.getStateRootAtSlotV1(slot);
+        ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(chainDataProvider, slot));
+        if (chainDataProvider.isFinalized(slot)) {
+          handlePossiblyGoneResult(ctx, future, this::handleResult);
+        } else {
+          handlePossiblyMissingResult(ctx, future, this::handleResult);
+        }
       }
       handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
     } catch (ChainDataUnavailableException ex) {

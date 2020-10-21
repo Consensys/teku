@@ -360,32 +360,10 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void stateParameterToSlot_shouldThrowWhenStoreNotFound() {
-    final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
-    assertThrows(ChainDataUnavailableException.class, () -> provider.stateParameterToSlot("1"));
-  }
-
-  @Test
   public void validatorParameterToIndex_shouldThrowWhenStoreNotFound() {
     final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
     assertThrows(
         ChainDataUnavailableException.class, () -> provider.validatorParameterToIndex("1"));
-  }
-
-  @Test
-  public void getValidatorDetails_shouldThrowWhenStoreNotFound() {
-    final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
-    assertThrows(
-        ChainDataUnavailableException.class,
-        () -> provider.getValidatorDetailsBySlot(ZERO, Optional.of(2)));
-  }
-
-  @Test
-  public void getValidatorsDetails_shouldThrowWhenStoreNotFound() {
-    final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
-    assertThrows(
-        ChainDataUnavailableException.class,
-        () -> provider.getValidatorsDetailsBySlot(ZERO, emptyList()));
   }
 
   @Test
@@ -554,19 +532,6 @@ public class ChainDataProviderTest {
     Optional<UInt64> result = provider.stateParameterToSlot("justified");
     assertThat(result.isPresent()).isTrue();
     assertThat(result.get()).isEqualTo(justifiedCheckpoint.getEpochStartSlot());
-  }
-
-  @Test
-  public void stateParameterToSlot_shouldParseStateRoot() {
-    final tech.pegasys.teku.datastructures.state.BeaconState beaconState =
-        recentChainData.getBestState().get();
-    final Bytes32 stateRoot = beaconState.hashTreeRoot().or(Bytes32.ZERO);
-    final ChainDataProvider provider =
-        new ChainDataProvider(recentChainData, combinedChainDataClient);
-
-    Optional<UInt64> result = provider.stateParameterToSlot(stateRoot.toHexString());
-    assertThat(result.isPresent()).isTrue();
-    assertThat(result.get()).isEqualTo(beaconState.getSlot());
   }
 
   @Test

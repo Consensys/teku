@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
@@ -100,6 +101,8 @@ public class GetStateValidators extends AbstractHandler {
     try {
       chainDataProvider.requireStoreAvailable();
       String stateIdParam = pathParams.get(PARAM_STATE_ID);
+      checkArgument(stateIdParam != null, "State_id argument could not be find.");
+
       final List<Integer> validatorIndices =
           stateValidatorsUtil.parseValidatorsParam(chainDataProvider, ctx);
 

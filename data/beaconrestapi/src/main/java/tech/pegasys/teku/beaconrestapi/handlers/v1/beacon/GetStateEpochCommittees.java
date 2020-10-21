@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
@@ -117,6 +118,7 @@ public class GetStateEpochCommittees extends AbstractHandler implements Handler 
       final UInt64 epoch =
           parseEpochPathParam(chainDataProvider, ctx).orElse(chainDataProvider.getCurrentEpoch());
       String stateIdParam = pathParams.get(PARAM_STATE_ID);
+      checkArgument(stateIdParam != null, "State_id argument could not be find.");
 
       final Optional<UInt64> slotQueryParam = parseSlotQueryParam(chainDataProvider, ctx);
       final Optional<Integer> indexQueryParam = parseIndexQueryParam(ctx);
