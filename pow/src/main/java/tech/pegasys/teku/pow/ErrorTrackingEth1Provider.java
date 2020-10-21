@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.pow;
 
+import java.math.BigInteger;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -60,6 +61,11 @@ public class ErrorTrackingEth1Provider implements Eth1Provider {
   public SafeFuture<EthCall> ethCall(
       final String from, final String to, final String data, final UInt64 blockNumber) {
     return logStatus(delegate.ethCall(from, to, data, blockNumber));
+  }
+
+  @Override
+  public SafeFuture<BigInteger> getChainId() {
+    return logStatus(delegate.getChainId());
   }
 
   private <T> SafeFuture<T> logStatus(final SafeFuture<T> action) {
