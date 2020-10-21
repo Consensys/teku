@@ -85,4 +85,14 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
   public int hashCode() {
     return Objects.hash(childrenTypes);
   }
+
+  @Override
+  public boolean isFixedSize() {
+    for (int i = 0; i < getMaxLength(); i++) {
+      if (!getChildType(i).isFixedSize()) {
+        return false;
+      }
+    }
+    return true;
+  }
 }

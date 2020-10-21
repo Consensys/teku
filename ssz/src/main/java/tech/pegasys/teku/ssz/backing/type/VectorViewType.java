@@ -46,4 +46,9 @@ public class VectorViewType<C> extends CollectionViewType {
   public VectorViewRead<C> createFromBackingNode(TreeNode node) {
     return new VectorViewReadImpl(this, node);
   }
+
+  @Override
+  public boolean isFixedSize() {
+    return getElementType().isFixedSize();
+  }
 }

@@ -67,4 +67,6 @@ public interface ViewType {
   default TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
     return newValue.getBackingNode();
   }
+
+  boolean isFixedSize();
 }
