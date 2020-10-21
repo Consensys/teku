@@ -27,6 +27,7 @@ import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.response.GetForkResponse;
 import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
 import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
+import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -245,14 +246,18 @@ public class ChainDataProvider {
         .thenApply(state -> state.map(BeaconState::new));
   }
 
-  public SafeFuture<Optional<tech.pegasys.teku.datastructures.state.BeaconState>>
-      getStateByStateRootV1(final Bytes32 stateRoot) {
-    return combinedChainDataClient.getStateByStateRoot(stateRoot);
+  public SafeFuture<Optional<FinalityCheckpointsResponse>> getStateFinalityCheckpointsByStateRootV1(
+      final Bytes32 stateRoot) {
+    return combinedChainDataClient
+        .getStateByStateRoot(stateRoot)
+        .thenApply(state -> state.map(FinalityCheckpointsResponse::fromState));
   }
 
-  public SafeFuture<Optional<tech.pegasys.teku.datastructures.state.BeaconState>> getStateBySlot(
+  public SafeFuture<Optional<FinalityCheckpointsResponse>> getStateFinalityCheckpointsBySlot(
       final UInt64 slot) {
-    return combinedChainDataClient.getStateAtSlotExact(slot);
+    return combinedChainDataClient
+        .getStateAtSlotExact(slot)
+        .thenApply(state -> state.map(FinalityCheckpointsResponse::fromState));
   }
 
   public SafeFuture<Optional<BeaconState>> getStateByStateRoot(final Bytes32 stateRoot) {

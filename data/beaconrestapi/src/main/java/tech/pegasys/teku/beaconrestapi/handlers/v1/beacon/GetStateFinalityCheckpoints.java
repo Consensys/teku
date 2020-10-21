@@ -42,7 +42,6 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsRespo
 import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
 import tech.pegasys.teku.api.schema.Checkpoint;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -82,27 +81,23 @@ public class GetStateFinalityCheckpoints extends AbstractHandler implements Hand
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final Function<Bytes32, SafeFuture<Optional<BeaconState>>> rootHandler =
-        chainDataProvider::getStateByStateRootV1;
-    final Function<UInt64, SafeFuture<Optional<BeaconState>>> slotHandler =
-        chainDataProvider::getStateBySlot;
+    final Function<Bytes32, SafeFuture<Optional<FinalityCheckpointsResponse>>> rootHandler =
+        chainDataProvider::getStateFinalityCheckpointsByStateRootV1;
+    final Function<UInt64, SafeFuture<Optional<FinalityCheckpointsResponse>>> slotHandler =
+        chainDataProvider::getStateFinalityCheckpointsBySlot;
 
     processStateEndpointRequest(
         chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
   }
 
-  private Optional<String> handleResult(Context ctx, final BeaconState response)
+  private Optional<String> handleResult(Context ctx, final FinalityCheckpointsResponse response)
       throws JsonProcessingException {
-    boolean isFinalized = response.getFinalized_checkpoint().getEpoch().isGreaterThan(UInt64.ZERO);
+    boolean isFinalized = response.finalized.epoch.isGreaterThan(UInt64.ZERO);
     FinalityCheckpointsResponse finalityCheckpointsResponse =
         new FinalityCheckpointsResponse(
-            isFinalized
-                ? new Checkpoint(response.getPrevious_justified_checkpoint())
-                : Checkpoint.EMPTY,
-            isFinalized
-                ? new Checkpoint(response.getCurrent_justified_checkpoint())
-                : Checkpoint.EMPTY,
-            isFinalized ? new Checkpoint(response.getFinalized_checkpoint()) : Checkpoint.EMPTY);
+            isFinalized ? response.previous_justified : Checkpoint.EMPTY,
+            isFinalized ? response.current_justified : Checkpoint.EMPTY,
+            isFinalized ? response.finalized : Checkpoint.EMPTY);
     return Optional.of(
         jsonProvider.objectToJSON(
             new GetStateFinalityCheckpointsResponse(finalityCheckpointsResponse)));

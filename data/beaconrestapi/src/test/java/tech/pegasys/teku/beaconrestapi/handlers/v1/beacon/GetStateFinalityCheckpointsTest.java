@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
 import tech.pegasys.teku.api.schema.Checkpoint;
 import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
@@ -51,8 +52,9 @@ public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(chainDataProvider.stateParameterToSlot("head")).thenReturn(Optional.of(UInt64.ONE));
-    when(chainDataProvider.getStateBySlot(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
+    when(chainDataProvider.getStateFinalityCheckpointsBySlot(any()))
+        .thenReturn(
+            SafeFuture.completedFuture(Optional.of(FinalityCheckpointsResponse.fromState(state))));
 
     handler.handle(context);
 
