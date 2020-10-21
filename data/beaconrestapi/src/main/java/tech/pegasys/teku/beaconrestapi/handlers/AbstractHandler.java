@@ -57,15 +57,14 @@ public abstract class AbstractHandler implements Handler {
       final AbstractHandler.ResultProcessor<T> resultProcessor)
       throws JsonProcessingException {
     try {
-      final Map<String, String> pathParams = ctx.pathParamMap();
       provider.requireStoreAvailable();
-      String stateIdParam = pathParams.get(PARAM_STATE_ID);
+      final Map<String, String> pathParams = ctx.pathParamMap();
+      final String stateIdParam = pathParams.get(PARAM_STATE_ID);
       checkArgument(stateIdParam != null, "State_id argument could not be find.");
 
-      SafeFuture<Optional<T>> future;
       final Optional<Bytes32> maybeRoot = ParameterUtils.getPotentialRoot(stateIdParam);
       if (maybeRoot.isPresent()) {
-        future = rootHandler.apply(maybeRoot.get());
+        SafeFuture<Optional<T>> future = rootHandler.apply(maybeRoot.get());
         handleOptionalResult(ctx, future, resultProcessor, SC_NOT_FOUND);
       } else {
         final Optional<UInt64> maybeSlot = provider.stateParameterToSlot(stateIdParam);
@@ -74,7 +73,7 @@ public abstract class AbstractHandler implements Handler {
           return;
         }
         UInt64 slot = maybeSlot.get();
-        future = slotHandler.apply(slot);
+        SafeFuture<Optional<T>> future = slotHandler.apply(slot);
         ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(provider, slot));
         if (provider.isFinalized(slot)) {
           handlePossiblyGoneResult(ctx, future, resultProcessor);
