@@ -108,13 +108,14 @@ public class BatchSync implements Sync {
     eventThread.checkOnEventThread();
     // Cancel the existing sync
     this.syncResult.complete(SyncResult.TARGET_CHANGED);
-    if (this.targetChain == null) {
+    final boolean firstChain = this.targetChain == null;
+    this.targetChain = targetChain;
+    if (firstChain) {
       // Only set the common ancestor if we haven't previously sync'd a chain
       // Otherwise we'll optimistically assume the new chain extends the current one and only reset
       // the common ancestor if we later find out that's not the case
       this.commonAncestorSlot = getCommonAncestorSlot();
     }
-    this.targetChain = targetChain;
     this.syncResult = syncResult;
     progressSync();
   }
