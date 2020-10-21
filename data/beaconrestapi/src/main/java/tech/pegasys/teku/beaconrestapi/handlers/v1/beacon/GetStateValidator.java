@@ -36,8 +36,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
@@ -49,7 +47,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetStateValidator extends AbstractHandler {
-  private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/eth/v1/beacon/states/:state_id/validators/:validator_id";
   private final ChainDataProvider chainDataProvider;
 

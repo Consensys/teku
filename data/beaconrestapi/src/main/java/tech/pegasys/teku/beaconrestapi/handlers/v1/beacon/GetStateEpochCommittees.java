@@ -44,8 +44,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
@@ -61,7 +59,6 @@ import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.util.config.Constants;
 
 public class GetStateEpochCommittees extends AbstractHandler implements Handler {
-  private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE_WITH_EPOCH_PARAM =
       "/eth/v1/beacon/states/:state_id/committees/:epoch";
   public static final String ROUTE_WITHOUT_EPOCH_PARAM =
