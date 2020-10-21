@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
@@ -49,6 +50,14 @@ public class TargetChain {
 
   public SlotAndBlockRoot getChainHead() {
     return chainHead;
+  }
+
+  public Optional<SyncSource> selectRandomPeer(final SyncSource... excluding) {
+    final Set<SyncSource> excludedPeers = Set.of(excluding);
+    return peers.stream()
+        .filter(peer -> !excludedPeers.contains(peer))
+        .skip((int) ((peers.size() - excludedPeers.size()) * Math.random()))
+        .findFirst();
   }
 
   @Override

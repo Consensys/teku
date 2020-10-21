@@ -66,15 +66,23 @@ class BatchSyncTest {
       chainWith(
           new SlotAndBlockRoot(UInt64.valueOf(1000), dataStructureUtil.randomBytes32()),
           syncSource);
+  private final MultipeerCommonAncestorFinder commonAncestor =
+      mock(MultipeerCommonAncestorFinder.class);
 
   private final BatchSync sync =
-      BatchSync.create(eventThread, recentChainData, batchImporter, batches, BATCH_SIZE);
+      BatchSync.create(
+          eventThread, recentChainData, batchImporter, batches, BATCH_SIZE, commonAncestor);
 
   @BeforeEach
   void setUp() {
     storageSystem.chainUpdater().initializeGenesis();
     when(batchImporter.importBatch(any()))
         .thenAnswer(invocation -> batches.getImportResult(invocation.getArgument(0)));
+    when(commonAncestor.findCommonAncestor(any()))
+        .thenAnswer(
+            invocation ->
+                SafeFuture.completedFuture(
+                    compute_start_slot_at_epoch(recentChainData.getFinalizedEpoch())));
   }
 
   @Test
