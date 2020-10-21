@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.pow;
 
+import java.math.BigInteger;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -25,6 +26,7 @@ import org.web3j.protocol.core.Response;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.EthCall;
+import org.web3j.protocol.core.methods.response.EthChainId;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -111,5 +113,10 @@ public class Web3jEth1Provider implements Eth1Provider {
                 Transaction.createEthCallTransaction(from, to, data),
                 DefaultBlockParameter.valueOf(blockNumber.bigIntegerValue()))
             .sendAsync());
+  }
+
+  @Override
+  public SafeFuture<BigInteger> getChainId() {
+    return sendAsync(web3j.ethChainId()).thenApply(EthChainId::getChainId);
   }
 }
