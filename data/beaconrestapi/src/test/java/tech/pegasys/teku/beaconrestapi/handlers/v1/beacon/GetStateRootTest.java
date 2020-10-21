@@ -36,6 +36,7 @@ public class GetStateRootTest extends AbstractBeaconHandlerTest {
   public void shouldReturnUnavailableWhenStoreNotAvailable() throws Exception {
     final GetStateRoot handler = new GetStateRoot(chainDataProvider, jsonProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(false);
+    when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
 
     handler.handle(context);
     verifyStatusCode(SC_NOT_FOUND);
@@ -47,7 +48,7 @@ public class GetStateRootTest extends AbstractBeaconHandlerTest {
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(chainDataProvider.stateParameterToSlot("head")).thenReturn(Optional.of(UInt64.ONE));
-    when(chainDataProvider.getStateRootAtSlot(any()))
+    when(chainDataProvider.getStateRootAtSlotV1(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(root)));
 
     handler.handle(context);
