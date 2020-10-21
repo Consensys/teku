@@ -200,7 +200,7 @@ jobs:
       - capture_test_artifacts
 
   referenceTests:
-    parallelism: 4
+    parallelism: 5
     executor: large_executor
     steps:
       - prepare
