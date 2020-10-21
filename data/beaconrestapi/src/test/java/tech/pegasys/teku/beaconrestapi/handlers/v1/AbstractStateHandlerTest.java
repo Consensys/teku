@@ -65,6 +65,37 @@ public class AbstractStateHandlerTest extends AbstractBeaconHandlerTest {
     verifyStatusCode(SC_NOT_FOUND);
   }
 
+  @Test
+  public void shouldDealCorrectlyWithTheExceptionOccurringInTheSlotHandler() throws Exception {
+    when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
+    when(chainDataProvider.stateParameterToSlot("head")).thenReturn(Optional.of(UInt64.ONE));
+    final AbstractHandler handler =
+        createHandler(
+            Optional.empty(),
+            Optional.of(
+                (__) -> {
+                  throw new ChainDataUnavailableException();
+                }));
+
+    handler.handle(context);
+    verifyStatusCode(SC_SERVICE_UNAVAILABLE);
+  }
+
+  @Test
+  public void shouldDealCorrectlyWithTheExceptionOccurringInTheRootHandler() throws Exception {
+    when(context.pathParamMap()).thenReturn(Map.of("state_id", "0xdeadbeef"));
+    final AbstractHandler handler =
+        createHandler(
+            Optional.of(
+                (__) -> {
+                  throw new ChainDataUnavailableException();
+                }),
+            Optional.empty());
+
+    handler.handle(context);
+    verifyStatusCode(SC_SERVICE_UNAVAILABLE);
+  }
+
   private AbstractHandler createHandler(
       Optional<Function<Bytes32, SafeFuture<Optional<Bytes32>>>> maybeRootHandler,
       Optional<Function<UInt64, SafeFuture<Optional<Bytes32>>>> maybeSlotHandler) {
