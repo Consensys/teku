@@ -17,11 +17,14 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Objects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Checkpoint {
+  public static Checkpoint EMPTY = new Checkpoint(UInt64.ZERO, Bytes32.ZERO);
+
   @Schema(type = "string", format = "uint64")
   public final UInt64 epoch;
 
@@ -42,5 +45,18 @@ public class Checkpoint {
 
   public tech.pegasys.teku.datastructures.state.Checkpoint asInternalCheckpoint() {
     return new tech.pegasys.teku.datastructures.state.Checkpoint(epoch, root);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Checkpoint)) return false;
+    Checkpoint that = (Checkpoint) o;
+    return Objects.equal(epoch, that.epoch) && Objects.equal(root, that.root);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(epoch, root);
   }
 }

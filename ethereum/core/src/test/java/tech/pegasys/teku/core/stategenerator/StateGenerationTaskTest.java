@@ -31,10 +31,14 @@ import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
+import tech.pegasys.teku.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 class StateGenerationTaskTest {
+
+  private static final int REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS = 0;
   private final ChainBuilder chainBuilder = ChainBuilder.createDefault();
   private TrackingBlockProvider blockProvider;
 
@@ -57,8 +61,11 @@ class StateGenerationTaskTest {
   @Test
   void performTask_shouldLoadStateFromLatestEpochBoundary() {
     chainBuilder.generateBlocksUpToSlot(5);
-    final StateGenerationTask task =
-        createTask(1, 5, Optional.of(chainBuilder.getBlockAtSlot(3).getRoot()));
+    final SignedBeaconBlock epochBoundaryBlock = chainBuilder.getBlockAtSlot(3);
+    final Optional<SlotAndBlockRoot> epochBoundaryRoot =
+        Optional.of(
+            new SlotAndBlockRoot(epochBoundaryBlock.getSlot(), epochBoundaryBlock.getRoot()));
+    final StateGenerationTask task = createTask(1, 5, epochBoundaryRoot);
     final SafeFuture<Optional<SignedBlockAndState>> result = task.performTask();
 
     assertThatSafeFuture(result)
@@ -110,7 +117,7 @@ class StateGenerationTaskTest {
   }
 
   private StateGenerationTask createTask(
-      final int startSlot, final int endSlot, final Optional<Bytes32> epochBoundaryRoot) {
+      final int startSlot, final int endSlot, final Optional<SlotAndBlockRoot> epochBoundaryRoot) {
     final SignedBlockAndState startBlockAndState = chainBuilder.getBlockAndStateAtSlot(startSlot);
     final SignedBeaconBlock endBlock = chainBuilder.getBlockAtSlot(endSlot);
     final HashTree.Builder treeBuilder =
@@ -126,10 +133,17 @@ class StateGenerationTaskTest {
     return new StateGenerationTask(
         endBlock.getRoot(),
         tree,
-        startBlockAndState,
-        epochBoundaryRoot,
         blockProvider,
-        chainBuilder.getStateAndBlockProvider());
+        new StateRegenerationBaseSelector(
+            epochBoundaryRoot,
+            () ->
+                Optional.of(
+                    new BlockRootAndState(
+                        startBlockAndState.getRoot(), startBlockAndState.getState())),
+            chainBuilder.getStateAndBlockProvider(),
+            blockProvider,
+            Optional.empty(),
+            REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS));
   }
 
   private static class TrackingBlockProvider implements BlockProvider {

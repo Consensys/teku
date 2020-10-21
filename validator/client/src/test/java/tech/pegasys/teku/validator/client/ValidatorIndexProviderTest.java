@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -101,5 +102,21 @@ class ValidatorIndexProviderTest {
     result.complete(Collections.emptyMap());
     provider.lookupValidators();
     verify(validatorApiChannel, times(2)).getValidatorIndices(List.of(key1));
+  }
+
+  @Test
+  void shouldNotMakeRequestWhenAllValidatorsAreKnown() {
+    final ValidatorIndexProvider provider =
+        new ValidatorIndexProvider(List.of(key1), validatorApiChannel);
+
+    when(validatorApiChannel.getValidatorIndices(List.of(key1)))
+        .thenReturn(SafeFuture.completedFuture(Map.of(key1, 1)));
+    provider.lookupValidators();
+
+    verify(validatorApiChannel).getValidatorIndices(any());
+
+    provider.lookupValidators();
+
+    verifyNoMoreInteractions(validatorApiChannel);
   }
 }
