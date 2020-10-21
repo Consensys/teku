@@ -62,7 +62,7 @@ public class GetStateValidatorsTest extends AbstractBeaconHandlerTest {
       when(chainDataProvider.validatorParameterToIndex(Integer.toString(i)))
           .thenReturn(Optional.of(i));
     }
-    when(chainDataProvider.getValidatorsDetails(slot, List.of(1, 2, 3, 4)))
+    when(chainDataProvider.getValidatorsDetailsBySlot(slot, List.of(1, 2, 3, 4)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(validatorResponse))));
     handler.handle(context);
     GetStateValidatorsResponse response = getResponseFromFuture(GetStateValidatorsResponse.class);

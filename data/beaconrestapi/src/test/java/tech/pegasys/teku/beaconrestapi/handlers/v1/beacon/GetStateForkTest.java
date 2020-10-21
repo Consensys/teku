@@ -36,6 +36,7 @@ public class GetStateForkTest extends AbstractBeaconHandlerTest {
   public void shouldReturnUnavailableWhenStoreNotAvailable() throws Exception {
     final GetStateFork handler = new GetStateFork(chainDataProvider, jsonProvider);
     when(chainDataProvider.isStoreAvailable()).thenReturn(false);
+    when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
 
     handler.handle(context);
     verifyStatusCode(SC_NOT_FOUND);
