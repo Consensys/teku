@@ -50,7 +50,7 @@ public class GetFork implements Handler {
       tags = {TAG_NODE},
       description =
           "Returns information about the fork of the beacon chain head from the node’s perspective."
-              + "Replaced by standard api endpoint /eth/v1/beacon/states/{state_id}/fork",
+              + "Replaced by standard api endpoint `/eth/v1/beacon/states/{state_id}/fork`.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,
