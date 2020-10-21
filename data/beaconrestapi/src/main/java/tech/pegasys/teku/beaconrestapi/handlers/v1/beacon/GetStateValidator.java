@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
 import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_VALIDATOR_DESCRIPTION;
@@ -30,6 +31,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.plugin.openapi.annotations.HttpMethod;
 import io.javalin.plugin.openapi.annotations.OpenApi;
@@ -40,10 +42,12 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.beaconrestapi.ParameterUtils;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -90,15 +94,30 @@ public class GetStateValidator extends AbstractHandler {
   public void handle(final Context ctx) throws Exception {
     final Map<String, String> pathParams = ctx.pathParamMap();
     try {
-      final UInt64 slot =
-          chainDataProvider
-              .stateParameterToSlot(pathParams.get(PARAM_STATE_ID))
-              .orElseThrow(ChainDataUnavailableException::new);
+      chainDataProvider.requireStoreAvailable();
+      String stateIdParam = pathParams.get(PARAM_STATE_ID);
       final Optional<Integer> validatorIndex =
           chainDataProvider.validatorParameterToIndex(pathParams.get(PARAM_VALIDATOR_ID));
-      final SafeFuture<Optional<ValidatorResponse>> future =
-          chainDataProvider.getValidatorDetails(slot, validatorIndex);
-      handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
+      SafeFuture<Optional<ValidatorResponse>> future;
+      final Optional<Bytes32> maybeRoot = ParameterUtils.getPotentialRoot(stateIdParam);
+      if (maybeRoot.isPresent()) {
+        future = chainDataProvider.getValidatorDetailsByStateRoot(maybeRoot.get(), validatorIndex);
+        handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
+      } else {
+        final Optional<UInt64> maybeSlot = chainDataProvider.stateParameterToSlot(stateIdParam);
+        if (maybeSlot.isEmpty()) {
+          ctx.status(SC_NOT_FOUND);
+          return;
+        }
+        UInt64 slot = maybeSlot.get();
+        future = chainDataProvider.getValidatorDetailsBySlot(slot, validatorIndex);
+        ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(chainDataProvider, slot));
+        if (chainDataProvider.isFinalized(slot)) {
+          handlePossiblyGoneResult(ctx, future, this::handleResult);
+        } else {
+          handlePossiblyMissingResult(ctx, future, this::handleResult);
+        }
+      }
     } catch (ChainDataUnavailableException ex) {
       LOG.trace(ex);
       ctx.status(SC_SERVICE_UNAVAILABLE);

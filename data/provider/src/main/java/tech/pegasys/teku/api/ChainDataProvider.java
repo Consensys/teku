@@ -115,20 +115,13 @@ public class ChainDataProvider {
                             .collect(toList())));
   }
 
-  public SafeFuture<Optional<List<EpochCommitteeResponse>>> getCommitteesAtEpochV1(
+  public SafeFuture<Optional<List<EpochCommitteeResponse>>> getCommitteesAtEpochBySlotV1(
       final UInt64 stateSlot,
       final UInt64 epoch,
       final Optional<UInt64> maybeSlot,
       final Optional<Integer> maybeIndex) {
-    if (!combinedChainDataClient.isChainDataFullyAvailable()) {
-      return chainUnavailable();
-    }
-
     final UInt64 earliestQueryableSlot =
         CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
-    if (recentChainData.getHeadSlot().isLessThan(earliestQueryableSlot)) {
-      return SafeFuture.completedFuture(Optional.empty());
-    }
 
     if (stateSlot.isLessThan(earliestQueryableSlot)) {
       return SafeFuture.completedFuture(Optional.empty());
@@ -152,6 +145,40 @@ public class ChainDataProvider {
                             .filter(filterForCommitteeIndex)
                             .map(EpochCommitteeResponse::new)
                             .collect(toList())));
+  }
+
+  public SafeFuture<Optional<List<EpochCommitteeResponse>>> getCommitteesAtEpochByStateRoot(
+      final Bytes32 stateRoot,
+      final UInt64 epoch,
+      final Optional<UInt64> maybeSlot,
+      final Optional<Integer> maybeIndex) {
+    final UInt64 earliestQueryableSlot =
+        CommitteeUtil.getEarliestQueryableSlotForTargetEpoch(epoch);
+
+    final Predicate<CommitteeAssignment> filterForSlot =
+        (committee) -> maybeSlot.map(slot -> committee.getSlot().equals(slot)).orElse(true);
+
+    final Predicate<CommitteeAssignment> filterForCommitteeIndex =
+        (committee) ->
+            maybeIndex.map(index -> committee.getCommitteeIndex().intValue() == index).orElse(true);
+
+    return combinedChainDataClient
+        .getStateByStateRoot(stateRoot)
+        .thenApply(
+            maybeResult ->
+                maybeResult
+                    .flatMap(
+                        state ->
+                            state.getSlot().isLessThan(earliestQueryableSlot)
+                                ? Optional.empty()
+                                : Optional.of(state))
+                    .map(
+                        state ->
+                            combinedChainDataClient.getCommitteesFromState(state, epoch).stream()
+                                .filter(filterForSlot)
+                                .filter(filterForCommitteeIndex)
+                                .map(EpochCommitteeResponse::new)
+                                .collect(toList())));
   }
 
   public SafeFuture<Optional<GetBlockResponse>> getBlockBySlot(final UInt64 slot) {
@@ -218,6 +245,16 @@ public class ChainDataProvider {
         .thenApply(state -> state.map(BeaconState::new));
   }
 
+  public SafeFuture<Optional<tech.pegasys.teku.datastructures.state.BeaconState>>
+      getStateByStateRootV1(final Bytes32 stateRoot) {
+    return combinedChainDataClient.getStateByStateRoot(stateRoot);
+  }
+
+  public SafeFuture<Optional<tech.pegasys.teku.datastructures.state.BeaconState>> getStateBySlot(
+      final UInt64 slot) {
+    return combinedChainDataClient.getStateAtSlotExact(slot);
+  }
+
   public SafeFuture<Optional<BeaconState>> getStateByStateRoot(final Bytes32 stateRoot) {
     if (!isStoreAvailable()) {
       return chainUnavailable();
@@ -237,11 +274,23 @@ public class ChainDataProvider {
         .thenApply(stateInternal -> stateInternal.map(BeaconState::new));
   }
 
+  // TODO: remove once old API's are removed
   public SafeFuture<Optional<Bytes32>> getStateRootAtSlot(final UInt64 slot) {
     if (!combinedChainDataClient.isChainDataFullyAvailable()) {
       return chainUnavailable();
     }
 
+    return SafeFuture.of(
+        () ->
+            combinedChainDataClient
+                .getStateAtSlotExact(slot)
+                .thenApplyChecked(
+                    maybeState ->
+                        maybeState.map(
+                            tech.pegasys.teku.datastructures.state.BeaconState::hash_tree_root)));
+  }
+
+  public SafeFuture<Optional<Bytes32>> getStateRootAtSlotV1(final UInt64 slot) {
     return SafeFuture.of(
         () ->
             combinedChainDataClient
@@ -328,18 +377,20 @@ public class ChainDataProvider {
     }
   }
 
-  /**
-   * Convert a State Parameter {state_id} from a URL to a slot number
-   *
-   * @param pathParam head, genesis, finalized, justified, &lt;slot&gt;, &lt;state_root&gt;
-   * @return Optional slot of the desired state
-   * @throws IllegalArgumentException if state cannot be parsed or is in the future.
-   * @throws ChainDataUnavailableException if store is not able to process requests.
-   */
-  public Optional<UInt64> stateParameterToSlot(final String pathParam) {
+  public void requireStoreAvailable() {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
     }
+  }
+
+  /**
+   * Convert a State Parameter {state_id} from a URL to a slot number
+   *
+   * @param pathParam head, genesis, finalized, justified, &lt;slot&gt;
+   * @return Optional slot of the desired state
+   * @throws IllegalArgumentException if state cannot be parsed or is in the future.
+   */
+  public Optional<UInt64> stateParameterToSlot(final String pathParam) {
     try {
       switch (pathParam) {
         case ("head"):
@@ -351,19 +402,13 @@ public class ChainDataProvider {
         case ("justified"):
           return recentChainData.getJustifiedCheckpoint().map(Checkpoint::getEpochStartSlot);
       }
-      if (pathParam.toLowerCase().startsWith("0x")) {
-        // state root
-        Bytes32 stateRoot = Bytes32.fromHexString(pathParam);
-        return combinedChainDataClient.getSlotByStateRoot(stateRoot).join();
-      } else {
-        final UInt64 slot = UInt64.valueOf(pathParam);
-        final UInt64 headSlot = recentChainData.getHeadSlot();
-        if (slot.isGreaterThan(headSlot)) {
-          throw new IllegalArgumentException(
-              String.format("Invalid state: %s is beyond head slot %s", slot, headSlot));
-        }
-        return Optional.of(UInt64.valueOf(pathParam));
+      final UInt64 slot = UInt64.valueOf(pathParam);
+      final UInt64 headSlot = recentChainData.getHeadSlot();
+      if (slot.isGreaterThan(headSlot)) {
+        throw new IllegalArgumentException(
+            String.format("Invalid state: %s is beyond head slot %s", slot, headSlot));
       }
+      return Optional.of(UInt64.valueOf(pathParam));
     } catch (NumberFormatException ex) {
       throw new IllegalArgumentException(String.format("Invalid state: %s", pathParam));
     }
@@ -419,18 +464,24 @@ public class ChainDataProvider {
     }
   }
 
+  public SafeFuture<Optional<Fork>> getForkAtStateRoot(final Bytes32 root) {
+    return combinedChainDataClient
+        .getStateByStateRoot(root)
+        .thenApply(maybeState -> maybeState.map(state -> new Fork(state.getFork())));
+  }
+
   public SafeFuture<Optional<Fork>> getForkAtSlot(final UInt64 slot) {
     return combinedChainDataClient
         .getStateAtSlotExact(slot)
         .thenApply(maybeState -> maybeState.map(state -> new Fork(state.getFork())));
   }
 
-  public SafeFuture<Optional<ValidatorResponse>> getValidatorDetails(
+  public SafeFuture<Optional<ValidatorResponse>> getValidatorDetailsBySlot(
       final UInt64 slot, final Optional<Integer> validatorIndex) {
     if (validatorIndex.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     } else {
-      return getValidatorsDetails(slot, List.of(validatorIndex.get()))
+      return getValidatorsDetailsBySlot(slot, List.of(validatorIndex.get()))
           .thenApply(
               maybeValidators ->
                   maybeValidators.flatMap(
@@ -443,12 +494,8 @@ public class ChainDataProvider {
     }
   }
 
-  public SafeFuture<Optional<List<ValidatorResponse>>> getValidatorsDetails(
+  public SafeFuture<Optional<List<ValidatorResponse>>> getValidatorsDetailsBySlot(
       final UInt64 slot, final List<Integer> validatorIndices) {
-    if (!isStoreAvailable()) {
-      throw new ChainDataUnavailableException();
-    }
-
     if (validatorIndices.isEmpty()) {
       return SafeFuture.completedFuture(Optional.of(emptyList()));
     }
@@ -458,18 +505,55 @@ public class ChainDataProvider {
         .thenApply(maybeState -> maybeState.map(state -> getValidators(validatorIndices, state)));
   }
 
-  public SafeFuture<Optional<List<ValidatorBalanceResponse>>> getValidatorsBalances(
-      final UInt64 slot, final List<Integer> validatorIndices) {
-    if (!isStoreAvailable()) {
-      throw new ChainDataUnavailableException();
+  public SafeFuture<Optional<ValidatorResponse>> getValidatorDetailsByStateRoot(
+      final Bytes32 stateRoot, final Optional<Integer> validatorIndex) {
+    if (validatorIndex.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    } else {
+      return getValidatorsDetailsByStateRoot(stateRoot, List.of(validatorIndex.get()))
+          .thenApply(
+              maybeValidators ->
+                  maybeValidators.flatMap(
+                      validators -> {
+                        checkState(
+                            validators.size() <= 1,
+                            "Received more than one validator for a single index");
+                        return validators.stream().findFirst();
+                      }));
+    }
+  }
+
+  public SafeFuture<Optional<List<ValidatorResponse>>> getValidatorsDetailsByStateRoot(
+      final Bytes32 stateRoot, final List<Integer> validatorIndices) {
+    if (validatorIndices.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.of(emptyList()));
     }
 
+    return combinedChainDataClient
+        .getStateByStateRoot(stateRoot)
+        .thenApply(maybeState -> maybeState.map(state -> getValidators(validatorIndices, state)));
+  }
+
+  public SafeFuture<Optional<List<ValidatorBalanceResponse>>> getValidatorsBalancesBySlot(
+      final UInt64 slot, final List<Integer> validatorIndices) {
     if (validatorIndices.isEmpty()) {
       return SafeFuture.completedFuture(Optional.of(emptyList()));
     }
 
     return combinedChainDataClient
         .getStateAtSlotExact(slot)
+        .thenApply(
+            maybeState -> maybeState.map(state -> getValidatorBalances(validatorIndices, state)));
+  }
+
+  public SafeFuture<Optional<List<ValidatorBalanceResponse>>> getValidatorsBalancesByStateRoot(
+      final Bytes32 stateRoot, final List<Integer> validatorIndices) {
+    if (validatorIndices.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.of(emptyList()));
+    }
+
+    return combinedChainDataClient
+        .getStateByStateRoot(stateRoot)
         .thenApply(
             maybeState -> maybeState.map(state -> getValidatorBalances(validatorIndices, state)));
   }

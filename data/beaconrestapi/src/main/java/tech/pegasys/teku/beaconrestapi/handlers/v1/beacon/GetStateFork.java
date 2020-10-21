@@ -39,11 +39,13 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.schema.Fork;
+import tech.pegasys.teku.beaconrestapi.ParameterUtils;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -88,13 +90,20 @@ public class GetStateFork extends AbstractHandler implements Handler {
   public void handle(@NotNull final Context ctx) throws Exception {
     final Map<String, String> pathParams = ctx.pathParamMap();
     try {
-      final Optional<UInt64> maybeSlot =
-          chainDataProvider.stateParameterToSlot(pathParams.get(PARAM_STATE_ID));
-      if (maybeSlot.isEmpty()) {
-        ctx.status(SC_NOT_FOUND);
-        return;
+      chainDataProvider.requireStoreAvailable();
+      String stateIdParam = pathParams.get(PARAM_STATE_ID);
+      final Optional<Bytes32> maybeRoot = ParameterUtils.getPotentialRoot(stateIdParam);
+      SafeFuture<Optional<Fork>> future;
+      if (maybeRoot.isPresent()) {
+        future = chainDataProvider.getForkAtStateRoot(maybeRoot.get());
+      } else {
+        final Optional<UInt64> maybeSlot = chainDataProvider.stateParameterToSlot(stateIdParam);
+        if (maybeSlot.isEmpty()) {
+          ctx.status(SC_NOT_FOUND);
+          return;
+        }
+        future = chainDataProvider.getForkAtSlot(maybeSlot.get());
       }
-      SafeFuture<Optional<Fork>> future = chainDataProvider.getForkAtSlot(maybeSlot.get());
       handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
     } catch (ChainDataUnavailableException ex) {
       LOG.trace(ex);

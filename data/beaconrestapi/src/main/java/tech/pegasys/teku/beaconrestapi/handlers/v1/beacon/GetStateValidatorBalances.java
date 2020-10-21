@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_ID;
@@ -28,6 +29,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVA
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -37,14 +39,18 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorBalancesResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
+import tech.pegasys.teku.beaconrestapi.ParameterUtils;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -56,19 +62,19 @@ public class GetStateValidatorBalances extends AbstractHandler implements Handle
   private static final Logger LOG = LogManager.getLogger();
   public static final String ROUTE = "/eth/v1/beacon/states/:state_id/validator_balances";
 
-  private final ChainDataProvider provider;
+  private final ChainDataProvider chainDataProvider;
   private final StateValidatorsUtil stateValidatorsUtil = new StateValidatorsUtil();
 
   public GetStateValidatorBalances(
       final DataProvider dataProvider, final JsonProvider jsonProvider) {
     super(jsonProvider);
-    this.provider = dataProvider.getChainDataProvider();
+    this.chainDataProvider = dataProvider.getChainDataProvider();
   }
 
   GetStateValidatorBalances(
       final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
     super(jsonProvider);
-    this.provider = chainDataProvider;
+    this.chainDataProvider = chainDataProvider;
   }
 
   @OpenApi(
@@ -95,22 +101,33 @@ public class GetStateValidatorBalances extends AbstractHandler implements Handle
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
+    final Map<String, String> pathParams = ctx.pathParamMap();
     try {
-      final UInt64 slot = stateValidatorsUtil.parseStateIdPathParam(provider, ctx);
-
+      chainDataProvider.requireStoreAvailable();
+      String stateIdParam = pathParams.get(PARAM_STATE_ID);
       final List<Integer> validatorIndices =
-          stateValidatorsUtil.parseValidatorsParam(provider, ctx);
+          stateValidatorsUtil.parseValidatorsParam(chainDataProvider, ctx);
 
-      SafeFuture<Optional<GetStateValidatorBalancesResponse>> future =
-          provider
-              .getValidatorsBalances(slot, validatorIndices)
-              .thenApply(result -> result.map(GetStateValidatorBalancesResponse::new));
-
-      ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(provider, slot));
-      if (provider.isFinalized(slot)) {
-        handlePossiblyGoneResult(ctx, future);
+      SafeFuture<Optional<List<ValidatorBalanceResponse>>> future;
+      final Optional<Bytes32> maybeRoot = ParameterUtils.getPotentialRoot(stateIdParam);
+      if (maybeRoot.isPresent()) {
+        future =
+            chainDataProvider.getValidatorsBalancesByStateRoot(maybeRoot.get(), validatorIndices);
+        handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
       } else {
-        handlePossiblyMissingResult(ctx, future);
+        final Optional<UInt64> maybeSlot = chainDataProvider.stateParameterToSlot(stateIdParam);
+        if (maybeSlot.isEmpty()) {
+          ctx.status(SC_NOT_FOUND);
+          return;
+        }
+        UInt64 slot = maybeSlot.get();
+        future = chainDataProvider.getValidatorsBalancesBySlot(slot, validatorIndices);
+        ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(chainDataProvider, slot));
+        if (chainDataProvider.isFinalized(slot)) {
+          handlePossiblyGoneResult(ctx, future, this::handleResult);
+        } else {
+          handlePossiblyMissingResult(ctx, future, this::handleResult);
+        }
       }
     } catch (ChainDataUnavailableException ex) {
       LOG.trace(ex);
@@ -121,5 +138,10 @@ public class GetStateValidatorBalances extends AbstractHandler implements Handle
       ctx.status(SC_BAD_REQUEST);
       ctx.result(BadRequest.badRequest(jsonProvider, ex.getMessage()));
     }
+  }
+
+  private Optional<String> handleResult(Context ctx, final List<ValidatorBalanceResponse> response)
+      throws JsonProcessingException {
+    return Optional.of(jsonProvider.objectToJSON(new GetStateValidatorBalancesResponse(response)));
   }
 }
