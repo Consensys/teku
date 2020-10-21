@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
@@ -44,11 +42,9 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
 import tech.pegasys.teku.api.schema.Root;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 public class GetStateRoot extends AbstractHandler implements Handler {
   private static final Logger LOG = LogManager.getLogger();
@@ -84,21 +80,12 @@ public class GetStateRoot extends AbstractHandler implements Handler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    try {
-      final Function<Bytes32, SafeFuture<Optional<Bytes32>>> rootHandler =
-          (root) -> SafeFuture.completedFuture(Optional.of(root));
-      final Function<UInt64, SafeFuture<Optional<Bytes32>>> slotHandler =
-          chainDataProvider::getStateRootAtSlotV1;
-      processStateEndpointRequest(
-          chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
-    } catch (ChainDataUnavailableException ex) {
-      LOG.trace(ex);
-      ctx.status(SC_SERVICE_UNAVAILABLE);
-    } catch (IllegalArgumentException ex) {
-      LOG.trace(ex);
-      ctx.status(SC_BAD_REQUEST);
-      ctx.result(jsonProvider.objectToJSON(new BadRequest(ex.getMessage())));
-    }
+    final Function<Bytes32, SafeFuture<Optional<Bytes32>>> rootHandler =
+        (root) -> SafeFuture.completedFuture(Optional.of(root));
+    final Function<UInt64, SafeFuture<Optional<Bytes32>>> slotHandler =
+        chainDataProvider::getStateRootAtSlotV1;
+    processStateEndpointRequest(
+        chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
   }
 
   private Optional<String> handleResult(Context ctx, final Bytes32 response)

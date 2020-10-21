@@ -34,7 +34,6 @@ import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
@@ -93,7 +92,6 @@ public class GetStateValidators extends AbstractHandler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final Map<String, String> pathParams = ctx.pathParamMap();
     try {
       final List<Integer> validatorIndices =
           stateValidatorsUtil.parseValidatorsParam(chainDataProvider, ctx);

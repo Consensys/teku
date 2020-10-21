@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.COMMITTEE_INDEX_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.EPOCH;
@@ -55,7 +53,6 @@ import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateEpochCommitteesResponse;
 import tech.pegasys.teku.api.schema.BeaconHead;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -107,30 +104,21 @@ public class GetStateEpochCommittees extends AbstractHandler implements Handler 
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    try {
-      final UInt64 epoch =
-          parseEpochPathParam(chainDataProvider, ctx).orElse(chainDataProvider.getCurrentEpoch());
-      final Optional<UInt64> slotQueryParam = parseSlotQueryParam(chainDataProvider, ctx);
-      final Optional<Integer> indexQueryParam = parseIndexQueryParam(ctx);
-      final Function<Bytes32, SafeFuture<Optional<List<EpochCommitteeResponse>>>> rootHandler =
-          (root) ->
-              chainDataProvider.getCommitteesAtEpochByStateRoot(
-                  root, epoch, slotQueryParam, indexQueryParam);
-      final Function<UInt64, SafeFuture<Optional<List<EpochCommitteeResponse>>>> slotHandler =
-          (slot) ->
-              chainDataProvider.getCommitteesAtEpochBySlotV1(
-                  slot, epoch, slotQueryParam, indexQueryParam);
-      processStateEndpointRequest(
-          chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
-    } catch (ChainDataUnavailableException ex) {
-      LOG.trace(ex);
-      ctx.status(SC_SERVICE_UNAVAILABLE);
-      ctx.result(BadRequest.serviceUnavailable(jsonProvider));
-    } catch (IllegalArgumentException ex) {
-      LOG.trace(ex);
-      ctx.status(SC_BAD_REQUEST);
-      ctx.result(BadRequest.badRequest(jsonProvider, ex.getMessage()));
-    }
+    final UInt64 epoch =
+        parseEpochPathParam(chainDataProvider, ctx).orElse(chainDataProvider.getCurrentEpoch());
+    final Optional<UInt64> slotQueryParam = parseSlotQueryParam(chainDataProvider, ctx);
+    final Optional<Integer> indexQueryParam = parseIndexQueryParam(ctx);
+    final Function<Bytes32, SafeFuture<Optional<List<EpochCommitteeResponse>>>> rootHandler =
+        (root) ->
+            chainDataProvider.getCommitteesAtEpochByStateRoot(
+                root, epoch, slotQueryParam, indexQueryParam);
+
+    final Function<UInt64, SafeFuture<Optional<List<EpochCommitteeResponse>>>> slotHandler =
+        (slot) ->
+            chainDataProvider.getCommitteesAtEpochBySlotV1(
+                slot, epoch, slotQueryParam, indexQueryParam);
+    processStateEndpointRequest(
+        chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
   }
 
   public Optional<Integer> parseIndexQueryParam(final Context ctx) {

@@ -38,6 +38,7 @@ import io.javalin.plugin.openapi.annotations.OpenApiResponse;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -98,13 +99,14 @@ public class GetStateValidatorBalances extends AbstractHandler implements Handle
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     try {
-      final List<Integer> validatorIndices =
-          stateValidatorsUtil.parseValidatorsParam(chainDataProvider, ctx);
+      final Supplier<List<Integer>> getValidatorIndices =
+          () -> stateValidatorsUtil.parseValidatorsParam(chainDataProvider, ctx);
 
       final Function<Bytes32, SafeFuture<Optional<List<ValidatorBalanceResponse>>>> rootHandler =
-          (root) -> chainDataProvider.getValidatorsBalancesByStateRoot(root, validatorIndices);
+          (root) ->
+              chainDataProvider.getValidatorsBalancesByStateRoot(root, getValidatorIndices.get());
       final Function<UInt64, SafeFuture<Optional<List<ValidatorBalanceResponse>>>> slotHandler =
-          (slot) -> chainDataProvider.getValidatorsBalancesBySlot(slot, validatorIndices);
+          (slot) -> chainDataProvider.getValidatorsBalancesBySlot(slot, getValidatorIndices.get());
 
       processStateEndpointRequest(
           chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
