@@ -60,7 +60,7 @@ public class PostAttestation implements Handler {
       description =
           "Submit a signed attestation to the beacon node to be validated and submitted if valid.\n\n"
               + "This endpoint does not protected against slashing. Signing the attestation can result in a slashable offence.\n\n"
-              + "Deprecated - use `/eth/v1/validator/attestation_data` instead.",
+              + "Deprecated - use `/eth/v1/beacon/pool/attestations` instead.",
       responses = {
         @OpenApiResponse(
             status = RES_NO_CONTENT,
