@@ -74,7 +74,6 @@ public class GetStateEpochCommittees extends AbstractHandler implements Handler 
       "/eth/v1/beacon/states/:state_id/committees/";
 
   private final ChainDataProvider chainDataProvider;
-  private final StateValidatorsUtil stateValidatorsUtil = new StateValidatorsUtil();
 
   public GetStateEpochCommittees(final DataProvider dataProvider, final JsonProvider jsonProvider) {
     super(jsonProvider);
