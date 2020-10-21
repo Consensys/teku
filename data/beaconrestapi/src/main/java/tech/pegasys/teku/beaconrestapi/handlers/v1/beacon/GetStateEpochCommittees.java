@@ -13,11 +13,37 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.javalin.http.Context;
+import io.javalin.http.Handler;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
+import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateEpochCommitteesResponse;
+import tech.pegasys.teku.api.schema.BeaconHead;
+import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
+import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
+import tech.pegasys.teku.util.config.Constants;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
+
 import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.COMMITTEE_INDEX_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.EPOCH;
@@ -36,36 +62,6 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SLOT_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.INVALID_NUMERIC_VALUE;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.core.util.Header;
-import io.javalin.http.Context;
-import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
-import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.api.ChainDataProvider;
-import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateEpochCommitteesResponse;
-import tech.pegasys.teku.api.schema.BeaconHead;
-import tech.pegasys.teku.beaconrestapi.ParameterUtils;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.beaconrestapi.schema.BadRequest;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
-import tech.pegasys.teku.util.config.Constants;
 
 public class GetStateEpochCommittees extends AbstractHandler implements Handler {
   private static final Logger LOG = LogManager.getLogger();
@@ -112,41 +108,15 @@ public class GetStateEpochCommittees extends AbstractHandler implements Handler 
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final Map<String, String> pathParams = ctx.pathParamMap();
     try {
-      chainDataProvider.requireStoreAvailable();
-      final UInt64 epoch =
-          parseEpochPathParam(chainDataProvider, ctx).orElse(chainDataProvider.getCurrentEpoch());
-      String stateIdParam = pathParams.get(PARAM_STATE_ID);
-      checkArgument(stateIdParam != null, "State_id argument could not be find.");
-
+      final UInt64 epoch = parseEpochPathParam(chainDataProvider, ctx).orElse(chainDataProvider.getCurrentEpoch());
       final Optional<UInt64> slotQueryParam = parseSlotQueryParam(chainDataProvider, ctx);
       final Optional<Integer> indexQueryParam = parseIndexQueryParam(ctx);
-
-      SafeFuture<Optional<List<EpochCommitteeResponse>>> future;
-      final Optional<Bytes32> maybeRoot = ParameterUtils.getPotentialRoot(stateIdParam);
-      if (maybeRoot.isPresent()) {
-        future =
-            chainDataProvider.getCommitteesAtEpochByStateRoot(
-                maybeRoot.get(), epoch, slotQueryParam, indexQueryParam);
-        handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
-      } else {
-        final Optional<UInt64> maybeSlot = chainDataProvider.stateParameterToSlot(stateIdParam);
-        if (maybeSlot.isEmpty()) {
-          ctx.status(SC_NOT_FOUND);
-          return;
-        }
-        UInt64 slot = maybeSlot.get();
-        future =
-            chainDataProvider.getCommitteesAtEpochBySlotV1(
-                slot, epoch, slotQueryParam, indexQueryParam);
-        ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(chainDataProvider, slot));
-        if (chainDataProvider.isFinalized(slot)) {
-          handlePossiblyGoneResult(ctx, future, this::handleResult);
-        } else {
-          handlePossiblyMissingResult(ctx, future, this::handleResult);
-        }
-      }
+      final Function<Bytes32, SafeFuture<Optional<List<EpochCommitteeResponse>>>> rootHandler = (root) ->
+              chainDataProvider.getCommitteesAtEpochByStateRoot(root, epoch, slotQueryParam, indexQueryParam);
+      final Function<UInt64, SafeFuture<Optional<List<EpochCommitteeResponse>>>> slotHandler = (slot) ->
+              chainDataProvider.getCommitteesAtEpochBySlotV1(slot, epoch, slotQueryParam, indexQueryParam);
+      processStateEndpointRequest(chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
     } catch (ChainDataUnavailableException ex) {
       LOG.trace(ex);
       ctx.status(SC_SERVICE_UNAVAILABLE);

@@ -13,14 +13,25 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers;
 
-import static javax.servlet.http.HttpServletResponse.SC_GONE;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-
+import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.beaconrestapi.ParameterUtils;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static javax.servlet.http.HttpServletResponse.SC_GONE;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
 
 public abstract class AbstractHandler implements Handler {
 
@@ -28,6 +39,39 @@ public abstract class AbstractHandler implements Handler {
 
   protected AbstractHandler(final JsonProvider jsonProvider) {
     this.jsonProvider = jsonProvider;
+  }
+
+  public <T> void processStateEndpointRequest(
+          final ChainDataProvider provider,
+          final Context ctx,
+          final Function<Bytes32, SafeFuture<Optional<T>>> rootHandler,
+          final Function<UInt64, SafeFuture<Optional<T>>> slotHandler,
+          final AbstractHandler.ResultProcessor<T> resultProcessor) {
+    final Map<String, String> pathParams = ctx.pathParamMap();
+    provider.requireStoreAvailable();
+    String stateIdParam = pathParams.get(PARAM_STATE_ID);
+    checkArgument(stateIdParam != null, "State_id argument could not be find.");
+
+    SafeFuture<Optional<T>> future;
+    final Optional<Bytes32> maybeRoot = ParameterUtils.getPotentialRoot(stateIdParam);
+    if (maybeRoot.isPresent()) {
+      future = rootHandler.apply(maybeRoot.get());
+      handleOptionalResult(ctx, future, resultProcessor, SC_NOT_FOUND);
+    } else {
+      final Optional<UInt64> maybeSlot = provider.stateParameterToSlot(stateIdParam);
+      if (maybeSlot.isEmpty()) {
+        ctx.status(SC_NOT_FOUND);
+        return;
+      }
+      UInt64 slot = maybeSlot.get();
+      future = slotHandler.apply(slot);
+      ctx.header(Header.CACHE_CONTROL, getMaxAgeForSlot(provider, slot));
+      if (provider.isFinalized(slot)) {
+        handlePossiblyGoneResult(ctx, future, resultProcessor);
+      } else {
+        handlePossiblyMissingResult(ctx, future, resultProcessor);
+      }
+    }
   }
 
   protected <T> void handlePossiblyMissingResult(
