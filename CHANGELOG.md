@@ -5,7 +5,7 @@ we recommend most users use the latest `master` branch of Teku.
 
 ## Upcoming Breaking Changes
 
-- REST API endpoints will be updated to match emerging standards in a future release. Current replacements:
+- REST API endpoints are being migrated to the standard API. Deprecated endpoints will be removed in a future release. Current replacements:
   - GET `/eth/v1/beacon/states/{state_id}/validators/{validator_id}` replaced by POST `/eth/v1/beacon/states/{state_id}/validators/{validator_id}`
   - `/network/enr` replaced by `/eth/v1/node/identity`
   - `/network/listen_addresses` replaced by `/eth/v1/node/identity`
@@ -34,7 +34,7 @@ we recommend most users use the latest `master` branch of Teku.
 ### Additions and Improvements
 - Teku now supports running the validator client as a separate process via the `teku validator-client` subcommand. The in-process validator client is still supported. 
   
-  **IMPORTANT**: Ensure validator keys are only passed as arguments to *either* the beacon node or the validator client but never both at the same time.
+  **IMPORTANT**: To avoid being slashed, ensure validator keys are only passed as arguments to *either* the beacon node or the validator client but never both at the same time.
 - Migrates to a new directory structure for data storage to provide clear separation between beacon node and validator files. Existing databases will be automatically migrated.
 - Improved management of states to reduce on-heap memory usage during long periods of non-finalization.
 - Head update and chain reorg events are no longer published during sync. A single coalesced event is published when sync completes.
@@ -57,7 +57,7 @@ we recommend most users use the latest `master` branch of Teku.
 - `/eth/v1/validator/duties/attester/:epoch` now includes the `committees_at_slot` value.
 - `/eth/v1/validator/duties/attester/:epoch` now supports using the `POST` method to specify validator IDs, avoiding URL length limits.
 - The beacon node now automatically manages persistent subnet subscriptions based on the requests to `/eth/v1/validator/beacon_committee_subscriptions` endpoint
-- Log to the console if the ETH1 node's chain ID doesn't match the expected value from the ETH2 network definition. This alerts users if the ETH1 node is sync'd to the wrong ETH1 network. Thanks to @systemfreund.
+- Log to the console if the ETH1 node's chain ID doesn't match the expected value from the ETH2 network definition. This alerts users if the ETH1 node is sync'd to the wrong ETH1 network. Thanks to `systemfreund`.
 - Performance tracker reports now include information on duties which could not be performed due to an error.
 - Added support for v1.0.0-rc.0 of the beacon chain spec.
 - Added a `beacon_attestation_pool_size` metric to report the number of attestations held in the attestation pool.
