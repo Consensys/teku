@@ -663,17 +663,6 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void parameterToSlot_shouldParseBlockRoot() {
-    final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElse(Bytes32.ZERO);
-    final ChainDataProvider provider =
-        new ChainDataProvider(recentChainData, combinedChainDataClient);
-
-    Optional<UInt64> result = provider.parameterToSlot(blockRoot.toHexString());
-    assertThat(result.isPresent()).isTrue();
-    assertThat(result.get()).isEqualTo(recentChainData.getHeadBlock().get().getSlot());
-  }
-
-  @Test
   public void getBlockHeaders_shouldGetHeadBlockIfNoParameters()
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider =
