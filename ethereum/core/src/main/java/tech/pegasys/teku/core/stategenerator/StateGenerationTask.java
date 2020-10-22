@@ -13,15 +13,12 @@
 
 package tech.pegasys.teku.core.stategenerator;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.core.lookup.BlockProvider;
-import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.core.stategenerator.CachingTaskQueue.CacheableTask;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
@@ -30,28 +27,19 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 public class StateGenerationTask implements CacheableTask<Bytes32, SignedBlockAndState> {
   private static final Logger LOG = LogManager.getLogger();
   private final HashTree tree;
-  private final SignedBlockAndState baseBlockAndState;
-  protected final Optional<Bytes32> epochBoundaryRoot;
   private final BlockProvider blockProvider;
-  protected final StateAndBlockProvider stateAndBlockProvider;
   private final Bytes32 blockRoot;
+  private final StateRegenerationBaseSelector baseSelector;
 
   public StateGenerationTask(
       final Bytes32 blockRoot,
       final HashTree tree,
-      final SignedBlockAndState baseBlockAndState,
-      final Optional<Bytes32> epochBoundaryRoot,
       final BlockProvider blockProvider,
-      final StateAndBlockProvider stateAndBlockProvider) {
-    checkArgument(
-        tree.getRootHash().equals(baseBlockAndState.getRoot()),
-        "Tree must be rooted at the base block");
+      final StateRegenerationBaseSelector baseSelector) {
     this.tree = tree;
-    this.baseBlockAndState = baseBlockAndState;
-    this.epochBoundaryRoot = epochBoundaryRoot;
     this.blockProvider = blockProvider;
-    this.stateAndBlockProvider = stateAndBlockProvider;
     this.blockRoot = blockRoot;
+    this.baseSelector = baseSelector;
   }
 
   @Override
@@ -82,42 +70,27 @@ public class StateGenerationTask implements CacheableTask<Bytes32, SignedBlockAn
           newBaseBlockAndState.getSlot());
       return this;
     }
-    final HashTree treeFromAncestor =
-        tree.withRoot(newBaseRoot).block(newBaseBlockAndState.getBlock()).build();
     return new StateGenerationTask(
         blockRoot,
-        treeFromAncestor,
-        newBaseBlockAndState,
-        epochBoundaryRoot.filter(treeFromAncestor::contains),
+        tree,
         blockProvider,
-        stateAndBlockProvider);
-  }
-
-  private SafeFuture<StateGenerationTask> resolveAgainstLatestEpochBoundary() {
-    SafeFuture<Optional<SignedBlockAndState>> epochBoundaryBaseFuture =
-        epochBoundaryRoot
-            .map(stateAndBlockProvider::getBlockAndState)
-            .orElseGet(() -> SafeFuture.completedFuture(Optional.empty()));
-
-    return epochBoundaryBaseFuture.thenApply(
-        newBase -> {
-          if (newBase.isEmpty()) {
-            return this;
-          }
-          return rebase(newBase.get());
-        });
+        baseSelector.withRebasedStartingPoint(newBaseBlockAndState));
   }
 
   @Override
   public SafeFuture<Optional<SignedBlockAndState>> performTask() {
-    return resolveAgainstLatestEpochBoundary()
-        .thenCompose(StateGenerationTask::regenerateState)
-        .thenApply(Optional::of);
+    return baseSelector.getBestBase().thenCompose(this::regenerateState);
   }
 
-  protected SafeFuture<SignedBlockAndState> regenerateState() {
-    final StateGenerator stateGenerator =
-        StateGenerator.create(tree, baseBlockAndState, blockProvider);
-    return stateGenerator.regenerateStateForBlock(blockRoot);
+  protected SafeFuture<Optional<SignedBlockAndState>> regenerateState(
+      final Optional<SignedBlockAndState> maybeBase) {
+    if (maybeBase.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    final SignedBlockAndState base = maybeBase.get();
+    return StateGenerator.create(
+            tree.withRoot(base.getRoot()).block(base.getBlock()).build(), base, blockProvider)
+        .regenerateStateForBlock(blockRoot)
+        .thenApply(Optional::of);
   }
 }

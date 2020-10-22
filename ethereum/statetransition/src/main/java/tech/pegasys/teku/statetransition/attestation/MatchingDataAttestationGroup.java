@@ -99,6 +99,10 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
     return attestationsByValidatorCount.isEmpty();
   }
 
+  public long size() {
+    return attestationsByValidatorCount.values().stream().map(Set::size).reduce(0, Integer::sum);
+  }
+
   /**
    * Removes any attestation from this group whose validators are all included in the specified
    * attestation. Attestations that include some but not all validators in the specified attestation

@@ -104,7 +104,14 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     final UInt64 firstValidAttestationSlot = slot.minus(attestationRetentionSlots);
     final Collection<Set<Bytes>> dataHashesToRemove =
         dataHashBySlot.headMap(firstValidAttestationSlot, false).values();
-    dataHashesToRemove.stream().flatMap(Set::stream).forEach(attestationGroupByDataHash::remove);
+    dataHashesToRemove.stream()
+        .flatMap(Set::stream)
+        .forEach(
+            key -> {
+              final int removed = Math.toIntExact(attestationGroupByDataHash.get(key).size());
+              attestationGroupByDataHash.remove(key);
+              updateSize(-removed);
+            });
     dataHashesToRemove.clear();
   }
 

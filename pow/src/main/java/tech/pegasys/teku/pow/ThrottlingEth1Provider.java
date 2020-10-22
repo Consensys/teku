@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.pow;
 
+import java.math.BigInteger;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Supplier;
@@ -61,6 +62,11 @@ public class ThrottlingEth1Provider implements Eth1Provider {
   public SafeFuture<EthCall> ethCall(
       final String from, final String to, final String data, final UInt64 blockNumber) {
     return queueRequest(() -> delegate.ethCall(from, to, data, blockNumber));
+  }
+
+  @Override
+  public SafeFuture<BigInteger> getChainId() {
+    return queueRequest(delegate::getChainId);
   }
 
   private <T> SafeFuture<T> queueRequest(final Supplier<SafeFuture<T>> request) {

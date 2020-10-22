@@ -80,6 +80,11 @@ public class SyncSourceBatch implements Batch {
   }
 
   @Override
+  public UInt64 getCount() {
+    return count;
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getFirstBlock() {
     return blocks.isEmpty() ? Optional.empty() : Optional.of(blocks.get(0));
   }

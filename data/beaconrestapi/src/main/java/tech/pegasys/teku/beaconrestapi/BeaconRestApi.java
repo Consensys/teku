@@ -64,8 +64,11 @@ import tech.pegasys.teku.beaconrestapi.handlers.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.node.GetVersion;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateEpochCommittees;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFinalityCheckpoints;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidatorBalances;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttestationData;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
@@ -313,8 +316,17 @@ public class BeaconRestApi {
         new tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateRoot(
             dataProvider, jsonProvider));
     app.get(GetStateFork.ROUTE, new GetStateFork(dataProvider, jsonProvider));
+    app.get(
+        GetStateFinalityCheckpoints.ROUTE,
+        new GetStateFinalityCheckpoints(dataProvider, jsonProvider));
     app.get(GetStateValidator.ROUTE, new GetStateValidator(dataProvider, jsonProvider));
     app.get(GetStateValidators.ROUTE, new GetStateValidators(dataProvider, jsonProvider));
+    app.get(
+        GetStateValidatorBalances.ROUTE, new GetStateValidatorBalances(dataProvider, jsonProvider));
+    GetStateEpochCommittees getStateEpochCommittees =
+        new GetStateEpochCommittees(dataProvider, jsonProvider);
+    app.get(GetStateEpochCommittees.ROUTE_WITH_EPOCH_PARAM, getStateEpochCommittees);
+    app.get(GetStateEpochCommittees.ROUTE_WITHOUT_EPOCH_PARAM, getStateEpochCommittees);
     app.post(
         tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock.ROUTE,
         new tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock(
