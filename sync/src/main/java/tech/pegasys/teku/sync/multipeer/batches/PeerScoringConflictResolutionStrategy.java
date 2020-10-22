@@ -26,7 +26,8 @@ public class PeerScoringConflictResolutionStrategy implements ConflictResolution
 
   @Override
   public void verifyBatch(final Batch batch, final SyncSource originalSource) {
-    LOG.debug("Invalidating batch {}", batch);
+    LOG.debug(
+        "Applying minor penalty to peer because of contested batch {} and redownloading", batch);
     // We aren't sure if this peer is providing bad blocks or some other peer, so apply a small
     // penalty to the peer and re-download the data for the batch. If the peer is honest, it should
     // have more confirmed batches than contested and the small penalty to reputation won't matter.
@@ -37,7 +38,7 @@ public class PeerScoringConflictResolutionStrategy implements ConflictResolution
 
   @Override
   public void reportInvalidBatch(final Batch batch, final SyncSource source) {
-    LOG.debug("Disconnecting peer {} for providing invalid batch data {}", source, batch);
+    LOG.debug("Penalising peer {} for providing invalid batch data {}", source, batch);
     source.adjustReputation(LARGE_PENALTY);
   }
 
