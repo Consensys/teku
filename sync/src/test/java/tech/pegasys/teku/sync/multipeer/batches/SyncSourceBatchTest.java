@@ -405,6 +405,36 @@ public class SyncSourceBatchTest {
   }
 
   @Test
+  void markFirstBlockConfirmed_shouldNotifyConflictResolutionStrategyWhenFirstConfirmed() {
+    final Batch batch = createBatch(10, 10);
+    batch.requestMoreBlocks(() -> {});
+    batch.markLastBlockConfirmed();
+    verifyNoMoreInteractions(conflictResolutionStrategy);
+
+    batch.markFirstBlockConfirmed();
+    verify(conflictResolutionStrategy).reportConfirmedBatch(batch, batch.getSource().orElseThrow());
+
+    // Only notifies the first time
+    batch.markFirstBlockConfirmed();
+    verifyNoMoreInteractions(conflictResolutionStrategy);
+  }
+
+  @Test
+  void markLastBlockConfirmed_shouldNotifyConflictResolutionStrategyWhenFirstConfirmed() {
+    final Batch batch = createBatch(10, 10);
+    batch.requestMoreBlocks(() -> {});
+    batch.markFirstBlockConfirmed();
+    verifyNoMoreInteractions(conflictResolutionStrategy);
+
+    batch.markLastBlockConfirmed();
+    verify(conflictResolutionStrategy).reportConfirmedBatch(batch, batch.getSource().orElseThrow());
+
+    // Only notifies the first time
+    batch.markLastBlockConfirmed();
+    verifyNoMoreInteractions(conflictResolutionStrategy);
+  }
+
+  @Test
   void isFirstBlockConfirmed_shouldBeTrueOnlyAfterBeingMarked() {
     final Batch batch = createBatch(1, 3);
     assertThatBatch(batch).hasUnconfirmedFirstBlock();

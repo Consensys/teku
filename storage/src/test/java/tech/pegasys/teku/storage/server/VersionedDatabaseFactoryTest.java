@@ -51,7 +51,7 @@ public class VersionedDatabaseFactoryTest {
   @Test
   public void createDatabase_fromExistingDataDir() throws Exception {
     createDbDirectory(dataDir);
-    createVersionFile(dataDir, DatabaseVersion.V3);
+    createVersionFile(dataDir, DatabaseVersion.V4);
 
     final VersionedDatabaseFactory dbFactory =
         new VersionedDatabaseFactory(
@@ -59,7 +59,7 @@ public class VersionedDatabaseFactoryTest {
     try (final Database db = dbFactory.createDatabase()) {
       assertThat(db).isNotNull();
     }
-    assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V3);
+    assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V4);
   }
 
   @Test
@@ -180,15 +180,6 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, "5", 1L, eth1Address);
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V5);
-  }
-
-  @Test
-  public void createDatabase_shouldAllowV3Database() {
-    createDbDirectory(dataDir);
-    final VersionedDatabaseFactory dbFactory =
-        new VersionedDatabaseFactory(
-            new StubMetricsSystem(), dataDir, DATA_STORAGE_MODE, "3.0", 1L, eth1Address);
-    assertThat(dbFactory.getDatabaseVersion()).isEqualTo(DatabaseVersion.V3);
   }
 
   @Test

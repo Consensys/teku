@@ -33,21 +33,6 @@ public class StorageSystemArgumentsProvider implements ArgumentsProvider {
   public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
     final Map<String, StorageSystemSupplier> storageSystems = new HashMap<>();
     for (StateStorageMode mode : StateStorageMode.values()) {
-      storageSystems.put(
-          "v3 (in-memory)",
-          (dataPath) ->
-              InMemoryStorageSystemBuilder.create()
-                  .version(DatabaseVersion.V3)
-                  .storageMode(mode)
-                  .build());
-      storageSystems.put(
-          "v3 (file-backed)",
-          (dataPath) ->
-              FileBackedStorageSystemBuilder.create()
-                  .version(DatabaseVersion.V3)
-                  .dataDir(dataPath)
-                  .storageMode(mode)
-                  .build());
       for (Long storageFrequency : stateStorageFrequencyOptions) {
         storageSystems.put(
             describeStorage("v4 (in-memory)", storageFrequency),
