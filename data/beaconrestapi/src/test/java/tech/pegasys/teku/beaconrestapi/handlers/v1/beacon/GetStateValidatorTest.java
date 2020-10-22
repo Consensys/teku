@@ -54,7 +54,7 @@ public class GetStateValidatorTest extends AbstractBeaconHandlerTest {
   public void shouldGetValidatorFromState() throws Exception {
     final UInt64 slot = dataStructureUtil.randomUInt64();
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head", "validator_id", "1"));
-    when(chainDataProvider.stateParameterToSlot("head")).thenReturn(Optional.of(slot));
+    when(chainDataProvider.parameterToSlot("head")).thenReturn(Optional.of(slot));
     when(chainDataProvider.validatorParameterToIndex("1")).thenReturn(Optional.of(1));
     when(chainDataProvider.getValidatorDetailsBySlot(slot, Optional.of(1)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(validatorResponse)));

@@ -13,15 +13,6 @@
 
 package tech.pegasys.teku.api;
 
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.api.DataProviderFailures.chainUnavailable;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.response.GetForkResponse;
@@ -30,6 +21,7 @@ import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.BeaconChainHead;
 import tech.pegasys.teku.api.schema.BeaconHead;
@@ -52,6 +44,16 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
+
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.api.DataProviderFailures.chainUnavailable;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 public class ChainDataProvider {
   private final CombinedChainDataClient combinedChainDataClient;
@@ -191,29 +193,67 @@ public class ChainDataProvider {
         .thenApply(block -> block.map(GetBlockResponse::new));
   }
 
-  public SafeFuture<Optional<BlockHeader>> getBlockHeaderByBlockId(final String slotParameter) {
-    if (!isStoreAvailable()) {
-      return chainUnavailable();
-    }
-
-    final Optional<UInt64> maybeSlot = blockParameterToSlot(slotParameter);
-    if (maybeSlot.isEmpty()) {
-      return getBlockHeaderByBlockRoot(Bytes32.fromHexString(slotParameter));
-    }
-
-    final UInt64 slot = maybeSlot.get();
+  public SafeFuture<Optional<Bytes32>> getBlockRootBySlot(final UInt64 slot) {
     return combinedChainDataClient
-        .getBlockAtSlotExact(slot)
-        .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
+            .getBlockInEffectAtSlot(slot)
+            .thenApply(maybeBlock -> maybeBlock.map(tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock::getRoot));
   }
 
-  // because this is called after attempting to match a block to a slot, this function
-  // will only ever be run for non canonical blocks. if made public, it will have to be updated to
-  // first check that the block doesnt have a slot, before it can make that assumption.
-  SafeFuture<Optional<BlockHeader>> getBlockHeaderByBlockRoot(final Bytes32 blockRoot) {
+  public SafeFuture<Optional<SignedBeaconBlock>> getBlockBySlotV1(final UInt64 slot) {
     return combinedChainDataClient
-        .getBlockByBlockRoot(blockRoot)
-        .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, false)));
+            .getBlockInEffectAtSlot(slot)
+            .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::new));
+  }
+
+  public SafeFuture<Optional<SignedBeaconBlock>> getBlockByRoot(final Bytes32 blockRoot) {
+    return combinedChainDataClient
+            .getBlockByBlockRoot(blockRoot)
+            .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::new));
+
+  }
+
+  public SafeFuture<Optional<List<Attestation>>> getBlockAttestationsByRoot(final Bytes32 blockRoot) {
+    return combinedChainDataClient
+            .getBlockByBlockRoot(blockRoot)
+            .thenApply(this::getBlockAttestations);
+  }
+
+  public SafeFuture<Optional<List<Attestation>>> getBlockAttestationsBySlot(final UInt64 slot) {
+    return combinedChainDataClient
+            .getBlockInEffectAtSlot(slot)
+            .thenApply(this::getBlockAttestations);
+  }
+
+  private Optional<List<Attestation>> getBlockAttestations(Optional<tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock> block) {
+    return block.map(tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock::getMessage)
+            .map(tech.pegasys.teku.datastructures.blocks.BeaconBlock::getBody)
+            .map(tech.pegasys.teku.datastructures.blocks.BeaconBlockBody::getAttestations)
+            .map(attestations -> attestations.stream().map(Attestation::new).collect(toList()));
+  }
+
+  public SafeFuture<Optional<BlockHeader>> getBlockHeaderBySlot(final UInt64 slot) {
+    return combinedChainDataClient
+            .getBlockInEffectAtSlot(slot)
+            .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
+  }
+
+  public SafeFuture<Optional<BlockHeader>> getBlockHeaderByRoot(final Bytes32 blockRoot) {
+    return combinedChainDataClient
+            .getBlockByBlockRoot(blockRoot)
+            .thenCompose(maybeBlock -> {
+              if (maybeBlock.isEmpty()) {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+              final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock block = maybeBlock.get();
+              return combinedChainDataClient.getBlockInEffectAtSlot(maybeBlock.get().getSlot())
+                      .thenApply(maybeCanonicalBlock -> maybeCanonicalBlock.map(canonicalBlock -> {
+                        if (canonicalBlock.equals(block)) {
+                          return new BlockHeader(block, true);
+                        } else {
+                          return new BlockHeader(block, false);
+                        }
+                      }));
+            });
   }
 
   public boolean isStoreAvailable() {
@@ -351,37 +391,6 @@ public class ChainDataProvider {
     return recentChainData.getHeadBlockAndState().map(BeaconChainHead::new);
   }
 
-  public Optional<UInt64> blockParameterToSlot(final String pathParam) {
-    if (!isStoreAvailable()) {
-      throw new ChainDataUnavailableException();
-    }
-    try {
-      switch (pathParam) {
-        case ("head"):
-          return recentChainData.getCurrentSlot();
-        case ("genesis"):
-          return Optional.of(UInt64.ZERO);
-        case ("finalized"):
-          return recentChainData.getFinalizedCheckpoint().map(Checkpoint::getEpochStartSlot);
-      }
-      if (pathParam.toLowerCase().startsWith("0x")) {
-        // block root
-        Bytes32 blockRoot = Bytes32.fromHexString(pathParam);
-        return combinedChainDataClient.getSlotByBlockRoot(blockRoot).join();
-      } else {
-        final UInt64 slot = UInt64.valueOf(pathParam);
-        final UInt64 headSlot = recentChainData.getHeadSlot();
-        if (slot.isGreaterThan(headSlot)) {
-          throw new IllegalArgumentException(
-              String.format("Invalid block: %s is beyond head slot %s", slot, headSlot));
-        }
-        return Optional.of(UInt64.valueOf(pathParam));
-      }
-    } catch (NumberFormatException ex) {
-      throw new IllegalArgumentException(String.format("Invalid block: %s", pathParam));
-    }
-  }
-
   public void requireStoreAvailable() {
     if (!isStoreAvailable()) {
       throw new ChainDataUnavailableException();
@@ -389,13 +398,13 @@ public class ChainDataProvider {
   }
 
   /**
-   * Convert a State Parameter {state_id} from a URL to a slot number
+   * Convert a URL to a slot number
    *
    * @param pathParam head, genesis, finalized, justified, &lt;slot&gt;
    * @return Optional slot of the desired state
-   * @throws IllegalArgumentException if state cannot be parsed or is in the future.
+   * @throws IllegalArgumentException if parameter cannot be parsed or is in the future.
    */
-  public Optional<UInt64> stateParameterToSlot(final String pathParam) {
+  public Optional<UInt64> parameterToSlot(final String pathParam) {
     try {
       switch (pathParam) {
         case ("head"):
@@ -411,11 +420,11 @@ public class ChainDataProvider {
       final UInt64 headSlot = recentChainData.getHeadSlot();
       if (slot.isGreaterThan(headSlot)) {
         throw new IllegalArgumentException(
-            String.format("Invalid state: %s is beyond head slot %s", slot, headSlot));
+            String.format("Invalid parameter: %s is beyond head slot %s", slot, headSlot));
       }
       return Optional.of(UInt64.valueOf(pathParam));
     } catch (NumberFormatException ex) {
-      throw new IllegalArgumentException(String.format("Invalid state: %s", pathParam));
+      throw new IllegalArgumentException(String.format("Invalid parameter: %s", pathParam));
     }
   }
 

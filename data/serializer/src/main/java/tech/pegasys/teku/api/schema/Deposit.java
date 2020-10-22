@@ -13,16 +13,18 @@
 
 package tech.pegasys.teku.api.schema;
 
-import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
 public class Deposit {
   @ArraySchema(
@@ -47,5 +49,19 @@ public class Deposit {
   public tech.pegasys.teku.datastructures.operations.Deposit asInternalDeposit() {
     return new tech.pegasys.teku.datastructures.operations.Deposit(
         SSZVector.createMutable(proof, Bytes32.class), data.asInternalDepositData());
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Deposit)) return false;
+    Deposit deposit = (Deposit) o;
+    return Objects.equals(proof, deposit.proof) &&
+            Objects.equals(data, deposit.data);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(proof, data);
   }
 }

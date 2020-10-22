@@ -40,7 +40,7 @@ public class GetStateValidatorBalancesTest extends AbstractBeaconHandlerTest {
     final UInt64 slot = dataStructureUtil.randomUInt64();
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(context.queryParamMap()).thenReturn(Map.of("id", List.of("1", "2", "3,4")));
-    when(chainDataProvider.stateParameterToSlot("head")).thenReturn(Optional.of(slot));
+    when(chainDataProvider.parameterToSlot("head")).thenReturn(Optional.of(slot));
     for (int i = 1; i <= 4; i++) {
       when(chainDataProvider.validatorParameterToIndex(Integer.toString(i)))
           .thenReturn(Optional.of(i));

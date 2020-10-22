@@ -13,14 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
@@ -30,6 +22,15 @@ import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 public class GetStateEpochCommitteesTest extends AbstractBeaconHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -45,7 +46,7 @@ public class GetStateEpochCommitteesTest extends AbstractBeaconHandlerTest {
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head", "epoch", epoch.toString()));
     when(context.queryParam("index")).thenReturn("1");
     when(context.queryParam("slot")).thenReturn(slot.toString());
-    when(chainDataProvider.stateParameterToSlot("head")).thenReturn(Optional.of(slot));
+    when(chainDataProvider.parameterToSlot("head")).thenReturn(Optional.of(slot));
     when(chainDataProvider.getCommitteesAtEpochBySlotV1(
             slot, epoch, Optional.of(slot), Optional.of(1)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(epochCommitteeResponse))));

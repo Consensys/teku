@@ -91,7 +91,7 @@ public class GetStateValidator extends AbstractHandler {
     final Function<UInt64, SafeFuture<Optional<ValidatorResponse>>> slotHandler =
         (slot) -> chainDataProvider.getValidatorDetailsBySlot(slot, getValidatorIndex.get());
 
-    processStateEndpointRequest(
+    this.processBeaconStateEndpointRequest(
         chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
   }
 

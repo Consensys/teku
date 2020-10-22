@@ -13,21 +13,10 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_GONE;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -39,6 +28,19 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static javax.servlet.http.HttpServletResponse.SC_GONE;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
+
 public abstract class AbstractHandler implements Handler {
 
   private static final Logger LOG = LogManager.getLogger();
@@ -49,25 +51,60 @@ public abstract class AbstractHandler implements Handler {
     this.jsonProvider = jsonProvider;
   }
 
-  public <T> void processStateEndpointRequest(
+  public <T> void processBeaconBlockEndpointRequest(
+          final ChainDataProvider provider,
+          final Context ctx,
+          final Function<Bytes32, SafeFuture<Optional<T>>> rootHandler,
+          final Function<UInt64, SafeFuture<Optional<T>>> slotHandler,
+          final AbstractHandler.ResultProcessor<T> resultProcessor)
+          throws JsonProcessingException {
+    processBeaconEndpointRequest(
+            provider,
+            ctx,
+            rootHandler,
+            slotHandler,
+            PARAM_BLOCK_ID,
+            resultProcessor
+    );
+  }
+
+  public <T> void processBeaconStateEndpointRequest(
+          final ChainDataProvider provider,
+          final Context ctx,
+          final Function<Bytes32, SafeFuture<Optional<T>>> rootHandler,
+          final Function<UInt64, SafeFuture<Optional<T>>> slotHandler,
+          final AbstractHandler.ResultProcessor<T> resultProcessor)
+          throws JsonProcessingException {
+    processBeaconEndpointRequest(
+            provider,
+            ctx,
+            rootHandler,
+            slotHandler,
+            PARAM_STATE_ID,
+            resultProcessor
+    );
+  }
+
+  public <T> void processBeaconEndpointRequest(
       final ChainDataProvider provider,
       final Context ctx,
       final Function<Bytes32, SafeFuture<Optional<T>>> rootHandler,
       final Function<UInt64, SafeFuture<Optional<T>>> slotHandler,
+      final String paramId,
       final AbstractHandler.ResultProcessor<T> resultProcessor)
       throws JsonProcessingException {
     try {
       provider.requireStoreAvailable();
       final Map<String, String> pathParams = ctx.pathParamMap();
-      final String stateIdParam = pathParams.get(PARAM_STATE_ID);
-      checkArgument(stateIdParam != null, "State_id argument could not be find.");
+      final String parsedParamId = pathParams.get(paramId);
+      checkArgument(parsedParamId != null, paramId + " argument could not be find.");
 
-      final Optional<Bytes32> maybeRoot = ParameterUtils.getPotentialRoot(stateIdParam);
+      final Optional<Bytes32> maybeRoot = ParameterUtils.getPotentialRoot(parsedParamId);
       if (maybeRoot.isPresent()) {
         SafeFuture<Optional<T>> future = rootHandler.apply(maybeRoot.get());
         handleOptionalResult(ctx, future, resultProcessor, SC_NOT_FOUND);
       } else {
-        final Optional<UInt64> maybeSlot = provider.stateParameterToSlot(stateIdParam);
+        final Optional<UInt64> maybeSlot = provider.parameterToSlot(parsedParamId);
         if (maybeSlot.isEmpty()) {
           ctx.status(SC_NOT_FOUND);
           return;

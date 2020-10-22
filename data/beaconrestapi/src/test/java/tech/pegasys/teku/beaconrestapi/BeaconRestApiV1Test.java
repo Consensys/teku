@@ -13,24 +13,20 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.google.common.eventbus.EventBus;
 import io.javalin.Javalin;
 import io.javalin.core.JavalinServer;
 import io.javalin.http.Handler;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlock;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockAttestations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateEpochCommittees;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFinalityCheckpoints;
@@ -63,6 +59,14 @@ import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.util.config.GlobalConfiguration;
+
+import java.util.stream.Stream;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class BeaconRestApiV1Test {
   private final RecentChainData storageClient = MemoryOnlyRecentChainData.create(new EventBus());
@@ -100,6 +104,9 @@ public class BeaconRestApiV1Test {
 
     // beacon
     builder
+        .add(Arguments.of(GetBlock.ROUTE, GetBlock.class))
+        .add(Arguments.of(GetBlockRoot.ROUTE, GetBlockRoot.class))
+        .add(Arguments.of(GetBlockAttestations.ROUTE, GetBlockAttestations.class))
         .add(Arguments.of(GetBlockHeader.ROUTE, GetBlockHeader.class))
         .add(Arguments.of(GetBlockHeaders.ROUTE, GetBlockHeaders.class))
         .add(Arguments.of(GetGenesis.ROUTE, GetGenesis.class))

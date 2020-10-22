@@ -47,7 +47,7 @@ public class GetStateRootTest extends AbstractBeaconHandlerTest {
     final GetStateRoot handler = new GetStateRoot(chainDataProvider, jsonProvider);
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
-    when(chainDataProvider.stateParameterToSlot("head")).thenReturn(Optional.of(UInt64.ONE));
+    when(chainDataProvider.parameterToSlot("head")).thenReturn(Optional.of(UInt64.ONE));
     when(chainDataProvider.getStateRootAtSlotV1(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(root)));
 

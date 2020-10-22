@@ -82,7 +82,7 @@ public class GetStateRoot extends AbstractHandler implements Handler {
     final Function<UInt64, SafeFuture<Optional<Bytes32>>> slotHandler =
         chainDataProvider::getStateRootAtSlotV1;
 
-    processStateEndpointRequest(
+    this.processBeaconStateEndpointRequest(
         chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
   }
 

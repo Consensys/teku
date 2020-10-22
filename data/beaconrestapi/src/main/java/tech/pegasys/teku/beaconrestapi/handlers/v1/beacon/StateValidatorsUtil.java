@@ -35,7 +35,7 @@ public class StateValidatorsUtil {
 
   public UInt64 parseStateIdPathParam(final ChainDataProvider provider, final Context ctx) {
     return provider
-        .stateParameterToSlot(ctx.pathParamMap().get(PARAM_STATE_ID))
+        .parameterToSlot(ctx.pathParamMap().get(PARAM_STATE_ID))
         .orElseThrow(ChainDataUnavailableException::new);
   }
 }

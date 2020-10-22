@@ -84,7 +84,7 @@ public class GetStateFork extends AbstractHandler implements Handler {
     final Function<UInt64, SafeFuture<Optional<Fork>>> slotHandler =
         chainDataProvider::getForkAtSlot;
 
-    processStateEndpointRequest(
+    this.processBeaconStateEndpointRequest(
         chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
   }
 

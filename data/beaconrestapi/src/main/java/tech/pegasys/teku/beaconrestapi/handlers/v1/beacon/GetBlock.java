@@ -25,8 +25,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.BlockHeader;
-import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetBlockResponse;
+import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -43,47 +43,47 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
 
-public class GetBlockHeader extends AbstractHandler implements Handler {
-  public static final String ROUTE = "/eth/v1/beacon/headers/:block_id";
+public class GetBlock extends AbstractHandler implements Handler {
+  public static final String ROUTE = "/eth/v1/beacon/blocks/:block_id";
   private final ChainDataProvider chainDataProvider;
 
-  public GetBlockHeader(final DataProvider dataProvider, final JsonProvider jsonProvider) {
+  public GetBlock(final DataProvider dataProvider, final JsonProvider jsonProvider) {
     this(dataProvider.getChainDataProvider(), jsonProvider);
   }
 
-  public GetBlockHeader(
-      final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
+  public GetBlock(
+          final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
     super(jsonProvider);
     this.chainDataProvider = chainDataProvider;
   }
 
   @OpenApi(
-      path = ROUTE,
-      method = HttpMethod.GET,
-      summary = "Get block header",
-      tags = {TAG_V1_BEACON},
-      description = "Retrieves block header for given block id.",
-      pathParams = {@OpenApiParam(name = PARAM_BLOCK_ID, description = PARAM_BLOCK_ID_DESCRIPTION)},
-      responses = {
-        @OpenApiResponse(
-            status = RES_OK,
-            content = @OpenApiContent(from = GetBlockHeaderResponse.class)),
-        @OpenApiResponse(status = RES_BAD_REQUEST),
-        @OpenApiResponse(status = RES_NOT_FOUND),
-        @OpenApiResponse(status = RES_INTERNAL_ERROR)
-      })
+          path = ROUTE,
+          method = HttpMethod.GET,
+          summary = "Get block",
+          tags = {TAG_V1_BEACON},
+          description = "Retrieves block details for given block id.",
+          pathParams = {@OpenApiParam(name = PARAM_BLOCK_ID, description = PARAM_BLOCK_ID_DESCRIPTION)},
+          responses = {
+                  @OpenApiResponse(
+                          status = RES_OK,
+                          content = @OpenApiContent(from = GetBlockResponse.class)),
+                  @OpenApiResponse(status = RES_BAD_REQUEST),
+                  @OpenApiResponse(status = RES_NOT_FOUND),
+                  @OpenApiResponse(status = RES_INTERNAL_ERROR)
+          })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final Function<UInt64, SafeFuture<Optional<BlockHeader>>> slotHandler =
-            chainDataProvider::getBlockHeaderBySlot;
-    final Function<Bytes32, SafeFuture<Optional<BlockHeader>>> rootHandler =
-            chainDataProvider::getBlockHeaderByRoot;
+    final Function<UInt64, SafeFuture<Optional<SignedBeaconBlock>>> slotHandler =
+            chainDataProvider::getBlockBySlotV1;
+    final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> rootHandler =
+            chainDataProvider::getBlockByRoot;
 
     processBeaconBlockEndpointRequest(chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
   }
 
-  private Optional<String> handleResult(Context ctx, final BlockHeader response)
-      throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(new GetBlockHeaderResponse(response)));
+  private Optional<String> handleResult(Context ctx, final SignedBeaconBlock response)
+          throws JsonProcessingException {
+    return Optional.of(jsonProvider.objectToJSON(new GetBlockResponse(response)));
   }
 }

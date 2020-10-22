@@ -51,7 +51,7 @@ public class GetStateFinalityCheckpointsTest extends AbstractBeaconHandlerTest {
         new GetStateFinalityCheckpoints(chainDataProvider, jsonProvider);
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(chainDataProvider.isStoreAvailable()).thenReturn(true);
-    when(chainDataProvider.stateParameterToSlot("head")).thenReturn(Optional.of(UInt64.ONE));
+    when(chainDataProvider.parameterToSlot("head")).thenReturn(Optional.of(UInt64.ONE));
     when(chainDataProvider.getStateFinalityCheckpointsBySlot(any()))
         .thenReturn(
             SafeFuture.completedFuture(Optional.of(FinalityCheckpointsResponse.fromState(state))));

@@ -68,7 +68,7 @@ public class AbstractStateHandlerTest extends AbstractBeaconHandlerTest {
   @Test
   public void shouldDealCorrectlyWithTheExceptionOccurringInTheSlotHandler() throws Exception {
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
-    when(chainDataProvider.stateParameterToSlot("head")).thenReturn(Optional.of(UInt64.ONE));
+    when(chainDataProvider.parameterToSlot("head")).thenReturn(Optional.of(UInt64.ONE));
     final AbstractHandler handler =
         createHandler(
             Optional.empty(),
@@ -106,7 +106,7 @@ public class AbstractStateHandlerTest extends AbstractBeaconHandlerTest {
 
       @Override
       public void handle(@NotNull Context ctx) throws Exception {
-        processStateEndpointRequest(
+        this.processBeaconStateEndpointRequest(
             chainDataProvider,
             ctx,
             maybeRootHandler.orElse(defaultRootHandler),
