@@ -39,4 +39,13 @@ public interface ConflictResolutionStrategy {
    * @param source the source that provided the batch data
    */
   void reportInvalidBatch(Batch batch, SyncSource source);
+
+  /**
+   * Report that a batch was confirmed as part of the target chain. This is called before the blocks
+   * are actually imported and only indicates that the first and last block matches the
+   *
+   * @param batch the confirmed batch
+   * @param source the
+   */
+  void reportConfirmedBatch(Batch batch, SyncSource source);
 }
