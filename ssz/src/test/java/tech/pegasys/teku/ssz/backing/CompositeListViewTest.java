@@ -49,6 +49,11 @@ public class CompositeListViewTest {
         public int getBitsSize() {
           return 256;
         }
+
+        @Override
+        public boolean isFixedSize() {
+          return true;
+        }
       };
 
   static class TestView implements ViewRead {
