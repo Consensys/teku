@@ -30,7 +30,7 @@ import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
-public class ReputationManager implements ReputationAdjustmentHandler {
+public class ReputationManager {
   static final UInt64 FAILURE_BAN_PERIOD = UInt64.valueOf(TimeUnit.MINUTES.toSeconds(2));
 
   static final int LARGE_CHANGE = 10;
@@ -83,7 +83,6 @@ public class ReputationManager implements ReputationAdjustmentHandler {
    * @param effect the reputation change to apply.
    * @return true if the peer should be disconnected, otherwise false.
    */
-  @Override
   public boolean adjustReputation(
       final PeerAddress peerAddress, final ReputationAdjustment effect) {
     return getOrCreateReputation(peerAddress).adjustReputation(effect);

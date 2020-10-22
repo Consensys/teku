@@ -73,7 +73,6 @@ import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
-import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustmentHandler;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.util.cli.VersionProvider;
@@ -323,10 +322,5 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   @Override
   public Map<String, Collection<NodeId>> getSubscribersByTopic() {
     return gossipNetwork.getSubscribersByTopic();
-  }
-
-  @Override
-  public ReputationAdjustmentHandler getReputationAdjustmentHandler() {
-    return peerManager.getReputationAdjustmentHandler();
   }
 }

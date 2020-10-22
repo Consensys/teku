@@ -24,8 +24,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.RateTracker;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
-import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 
 public class ThrottlingSyncSource implements SyncSource {
   private static final Logger LOG = LogManager.getLogger();
@@ -65,8 +65,8 @@ public class ThrottlingSyncSource implements SyncSource {
   }
 
   @Override
-  public PeerAddress getAddress() {
-    return delegate.getAddress();
+  public void adjustReputation(final ReputationAdjustment adjustment) {
+    delegate.adjustReputation(adjustment);
   }
 
   @Override
