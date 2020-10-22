@@ -19,15 +19,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
+import com.google.common.collect.Streams;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.teku.core.ChainBuilder;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
@@ -259,5 +262,71 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
             historicalStates.values().stream().map(BeaconState::getSlot).collect(toList()));
         break;
     }
+  }
+
+  @Test
+  public void shouldHandleRestartWithUnrecoverableForkBlocks_archive(@TempDir final Path tempDir)
+      throws Exception {
+    testShouldHandleRestartWithUnrecoverableForkBlocks(tempDir, StateStorageMode.ARCHIVE);
+  }
+
+  @Test
+  public void shouldHandleRestartWithUnrecoverableForkBlocks_prune(@TempDir final Path tempDir)
+      throws Exception {
+    testShouldHandleRestartWithUnrecoverableForkBlocks(tempDir, StateStorageMode.PRUNE);
+  }
+
+  private void testShouldHandleRestartWithUnrecoverableForkBlocks(
+      @TempDir final Path tempDir, final StateStorageMode storageMode) throws Exception {
+    // Setup chains
+    // Both chains share block up to slot 3
+    final ChainBuilder primaryChain = ChainBuilder.create(VALIDATOR_KEYS);
+    primaryChain.generateGenesis(genesisTime, true);
+    primaryChain.generateBlocksUpToSlot(3);
+    final ChainBuilder forkChain = primaryChain.fork();
+    // Primary chain's next block is at 7
+    final SignedBlockAndState finalizedBlock = primaryChain.generateBlockAtSlot(7);
+    final Checkpoint finalizedCheckpoint = getCheckpointForBlock(primaryChain.getBlockAtSlot(7));
+    final UInt64 firstHotBlockSlot = finalizedCheckpoint.getEpochStartSlot().plus(UInt64.ONE);
+    primaryChain.generateBlockAtSlot(firstHotBlockSlot);
+    // Fork chain's next block is at 6
+    forkChain.generateBlockAtSlot(6);
+    forkChain.generateBlockAtSlot(firstHotBlockSlot);
+
+    // Setup database
+    createStorage(tempDir.toFile(), storageMode);
+    initGenesis();
+
+    final Set<SignedBlockAndState> allBlocksAndStates =
+        Streams.concat(primaryChain.streamBlocksAndStates(), forkChain.streamBlocksAndStates())
+            .collect(Collectors.toSet());
+
+    // Finalize at block 7, making the fork blocks unavailable
+    add(allBlocksAndStates);
+    justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock);
+
+    // Close database and rebuild from disk
+    restartStorage();
+
+    // We should be able to access primary hot blocks and state
+    final List<SignedBlockAndState> expectedHotBlocksAndStates =
+        primaryChain
+            .streamBlocksAndStates(finalizedBlock.getSlot(), chainBuilder.getLatestSlot())
+            .collect(toList());
+    assertHotBlocksAndStatesInclude(expectedHotBlocksAndStates);
+
+    // Fork states should be unavailable
+    final List<Bytes32> unavailableBlockRoots =
+        forkChain
+            .streamBlocksAndStates(4, firstHotBlockSlot.longValue())
+            .map(SignedBlockAndState::getRoot)
+            .collect(Collectors.toList());
+    final List<UInt64> unavailableBlockSlots =
+        forkChain
+            .streamBlocksAndStates(4, firstHotBlockSlot.longValue())
+            .map(SignedBlockAndState::getSlot)
+            .collect(Collectors.toList());
+    assertStatesUnavailable(unavailableBlockSlots);
+    assertBlocksUnavailable(unavailableBlockRoots);
   }
 }
