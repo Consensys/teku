@@ -84,14 +84,6 @@ public class GetBlockHeaders extends AbstractHandler implements Handler {
         SingleQueryParameterUtils.getParameterValueAsBytes32IfPresent(queryParameters, PARENT_ROOT);
     final Optional<UInt64> slot =
         SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent(queryParameters, SLOT);
-
-    if (parentRoot.isPresent() && slot.isPresent()) {
-      ctx.status(SC_BAD_REQUEST);
-      ctx.result(
-          BadRequest.badRequest(
-              jsonProvider, "Either supply parent_root, slot, or neither, but not both."));
-      return;
-    }
     try {
       ctx.result(
           chainDataProvider

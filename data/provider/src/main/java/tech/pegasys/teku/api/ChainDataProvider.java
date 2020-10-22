@@ -595,8 +595,9 @@ public class ChainDataProvider {
       return SafeFuture.completedFuture(List.of());
     }
 
+    final UInt64 slotToLoad = slot.or(recentChainData::getCurrentSlot).orElseThrow();
     return combinedChainDataClient
-        .getBlockAtSlotExact(slot.orElse(recentChainData.getCurrentSlot().orElseThrow()))
+        .getBlockAtSlotExact(slotToLoad)
         .thenApply(
             maybeBlock ->
                 maybeBlock.map(block -> List.of(new BlockHeader(block, true))).orElse(List.of()));
