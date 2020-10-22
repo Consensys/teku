@@ -13,19 +13,26 @@
 
 package tech.pegasys.teku.storage.server.rocksdb;
 
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.core.lookup.BlockProvider;
 import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -40,6 +47,7 @@ import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbHotDao;
 import tech.pegasys.teku.storage.store.StoreBuilder;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
+import tech.pegasys.teku.util.config.StateStorageMode;
 
 public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedDatabaseTest {
 
@@ -192,5 +200,64 @@ public abstract class AbstractRocksDbDatabaseTest extends AbstractStorageBackedD
     assertThatThrownBy(
             () -> database.getLatestAvailableFinalizedState(genesisCheckpoint.getEpochStartSlot()))
         .isInstanceOf(ShuttingDownException.class);
+  }
+
+  @Test
+  public void shouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__archive(
+      @TempDir final Path tempDir) throws Exception {
+    testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(tempDir, StateStorageMode.ARCHIVE);
+  }
+
+  @Test
+  public void shouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart__prune(
+      @TempDir final Path tempDir) throws Exception {
+    testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(tempDir, StateStorageMode.PRUNE);
+  }
+
+  private void testShouldPruneHotBlocksOlderThanFinalizedSlotAfterRestart(
+      @TempDir final Path tempDir, final StateStorageMode storageMode) throws Exception {
+    final long finalizedSlot = 7;
+    final int hotBlockCount = 3;
+    // Setup chains
+    chainBuilder.generateBlocksUpToSlot(finalizedSlot);
+    SignedBlockAndState finalizedBlock = chainBuilder.getBlockAndStateAtSlot(finalizedSlot);
+    final Checkpoint finalizedCheckpoint = getCheckpointForBlock(finalizedBlock.getBlock());
+    final long firstHotBlockSlot =
+        finalizedCheckpoint.getEpochStartSlot().plus(UInt64.ONE).longValue();
+    for (int i = 0; i < hotBlockCount; i++) {
+      chainBuilder.generateBlockAtSlot(firstHotBlockSlot + i);
+    }
+    final long lastSlot = chainBuilder.getLatestSlot().longValue();
+
+    // Setup database
+    createStorage(tempDir.toFile(), storageMode);
+    initGenesis();
+
+    add(chainBuilder.streamBlocksAndStates().collect(Collectors.toSet()));
+
+    // Close database and rebuild from disk
+    restartStorage();
+
+    justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock);
+
+    // We should be able to access hot blocks and state
+    final List<SignedBlockAndState> expectedHotBlocksAndStates =
+        chainBuilder.streamBlocksAndStates(finalizedSlot, lastSlot).collect(toList());
+    assertHotBlocksAndStatesInclude(expectedHotBlocksAndStates);
+
+    final Map<Bytes32, BeaconState> historicalStates =
+        chainBuilder
+            .streamBlocksAndStates(0, 6)
+            .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
+
+    switch (storageMode) {
+      case ARCHIVE:
+        assertFinalizedStatesAvailable(historicalStates);
+        break;
+      case PRUNE:
+        assertStatesUnavailable(
+            historicalStates.values().stream().map(BeaconState::getSlot).collect(toList()));
+        break;
+    }
   }
 }

@@ -170,11 +170,10 @@ class Store implements UpdatableStore {
     childToParentRoot.forEach(treeBuilder::childAndParentRoots);
     final BlockTree blockTree = BlockTree.create(treeBuilder.build(), rootToSlotMap);
     if (blockTree.size() < childToParentRoot.size()) {
-      // This should be an error, but keeping this as a warning now for backwards-compatibility
-      // reasons.  Some existing databases may have unpruned fork blocks, and could become
-      // unusable
-      // if we throw here.  In the future, we should convert this to an error.
-      LOG.warn("Ignoring {} non-canonical blocks", childToParentRoot.size() - blockTree.size());
+      final int invalidBlockCount = childToParentRoot.size() - blockTree.size();
+      throw new IllegalStateException(
+          invalidBlockCount
+              + " invalid non-canonical block(s) supplied to Store that do not descend from the latest finalized block.");
     }
 
     return new Store(
