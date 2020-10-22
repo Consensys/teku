@@ -123,6 +123,26 @@ class MatchingDataAttestationGroupTest {
     assertThat(group).containsExactly(aggregate);
   }
 
+  @Test
+  public void size() {
+    assertThat(group.size()).isEqualTo(0);
+    final ValidateableAttestation attestation1 = addAttestation(1);
+    assertThat(group.size()).isEqualTo(1);
+    final ValidateableAttestation attestation2 = addAttestation(2);
+    assertThat(group.size()).isEqualTo(2);
+    addAttestation(3, 4);
+    assertThat(group.size()).isEqualTo(3);
+    addAttestation(1, 2);
+    assertThat(group.size()).isEqualTo(4);
+
+    int numRemoved =
+        group.remove(
+            aggregateAttestations(attestation1.getAttestation(), attestation2.getAttestation()));
+
+    assertThat(numRemoved).isEqualTo(3);
+    assertThat(group.size()).isEqualTo(1);
+  }
+
   private ValidateableAttestation addAttestation(final int... validators) {
     final ValidateableAttestation attestation = createAttestation(validators);
     final boolean added = group.add(attestation);

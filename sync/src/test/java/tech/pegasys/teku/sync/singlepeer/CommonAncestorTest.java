@@ -44,7 +44,8 @@ public class CommonAncestorTest extends AbstractSyncTest {
             dataStructureUtil.randomBytes32());
     when(storageClient.getHeadSlot()).thenReturn(currentLocalHead);
 
-    assertThat(commonAncestor.getCommonAncestor(peer, status, firstNonFinalSlot).get())
+    assertThat(
+            commonAncestor.getCommonAncestor(peer, firstNonFinalSlot, status.getHeadSlot()).get())
         .isEqualTo(firstNonFinalSlot);
   }
 
@@ -64,7 +65,8 @@ public class CommonAncestorTest extends AbstractSyncTest {
             dataStructureUtil.randomBytes32());
     when(storageClient.getHeadSlot()).thenReturn(currentLocalHead);
 
-    assertThat(commonAncestor.getCommonAncestor(peer, status, firstNonFinalSlot).get())
+    assertThat(
+            commonAncestor.getCommonAncestor(peer, firstNonFinalSlot, status.getHeadSlot()).get())
         .isEqualTo(firstNonFinalSlot);
   }
 
@@ -94,7 +96,7 @@ public class CommonAncestorTest extends AbstractSyncTest {
     when(storageClient.containsBlock(any())).thenReturn(true);
 
     SafeFuture<UInt64> futureSlot =
-        commonAncestor.getCommonAncestor(peer, status, firstNonFinalSlot);
+        commonAncestor.getCommonAncestor(peer, firstNonFinalSlot, status.getHeadSlot());
 
     verify(peer)
         .requestBlocksByRange(

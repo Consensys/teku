@@ -46,7 +46,8 @@ public class GetStateEpochCommitteesTest extends AbstractBeaconHandlerTest {
     when(context.queryParam("index")).thenReturn("1");
     when(context.queryParam("slot")).thenReturn(slot.toString());
     when(chainDataProvider.stateParameterToSlot("head")).thenReturn(Optional.of(slot));
-    when(chainDataProvider.getCommitteesAtEpochV1(slot, epoch, Optional.of(slot), Optional.of(1)))
+    when(chainDataProvider.getCommitteesAtEpochBySlotV1(
+            slot, epoch, Optional.of(slot), Optional.of(1)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(epochCommitteeResponse))));
     when(chainDataProvider.getBeaconHead())
         .thenReturn(Optional.of(new BeaconHead(slot, Bytes32.ZERO, Bytes32.ZERO)));
