@@ -21,8 +21,8 @@ import com.google.common.base.Objects;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64Util;
 
 public class EpochCommitteeResponse {
   @JsonProperty("index")
@@ -44,10 +44,7 @@ public class EpochCommitteeResponse {
       tech.pegasys.teku.datastructures.state.CommitteeAssignment committeeAssignment) {
     this.slot = committeeAssignment.getSlot();
     this.index = committeeAssignment.getCommitteeIndex();
-    this.validators =
-        committeeAssignment.getCommittee().stream()
-            .map(UInt64::valueOf)
-            .collect(Collectors.toList());
+    this.validators = UInt64Util.intToUInt64List(committeeAssignment.getCommittee());
   }
 
   @JsonCreator
