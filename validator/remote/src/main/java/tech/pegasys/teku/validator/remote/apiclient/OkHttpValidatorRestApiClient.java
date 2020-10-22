@@ -40,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import okhttp3.Credentials;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -243,7 +244,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
       queryParams.forEach(httpUrlBuilder::addQueryParameter);
     }
 
-    final Request request = new Request.Builder().url(httpUrlBuilder.build()).build();
+    final Request request = requestBuilder().url(httpUrlBuilder.build()).build();
     return executeCall(request, responseClass);
   }
 
@@ -261,12 +262,22 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     }
 
     final Request request =
-        new Request.Builder()
+        requestBuilder()
             .url(httpUrlBuilder.build())
             .post(RequestBody.create(requestBody, APPLICATION_JSON))
             .build();
 
     return executeCall(request, responseClass);
+  }
+
+  private Request.Builder requestBuilder() {
+    final Request.Builder builder = new Request.Builder();
+    if (!baseEndpoint.username().isEmpty()) {
+      builder.header(
+          "Authorization",
+          Credentials.basic(baseEndpoint.encodedUsername(), baseEndpoint.encodedPassword()));
+    }
+    return builder;
   }
 
   private <T> Optional<T> post(
