@@ -30,6 +30,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateEpochCommittees;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFinalityCheckpoints;
@@ -100,6 +101,7 @@ public class BeaconRestApiV1Test {
     // beacon
     builder
         .add(Arguments.of(GetBlockHeader.ROUTE, GetBlockHeader.class))
+        .add(Arguments.of(GetBlockHeaders.ROUTE, GetBlockHeaders.class))
         .add(Arguments.of(GetGenesis.ROUTE, GetGenesis.class))
         .add(Arguments.of(GetStateFork.ROUTE, GetStateFork.class))
         .add(Arguments.of(GetStateRoot.ROUTE, GetStateRoot.class))
