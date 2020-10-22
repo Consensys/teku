@@ -40,6 +40,7 @@ public class RestApiConstants {
   public static final String TAG_V1_BEACON = "Beacon V1";
   public static final String TAG_EVENTS = "Events";
   public static final String TAG_VALIDATOR_REQUIRED = "Validator Required Api";
+  public static final String TAG_DEBUG = "Debug";
 
   public static final String RES_OK = "200"; // SC_OK
   public static final String RES_ACCEPTED = "202"; // SC_ACCEPTED
