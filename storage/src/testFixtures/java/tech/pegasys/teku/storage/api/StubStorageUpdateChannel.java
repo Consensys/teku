@@ -31,5 +31,5 @@ public class StubStorageUpdateChannel implements StorageUpdateChannel {
   }
 
   @Override
-  public void onGenesis(AnchorPoint genesis) {}
+  public void onAnchorPoint(AnchorPoint anchorPoint) {}
 }

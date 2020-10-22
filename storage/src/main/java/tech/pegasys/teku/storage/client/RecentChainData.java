@@ -122,24 +122,28 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public void initializeFromGenesis(final BeaconState genesisState) {
     final AnchorPoint genesis = AnchorPoint.fromGenesisState(genesisState);
+    initializeFromAnchorPoint(genesis);
+  }
+
+  public void initializeFromAnchorPoint(final AnchorPoint anchorPoint) {
     final UpdatableStore store =
         StoreBuilder.forkChoiceStoreBuilder(
-                asyncRunner, metricsSystem, blockProvider, stateProvider, genesis)
+                asyncRunner, metricsSystem, blockProvider, stateProvider, anchorPoint)
             .storeConfig(storeConfig)
             .build();
 
     final boolean result = setStore(store);
     if (!result) {
       throw new IllegalStateException(
-          "Failed to set genesis state: store has already been initialized");
+          "Failed to initial from state: store has already been initialized");
     }
 
-    storageUpdateChannel.onGenesis(genesis);
-    eventBus.post(genesis);
+    eventBus.post(anchorPoint);
 
     // The genesis state is by definition finalized so just get the root from there.
     final SignedBlockAndState headBlock = store.getLatestFinalizedBlockAndState();
     updateHead(headBlock.getRoot(), headBlock.getSlot());
+    storageUpdateChannel.onAnchorPoint(anchorPoint);
   }
 
   public UInt64 getGenesisTime() {

@@ -103,8 +103,8 @@ public class ChainStorage implements StorageUpdateChannel, StorageQueryChannel {
   }
 
   @Override
-  public void onGenesis(final AnchorPoint genesis) {
-    database.storeGenesis(genesis);
+  public void onAnchorPoint(final AnchorPoint anchorPoint) {
+    database.storeAnchorPoint(anchorPoint);
   }
 
   @Override

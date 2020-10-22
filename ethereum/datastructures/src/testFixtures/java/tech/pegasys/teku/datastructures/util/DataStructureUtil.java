@@ -205,6 +205,14 @@ public final class DataStructureUtil {
     return new SlotAndBlockRoot(slot, randomBytes32());
   }
 
+  public Checkpoint randomCheckpoint(final long epoch) {
+    return randomCheckpoint(UInt64.valueOf(epoch));
+  }
+
+  public Checkpoint randomCheckpoint(final UInt64 epoch) {
+    return new Checkpoint(epoch, randomBytes32());
+  }
+
   public Checkpoint randomCheckpoint() {
     return new Checkpoint(randomEpoch(), randomBytes32());
   }
