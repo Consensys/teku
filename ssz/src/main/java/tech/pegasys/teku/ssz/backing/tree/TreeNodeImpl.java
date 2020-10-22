@@ -13,25 +13,16 @@
 
 package tech.pegasys.teku.ssz.backing.tree;
 
+import java.util.Arrays;
 import java.util.Objects;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 
 abstract class TreeNodeImpl implements TreeNode {
 
-  static class LeafNodeImpl extends TreeNodeImpl implements LeafNode {
-    private final Bytes32 root;
-
-    public LeafNodeImpl(Bytes32 root) {
-      this.root = root;
-    }
-
-    @Override
-    public Bytes32 getRoot() {
-      return root;
-    }
-
+  private abstract static class AbstractLeafNodeImpl extends TreeNodeImpl implements LeafNode {
     @Override
     public TreeNode updated(TreeUpdates newNodes) {
       if (newNodes.size() == 0) {
@@ -47,21 +38,47 @@ abstract class TreeNodeImpl implements TreeNode {
       if (this == o) {
         return true;
       }
-      if (o == null || getClass() != o.getClass()) {
+      if (!(o instanceof LeafNode)) {
         return false;
       }
-      LeafNodeImpl root1 = (LeafNodeImpl) o;
-      return Objects.equals(root, root1.root);
+      LeafNode otherLeaf = (LeafNode) o;
+      return Objects.equals(getRoot(), otherLeaf.getRoot());
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(root);
+      return getRoot().hashCode();
     }
 
     @Override
     public String toString() {
-      return "[" + (Bytes32.ZERO.equals(root) ? "0x0" : root) + "]";
+      return "[" + (Bytes32.ZERO.equals(getRoot()) ? "0x0" : getRoot()) + "]";
+    }
+  }
+
+  static class CompressedLeafNodeImpl extends AbstractLeafNodeImpl implements LeafNode {
+    private final byte[] partialRoot;
+
+    public CompressedLeafNodeImpl(Bytes partialRoot) {
+      this.partialRoot = partialRoot.toArrayUnsafe();
+    }
+
+    @Override
+    public Bytes32 getRoot() {
+      return Bytes32.wrap(Arrays.copyOf(partialRoot, 32));
+    }
+  }
+
+  static class LeafNodeImpl extends AbstractLeafNodeImpl implements LeafNode {
+    private final Bytes32 root;
+
+    public LeafNodeImpl(Bytes32 root) {
+      this.root = root;
+    }
+
+    @Override
+    public Bytes32 getRoot() {
+      return root;
     }
   }
 
@@ -117,5 +134,10 @@ abstract class TreeNodeImpl implements TreeNode {
     public String toString() {
       return "(" + (left == right ? "default" : left + ", " + right) + ')';
     }
+  }
+
+  @Override
+  public boolean isZero() {
+    return false;
   }
 }

@@ -57,9 +57,12 @@ public class GetStateRoot implements Handler {
   }
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the beacon chain state root for the specified slot.",
+      summary =
+          "Get the beacon chain state root for the specified slot.\n"
+              + "Deprecated - use `/eth/v1/beacon/states/{state_id}/root` instead.",
       tags = {TAG_BEACON},
       queryParams = {@OpenApiParam(name = SLOT, description = SLOT_QUERY_DESCRIPTION)},
       description = "Returns the beacon chain state root for the specified slot.",
