@@ -95,4 +95,14 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
     }
     return true;
   }
+
+  @Override
+  public int getFixedPartSize() {
+    int size = 0;
+    for (int i = 0; i < getMaxLength(); i++) {
+      ViewType childType = getChildType(i);
+      size += childType.isFixedSize() ? childType.getFixedPartSize() : SSZ_OFFSET_SIZE;
+    }
+    return size;
+  }
 }

@@ -47,8 +47,19 @@ public class VectorViewType<C> extends CollectionViewType {
     return new VectorViewReadImpl(this, node);
   }
 
+  public int getLength() {
+    long maxLength = getMaxLength();
+    if (maxLength > Integer.MAX_VALUE) throw new IllegalArgumentException("Vector size too large: " + maxLength);
+    return (int) maxLength;
+  }
+
   @Override
   public boolean isFixedSize() {
     return getElementType().isFixedSize();
+  }
+
+  @Override
+  public int getFixedPartSize() {
+    return getLength() * (isFixedSize() ? getElementType().getBitsSize() : SSZ_OFFSET_SIZE);
   }
 }

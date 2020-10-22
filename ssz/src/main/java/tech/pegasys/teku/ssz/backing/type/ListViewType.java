@@ -48,6 +48,11 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
   }
 
   @Override
+  public int getFixedPartSize() {
+    return 0;
+  }
+
+  @Override
   public boolean isFixedSize() {
     return false;
   }
