@@ -16,6 +16,7 @@ package tech.pegasys.teku.api.response.v1.beacon;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.pegasys.teku.api.schema.Checkpoint;
+import tech.pegasys.teku.datastructures.state.BeaconState;
 
 public class FinalityCheckpointsResponse {
   @JsonProperty("previous_justified")
@@ -35,5 +36,12 @@ public class FinalityCheckpointsResponse {
     this.previous_justified = previous_justified;
     this.current_justified = current_justified;
     this.finalized = finalized;
+  }
+
+  public static FinalityCheckpointsResponse fromState(BeaconState state) {
+    return new FinalityCheckpointsResponse(
+        new Checkpoint(state.getPrevious_justified_checkpoint()),
+        new Checkpoint(state.getCurrent_justified_checkpoint()),
+        new Checkpoint(state.getFinalized_checkpoint()));
   }
 }

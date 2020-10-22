@@ -13,11 +13,8 @@
 
 package tech.pegasys.teku.sync.multipeer.batches;
 
-import java.util.Collection;
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 
 public class BatchFactory {
@@ -29,16 +26,12 @@ public class BatchFactory {
 
   public Batch createBatch(final TargetChain chain, final UInt64 start, final UInt64 count) {
     eventThread.checkOnEventThread();
-    final SyncSourceSelector syncSourceProvider = () -> selectRandomPeer(chain.getPeers());
+    final SyncSourceSelector syncSourceProvider = chain::selectRandomPeer;
     final ConflictResolutionStrategy conflictResolutionStrategy =
         new NaiveConflictResolutionStrategy();
     return new EventThreadOnlyBatch(
         eventThread,
         new SyncSourceBatch(
             eventThread, syncSourceProvider, conflictResolutionStrategy, chain, start, count));
-  }
-
-  private Optional<SyncSource> selectRandomPeer(final Collection<SyncSource> peers) {
-    return peers.stream().skip((int) (peers.size() * Math.random())).findFirst();
   }
 }

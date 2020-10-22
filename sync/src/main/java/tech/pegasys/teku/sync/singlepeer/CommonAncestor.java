@@ -18,8 +18,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
+import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -38,8 +37,8 @@ public class CommonAncestor {
   }
 
   public SafeFuture<UInt64> getCommonAncestor(
-      final Eth2Peer peer, final PeerStatus status, final UInt64 firstNonFinalSlot) {
-    final UInt64 lowestHeadSlot = storageClient.getHeadSlot().min(status.getHeadSlot());
+      final SyncSource peer, final UInt64 firstNonFinalSlot, final UInt64 peerHeadSlot) {
+    final UInt64 lowestHeadSlot = storageClient.getHeadSlot().min(peerHeadSlot);
     if (lowestHeadSlot.isLessThan(firstNonFinalSlot.plus(OPTIMISTIC_HISTORY_LENGTH))) {
       return SafeFuture.completedFuture(firstNonFinalSlot);
     }
@@ -56,7 +55,7 @@ public class CommonAncestor {
         SAMPLE_RATE,
         firstRequestedSlot,
         lastSlot,
-        status.getHeadSlot());
+        peerHeadSlot);
 
     final BestBlockListener blockListener = new BestBlockListener(storageClient, firstNonFinalSlot);
     final PeerSyncBlockRequest request =

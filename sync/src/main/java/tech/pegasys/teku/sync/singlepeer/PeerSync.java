@@ -139,7 +139,7 @@ public class PeerSync {
                 return SafeFuture.completedFuture(startSlot);
               }
               CommonAncestor ancestor = new CommonAncestor(storageClient);
-              return ancestor.getCommonAncestor(peer, status, startSlot);
+              return ancestor.getCommonAncestor(peer, startSlot, status.getHeadSlot());
             })
         .thenCompose(
             (ancestorStartSlot) -> {
