@@ -36,4 +36,7 @@ public class NaiveConflictResolutionStrategy implements ConflictResolutionStrate
     // This assumes malice where a simple chain reorg may have explained it
     source.disconnectCleanly(DisconnectReason.REMOTE_FAULT).reportExceptions();
   }
+
+  @Override
+  public void reportConfirmedBatch(final Batch batch, final SyncSource source) {}
 }

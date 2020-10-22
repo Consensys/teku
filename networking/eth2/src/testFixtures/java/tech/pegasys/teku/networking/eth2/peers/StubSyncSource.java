@@ -20,16 +20,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseStreamListener;
+import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
+import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 
 public class StubSyncSource implements SyncSource {
 
+  // Generate an arbitrary but guaranteed unique node ID
+  private final AtomicInteger NEXT_NODE_ID = new AtomicInteger(0);
+
   private final List<Request> requests = new ArrayList<>();
+  private final PeerAddress peerAddress =
+      new PeerAddress(new MockNodeId(NEXT_NODE_ID.getAndIncrement()));
   private Optional<SafeFuture<Void>> currentRequest = Optional.empty();
   private Optional<ResponseStreamListener<SignedBeaconBlock>> currentListener = Optional.empty();
 
@@ -61,6 +69,11 @@ public class StubSyncSource implements SyncSource {
   @Override
   public SafeFuture<Void> disconnectCleanly(final DisconnectReason reason) {
     return SafeFuture.COMPLETE;
+  }
+
+  @Override
+  public PeerAddress getAddress() {
+    return peerAddress;
   }
 
   public void assertRequestedBlocks(final long startSlot, final long count) {

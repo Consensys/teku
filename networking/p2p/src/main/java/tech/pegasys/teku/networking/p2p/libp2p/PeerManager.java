@@ -31,13 +31,14 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
-import tech.pegasys.teku.networking.p2p.connection.ReputationManager;
 import tech.pegasys.teku.networking.p2p.libp2p.rpc.RpcHandler;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustmentHandler;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 
 public class PeerManager implements ConnectionHandler {
@@ -156,5 +157,9 @@ public class PeerManager implements ConnectionHandler {
 
   public int getPeerCount() {
     return connectedPeerMap.size();
+  }
+
+  public ReputationAdjustmentHandler getReputationAdjustmentHandler() {
+    return reputationManager;
   }
 }

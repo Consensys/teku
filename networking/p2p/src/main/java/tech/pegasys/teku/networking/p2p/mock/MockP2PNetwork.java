@@ -29,6 +29,7 @@ import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustmentHandler;
 
 public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   private final int port = 6000;
@@ -135,5 +136,10 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   @Override
   public Map<String, Collection<NodeId>> getSubscribersByTopic() {
     return Collections.emptyMap();
+  }
+
+  @Override
+  public ReputationAdjustmentHandler getReputationAdjustmentHandler() {
+    return (peerAddress, adjustment) -> false;
   }
 }

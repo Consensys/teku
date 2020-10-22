@@ -21,6 +21,7 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerConnectedSubscriber;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustmentHandler;
 
 public interface P2PNetwork<T extends Peer> extends GossipNetwork {
 
@@ -82,6 +83,8 @@ public interface P2PNetwork<T extends Peer> extends GossipNetwork {
   NodeId getNodeId();
 
   int getListenPort();
+
+  ReputationAdjustmentHandler getReputationAdjustmentHandler();
 
   /**
    * Get the Ethereum Node Record (ENR) for the local node, if one exists.

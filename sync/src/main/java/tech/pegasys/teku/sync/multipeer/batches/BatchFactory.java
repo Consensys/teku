@@ -19,16 +19,17 @@ import tech.pegasys.teku.sync.multipeer.chains.TargetChain;
 
 public class BatchFactory {
   private final EventThread eventThread;
+  private final ConflictResolutionStrategy conflictResolutionStrategy;
 
-  public BatchFactory(final EventThread eventThread) {
+  public BatchFactory(
+      final EventThread eventThread, final ConflictResolutionStrategy conflictResolutionStrategy) {
     this.eventThread = eventThread;
+    this.conflictResolutionStrategy = conflictResolutionStrategy;
   }
 
   public Batch createBatch(final TargetChain chain, final UInt64 start, final UInt64 count) {
     eventThread.checkOnEventThread();
     final SyncSourceSelector syncSourceProvider = chain::selectRandomPeer;
-    final ConflictResolutionStrategy conflictResolutionStrategy =
-        new NaiveConflictResolutionStrategy();
     return new EventThreadOnlyBatch(
         eventThread,
         new SyncSourceBatch(

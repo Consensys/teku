@@ -141,12 +141,23 @@ public class SyncSourceBatch implements Batch {
 
   @Override
   public void markFirstBlockConfirmed() {
+    final boolean wasConfirmed = isConfirmed();
     firstBlockConfirmed = true;
+    checkIfNewlyConfirmed(wasConfirmed);
   }
 
   @Override
   public void markLastBlockConfirmed() {
+    final boolean wasConfirmed = isConfirmed();
     lastBlockConfirmed = true;
+    checkIfNewlyConfirmed(wasConfirmed);
+  }
+
+  private void checkIfNewlyConfirmed(final boolean wasConfirmed) {
+    if (!wasConfirmed && isConfirmed()) {
+      currentSyncSource.ifPresent(
+          source -> conflictResolutionStrategy.reportConfirmedBatch(this, source));
+    }
   }
 
   @Override
