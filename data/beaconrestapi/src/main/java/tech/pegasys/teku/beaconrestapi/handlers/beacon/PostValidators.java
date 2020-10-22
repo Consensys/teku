@@ -48,13 +48,8 @@ public class PostValidators extends AbstractHandler implements Handler {
 
   private final ChainDataProvider chainDataProvider;
 
-  public PostValidators(
-      final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
-    super(jsonProvider);
-    this.chainDataProvider = chainDataProvider;
-  }
-
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.POST,
       summary = "Get validators matching specified public keys.",
@@ -62,7 +57,8 @@ public class PostValidators extends AbstractHandler implements Handler {
       description =
           "Returns information about validators that match the list of validator public keys and optional epoch.\n\n"
               + "If no epoch is specified, the validators are queried from the current state.\n\n"
-              + "Public keys that do not match a validator are returned without validator information.",
+              + "Public keys that do not match a validator are returned without validator information.\n"
+              + "Deprecated - use `/eth/v1/beacon/states/{state_id}/validators/{validator_id}` instead.",
       requestBody =
           @OpenApiRequestBody(
               content = {@OpenApiContent(from = ValidatorsRequest.class)},
@@ -102,6 +98,12 @@ public class PostValidators extends AbstractHandler implements Handler {
       }
       ctx.status(SC_BAD_REQUEST);
     }
+  }
+
+  public PostValidators(
+      final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
+    super(jsonProvider);
+    this.chainDataProvider = chainDataProvider;
   }
 
   private Optional<String> processResult(
