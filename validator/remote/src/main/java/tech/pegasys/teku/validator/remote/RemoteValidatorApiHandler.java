@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.remote;
 
 import static java.util.Collections.emptyMap;
 
+import com.google.common.base.Throwables;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -42,6 +44,8 @@ import tech.pegasys.teku.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.datastructures.state.Fork;
 import tech.pegasys.teku.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
+import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.AttesterDuties;
@@ -50,6 +54,7 @@ import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
+import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 
 public class RemoteValidatorApiHandler implements ValidatorApiChannel {
@@ -68,7 +73,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<Fork>> getFork() {
-    return asyncRunner.runAsync(
+    return sendRequest(
         () ->
             apiClient
                 .getFork()
@@ -79,7 +84,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<GenesisData>> getGenesisData() {
-    return asyncRunner.runAsync(
+    return sendRequest(
         () ->
             apiClient
                 .getGenesis()
@@ -95,7 +100,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
     if (publicKeys.isEmpty()) {
       return SafeFuture.completedFuture(emptyMap());
     }
-    return asyncRunner.runAsync(
+    return sendRequest(
         () -> {
           final Map<BLSPublicKey, Integer> indices = new HashMap<>();
           for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
@@ -133,7 +138,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
       return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
     }
 
-    return asyncRunner.runAsync(
+    return sendRequest(
         () -> {
           final List<BLSPubKey> blsPubKeys =
               publicKeys.stream().map(BLSPubKey::new).collect(Collectors.toList());
@@ -152,7 +157,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<List<AttesterDuties>>> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndexes) {
-    return asyncRunner.runAsync(
+    return sendRequest(
         () -> {
           final List<AttesterDuties> duties =
               apiClient.getAttestationDuties(epoch, validatorIndexes).stream()
@@ -165,7 +170,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<List<ProposerDuties>>> getProposerDuties(final UInt64 epoch) {
-    return asyncRunner.runAsync(
+    return sendRequest(
         () -> {
           final List<ProposerDuties> duties =
               apiClient.getProposerDuties(epoch).stream()
@@ -209,7 +214,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<Attestation>> createUnsignedAttestation(
       final UInt64 slot, final int committeeIndex) {
-    return asyncRunner.runAsync(
+    return sendRequest(
         () ->
             apiClient
                 .createUnsignedAttestation(slot, committeeIndex)
@@ -219,7 +224,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<AttestationData>> createAttestationData(
       final UInt64 slot, final int committeeIndex) {
-    return asyncRunner.runAsync(
+    return sendRequest(
         () ->
             apiClient
                 .createAttestationData(slot, committeeIndex)
@@ -231,8 +236,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
     final tech.pegasys.teku.api.schema.Attestation schemaAttestation =
         new tech.pegasys.teku.api.schema.Attestation(attestation);
 
-    asyncRunner
-        .runAsync(() -> apiClient.sendSignedAttestation(schemaAttestation))
+    sendRequest(() -> apiClient.sendSignedAttestation(schemaAttestation))
         .finish(error -> LOG.error("Failed to send signed attestation", error));
   }
 
@@ -245,7 +249,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
       final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
-    return asyncRunner.runAsync(
+    return sendRequest(
         () -> {
           final tech.pegasys.teku.api.schema.BLSSignature schemaBLSSignature =
               new tech.pegasys.teku.api.schema.BLSSignature(randaoReveal);
@@ -258,13 +262,13 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
-    return asyncRunner.runAsync(
+    return sendRequest(
         () -> apiClient.sendSignedBlock(new tech.pegasys.teku.api.schema.SignedBeaconBlock(block)));
   }
 
   @Override
   public SafeFuture<Optional<Attestation>> createAggregate(final Bytes32 attestationHashTreeRoot) {
-    return asyncRunner.runAsync(
+    return sendRequest(
         () ->
             apiClient
                 .createAggregate(attestationHashTreeRoot)
@@ -273,18 +277,18 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public void sendAggregateAndProof(final SignedAggregateAndProof aggregateAndProof) {
-    asyncRunner
-        .runAsync(
+    sendRequest(
             () ->
-                apiClient.sendAggregateAndProof(
-                    new tech.pegasys.teku.api.schema.SignedAggregateAndProof(aggregateAndProof)))
+                apiClient.sendAggregateAndProofs(
+                    List.of(
+                        new tech.pegasys.teku.api.schema.SignedAggregateAndProof(
+                            aggregateAndProof))))
         .finish(error -> LOG.error("Failed to send aggregate and proof", error));
   }
 
   @Override
   public void subscribeToBeaconCommittee(final List<CommitteeSubscriptionRequest> requests) {
-    asyncRunner
-        .runAsync(() -> apiClient.subscribeToBeaconCommittee(requests))
+    sendRequest(() -> apiClient.subscribeToBeaconCommittee(requests))
         .finish(
             error -> LOG.error("Failed to subscribe to beacon committee for aggregation", error));
   }
@@ -299,8 +303,31 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
                         s.getSubnetId(), s.getUnsubscriptionSlot()))
             .collect(Collectors.toSet());
 
-    asyncRunner
-        .runAsync(() -> apiClient.subscribeToPersistentSubnets(schemaSubscriptions))
+    sendRequest(() -> apiClient.subscribeToPersistentSubnets(schemaSubscriptions))
         .finish(error -> LOG.error("Failed to subscribe to persistent subnets", error));
+  }
+
+  private SafeFuture<Void> sendRequest(final ExceptionThrowingRunnable requestExecutor) {
+    return sendRequest(
+        () -> {
+          requestExecutor.run();
+          return null;
+        });
+  }
+
+  private <T> SafeFuture<T> sendRequest(final ExceptionThrowingSupplier<T> requestExecutor) {
+    return asyncRunner
+        .runAsync(requestExecutor)
+        .exceptionallyCompose(
+            error -> {
+              if (Throwables.getRootCause(error) instanceof RateLimitedException) {
+                LOG.warn(
+                    "Received Too Many Requests response from beacon node. Retrying after a delay.");
+                return asyncRunner.runAfterDelay(
+                    () -> sendRequest(requestExecutor), 2, TimeUnit.SECONDS);
+              } else {
+                return SafeFuture.failedFuture(error);
+              }
+            });
   }
 }

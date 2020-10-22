@@ -528,6 +528,7 @@ class RemoteValidatorApiHandlerTest {
     assertThat(unwrapToValue(future)).usingRecursiveComparison().isEqualTo(attestation);
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void sendSAggregateAndProof_InvokeApiWithCorrectRequest() {
     final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
@@ -538,13 +539,13 @@ class RemoteValidatorApiHandlerTest {
     tech.pegasys.teku.api.schema.SignedAggregateAndProof schemaSignedAggAndProof =
         new tech.pegasys.teku.api.schema.SignedAggregateAndProof(signedAggregateAndProof);
 
-    ArgumentCaptor<tech.pegasys.teku.api.schema.SignedAggregateAndProof> argumentCaptor =
-        ArgumentCaptor.forClass(tech.pegasys.teku.api.schema.SignedAggregateAndProof.class);
+    ArgumentCaptor<List<tech.pegasys.teku.api.schema.SignedAggregateAndProof>> argumentCaptor =
+        ArgumentCaptor.forClass(List.class);
 
     apiHandler.sendAggregateAndProof(signedAggregateAndProof);
     asyncRunner.executeQueuedActions();
 
-    verify(apiClient).sendAggregateAndProof(argumentCaptor.capture());
+    verify(apiClient).sendAggregateAndProofs(argumentCaptor.capture());
     assertThat(argumentCaptor.getValue())
         .usingRecursiveComparison()
         .isEqualTo(schemaSignedAggAndProof);
