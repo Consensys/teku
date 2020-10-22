@@ -31,6 +31,7 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -50,9 +51,12 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   @VisibleForTesting
   final NavigableMap<UInt64, Set<SignedBeaconBlock>> producedBlocksByEpoch = new TreeMap<>();
 
-  final NavigableMap<UInt64, Set<Attestation>> producedAttestationsByEpoch = new TreeMap<>();
-  final NavigableMap<UInt64, AtomicInteger> blockProductionAttemptsByEpoch = new TreeMap<>();
-  final NavigableMap<UInt64, AtomicInteger> attestationProductionAttemptsByEpoch = new TreeMap<>();
+  final NavigableMap<UInt64, Set<Attestation>> producedAttestationsByEpoch =
+      new ConcurrentSkipListMap<>();
+  final NavigableMap<UInt64, AtomicInteger> blockProductionAttemptsByEpoch =
+      new ConcurrentSkipListMap<>();
+  final NavigableMap<UInt64, AtomicInteger> attestationProductionAttemptsByEpoch =
+      new ConcurrentSkipListMap<>();
 
   @VisibleForTesting
   static final UInt64 BLOCK_PERFORMANCE_EVALUATION_INTERVAL = UInt64.valueOf(2); // epochs
