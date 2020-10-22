@@ -27,6 +27,7 @@ public class RestApiConstants {
   public static final String ATTESTATION_DATA_ROOT = "attestation_data_root";
   public static final String INDEX = "index";
   public static final String TOPICS = "topics";
+  public static final String PARENT_ROOT = "parent_root";
 
   public static final String TAG_ADMIN = "Admin";
   public static final String TAG_BEACON = "Beacon";

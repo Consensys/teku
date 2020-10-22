@@ -14,7 +14,6 @@
 package tech.pegasys.teku.sync.multipeer;
 
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collection;
@@ -42,13 +41,14 @@ public class BatchSync implements Sync {
   private final RecentChainData recentChainData;
   private final BatchImporter batchImporter;
   private final BatchDataRequester batchDataRequester;
+  private final MultipeerCommonAncestorFinder commonAncestorFinder;
 
   private final BatchChain activeBatches;
 
   private Optional<Batch> importingBatch = Optional.empty();
   private boolean switchingBranches = false;
 
-  private UInt64 commonAncestorSlot;
+  private SafeFuture<UInt64> commonAncestorSlot;
 
   private TargetChain targetChain;
   private SafeFuture<SyncResult> syncResult = SafeFuture.completedFuture(SyncResult.COMPLETE);
@@ -58,12 +58,14 @@ public class BatchSync implements Sync {
       final RecentChainData recentChainData,
       final BatchChain activeBatches,
       final BatchImporter batchImporter,
-      final BatchDataRequester batchDataRequester) {
+      final BatchDataRequester batchDataRequester,
+      final MultipeerCommonAncestorFinder commonAncestorFinder) {
     this.eventThread = eventThread;
     this.recentChainData = recentChainData;
     this.activeBatches = activeBatches;
     this.batchImporter = batchImporter;
     this.batchDataRequester = batchDataRequester;
+    this.commonAncestorFinder = commonAncestorFinder;
   }
 
   public static BatchSync create(
@@ -71,13 +73,19 @@ public class BatchSync implements Sync {
       final RecentChainData recentChainData,
       final BatchImporter batchImporter,
       final BatchFactory batchFactory,
-      final UInt64 batchSize) {
+      final UInt64 batchSize,
+      final MultipeerCommonAncestorFinder commonAncestorFinder) {
     final BatchChain activeBatches = new BatchChain();
     final BatchDataRequester batchDataRequester =
         new BatchDataRequester(
             eventThread, activeBatches, batchFactory, batchSize, MAX_PENDING_BATCHES);
     return new BatchSync(
-        eventThread, recentChainData, activeBatches, batchImporter, batchDataRequester);
+        eventThread,
+        recentChainData,
+        activeBatches,
+        batchImporter,
+        batchDataRequester,
+        commonAncestorFinder);
   }
 
   /**
@@ -100,14 +108,22 @@ public class BatchSync implements Sync {
     eventThread.checkOnEventThread();
     // Cancel the existing sync
     this.syncResult.complete(SyncResult.TARGET_CHANGED);
+    final boolean firstChain = this.targetChain == null;
     this.targetChain = targetChain;
-    this.commonAncestorSlot = getCommonAncestorSlot();
+    if (firstChain) {
+      // Only set the common ancestor if we haven't previously sync'd a chain
+      // Otherwise we'll optimistically assume the new chain extends the current one and only reset
+      // the common ancestor if we later find out that's not the case
+      this.commonAncestorSlot = getCommonAncestorSlot();
+    }
     this.syncResult = syncResult;
     progressSync();
   }
 
-  private UInt64 getCommonAncestorSlot() {
-    return compute_start_slot_at_epoch(recentChainData.getFinalizedEpoch());
+  private SafeFuture<UInt64> getCommonAncestorSlot() {
+    final SafeFuture<UInt64> commonAncestor = commonAncestorFinder.findCommonAncestor(targetChain);
+    commonAncestor.thenRunAsync(this::progressSync, eventThread).reportExceptions();
+    return commonAncestor;
   }
 
   private void onBatchReceivedBlocks(final Batch batch) {
@@ -188,7 +204,7 @@ public class BatchSync implements Sync {
       batch.markFirstBlockConfirmed();
       previousBatches.forEach(this::confirmEmptyBatch);
     } else if (previousBatches.isEmpty()) {
-      // There are no previous batches but this doesn't match our chain so must be invalid]
+      // There are no previous batches but this doesn't match our chain so must be invalid
       LOG.debug(
           "Marking batch {} as invalid because there are no previous batches and it does not connect to our chain",
           batch);
@@ -317,7 +333,7 @@ public class BatchSync implements Sync {
     } else {
       // Everything prior to this batch must already exist on our chain so we can drop them all
       activeBatches.removeUpToIncluding(importedBatch);
-      commonAncestorSlot = importedBatch.getLastSlot();
+      commonAncestorSlot = SafeFuture.completedFuture(importedBatch.getLastSlot());
     }
     progressSync();
     if (activeBatches.isEmpty()) {
@@ -365,8 +381,10 @@ public class BatchSync implements Sync {
   }
 
   private void fillRetrievingQueue() {
-    batchDataRequester.fillRetrievingQueue(
-        targetChain, commonAncestorSlot, this::onBatchReceivedBlocks);
+    if (commonAncestorSlot.isDone() && !commonAncestorSlot.isCompletedExceptionally()) {
+      batchDataRequester.fillRetrievingQueue(
+          targetChain, commonAncestorSlot.join(), this::onBatchReceivedBlocks);
+    }
   }
 
   @VisibleForTesting
