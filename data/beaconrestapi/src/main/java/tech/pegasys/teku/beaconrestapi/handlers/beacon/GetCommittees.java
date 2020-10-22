@@ -64,8 +64,9 @@ public class GetCommittees extends AbstractHandler implements Handler {
       queryParams = {
         @OpenApiParam(name = EPOCH, description = EPOCH_QUERY_DESCRIPTION, required = true),
       },
-      description = "Returns committee assignments for each slot in a specified epoch.\n" +
-          "Deprecated - use `/eth/v1/beacon/states/{state_id}/committees/{epoch}` instead.",
+      description =
+          "Returns committee assignments for each slot in a specified epoch.\n"
+              + "Deprecated - use `/eth/v1/beacon/states/{state_id}/committees/{epoch}` instead.",
       responses = {
         @OpenApiResponse(
             status = RES_OK,

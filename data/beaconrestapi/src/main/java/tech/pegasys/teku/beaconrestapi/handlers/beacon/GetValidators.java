@@ -71,8 +71,8 @@ public class GetValidators extends AbstractHandler implements Handler {
       tags = {TAG_BEACON},
       description =
           "Returns validator information.\n\n"
-              + "Returns the first page of validators in the current epoch if you do not specify any parameters.\n" +
-              "Deprecated - use `/eth/v1/beacon/states/{state_id}/validators` instead.",
+              + "Returns the first page of validators in the current epoch if you do not specify any parameters.\n"
+              + "Deprecated - use `/eth/v1/beacon/states/{state_id}/validators` instead.",
       queryParams = {
         @OpenApiParam(
             name = EPOCH,

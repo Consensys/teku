@@ -138,8 +138,7 @@ public class BeaconRestApiV1Test {
         .add(Arguments.of(GetProposerDuties.ROUTE, GetProposerDuties.class));
 
     // DEBUG
-    builder
-        .add(Arguments.of(GetState.ROUTE, GetState.class));
+    builder.add(Arguments.of(GetState.ROUTE, GetState.class));
 
     return builder.build();
   }

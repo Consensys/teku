@@ -147,7 +147,9 @@ public class BeaconRestApi {
   }
 
   private void addV1DebugHandlers(final DataProvider dataProvider) {
-    app.get(tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState.ROUTE, new tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState(dataProvider, jsonProvider));
+    app.get(
+        tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState.ROUTE,
+        new tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState(dataProvider, jsonProvider));
   }
 
   private void addHostAllowlistHandler(final GlobalConfiguration configuration) {
