@@ -101,20 +101,6 @@ class ForkChoiceTest {
   }
 
   @Test
-  void onBlock_shouldNotImmediatelyMakeChildOfCurrentHeadTheNewHeadWhenItIsTooFarBehind() {
-    storageSystem
-        .chainUpdater()
-        .setTime(genesis.getState().getGenesis_time().plus(34 * SECONDS_PER_SLOT));
-    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
-    final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(blockAndState.getBlock(), Optional.of(genesis.getState()));
-    assertBlockImportedSuccessfully(importResult);
-
-    assertThat(recentChainData.getHeadBlock()).contains(genesis.getBlock());
-    assertThat(recentChainData.getHeadSlot()).isEqualTo(genesis.getSlot());
-  }
-
-  @Test
   void onBlock_shouldTriggerReorgWhenSelectingChildOfChainHeadWhenForkChoiceSlotHasAdvanced() {
     // Advance the current head
     final UInt64 nodeSlot = UInt64.valueOf(5);
