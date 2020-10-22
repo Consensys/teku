@@ -150,7 +150,7 @@ public class LibP2PPeer implements Peer {
   public void adjustReputation(final ReputationAdjustment adjustment) {
     final boolean shouldDisconnect = reputationManager.adjustReputation(getAddress(), adjustment);
     if (shouldDisconnect) {
-      disconnectCleanly(DisconnectReason.REMOTE_FAULT);
+      disconnectCleanly(DisconnectReason.REMOTE_FAULT).reportExceptions();
     }
   }
 }
