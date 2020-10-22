@@ -65,8 +65,10 @@ public class GetBlockHeaders extends AbstractHandler implements Handler {
       tags = {TAG_V1_BEACON},
       description =
           "Retrieves block headers matching given query. By default it will fetch current head slot blocks.",
-      queryParams = {@OpenApiParam(name = SLOT),
-          @OpenApiParam(name = PARENT_ROOT, description = "Not currently supported.")},
+      queryParams = {
+        @OpenApiParam(name = SLOT),
+        @OpenApiParam(name = PARENT_ROOT, description = "Not currently supported.")
+      },
       responses = {
         @OpenApiResponse(
             status = RES_OK,
