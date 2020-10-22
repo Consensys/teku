@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.sync.multipeer.BatchImporter.BatchImportResult.IMPORTED_ALL_BLOCKS;
 import static tech.pegasys.teku.sync.multipeer.BatchImporter.BatchImportResult.IMPORT_FAILED;
@@ -66,15 +67,22 @@ class BatchSyncTest {
       chainWith(
           new SlotAndBlockRoot(UInt64.valueOf(1000), dataStructureUtil.randomBytes32()),
           syncSource);
+  private final MultipeerCommonAncestorFinder commonAncestor =
+      mock(MultipeerCommonAncestorFinder.class);
 
   private final BatchSync sync =
-      BatchSync.create(eventThread, recentChainData, batchImporter, batches, BATCH_SIZE);
+      BatchSync.create(
+          eventThread, recentChainData, batchImporter, batches, BATCH_SIZE, commonAncestor);
 
   @BeforeEach
   void setUp() {
     storageSystem.chainUpdater().initializeGenesis();
     when(batchImporter.importBatch(any()))
         .thenAnswer(invocation -> batches.getImportResult(invocation.getArgument(0)));
+    when(commonAncestor.findCommonAncestor(any()))
+        .thenAnswer(
+            invocation ->
+                completedFuture(compute_start_slot_at_epoch(recentChainData.getFinalizedEpoch())));
   }
 
   @Test
@@ -132,12 +140,14 @@ class BatchSyncTest {
   }
 
   @Test
-  void shouldResumeSyncFromFinalizedEpochAfterRestart() {
-    // TODO: Should restore the ability to find the common ancestor and sync from there
+  void shouldResumeSyncFromCommonAncestorAfterRestart() {
     storageSystem.chainUpdater().finalizeEpoch(ONE);
+    final UInt64 commonAncestorSlot = UInt64.valueOf(50);
+    when(commonAncestor.findCommonAncestor(targetChain))
+        .thenReturn(completedFuture(commonAncestorSlot));
     assertThat(sync.syncToChain(targetChain)).isNotDone();
 
-    assertThatBatch(batches.get(0)).hasFirstSlot(compute_start_slot_at_epoch(ONE).plus(1));
+    assertThatBatch(batches.get(0)).hasFirstSlot(commonAncestorSlot.plus(1));
   }
 
   @Test
@@ -606,7 +616,7 @@ class BatchSyncTest {
   }
 
   @Test
-  void shouldRestartSyncFromFinalizedCheckpointWhenBatchFromNewChainDoesNotLineUp() {
+  void shouldRestartSyncFromCommonAncestorWhenBatchFromNewChainDoesNotLineUp() {
     // Start sync to first chain
     final SafeFuture<SyncResult> firstSyncResult = sync.syncToChain(targetChain);
 
@@ -636,6 +646,10 @@ class BatchSyncTest {
     // to keep track
     final List<Batch> originalBatches = batches.clearBatchList();
 
+    // Setup an expected common ancestor to start syncing the new chain from
+    final SafeFuture<UInt64> commonAncestorFuture = new SafeFuture<>();
+    when(commonAncestor.findCommonAncestor(targetChain)).thenReturn(commonAncestorFuture);
+
     // And then get the first block of the new chain which doesn't line up
     // So we now know the new chain doesn't extend the old one
     batches.receiveBlocks(batch5, dataStructureUtil.randomSignedBeaconBlock(batch5.getFirstSlot()));
@@ -647,10 +661,17 @@ class BatchSyncTest {
           batches.assertNotMarkedInvalid(batch);
         });
 
+    // Should try to find the common ancestor with the new chain and not create any batches yet
+    verify(commonAncestor).findCommonAncestor(targetChain);
+    assertThat(batches).hasSize(0);
+
+    // Then the common ancestor is found
+    final UInt64 commonAncestorSlot = UInt64.valueOf(70);
+    commonAncestorFuture.complete(commonAncestorSlot);
+
     // Should have recreated the batches from finalized epoch again
     assertThat(batches).hasSize(5);
-    assertThatBatch(batches.get(0))
-        .hasFirstSlot(compute_start_slot_at_epoch(recentChainData.getFinalizedEpoch()).plus(1));
+    assertThatBatch(batches.get(0)).hasFirstSlot(commonAncestorSlot.plus(1));
     assertThat(secondSyncResult).isNotDone();
   }
 
