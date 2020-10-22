@@ -719,8 +719,6 @@ public class ChainDataProviderTest {
 
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
-    final SignedBeaconBlock block =
-        new SignedBeaconBlock(combinedChainDataClient.getBestBlock().get());
     Optional<BlockHeader> results =
         provider.getBlockHeaderByRoot(forkBlock.getBlock().getRoot()).get();
     assertThat(results.get().header.message.slot).isEqualTo(forkBlock.getSlot());
