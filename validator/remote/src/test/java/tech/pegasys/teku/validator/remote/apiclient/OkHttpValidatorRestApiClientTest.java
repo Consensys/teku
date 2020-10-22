@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -59,11 +60,13 @@ class OkHttpValidatorRestApiClientTest {
   private final JsonProvider jsonProvider = new JsonProvider();
   private final MockWebServer mockWebServer = new MockWebServer();
   private OkHttpValidatorRestApiClient apiClient;
+  private OkHttpClient okHttpClient;
 
   @BeforeEach
   public void beforeEach() throws Exception {
     mockWebServer.start();
-    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), new OkHttpClient());
+    okHttpClient = new OkHttpClient();
+    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient);
   }
 
   @AfterEach
@@ -729,6 +732,44 @@ class OkHttpValidatorRestApiClientTest {
     assertThatThrownBy(() -> apiClient.subscribeToPersistentSubnets(subnetSubscriptions))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
+  }
+
+  @Test
+  void shouldIncludeAuthorizationHeaderWhenBaseUrlIncludesCredentialsForGetRequest()
+      throws Exception {
+    final HttpUrl url =
+        mockWebServer.url("/").newBuilder().username("user").password("password").build();
+    apiClient = new OkHttpValidatorRestApiClient(url, okHttpClient);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+
+    apiClient.getFork();
+
+    RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getMethod()).isEqualTo("GET");
+    final String authorization = request.getHeader("Authorization");
+    // Base64 encoded version of credentials.
+    assertThat(authorization).isEqualTo("Basic dXNlcjpwYXNzd29yZA==");
+  }
+
+  @Test
+  void shouldIncludeAuthorizationHeaderWhenBaseUrlIncludesCredentialsForPostRequest()
+      throws Exception {
+    final HttpUrl url =
+        mockWebServer.url("/").newBuilder().username("user").password("password").build();
+    apiClient = new OkHttpValidatorRestApiClient(url, okHttpClient);
+
+    final ValidatorDutiesRequest validatorDutiesRequest = schemaObjects.validatorDutiesRequest();
+    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+
+    apiClient.getDuties(validatorDutiesRequest);
+
+    RecordedRequest request = mockWebServer.takeRequest();
+
+    assertThat(request.getMethod()).isEqualTo("POST");
+    final String authorization = request.getHeader("Authorization");
+    // Base64 encoded version of credentials.
+    assertThat(authorization).isEqualTo("Basic dXNlcjpwYXNzd29yZA==");
   }
 
   private String asJson(Object object) {

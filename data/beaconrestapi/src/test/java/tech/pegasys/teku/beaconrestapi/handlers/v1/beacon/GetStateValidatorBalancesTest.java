@@ -36,7 +36,7 @@ public class GetStateValidatorBalancesTest extends AbstractBeaconHandlerTest {
       new ValidatorBalanceResponse(ONE, UInt64.valueOf("32000000000"));
 
   @Test
-  public void shouldGetValidatorFromState() throws Exception {
+  public void shouldGetValidatorBalancesFromState() throws Exception {
     final UInt64 slot = dataStructureUtil.randomUInt64();
     when(context.pathParamMap()).thenReturn(Map.of("state_id", "head"));
     when(context.queryParamMap()).thenReturn(Map.of("id", List.of("1", "2", "3,4")));
@@ -45,7 +45,7 @@ public class GetStateValidatorBalancesTest extends AbstractBeaconHandlerTest {
       when(chainDataProvider.validatorParameterToIndex(Integer.toString(i)))
           .thenReturn(Optional.of(i));
     }
-    when(chainDataProvider.getValidatorsBalances(slot, List.of(1, 2, 3, 4)))
+    when(chainDataProvider.getValidatorsBalancesBySlot(slot, List.of(1, 2, 3, 4)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(validatorBalanceResponse))));
     handler.handle(context);
     GetStateValidatorBalancesResponse response =
