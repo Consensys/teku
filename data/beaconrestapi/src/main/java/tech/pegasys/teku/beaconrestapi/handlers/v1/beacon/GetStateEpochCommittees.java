@@ -13,32 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
-import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.apache.tuweni.bytes.Bytes32;
-import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.api.ChainDataProvider;
-import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateEpochCommitteesResponse;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.util.config.Constants;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.COMMITTEE_INDEX_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.EPOCH;
@@ -59,6 +33,31 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.INVALID_NUMERIC_VALUE;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsIntIfPresent;
 import static tech.pegasys.teku.beaconrestapi.SingleQueryParameterUtils.getParameterValueAsUInt64IfPresent;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.javalin.http.Context;
+import io.javalin.http.Handler;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes32;
+import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateEpochCommitteesResponse;
+import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.util.config.Constants;
 
 public class GetStateEpochCommittees extends AbstractHandler implements Handler {
   public static final String ROUTE_WITH_EPOCH_PARAM =
@@ -107,9 +106,12 @@ public class GetStateEpochCommittees extends AbstractHandler implements Handler 
     final Map<String, List<String>> queryParameters = ctx.queryParamMap();
 
     final Supplier<UInt64> epochParamSupplier =
-        () -> parseEpochPathParam(chainDataProvider, ctx).orElse(chainDataProvider.getCurrentEpoch());
-    final Optional<UInt64> slotQueryParam = getParameterValueAsUInt64IfPresent(queryParameters, SLOT);
-    final Optional<Integer> indexQueryParam = getParameterValueAsIntIfPresent(queryParameters, INDEX);
+        () ->
+            parseEpochPathParam(chainDataProvider, ctx).orElse(chainDataProvider.getCurrentEpoch());
+    final Optional<UInt64> slotQueryParam =
+        getParameterValueAsUInt64IfPresent(queryParameters, SLOT);
+    final Optional<Integer> indexQueryParam =
+        getParameterValueAsIntIfPresent(queryParameters, INDEX);
 
     final Function<Bytes32, SafeFuture<Optional<List<EpochCommitteeResponse>>>> rootHandler =
         (root) ->

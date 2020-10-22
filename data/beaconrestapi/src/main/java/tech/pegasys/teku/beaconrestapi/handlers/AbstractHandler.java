@@ -13,10 +13,22 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
+import static javax.servlet.http.HttpServletResponse.SC_GONE;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.core.util.Header;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,19 +39,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
-
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static javax.servlet.http.HttpServletResponse.SC_BAD_REQUEST;
-import static javax.servlet.http.HttpServletResponse.SC_GONE;
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static javax.servlet.http.HttpServletResponse.SC_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.beaconrestapi.CacheControlUtils.getMaxAgeForSlot;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
 
 public abstract class AbstractHandler implements Handler {
 
@@ -52,37 +51,25 @@ public abstract class AbstractHandler implements Handler {
   }
 
   public <T> void processBeaconBlockEndpointRequest(
-          final ChainDataProvider provider,
-          final Context ctx,
-          final Function<Bytes32, SafeFuture<Optional<T>>> rootHandler,
-          final Function<UInt64, SafeFuture<Optional<T>>> slotHandler,
-          final AbstractHandler.ResultProcessor<T> resultProcessor)
-          throws JsonProcessingException {
+      final ChainDataProvider provider,
+      final Context ctx,
+      final Function<Bytes32, SafeFuture<Optional<T>>> rootHandler,
+      final Function<UInt64, SafeFuture<Optional<T>>> slotHandler,
+      final AbstractHandler.ResultProcessor<T> resultProcessor)
+      throws JsonProcessingException {
     processBeaconEndpointRequest(
-            provider,
-            ctx,
-            rootHandler,
-            slotHandler,
-            PARAM_BLOCK_ID,
-            resultProcessor
-    );
+        provider, ctx, rootHandler, slotHandler, PARAM_BLOCK_ID, resultProcessor);
   }
 
   public <T> void processBeaconStateEndpointRequest(
-          final ChainDataProvider provider,
-          final Context ctx,
-          final Function<Bytes32, SafeFuture<Optional<T>>> rootHandler,
-          final Function<UInt64, SafeFuture<Optional<T>>> slotHandler,
-          final AbstractHandler.ResultProcessor<T> resultProcessor)
-          throws JsonProcessingException {
+      final ChainDataProvider provider,
+      final Context ctx,
+      final Function<Bytes32, SafeFuture<Optional<T>>> rootHandler,
+      final Function<UInt64, SafeFuture<Optional<T>>> slotHandler,
+      final AbstractHandler.ResultProcessor<T> resultProcessor)
+      throws JsonProcessingException {
     processBeaconEndpointRequest(
-            provider,
-            ctx,
-            rootHandler,
-            slotHandler,
-            PARAM_STATE_ID,
-            resultProcessor
-    );
+        provider, ctx, rootHandler, slotHandler, PARAM_STATE_ID, resultProcessor);
   }
 
   public <T> void processBeaconEndpointRequest(

@@ -13,15 +13,14 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-
-import java.util.Objects;
-
-import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
 public class AttestationData {
   @Schema(type = "string", format = "uint64")
@@ -71,11 +70,11 @@ public class AttestationData {
     if (this == o) return true;
     if (!(o instanceof AttestationData)) return false;
     AttestationData that = (AttestationData) o;
-    return Objects.equals(slot, that.slot) &&
-            Objects.equals(index, that.index) &&
-            Objects.equals(beacon_block_root, that.beacon_block_root) &&
-            Objects.equals(source, that.source) &&
-            Objects.equals(target, that.target);
+    return Objects.equals(slot, that.slot)
+        && Objects.equals(index, that.index)
+        && Objects.equals(beacon_block_root, that.beacon_block_root)
+        && Objects.equals(source, that.source)
+        && Objects.equals(target, that.target);
   }
 
   @Override

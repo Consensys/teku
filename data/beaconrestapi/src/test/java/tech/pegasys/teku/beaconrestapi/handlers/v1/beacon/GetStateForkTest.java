@@ -13,6 +13,13 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateForkResponse;
 import tech.pegasys.teku.api.schema.Fork;
@@ -20,14 +27,6 @@ import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-
-import java.util.Map;
-import java.util.Optional;
-
-import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
 public class GetStateForkTest extends AbstractBeaconHandlerTest {
   final DataStructureUtil dataStructureUtil = new DataStructureUtil();

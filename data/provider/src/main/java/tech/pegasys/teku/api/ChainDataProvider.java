@@ -13,6 +13,15 @@
 
 package tech.pegasys.teku.api;
 
+import static com.google.common.base.Preconditions.checkState;
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.api.DataProviderFailures.chainUnavailable;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.response.GetBlockResponse;
 import tech.pegasys.teku.api.response.GetForkResponse;
@@ -44,16 +53,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Predicate;
-
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.api.DataProviderFailures.chainUnavailable;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
 
 public class ChainDataProvider {
   private final CombinedChainDataClient combinedChainDataClient;
@@ -195,64 +194,74 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<Bytes32>> getBlockRootBySlot(final UInt64 slot) {
     return combinedChainDataClient
-            .getBlockInEffectAtSlot(slot)
-            .thenApply(maybeBlock -> maybeBlock.map(tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock::getRoot));
+        .getBlockInEffectAtSlot(slot)
+        .thenApply(
+            maybeBlock ->
+                maybeBlock.map(tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock::getRoot));
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockBySlotV1(final UInt64 slot) {
     return combinedChainDataClient
-            .getBlockInEffectAtSlot(slot)
-            .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::new));
+        .getBlockInEffectAtSlot(slot)
+        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::new));
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByRoot(final Bytes32 blockRoot) {
     return combinedChainDataClient
-            .getBlockByBlockRoot(blockRoot)
-            .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::new));
-
+        .getBlockByBlockRoot(blockRoot)
+        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::new));
   }
 
-  public SafeFuture<Optional<List<Attestation>>> getBlockAttestationsByRoot(final Bytes32 blockRoot) {
+  public SafeFuture<Optional<List<Attestation>>> getBlockAttestationsByRoot(
+      final Bytes32 blockRoot) {
     return combinedChainDataClient
-            .getBlockByBlockRoot(blockRoot)
-            .thenApply(this::getBlockAttestations);
+        .getBlockByBlockRoot(blockRoot)
+        .thenApply(this::getBlockAttestations);
   }
 
   public SafeFuture<Optional<List<Attestation>>> getBlockAttestationsBySlot(final UInt64 slot) {
     return combinedChainDataClient
-            .getBlockInEffectAtSlot(slot)
-            .thenApply(this::getBlockAttestations);
+        .getBlockInEffectAtSlot(slot)
+        .thenApply(this::getBlockAttestations);
   }
 
-  private Optional<List<Attestation>> getBlockAttestations(Optional<tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock> block) {
-    return block.map(tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock::getMessage)
-            .map(tech.pegasys.teku.datastructures.blocks.BeaconBlock::getBody)
-            .map(tech.pegasys.teku.datastructures.blocks.BeaconBlockBody::getAttestations)
-            .map(attestations -> attestations.stream().map(Attestation::new).collect(toList()));
+  private Optional<List<Attestation>> getBlockAttestations(
+      Optional<tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock> block) {
+    return block
+        .map(tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock::getMessage)
+        .map(tech.pegasys.teku.datastructures.blocks.BeaconBlock::getBody)
+        .map(tech.pegasys.teku.datastructures.blocks.BeaconBlockBody::getAttestations)
+        .map(attestations -> attestations.stream().map(Attestation::new).collect(toList()));
   }
 
   public SafeFuture<Optional<BlockHeader>> getBlockHeaderBySlot(final UInt64 slot) {
     return combinedChainDataClient
-            .getBlockInEffectAtSlot(slot)
-            .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
+        .getBlockInEffectAtSlot(slot)
+        .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
   }
 
   public SafeFuture<Optional<BlockHeader>> getBlockHeaderByRoot(final Bytes32 blockRoot) {
     return combinedChainDataClient
-            .getBlockByBlockRoot(blockRoot)
-            .thenCompose(maybeBlock -> {
+        .getBlockByBlockRoot(blockRoot)
+        .thenCompose(
+            maybeBlock -> {
               if (maybeBlock.isEmpty()) {
                 return SafeFuture.completedFuture(Optional.empty());
               }
-              final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock block = maybeBlock.get();
-              return combinedChainDataClient.getBlockInEffectAtSlot(maybeBlock.get().getSlot())
-                      .thenApply(maybeCanonicalBlock -> maybeCanonicalBlock.map(canonicalBlock -> {
-                        if (canonicalBlock.equals(block)) {
-                          return new BlockHeader(block, true);
-                        } else {
-                          return new BlockHeader(block, false);
-                        }
-                      }));
+              final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock block =
+                  maybeBlock.get();
+              return combinedChainDataClient
+                  .getBlockInEffectAtSlot(maybeBlock.get().getSlot())
+                  .thenApply(
+                      maybeCanonicalBlock ->
+                          maybeCanonicalBlock.map(
+                              canonicalBlock -> {
+                                if (canonicalBlock.equals(block)) {
+                                  return new BlockHeader(block, true);
+                                } else {
+                                  return new BlockHeader(block, false);
+                                }
+                              }));
             });
   }
 

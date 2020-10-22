@@ -13,6 +13,14 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.beacon.EpochCommitteeResponse;
@@ -22,15 +30,6 @@ import tech.pegasys.teku.beaconrestapi.AbstractBeaconHandlerTest;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 public class GetStateEpochCommitteesTest extends AbstractBeaconHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();

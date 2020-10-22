@@ -15,7 +15,6 @@ package tech.pegasys.teku.api.schema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Objects;
 
 public class ProposerSlashing {
@@ -46,8 +45,7 @@ public class ProposerSlashing {
     if (this == o) return true;
     if (!(o instanceof ProposerSlashing)) return false;
     ProposerSlashing that = (ProposerSlashing) o;
-    return Objects.equals(header_1, that.header_1) &&
-            Objects.equals(header_2, that.header_2);
+    return Objects.equals(header_1, that.header_1) && Objects.equals(header_2, that.header_2);
   }
 
   @Override

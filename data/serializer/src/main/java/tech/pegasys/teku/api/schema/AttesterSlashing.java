@@ -15,7 +15,6 @@ package tech.pegasys.teku.api.schema;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Objects;
 
 public class AttesterSlashing {
@@ -46,8 +45,8 @@ public class AttesterSlashing {
     if (this == o) return true;
     if (!(o instanceof AttesterSlashing)) return false;
     AttesterSlashing that = (AttesterSlashing) o;
-    return Objects.equals(attestation_1, that.attestation_1) &&
-            Objects.equals(attestation_2, that.attestation_2);
+    return Objects.equals(attestation_1, that.attestation_1)
+        && Objects.equals(attestation_2, that.attestation_2);
   }
 
   @Override

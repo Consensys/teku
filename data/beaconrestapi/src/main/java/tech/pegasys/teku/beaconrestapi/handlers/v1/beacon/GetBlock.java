@@ -13,6 +13,14 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -21,6 +29,8 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
@@ -32,17 +42,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
-import java.util.Optional;
-import java.util.function.Function;
-
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
-
 public class GetBlock extends AbstractHandler implements Handler {
   public static final String ROUTE = "/eth/v1/beacon/blocks/:block_id";
   private final ChainDataProvider chainDataProvider;
@@ -51,39 +50,37 @@ public class GetBlock extends AbstractHandler implements Handler {
     this(dataProvider.getChainDataProvider(), jsonProvider);
   }
 
-  public GetBlock(
-          final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
+  public GetBlock(final ChainDataProvider chainDataProvider, final JsonProvider jsonProvider) {
     super(jsonProvider);
     this.chainDataProvider = chainDataProvider;
   }
 
   @OpenApi(
-          path = ROUTE,
-          method = HttpMethod.GET,
-          summary = "Get block",
-          tags = {TAG_V1_BEACON},
-          description = "Retrieves block details for given block id.",
-          pathParams = {@OpenApiParam(name = PARAM_BLOCK_ID, description = PARAM_BLOCK_ID_DESCRIPTION)},
-          responses = {
-                  @OpenApiResponse(
-                          status = RES_OK,
-                          content = @OpenApiContent(from = GetBlockResponse.class)),
-                  @OpenApiResponse(status = RES_BAD_REQUEST),
-                  @OpenApiResponse(status = RES_NOT_FOUND),
-                  @OpenApiResponse(status = RES_INTERNAL_ERROR)
-          })
+      path = ROUTE,
+      method = HttpMethod.GET,
+      summary = "Get block",
+      tags = {TAG_V1_BEACON},
+      description = "Retrieves block details for given block id.",
+      pathParams = {@OpenApiParam(name = PARAM_BLOCK_ID, description = PARAM_BLOCK_ID_DESCRIPTION)},
+      responses = {
+        @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = GetBlockResponse.class)),
+        @OpenApiResponse(status = RES_BAD_REQUEST),
+        @OpenApiResponse(status = RES_NOT_FOUND),
+        @OpenApiResponse(status = RES_INTERNAL_ERROR)
+      })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     final Function<UInt64, SafeFuture<Optional<SignedBeaconBlock>>> slotHandler =
-            chainDataProvider::getBlockBySlotV1;
+        chainDataProvider::getBlockBySlotV1;
     final Function<Bytes32, SafeFuture<Optional<SignedBeaconBlock>>> rootHandler =
-            chainDataProvider::getBlockByRoot;
+        chainDataProvider::getBlockByRoot;
 
-    processBeaconBlockEndpointRequest(chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
+    processBeaconBlockEndpointRequest(
+        chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
   }
 
   private Optional<String> handleResult(Context ctx, final SignedBeaconBlock response)
-          throws JsonProcessingException {
+      throws JsonProcessingException {
     return Optional.of(jsonProvider.objectToJSON(new GetBlockResponse(response)));
   }
 }

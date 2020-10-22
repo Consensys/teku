@@ -16,9 +16,8 @@ package tech.pegasys.teku.api.schema;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-
 import java.util.Objects;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class VoluntaryExit {
   @Schema(type = "string", format = "uint64")
@@ -49,8 +48,8 @@ public class VoluntaryExit {
     if (this == o) return true;
     if (!(o instanceof VoluntaryExit)) return false;
     VoluntaryExit that = (VoluntaryExit) o;
-    return Objects.equals(epoch, that.epoch) &&
-            Objects.equals(validator_index, that.validator_index);
+    return Objects.equals(epoch, that.epoch)
+        && Objects.equals(validator_index, that.validator_index);
   }
 
   @Override

@@ -13,31 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import io.javalin.http.Context;
-import io.javalin.http.Handler;
-import io.javalin.plugin.openapi.annotations.HttpMethod;
-import io.javalin.plugin.openapi.annotations.OpenApi;
-import io.javalin.plugin.openapi.annotations.OpenApiContent;
-import io.javalin.plugin.openapi.annotations.OpenApiParam;
-import io.javalin.plugin.openapi.annotations.OpenApiResponse;
-import org.apache.tuweni.bytes.Bytes32;
-import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.api.ChainDataProvider;
-import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
-import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorBalancesResponse;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
-import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.provider.JsonProvider;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_ID;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_STATE_ID_DESCRIPTION;
@@ -49,6 +24,30 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.javalin.http.Context;
+import io.javalin.http.Handler;
+import io.javalin.plugin.openapi.annotations.HttpMethod;
+import io.javalin.plugin.openapi.annotations.OpenApi;
+import io.javalin.plugin.openapi.annotations.OpenApiContent;
+import io.javalin.plugin.openapi.annotations.OpenApiParam;
+import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes32;
+import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateRootResponse;
+import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorBalancesResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorBalanceResponse;
+import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetStateValidatorBalances extends AbstractHandler implements Handler {
   public static final String ROUTE = "/eth/v1/beacon/states/:state_id/validator_balances";

@@ -13,6 +13,14 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
@@ -21,6 +29,8 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
@@ -31,17 +41,6 @@ import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-
-import java.util.Optional;
-import java.util.function.Function;
-
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_BAD_REQUEST;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERROR;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_NOT_FOUND;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
-import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
 
 public class GetBlockHeader extends AbstractHandler implements Handler {
   public static final String ROUTE = "/eth/v1/beacon/headers/:block_id";
@@ -75,11 +74,12 @@ public class GetBlockHeader extends AbstractHandler implements Handler {
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
     final Function<UInt64, SafeFuture<Optional<BlockHeader>>> slotHandler =
-            chainDataProvider::getBlockHeaderBySlot;
+        chainDataProvider::getBlockHeaderBySlot;
     final Function<Bytes32, SafeFuture<Optional<BlockHeader>>> rootHandler =
-            chainDataProvider::getBlockHeaderByRoot;
+        chainDataProvider::getBlockHeaderByRoot;
 
-    processBeaconBlockEndpointRequest(chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
+    processBeaconBlockEndpointRequest(
+        chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
   }
 
   private Optional<String> handleResult(Context ctx, final BlockHeader response)
