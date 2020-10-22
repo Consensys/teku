@@ -66,9 +66,6 @@ public class InMemoryStorageSystemBuilder {
       case V4:
         database = createV4Database();
         break;
-      case V3:
-        database = createV3Database();
-        break;
       default:
         throw new UnsupportedOperationException("Unsupported database version: " + version);
     }
@@ -162,13 +159,6 @@ public class InMemoryStorageSystemBuilder {
     }
     return InMemoryRocksDbDatabaseFactory.createV4(
         hotDb, coldDb, storageMode, stateStorageFrequency);
-  }
-
-  private Database createV3Database() {
-    if (unifiedDb == null) {
-      unifiedDb = InMemoryRocksDbDatabaseFactory.createEmptyV3RocksDbInstance();
-    }
-    return InMemoryRocksDbDatabaseFactory.createV3(unifiedDb, storageMode);
   }
 
   private void reopenDatabases() {
