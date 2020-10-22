@@ -18,6 +18,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
@@ -50,4 +51,6 @@ public interface Peer {
   default boolean idMatches(final Peer other) {
     return other != null && Objects.equals(getId(), other.getId());
   }
+
+  void adjustReputation(final ReputationAdjustment adjustment);
 }
