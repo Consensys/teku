@@ -79,7 +79,7 @@ public class RocksDbConfiguration {
 
   @JsonIgnore private Path databaseDir;
 
-  public static RocksDbConfiguration v3And4Settings(final Path databaseDir) {
+  public static RocksDbConfiguration v4Settings(final Path databaseDir) {
     return new RocksDbConfiguration().withDatabaseDir(databaseDir);
   }
 

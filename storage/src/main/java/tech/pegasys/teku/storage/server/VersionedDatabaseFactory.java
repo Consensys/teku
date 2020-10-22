@@ -124,11 +124,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         database = new NoOpDatabase();
         LOG.info("Created no-op database");
         break;
-      case V3:
-        database = createV3Database();
-        LOG.info(
-            "Created V3 database ({}) at {}", dbVersion.getValue(), dbDirectory.getAbsolutePath());
-        break;
       case V4:
         database = createV4Database();
         LOG.info(
@@ -175,24 +170,13 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     return database;
   }
 
-  private Database createV3Database() {
-    try {
-      DatabaseNetwork.init(getNetworkFile(), Constants.GENESIS_FORK_VERSION, eth1Address);
-      final RocksDbConfiguration rocksDbConfiguration =
-          RocksDbConfiguration.v3And4Settings(dbDirectory.toPath());
-      return RocksDbDatabase.createV3(metricsSystem, rocksDbConfiguration, stateStorageMode);
-    } catch (final IOException e) {
-      throw new DatabaseStorageException("Failed to read network configuration file", e);
-    }
-  }
-
   private Database createV4Database() {
     try {
       DatabaseNetwork.init(getNetworkFile(), Constants.GENESIS_FORK_VERSION, eth1Address);
       return RocksDbDatabase.createV4(
           metricsSystem,
-          RocksDbConfiguration.v3And4Settings(dbDirectory.toPath()),
-          RocksDbConfiguration.v3And4Settings(v5ArchiveDirectory.toPath()),
+          RocksDbConfiguration.v4Settings(dbDirectory.toPath()),
+          RocksDbConfiguration.v4Settings(v5ArchiveDirectory.toPath()),
           stateStorageMode,
           stateStorageFrequency);
     } catch (final IOException e) {

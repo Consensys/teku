@@ -64,13 +64,11 @@ import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbFinalizedDao.F
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbHotDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbHotDao.HotUpdater;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.RocksDbProtoArrayDao;
-import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V3RocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V4FinalizedRocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.dataaccess.V4HotRocksDbDao;
 import tech.pegasys.teku.storage.server.rocksdb.schema.RocksDbColumn;
 import tech.pegasys.teku.storage.server.rocksdb.schema.SchemaFinalized;
 import tech.pegasys.teku.storage.server.rocksdb.schema.SchemaHot;
-import tech.pegasys.teku.storage.server.rocksdb.schema.V3Schema;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaFinalized;
 import tech.pegasys.teku.storage.server.rocksdb.schema.V4SchemaHot;
 import tech.pegasys.teku.storage.server.state.StateRootRecorder;
@@ -86,16 +84,6 @@ public class RocksDbDatabase implements Database {
   final RocksDbFinalizedDao finalizedDao;
   final RocksDbEth1Dao eth1Dao;
   private final RocksDbProtoArrayDao protoArrayDao;
-
-  public static Database createV3(
-      final MetricsSystem metricsSystem,
-      final RocksDbConfiguration configuration,
-      final StateStorageMode stateStorageMode) {
-    final RocksDbAccessor db =
-        RocksDbInstanceFactory.create(
-            metricsSystem, STORAGE_HOT_DB, configuration, V3Schema.ALL_COLUMNS);
-    return createV3(metricsSystem, db, stateStorageMode);
-  }
 
   public static Database createV4(
       final MetricsSystem metricsSystem,
@@ -152,14 +140,6 @@ public class RocksDbDatabase implements Database {
         schemaFinalized,
         stateStorageMode,
         stateStorageFrequency);
-  }
-
-  static Database createV3(
-      final MetricsSystem metricsSystem,
-      final RocksDbAccessor db,
-      final StateStorageMode stateStorageMode) {
-    final V3RocksDbDao dao = new V3RocksDbDao(db);
-    return new RocksDbDatabase(metricsSystem, dao, dao, dao, dao, stateStorageMode);
   }
 
   static Database createV4(
