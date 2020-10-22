@@ -78,7 +78,7 @@ public class GetState extends AbstractHandler implements Handler {
     final Function<UInt64, SafeFuture<Optional<BeaconState>>> slotHandler =
         chainDataProvider::getStateAtSlot;
 
-    processStateEndpointRequest(
+    processBeaconStateEndpointRequest(
         chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
   }
 
