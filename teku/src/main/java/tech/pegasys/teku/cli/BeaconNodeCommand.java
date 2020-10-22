@@ -131,7 +131,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
       names = {"-c", CONFIG_FILE_OPTION_NAME},
       paramLabel = "<FILENAME>",
       description = "Path/filename of the yaml config file (default: none)",
-      arity = "1")
+      arity = "1",
+      // Available to all subcommands
+      scope = ScopeType.INHERIT)
   private File configFile;
 
   @Mixin(name = "Network")
