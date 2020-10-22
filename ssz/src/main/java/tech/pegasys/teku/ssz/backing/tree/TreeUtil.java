@@ -27,7 +27,13 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
 /** Misc Backing binary tree utils */
 public class TreeUtil {
 
-  public static final TreeNode ZERO_LEAF = new LeafNodeImpl(Bytes32.ZERO);
+  public static final TreeNode ZERO_LEAF =
+      new LeafNodeImpl(Bytes32.ZERO) {
+        @Override
+        public boolean isZero() {
+          return true;
+        }
+      };
   private static final TreeNode[] ZERO_TREES;
 
   static {

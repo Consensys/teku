@@ -104,7 +104,7 @@ public class Validator extends AbstractImmutableContainer
         ViewUtils.createVectorFromBytes(pubkey.toSSZBytes()),
         new Bytes32View(withdrawal_credentials),
         new UInt64View(effective_balance),
-        new BitView(slashed),
+        BitView.viewOf(slashed),
         new UInt64View(activation_eligibility_epoch),
         new UInt64View(activation_epoch),
         new UInt64View(exit_epoch),
