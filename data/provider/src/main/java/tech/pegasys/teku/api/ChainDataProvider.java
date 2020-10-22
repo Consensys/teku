@@ -210,7 +210,7 @@ public class ChainDataProvider {
   // because this is called after attempting to match a block to a slot, this function
   // will only ever be run for non canonical blocks. if made public, it will have to be updated to
   // first check that the block doesnt have a slot, before it can make that assumption.
-  private SafeFuture<Optional<BlockHeader>> getBlockHeaderByBlockRoot(final Bytes32 blockRoot) {
+  SafeFuture<Optional<BlockHeader>> getBlockHeaderByBlockRoot(final Bytes32 blockRoot) {
     return combinedChainDataClient
         .getBlockByBlockRoot(blockRoot)
         .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, false)));
@@ -584,5 +584,22 @@ public class ChainDataProvider {
         .getStateByBlockRoot(blockRoot)
         .join()
         .map(Merkleizable::hash_tree_root);
+  }
+
+  public SafeFuture<List<BlockHeader>> getBlockHeaders(
+      final Optional<Bytes32> parentRoot, final Optional<UInt64> slot) {
+    if (!isStoreAvailable()) {
+      throw new ChainDataUnavailableException();
+    }
+    if (parentRoot.isPresent()) {
+      return SafeFuture.completedFuture(List.of());
+    }
+
+    final UInt64 slotToLoad = slot.or(recentChainData::getCurrentSlot).orElseThrow();
+    return combinedChainDataClient
+        .getBlockAtSlotExact(slotToLoad)
+        .thenApply(
+            maybeBlock ->
+                maybeBlock.map(block -> List.of(new BlockHeader(block, true))).orElse(List.of()));
   }
 }
