@@ -209,7 +209,7 @@ public class SlotProcessorTest {
             finalizedCheckpoint.getEpoch(),
             finalizedCheckpoint.getRoot(),
             1);
-    verify(forkChoice).processHead(slot, false);
+    verify(forkChoice).processHead(slot);
   }
 
   @Test
@@ -243,7 +243,7 @@ public class SlotProcessorTest {
     verify(slotEventsChannel).onSlot(ZERO);
     // Attestation due
     slotProcessor.onTick(beaconState.getGenesis_time().plus(SECONDS_PER_SLOT / 3));
-    verify(forkChoice).processHead(ZERO, false);
+    verify(forkChoice).processHead(ZERO);
 
     // Slot 2 start
     final UInt64 slot1Start = beaconState.getGenesis_time().plus(SECONDS_PER_SLOT);
@@ -251,6 +251,6 @@ public class SlotProcessorTest {
     verify(slotEventsChannel).onSlot(ONE);
     // Attestation due
     slotProcessor.onTick(slot1Start.plus(SECONDS_PER_SLOT / 3));
-    verify(forkChoice).processHead(ONE, false);
+    verify(forkChoice).processHead(ONE);
   }
 }
