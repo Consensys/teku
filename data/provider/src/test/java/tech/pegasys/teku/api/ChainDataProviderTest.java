@@ -360,32 +360,10 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void stateParameterToSlot_shouldThrowWhenStoreNotFound() {
-    final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
-    assertThrows(ChainDataUnavailableException.class, () -> provider.stateParameterToSlot("1"));
-  }
-
-  @Test
   public void validatorParameterToIndex_shouldThrowWhenStoreNotFound() {
     final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
     assertThrows(
         ChainDataUnavailableException.class, () -> provider.validatorParameterToIndex("1"));
-  }
-
-  @Test
-  public void getValidatorDetails_shouldThrowWhenStoreNotFound() {
-    final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
-    assertThrows(
-        ChainDataUnavailableException.class,
-        () -> provider.getValidatorDetails(ZERO, Optional.of(2)));
-  }
-
-  @Test
-  public void getValidatorsDetails_shouldThrowWhenStoreNotFound() {
-    final ChainDataProvider provider = new ChainDataProvider(null, mockCombinedChainDataClient);
-    assertThrows(
-        ChainDataUnavailableException.class,
-        () -> provider.getValidatorsDetails(ZERO, emptyList()));
   }
 
   @Test
@@ -557,19 +535,6 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void stateParameterToSlot_shouldParseStateRoot() {
-    final tech.pegasys.teku.datastructures.state.BeaconState beaconState =
-        recentChainData.getBestState().get();
-    final Bytes32 stateRoot = beaconState.hashTreeRoot().or(Bytes32.ZERO);
-    final ChainDataProvider provider =
-        new ChainDataProvider(recentChainData, combinedChainDataClient);
-
-    Optional<UInt64> result = provider.stateParameterToSlot(stateRoot.toHexString());
-    assertThat(result.isPresent()).isTrue();
-    assertThat(result.get()).isEqualTo(beaconState.getSlot());
-  }
-
-  @Test
   public void stateParameterToSlot_shouldParseSlotNumber() {
     final UInt64 slot = UInt64.valueOf(1);
     final ChainDataProvider provider =
@@ -644,7 +609,7 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
     final SafeFuture<Optional<ValidatorResponse>> response =
-        provider.getValidatorDetails(UInt64.valueOf(12345678), Optional.of(1));
+        provider.getValidatorDetailsBySlot(UInt64.valueOf(12345678), Optional.of(1));
     assertThatSafeFuture(response).isCompletedWithEmptyOptional();
   }
 
@@ -652,7 +617,7 @@ public class ChainDataProviderTest {
   public void getValidatorDetails_shouldReturnEmptyFromEmptyValidatorIndex() {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
-    assertThatSafeFuture(provider.getValidatorDetails(ONE, Optional.empty()))
+    assertThatSafeFuture(provider.getValidatorDetailsBySlot(ONE, Optional.empty()))
         .isCompletedWithEmptyOptional();
   }
 
@@ -670,7 +635,7 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
     SafeFuture<Optional<List<ValidatorResponse>>> response =
-        provider.getValidatorsDetails(UInt64.valueOf(12345678), List.of(1));
+        provider.getValidatorsDetailsBySlot(UInt64.valueOf(12345678), List.of(1));
     assertThatSafeFuture(response).isCompletedWithEmptyOptional();
   }
 
@@ -678,7 +643,7 @@ public class ChainDataProviderTest {
   public void getValidatorsDetails_shouldReturnEmptyListWhenNoValidatorIndicesProvided() {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
-    assertThatSafeFuture(provider.getValidatorsDetails(ONE, emptyList()))
+    assertThatSafeFuture(provider.getValidatorsDetailsBySlot(ONE, emptyList()))
         .isCompletedWithValue(Optional.of(emptyList()));
   }
 
@@ -801,7 +766,7 @@ public class ChainDataProviderTest {
   private void assertValidatorRespondsWithCorrectValidatorAtHead(
       final ChainDataProvider provider, final Validator validator, final Integer validatorId) {
     SafeFuture<Optional<ValidatorResponse>> response =
-        provider.getValidatorDetails(ZERO, Optional.of(validatorId));
+        provider.getValidatorDetailsBySlot(ZERO, Optional.of(validatorId));
     Optional<ValidatorResponse> maybeValidator = response.join();
     assertThat(maybeValidator.isPresent()).isTrue();
     assertThat(maybeValidator.get())
@@ -828,7 +793,7 @@ public class ChainDataProviderTest {
             .map(id -> ValidatorResponse.fromState(beaconStateInternal, id))
             .collect(toList());
     SafeFuture<Optional<List<ValidatorResponse>>> response =
-        provider.getValidatorsDetails(slot, validatorIds);
+        provider.getValidatorsDetailsBySlot(slot, validatorIds);
     assertThatSafeFuture(response).isCompletedWithValue(Optional.of(expectedValidators));
   }
 }

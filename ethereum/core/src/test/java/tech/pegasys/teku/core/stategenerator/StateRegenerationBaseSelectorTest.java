@@ -32,6 +32,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class StateRegenerationBaseSelectorTest {
+
+  private static final int REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS = 2;
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   @SuppressWarnings("unchecked")
@@ -76,7 +78,7 @@ class StateRegenerationBaseSelectorTest {
   void shouldUseLatestEpochBoundaryWhenBetterThanOtherOptions() {
     withClosestAvailableFromStoreAtSlot(100);
     withRebasedStartingPointAtSlot(1);
-    final SignedBlockAndState latestEpochBoundary = withLatestEpochBoundaryAtSlot(101);
+    final SignedBlockAndState latestEpochBoundary = withLatestEpochBoundaryAtSlot(200);
 
     assertSelectedBase(latestEpochBoundary);
   }
@@ -84,9 +86,26 @@ class StateRegenerationBaseSelectorTest {
   @Test
   void shouldUseLatestEpochBoundaryWhenBetterThanStoreAndNoRebasedOptionAvailable() {
     withClosestAvailableFromStoreAtSlot(100);
-    final SignedBlockAndState latestEpochBoundary = withLatestEpochBoundaryAtSlot(101);
+    final SignedBlockAndState latestEpochBoundary = withLatestEpochBoundaryAtSlot(200);
 
     assertSelectedBase(latestEpochBoundary);
+  }
+
+  @Test
+  void shouldNotUseLatestEpochBoundaryWhenNotMuchBetterThanStore() {
+    final SignedBlockAndState storeState = withClosestAvailableFromStoreAtSlot(100);
+    withLatestEpochBoundaryAtSlot(101);
+
+    assertSelectedBase(storeState);
+  }
+
+  @Test
+  void shouldNotUseLatestEpochBoundaryWhenNotMuchBetterThanRebasedOption() {
+    withClosestAvailableFromStoreAtSlot(1);
+    final SignedBlockAndState rebasedState = withRebasedStartingPointAtSlot(100);
+    withLatestEpochBoundaryAtSlot(101);
+
+    assertSelectedBase(rebasedState);
   }
 
   @Test
@@ -214,6 +233,7 @@ class StateRegenerationBaseSelectorTest {
         closestAvailableStateSupplier,
         stateAndBlockProvider,
         blockProvider,
-        rebasedStartingPoint);
+        rebasedStartingPoint,
+        REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS);
   }
 }
