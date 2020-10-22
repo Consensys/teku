@@ -272,7 +272,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   private Request.Builder requestBuilder() {
-    final Request.Builder builder = new Builder();
+    final Request.Builder builder = new Request.Builder();
     if (!baseEndpoint.username().isEmpty()) {
       builder.header(
           "Authorization",
