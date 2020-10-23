@@ -327,8 +327,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
             error -> {
               if (Throwables.getRootCause(error) instanceof RateLimitedException
                   && attempt < MAX_RATE_LIMITING_RETRIES) {
-                LOG.warn(
-                    "Received Too Many Requests response from beacon node. Retrying after a delay.");
+                LOG.warn("Beacon node request rate limit has been exceeded. Retrying after delay.");
                 return asyncRunner.runAfterDelay(
                     () -> sendRequest(requestExecutor, attempt + 1), 2, TimeUnit.SECONDS);
               } else {
