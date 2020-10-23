@@ -14,6 +14,12 @@
 package tech.pegasys.teku.validator.remote.apiclient;
 
 import static java.util.Collections.emptyMap;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_TOO_MANY_REQUESTS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_AGGREGATE;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DATA;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DUTIES;
@@ -161,8 +167,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   @Override
   public SendSignedBlockResult sendSignedBlock(final SignedBeaconBlock beaconBlock) {
     return post(SEND_SIGNED_BLOCK, beaconBlock, String.class)
-        .map(Bytes32::fromHexString)
-        .map(SendSignedBlockResult::success)
+        .map(__ -> SendSignedBlockResult.success(Bytes32.ZERO))
         .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
   }
 
@@ -202,8 +207,8 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public void sendAggregateAndProof(final SignedAggregateAndProof signedAggregateAndProof) {
-    post(SEND_SIGNED_AGGREGATE_AND_PROOF, List.of(signedAggregateAndProof), null);
+  public void sendAggregateAndProofs(final List<SignedAggregateAndProof> signedAggregateAndProof) {
+    post(SEND_SIGNED_AGGREGATE_AND_PROOF, signedAggregateAndProof, null);
   }
 
   @Override
@@ -297,24 +302,22 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
       LOG.trace("{} {} {}", request.method(), request.url(), response.code());
 
       switch (response.code()) {
-        case 200:
+        case SC_OK:
           {
-            final String responseBody = response.body().string();
             if (responseClass != null) {
-              final T responseObj = jsonProvider.jsonToObject(responseBody, responseClass);
+              final T responseObj =
+                  jsonProvider.jsonToObject(response.body().string(), responseClass);
               return Optional.of(responseObj);
             } else {
               return Optional.empty();
             }
           }
-        case 202:
-        case 204:
-        case 404:
-        case 503:
-          {
-            return Optional.empty();
-          }
-        case 400:
+        case SC_ACCEPTED:
+        case SC_NO_CONTENT:
+        case SC_SERVICE_UNAVAILABLE:
+          return Optional.empty();
+
+        case SC_BAD_REQUEST:
           {
             throw new IllegalArgumentException(
                 "Invalid params response from Beacon Node API (url = "
@@ -323,21 +326,13 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
                     + response.body().string()
                     + ")");
           }
+        case SC_TOO_MANY_REQUESTS:
+          throw new RateLimitedException(request.url().toString());
         default:
-          {
-            final String responseBody = response.body().string();
-            LOG.error(
-                "Unexpected error calling Beacon Node API (url = {}, status = {}, response = {})",
-                request.url(),
-                response.code(),
-                responseBody);
-            throw new RuntimeException(
-                "Unexpected response from Beacon Node API (status = "
-                    + response.code()
-                    + ", response = "
-                    + responseBody
-                    + ")");
-          }
+          throw new RuntimeException(
+              String.format(
+                  "Unexpected response from Beacon Node API (url = %s, status = %s, response = %s)",
+                  request.url(), response.code(), response.body().string()));
       }
     } catch (IOException e) {
       throw new RuntimeException("Error communicating with Beacon Node API: " + e.getMessage(), e);

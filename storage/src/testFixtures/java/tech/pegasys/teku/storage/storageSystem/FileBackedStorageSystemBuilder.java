@@ -59,9 +59,6 @@ public class FileBackedStorageSystemBuilder {
       case V4:
         database = createV4Database();
         break;
-      case V3:
-        database = createV3Database();
-        break;
       default:
         throw new UnsupportedOperationException("Unsupported database version: " + version);
     }
@@ -160,14 +157,9 @@ public class FileBackedStorageSystemBuilder {
   private Database createV4Database() {
     return RocksDbDatabase.createV4(
         new StubMetricsSystem(),
-        RocksDbConfiguration.v3And4Settings(hotDir),
-        RocksDbConfiguration.v3And4Settings(archiveDir),
+        RocksDbConfiguration.v4Settings(hotDir),
+        RocksDbConfiguration.v4Settings(archiveDir),
         storageMode,
         stateStorageFrequency);
-  }
-
-  private Database createV3Database() {
-    final RocksDbConfiguration rocksDbConfiguration = RocksDbConfiguration.v3And4Settings(dataDir);
-    return RocksDbDatabase.createV3(new StubMetricsSystem(), rocksDbConfiguration, storageMode);
   }
 }

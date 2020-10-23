@@ -353,7 +353,7 @@ task distDocker(type: Exec) {
   dependsOn dockerDistUntar
 
   def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
-  def image = "quorumengineering/teku:develop"
+  def image = "consensys/teku:develop"
   def dockerBuildDir = "build/docker-teku/"
   workingDir "${dockerBuildDir}"
 
@@ -694,7 +694,7 @@ bintrayUpload.mustRunAfter(distZip)
 task dockerUpload(type: Exec) {
   dependsOn([distDocker])
   def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
-  def imageName = "quorumengineering/teku"
+  def imageName = "consensys/teku"
   def image = "${imageName}:${dockerBuildVersion}"
   def cmd = "docker tag '${imageName}:develop' '${image}' && docker push '${image}'"
 

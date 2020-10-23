@@ -11,34 +11,29 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server;
+package tech.pegasys.teku.infrastructure.unsigned;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Optional;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
-public class DatabaseVersionTest {
+public class UInt64UtilTest {
   @Test
-  public void defaultVersion() {
-    assertThat(DatabaseVersion.DEFAULT_VERSION).isEqualTo(DatabaseVersion.V5);
+  void shouldConvertIntegerListToUInt64() {
+    assertThat(UInt64Util.intToUInt64List(List.of(1, 2, 3)))
+        .containsExactly(UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3));
   }
 
   @Test
-  public void shouldAcceptV6FromString() {
-    Optional<DatabaseVersion> data = DatabaseVersion.fromString("6");
-    assertThat(data).contains(DatabaseVersion.V6);
+  void shouldConvertLongListToUInt64() {
+    assertThat(UInt64Util.longToUInt64List(List.of(1L, 2L, 3L)))
+        .containsExactly(UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3));
   }
 
   @Test
-  public void shouldAcceptV5FromString() {
-    Optional<DatabaseVersion> data = DatabaseVersion.fromString("5");
-    assertThat(data).contains(DatabaseVersion.V5);
-  }
-
-  @Test
-  public void shouldAcceptV4FromString() {
-    Optional<DatabaseVersion> data = DatabaseVersion.fromString("4");
-    assertThat(data).contains(DatabaseVersion.V4);
+  void shouldConvertStringListToUInt64() {
+    assertThat(UInt64Util.stringToUInt64List(List.of("1", "2", "3")))
+        .containsExactly(UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3));
   }
 }
