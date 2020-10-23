@@ -84,7 +84,9 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
       // Bitlist is handled specially
 
       LastBytesDelayer bytesDelayer = new LastBytesDelayer(writer);
-      int sizeBytes = sszSerializeVector(getVectorNode(node), bytesDelayer, elementsCount);
+      int sizeBytes =
+          sszSerializeVector(getVectorNode(node), bytesDelayer, elementsCount)
+              + ((elementsCount % 8 == 0) ? 1 : 0);
       Bytes lastBits = bytesDelayer.getLast();
       Bytes trailingByte = (elementsCount % 8 == 0) ? Bytes.of(0) : Bytes.EMPTY;
       MutableBytes mutableBytes = Bytes.wrap(lastBits, trailingByte).mutableCopy();
@@ -93,7 +95,7 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
       lastByte |= 1 << boundaryBitOff;
       mutableBytes.set(mutableBytes.size() - 1, lastByte);
       writer.accept(mutableBytes);
-      return sizeBytes + ((elementsCount % 8 == 0) ? 1 : 0);
+      return sizeBytes;
     } else {
       return sszSerializeVector(getVectorNode(node), writer, elementsCount);
     }

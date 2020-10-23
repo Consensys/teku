@@ -17,6 +17,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 
 /** Type of homogeneous collections (like List and Vector) */
 public abstract class CollectionViewType implements CompositeViewType {
@@ -73,14 +74,32 @@ public abstract class CollectionViewType implements CompositeViewType {
 
   public int sszSerializeVector(TreeNode node, Consumer<Bytes> writer, int elementsCount) {
     if (getElementType().isFixedSize()) {
-      return sszSerializeFixedVector(node, writer, elementsCount);
+      if (getElementType().getBitsSize() == 1) {
+        return sszSerializeFixedVectorRegular(node,writer,elementsCount);
+      } else {
+        return sszSerializeFixedVectorFast(node, writer, elementsCount);
+      }
     } else {
       return sszSerializeVariableVector(node, writer, elementsCount);
     }
   }
 
-  private int sszSerializeFixedVector(
-      TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
+  private int sszSerializeFixedVectorFast(TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
+    int nodesCount = getChunks(elementsCount);
+    int[] bytesCnt = new int[1];
+    TreeUtil.iterateLeaves(
+        vectorNode,
+        getGeneralizedIndex(0),
+        getGeneralizedIndex(nodesCount - 1),
+        leaf -> {
+          Bytes ssz = leaf.getSSZ();
+          writer.accept(ssz);
+          bytesCnt[0] += ssz.size();
+        });
+    return bytesCnt[0];
+  }
+
+  private int sszSerializeFixedVectorRegular(TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
     int nodesCount = getChunks(elementsCount);
     ViewType elementType = getElementType();
     int bytesCount = (elementsCount * elementType.getBitsSize() + 7) / 8;
