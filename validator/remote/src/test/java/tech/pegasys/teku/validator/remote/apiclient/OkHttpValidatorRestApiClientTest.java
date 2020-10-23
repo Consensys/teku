@@ -1,5 +1,5 @@
 /*
- * Copyright SC_ACCEPTED0 ConsenSys AG.
+ * Copyright 2020 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,13 +24,12 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
@@ -431,7 +430,6 @@ class OkHttpValidatorRestApiClientTest {
     assertThatThrownBy(() -> apiClient.createUnsignedAttestation(slot, committeeIndex))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
-    ;
   }
 
   @Test
@@ -653,10 +651,10 @@ class OkHttpValidatorRestApiClientTest {
     final boolean aggregator2 = false;
 
     final BeaconCommitteeSubscriptionRequest[] expectedRequest = {
-        new BeaconCommitteeSubscriptionRequest(
-            validatorIndex1, committeeIndex1, committeesAtSlot1, slot1, aggregator1),
-        new BeaconCommitteeSubscriptionRequest(
-            validatorIndex2, committeeIndex2, committeesAtSlot2, slot2, aggregator2)
+      new BeaconCommitteeSubscriptionRequest(
+          validatorIndex1, committeeIndex1, committeesAtSlot1, slot1, aggregator1),
+      new BeaconCommitteeSubscriptionRequest(
+          validatorIndex2, committeeIndex2, committeesAtSlot2, slot2, aggregator2)
     };
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
@@ -679,18 +677,18 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void
-  subscribeToBeaconCommitteeForAggregation_WhenBadRequest_ThrowsIllegalArgumentException() {
+      subscribeToBeaconCommitteeForAggregation_WhenBadRequest_ThrowsIllegalArgumentException() {
     final int committeeIndex = 1;
     final UInt64 aggregationSlot = UInt64.ONE;
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
     assertThatThrownBy(
-        () ->
-            apiClient.subscribeToBeaconCommittee(
-                List.of(
-                    new CommitteeSubscriptionRequest(
-                        1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))))
+            () ->
+                apiClient.subscribeToBeaconCommittee(
+                    List.of(
+                        new CommitteeSubscriptionRequest(
+                            1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -702,11 +700,11 @@ class OkHttpValidatorRestApiClientTest {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
     assertThatThrownBy(
-        () ->
-            apiClient.subscribeToBeaconCommittee(
-                List.of(
-                    new CommitteeSubscriptionRequest(
-                        1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))))
+            () ->
+                apiClient.subscribeToBeaconCommittee(
+                    List.of(
+                        new CommitteeSubscriptionRequest(
+                            1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
   }
