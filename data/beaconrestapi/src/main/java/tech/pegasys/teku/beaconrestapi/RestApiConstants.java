@@ -15,7 +15,6 @@ package tech.pegasys.teku.beaconrestapi;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_CONFLICT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
@@ -62,7 +61,6 @@ public class RestApiConstants {
   public static final String RES_BAD_REQUEST = "" + SC_BAD_REQUEST;
   public static final String RES_FORBIDDEN = "" + SC_FORBIDDEN;
   public static final String RES_NOT_FOUND = "" + SC_NOT_FOUND;
-  public static final String RES_CONFLICT = "" + SC_CONFLICT;
   public static final String RES_INTERNAL_ERROR = "" + SC_INTERNAL_SERVER_ERROR;
   public static final String RES_SERVICE_UNAVAILABLE = "" + SC_SERVICE_UNAVAILABLE;
 
