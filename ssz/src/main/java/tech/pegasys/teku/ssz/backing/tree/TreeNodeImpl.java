@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing.tree;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Arrays;
+import java.util.Objects;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -43,6 +44,38 @@ abstract class TreeNodeImpl implements TreeNode {
       } else {
         return Bytes32.wrap(Arrays.copyOf(data, 32));
       }
+    }
+
+    @Override
+    public TreeNode updated(TreeUpdates newNodes) {
+      if (newNodes.size() == 0) {
+        return this;
+      } else {
+        newNodes.checkLeaf();
+        return newNodes.getNode(0);
+      }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof LeafNode)) {
+        return false;
+      }
+      LeafNode otherLeaf = (LeafNode) o;
+      return Objects.equals(getData(), otherLeaf.getData());
+    }
+
+    @Override
+    public int hashCode() {
+      return getData().hashCode();
+    }
+
+    @Override
+    public String toString() {
+      return "[" + getData() + "]";
     }
   }
 
