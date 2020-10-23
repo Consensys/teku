@@ -38,7 +38,7 @@ public class StubBatchFactory extends BatchFactory implements Iterable<Batch> {
   private final boolean enforceEventThread;
 
   public StubBatchFactory(final EventThread eventThread, final boolean enforceEventThread) {
-    super(eventThread);
+    super(eventThread, null);
     this.eventThread = eventThread;
     this.enforceEventThread = enforceEventThread;
   }
@@ -131,6 +131,9 @@ public class StubBatchFactory extends BatchFactory implements Iterable<Batch> {
     public void reportInvalidBatch(final Batch batch, final SyncSource source) {
       markedInvalid = true;
     }
+
+    @Override
+    public void reportConfirmedBatch(final Batch batch, final SyncSource source) {}
 
     @Override
     public Optional<SyncSource> selectSource() {

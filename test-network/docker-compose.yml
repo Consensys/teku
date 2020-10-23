@@ -34,7 +34,7 @@ services:
       - "3001:3000"
 
   teku1:
-    image: quorumengineering/teku:develop
+    image: consensys/teku:develop
     << : *teku-deploy-def
     user: "${USER}"
     command:
@@ -64,7 +64,7 @@ services:
       - '19601:5051'
 
   teku2:
-    image: quorumengineering/teku:develop
+    image: consensys/teku:develop
     <<: *teku-deploy-def
     user: "${USER}"
     command:
@@ -91,7 +91,7 @@ services:
       - '19602:5051'
 
   teku3:
-    image: quorumengineering/teku:develop
+    image: consensys/teku:develop
     <<: *teku-deploy-def
     user: "${USER}"
     command:
@@ -118,7 +118,7 @@ services:
       - '19603:5051'
 
   teku4:
-    image: quorumengineering/teku:develop
+    image: consensys/teku:develop
     <<: *teku-deploy-def
     user: "${USER}"
     command:

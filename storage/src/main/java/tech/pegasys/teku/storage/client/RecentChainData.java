@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.client;
 
 import static tech.pegasys.teku.core.ForkChoiceUtil.get_ancestor;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_epoch_at_slot;
-import static tech.pegasys.teku.infrastructure.logging.LogFormatter.formatBlock;
 
 import com.google.common.eventbus.EventBus;
 import java.util.NavigableMap;
@@ -217,10 +216,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
    * @param currentSlot The current slot - the slot at which the new head was selected
    */
   public void updateHead(Bytes32 root, UInt64 currentSlot) {
-    updateHead(root, currentSlot, false);
-  }
-
-  public void updateHead(Bytes32 root, UInt64 currentSlot, boolean syncing) {
     final Optional<ChainHead> originalChainHead = chainHead;
 
     // Never let the fork choice slot go backwards.
@@ -238,12 +233,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
                                 String.format(
                                     "Unable to update head block as of slot %s.  Block is unavailable: %s.",
                                     currentSlot, root))))
-        .thenAccept(headBlock -> updateChainHead(originalChainHead, headBlock, syncing))
+        .thenAccept(headBlock -> updateChainHead(originalChainHead, headBlock))
         .reportExceptions();
   }
 
   private void updateChainHead(
-      final Optional<ChainHead> originalHead, final ChainHead newChainHead, final boolean syncing) {
+      final Optional<ChainHead> originalHead, final ChainHead newChainHead) {
     synchronized (this) {
       if (!chainHead.equals(originalHead)) {
         // The chain head has been updated while we were waiting for the newChainHead
@@ -265,15 +260,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
         final UInt64 commonAncestorSlot = previousChainHead.findCommonAncestor(newChainHead);
 
-        if (!syncing) {
-          // Don't log reorgs while syncing as it's just pointless noise.
-          // We're filling in historic slots so every block is a reorg vs the chain of empty slots
-          LOG.info(
-              "Chain reorg from {} to {}. Common ancestor at slot {}",
-              formatBlock(previousChainHead.getForkChoiceSlot(), previousChainHead.getRoot()),
-              formatBlock(newChainHead.getForkChoiceSlot(), newChainHead.getRoot()),
-              commonAncestorSlot);
-        }
         reorgCounter.inc();
         optionalReorgContext =
             ReorgContext.of(

@@ -13,7 +13,18 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PARTIAL_CONTENT;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
+
 public class RestApiConstants {
+
   public static final String STATE_ROOT = "stateRoot";
   public static final String ROOT = "root";
   public static final String SLOT = "slot";
@@ -40,17 +51,18 @@ public class RestApiConstants {
   public static final String TAG_V1_BEACON = "Beacon V1";
   public static final String TAG_EVENTS = "Events";
   public static final String TAG_VALIDATOR_REQUIRED = "Validator Required Api";
+  public static final String TAG_DEBUG = "Debug";
 
-  public static final String RES_OK = "200"; // SC_OK
-  public static final String RES_ACCEPTED = "202"; // SC_ACCEPTED
-  public static final String RES_NO_CONTENT = "204"; // SC_NO_CONTENT
-  public static final String RES_PARTIAL_CONTENT = "206"; // SC_PARTIAL_CONTENT
-  public static final String RES_BAD_REQUEST = "400"; // SC_BAD_REQUEST
-  public static final String RES_FORBIDDEN = "403"; // SC_FORBIDDEN
-  public static final String RES_NOT_FOUND = "404"; // SC_NOT_FOUND
-  public static final String RES_CONFLICT = "406"; // SC_CONFLICT
-  public static final String RES_INTERNAL_ERROR = "500"; // SC_INTERNAL_SERVER_ERROR
-  public static final String RES_SERVICE_UNAVAILABLE = "503"; // SC_SERVICE_UNAVAILABLE
+  // Use "" + instead of Integer.toString so they are constants and can be used in annotations
+  public static final String RES_OK = "" + SC_OK;
+  public static final String RES_ACCEPTED = "" + SC_ACCEPTED;
+  public static final String RES_NO_CONTENT = "" + SC_NO_CONTENT;
+  public static final String RES_PARTIAL_CONTENT = "" + SC_PARTIAL_CONTENT;
+  public static final String RES_BAD_REQUEST = "" + SC_BAD_REQUEST;
+  public static final String RES_FORBIDDEN = "" + SC_FORBIDDEN;
+  public static final String RES_NOT_FOUND = "" + SC_NOT_FOUND;
+  public static final String RES_INTERNAL_ERROR = "" + SC_INTERNAL_SERVER_ERROR;
+  public static final String RES_SERVICE_UNAVAILABLE = "" + SC_SERVICE_UNAVAILABLE;
 
   public static final String NO_CONTENT_PRE_GENESIS =
       "No content may be returned if the genesis block has not been set, meaning that there is no head to query.";

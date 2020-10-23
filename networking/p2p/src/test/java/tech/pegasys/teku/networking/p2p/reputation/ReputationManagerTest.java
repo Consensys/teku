@@ -11,9 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.p2p.connection;
+package tech.pegasys.teku.networking.p2p.reputation;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.LARGE_PENALTY;
+import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.LARGE_REWARD;
+import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.SMALL_PENALTY;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -117,5 +120,39 @@ class ReputationManagerTest {
 
     assertThat(reputationManager.isConnectionInitiationAllowed(new PeerAddress(new MockNodeId(1))))
         .isFalse();
+  }
+
+  @Test
+  void shouldDisconnectIfFirstAdjustmentIsALargePenalty() {
+    assertThat(reputationManager.adjustReputation(peerAddress, LARGE_PENALTY)).isTrue();
+  }
+
+  @Test
+  void shouldDisconnectAfterFourSmallPenalties() {
+    assertThat(reputationManager.adjustReputation(peerAddress, SMALL_PENALTY)).isFalse();
+    assertThat(reputationManager.adjustReputation(peerAddress, SMALL_PENALTY)).isFalse();
+    assertThat(reputationManager.adjustReputation(peerAddress, SMALL_PENALTY)).isFalse();
+    assertThat(reputationManager.adjustReputation(peerAddress, SMALL_PENALTY)).isTrue();
+  }
+
+  @Test
+  void shouldCapPositiveScoreAtTwoLargeChanges() {
+    assertThat(reputationManager.adjustReputation(peerAddress, LARGE_REWARD)).isFalse();
+    assertThat(reputationManager.adjustReputation(peerAddress, LARGE_REWARD)).isFalse();
+    assertThat(reputationManager.adjustReputation(peerAddress, LARGE_REWARD)).isFalse();
+    assertThat(reputationManager.adjustReputation(peerAddress, LARGE_REWARD)).isFalse();
+
+    // Two large penalties should get from the max positive value back to 0.
+    assertThat(reputationManager.adjustReputation(peerAddress, LARGE_PENALTY)).isFalse();
+    assertThat(reputationManager.adjustReputation(peerAddress, LARGE_PENALTY)).isFalse();
+
+    // And one more gets disconnected
+    assertThat(reputationManager.adjustReputation(peerAddress, LARGE_PENALTY)).isTrue();
+  }
+
+  @Test
+  void shouldBeUnsuitableToConnectToAfterBeingDisconnected() {
+    assertThat(reputationManager.adjustReputation(peerAddress, LARGE_PENALTY)).isTrue();
+    assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isFalse();
   }
 }

@@ -30,6 +30,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.sync.SyncService;
 import tech.pegasys.teku.sync.SyncingStatus;
 import tech.pegasys.teku.sync.multipeer.batches.BatchFactory;
+import tech.pegasys.teku.sync.multipeer.batches.PeerScoringConflictResolutionStrategy;
 import tech.pegasys.teku.sync.multipeer.chains.PeerChainTracker;
 import tech.pegasys.teku.sync.multipeer.chains.SyncSourceFactory;
 import tech.pegasys.teku.sync.multipeer.chains.TargetChains;
@@ -70,7 +71,7 @@ public class MultipeerSyncService extends Service implements SyncService {
             eventThread,
             recentChainData,
             new BatchImporter(blockImporter, asyncRunner),
-            new BatchFactory(eventThread),
+            new BatchFactory(eventThread, new PeerScoringConflictResolutionStrategy()),
             Constants.SYNC_BATCH_SIZE,
             MultipeerCommonAncestorFinder.create(recentChainData, eventThread));
     final SyncController syncController =

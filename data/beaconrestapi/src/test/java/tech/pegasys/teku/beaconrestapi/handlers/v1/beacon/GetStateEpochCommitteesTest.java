@@ -36,7 +36,8 @@ public class GetStateEpochCommitteesTest extends AbstractBeaconHandlerTest {
   private final GetStateEpochCommittees handler =
       new GetStateEpochCommittees(chainDataProvider, jsonProvider);
   private final EpochCommitteeResponse epochCommitteeResponse =
-      new EpochCommitteeResponse(ONE, ONE, List.of(1, 2, 3));
+      new EpochCommitteeResponse(
+          ONE, ONE, List.of(UInt64.valueOf(1), UInt64.valueOf(2), UInt64.valueOf(3)));
 
   @Test
   public void shouldGetCommitteesFromState() throws Exception {

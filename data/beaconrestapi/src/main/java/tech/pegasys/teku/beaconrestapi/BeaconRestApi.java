@@ -135,6 +135,7 @@ public class BeaconRestApi {
     addEventHandler(dataProvider, eventChannels, asyncRunner);
     addV1NodeHandlers(dataProvider);
     addV1ValidatorHandlers(dataProvider);
+    addV1DebugHandlers(dataProvider);
 
     // Endpoints from before standard API
     addAdminHandlers();
@@ -143,6 +144,12 @@ public class BeaconRestApi {
     addNodeHandlers(dataProvider);
     addValidatorHandlers(dataProvider);
     addCustomErrorPages(configuration);
+  }
+
+  private void addV1DebugHandlers(final DataProvider dataProvider) {
+    app.get(
+        tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState.ROUTE,
+        new tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState(dataProvider, jsonProvider));
   }
 
   private void addHostAllowlistHandler(final GlobalConfiguration configuration) {

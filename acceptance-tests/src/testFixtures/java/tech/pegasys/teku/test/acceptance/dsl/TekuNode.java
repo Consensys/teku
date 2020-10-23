@@ -54,7 +54,7 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.GenesisStateGenerator;
 public class TekuNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
 
-  public static final String TEKU_DOCKER_IMAGE = "quorumengineering/teku:develop";
+  public static final String TEKU_DOCKER_IMAGE = "consensys/teku:develop";
   private static final int REST_API_PORT = 9051;
   private static final String CONFIG_FILE_PATH = "/config.yaml";
   protected static final String WORKING_DIRECTORY = "/opt/teku/";

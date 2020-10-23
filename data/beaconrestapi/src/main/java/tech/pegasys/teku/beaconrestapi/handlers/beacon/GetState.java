@@ -62,9 +62,12 @@ public class GetState extends AbstractHandler implements Handler {
   }
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the beacon chain state matching the criteria.",
+      summary =
+          "Get the beacon chain state matching the criteria.\n"
+              + "Deprecated - use `/eth/v1/debug/states/{state_id}` instead.",
       tags = {TAG_BEACON},
       queryParams = {
         @OpenApiParam(name = ROOT, description = ROOT_QUERY_DESCRIPTION),

@@ -44,6 +44,7 @@ public class GetHead implements Handler {
   }
 
   @OpenApi(
+      deprecated = true,
       path = ROUTE,
       method = HttpMethod.GET,
       summary = "Get information about the chain head.",
@@ -52,7 +53,8 @@ public class GetHead implements Handler {
           "Returns information about the head of the beacon chain from the node’s perspective.\n\n"
               + "To retrieve finalized and justified information, use "
               + GetChainHead.ROUTE
-              + " instead.",
+              + " instead.\n"
+              + "Deprecated - use `/eth/v1/beacon/headers` instead.",
       responses = {
         @OpenApiResponse(status = RES_OK, content = @OpenApiContent(from = BeaconHead.class)),
         @OpenApiResponse(status = RES_NO_CONTENT, description = NO_CONTENT_PRE_GENESIS),

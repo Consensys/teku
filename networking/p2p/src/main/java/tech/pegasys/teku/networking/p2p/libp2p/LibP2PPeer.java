@@ -29,6 +29,8 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedSubscriber;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
@@ -37,6 +39,7 @@ public class LibP2PPeer implements Peer {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Map<RpcMethod, RpcHandler> rpcHandlers;
+  private final ReputationManager reputationManager;
   private final Connection connection;
   private final AtomicBoolean connected = new AtomicBoolean(true);
   private final MultiaddrPeerAddress peerAddress;
@@ -49,9 +52,13 @@ public class LibP2PPeer implements Peer {
         return SafeFuture.COMPLETE;
       };
 
-  public LibP2PPeer(final Connection connection, final Map<RpcMethod, RpcHandler> rpcHandlers) {
+  public LibP2PPeer(
+      final Connection connection,
+      final Map<RpcMethod, RpcHandler> rpcHandlers,
+      final ReputationManager reputationManager) {
     this.connection = connection;
     this.rpcHandlers = rpcHandlers;
+    this.reputationManager = reputationManager;
 
     final PeerId peerId = connection.secureSession().getRemoteId();
     final NodeId nodeId = new LibP2PNodeId(peerId);
@@ -137,5 +144,13 @@ public class LibP2PPeer implements Peer {
   private void handleConnectionClosed() {
     LOG.debug("Disconnected from peer {}", getId());
     connected.set(false);
+  }
+
+  @Override
+  public void adjustReputation(final ReputationAdjustment adjustment) {
+    final boolean shouldDisconnect = reputationManager.adjustReputation(getAddress(), adjustment);
+    if (shouldDisconnect) {
+      disconnectCleanly(DisconnectReason.REMOTE_FAULT).reportExceptions();
+    }
   }
 }
