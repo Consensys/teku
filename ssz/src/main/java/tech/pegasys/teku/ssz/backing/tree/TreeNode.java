@@ -138,7 +138,10 @@ public interface TreeNode {
     }
   }
 
-  /** Calculates (if necessary) and returns `hash_tree_root` of this tree node */
+  /**
+   * Calculates (if necessary) and returns `hash_tree_root` of this tree node.
+   * Worth to mention that `hash_tree_root` of a {@link LeafNode} is the node {@link Bytes32} content
+   */
   Bytes32 hashTreeRoot();
 
   /**

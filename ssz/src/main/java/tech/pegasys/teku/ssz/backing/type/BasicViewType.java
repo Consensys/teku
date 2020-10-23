@@ -15,6 +15,8 @@ package tech.pegasys.teku.ssz.backing.type;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.function.Consumer;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
@@ -60,8 +62,34 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType {
   public abstract TreeNode updateBackingNode(
       TreeNode srcNode, int internalIndex, ViewRead newValue);
 
+  private int getSSZBytesSize() {
+    return (getBitsSize() + 7) / 8;
+  }
+
   @Override
   public boolean isFixedSize() {
     return true;
+  }
+
+  @Override
+  public int getFixedPartSize() {
+    return getSSZBytesSize();
+  }
+
+  @Override
+  public int getVariablePartSize(TreeNode node) {
+    return 0;
+  }
+
+  @Override
+  public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
+    Bytes ret = node.hashTreeRoot().slice(0, getSSZBytesSize());
+    writer.accept(ret);
+    return ret.size();
+  }
+
+  @Override
+  public TreeNode sszDeserialize(Bytes ssz) {
+    throw new UnsupportedOperationException("TODO");
   }
 }

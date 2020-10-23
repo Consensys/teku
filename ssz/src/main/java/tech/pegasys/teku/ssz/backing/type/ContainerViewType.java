@@ -17,6 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.ContainerViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
@@ -101,8 +103,73 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
     int size = 0;
     for (int i = 0; i < getMaxLength(); i++) {
       ViewType childType = getChildType(i);
-      size += childType.isFixedSize() ? childType.getFixedPartSize() : SSZ_OFFSET_SIZE;
+      size += childType.isFixedSize() ? childType.getFixedPartSize() : SSZ_LENGTH_SIZE;
     }
     return size;
+  }
+
+  @Override
+  public int getVariablePartSize(TreeNode node) {
+    int size = 0;
+    for (int i = 0; i < getMaxLength(); i++) {
+      ViewType childType = getChildType(i);
+      if (!childType.isFixedSize()) {
+        size += childType.getVariablePartSize(node.get(getGeneralizedIndex(i)));
+      }
+    }
+    return size;
+  }
+
+  @Override
+  public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
+    int variableChildOffset = getFixedPartSize();
+    for (int i = 0; i < getMaxLength(); i++) {
+      TreeNode childSubtree = node.get(getGeneralizedIndex(i));
+      ViewType childType = getChildType(i);
+//      Bytes childSsz = childType.sszSerialize(childSubtree);
+      if (childType.isFixedSize()) {
+        childType.sszSerialize(childSubtree, writer);
+      } else {
+        writer.accept(SSZType.lengthToBytes(variableChildOffset));
+        //        fixedParts.add(SSZType.lengthToBytes(variableChildOffset));
+        //        variableParts.add(childSsz);
+        variableChildOffset += childType.getSszSize(childSubtree);
+      }
+    }
+    for (int i = 0; i < getMaxLength(); i++) {
+      ViewType childType = getChildType(i);
+      if (!childType.isFixedSize()) {
+        TreeNode childSubtree = node.get(getGeneralizedIndex(i));
+        childType.sszSerialize(childSubtree, writer);
+      }
+    }
+    return variableChildOffset;
+  }
+
+//  @Override
+//  public Bytes sszSerialize(TreeNode node) {
+//    List<Bytes> fixedParts = new ArrayList<>();
+//    List<Bytes> variableParts = new ArrayList<>();
+//    int variableChildOffset = getFixedPartSize();
+//    for (int i = 0; i < getMaxLength(); i++) {
+//      TreeNode childSubtree = node.get(getGeneralizedIndex(i));
+//      ViewType childType = getChildType(i);
+//      Bytes childSsz = childType.sszSerialize(childSubtree);
+//      if (childType.isFixedSize()) {
+//        fixedParts.add(childSsz);
+//      } else {
+//        fixedParts.add(SSZType.lengthToBytes(variableChildOffset));
+//        variableParts.add(childSsz);
+//        variableChildOffset += childSsz.size();
+//      }
+//    }
+//    return Bytes.wrap(
+//        Bytes.wrap(fixedParts.toArray(new Bytes[0])),
+//        Bytes.wrap(variableParts.toArray(new Bytes[0])));
+//  }
+
+  @Override
+  public TreeNode sszDeserialize(Bytes ssz) {
+    throw new UnsupportedOperationException("TODO");
   }
 }

@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.ssz.backing;
 
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ssz.backing.ssz.SSZView;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.type.ViewType;
 
@@ -45,5 +45,7 @@ public interface ViewRead {
     return getBackingNode().hashTreeRoot();
   }
 
-  SSZView getSSZ();
+  default Bytes sszSerialize() {
+    return getType().sszSerialize(getBackingNode());
+  }
 }

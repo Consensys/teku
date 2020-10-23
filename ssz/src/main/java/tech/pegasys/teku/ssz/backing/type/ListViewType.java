@@ -13,9 +13,13 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
+import java.util.function.Consumer;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.MutableBytes;
 import tech.pegasys.teku.ssz.backing.ListViewRead;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode.BranchNode;
 import tech.pegasys.teku.ssz.backing.view.ListViewReadImpl;
 
 public class ListViewType<C extends ViewRead> extends CollectionViewType {
@@ -53,7 +57,85 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
   }
 
   @Override
+  public int getVariablePartSize(TreeNode node) {
+    int length = getLength(node);
+    ViewType elementType = getElementType();
+    if (elementType.isFixedSize()) {
+      if (elementType.getBitsSize() == 1) {
+        // Bitlist is handled specially
+        return length / 8 + 1;
+      } else {
+        return length * elementType.getFixedPartSize();
+      }
+    } else {
+      return getVariablePartSize(getVectorNode(node), length) + length * SSZ_LENGTH_SIZE;
+    }
+  }
+
+  @Override
   public boolean isFixedSize() {
     return false;
+  }
+
+  @Override
+  public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
+    int elementsCount = getLength(node);
+    if (getElementType().getBitsSize() == 1) {
+      // Bitlist is handled specially
+
+      LastBytesDelayer bytesDelayer = new LastBytesDelayer(writer);
+      int sizeBytes = sszSerializeVector(getVectorNode(node), bytesDelayer, elementsCount);
+      Bytes lastBits = bytesDelayer.getLast();
+      Bytes trailingByte = (elementsCount % 8 == 0) ? Bytes.of(0) : Bytes.EMPTY;
+      MutableBytes mutableBytes = Bytes.wrap(lastBits, trailingByte).mutableCopy();
+      byte lastByte = mutableBytes.get(mutableBytes.size() - 1);
+      int boundaryBitOff = elementsCount % 8;
+      lastByte |= 1 << boundaryBitOff;
+      mutableBytes.set(mutableBytes.size() - 1, lastByte);
+      writer.accept(mutableBytes);
+      return sizeBytes + ((elementsCount % 8 == 0) ? 1 : 0);
+    } else {
+      return sszSerializeVector(getVectorNode(node), writer, elementsCount);
+    }
+  }
+
+  @Override
+  public TreeNode sszDeserialize(Bytes ssz) {
+    throw new UnsupportedOperationException("TODO");
+  }
+
+  private static int getLength(TreeNode listNode) {
+    if (!(listNode instanceof BranchNode)) {
+      throw new IllegalArgumentException("Expected BranchNode for List, but got " + listNode);
+    }
+    return SSZType.bytesToLength(((BranchNode) listNode).right().hashTreeRoot());
+  }
+
+  private static TreeNode getVectorNode(TreeNode listNode) {
+    if (!(listNode instanceof BranchNode)) {
+      throw new IllegalArgumentException("Expected BranchNode for List, but got " + listNode);
+    }
+    return ((BranchNode) listNode).left();
+  }
+
+  private static class LastBytesDelayer implements Consumer<Bytes> {
+    private final Consumer<Bytes> delegate;
+    private Bytes last = null;
+
+    public LastBytesDelayer(Consumer<Bytes> delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override
+    public void accept(Bytes bytes) {
+      if (last != null) {
+        delegate.accept(last);
+      }
+      last = bytes;
+    }
+
+    public Bytes getLast() {
+      return last;
+    }
   }
 }

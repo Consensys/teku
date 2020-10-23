@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ssz.backing.type;
 
+import java.util.function.Consumer;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.VectorViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
@@ -53,13 +55,35 @@ public class VectorViewType<C> extends CollectionViewType {
     return (int) maxLength;
   }
 
+  public int getChunksCount() {
+    long maxChunks = maxChunks();
+    if (maxChunks > Integer.MAX_VALUE) throw new IllegalArgumentException("Vector size too large: " + maxChunks);
+    return (int) maxChunks;
+  }
+
   @Override
   public boolean isFixedSize() {
     return getElementType().isFixedSize();
   }
 
   @Override
+  public int getVariablePartSize(TreeNode node) {
+    return getVariablePartSize(node, getLength());
+  }
+
+  @Override
   public int getFixedPartSize() {
-    return getLength() * (isFixedSize() ? getElementType().getBitsSize() : SSZ_OFFSET_SIZE);
+    int bitsPerChild = isFixedSize() ? getElementType().getBitsSize() : SSZ_LENGTH_SIZE * 8;
+    return (getLength() * bitsPerChild + 7) / 8;
+  }
+
+  @Override
+  public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
+    return sszSerializeVector(node, writer, getLength());
+  }
+
+  @Override
+  public TreeNode sszDeserialize(Bytes ssz) {
+    throw new UnsupportedOperationException("TODO");
   }
 }
