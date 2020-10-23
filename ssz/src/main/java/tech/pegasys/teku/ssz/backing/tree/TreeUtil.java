@@ -17,18 +17,18 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
 import java.util.function.Consumer;
-import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.Utils;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode.BranchNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.BranchNodeImpl;
-import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
+import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.CompressedLeafNodeImpl;
 
 /** Misc Backing binary tree utils */
 public class TreeUtil {
 
   public static final TreeNode ZERO_LEAF =
-      new LeafNodeImpl(Bytes32.ZERO) {
+      new CompressedLeafNodeImpl(Bytes.EMPTY) {
         @Override
         public boolean isZero() {
           return true;

@@ -19,10 +19,12 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.bytes.MutableBytes;
 import org.apache.tuweni.bytes.MutableBytes32;
 import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode.LeafNode;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
@@ -76,9 +78,16 @@ public class BasicViewTypes {
           if (srcNode.isZero() && index == 0) {
             return TreeNode.createCompressedLeafNode(Bytes.of(aByte));
           } else {
-            byte[] bytes = srcNode.hashTreeRoot().toArray();
-            bytes[index] = aByte;
-            return TreeNode.createLeafNode(Bytes32.wrap(bytes));
+            Bytes curVal = ((LeafNode) srcNode).getSSZ();
+            final MutableBytes dest;
+            if (index >= curVal.size()) {
+              dest = MutableBytes.create(index + 1);
+              curVal.copyTo(dest, 0);
+            } else {
+              dest = curVal.mutableCopy();
+            }
+            dest.set(index, aByte);
+            return TreeNode.createCompressedLeafNode(dest);
           }
         }
       };
@@ -119,12 +128,16 @@ public class BasicViewTypes {
           if (srcNode.isZero() && index == 0) {
             return TreeNode.createCompressedLeafNode(uintBytes);
           } else {
-            return TreeNode.createLeafNode(
-                Bytes32.wrap(
-                    Bytes.concatenate(
-                        originalChunk.slice(0, index * 8),
-                        uintBytes,
-                        originalChunk.slice((index + 1) * 8))));
+            Bytes curVal = ((LeafNode) srcNode).getSSZ();
+            final MutableBytes dest;
+            if (index * 8 >= curVal.size()) {
+              dest = MutableBytes.create((index + 1) * 8);
+              curVal.copyTo(dest, 0);
+            } else {
+              dest = curVal.mutableCopy();
+            }
+            uintBytes.copyTo(dest, index * 8);
+            return TreeNode.createCompressedLeafNode(dest);
           }
         }
       };
@@ -145,13 +158,16 @@ public class BasicViewTypes {
           if (srcNode.isZero() && internalIndex == 0) {
             return TreeNode.createCompressedLeafNode(bytes);
           } else {
-            Bytes32 originalChunk = srcNode.hashTreeRoot();
-            return TreeNode.createLeafNode(
-                Bytes32.wrap(
-                    Bytes.concatenate(
-                        originalChunk.slice(0, internalIndex * 4),
-                        bytes,
-                        originalChunk.slice((internalIndex + 1) * 4))));
+            Bytes curVal = ((LeafNode) srcNode).getSSZ();
+            final MutableBytes dest;
+            if (internalIndex * 4 >= curVal.size()) {
+              dest = MutableBytes.create((internalIndex + 1) * 4);
+              curVal.copyTo(dest, 0);
+            } else {
+              dest = curVal.mutableCopy();
+            }
+            bytes.copyTo(dest, internalIndex * 4);
+            return TreeNode.createCompressedLeafNode(dest);
           }
         }
       };
