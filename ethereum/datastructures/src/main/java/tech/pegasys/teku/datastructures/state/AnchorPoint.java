@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.events;
+package tech.pegasys.teku.datastructures.state;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_next_epoch_boundary;
@@ -22,8 +22,6 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.datastructures.state.BeaconState;
-import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
@@ -38,7 +36,8 @@ public class AnchorPoint {
   private final BeaconState state;
   private final boolean isGenesis;
 
-  private AnchorPoint(Checkpoint checkpoint, SignedBeaconBlock block, BeaconState state) {
+  private AnchorPoint(
+      final Checkpoint checkpoint, final SignedBeaconBlock block, final BeaconState state) {
     checkArgument(
         block.getStateRoot().equals(state.hash_tree_root()), "Block and state must match");
     checkArgument(checkpoint.getRoot().equals(block.getRoot()), "Checkpoint and block must match");
@@ -47,6 +46,15 @@ public class AnchorPoint {
     this.block = block;
     this.state = state;
     this.isGenesis = checkpoint.getEpoch().equals(UInt64.valueOf(Constants.GENESIS_EPOCH));
+  }
+
+  public static AnchorPoint create(
+      Checkpoint checkpoint, SignedBeaconBlock block, BeaconState state) {
+    return new AnchorPoint(checkpoint, block, state);
+  }
+
+  public static AnchorPoint create(Checkpoint checkpoint, SignedBlockAndState blockAndState) {
+    return new AnchorPoint(checkpoint, blockAndState.getBlock(), blockAndState.getState());
   }
 
   public static AnchorPoint fromGenesisState(final BeaconState genesisState) {
@@ -100,6 +108,10 @@ public class AnchorPoint {
 
   public UInt64 getEpoch() {
     return checkpoint.getEpoch();
+  }
+
+  public UInt64 getEpochStartSlot() {
+    return checkpoint.getEpochStartSlot();
   }
 
   public Bytes32 getRoot() {

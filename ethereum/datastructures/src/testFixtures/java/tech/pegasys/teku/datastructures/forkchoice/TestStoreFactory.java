@@ -18,13 +18,12 @@ import static tech.pegasys.teku.util.config.Constants.SECONDS_PER_SLOT;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
-import tech.pegasys.teku.datastructures.util.BeaconStateUtil;
 import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.util.config.Constants;
@@ -33,21 +32,25 @@ public class TestStoreFactory {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
 
   public MutableStore createGenesisStore() {
-    final BeaconState genesisState = createRandomGenesisState();
-    return getForkChoiceStore(genesisState);
+    return getForkChoiceStore(createAnchorForGenesis());
+  }
+
+  public MutableStore createAnchorStore(final AnchorPoint anchor) {
+    return getForkChoiceStore(anchor);
   }
 
   public MutableStore createGenesisStore(final BeaconState genesisState) {
     checkArgument(
         genesisState.getSlot().equals(UInt64.valueOf(Constants.GENESIS_SLOT)),
         "Genesis state has invalid slot.");
-    return getForkChoiceStore(genesisState);
+    return getForkChoiceStore(createAnchorFromState(genesisState));
   }
 
   public MutableStore createEmptyStore() {
     return new TestStoreImpl(
         UInt64.ZERO,
         UInt64.ZERO,
+        Optional.empty(),
         null,
         null,
         null,
@@ -57,26 +60,32 @@ public class TestStoreFactory {
         new HashMap<>());
   }
 
-  private MutableStore getForkChoiceStore(final BeaconState anchorState) {
-    final BeaconBlock anchorBlock = new BeaconBlock(anchorState.hash_tree_root());
-    final SignedBeaconBlock signedAnchorBlock =
-        new SignedBeaconBlock(anchorBlock, BLSSignature.empty());
-    final Bytes32 anchorRoot = anchorBlock.hash_tree_root();
-    final UInt64 anchorEpoch = BeaconStateUtil.get_current_epoch(anchorState);
-    final Checkpoint anchorCheckpoint = new Checkpoint(anchorEpoch, anchorRoot);
+  private AnchorPoint createAnchorForGenesis() {
+    return createAnchorFromState(createRandomGenesisState());
+  }
+
+  private AnchorPoint createAnchorFromState(final BeaconState anchorState) {
+    return dataStructureUtil.createAnchorFromState(anchorState);
+  }
+
+  private MutableStore getForkChoiceStore(final AnchorPoint anchor) {
+    final BeaconState anchorState = anchor.getState();
+    final Bytes32 anchorRoot = anchor.getRoot();
+    final Checkpoint anchorCheckpoint = anchor.getCheckpoint();
 
     Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
     Map<Bytes32, BeaconState> block_states = new HashMap<>();
     Map<Checkpoint, BeaconState> checkpoint_states = new HashMap<>();
     Map<UInt64, VoteTracker> votes = new HashMap<>();
 
-    blocks.put(anchorRoot, signedAnchorBlock);
+    blocks.put(anchorRoot, anchor.getBlock());
     block_states.put(anchorRoot, anchorState);
     checkpoint_states.put(anchorCheckpoint, anchorState);
 
     return new TestStoreImpl(
         anchorState.getGenesis_time().plus(anchorState.getSlot().times(SECONDS_PER_SLOT)),
         anchorState.getGenesis_time(),
+        Optional.of(anchorCheckpoint),
         anchorCheckpoint,
         anchorCheckpoint,
         anchorCheckpoint,

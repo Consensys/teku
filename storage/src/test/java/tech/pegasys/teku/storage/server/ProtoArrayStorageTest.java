@@ -72,7 +72,12 @@ public class ProtoArrayStorageTest {
     // init ProtoArray
     ProtoArray protoArray =
         new ProtoArray(
-            10000, UInt64.valueOf(100), UInt64.valueOf(99), new ArrayList<>(), new HashMap<>());
+            10000,
+            UInt64.valueOf(100),
+            UInt64.valueOf(99),
+            UInt64.ZERO,
+            new ArrayList<>(),
+            new HashMap<>());
 
     // add block 1
     protoArray.onBlock(
@@ -115,14 +120,24 @@ public class ProtoArrayStorageTest {
     // init ProtoArray
     ProtoArray protoArray1 =
         new ProtoArray(
-            10000, UInt64.valueOf(100), UInt64.valueOf(99), new ArrayList<>(), new HashMap<>());
+            10000,
+            UInt64.valueOf(100),
+            UInt64.valueOf(99),
+            UInt64.ZERO,
+            new ArrayList<>(),
+            new HashMap<>());
 
     ProtoArraySnapshot protoArraySnapshot1 = ProtoArraySnapshot.create(protoArray1);
     protoArrayStorage.onProtoArrayUpdate(protoArraySnapshot1);
 
     ProtoArray protoArray2 =
         new ProtoArray(
-            10000, UInt64.valueOf(98), UInt64.valueOf(97), new ArrayList<>(), new HashMap<>());
+            10000,
+            UInt64.valueOf(98),
+            UInt64.valueOf(97),
+            UInt64.ZERO,
+            new ArrayList<>(),
+            new HashMap<>());
 
     // add block 1
     protoArray2.onBlock(

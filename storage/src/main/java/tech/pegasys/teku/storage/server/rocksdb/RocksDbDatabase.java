@@ -43,6 +43,7 @@ import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.hashtree.HashTree;
+import tech.pegasys.teku.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.state.Checkpoint;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -50,7 +51,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.pow.event.DepositsFromBlockEvent;
 import tech.pegasys.teku.pow.event.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.protoarray.ProtoArraySnapshot;
-import tech.pegasys.teku.storage.events.AnchorPoint;
 import tech.pegasys.teku.storage.events.StorageUpdate;
 import tech.pegasys.teku.storage.events.WeakSubjectivityState;
 import tech.pegasys.teku.storage.events.WeakSubjectivityUpdate;
@@ -184,28 +184,29 @@ public class RocksDbDatabase implements Database {
   }
 
   @Override
-  public void storeAnchorPoint(final AnchorPoint genesis) {
+  public void storeAnchorPoint(final AnchorPoint anchor) {
     try (final HotUpdater hotUpdater = hotDao.hotUpdater();
         final FinalizedUpdater finalizedUpdater = finalizedDao.finalizedUpdater()) {
-      // We should only have a single block / state / checkpoint at genesis
-      final Checkpoint genesisCheckpoint = genesis.getCheckpoint();
-      final Bytes32 genesisRoot = genesisCheckpoint.getRoot();
-      final BeaconState genesisState = genesis.getState();
-      final SignedBeaconBlock genesisBlock = genesis.getBlock();
+      // We should only have a single block / state / checkpoint at anchorpoint initialization
+      final Checkpoint anchorCheckpoint = anchor.getCheckpoint();
+      final Bytes32 anchorRoot = anchorCheckpoint.getRoot();
+      final BeaconState anchorState = anchor.getState();
+      final SignedBeaconBlock anchorBlock = anchor.getBlock();
 
-      hotUpdater.setGenesisTime(genesisState.getGenesis_time());
-      hotUpdater.setJustifiedCheckpoint(genesisCheckpoint);
-      hotUpdater.setBestJustifiedCheckpoint(genesisCheckpoint);
-      hotUpdater.setFinalizedCheckpoint(genesisCheckpoint);
-      hotUpdater.setLatestFinalizedState(genesisState);
+      hotUpdater.setAnchor(anchor.getCheckpoint());
+      hotUpdater.setGenesisTime(anchorState.getGenesis_time());
+      hotUpdater.setJustifiedCheckpoint(anchorCheckpoint);
+      hotUpdater.setBestJustifiedCheckpoint(anchorCheckpoint);
+      hotUpdater.setFinalizedCheckpoint(anchorCheckpoint);
+      hotUpdater.setLatestFinalizedState(anchorState);
 
-      // We need to store the genesis block in both hot and cold storage so that on restart
+      // We need to store the anchor block in both hot and cold storage so that on restart
       // we're guaranteed to have at least one block / state to load into RecentChainData.
       // Save to hot storage
-      hotUpdater.addHotBlock(genesisBlock);
+      hotUpdater.addHotBlock(anchorBlock);
       // Save to cold storage
-      finalizedUpdater.addFinalizedBlock(genesisBlock);
-      putFinalizedState(finalizedUpdater, genesisRoot, genesisState);
+      finalizedUpdater.addFinalizedBlock(anchorBlock);
+      putFinalizedState(finalizedUpdater, anchorRoot, anchorState);
 
       finalizedUpdater.commit();
       hotUpdater.commit();
@@ -243,6 +244,7 @@ public class RocksDbDatabase implements Database {
       return Optional.empty();
     }
     final UInt64 genesisTime = maybeGenesisTime.get();
+    final Optional<Checkpoint> anchor = hotDao.getAnchor();
     final Checkpoint justifiedCheckpoint = hotDao.getJustifiedCheckpoint().orElseThrow();
     final Checkpoint finalizedCheckpoint = hotDao.getFinalizedCheckpoint().orElseThrow();
     final Checkpoint bestJustifiedCheckpoint = hotDao.getBestJustifiedCheckpoint().orElseThrow();
@@ -281,6 +283,7 @@ public class RocksDbDatabase implements Database {
         StoreBuilder.create()
             .metricsSystem(metricsSystem)
             .time(time)
+            .anchor(anchor)
             .genesisTime(genesisTime)
             .finalizedCheckpoint(finalizedCheckpoint)
             .justifiedCheckpoint(justifiedCheckpoint)
