@@ -552,7 +552,7 @@ class RemoteValidatorApiHandlerTest {
     verify(apiClient).sendAggregateAndProofs(argumentCaptor.capture());
     assertThat(argumentCaptor.getValue())
         .usingRecursiveComparison()
-        .isEqualTo(schemaSignedAggAndProof);
+        .isEqualTo(List.of(schemaSignedAggAndProof));
   }
 
   @Test
