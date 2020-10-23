@@ -18,13 +18,18 @@ import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 
+/** Collection of SSZ related methods for {@link ViewType} */
 public interface SSZType {
+
+  // the size of SSZ UIn32 lengths and offsets
   int SSZ_LENGTH_SIZE = 4;
 
+  // serializes int length to SSZ 4 bytes
   static Bytes lengthToBytes(int length) {
     return Bytes.ofUnsignedInt(length, ByteOrder.LITTLE_ENDIAN);
   }
 
+  // deserializes int length from SSZ 4 bytes
   static int bytesToLength(Bytes bytes) {
     if (!bytes.slice(SSZ_LENGTH_SIZE).isZero()) {
       throw new IllegalArgumentException("Invalid length bytes: " + bytes);
@@ -32,16 +37,21 @@ public interface SSZType {
     return bytes.slice(0, SSZ_LENGTH_SIZE).toInt(ByteOrder.LITTLE_ENDIAN);
   }
 
+  /** Indicates whether the type is fixed or variable size */
   boolean isFixedSize();
 
+  /** Returns the size of the fixed SSZ part for this type */
   int getFixedPartSize();
 
+  /** Returns the size of the variable SSZ part for this type and specified backing subtree */
   int getVariablePartSize(TreeNode node);
 
+  /** Calculates the full SSZ size in bytes for this type and specified backing subtree */
   default int getSszSize(TreeNode node) {
     return getFixedPartSize() + getVariablePartSize(node);
   }
 
+  /** SSZ serializes the backing tree instance of this type */
   default Bytes sszSerialize(TreeNode node) {
     byte[] buf = new byte[getSszSize(node)];
     sszSerialize(
@@ -58,6 +68,10 @@ public interface SSZType {
     return Bytes.wrap(buf);
   }
 
+  /**
+   * SSZ serializes the backing tree of this type and returns the data as bytes 'stream' via passed
+   * {@code writer}
+   */
   int sszSerialize(TreeNode node, Consumer<Bytes> writer);
 
   TreeNode sszDeserialize(Bytes ssz);
