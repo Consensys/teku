@@ -154,6 +154,28 @@ class MatchingDataAttestationGroupTest {
   }
 
   @Test
+  public void
+      iterator_shouldAggregateAttestationsWithMoreValidatorsFirst_updatingValidatorCountAfterRemoval() {
+    final ValidateableAttestation attestation1 = createAttestation(1);
+    final ValidateableAttestation attestation3 = createAttestation(3);
+
+    final ValidateableAttestation attestationA = addAttestation(1, 3, 5, 7);
+    final ValidateableAttestation attestationB = addAttestation(5, 7, 9);
+    final ValidateableAttestation attestationC = addAttestation(2);
+
+    // Remove some attesters, which should lower attestationA's priority
+    group.remove(attestation1.getAttestation());
+    group.remove(attestation3.getAttestation());
+
+    assertThat(group)
+        .containsExactly(
+            ValidateableAttestation.fromAttestation(
+                aggregateAttestations(
+                    attestationB.getAttestation(), attestationC.getAttestation())),
+            attestationA);
+  }
+
+  @Test
   public void iterator_shouldNotAggregateAttestationsWhenValidatorsOverlap() {
     final ValidateableAttestation attestation1 = addAttestation(1, 2, 5);
     final ValidateableAttestation attestation2 = addAttestation(1, 2, 3);
