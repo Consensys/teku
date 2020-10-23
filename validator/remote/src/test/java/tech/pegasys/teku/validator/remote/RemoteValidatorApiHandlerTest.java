@@ -23,9 +23,12 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.refEq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_PUBLIC_KEY_BATCH_SIZE;
+import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_RATE_LIMITING_RETRIES;
 
 import java.util.Collections;
 import java.util.List;
@@ -64,6 +67,7 @@ import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorDuties;
+import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.SchemaObjectsTestFixture;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 
@@ -528,6 +532,7 @@ class RemoteValidatorApiHandlerTest {
     assertThat(unwrapToValue(future)).usingRecursiveComparison().isEqualTo(attestation);
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void sendSAggregateAndProof_InvokeApiWithCorrectRequest() {
     final AggregateAndProof aggregateAndProof = dataStructureUtil.randomAggregateAndProof();
@@ -538,16 +543,16 @@ class RemoteValidatorApiHandlerTest {
     tech.pegasys.teku.api.schema.SignedAggregateAndProof schemaSignedAggAndProof =
         new tech.pegasys.teku.api.schema.SignedAggregateAndProof(signedAggregateAndProof);
 
-    ArgumentCaptor<tech.pegasys.teku.api.schema.SignedAggregateAndProof> argumentCaptor =
-        ArgumentCaptor.forClass(tech.pegasys.teku.api.schema.SignedAggregateAndProof.class);
+    ArgumentCaptor<List<tech.pegasys.teku.api.schema.SignedAggregateAndProof>> argumentCaptor =
+        ArgumentCaptor.forClass(List.class);
 
     apiHandler.sendAggregateAndProof(signedAggregateAndProof);
     asyncRunner.executeQueuedActions();
 
-    verify(apiClient).sendAggregateAndProof(argumentCaptor.capture());
+    verify(apiClient).sendAggregateAndProofs(argumentCaptor.capture());
     assertThat(argumentCaptor.getValue())
         .usingRecursiveComparison()
-        .isEqualTo(schemaSignedAggAndProof);
+        .isEqualTo(List.of(schemaSignedAggAndProof));
   }
 
   @Test
@@ -590,6 +595,22 @@ class RemoteValidatorApiHandlerTest {
     assertThat(request.stream().findFirst().orElseThrow())
         .usingRecursiveComparison()
         .isEqualTo(schemaSubnetSubscription);
+  }
+
+  @Test
+  void shouldRetryAfterDelayWhenRequestRateLimited() {
+    when(apiClient.getFork()).thenThrow(new RateLimitedException("/fork"));
+
+    final SafeFuture<Optional<Fork>> result = apiHandler.getFork();
+
+    for (int i = 0; i < MAX_RATE_LIMITING_RETRIES; i++) {
+      asyncRunner.executeQueuedActions();
+      assertThat(result).isNotDone();
+      verify(apiClient, times(i + 1)).getFork();
+    }
+
+    asyncRunner.executeQueuedActions();
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(RateLimitedException.class);
   }
 
   private <T> Optional<T> unwrapToOptional(SafeFuture<Optional<T>> future) {
