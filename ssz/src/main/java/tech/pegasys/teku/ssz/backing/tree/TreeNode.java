@@ -32,11 +32,11 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.CompressedLeafNodeImpl;
  */
 public interface TreeNode {
 
-  static TreeNode createLeafNode(Bytes32 val) {
+  static LeafNode createLeafNode(Bytes32 val) {
     return new LeafNodeImpl(val);
   }
 
-  static TreeNode createCompressedLeafNode(Bytes val) {
+  static LeafNode createCompressedLeafNode(Bytes val) {
     return new CompressedLeafNodeImpl(val);
   }
 
@@ -47,12 +47,11 @@ public interface TreeNode {
    */
   interface LeafNode extends TreeNode {
 
-    /** Returns node value */
-    Bytes32 getRoot();
+    Bytes getSSZ();
 
     @Override
     default Bytes32 hashTreeRoot() {
-      return getRoot();
+      return Bytes32.rightPad(getSSZ());
     }
 
     /**
@@ -113,7 +112,7 @@ public interface TreeNode {
         return this;
       } else {
         long anchor = Long.highestOneBit(target);
-        long pivot = anchor >> 1;
+        long pivot = anchor >>> 1;
         return target < (target | pivot)
             ? left().get((target ^ anchor) | pivot)
             : right().get((target ^ anchor) | pivot);
@@ -126,7 +125,7 @@ public interface TreeNode {
         return nodeUpdater.apply(this);
       } else {
         long anchor = Long.highestOneBit(target);
-        long pivot = anchor >> 1;
+        long pivot = anchor >>> 1;
         if (target < (target | pivot)) {
           TreeNode newLeftChild = left().updated((target ^ anchor) | pivot, nodeUpdater);
           return rebind(true, newLeftChild);

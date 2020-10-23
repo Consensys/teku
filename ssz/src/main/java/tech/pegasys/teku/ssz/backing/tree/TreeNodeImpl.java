@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ssz.backing.tree;
 
-import java.util.Arrays;
 import java.util.Objects;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes;
@@ -42,17 +41,17 @@ abstract class TreeNodeImpl implements TreeNode {
         return false;
       }
       LeafNode otherLeaf = (LeafNode) o;
-      return Objects.equals(getRoot(), otherLeaf.getRoot());
+      return Objects.equals(getSSZ(), otherLeaf.getSSZ());
     }
 
     @Override
     public int hashCode() {
-      return getRoot().hashCode();
+      return getSSZ().hashCode();
     }
 
     @Override
     public String toString() {
-      return "[" + (Bytes32.ZERO.equals(getRoot()) ? "0x0" : getRoot()) + "]";
+      return "[" + "0x0" + getSSZ() + "]";
     }
   }
 
@@ -64,8 +63,8 @@ abstract class TreeNodeImpl implements TreeNode {
     }
 
     @Override
-    public Bytes32 getRoot() {
-      return Bytes32.wrap(Arrays.copyOf(partialRoot, 32));
+    public Bytes getSSZ() {
+      return Bytes.wrap(partialRoot);
     }
   }
 
@@ -77,7 +76,7 @@ abstract class TreeNodeImpl implements TreeNode {
     }
 
     @Override
-    public Bytes32 getRoot() {
+    public Bytes32 getSSZ() {
       return root;
     }
   }

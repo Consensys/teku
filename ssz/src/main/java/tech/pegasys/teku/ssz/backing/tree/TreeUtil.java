@@ -119,6 +119,40 @@ public class TreeUtil {
     }
   }
 
+  public static void iterateLeaves(TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<LeafNode> visitor) {
+    long leftmostFromIndex = fromGeneralIndex << (63 - treeDepth(fromGeneralIndex));
+    int shiftN = 63 - treeDepth(toGeneralIndex);
+    long rightmostToIndex = (toGeneralIndex << shiftN) | ((1L << shiftN) - 1);
+    iterateLeavesPriv(node, leftmostFromIndex, rightmostToIndex, visitor);
+  }
+
+  private static void iterateLeavesPriv(TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<LeafNode> visitor) {
+    if (node instanceof LeafNode) {
+      visitor.accept((LeafNode) node);
+    } else {
+
+      BranchNode bNode = (BranchNode) node;
+      long anchorF = Long.highestOneBit(fromGeneralIndex);
+      long pivotF = anchorF >>> 1;
+      boolean fromLeft = fromGeneralIndex < (fromGeneralIndex | pivotF);
+      long fromChildIdx = (fromGeneralIndex ^ anchorF) | pivotF;
+
+      long anchorT = Long.highestOneBit(toGeneralIndex);
+      long pivotT = anchorT >>> 1;
+      boolean toLeft = toGeneralIndex < (toGeneralIndex | pivotT);
+      long toChildIdx = (toGeneralIndex ^ anchorT) | pivotT;
+
+      if (fromLeft && !toLeft) {
+        iterateLeavesPriv(bNode.left(), fromChildIdx, -1, visitor);
+        iterateLeavesPriv(bNode.right(), 1L << 63, toChildIdx, visitor);
+      } else if (fromLeft && toLeft) {
+        iterateLeavesPriv(bNode.left(), fromChildIdx, toChildIdx, visitor);
+      } else if (!fromLeft && !toLeft) {
+        iterateLeavesPriv(bNode.right(), fromChildIdx, toChildIdx, visitor);
+      }
+    }
+  }
+
   /** Dumps the tree to stdout */
   public static String dumpBinaryTree(TreeNode node) {
     StringBuilder ret = new StringBuilder();

@@ -16,6 +16,7 @@ package tech.pegasys.teku.ssz.backing.tree;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -25,11 +26,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ssz.TestUtil;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode.BranchNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeNode.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeUpdates.Update;
 
 public class TreeTest {
 
-  public static TreeNode newTestLeaf(long l) {
+  public static LeafNode newTestLeaf(long l) {
     return TreeNode.createLeafNode(Bytes32.leftPad(Bytes.ofUnsignedLong(l, ByteOrder.BIG_ENDIAN)));
   }
 
@@ -130,5 +132,36 @@ public class TreeTest {
     TreeNode tree = TreeUtil.createDefaultTree(32 * 1024, newTestLeaf(111));
     List<Future<Bytes32>> hasheFuts = TestUtil.executeParallel(() -> tree.hashTreeRoot(), 512);
     assertThat(TestUtil.waitAll(hasheFuts)).containsOnly(tree.hashTreeRoot());
+  }
+
+  @Test
+  void testLeavesIterator() {
+    BranchNode n1 =
+        (BranchNode)
+            TreeUtil.createTree(
+                IntStream.range(0, 8).mapToObj(TreeTest::newTestLeaf).collect(Collectors.toList()));
+    assertThat(collectLeaves(n1, 0b1000, 0b1000)).containsExactly(newTestLeaf(0));
+    assertThat(collectLeaves(n1, 0b1000, 0b1001)).containsExactly(
+        newTestLeaf(0), newTestLeaf(1));
+    assertThat(collectLeaves(n1, 0b100, 0b100)).containsExactly(
+        newTestLeaf(0), newTestLeaf(1));
+    assertThat(collectLeaves(n1, 0b101, 0b1100)).containsExactly(
+        newTestLeaf(2), newTestLeaf(3), newTestLeaf(4));
+    assertThat(collectLeaves(n1, 0b101, 0b110)).containsExactly(
+        newTestLeaf(2), newTestLeaf(3), newTestLeaf(4), newTestLeaf(5));
+    assertThat(collectLeaves(n1, 0b100, 0b110))
+        .containsExactly(
+            newTestLeaf(0),
+            newTestLeaf(1),
+            newTestLeaf(2),
+            newTestLeaf(3),
+            newTestLeaf(4),
+            newTestLeaf(5));
+  }
+
+  static List<LeafNode> collectLeaves(TreeNode n, long from, long to) {
+    List<LeafNode> ret = new ArrayList<>();
+    TreeUtil.iterateLeaves(n , from, to, ret::add);
+    return ret;
   }
 }
