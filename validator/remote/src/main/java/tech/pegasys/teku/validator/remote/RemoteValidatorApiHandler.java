@@ -61,6 +61,7 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
 
   private static final Logger LOG = LogManager.getLogger();
   static final int MAX_PUBLIC_KEY_BATCH_SIZE = 10;
+  static final int MAX_RATE_LIMITING_RETRIES = 3;
 
   private final ValidatorRestApiClient apiClient;
   private final AsyncRunner asyncRunner;
@@ -316,15 +317,20 @@ public class RemoteValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private <T> SafeFuture<T> sendRequest(final ExceptionThrowingSupplier<T> requestExecutor) {
-    return asyncRunner
-        .runAsync(requestExecutor)
+    return asyncRunner.runAsync(() -> sendRequest(requestExecutor, 0));
+  }
+
+  private <T> SafeFuture<T> sendRequest(
+      final ExceptionThrowingSupplier<T> requestExecutor, final int attempt) {
+    return SafeFuture.of(requestExecutor)
         .exceptionallyCompose(
             error -> {
-              if (Throwables.getRootCause(error) instanceof RateLimitedException) {
+              if (Throwables.getRootCause(error) instanceof RateLimitedException
+                  && attempt < MAX_RATE_LIMITING_RETRIES) {
                 LOG.warn(
                     "Received Too Many Requests response from beacon node. Retrying after a delay.");
                 return asyncRunner.runAfterDelay(
-                    () -> sendRequest(requestExecutor), 2, TimeUnit.SECONDS);
+                    () -> sendRequest(requestExecutor, attempt + 1), 2, TimeUnit.SECONDS);
               } else {
                 return SafeFuture.failedFuture(error);
               }
