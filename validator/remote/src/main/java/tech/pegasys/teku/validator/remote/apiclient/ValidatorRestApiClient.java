@@ -64,7 +64,7 @@ public interface ValidatorRestApiClient {
 
   Optional<Attestation> createAggregate(Bytes32 attestationHashTreeRoot);
 
-  void sendAggregateAndProof(SignedAggregateAndProof signedAggregateAndProof);
+  void sendAggregateAndProofs(List<SignedAggregateAndProof> signedAggregateAndProof);
 
   void subscribeToBeaconCommittee(List<CommitteeSubscriptionRequest> requests);
 

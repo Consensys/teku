@@ -202,8 +202,8 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public void sendAggregateAndProof(final SignedAggregateAndProof signedAggregateAndProof) {
-    post(SEND_SIGNED_AGGREGATE_AND_PROOF, List.of(signedAggregateAndProof), null);
+  public void sendAggregateAndProofs(final List<SignedAggregateAndProof> signedAggregateAndProof) {
+    post(SEND_SIGNED_AGGREGATE_AND_PROOF, signedAggregateAndProof, null);
   }
 
   @Override
@@ -323,6 +323,8 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
                     + response.body().string()
                     + ")");
           }
+        case 429:
+          throw new RateLimitedException(request.url().toString());
         default:
           {
             final String responseBody = response.body().string();
