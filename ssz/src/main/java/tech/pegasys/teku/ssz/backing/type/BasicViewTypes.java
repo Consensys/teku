@@ -122,7 +122,6 @@ public class BasicViewTypes {
 
         @Override
         public TreeNode updateBackingNode(TreeNode srcNode, int index, ViewRead newValue) {
-          Bytes32 originalChunk = srcNode.hashTreeRoot();
           Bytes uintBytes =
               Bytes.ofUnsignedLong(((UInt64View) newValue).longValue(), ByteOrder.LITTLE_ENDIAN);
           if (srcNode.isZero() && index == 0) {

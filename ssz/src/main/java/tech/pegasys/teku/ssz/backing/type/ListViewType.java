@@ -92,8 +92,7 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
       MutableBytes mutableBytes = Bytes.wrap(lastBits, trailingByte).mutableCopy();
       byte lastByte = mutableBytes.get(mutableBytes.size() - 1);
       int boundaryBitOff = elementsCount % 8;
-      lastByte |= 1 << boundaryBitOff;
-      mutableBytes.set(mutableBytes.size() - 1, lastByte);
+      mutableBytes.set(mutableBytes.size() - 1, (byte) (lastByte | 1 << boundaryBitOff));
       writer.accept(mutableBytes);
       return sizeBytes;
     } else {
