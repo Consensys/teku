@@ -70,7 +70,9 @@ public class GetBlock implements Handler {
   @OpenApi(
       path = ROUTE,
       method = HttpMethod.GET,
-      summary = "Get the beacon chain block matching the criteria.",
+      summary =
+          "Get the beacon chain block matching the criteria.\n"
+              + "Deprecated - use `/eth/v1/beacon/blocks/{block_id}` instead.",
       tags = {TAG_BEACON},
       queryParams = {
         @OpenApiParam(name = EPOCH, description = EPOCH_QUERY_DESCRIPTION),
