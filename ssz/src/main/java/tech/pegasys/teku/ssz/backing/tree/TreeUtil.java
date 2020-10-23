@@ -119,14 +119,16 @@ public class TreeUtil {
     }
   }
 
-  public static void iterateLeaves(TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<LeafNode> visitor) {
+  public static void iterateLeaves(
+      TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<LeafNode> visitor) {
     long leftmostFromIndex = fromGeneralIndex << (63 - treeDepth(fromGeneralIndex));
     int shiftN = 63 - treeDepth(toGeneralIndex);
     long rightmostToIndex = (toGeneralIndex << shiftN) | ((1L << shiftN) - 1);
     iterateLeavesPriv(node, leftmostFromIndex, rightmostToIndex, visitor);
   }
 
-  private static void iterateLeavesPriv(TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<LeafNode> visitor) {
+  private static void iterateLeavesPriv(
+      TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<LeafNode> visitor) {
     if (node instanceof LeafNode) {
       visitor.accept((LeafNode) node);
     } else {

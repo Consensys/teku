@@ -75,7 +75,7 @@ public abstract class CollectionViewType implements CompositeViewType {
   public int sszSerializeVector(TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
     if (getElementType().isFixedSize()) {
       if (getElementType().getBitsSize() == 1) {
-        return sszSerializeFixedVectorRegular(vectorNode,writer,elementsCount);
+        return sszSerializeFixedVectorRegular(vectorNode, writer, elementsCount);
       } else {
         return sszSerializeFixedVectorFast(vectorNode, writer, elementsCount);
       }
@@ -84,7 +84,8 @@ public abstract class CollectionViewType implements CompositeViewType {
     }
   }
 
-  private int sszSerializeFixedVectorFast(TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
+  private int sszSerializeFixedVectorFast(
+      TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
     int nodesCount = getChunks(elementsCount);
     int[] bytesCnt = new int[1];
     TreeUtil.iterateLeaves(
@@ -99,7 +100,8 @@ public abstract class CollectionViewType implements CompositeViewType {
     return bytesCnt[0];
   }
 
-  private int sszSerializeFixedVectorRegular(TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
+  private int sszSerializeFixedVectorRegular(
+      TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
     int nodesCount = getChunks(elementsCount);
     ViewType elementType = getElementType();
     int bytesCount = (elementsCount * elementType.getBitsSize() + 7) / 8;

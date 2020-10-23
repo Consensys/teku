@@ -138,7 +138,7 @@ public class SimpleOffsetSerializer {
 
   public static Bytes serialize(SimpleOffsetSerializable value) {
     if (value instanceof ViewRead) {
-      return  ((ViewRead) value).sszSerialize();
+      return ((ViewRead) value).sszSerialize();
     } else {
       List<UInt64> variable_offsets = new ArrayList<>();
       List<Bytes> interleaved_values = new ArrayList<>();

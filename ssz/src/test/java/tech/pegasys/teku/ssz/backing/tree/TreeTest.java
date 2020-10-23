@@ -141,14 +141,12 @@ public class TreeTest {
             TreeUtil.createTree(
                 IntStream.range(0, 8).mapToObj(TreeTest::newTestLeaf).collect(Collectors.toList()));
     assertThat(collectLeaves(n1, 0b1000, 0b1000)).containsExactly(newTestLeaf(0));
-    assertThat(collectLeaves(n1, 0b1000, 0b1001)).containsExactly(
-        newTestLeaf(0), newTestLeaf(1));
-    assertThat(collectLeaves(n1, 0b100, 0b100)).containsExactly(
-        newTestLeaf(0), newTestLeaf(1));
-    assertThat(collectLeaves(n1, 0b101, 0b1100)).containsExactly(
-        newTestLeaf(2), newTestLeaf(3), newTestLeaf(4));
-    assertThat(collectLeaves(n1, 0b101, 0b110)).containsExactly(
-        newTestLeaf(2), newTestLeaf(3), newTestLeaf(4), newTestLeaf(5));
+    assertThat(collectLeaves(n1, 0b1000, 0b1001)).containsExactly(newTestLeaf(0), newTestLeaf(1));
+    assertThat(collectLeaves(n1, 0b100, 0b100)).containsExactly(newTestLeaf(0), newTestLeaf(1));
+    assertThat(collectLeaves(n1, 0b101, 0b1100))
+        .containsExactly(newTestLeaf(2), newTestLeaf(3), newTestLeaf(4));
+    assertThat(collectLeaves(n1, 0b101, 0b110))
+        .containsExactly(newTestLeaf(2), newTestLeaf(3), newTestLeaf(4), newTestLeaf(5));
     assertThat(collectLeaves(n1, 0b100, 0b110))
         .containsExactly(
             newTestLeaf(0),
@@ -161,7 +159,7 @@ public class TreeTest {
 
   static List<LeafNode> collectLeaves(TreeNode n, long from, long to) {
     List<LeafNode> ret = new ArrayList<>();
-    TreeUtil.iterateLeaves(n , from, to, ret::add);
+    TreeUtil.iterateLeaves(n, from, to, ret::add);
     return ret;
   }
 }

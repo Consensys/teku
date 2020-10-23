@@ -43,12 +43,11 @@ public interface TreeNode {
   interface LeafNode extends TreeNode {
 
     /**
-     * Returns only data bytes without zero right padding (unlike {@link #hashTreeRoot()})
-     * E.g. if a {@code LeafNode} corresponds to a contained UInt64 field, then
-     * {@code getData()} returns only 8 bytes corresponding to the field value
-     * If a {@code Vector[Byte, 48]} is stored across two {@code LeafNode}s then the
-     * second node {@code getData} would return just the last 16 bytes of the vector
-     * (while {@link #hashTreeRoot()} would return zero padded 32 bytes)
+     * Returns only data bytes without zero right padding (unlike {@link #hashTreeRoot()}) E.g. if a
+     * {@code LeafNode} corresponds to a contained UInt64 field, then {@code getData()} returns only
+     * 8 bytes corresponding to the field value If a {@code Vector[Byte, 48]} is stored across two
+     * {@code LeafNode}s then the second node {@code getData} would return just the last 16 bytes of
+     * the vector (while {@link #hashTreeRoot()} would return zero padded 32 bytes)
      */
     Bytes getData();
 
@@ -141,8 +140,8 @@ public interface TreeNode {
   }
 
   /**
-   * Calculates (if necessary) and returns `hash_tree_root` of this tree node.
-   * Worth to mention that `hash_tree_root` of a {@link LeafNode} is the node {@link Bytes32} content
+   * Calculates (if necessary) and returns `hash_tree_root` of this tree node. Worth to mention that
+   * `hash_tree_root` of a {@link LeafNode} is the node {@link Bytes32} content
    */
   Bytes32 hashTreeRoot();
 

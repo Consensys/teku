@@ -51,13 +51,15 @@ public class VectorViewType<C> extends CollectionViewType {
 
   public int getLength() {
     long maxLength = getMaxLength();
-    if (maxLength > Integer.MAX_VALUE) throw new IllegalArgumentException("Vector size too large: " + maxLength);
+    if (maxLength > Integer.MAX_VALUE)
+      throw new IllegalArgumentException("Vector size too large: " + maxLength);
     return (int) maxLength;
   }
 
   public int getChunksCount() {
     long maxChunks = maxChunks();
-    if (maxChunks > Integer.MAX_VALUE) throw new IllegalArgumentException("Vector size too large: " + maxChunks);
+    if (maxChunks > Integer.MAX_VALUE)
+      throw new IllegalArgumentException("Vector size too large: " + maxChunks);
     return (int) maxChunks;
   }
 

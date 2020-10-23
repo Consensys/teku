@@ -126,13 +126,10 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
     for (int i = 0; i < getMaxLength(); i++) {
       TreeNode childSubtree = node.get(getGeneralizedIndex(i));
       ViewType childType = getChildType(i);
-//      Bytes childSsz = childType.sszSerialize(childSubtree);
       if (childType.isFixedSize()) {
         childType.sszSerialize(childSubtree, writer);
       } else {
         writer.accept(SSZType.lengthToBytes(variableChildOffset));
-        //        fixedParts.add(SSZType.lengthToBytes(variableChildOffset));
-        //        variableParts.add(childSsz);
         variableChildOffset += childType.getSszSize(childSubtree);
       }
     }
@@ -145,28 +142,6 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
     }
     return variableChildOffset;
   }
-
-//  @Override
-//  public Bytes sszSerialize(TreeNode node) {
-//    List<Bytes> fixedParts = new ArrayList<>();
-//    List<Bytes> variableParts = new ArrayList<>();
-//    int variableChildOffset = getFixedPartSize();
-//    for (int i = 0; i < getMaxLength(); i++) {
-//      TreeNode childSubtree = node.get(getGeneralizedIndex(i));
-//      ViewType childType = getChildType(i);
-//      Bytes childSsz = childType.sszSerialize(childSubtree);
-//      if (childType.isFixedSize()) {
-//        fixedParts.add(childSsz);
-//      } else {
-//        fixedParts.add(SSZType.lengthToBytes(variableChildOffset));
-//        variableParts.add(childSsz);
-//        variableChildOffset += childSsz.size();
-//      }
-//    }
-//    return Bytes.wrap(
-//        Bytes.wrap(fixedParts.toArray(new Bytes[0])),
-//        Bytes.wrap(variableParts.toArray(new Bytes[0])));
-//  }
 
   @Override
   public TreeNode sszDeserialize(Bytes ssz) {
