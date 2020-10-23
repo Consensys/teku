@@ -176,6 +176,32 @@ class MatchingDataAttestationGroupTest {
   }
 
   @Test
+  public void
+      iterator_shouldAggregateAttestationsWithMoreValidatorsFirst_updatingValidatorCountAfterRemoval_multipleUpdates() {
+    final Attestation toRemove =
+        aggregateAttestations(
+            createAttestation(16).getAttestation(),
+            createAttestation(12).getAttestation(),
+            createAttestation(8).getAttestation(),
+            createAttestation(17).getAttestation(),
+            createAttestation(18).getAttestation(),
+            createAttestation(7).getAttestation());
+
+    final ValidateableAttestation attestationA = addAttestation(19, 0, 4, 8, 12, 16);
+    final ValidateableAttestation attestationB = addAttestation(0, 1, 5, 9, 13, 17);
+    final ValidateableAttestation attestationC = addAttestation(4, 2, 6, 10, 14, 18);
+    final ValidateableAttestation attestationD = addAttestation(0, 3, 7);
+
+    // Remove some attesters, which should reprioritize the attestations
+    group.remove(toRemove);
+
+    final ValidateableAttestation attestationBC =
+        ValidateableAttestation.fromAttestation(
+            aggregateAttestations(attestationB.getAttestation(), attestationC.getAttestation()));
+    assertThat(group).containsExactly(attestationBC, attestationA, attestationD);
+  }
+
+  @Test
   public void iterator_shouldNotAggregateAttestationsWhenValidatorsOverlap() {
     final ValidateableAttestation attestation1 = addAttestation(1, 2, 5);
     final ValidateableAttestation attestation2 = addAttestation(1, 2, 3);
@@ -219,7 +245,7 @@ class MatchingDataAttestationGroupTest {
   }
 
   private ValidateableAttestation createAttestation(final int... validators) {
-    final Bitlist aggregationBits = new Bitlist(10, MAX_VALIDATORS_PER_COMMITTEE);
+    final Bitlist aggregationBits = new Bitlist(20, MAX_VALIDATORS_PER_COMMITTEE);
     IntStream.of(validators).forEach(aggregationBits::setBit);
     return ValidateableAttestation.fromAttestation(
         new Attestation(aggregationBits, attestationData, dataStructureUtil.randomSignature()));
