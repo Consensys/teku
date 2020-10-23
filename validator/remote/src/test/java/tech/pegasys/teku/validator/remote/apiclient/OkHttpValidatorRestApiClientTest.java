@@ -587,12 +587,12 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
-  public void sendAggregateAndProof_MakesExpectedRequest() throws Exception {
+  public void sendAggregateAndProofs_MakesExpectedRequest() throws Exception {
     final SignedAggregateAndProof signedAggregateAndProof = schemaObjects.signedAggregateAndProof();
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    apiClient.sendAggregateAndProof(signedAggregateAndProof);
+    apiClient.sendAggregateAndProofs(List.of(signedAggregateAndProof));
 
     RecordedRequest request = mockWebServer.takeRequest();
 
@@ -604,22 +604,22 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
-  public void sendAggregateAndProof_WhenBadParameters_ThrowsIllegalArgumentException() {
+  public void sendAggregateAndProofs_WhenBadParameters_ThrowsIllegalArgumentException() {
     final SignedAggregateAndProof signedAggregateAndProof = schemaObjects.signedAggregateAndProof();
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(400));
 
-    assertThatThrownBy(() -> apiClient.sendAggregateAndProof(signedAggregateAndProof))
+    assertThatThrownBy(() -> apiClient.sendAggregateAndProofs(List.of(signedAggregateAndProof)))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
-  public void sendAggregateAndProof_WhenServerError_ThrowsRuntimeException() {
+  public void sendAggregateAndProofs_WhenServerError_ThrowsRuntimeException() {
     final SignedAggregateAndProof signedAggregateAndProof = schemaObjects.signedAggregateAndProof();
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(500));
 
-    assertThatThrownBy(() -> apiClient.sendAggregateAndProof(signedAggregateAndProof))
+    assertThatThrownBy(() -> apiClient.sendAggregateAndProofs(List.of(signedAggregateAndProof)))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
   }
@@ -770,6 +770,13 @@ class OkHttpValidatorRestApiClientTest {
     final String authorization = request.getHeader("Authorization");
     // Base64 encoded version of credentials.
     assertThat(authorization).isEqualTo("Basic dXNlcjpwYXNzd29yZA==");
+  }
+
+  @Test
+  void shouldThrowRateLimitedExceptionWhen429ResponseReceived() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(429));
+
+    assertThatThrownBy(() -> apiClient.getFork()).isInstanceOf(RateLimitedException.class);
   }
 
   private String asJson(Object object) {
