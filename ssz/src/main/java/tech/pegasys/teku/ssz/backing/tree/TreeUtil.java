@@ -22,13 +22,13 @@ import tech.pegasys.teku.ssz.backing.Utils;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode.BranchNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode.LeafNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.BranchNodeImpl;
-import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.CompressedLeafNodeImpl;
+import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
 
 /** Misc Backing binary tree utils */
 public class TreeUtil {
 
   public static final TreeNode ZERO_LEAF =
-      new CompressedLeafNodeImpl(Bytes.EMPTY) {
+      new LeafNodeImpl(Bytes.EMPTY) {
         @Override
         public boolean isZero() {
           return true;

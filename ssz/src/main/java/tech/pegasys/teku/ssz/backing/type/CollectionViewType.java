@@ -72,15 +72,15 @@ public abstract class CollectionViewType implements CompositeViewType {
     }
   }
 
-  public int sszSerializeVector(TreeNode node, Consumer<Bytes> writer, int elementsCount) {
+  public int sszSerializeVector(TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
     if (getElementType().isFixedSize()) {
       if (getElementType().getBitsSize() == 1) {
-        return sszSerializeFixedVectorRegular(node,writer,elementsCount);
+        return sszSerializeFixedVectorRegular(vectorNode,writer,elementsCount);
       } else {
-        return sszSerializeFixedVectorFast(node, writer, elementsCount);
+        return sszSerializeFixedVectorFast(vectorNode, writer, elementsCount);
       }
     } else {
-      return sszSerializeVariableVector(node, writer, elementsCount);
+      return sszSerializeVariableVector(vectorNode, writer, elementsCount);
     }
   }
 
@@ -92,7 +92,7 @@ public abstract class CollectionViewType implements CompositeViewType {
         getGeneralizedIndex(0),
         getGeneralizedIndex(nodesCount - 1),
         leaf -> {
-          Bytes ssz = leaf.getSSZ();
+          Bytes ssz = leaf.getData();
           writer.accept(ssz);
           bytesCnt[0] += ssz.size();
         });
