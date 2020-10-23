@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static java.util.Collections.emptyList;
 import static tech.pegasys.teku.datastructures.util.CommitteeUtil.isAggregator;
 
 import java.util.Collection;
@@ -56,6 +57,9 @@ public class AttestationDutyLoader extends AbstractDutyLoader<AttesterDuties> {
   @Override
   protected SafeFuture<Optional<List<AttesterDuties>>> requestDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
+    if (validatorIndices.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.of(emptyList()));
+    }
     return validatorApiChannel.getAttestationDuties(epoch, validatorIndices);
   }
 
