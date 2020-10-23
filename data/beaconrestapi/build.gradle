@@ -5,6 +5,7 @@ dependencies {
     implementation project(':ethereum:datastructures')
     implementation project(':ethereum:statetransition')
     implementation project(':infrastructure:async')
+    implementation project(':infrastructure:http')
     implementation project(':infrastructure:logging')
     implementation project(':networking:eth2')
     implementation project(':services:serviceutils')

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 ConsenSys AG.
+ * Copyright SC_ACCEPTED0 ConsenSys AG.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,13 +17,20 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.fail;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
@@ -76,7 +83,7 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void getFork_MakesExpectedRequest() throws Exception {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     apiClient.getFork();
 
@@ -89,7 +96,7 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void getFork_WhenServerError_ThrowsRuntimeException() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
     assertThatThrownBy(() -> apiClient.getFork())
         .isInstanceOf(RuntimeException.class)
@@ -98,7 +105,7 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void getFork_WhenNoContent_ReturnsEmpty() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     assertThat(apiClient.getFork()).isEmpty();
   }
@@ -108,7 +115,7 @@ class OkHttpValidatorRestApiClientTest {
     final GetStateForkResponse getStateForkResponse = schemaObjects.getStateForkResponse();
 
     mockWebServer.enqueue(
-        new MockResponse().setResponseCode(200).setBody(asJson(getStateForkResponse)));
+        new MockResponse().setResponseCode(SC_OK).setBody(asJson(getStateForkResponse)));
 
     Optional<Fork> fork = apiClient.getFork();
 
@@ -118,7 +125,7 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void getGenesis_MakesExpectedRequest() throws Exception {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     apiClient.getGenesis();
 
@@ -130,7 +137,7 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void getGenesis_WhenServerError_ThrowsRuntimeException() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
     assertThatThrownBy(() -> apiClient.getGenesis())
         .isInstanceOf(RuntimeException.class)
@@ -139,7 +146,7 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void getGenesis_WhenNoContent_ReturnsEmpty() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     assertThat(apiClient.getGenesis()).isEmpty();
   }
@@ -149,7 +156,7 @@ class OkHttpValidatorRestApiClientTest {
     final GetGenesisResponse getGenesisResponse = schemaObjects.getGenesisResponse();
 
     mockWebServer.enqueue(
-        new MockResponse().setResponseCode(200).setBody(asJson(getGenesisResponse)));
+        new MockResponse().setResponseCode(SC_OK).setBody(asJson(getGenesisResponse)));
 
     Optional<GetGenesisResponse> genesis = apiClient.getGenesis();
 
@@ -159,7 +166,7 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   void getValidators_MakesExpectedRequest() throws Exception {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     apiClient.getValidators(List.of("1", "0x1234"));
 
@@ -172,7 +179,7 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   void getValidators_WhenServerError_ThrowsRuntimeException() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
     assertThatThrownBy(() -> apiClient.getValidators(List.of("1")))
         .isInstanceOf(RuntimeException.class)
@@ -181,7 +188,7 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void getValidators_WhenNoContent_ReturnsEmpty() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     assertThat(apiClient.getValidators(List.of("1"))).isEmpty();
   }
@@ -192,7 +199,7 @@ class OkHttpValidatorRestApiClientTest {
         List.of(schemaObjects.validatorResponse(), schemaObjects.validatorResponse());
     final GetStateValidatorsResponse response = new GetStateValidatorsResponse(expected);
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody(asJson(response)));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(asJson(response)));
 
     Optional<List<ValidatorResponse>> result = apiClient.getValidators(List.of("1", "2"));
 
@@ -204,7 +211,7 @@ class OkHttpValidatorRestApiClientTest {
   public void getDuties_MakesExpectedRequest() throws Exception {
     final ValidatorDutiesRequest validatorDutiesRequest = schemaObjects.validatorDutiesRequest();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     apiClient.getDuties(validatorDutiesRequest);
 
@@ -220,7 +227,7 @@ class OkHttpValidatorRestApiClientTest {
   public void getDuties_WhenServerError_ThrowsRuntimeException() {
     final ValidatorDutiesRequest validatorDutiesRequest = schemaObjects.validatorDutiesRequest();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
     assertThatThrownBy(() -> apiClient.getDuties(validatorDutiesRequest))
         .isInstanceOf(RuntimeException.class)
@@ -228,19 +235,21 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
-  public void getDuties_WhenBadRequest_ReturnsEmpty() {
+  public void getDuties_WhenBadRequest_ThrowException() {
     final ValidatorDutiesRequest validatorDutiesRequest = schemaObjects.validatorDutiesRequest();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(404));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
-    assertThat(apiClient.getDuties(validatorDutiesRequest)).isEmpty();
+    assertThatThrownBy(() -> apiClient.getDuties(validatorDutiesRequest))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Invalid params response from Beacon Node API");
   }
 
   @Test
   public void getDuties_WhenNoContent_ReturnsEmpty() {
     final ValidatorDutiesRequest validatorDutiesRequest = schemaObjects.validatorDutiesRequest();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     assertThat(apiClient.getDuties(validatorDutiesRequest)).isEmpty();
   }
@@ -251,7 +260,7 @@ class OkHttpValidatorRestApiClientTest {
     final ValidatorDuties validatorDuties = schemaObjects.validatorDuties();
 
     mockWebServer.enqueue(
-        new MockResponse().setResponseCode(200).setBody(asJson(List.of(validatorDuties))));
+        new MockResponse().setResponseCode(SC_OK).setBody(asJson(List.of(validatorDuties))));
 
     List<ValidatorDuties> duties = apiClient.getDuties(validatorDutiesRequest);
 
@@ -265,7 +274,7 @@ class OkHttpValidatorRestApiClientTest {
     final BLSSignature blsSignature = schemaObjects.BLSSignature();
     final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     apiClient.createUnsignedBlock(slot, blsSignature, graffiti);
 
@@ -286,7 +295,7 @@ class OkHttpValidatorRestApiClientTest {
     final BLSSignature blsSignature = schemaObjects.BLSSignature();
     final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     assertThat(apiClient.createUnsignedBlock(slot, blsSignature, graffiti)).isEmpty();
   }
@@ -297,7 +306,7 @@ class OkHttpValidatorRestApiClientTest {
     final BLSSignature blsSignature = schemaObjects.BLSSignature();
     final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(400));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
     assertThatThrownBy(() -> apiClient.createUnsignedBlock(slot, blsSignature, graffiti))
         .isInstanceOf(IllegalArgumentException.class);
@@ -312,7 +321,7 @@ class OkHttpValidatorRestApiClientTest {
 
     mockWebServer.enqueue(
         new MockResponse()
-            .setResponseCode(200)
+            .setResponseCode(SC_OK)
             .setBody(asJson(new GetNewBlockResponse(expectedBeaconBlock))));
 
     Optional<BeaconBlock> beaconBlock = apiClient.createUnsignedBlock(slot, blsSignature, graffiti);
@@ -327,7 +336,7 @@ class OkHttpValidatorRestApiClientTest {
     final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
 
     // Block has been successfully broadcast, validated and imported
-    mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody(asJson(blockRoot)));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(asJson(blockRoot)));
 
     apiClient.sendSignedBlock(signedBeaconBlock);
 
@@ -345,7 +354,7 @@ class OkHttpValidatorRestApiClientTest {
     final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
 
     // Block has been successfully broadcast, but failed validation and has not been imported
-    mockWebServer.enqueue(new MockResponse().setResponseCode(202));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_ACCEPTED));
 
     apiClient.sendSignedBlock(signedBeaconBlock);
   }
@@ -354,7 +363,7 @@ class OkHttpValidatorRestApiClientTest {
   public void sendSignedBlock_WhenBadParameters_ThrowsIllegalArgumentException() {
     final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(400));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
     assertThatThrownBy(() -> apiClient.sendSignedBlock(signedBeaconBlock))
         .isInstanceOf(IllegalArgumentException.class);
@@ -374,7 +383,7 @@ class OkHttpValidatorRestApiClientTest {
   public void sendSignedBlock_WhenServerError_ThrowsRuntimeException() {
     final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
     assertThatThrownBy(() -> apiClient.sendSignedBlock(signedBeaconBlock))
         .isInstanceOf(RuntimeException.class)
@@ -386,7 +395,7 @@ class OkHttpValidatorRestApiClientTest {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     apiClient.createUnsignedAttestation(slot, committeeIndex);
 
@@ -405,21 +414,24 @@ class OkHttpValidatorRestApiClientTest {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(400));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
     assertThatThrownBy(() -> apiClient.createUnsignedAttestation(slot, committeeIndex))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
-  public void createUnsignedAttestation_WhenNotFound_ReturnsEmpty() {
+  public void createUnsignedAttestation_WhenNotFound_ThrowsException() {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
 
     // An attestation could not be created for the specified slot
-    mockWebServer.enqueue(new MockResponse().setResponseCode(404));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
 
-    assertThat(apiClient.createUnsignedAttestation(slot, committeeIndex)).isEmpty();
+    assertThatThrownBy(() -> apiClient.createUnsignedAttestation(slot, committeeIndex))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("Unexpected response from Beacon Node API");
+    ;
   }
 
   @Test
@@ -429,7 +441,7 @@ class OkHttpValidatorRestApiClientTest {
     final Attestation expectedAttestation = schemaObjects.attestation();
 
     mockWebServer.enqueue(
-        new MockResponse().setResponseCode(200).setBody(asJson(expectedAttestation)));
+        new MockResponse().setResponseCode(SC_OK).setBody(asJson(expectedAttestation)));
 
     Optional<Attestation> attestation = apiClient.createUnsignedAttestation(slot, committeeIndex);
 
@@ -442,7 +454,7 @@ class OkHttpValidatorRestApiClientTest {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     apiClient.createAttestationData(slot, committeeIndex);
 
@@ -461,21 +473,23 @@ class OkHttpValidatorRestApiClientTest {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(400));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
     assertThatThrownBy(() -> apiClient.createAttestationData(slot, committeeIndex))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
-  public void createAttestationData_WhenNotFound_ReturnsEmpty() {
+  public void createAttestationData_WhenNotFound_ThrowsError() {
     final UInt64 slot = UInt64.ONE;
     final int committeeIndex = 1;
 
     // An attestation could not be created for the specified slot
-    mockWebServer.enqueue(new MockResponse().setResponseCode(404));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
 
-    assertThat(apiClient.createAttestationData(slot, committeeIndex)).isEmpty();
+    assertThatThrownBy(() -> apiClient.createAttestationData(slot, committeeIndex))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("Unexpected response from Beacon Node API");
   }
 
   @Test
@@ -485,7 +499,7 @@ class OkHttpValidatorRestApiClientTest {
     final AttestationData expectedAttestationData = schemaObjects.attestation().data;
 
     mockWebServer.enqueue(
-        new MockResponse().setResponseCode(200).setBody(asJson(expectedAttestationData)));
+        new MockResponse().setResponseCode(SC_OK).setBody(asJson(expectedAttestationData)));
 
     Optional<AttestationData> attestationData =
         apiClient.createAttestationData(slot, committeeIndex);
@@ -498,7 +512,7 @@ class OkHttpValidatorRestApiClientTest {
   public void sendSignedAttestation_MakesExpectedRequest() throws Exception {
     final Attestation attestation = schemaObjects.attestation();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(200));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
 
     apiClient.sendSignedAttestation(attestation);
 
@@ -514,7 +528,7 @@ class OkHttpValidatorRestApiClientTest {
   public void sendSignedAttestation_WhenBadParameters_ThrowsIllegalArgumentException() {
     final Attestation attestation = schemaObjects.attestation();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(400));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
     assertThatThrownBy(() -> apiClient.sendSignedAttestation(attestation))
         .isInstanceOf(IllegalArgumentException.class);
@@ -524,7 +538,7 @@ class OkHttpValidatorRestApiClientTest {
   public void sendSignedAttestation_WhenServerError_ThrowsRuntimeException() {
     final Attestation attestation = schemaObjects.attestation();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
     assertThatThrownBy(() -> apiClient.sendSignedAttestation(attestation))
         .isInstanceOf(RuntimeException.class)
@@ -536,7 +550,7 @@ class OkHttpValidatorRestApiClientTest {
     final UInt64 slot = UInt64.ZERO;
     final Bytes32 attestationHashTreeRoot = Bytes32.random();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     apiClient.createAggregate(attestationHashTreeRoot);
 
@@ -553,7 +567,7 @@ class OkHttpValidatorRestApiClientTest {
   public void createAggregate_WhenBadParameters_ThrowsIllegalArgumentException() {
     final Bytes32 attestationHashTreeRoot = Bytes32.random();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(400));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
     assertThatThrownBy(() -> apiClient.createAggregate(attestationHashTreeRoot))
         .isInstanceOf(IllegalArgumentException.class);
@@ -563,7 +577,7 @@ class OkHttpValidatorRestApiClientTest {
   public void createAggregate_WhenServerError_ThrowsRuntimeException() {
     final Bytes32 attestationHashTreeRoot = Bytes32.random();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
     assertThatThrownBy(() -> apiClient.createAggregate(attestationHashTreeRoot))
         .isInstanceOf(RuntimeException.class)
@@ -577,7 +591,7 @@ class OkHttpValidatorRestApiClientTest {
 
     mockWebServer.enqueue(
         new MockResponse()
-            .setResponseCode(200)
+            .setResponseCode(SC_OK)
             .setBody(asJson(new GetAggregatedAttestationResponse(expectedAttestation))));
 
     final Optional<Attestation> attestation = apiClient.createAggregate(attestationHashTreeRoot);
@@ -590,7 +604,7 @@ class OkHttpValidatorRestApiClientTest {
   public void sendAggregateAndProofs_MakesExpectedRequest() throws Exception {
     final SignedAggregateAndProof signedAggregateAndProof = schemaObjects.signedAggregateAndProof();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(200));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
 
     apiClient.sendAggregateAndProofs(List.of(signedAggregateAndProof));
 
@@ -607,7 +621,7 @@ class OkHttpValidatorRestApiClientTest {
   public void sendAggregateAndProofs_WhenBadParameters_ThrowsIllegalArgumentException() {
     final SignedAggregateAndProof signedAggregateAndProof = schemaObjects.signedAggregateAndProof();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(400));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
     assertThatThrownBy(() -> apiClient.sendAggregateAndProofs(List.of(signedAggregateAndProof)))
         .isInstanceOf(IllegalArgumentException.class);
@@ -617,7 +631,7 @@ class OkHttpValidatorRestApiClientTest {
   public void sendAggregateAndProofs_WhenServerError_ThrowsRuntimeException() {
     final SignedAggregateAndProof signedAggregateAndProof = schemaObjects.signedAggregateAndProof();
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
     assertThatThrownBy(() -> apiClient.sendAggregateAndProofs(List.of(signedAggregateAndProof)))
         .isInstanceOf(RuntimeException.class)
@@ -639,13 +653,13 @@ class OkHttpValidatorRestApiClientTest {
     final boolean aggregator2 = false;
 
     final BeaconCommitteeSubscriptionRequest[] expectedRequest = {
-      new BeaconCommitteeSubscriptionRequest(
-          validatorIndex1, committeeIndex1, committeesAtSlot1, slot1, aggregator1),
-      new BeaconCommitteeSubscriptionRequest(
-          validatorIndex2, committeeIndex2, committeesAtSlot2, slot2, aggregator2)
+        new BeaconCommitteeSubscriptionRequest(
+            validatorIndex1, committeeIndex1, committeesAtSlot1, slot1, aggregator1),
+        new BeaconCommitteeSubscriptionRequest(
+            validatorIndex2, committeeIndex2, committeesAtSlot2, slot2, aggregator2)
     };
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(200));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
 
     apiClient.subscribeToBeaconCommittee(
         List.of(
@@ -665,18 +679,18 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void
-      subscribeToBeaconCommitteeForAggregation_WhenBadRequest_ThrowsIllegalArgumentException() {
+  subscribeToBeaconCommitteeForAggregation_WhenBadRequest_ThrowsIllegalArgumentException() {
     final int committeeIndex = 1;
     final UInt64 aggregationSlot = UInt64.ONE;
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(400));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
     assertThatThrownBy(
-            () ->
-                apiClient.subscribeToBeaconCommittee(
-                    List.of(
-                        new CommitteeSubscriptionRequest(
-                            1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))))
+        () ->
+            apiClient.subscribeToBeaconCommittee(
+                List.of(
+                    new CommitteeSubscriptionRequest(
+                        1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -685,14 +699,14 @@ class OkHttpValidatorRestApiClientTest {
     final int committeeIndex = 1;
     final UInt64 aggregationSlot = UInt64.ONE;
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
     assertThatThrownBy(
-            () ->
-                apiClient.subscribeToBeaconCommittee(
-                    List.of(
-                        new CommitteeSubscriptionRequest(
-                            1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))))
+        () ->
+            apiClient.subscribeToBeaconCommittee(
+                List.of(
+                    new CommitteeSubscriptionRequest(
+                        1, committeeIndex, UInt64.valueOf(10), aggregationSlot, true))))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
   }
@@ -701,7 +715,7 @@ class OkHttpValidatorRestApiClientTest {
   public void subscribeToPersistentSubnets_MakesExpectedRequest() throws Exception {
     final Set<SubnetSubscription> subnetSubscriptions = Set.of(schemaObjects.subnetSubscription());
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(200));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK));
 
     apiClient.subscribeToPersistentSubnets(subnetSubscriptions);
 
@@ -718,7 +732,7 @@ class OkHttpValidatorRestApiClientTest {
   public void subscribeToPersistentSubnets_WhenBadRequest_ThrowsIllegalArgumentException() {
     final Set<SubnetSubscription> subnetSubscriptions = Set.of(schemaObjects.subnetSubscription());
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(400));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
     assertThatThrownBy(() -> apiClient.subscribeToPersistentSubnets(subnetSubscriptions))
         .isInstanceOf(IllegalArgumentException.class);
   }
@@ -727,7 +741,7 @@ class OkHttpValidatorRestApiClientTest {
   public void subscribeToPersistentSubnets_WhenServerError_ThrowsRuntimeException() {
     final Set<SubnetSubscription> subnetSubscriptions = Set.of(schemaObjects.subnetSubscription());
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
     assertThatThrownBy(() -> apiClient.subscribeToPersistentSubnets(subnetSubscriptions))
         .isInstanceOf(RuntimeException.class)
@@ -740,7 +754,7 @@ class OkHttpValidatorRestApiClientTest {
     final HttpUrl url =
         mockWebServer.url("/").newBuilder().username("user").password("password").build();
     apiClient = new OkHttpValidatorRestApiClient(url, okHttpClient);
-    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     apiClient.getFork();
 
@@ -760,7 +774,7 @@ class OkHttpValidatorRestApiClientTest {
     apiClient = new OkHttpValidatorRestApiClient(url, okHttpClient);
 
     final ValidatorDutiesRequest validatorDutiesRequest = schemaObjects.validatorDutiesRequest();
-    mockWebServer.enqueue(new MockResponse().setResponseCode(204));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     apiClient.getDuties(validatorDutiesRequest);
 
