@@ -22,6 +22,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_INTERNAL_ERRO
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_OK;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.beaconrestapi.RestApiConstants.STATUS;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -73,6 +75,20 @@ public class GetStateValidators extends AbstractHandler {
         @OpenApiParam(
             name = PARAM_ID,
             description = PARAM_VALIDATOR_DESCRIPTION,
+            isRepeatable = true),
+        @OpenApiParam(
+            name = STATUS,
+            type = ValidatorStatus.class,
+            description =
+                "valid values:   pending_initialized, "
+                    + "  pending_queued, "
+                    + "  active_ongoing, "
+                    + "  active_exiting, "
+                    + "  active_slashed, "
+                    + "  exited_unslashed, "
+                    + "  exited_slashed, "
+                    + "  withdrawal_possible, "
+                    + "  withdrawal_done",
             isRepeatable = true)
       },
       responses = {
@@ -88,10 +104,15 @@ public class GetStateValidators extends AbstractHandler {
     final List<Integer> validatorIndices =
         stateValidatorsUtil.parseValidatorsParam(chainDataProvider, ctx);
 
+    final List<ValidatorStatus> statusFilter =
+        stateValidatorsUtil.parseStatusFilter(ctx.queryParamMap());
+
     final Function<Bytes32, SafeFuture<Optional<List<ValidatorResponse>>>> rootHandler =
-        (root) -> chainDataProvider.getValidatorsDetailsByStateRoot(root, validatorIndices);
+        (root) ->
+            chainDataProvider.getValidatorsDetailsByStateRoot(root, validatorIndices, statusFilter);
     final Function<UInt64, SafeFuture<Optional<List<ValidatorResponse>>>> slotHandler =
-        (slot) -> chainDataProvider.getValidatorsDetailsBySlot(slot, validatorIndices);
+        (slot) ->
+            chainDataProvider.getValidatorsDetailsBySlot(slot, validatorIndices, statusFilter);
 
     processStateEndpointRequest(
         chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);

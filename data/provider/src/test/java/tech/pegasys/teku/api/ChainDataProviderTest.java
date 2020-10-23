@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.api;
 
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -635,16 +634,8 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
     SafeFuture<Optional<List<ValidatorResponse>>> response =
-        provider.getValidatorsDetailsBySlot(UInt64.valueOf(12345678), List.of(1));
+        provider.getValidatorsDetailsBySlot(UInt64.valueOf(12345678), List.of(1), List.of());
     assertThatSafeFuture(response).isCompletedWithEmptyOptional();
-  }
-
-  @Test
-  public void getValidatorsDetails_shouldReturnEmptyListWhenNoValidatorIndicesProvided() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(recentChainData, combinedChainDataClient);
-    assertThatSafeFuture(provider.getValidatorsDetailsBySlot(ONE, emptyList()))
-        .isCompletedWithValue(Optional.of(emptyList()));
   }
 
   @Test
@@ -793,7 +784,7 @@ public class ChainDataProviderTest {
             .map(id -> ValidatorResponse.fromState(beaconStateInternal, id))
             .collect(toList());
     SafeFuture<Optional<List<ValidatorResponse>>> response =
-        provider.getValidatorsDetailsBySlot(slot, validatorIds);
+        provider.getValidatorsDetailsBySlot(slot, validatorIds, List.of());
     assertThatSafeFuture(response).isCompletedWithValue(Optional.of(expectedValidators));
   }
 }
