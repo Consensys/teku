@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
-import static java.util.Collections.emptyMap;
 import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForRandaoReveal;
 import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignAggregateAndProof;
 import static tech.pegasys.teku.core.signatures.SigningRootUtil.signingRootForSignAggregationSlot;
@@ -32,6 +31,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.core.signatures.Signer;
@@ -46,6 +46,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 
 public class ExternalSigner implements Signer {
   public static final String EXTERNAL_SIGNER_ENDPOINT = "/api/v1/eth2/sign";
+  private static final String FORK_INFO = "fork_info";
   private final JsonProvider jsonProvider = new JsonProvider();
   private final URL signingServiceUrl;
   private final BLSPublicKey blsPublicKey;
@@ -62,7 +63,10 @@ public class ExternalSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> createRandaoReveal(final UInt64 epoch, final ForkInfo forkInfo) {
-    return sign(signingRootForRandaoReveal(epoch, forkInfo), SignType.RANDAO_REVEAL, emptyMap());
+    return sign(
+        signingRootForRandaoReveal(epoch, forkInfo),
+        SignType.RANDAO_REVEAL,
+        Map.of("randao_reveal", Map.of("epoch", epoch), FORK_INFO, forkInfo(forkInfo)));
   }
 
   @Override
@@ -71,7 +75,10 @@ public class ExternalSigner implements Signer {
         signingRootForSignBlock(block, forkInfo),
         SignType.BLOCK,
         Map.of(
-            "genesisValidatorRoot", forkInfo.getGenesisValidatorsRoot(), "slot", block.getSlot()));
+            "block",
+            new tech.pegasys.teku.api.schema.BeaconBlock(block),
+            FORK_INFO,
+            forkInfo(forkInfo)));
   }
 
   @Override
@@ -81,15 +88,18 @@ public class ExternalSigner implements Signer {
         signingRootForSignAttestationData(attestationData, forkInfo),
         SignType.ATTESTATION,
         Map.of(
-            "genesisValidatorRoot", forkInfo.getGenesisValidatorsRoot(),
-            "sourceEpoch", attestationData.getSource().getEpoch(),
-            "targetEpoch", attestationData.getTarget().getEpoch()));
+            "attestation",
+            new tech.pegasys.teku.api.schema.AttestationData(attestationData),
+            FORK_INFO,
+            forkInfo(forkInfo)));
   }
 
   @Override
   public SafeFuture<BLSSignature> signAggregationSlot(final UInt64 slot, final ForkInfo forkInfo) {
     return sign(
-        signingRootForSignAggregationSlot(slot, forkInfo), SignType.AGGREGATION_SLOT, emptyMap());
+        signingRootForSignAggregationSlot(slot, forkInfo),
+        SignType.AGGREGATION_SLOT,
+        Map.of("aggregation_slot", Map.of("slot", slot), FORK_INFO, forkInfo(forkInfo)));
   }
 
   @Override
@@ -98,7 +108,11 @@ public class ExternalSigner implements Signer {
     return sign(
         signingRootForSignAggregateAndProof(aggregateAndProof, forkInfo),
         SignType.AGGREGATE_AND_PROOF,
-        emptyMap());
+        Map.of(
+            "aggregate_and_proof",
+            new tech.pegasys.teku.api.schema.AggregateAndProof(aggregateAndProof),
+            FORK_INFO,
+            forkInfo(forkInfo)));
   }
 
   @Override
@@ -107,12 +121,24 @@ public class ExternalSigner implements Signer {
     return sign(
         signingRootForSignVoluntaryExit(voluntaryExit, forkInfo),
         SignType.VOLUNTARY_EXIT,
-        emptyMap());
+        Map.of(
+            "voluntary_exit",
+            new tech.pegasys.teku.api.schema.VoluntaryExit(voluntaryExit),
+            FORK_INFO,
+            forkInfo(forkInfo)));
   }
 
   @Override
   public boolean isLocal() {
     return false;
+  }
+
+  private Map<String, Object> forkInfo(final ForkInfo forkInfo) {
+    return Map.of(
+        "fork",
+        new Fork(forkInfo.getFork()),
+        "genesis_validators_root",
+        forkInfo.getGenesisValidatorsRoot());
   }
 
   private SafeFuture<BLSSignature> sign(
