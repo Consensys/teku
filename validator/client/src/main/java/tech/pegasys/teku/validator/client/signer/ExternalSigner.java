@@ -68,7 +68,7 @@ public class ExternalSigner implements Signer {
         SignType.RANDAO_REVEAL,
         Map.of(
             "randao_reveal", Map.of("epoch", epoch),
-            "fork_info", forkInfo(forkInfo)));
+            FORK_INFO, forkInfo(forkInfo)));
   }
 
   @Override
