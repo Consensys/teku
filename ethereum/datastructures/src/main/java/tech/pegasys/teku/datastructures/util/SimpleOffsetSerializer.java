@@ -74,6 +74,7 @@ import tech.pegasys.teku.ssz.SSZTypes.SSZContainer;
 import tech.pegasys.teku.ssz.SSZTypes.SSZList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZMutableList;
 import tech.pegasys.teku.ssz.SSZTypes.SSZVector;
+import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.sos.ReflectionInformation;
 import tech.pegasys.teku.ssz.sos.SimpleOffsetSerializable;
 
@@ -136,40 +137,44 @@ public class SimpleOffsetSerializer {
   }
 
   public static Bytes serialize(SimpleOffsetSerializable value) {
-    List<UInt64> variable_offsets = new ArrayList<>();
-    List<Bytes> interleaved_values = new ArrayList<>();
-    UInt64 fixedLengthSum = UInt64.ZERO;
-    UInt64 varLengthSum = UInt64.ZERO;
+    if (value instanceof ViewRead) {
+      return  ((ViewRead) value).sszSerialize();
+    } else {
+      List<UInt64> variable_offsets = new ArrayList<>();
+      List<Bytes> interleaved_values = new ArrayList<>();
+      UInt64 fixedLengthSum = UInt64.ZERO;
+      UInt64 varLengthSum = UInt64.ZERO;
 
-    for (Bytes fixedPart : value.get_fixed_parts()) {
-      UInt64 fixedPartSize = UInt64.valueOf(fixedPart.size());
-      if (fixedPartSize.equals(UInt64.ZERO)) {
-        fixedPartSize = UInt64.valueOf(4L);
+      for (Bytes fixedPart : value.get_fixed_parts()) {
+        UInt64 fixedPartSize = UInt64.valueOf(fixedPart.size());
+        if (fixedPartSize.equals(UInt64.ZERO)) {
+          fixedPartSize = UInt64.valueOf(4L);
+        }
+        fixedLengthSum = fixedLengthSum.plus(fixedPartSize);
       }
-      fixedLengthSum = fixedLengthSum.plus(fixedPartSize);
-    }
 
-    variable_offsets.add(fixedLengthSum);
-    for (Bytes varPart : value.get_variable_parts()) {
-      UInt64 varPartSize = UInt64.valueOf(varPart.size());
-      varLengthSum = varLengthSum.plus(varPartSize);
-      variable_offsets.add(fixedLengthSum.plus(varLengthSum));
-    }
-
-    int interleavingIndex = 0;
-    for (Bytes element : value.get_fixed_parts()) {
-      if (!element.equals(Bytes.EMPTY)) {
-        interleaved_values.add(element);
-      } else {
-        interleaved_values.add(
-            SSZ.encodeUInt32(variable_offsets.get(interleavingIndex).longValue()));
+      variable_offsets.add(fixedLengthSum);
+      for (Bytes varPart : value.get_variable_parts()) {
+        UInt64 varPartSize = UInt64.valueOf(varPart.size());
+        varLengthSum = varLengthSum.plus(varPartSize);
+        variable_offsets.add(fixedLengthSum.plus(varLengthSum));
       }
-      ++interleavingIndex;
-    }
 
-    return Bytes.wrap(
-        Bytes.concatenate(interleaved_values.toArray(new Bytes[0])),
-        Bytes.concatenate(value.get_variable_parts().toArray(new Bytes[0])));
+      int interleavingIndex = 0;
+      for (Bytes element : value.get_fixed_parts()) {
+        if (!element.equals(Bytes.EMPTY)) {
+          interleaved_values.add(element);
+        } else {
+          interleaved_values.add(
+              SSZ.encodeUInt32(variable_offsets.get(interleavingIndex).longValue()));
+        }
+        ++interleavingIndex;
+      }
+
+      return Bytes.wrap(
+          Bytes.concatenate(interleaved_values.toArray(new Bytes[0])),
+          Bytes.concatenate(value.get_variable_parts().toArray(new Bytes[0])));
+    }
   }
 
   public static Bytes serializeFixedCompositeList(
