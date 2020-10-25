@@ -203,7 +203,7 @@ public class ChainDataProvider {
 
     final UInt64 slot = maybeSlot.get();
     return combinedChainDataClient
-        .getBlockAtSlotExact(slot)
+        .getBlockInEffectAtSlot(slot)
         .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
   }
 
@@ -597,7 +597,7 @@ public class ChainDataProvider {
 
     final UInt64 slotToLoad = slot.or(recentChainData::getCurrentSlot).orElseThrow();
     return combinedChainDataClient
-        .getBlockAtSlotExact(slotToLoad)
+        .getBlockInEffectAtSlot(slotToLoad)
         .thenApply(
             maybeBlock ->
                 maybeBlock.map(block -> List.of(new BlockHeader(block, true))).orElse(List.of()));

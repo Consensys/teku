@@ -763,6 +763,32 @@ public class ChainDataProviderTest {
     assertThat(results.get().header.message.slot).isEqualTo(slot);
   }
 
+  @Test
+  public void shouldGetBlockHeadersOnEmptySlot() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    final UInt64 headSlot = recentChainData.getHeadSlot();
+    storageSystem.chainUpdater().advanceChain(headSlot.plus(1));
+
+    final SafeFuture<List<BlockHeader>> future = provider.getBlockHeaders(Optional.empty(), Optional.of(recentChainData.getCurrentSlot().get()));
+    final BlockHeader header = future.join().get(0);
+    assertThat(header.header.message.slot).isEqualTo(headSlot);
+  }
+
+  @Test
+  public void shouldGetBlockHeaderOnEmptySlot() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(recentChainData, combinedChainDataClient);
+
+    final UInt64 headSlot = recentChainData.getHeadSlot();
+    storageSystem.chainUpdater().advanceChain(headSlot.plus(1));
+
+    final SafeFuture<Optional<BlockHeader>> future = provider.getBlockHeaderByBlockId("head");
+    final BlockHeader header = future.join().get();
+    assertThat(header.header.message.slot).isEqualTo(headSlot);
+  }
+
   private void assertValidatorRespondsWithCorrectValidatorAtHead(
       final ChainDataProvider provider, final Validator validator, final Integer validatorId) {
     SafeFuture<Optional<ValidatorResponse>> response =
