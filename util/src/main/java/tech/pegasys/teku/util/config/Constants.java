@@ -16,6 +16,8 @@ package tech.pegasys.teku.util.config;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -168,6 +170,8 @@ public class Constants {
   public static final int VALID_AGGREGATE_SET_SIZE = 1000;
   public static final int VALID_VALIDATOR_SET_SIZE = 10000;
   public static final int NETWORKING_FAILURE_REPEAT_INTERVAL = 3; // in sec
+
+  public static final Map<String, Object> CONFIG_ITEM_MAP = new HashMap<>();
 
   // Custom
   // Temporary BLS backward compatibility flag
