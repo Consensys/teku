@@ -29,9 +29,7 @@ public class ChainSelector {
   private final TargetChains availableChains;
   private final RecentChainData recentChainData;
 
-  public ChainSelector(
-      final RecentChainData recentChainData,
-      final TargetChains availableChains) {
+  public ChainSelector(final RecentChainData recentChainData, final TargetChains availableChains) {
     this.availableChains = availableChains;
     this.recentChainData = recentChainData;
   }
@@ -57,5 +55,4 @@ public class ChainSelector {
         .filter(chain -> chain.getChainHead().getSlot().isGreaterThan(minimumSlot))
         .findFirst();
   }
-
 }
