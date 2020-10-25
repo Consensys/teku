@@ -771,7 +771,9 @@ public class ChainDataProviderTest {
     final UInt64 headSlot = recentChainData.getHeadSlot();
     storageSystem.chainUpdater().advanceChain(headSlot.plus(1));
 
-    final SafeFuture<List<BlockHeader>> future = provider.getBlockHeaders(Optional.empty(), Optional.of(recentChainData.getCurrentSlot().get()));
+    final SafeFuture<List<BlockHeader>> future =
+        provider.getBlockHeaders(
+            Optional.empty(), Optional.of(recentChainData.getCurrentSlot().get()));
     final BlockHeader header = future.join().get(0);
     assertThat(header.header.message.slot).isEqualTo(headSlot);
   }
