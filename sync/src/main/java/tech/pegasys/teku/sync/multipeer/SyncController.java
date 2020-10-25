@@ -71,7 +71,6 @@ public class SyncController {
    */
   public void onTargetChainsUpdated() {
     eventThread.checkOnEventThread();
-    LOG.trace("Target chains updated, checking for better sync target");
     final boolean currentlySyncing = isSyncActive();
     final Optional<InProgressSync> newSync = selectNewSyncTarget(currentlySyncing);
     if (newSync.isEmpty() && currentlySyncing) {
@@ -89,7 +88,6 @@ public class SyncController {
     // We may not have run fork choice to update our chain head, so check if the best finalized
     // chain is the one we just finished syncing and move on to non-finalized if it is.
     if (bestFinalizedChain.isPresent() && !isCompletedSync(bestFinalizedChain.get())) {
-      LOG.trace("Found finalized chain to sync to {}", bestFinalizedChain.get());
       return bestFinalizedChain.map(chain -> startSync(chain, true));
     } else if (!isSyncingFinalizedChain()) {
       final Optional<TargetChain> targetChain =
