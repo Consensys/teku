@@ -16,9 +16,6 @@ package tech.pegasys.teku.sync.multipeer.chains;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
-import static tech.pegasys.teku.sync.multipeer.ChainSelector.createFinalizedChainSelector;
-import static tech.pegasys.teku.sync.multipeer.ChainSelector.createNonfinalizedChainSelector;
 import static tech.pegasys.teku.util.config.Constants.SLOTS_PER_EPOCH;
 
 import java.util.Optional;
@@ -29,6 +26,7 @@ import tech.pegasys.teku.datastructures.util.DataStructureUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.sync.multipeer.ChainSelector;
 
 class ChainSelectorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil();
@@ -43,88 +41,33 @@ class ChainSelectorTest {
   }
 
   @Test
-  void finalized_shouldNotSelectAChainWhereThereAreNoneToSelect() {
-    assertThat(selectFinalSyncTarget()).isEmpty();
+  void shouldNotSelectAChainWhereThereAreNoneToSelect() {
+    assertThat(selectSyncTarget()).isEmpty();
   }
 
   @Test
-  void finalized_shouldNotSelectTargetChainsLessThanCurrentFinalizedEpoch() {
-    addPeerAtEpoch(UInt64.ONE);
-
-    assertThat(selectFinalSyncTarget()).isEmpty();
-  }
-
-  @Test
-  void finalized_shouldNotSelectTargetChainsWithSameFinalizedEpoch() {
-    addPeerAtEpoch(recentChainData.getFinalizedEpoch());
-
-    assertThat(selectFinalSyncTarget()).isEmpty();
-  }
-
-  @Test
-  void finalized_shouldNotSelectTargetChainsWithNextFinalizedEpoch() {
-    // Avoids triggering a sync when we may be just about to finalize the next epoch anyway
-    addPeerAtEpoch(recentChainData.getFinalizedEpoch().plus(1));
-
-    assertThat(selectFinalSyncTarget()).isEmpty();
-  }
-
-  @Test
-  void finalized_shouldSelectSuitableTargetChainWithMostPeers() {
-    final SlotAndBlockRoot chainHead1 = addPeerAtEpoch(recentChainData.getFinalizedEpoch().plus(2));
-    final SlotAndBlockRoot chainHead2 = addPeerAtEpoch(recentChainData.getFinalizedEpoch().plus(2));
-    addPeerToChain(chainHead1);
-    addPeerToChain(chainHead1);
-    addPeerToChain(chainHead2);
-
-    assertThat(selectFinalSyncTarget())
-        .isPresent()
-        .map(TargetChain::getChainHead)
-        .contains(chainHead1);
-  }
-
-  @Test
-  void finalized_shouldNotAddToleranceWhenSyncAlreadyInProgress() {
-    addPeerAtEpoch(recentChainData.getFinalizedEpoch().plus(1));
-    assertThat(createFinalizedChainSelector(recentChainData, targetChains).selectTargetChain(true))
-        .isPresent();
-  }
-
-  @Test
-  void finalized_shouldNotSelectChainsThatAreNotAheadWhenSyncAlreadyInProgress() {
-    addPeerAtEpoch(recentChainData.getFinalizedEpoch());
-    assertThat(createFinalizedChainSelector(recentChainData, targetChains).selectTargetChain(true))
-        .isEmpty();
-  }
-
-  @Test
-  void nonfinalized_shouldNotSelectAChainWhereThereAreNoneToSelect() {
-    assertThat(selectNonfinalSyncTarget()).isEmpty();
-  }
-
-  @Test
-  void nonfinalized_shouldNotSelectTargetChainsLessThanCurrentHeadSlot() {
+  void shouldNotSelectTargetChainsLessThanCurrentHeadSlot() {
     addPeerAtSlot(UInt64.ONE);
 
-    assertThat(selectNonfinalSyncTarget()).isEmpty();
+    assertThat(selectSyncTarget()).isEmpty();
   }
 
   @Test
-  void nonfinalized_shouldNotSelectTargetChainsWithSameHeadSlot() {
+  void shouldNotSelectTargetChainsWithSameHeadSlot() {
     addPeerAtSlot(recentChainData.getHeadSlot());
 
-    assertThat(selectNonfinalSyncTarget()).isEmpty();
+    assertThat(selectSyncTarget()).isEmpty();
   }
 
   @Test
-  void nonfinalized_shouldNotSelectTargetChainsWithinToleranceOfOurHeadSlot() {
+  void shouldNotSelectTargetChainsWithinToleranceOfOurHeadSlot() {
     addPeerAtSlot(recentChainData.getHeadSlot().plus(SLOTS_PER_EPOCH));
 
-    assertThat(selectNonfinalSyncTarget()).isEmpty();
+    assertThat(selectSyncTarget()).isEmpty();
   }
 
   @Test
-  void nonfinalized_shouldSelectSuitableTargetChainWithMostPeers() {
+  void shouldSelectSuitableTargetChainWithMostPeers() {
     // Avoids triggering a sync when we may be just about to finalize the next epoch anyway
     final UInt64 remoteHeadSlot = recentChainData.getHeadSlot().plus(SLOTS_PER_EPOCH + 1);
     final SlotAndBlockRoot chainHead1 = addPeerAtSlot(remoteHeadSlot);
@@ -133,30 +76,20 @@ class ChainSelectorTest {
     addPeerToChain(chainHead1);
     addPeerToChain(chainHead2);
 
-    assertThat(selectNonfinalSyncTarget())
-        .isPresent()
-        .map(TargetChain::getChainHead)
-        .contains(chainHead1);
+    assertThat(selectSyncTarget()).isPresent().map(TargetChain::getChainHead).contains(chainHead1);
   }
 
   @Test
-  void nonfinalized_shouldNotAddToleranceWhenSyncAlreadyInProgress() {
+  void shouldNotAddToleranceWhenSyncAlreadyInProgress() {
     addPeerAtSlot(recentChainData.getHeadSlot().plus(1));
-    assertThat(
-            createNonfinalizedChainSelector(recentChainData, targetChains).selectTargetChain(true))
+    assertThat(new ChainSelector(recentChainData, targetChains).selectTargetChain(true))
         .isPresent();
   }
 
   @Test
-  void nonfinalized_shouldNotSelectChainsThatAreNotAheadWhenSyncAlreadyInProgress() {
+  void shouldNotSelectChainsThatAreNotAheadWhenSyncAlreadyInProgress() {
     addPeerAtSlot(recentChainData.getHeadSlot());
-    assertThat(
-            createNonfinalizedChainSelector(recentChainData, targetChains).selectTargetChain(true))
-        .isEmpty();
-  }
-
-  private SlotAndBlockRoot addPeerAtEpoch(final UInt64 epoch) {
-    return addPeerAtSlot(compute_start_slot_at_epoch(epoch));
+    assertThat(new ChainSelector(recentChainData, targetChains).selectTargetChain(true)).isEmpty();
   }
 
   private SlotAndBlockRoot addPeerAtSlot(final UInt64 slot) {
@@ -170,11 +103,7 @@ class ChainSelectorTest {
     targetChains.onPeerStatusUpdated(mock(SyncSource.class), chainHead);
   }
 
-  private Optional<TargetChain> selectFinalSyncTarget() {
-    return createFinalizedChainSelector(recentChainData, targetChains).selectTargetChain(false);
-  }
-
-  private Optional<TargetChain> selectNonfinalSyncTarget() {
-    return createNonfinalizedChainSelector(recentChainData, targetChains).selectTargetChain(false);
+  private Optional<TargetChain> selectSyncTarget() {
+    return new ChainSelector(recentChainData, targetChains).selectTargetChain(false);
   }
 }
