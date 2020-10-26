@@ -113,7 +113,6 @@ public class BeaconStateBuilder {
     stateRoots =
         dataStructureUtil.randomSSZVector(
             Bytes32.ZERO, Constants.SLOTS_PER_HISTORICAL_ROOT, dataStructureUtil::randomBytes32);
-    ;
     historicalRoots =
         dataStructureUtil.randomSSZList(
             Bytes32.class,
