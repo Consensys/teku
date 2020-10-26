@@ -512,7 +512,9 @@ class ValidatorApiHandlerTest {
     when(attestationPool.createAggregateFor(eq(attestationData.hashTreeRoot())))
         .thenReturn(aggregate.map(ValidateableAttestation::fromAttestation));
 
-    assertThat(validatorApiHandler.createAggregate(ONE, attestationData.hashTreeRoot()))
+    assertThat(
+            validatorApiHandler.createAggregate(
+                aggregate.get().getData().getSlot(), attestationData.hashTreeRoot()))
         .isCompletedWithValue(aggregate);
   }
 
