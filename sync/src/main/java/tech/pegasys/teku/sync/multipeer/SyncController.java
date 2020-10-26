@@ -111,6 +111,8 @@ public class SyncController {
     eventThread.checkOnEventThread();
     if (isSyncActive() || result == SyncResult.TARGET_CHANGED) {
       // A different sync is now running so ignore this change.
+      LOG.debug(
+          "Ignoring sync complete because another sync is already active. Result: {}", result);
       return;
     }
     LOG.debug(
