@@ -93,7 +93,8 @@ class GetAggregateTest {
   public void shouldReturnNotFoundWhenAttestationIsNotPresent() throws Exception {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     mockContextWithAttestationParams(attestation);
-    when(provider.createAggregate(eq(attestation.hash_tree_root())))
+    when(provider.createAggregate(
+            eq(attestation.getData().getSlot()), eq(attestation.hash_tree_root())))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     handler.handle(context);
@@ -106,7 +107,8 @@ class GetAggregateTest {
     mockContextWithAttestationParams(attestation);
     final tech.pegasys.teku.api.schema.Attestation schemaAttestation =
         new tech.pegasys.teku.api.schema.Attestation(attestation);
-    when(provider.createAggregate(eq(attestation.hash_tree_root())))
+    when(provider.createAggregate(
+            eq(attestation.getData().getSlot()), eq(attestation.hash_tree_root())))
         .thenReturn(SafeFuture.completedFuture(Optional.of(schemaAttestation)));
 
     handler.handle(context);
@@ -123,7 +125,8 @@ class GetAggregateTest {
   public void shouldReturnBadRequestWhenFutureExceptionIsIllegalArgument() throws Exception {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     mockContextWithAttestationParams(attestation);
-    when(provider.createAggregate(eq(attestation.hash_tree_root())))
+    when(provider.createAggregate(
+            eq(attestation.getData().getSlot()), eq(attestation.hash_tree_root())))
         .thenReturn(SafeFuture.failedFuture(new IllegalArgumentException()));
 
     handler.handle(context);
@@ -134,7 +137,8 @@ class GetAggregateTest {
   public void shouldReturnServerErrorWhenFutureHasUnmappedException() throws Exception {
     final Attestation attestation = dataStructureUtil.randomAttestation();
     mockContextWithAttestationParams(attestation);
-    when(provider.createAggregate(eq(attestation.hash_tree_root())))
+    when(provider.createAggregate(
+            eq(attestation.getData().getSlot()), eq(attestation.hash_tree_root())))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException()));
 
     handler.handle(context);

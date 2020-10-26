@@ -545,12 +545,12 @@ class OkHttpValidatorRestApiClientTest {
 
   @Test
   public void createAggregate_MakesExpectedRequest() throws Exception {
-    final UInt64 slot = UInt64.ZERO;
+    final UInt64 slot = UInt64.valueOf(323);
     final Bytes32 attestationHashTreeRoot = Bytes32.random();
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    apiClient.createAggregate(attestationHashTreeRoot);
+    apiClient.createAggregate(slot, attestationHashTreeRoot);
 
     RecordedRequest request = mockWebServer.takeRequest();
 
@@ -567,7 +567,7 @@ class OkHttpValidatorRestApiClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
 
-    assertThatThrownBy(() -> apiClient.createAggregate(attestationHashTreeRoot))
+    assertThatThrownBy(() -> apiClient.createAggregate(UInt64.ONE, attestationHashTreeRoot))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -577,7 +577,7 @@ class OkHttpValidatorRestApiClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
 
-    assertThatThrownBy(() -> apiClient.createAggregate(attestationHashTreeRoot))
+    assertThatThrownBy(() -> apiClient.createAggregate(UInt64.ONE, attestationHashTreeRoot))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Unexpected response from Beacon Node API");
   }
@@ -592,7 +592,8 @@ class OkHttpValidatorRestApiClientTest {
             .setResponseCode(SC_OK)
             .setBody(asJson(new GetAggregatedAttestationResponse(expectedAttestation))));
 
-    final Optional<Attestation> attestation = apiClient.createAggregate(attestationHashTreeRoot);
+    final Optional<Attestation> attestation =
+        apiClient.createAggregate(UInt64.ONE, attestationHashTreeRoot);
 
     assertThat(attestation).isPresent();
     assertThat(attestation.get()).usingRecursiveComparison().isEqualTo(expectedAttestation);
