@@ -179,8 +179,8 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
               attestationsByOldCount.removeAll(attestations);
               attestations.forEach(this::add);
 
-              // We're processing in reverse order so items should only move to lower values
-              // So, should we safe to remove here
+              // We're processing in reverse order and items should only move to lower values
+              // So, we should be safe to remove here
               if (attestationsByOldCount.isEmpty()) {
                 attestationsByValidatorCount.remove(oldValidatorCount);
               }

@@ -184,21 +184,19 @@ class MatchingDataAttestationGroupTest {
             createAttestation(12).getAttestation(),
             createAttestation(8).getAttestation(),
             createAttestation(17).getAttestation(),
+            createAttestation(13).getAttestation(),
             createAttestation(18).getAttestation(),
             createAttestation(7).getAttestation());
 
     final ValidateableAttestation attestationA = addAttestation(19, 0, 4, 8, 12, 16);
     final ValidateableAttestation attestationB = addAttestation(0, 1, 5, 9, 13, 17);
-    final ValidateableAttestation attestationC = addAttestation(4, 2, 6, 10, 14, 18);
+    final ValidateableAttestation attestationC = addAttestation(0, 2, 6, 10, 14, 18);
     final ValidateableAttestation attestationD = addAttestation(0, 3, 7);
 
-    // Remove some attesters, which should reprioritize the attestations
+    // Remove multiple attesters all at once, which should reprioritize the attestations
     group.remove(toRemove);
 
-    final ValidateableAttestation attestationBC =
-        ValidateableAttestation.fromAttestation(
-            aggregateAttestations(attestationB.getAttestation(), attestationC.getAttestation()));
-    assertThat(group).containsExactly(attestationBC, attestationA, attestationD);
+    assertThat(group).containsExactly(attestationC, attestationB, attestationA, attestationD);
   }
 
   @Test
