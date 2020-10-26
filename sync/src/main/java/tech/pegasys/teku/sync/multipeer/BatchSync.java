@@ -337,6 +337,7 @@ public class BatchSync implements Sync {
     }
     progressSync();
     if (activeBatches.isEmpty()) {
+      LOG.trace("Marking sync to {} as complete", targetChain);
       syncResult.complete(SyncResult.COMPLETE);
     }
   }
@@ -374,6 +375,7 @@ public class BatchSync implements Sync {
       // Waiting for last import to complete to switch branches so don't start new tasks
       checkState(
           importingBatch.isPresent(), "Waiting for import to complete but no import in progress");
+      LOG.debug("Not adding new batches on new chain while waiting for import to complete");
       return;
     }
     startNextImport();

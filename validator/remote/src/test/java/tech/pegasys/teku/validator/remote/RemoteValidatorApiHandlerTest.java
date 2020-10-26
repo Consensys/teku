@@ -508,26 +508,29 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   public void createAggregate_WhenNotFound_ReturnsEmpty() {
+    final UInt64 slot = dataStructureUtil.randomUInt64();
     final Bytes32 attHashTreeRoot = Bytes32.random();
 
-    when(apiClient.createAggregate(eq(attHashTreeRoot))).thenReturn(Optional.empty());
+    when(apiClient.createAggregate(eq(slot), eq(attHashTreeRoot))).thenReturn(Optional.empty());
 
-    SafeFuture<Optional<Attestation>> future = apiHandler.createAggregate(attHashTreeRoot);
+    SafeFuture<Optional<Attestation>> future = apiHandler.createAggregate(slot, attHashTreeRoot);
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
 
   @Test
   public void createAggregate_WhenFound_ReturnsAttestation() {
+    final UInt64 slot = dataStructureUtil.randomUInt64();
     final Bytes32 attHashTreeRoot = Bytes32.random();
 
     final Attestation attestation = dataStructureUtil.randomAttestation();
     final tech.pegasys.teku.api.schema.Attestation schemaAttestation =
         new tech.pegasys.teku.api.schema.Attestation(attestation);
 
-    when(apiClient.createAggregate(eq(attHashTreeRoot))).thenReturn(Optional.of(schemaAttestation));
+    when(apiClient.createAggregate(eq(slot), eq(attHashTreeRoot)))
+        .thenReturn(Optional.of(schemaAttestation));
 
-    SafeFuture<Optional<Attestation>> future = apiHandler.createAggregate(attHashTreeRoot);
+    SafeFuture<Optional<Attestation>> future = apiHandler.createAggregate(slot, attHashTreeRoot);
 
     assertThat(unwrapToValue(future)).usingRecursiveComparison().isEqualTo(attestation);
   }
