@@ -19,6 +19,7 @@ import tech.pegasys.teku.api.schema.AttestationData;
 
 public class GetAttestationDataResponse {
 
+  @JsonProperty("data")
   public final AttestationData data;
 
   @JsonCreator
