@@ -13,13 +13,14 @@
 
 package tech.pegasys.teku.cli.subcommand.debug;
 
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
@@ -29,6 +30,9 @@ import tech.pegasys.teku.cli.options.BeaconNodeDataOptions;
 import tech.pegasys.teku.cli.options.DataStorageOptions;
 import tech.pegasys.teku.cli.options.NetworkOptions;
 import tech.pegasys.teku.core.lookup.BlockProvider;
+import tech.pegasys.teku.core.lookup.StateAndBlockProvider;
+import tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.datastructures.state.BeaconState;
 import tech.pegasys.teku.datastructures.util.SimpleOffsetSerializer;
@@ -41,6 +45,7 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.util.config.Constants;
 import tech.pegasys.teku.util.config.NetworkDefinition;
 
@@ -144,7 +149,11 @@ public class DebugDbCommand implements Runnable {
               required = true,
               names = {"--output", "-o"},
               description = "File to write state to")
-          final Path outputFile)
+          final Path outputFile,
+      @Option(
+              names = {"--block-output"},
+              description = "File to write the block matching the latest finalized state to")
+          final Path blockOutputFile)
       throws Exception {
     setConstants(networkOptions);
     final AsyncRunner asyncRunner =
@@ -152,14 +161,22 @@ public class DebugDbCommand implements Runnable {
             "async", 1, new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
     try (final Database database =
         createDatabase(dataOptions, dataStorageOptions, networkOptions)) {
-      final Optional<BeaconState> state =
+      final Optional<SignedBlockAndState> blockAndState =
           database
               .createMemoryStore()
               .map(
                   builder ->
-                      builder.blockProvider(BlockProvider.NOOP).asyncRunner(asyncRunner).build())
-              .map(store -> store.getLatestFinalizedBlockAndState().getState());
-      return writeState(outputFile, state);
+                      builder
+                          .blockProvider(BlockProvider.NOOP)
+                          .asyncRunner(asyncRunner)
+                          .stateProvider(StateAndBlockProvider.NOOP)
+                          .build())
+              .map(UpdatableStore::getLatestFinalizedBlockAndState);
+      int result = writeState(outputFile, blockAndState.map(SignedBlockAndState::getState));
+      if (result == 0 && blockOutputFile != null) {
+        result = writeBlock(blockOutputFile, blockAndState.map(SignedBlockAndState::getBlock));
+      }
+      return result;
     } finally {
       asyncRunner.shutdown();
     }
@@ -234,6 +251,20 @@ public class DebugDbCommand implements Runnable {
       Files.write(outputFile, SimpleOffsetSerializer.serialize(state.get()).toArrayUnsafe());
     } catch (IOException e) {
       System.err.println("Unable to write state to " + outputFile + ": " + e.getMessage());
+      return 1;
+    }
+    return 0;
+  }
+
+  private int writeBlock(final Path outputFile, final Optional<SignedBeaconBlock> block) {
+    if (block.isEmpty()) {
+      System.err.println("No block available.");
+      return 2;
+    }
+    try {
+      Files.write(outputFile, SimpleOffsetSerializer.serialize(block.get()).toArrayUnsafe());
+    } catch (IOException e) {
+      System.err.println("Unable to write block to " + outputFile + ": " + e.getMessage());
       return 1;
     }
     return 0;
