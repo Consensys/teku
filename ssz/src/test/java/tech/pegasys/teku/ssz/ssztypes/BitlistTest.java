@@ -104,6 +104,33 @@ class BitlistTest {
   }
 
   @Test
+  void countMatchingBits_someMatch() {
+    Bitlist bitlist1 = create(1, 3, 5, 7, 9);
+    Bitlist bitlist2 = create(1, 2, 5, 6);
+
+    assertThat(bitlist1.countMatchingBits(bitlist2)).isEqualTo(2);
+    assertThat(bitlist2.countMatchingBits(bitlist1)).isEqualTo(2);
+  }
+
+  @Test
+  void countMatchingBits_noMatches() {
+    Bitlist bitlist1 = create(1, 3, 5, 7, 9);
+    Bitlist bitlist2 = create(2, 4, 6);
+
+    assertThat(bitlist1.countMatchingBits(bitlist2)).isEqualTo(0);
+    assertThat(bitlist2.countMatchingBits(bitlist1)).isEqualTo(0);
+  }
+
+  @Test
+  void countMatchingBits_allMatch() {
+    Bitlist bitlist1 = create(1, 3, 5);
+    Bitlist bitlist2 = create(1, 3, 5);
+
+    assertThat(bitlist1.countMatchingBits(bitlist2)).isEqualTo(3);
+    assertThat(bitlist2.countMatchingBits(bitlist1)).isEqualTo(3);
+  }
+
+  @Test
   void countSetBits() {
     assertThat(create(1, 2, 6, 7, 9).getBitCount()).isEqualTo(5);
   }
