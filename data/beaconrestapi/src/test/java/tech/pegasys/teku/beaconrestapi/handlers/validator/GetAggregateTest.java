@@ -149,7 +149,7 @@ class GetAggregateTest {
     final Map<String, List<String>> validQueryParams =
         Map.of(
             "attestation_data_root", List.of(attestation.hash_tree_root().toHexString()),
-            "slot", List.of("1"));
+            "slot", List.of(attestation.getData().getSlot().toString()));
     when(context.queryParamMap()).thenReturn(validQueryParams);
   }
 }
