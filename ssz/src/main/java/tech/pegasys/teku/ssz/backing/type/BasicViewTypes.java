@@ -44,8 +44,8 @@ public class BasicViewTypes {
         public TreeNode updateBackingNode(TreeNode srcNode, int idx, ViewRead newValue) {
           int byteIndex = idx / 8;
           int bitIndex = idx % 8;
-          Bytes32 originalBytes = srcNode.hashTreeRoot();
-          byte b = originalBytes.get(byteIndex);
+          Bytes originalBytes = ((LeafNode) srcNode).getData();
+          byte b = byteIndex < originalBytes.size() ? originalBytes.get(byteIndex) : 0;
           boolean bit = ((BitView) newValue).get();
           if (bit) {
             b = (byte) (b | (1 << bitIndex));
