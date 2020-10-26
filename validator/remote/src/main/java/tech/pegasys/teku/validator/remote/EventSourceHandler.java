@@ -16,8 +16,10 @@ package tech.pegasys.teku.validator.remote;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.base.Throwables;
 import com.launchdarkly.eventsource.EventHandler;
 import com.launchdarkly.eventsource.MessageEvent;
+import java.net.SocketTimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.response.v1.ChainReorgEvent;
@@ -96,6 +98,11 @@ class EventSourceHandler implements EventHandler {
 
   @Override
   public void onError(final Throwable t) {
-    VALIDATOR_LOGGER.beaconNodeConnectionError(t);
+    if (Throwables.getRootCause(t) instanceof SocketTimeoutException) {
+      LOG.info(
+          "Timed out waiting for events from beacon node event stream. Reconnecting. This is normal if the beacon node is still syncing.");
+    } else {
+      VALIDATOR_LOGGER.beaconNodeConnectionError(t);
+    }
   }
 }
