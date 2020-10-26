@@ -93,7 +93,7 @@ class AggregationDutyTest {
         attestationCommitteeIndex,
         completedFuture(Optional.of(attestationData)));
 
-    when(validatorApiChannel.createAggregate(attestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(SLOT, attestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(aggregate)));
 
     final AggregateAndProof expectedAggregateAndProof =
@@ -136,9 +136,9 @@ class AggregationDutyTest {
         validator2CommitteeIndex,
         completedFuture(Optional.of(committee2AttestationData)));
 
-    when(validatorApiChannel.createAggregate(committee1AttestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(SLOT, committee1AttestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(committee1Aggregate)));
-    when(validatorApiChannel.createAggregate(committee2AttestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(SLOT, committee2AttestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(committee2Aggregate)));
 
     final AggregateAndProof aggregateAndProof1 =
@@ -190,7 +190,7 @@ class AggregationDutyTest {
         committeeIndex,
         completedFuture(Optional.of(attestationData)));
 
-    when(validatorApiChannel.createAggregate(attestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(SLOT, attestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.of(aggregate)));
 
     final AggregateAndProof aggregateAndProof =
@@ -244,7 +244,7 @@ class AggregationDutyTest {
         dataStructureUtil.randomSignature(),
         2,
         completedFuture(Optional.of(attestationData)));
-    when(validatorApiChannel.createAggregate(attestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(SLOT, attestationData.hashTreeRoot()))
         .thenReturn(completedFuture(Optional.empty()));
 
     assertThat(duty.performDuty()).isCompleted();
@@ -263,7 +263,7 @@ class AggregationDutyTest {
         dataStructureUtil.randomSignature(),
         2,
         completedFuture(Optional.of(attestationData)));
-    when(validatorApiChannel.createAggregate(attestationData.hashTreeRoot()))
+    when(validatorApiChannel.createAggregate(SLOT, attestationData.hashTreeRoot()))
         .thenReturn(failedFuture(exception));
 
     performAndReportDuty();

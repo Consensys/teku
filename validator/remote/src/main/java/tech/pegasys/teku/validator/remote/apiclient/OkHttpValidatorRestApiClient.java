@@ -199,9 +199,10 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public Optional<Attestation> createAggregate(final Bytes32 attestationHashTreeRoot) {
+  public Optional<Attestation> createAggregate(
+      final UInt64 slot, final Bytes32 attestationHashTreeRoot) {
     final Map<String, String> queryParams = new HashMap<>();
-    queryParams.put("slot", encodeQueryParam(UInt64.ZERO));
+    queryParams.put("slot", encodeQueryParam(slot));
     queryParams.put("attestation_data_root", encodeQueryParam(attestationHashTreeRoot));
 
     return get(GET_AGGREGATE, queryParams, GetAggregatedAttestationResponse.class)
