@@ -72,4 +72,8 @@ public class OperationPool<T> {
   public void removeAll(SSZList<T> items) {
     operations.removeAll(items.asList());
   }
+
+  public Set<T> getAll() {
+    return operations;
+  }
 }
