@@ -20,7 +20,6 @@ import java.util.OptionalInt;
 
 public class P2PConfig {
 
-  // P2P
   private final boolean p2pEnabled;
   private final String p2pInterface;
   private final int p2pPort;
