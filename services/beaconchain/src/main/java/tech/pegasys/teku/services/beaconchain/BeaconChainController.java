@@ -552,9 +552,12 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void initGenesisHandler() {
-    if (config.isInteropEnabled() || config.getInitialState() != null) {
-      // We're manually setting genesis, so don't spin up the genesis handler
+    if (!recentChainData.isPreGenesis()) {
+      // We already have a genesis block - no need for a genesis handler
       return;
+    } else if (!config.isEth1Enabled()) {
+      // We're pre-genesis but no eth1 endpoint is set
+      throw new IllegalStateException("ETH1 is disabled, but no initial state is set.");
     }
     LOG.debug("BeaconChainController.initPreGenesisDepositHandler()");
     eventChannels.subscribe(Eth1EventsChannel.class, new GenesisHandler(recentChainData));
