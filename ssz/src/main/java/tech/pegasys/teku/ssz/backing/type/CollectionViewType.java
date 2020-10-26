@@ -79,11 +79,7 @@ public abstract class CollectionViewType implements CompositeViewType {
    */
   protected int sszSerializeVector(TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
     if (getElementType().isFixedSize()) {
-      if (getElementType().getBitsSize() == 1) {
-        return sszSerializeFixedVectorRegular(vectorNode, writer, elementsCount);
-      } else {
-        return sszSerializeFixedVectorFast(vectorNode, writer, elementsCount);
-      }
+      return sszSerializeFixedVectorFast(vectorNode, writer, elementsCount);
     } else {
       return sszSerializeVariableVector(vectorNode, writer, elementsCount);
     }
@@ -106,29 +102,6 @@ public abstract class CollectionViewType implements CompositeViewType {
           bytesCnt[0] += ssz.size();
         });
     return bytesCnt[0];
-  }
-
-  private int sszSerializeFixedVectorRegular(
-      TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
-    int nodesCount = getChunks(elementsCount);
-    ViewType elementType = getElementType();
-    int bytesCount = (elementsCount * elementType.getBitsSize() + 7) / 8;
-    int size = 0;
-    for (int i = 0; i < nodesCount; i++) {
-      TreeNode childSubtree = vectorNode.get(getGeneralizedIndex(i));
-      if (elementType instanceof BasicViewType) {
-        Bytes ssz = childSubtree.hashTreeRoot();
-        if (bytesCount < 32) {
-          ssz = ssz.slice(0, bytesCount);
-        }
-        writer.accept(ssz);
-        size += ssz.size();
-      } else {
-        size += elementType.sszSerialize(childSubtree, writer);
-      }
-      bytesCount -= 32;
-    }
-    return size;
   }
 
   private int sszSerializeVariableVector(
