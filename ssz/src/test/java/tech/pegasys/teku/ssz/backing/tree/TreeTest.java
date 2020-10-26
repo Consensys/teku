@@ -54,9 +54,9 @@ public class TreeTest {
     assertThat(n101.left()).isEqualTo(newTestLeaf(2));
     assertThat(n101.right()).isEqualTo(newTestLeaf(3));
     assertThat(n110.left()).isEqualTo(newTestLeaf(4));
-    assertThat(n110.right()).isSameAs(TreeUtil.ZERO_LEAF);
-    assertThat(n111.left()).isSameAs(TreeUtil.ZERO_LEAF);
-    assertThat(n111.right()).isSameAs(TreeUtil.ZERO_LEAF);
+    assertThat(n110.right()).isSameAs(TreeUtil.EMPTY_LEAF);
+    assertThat(n111.left()).isSameAs(TreeUtil.EMPTY_LEAF);
+    assertThat(n111.right()).isSameAs(TreeUtil.EMPTY_LEAF);
 
     assertThat(n1.get(0b1)).isSameAs(n1);
     assertThat(n1.get(0b10)).isSameAs(n10);
@@ -69,9 +69,9 @@ public class TreeTest {
 
   @Test
   public void testZeroLeafDefaultTree() {
-    TreeNode n1 = TreeUtil.createDefaultTree(5, TreeUtil.ZERO_LEAF);
-    assertThat(n1.get(0b1000)).isSameAs(TreeUtil.ZERO_LEAF);
-    assertThat(n1.get(0b1111)).isSameAs(TreeUtil.ZERO_LEAF);
+    TreeNode n1 = TreeUtil.createDefaultTree(5, TreeUtil.EMPTY_LEAF);
+    assertThat(n1.get(0b1000)).isSameAs(TreeUtil.EMPTY_LEAF);
+    assertThat(n1.get(0b1111)).isSameAs(TreeUtil.EMPTY_LEAF);
     assertThat(n1.get(0b100)).isSameAs(n1.get(0b101));
     assertThat(n1.get(0b100)).isSameAs(n1.get(0b110));
     assertThat(n1.get(0b100)).isSameAs(n1.get(0b111));
@@ -80,27 +80,27 @@ public class TreeTest {
 
   @Test
   public void testNonZeroLeafDefaultTree() {
-    TreeNode zeroTree = TreeUtil.createDefaultTree(5, TreeUtil.ZERO_LEAF);
+    TreeNode zeroTree = TreeUtil.createDefaultTree(5, TreeUtil.EMPTY_LEAF);
 
     TreeNode defaultLeaf = newTestLeaf(111);
     BranchNode n1 = (BranchNode) TreeUtil.createDefaultTree(5, defaultLeaf);
     assertThat(n1.get(0b1000)).isSameAs(defaultLeaf);
     assertThat(n1.get(0b1001)).isSameAs(defaultLeaf);
     assertThat(n1.get(0b1100)).isSameAs(defaultLeaf);
-    assertThat(n1.get(0b1101)).isSameAs(TreeUtil.ZERO_LEAF);
-    assertThat(n1.get(0b1111)).isSameAs(TreeUtil.ZERO_LEAF);
+    assertThat(n1.get(0b1101)).isSameAs(TreeUtil.EMPTY_LEAF);
+    assertThat(n1.get(0b1111)).isSameAs(TreeUtil.EMPTY_LEAF);
     assertThat(n1.get(0b111)).isSameAs(zeroTree.get(0b111));
   }
 
   @Test
   public void testUpdated() {
-    TreeNode zeroTree = TreeUtil.createDefaultTree(8, TreeUtil.ZERO_LEAF);
+    TreeNode zeroTree = TreeUtil.createDefaultTree(8, TreeUtil.EMPTY_LEAF);
     TreeNode t1 = zeroTree.updated(8 + 0, newTestLeaf(111));
     TreeNode t1_ = zeroTree.updated(8 + 0, newTestLeaf(111));
     assertThat(t1).isNotSameAs(t1_);
     assertThat(t1.get(8 + 0)).isEqualTo(newTestLeaf(111));
     assertThat(IntStream.range(1, 8).mapToObj(idx -> t1.get(8 + idx)))
-        .containsOnly(TreeUtil.ZERO_LEAF);
+        .containsOnly(TreeUtil.EMPTY_LEAF);
     assertThat(t1.hashTreeRoot()).isEqualTo(t1_.hashTreeRoot());
 
     TreeNode t2 = t1.updated(8 + 3, newTestLeaf(222));
@@ -112,14 +112,14 @@ public class TreeTest {
     assertThat(t2.get(8 + 0)).isEqualTo(newTestLeaf(111));
     assertThat(t2.get(8 + 3)).isEqualTo(newTestLeaf(222));
     assertThat(IntStream.of(1, 2, 4, 5, 6, 7).mapToObj(idx -> t2.get(8 + idx)))
-        .containsOnly(TreeUtil.ZERO_LEAF);
+        .containsOnly(TreeUtil.EMPTY_LEAF);
     assertThat(t2.hashTreeRoot()).isEqualTo(t2_.hashTreeRoot());
 
     TreeNode zeroTree_ =
         t2.updated(
             new TreeUpdates(
                 List.of(
-                    new Update(8 + 0, TreeUtil.ZERO_LEAF), new Update(8 + 3, TreeUtil.ZERO_LEAF))));
+                    new Update(8 + 0, TreeUtil.EMPTY_LEAF), new Update(8 + 3, TreeUtil.EMPTY_LEAF))));
     assertThat(zeroTree.hashTreeRoot()).isEqualTo(zeroTree_.hashTreeRoot());
   }
 

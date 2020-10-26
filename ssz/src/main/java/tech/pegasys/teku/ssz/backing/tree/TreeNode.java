@@ -31,6 +31,9 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface TreeNode {
 
+  int NODE_BYTE_SIZE = 32;
+  int NODE_BIT_SIZE = NODE_BYTE_SIZE * 8;
+
   static LeafNode createLeafNode(Bytes data) {
     return new LeafNodeImpl(data);
   }

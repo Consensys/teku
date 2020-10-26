@@ -28,7 +28,7 @@ abstract class TreeNodeImpl implements TreeNode {
     private final byte[] data;
 
     public LeafNodeImpl(Bytes data) {
-      checkArgument(data.size() <= 32);
+      checkArgument(data.size() <= TreeNode.NODE_BYTE_SIZE);
       this.data = data.toArrayUnsafe();
     }
 
@@ -39,10 +39,10 @@ abstract class TreeNodeImpl implements TreeNode {
 
     @Override
     public Bytes32 hashTreeRoot() {
-      if (data.length == 32) {
+      if (data.length == TreeNode.NODE_BYTE_SIZE) {
         return Bytes32.wrap(data);
       } else {
-        return Bytes32.wrap(Arrays.copyOf(data, 32));
+        return Bytes32.wrap(Arrays.copyOf(data, TreeNode.NODE_BYTE_SIZE));
       }
     }
 
@@ -129,7 +129,7 @@ abstract class TreeNodeImpl implements TreeNode {
 
     @Override
     public String toString() {
-      return "(" + (left == right ? "default" : left + ", " + right) + ')';
+      return "(" + left + ", " + right + ')';
     }
   }
 

@@ -86,6 +86,9 @@ public abstract class CollectionViewType implements CompositeViewType {
 
   private int sszSerializeFixedVectorFast(
       TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
+    if (elementsCount == 0) {
+      return 0;
+    }
     int nodesCount = getChunks(elementsCount);
     int[] bytesCnt = new int[1];
     TreeUtil.iterateLeaves(

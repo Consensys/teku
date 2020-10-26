@@ -42,11 +42,6 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType {
   }
 
   @Override
-  public TreeNode getDefaultTree() {
-    return TreeUtil.ZERO_LEAF;
-  }
-
-  @Override
   public C createFromBackingNode(TreeNode node) {
     return createFromBackingNode(node, 0);
   }
@@ -55,7 +50,7 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType {
   public abstract C createFromBackingNode(TreeNode node, int internalIndex);
 
   public TreeNode createBackingNode(C newValue) {
-    return updateBackingNode(TreeUtil.ZERO_LEAF, 0, newValue);
+    return updateBackingNode(TreeUtil.EMPTY_LEAF, 0, newValue);
   }
 
   @Override

@@ -25,6 +25,7 @@ import tech.pegasys.teku.ssz.SSZTypes.Bytes4;
 import tech.pegasys.teku.ssz.backing.ViewRead;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode.LeafNode;
+import tech.pegasys.teku.ssz.backing.tree.TreeUtil;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.BitView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.ByteView;
 import tech.pegasys.teku.ssz.backing.view.BasicViews.Bytes32View;
@@ -63,6 +64,11 @@ public class BasicViewTypes {
             return TreeNode.createLeafNode(dest);
           }
         }
+
+        @Override
+        public TreeNode getDefaultTree() {
+          return TreeUtil.ZERO_LEAVES[1];
+        }
       };
 
   public static final BasicViewType<ByteView> BYTE_TYPE =
@@ -89,6 +95,11 @@ public class BasicViewTypes {
             dest.set(index, aByte);
             return TreeNode.createLeafNode(dest);
           }
+        }
+
+        @Override
+        public TreeNode getDefaultTree() {
+          return TreeUtil.ZERO_LEAVES[1];
         }
       };
 
@@ -139,6 +150,11 @@ public class BasicViewTypes {
             return TreeNode.createLeafNode(dest);
           }
         }
+
+        @Override
+        public TreeNode getDefaultTree() {
+          return TreeUtil.ZERO_LEAVES[8];
+        }
       };
 
   public static final BasicViewType<Bytes4View> BYTES4_TYPE =
@@ -169,6 +185,11 @@ public class BasicViewTypes {
             return TreeNode.createLeafNode(dest);
           }
         }
+
+        @Override
+        public TreeNode getDefaultTree() {
+          return TreeUtil.ZERO_LEAVES[4];
+        }
       };
 
   public static final BasicViewType<Bytes32View> BYTES32_TYPE =
@@ -181,6 +202,11 @@ public class BasicViewTypes {
         @Override
         public TreeNode updateBackingNode(TreeNode srcNode, int internalIndex, ViewRead newValue) {
           return TreeNode.createLeafNode(((Bytes32View) newValue).get());
+        }
+
+        @Override
+        public TreeNode getDefaultTree() {
+          return TreeUtil.ZERO_LEAVES[32];
         }
       };
 }

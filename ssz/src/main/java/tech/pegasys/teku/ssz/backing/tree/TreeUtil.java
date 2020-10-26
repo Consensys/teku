@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ssz.backing.Utils;
 import tech.pegasys.teku.ssz.backing.tree.TreeNode.BranchNode;
@@ -27,20 +28,53 @@ import tech.pegasys.teku.ssz.backing.tree.TreeNodeImpl.LeafNodeImpl;
 /** Misc Backing binary tree utils */
 public class TreeUtil {
 
-  public static final TreeNode ZERO_LEAF =
-      new LeafNodeImpl(Bytes.EMPTY) {
-        @Override
-        public boolean isZero() {
-          return true;
-        }
-      };
+  private static class ZeroLeafNode extends LeafNodeImpl {
+    public ZeroLeafNode(int size) {
+      super(Bytes.wrap(new byte[size]));
+    }
+
+    @Override
+    public boolean isZero() {
+      return true;
+    }
+
+    @Override
+    public String toString() {
+      return "(" + getData() + ")";
+    }
+  }
+
+  private static class ZeroBranchNode extends BranchNodeImpl {
+    private final int height;
+
+    public ZeroBranchNode(TreeNode left, TreeNode right, int height) {
+      super(left, right);
+      this.height = height;
+    }
+
+    @Override
+    public boolean isZero() {
+      return true;
+    }
+
+    @Override
+    public String toString() {
+      return "(ZeroBranch-" + height + ")";
+    }
+  }
+
+  public static final TreeNode[] ZERO_LEAVES =
+      IntStream.range(0, TreeNode.NODE_BYTE_SIZE + 1)
+          .mapToObj(ZeroLeafNode::new)
+          .toArray(TreeNode[]::new);
+  public static final TreeNode EMPTY_LEAF = ZERO_LEAVES[0];
   private static final TreeNode[] ZERO_TREES;
 
   static {
     ZERO_TREES = new TreeNode[64];
-    ZERO_TREES[0] = ZERO_LEAF;
+    ZERO_TREES[0] = EMPTY_LEAF;
     for (int i = 1; i < ZERO_TREES.length; i++) {
-      ZERO_TREES[i] = new BranchNodeImpl(ZERO_TREES[i - 1], ZERO_TREES[i - 1]);
+      ZERO_TREES[i] = new ZeroBranchNode(ZERO_TREES[i - 1], ZERO_TREES[i - 1], i);
       ZERO_TREES[i].hashTreeRoot(); // pre-cache
     }
   }
@@ -56,7 +90,7 @@ public class TreeUtil {
    */
   public static TreeNode createDefaultTree(long maxLength, TreeNode defaultNode) {
     return createTree(
-        defaultNode, ZERO_LEAF.equals(defaultNode) ? 0 : maxLength, treeDepth(maxLength));
+        defaultNode, EMPTY_LEAF.equals(defaultNode) ? 0 : maxLength, treeDepth(maxLength));
   }
 
   /** Creates a binary tree of width `nextPowerOf2(leafNodes.size())` with specific leaf nodes */
