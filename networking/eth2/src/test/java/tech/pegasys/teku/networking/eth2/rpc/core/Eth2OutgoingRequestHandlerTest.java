@@ -282,7 +282,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
 
     asyncRequestRunner.executeQueuedActions();
 
-    assertThrows(IllegalReferenceCountException.class, this::complete);
+    complete();
 
     assertThat(finishedProcessingFuture).isCompletedExceptionally();
   }
