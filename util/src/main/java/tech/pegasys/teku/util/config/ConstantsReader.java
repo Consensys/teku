@@ -51,6 +51,7 @@ class ConstantsReader {
                 .readValues(source)
                 .next();
     values.forEach(ConstantsReader::setField);
+    Constants.CONFIG_ITEM_MAP.putAll(values);
   }
 
   private static void setField(final String key, final Object value) {

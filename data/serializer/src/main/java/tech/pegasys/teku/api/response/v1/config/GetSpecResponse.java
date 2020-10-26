@@ -11,19 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.response.v1.validator;
+package tech.pegasys.teku.api.response.v1.config;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import tech.pegasys.teku.api.schema.AttestationData;
+import java.util.Map;
 
-public class GetAttestationDataResponse {
-
-  @JsonProperty("data")
-  public final AttestationData data;
+public class GetSpecResponse {
+  public final Map<String, String> data;
 
   @JsonCreator
-  public GetAttestationDataResponse(@JsonProperty("data") final AttestationData data) {
+  public GetSpecResponse(@JsonProperty("data") final Map<String, String> data) {
     this.data = data;
   }
 }

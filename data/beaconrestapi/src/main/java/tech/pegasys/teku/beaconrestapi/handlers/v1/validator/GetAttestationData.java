@@ -114,6 +114,6 @@ public class GetAttestationData extends AbstractHandler {
 
   private Optional<String> processResult(final Context ctx, final Attestation attestation)
       throws JsonProcessingException {
-    return Optional.of(jsonProvider.objectToJSON(attestation.data));
+    return Optional.of(jsonProvider.objectToJSON(new GetAttestationDataResponse(attestation.data)));
   }
 }
