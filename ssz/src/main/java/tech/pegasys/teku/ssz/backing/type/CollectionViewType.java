@@ -72,7 +72,12 @@ public abstract class CollectionViewType implements CompositeViewType {
     }
   }
 
-  public int sszSerializeVector(TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
+  /**
+   * Serializes {@code elementsCount} from the content of this collection
+   * @param vectorNode for a {@link VectorViewType} type - the node itself, for a {@link ListViewType} -
+   *                   the left sibling node of list size node
+   */
+  protected int sszSerializeVector(TreeNode vectorNode, Consumer<Bytes> writer, int elementsCount) {
     if (getElementType().isFixedSize()) {
       if (getElementType().getBitsSize() == 1) {
         return sszSerializeFixedVectorRegular(vectorNode, writer, elementsCount);

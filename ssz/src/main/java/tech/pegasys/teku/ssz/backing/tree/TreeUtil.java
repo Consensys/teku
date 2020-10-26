@@ -53,11 +53,23 @@ public class TreeUtil {
     }
   }
 
+  /**
+   * Pre-allocated leaf nodes with the data consisting of 0, 1, 2, ..., 32 zero bytes
+   * Worth to mention that  {@link TreeNode#hashTreeRoot()} for all these nodes return the same
+   * value {@link org.apache.tuweni.bytes.Bytes32#ZERO}
+   *
+   * Iterating leaves with this method is much faster that addressing each leaf by its general index
+   * separately
+   */
   public static final TreeNode[] ZERO_LEAVES =
       IntStream.range(0, TreeNode.NODE_BYTE_SIZE + 1)
           .mapToObj(ZeroLeafNode::new)
           .toArray(TreeNode[]::new);
+  /**
+   * The {@link LeafNode} with empty data
+   */
   public static final TreeNode EMPTY_LEAF = ZERO_LEAVES[0];
+
   private static final TreeNode[] ZERO_TREES;
 
   static {
@@ -143,6 +155,12 @@ public class TreeUtil {
     }
   }
 
+  /**
+   * Iterate all leaf tree nodes starting from the node with general index {@code fromGeneralIndex}
+   * (including all node descendants if this is a branch node) and ending with the node
+   * with general index {@code toGeneralIndex} inclusive (including all node descendants if this
+   * is a branch node). On every {@link LeafNode} the supplied {@code visitor} is invoked.
+   */
   public static void iterateLeaves(
       TreeNode node, long fromGeneralIndex, long toGeneralIndex, Consumer<LeafNode> visitor) {
     long leftmostFromIndex = fromGeneralIndex << (63 - treeDepth(fromGeneralIndex));
