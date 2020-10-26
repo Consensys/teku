@@ -50,7 +50,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
 
   private TreeNode createDefaultTree() {
     List<TreeNode> defaultChildren = new ArrayList<>((int) getMaxLength());
-    for (int i = 0; i < getMaxLength(); i++) {
+    for (int i = 0; i < getChildCount(); i++) {
       defaultChildren.add(getChildType(i).getDefault().getBackingNode());
     }
     return TreeUtil.createTree(defaultChildren);
@@ -90,7 +90,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
 
   @Override
   public boolean isFixedSize() {
-    for (int i = 0; i < getMaxLength(); i++) {
+    for (int i = 0; i < getChildCount(); i++) {
       if (!getChildType(i).isFixedSize()) {
         return false;
       }
@@ -101,7 +101,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
   @Override
   public int getFixedPartSize() {
     int size = 0;
-    for (int i = 0; i < getMaxLength(); i++) {
+    for (int i = 0; i < getChildCount(); i++) {
       ViewType childType = getChildType(i);
       size += childType.isFixedSize() ? childType.getFixedPartSize() : SSZ_LENGTH_SIZE;
     }
@@ -111,7 +111,7 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
   @Override
   public int getVariablePartSize(TreeNode node) {
     int size = 0;
-    for (int i = 0; i < getMaxLength(); i++) {
+    for (int i = 0; i < getChildCount(); i++) {
       ViewType childType = getChildType(i);
       if (!childType.isFixedSize()) {
         size += childType.getVariablePartSize(node.get(getGeneralizedIndex(i)));
@@ -120,24 +120,33 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
     return size;
   }
 
+  private int getChildCount() {
+    return (int) getMaxLength();
+  }
+
   @Override
   public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
     int variableChildOffset = getFixedPartSize();
-    for (int i = 0; i < getMaxLength(); i++) {
+    int[] variableSizes = new int[getChildCount()];
+    for (int i = 0; i < getChildCount(); i++) {
       TreeNode childSubtree = node.get(getGeneralizedIndex(i));
       ViewType childType = getChildType(i);
       if (childType.isFixedSize()) {
-        childType.sszSerialize(childSubtree, writer);
+        int size = childType.sszSerialize(childSubtree, writer);
+        assert size == childType.getFixedPartSize();
       } else {
         writer.accept(SSZType.lengthToBytes(variableChildOffset));
-        variableChildOffset += childType.getSszSize(childSubtree);
+        int childSize = childType.getSszSize(childSubtree);
+        variableSizes[i] = childSize;
+        variableChildOffset += childSize;
       }
     }
     for (int i = 0; i < getMaxLength(); i++) {
       ViewType childType = getChildType(i);
       if (!childType.isFixedSize()) {
         TreeNode childSubtree = node.get(getGeneralizedIndex(i));
-        childType.sszSerialize(childSubtree, writer);
+        int size = childType.sszSerialize(childSubtree, writer);
+        assert size == variableSizes[i];
       }
     }
     return variableChildOffset;
