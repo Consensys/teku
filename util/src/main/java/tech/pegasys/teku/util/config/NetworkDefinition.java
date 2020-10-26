@@ -31,7 +31,7 @@ public class NetworkDefinition {
               "medalla",
               builder()
                   .constants("medalla")
-                  .genesisStateFromClasspath("medalla-genesis.ssz")
+                  .initialStateFromClasspath("medalla-genesis.ssz")
                   .startupTimeoutSeconds(120)
                   .eth1DepositContractAddress("0x07b39F4fDE4A38bACe212b546dAc87C58DfE3fDC")
                   .discoveryBootnodes(
@@ -54,7 +54,7 @@ public class NetworkDefinition {
               "spadina",
               builder()
                   .constants("spadina")
-                  .genesisStateFromClasspath("spadina-genesis.ssz")
+                  .initialStateFromClasspath("spadina-genesis.ssz")
                   .startupTimeoutSeconds(120)
                   .eth1DepositContractAddress("0x48B597F4b53C21B48AD95c7256B49D1779Bd5890")
                   .discoveryBootnodes(
@@ -71,7 +71,7 @@ public class NetworkDefinition {
               "zinken",
               builder()
                   .constants("zinken")
-                  .genesisStateFromClasspath("zinken-genesis.ssz")
+                  .initialStateFromClasspath("zinken-genesis.ssz")
                   .startupTimeoutSeconds(120)
                   .eth1DepositContractAddress("0x99F0Ec06548b086E46Cb0019C78D0b9b9F36cD53")
                   .discoveryBootnodes(
@@ -87,7 +87,7 @@ public class NetworkDefinition {
           .build();
 
   private final String constants;
-  private final Optional<String> genesisState;
+  private final Optional<String> initialState;
   private final int startupTargetPeerCount;
   private final int startupTimeoutSeconds;
   private final List<String> discoveryBootnodes;
@@ -96,14 +96,14 @@ public class NetworkDefinition {
 
   private NetworkDefinition(
       final String constants,
-      final Optional<String> genesisState,
+      final Optional<String> initialState,
       final int startupTargetPeerCount,
       final int startupTimeoutSeconds,
       final List<String> discoveryBootnodes,
       final Optional<Eth1Address> eth1DepositContractAddress,
       final Optional<String> eth1Endpoint) {
     this.constants = constants;
-    this.genesisState = genesisState;
+    this.initialState = initialState;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.discoveryBootnodes = discoveryBootnodes;
@@ -123,8 +123,8 @@ public class NetworkDefinition {
     return constants;
   }
 
-  public Optional<String> getGenesisState() {
-    return genesisState;
+  public Optional<String> getInitialState() {
+    return initialState;
   }
 
   public Integer getStartupTargetPeerCount() {
@@ -149,7 +149,7 @@ public class NetworkDefinition {
 
   private static class Builder {
     private String constants;
-    private Optional<String> genesisState = Optional.empty();
+    private Optional<String> initialState = Optional.empty();
     private int startupTargetPeerCount = Constants.DEFAULT_STARTUP_TARGET_PEER_COUNT;
     private int startupTimeoutSeconds = Constants.DEFAULT_STARTUP_TIMEOUT_SECONDS;
     private List<String> discoveryBootnodes = new ArrayList<>();
@@ -161,13 +161,13 @@ public class NetworkDefinition {
       return this;
     }
 
-    public Builder genesisState(final String genesisState) {
-      this.genesisState = Optional.of(genesisState);
+    public Builder initialState(final String initialState) {
+      this.initialState = Optional.of(initialState);
       return this;
     }
 
-    public Builder genesisStateFromClasspath(final String filename) {
-      this.genesisState =
+    public Builder initialStateFromClasspath(final String filename) {
+      this.initialState =
           Optional.of(NetworkDefinition.class.getResource(filename).toExternalForm());
       return this;
     }
@@ -201,7 +201,7 @@ public class NetworkDefinition {
       checkNotNull(constants, "Missing constants");
       return new NetworkDefinition(
           constants,
-          genesisState,
+          initialState,
           startupTargetPeerCount,
           startupTimeoutSeconds,
           discoveryBootnodes,

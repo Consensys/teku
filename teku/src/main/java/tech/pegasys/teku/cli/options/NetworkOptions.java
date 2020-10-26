@@ -25,11 +25,11 @@ public class NetworkOptions {
   private String network = "medalla";
 
   @Option(
-      names = {"--genesis-state", "--initial-state"},
+      names = {"--initial-state"},
       paramLabel = "<STRING>",
-      description = "The genesis state",
+      description = "Initial BeaconState to load",
       arity = "1")
-  private String genesisState = null;
+  private String initialState = null;
 
   @Option(
       names = {"--Xstartup-target-peer-count"},
@@ -68,8 +68,8 @@ public class NetworkOptions {
     return network;
   }
 
-  public String getGenesisState() {
-    return genesisState;
+  public String getInitialState() {
+    return initialState;
   }
 
   public Integer getStartupTargetPeerCount() {

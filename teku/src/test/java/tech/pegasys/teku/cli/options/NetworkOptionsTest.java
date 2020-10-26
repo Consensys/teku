@@ -42,8 +42,8 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.getP2pDiscoveryBootnodes())
         .isEqualTo(networkDefinition.getDiscoveryBootnodes());
     assertThat(config.getConstants()).isEqualTo(networkDefinition.getConstants());
-    assertThat(config.getGenesisState())
-        .isEqualTo(networkDefinition.getGenesisState().orElse(null));
+    assertThat(config.getInitialState())
+        .isEqualTo(networkDefinition.getInitialState().orElse(null));
     assertThat(config.getStartupTargetPeerCount())
         .isEqualTo(networkDefinition.getStartupTargetPeerCount());
     assertThat(config.getStartupTimeoutSeconds())
@@ -72,11 +72,11 @@ public class NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void useGenesisState() {
-    String genesisState = "some-file-or-url";
+  public void useInitialState() {
+    String initialState = "some-file-or-url";
     final GlobalConfiguration config =
-        getGlobalConfigurationFromArguments("--genesis-state", genesisState);
-    assertThat(config.getGenesisState()).isEqualTo(genesisState);
+        getGlobalConfigurationFromArguments("--initial-state", initialState);
+    assertThat(config.getInitialState()).isEqualTo(initialState);
   }
 
   @Test

@@ -277,7 +277,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
                 // Set up initial state
                 if (weakSubjectivityAnchor.isPresent()) {
                   client.initializeFromAnchorPoint(weakSubjectivityAnchor.get());
-                } else if (config.getGenesisState() != null) {
+                } else if (config.getInitialState() != null) {
                   setupGenesisState();
                 } else if (config.isInteropEnabled()) {
                   setupInteropState();
@@ -552,7 +552,7 @@ public class BeaconChainController extends Service implements TimeTickChannel {
   }
 
   private void initGenesisHandler() {
-    if (config.isInteropEnabled() || config.getGenesisState() != null) {
+    if (config.isInteropEnabled() || config.getInitialState() != null) {
       // We're manually setting genesis, so don't spin up the genesis handler
       return;
     }
@@ -775,11 +775,11 @@ public class BeaconChainController extends Service implements TimeTickChannel {
 
   private void setupGenesisState() {
     try {
-      STATUS_LOG.loadingGenesisResource(config.getGenesisState());
-      final BeaconState genesisState = ChainDataLoader.loadState(config.getGenesisState());
+      STATUS_LOG.loadingGenesisResource(config.getInitialState());
+      final BeaconState genesisState = ChainDataLoader.loadState(config.getInitialState());
       initializeGenesis(genesisState);
     } catch (final IOException e) {
-      throw new IllegalStateException("Failed to load initial state", e);
+      throw new IllegalStateException("Failed to load genesis state", e);
     }
   }
 
