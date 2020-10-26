@@ -119,7 +119,8 @@ public class TreeTest {
         t2.updated(
             new TreeUpdates(
                 List.of(
-                    new Update(8 + 0, TreeUtil.EMPTY_LEAF), new Update(8 + 3, TreeUtil.EMPTY_LEAF))));
+                    new Update(8 + 0, TreeUtil.EMPTY_LEAF),
+                    new Update(8 + 3, TreeUtil.EMPTY_LEAF))));
     assertThat(zeroTree.hashTreeRoot()).isEqualTo(zeroTree_.hashTreeRoot());
   }
 
