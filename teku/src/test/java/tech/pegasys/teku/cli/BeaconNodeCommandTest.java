@@ -281,29 +281,30 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   private TekuConfiguration.Builder expectedDefaultConfigurationBuilder() {
+    final NetworkDefinition networkDefinition = NetworkDefinition.fromCliArg("medalla");
     return expectedConfigurationBuilder()
         .globalConfig(
-            b -> {
-              b.setNetwork(NetworkDefinition.fromCliArg("medalla"))
-                  .setEth1DepositContractAddress(null)
-                  .setEth1Endpoint(null)
-                  .setMetricsCategories(
-                      DEFAULT_METRICS_CATEGORIES.stream()
-                          .map(Object::toString)
-                          .collect(Collectors.toList()))
-                  .setInteropEnabled(false)
-                  .setPeerRateLimit(500)
-                  .setPeerRequestLimit(50)
-                  .setInteropGenesisTime(0)
-                  .setInteropOwnedValidatorCount(0)
-                  .setLogDestination(DEFAULT_BOTH)
-                  .setLogFile(DEFAULT_LOG_FILE)
-                  .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN);
-            })
+            b ->
+                b.setNetwork(networkDefinition)
+                    .setEth1DepositContractAddress(null)
+                    .setEth1Endpoint(null)
+                    .setMetricsCategories(
+                        DEFAULT_METRICS_CATEGORIES.stream()
+                            .map(Object::toString)
+                            .collect(Collectors.toList()))
+                    .setInteropEnabled(false)
+                    .setPeerRateLimit(500)
+                    .setPeerRequestLimit(50)
+                    .setInteropGenesisTime(0)
+                    .setInteropOwnedValidatorCount(0)
+                    .setLogDestination(DEFAULT_BOTH)
+                    .setLogFile(DEFAULT_LOG_FILE)
+                    .setLogFileNamePattern(DEFAULT_LOG_FILE_NAME_PATTERN))
         .p2p(
             b ->
                 b.p2pAdvertisedPort(OptionalInt.empty())
                     .p2pDiscoveryEnabled(true)
+                    .p2pDiscoveryBootnodes(networkDefinition.getDiscoveryBootnodes())
                     .p2pInterface("0.0.0.0")
                     .p2pPort(9000)
                     .p2pPrivateKeyFile(null))
