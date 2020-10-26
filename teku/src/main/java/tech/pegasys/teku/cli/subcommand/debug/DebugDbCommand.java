@@ -13,14 +13,13 @@
 
 package tech.pegasys.teku.cli.subcommand.debug;
 
-import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
