@@ -592,6 +592,15 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
+  public void createAggregate_WhenNotFound_ReturnsEmpty() {
+    final Bytes32 attestationHashTreeRoot = Bytes32.random();
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+
+    assertThat(apiClient.createAggregate(UInt64.ONE, attestationHashTreeRoot)).isEmpty();
+  }
+
+  @Test
   public void createAggregate_WhenServerError_ThrowsRuntimeException() {
     final Bytes32 attestationHashTreeRoot = Bytes32.random();
 
