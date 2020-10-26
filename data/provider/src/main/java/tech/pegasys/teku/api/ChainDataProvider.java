@@ -194,19 +194,17 @@ public class ChainDataProvider {
         .thenApply(block -> block.map(GetBlockResponse::new));
   }
 
-  public SafeFuture<Optional<BlockHeader>> getBlockHeaderByBlockId(final String slotParameter) {
+  public SafeFuture<Optional<BlockHeader>> getBlockHeader(final String slotParameter) {
     if (!isStoreAvailable()) {
       return chainUnavailable();
     }
 
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
-        .getBlock()
-        .thenApply(
-            blockList ->
-                blockList.isEmpty()
-                    ? Optional.empty()
-                    : Optional.of(new BlockHeader(blockList.get(0), true)));
+        .getSingleBlock()
+        .thenApply(maybeBlock ->
+            maybeBlock.map(block -> new BlockHeader(block, true)));
+
   }
 
   public boolean isStoreAvailable() {

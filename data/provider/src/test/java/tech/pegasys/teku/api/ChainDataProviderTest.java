@@ -714,7 +714,7 @@ public class ChainDataProviderTest {
         new ChainDataProvider(recentChainData, combinedChainDataClient);
     final tech.pegasys.teku.datastructures.blocks.SignedBeaconBlock block =
         combinedChainDataClient.getBestBlock().get();
-    BlockHeader result = provider.getBlockHeaderByBlockId("head").get().get();
+    BlockHeader result = provider.getBlockHeader("head").get().get();
     final BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(
             block.getSlot(),
