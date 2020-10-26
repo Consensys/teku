@@ -1,7 +1,7 @@
 # teku
 
- [![Build Status](https://circleci.com/gh/PegaSysEng/teku.svg?style=svg)](https://circleci.com/gh/PegaSysEng/workflows/teku)
- [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/PegasysEng/teku/blob/master/LICENSE)
+ [![Build Status](https://circleci.com/gh/ConsenSys/teku.svg?style=svg)](https://circleci.com/gh/ConsenSys/workflows/teku)
+ [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/ConsenSys/teku/blob/master/LICENSE)
  [![Discord](https://img.shields.io/badge/Chat-on%20Discord-blue)](https://discord.gg/7hPv2T6)
 
 Teku is a Java implementation of the Ethereum 2.0 Beacon Chain. Teku is changing rapidly hence we recommend building from the latest master. See the [Changelog](CHANGELOG.md) for known issues and breaking changes.
@@ -10,8 +10,8 @@ Teku is a Java implementation of the Ethereum 2.0 Beacon Chain. Teku is changing
 
 * [Ethereum 2.0 Beacon Chain specification](https://github.com/ethereum/eth2.0-specs/blob/dev/specs/phase0/beacon-chain.md) 
 * [Teku user documentation](https://docs.teku.pegasys.tech/)
-* [Teku REST API reference documentation](https://pegasyseng.github.io/teku/)
-* [Teku issues](https://github.com/PegaSysEng/teku/issues)
+* [Teku REST API reference documentation](https://consensys.github.io/teku/)
+* [Teku issues](https://github.com/ConsenSys/teku/issues)
 * [Contribution guidelines](CONTRIBUTING.md)
 * [Teku Changelog](CHANGELOG.md)
 
@@ -19,7 +19,7 @@ Teku is a Java implementation of the Ethereum 2.0 Beacon Chain. Teku is changing
 
 See our [user documentation](https://docs.teku.pegasys.tech/). 
 
-Raise a [documentation issue](https://github.com/PegaSysEng/doc.teku/issues) or get in touch in 
+Raise a [documentation issue](https://github.com/ConsenSys/doc.teku/issues) or get in touch in 
 the #teku channel on [Discord](https://discord.gg/7hPv2T6) if you've got questions or feedback. 
 
 ## Teku developers 
@@ -38,7 +38,7 @@ the #teku channel on [Discord](https://discord.gg/7hPv2T6) if you've got questio
 To create a ready to run distribution:
 
 ```shell script
-git clone https://github.com/PegaSysEng/teku.git
+git clone https://github.com/ConsenSys/teku.git
 cd teku && ./gradlew distTar installDist
 ```
 
@@ -51,7 +51,7 @@ This produces:
 To build, clone this repo and run with `gradle`:
 
 ```shell script
-git clone https://github.com/PegaSysEng/teku.git
+git clone https://github.com/ConsenSys/teku.git
 cd teku && ./gradlew
 
 ```
@@ -59,7 +59,7 @@ cd teku && ./gradlew
 Or clone it manually:
 
 ```shell script
-git clone https://github.com/PegaSysEng/teku.git
+git clone https://github.com/ConsenSys/teku.git
 cd teku && ./gradlew
 ```
 
@@ -72,7 +72,7 @@ After a successful build, distribution packages are available in `build/distribu
 | distTar      | Full distribution in build/distributions (as `.tar.gz`)
 | distZip      | Full distribution in build/distributions (as `.zip`)
 | installDist  | Expanded distribution in `build/install/teku`
-| distDocker   | The `pegasyseng/teku` docker image
+| distDocker   | The `consensys/teku` docker image
 
 ## Code Style
 
