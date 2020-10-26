@@ -753,18 +753,7 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void shouldGetBlockHeaderWithBlockRoot() throws ExecutionException, InterruptedException {
-    final ChainDataProvider provider =
-        new ChainDataProvider(recentChainData, combinedChainDataClient);
-    final SignedBeaconBlock block =
-        new SignedBeaconBlock(combinedChainDataClient.getBestBlock().get());
-    Optional<BlockHeader> results =
-        provider.getBlockHeaderByBlockRoot(block.asInternalSignedBeaconBlock().getRoot()).get();
-    assertThat(results.get().header.message.slot).isEqualTo(slot);
-  }
-
-  @Test
-  public void shouldGetBlockHeadersOnEmptySlot() {
+  public void shouldGetBlockHeadersOnEmptyChainHeadSlot() {
     final ChainDataProvider provider =
         new ChainDataProvider(recentChainData, combinedChainDataClient);
 
@@ -772,22 +761,8 @@ public class ChainDataProviderTest {
     storageSystem.chainUpdater().advanceChain(headSlot.plus(1));
 
     final SafeFuture<List<BlockHeader>> future =
-        provider.getBlockHeaders(
-            Optional.empty(), Optional.of(recentChainData.getCurrentSlot().get()));
+        provider.getBlockHeaders(Optional.empty(), Optional.empty());
     final BlockHeader header = future.join().get(0);
-    assertThat(header.header.message.slot).isEqualTo(headSlot);
-  }
-
-  @Test
-  public void shouldGetBlockHeaderOnEmptySlot() {
-    final ChainDataProvider provider =
-        new ChainDataProvider(recentChainData, combinedChainDataClient);
-
-    final UInt64 headSlot = recentChainData.getHeadSlot();
-    storageSystem.chainUpdater().advanceChain(headSlot.plus(1));
-
-    final SafeFuture<Optional<BlockHeader>> future = provider.getBlockHeaderByBlockId("head");
-    final BlockHeader header = future.join().get();
     assertThat(header.header.message.slot).isEqualTo(headSlot);
   }
 

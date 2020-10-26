@@ -15,10 +15,12 @@ package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import io.netty.util.IllegalReferenceCountException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -280,7 +282,7 @@ public abstract class Eth2OutgoingRequestHandlerTest
 
     asyncRequestRunner.executeQueuedActions();
 
-    complete();
+    assertThrows(IllegalReferenceCountException.class, this::complete);
 
     assertThat(finishedProcessingFuture).isCompletedExceptionally();
   }
