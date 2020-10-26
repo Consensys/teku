@@ -100,11 +100,6 @@ public class ListViewType<C extends ViewRead> extends CollectionViewType {
     }
   }
 
-  @Override
-  public TreeNode sszDeserialize(Bytes ssz) {
-    throw new UnsupportedOperationException("TODO");
-  }
-
   private static int getLength(TreeNode listNode) {
     if (!(listNode instanceof BranchNode)) {
       throw new IllegalArgumentException("Expected BranchNode for List, but got " + listNode);

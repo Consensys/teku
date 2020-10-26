@@ -73,6 +73,4 @@ public interface SSZType {
    * {@code writer}
    */
   int sszSerialize(TreeNode node, Consumer<Bytes> writer);
-
-  TreeNode sszDeserialize(Bytes ssz);
 }

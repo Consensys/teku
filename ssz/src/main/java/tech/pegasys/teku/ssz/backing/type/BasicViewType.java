@@ -82,9 +82,4 @@ public abstract class BasicViewType<C extends ViewRead> implements ViewType {
     writer.accept(ret);
     return ret.size();
   }
-
-  @Override
-  public TreeNode sszDeserialize(Bytes ssz) {
-    throw new UnsupportedOperationException("TODO");
-  }
 }

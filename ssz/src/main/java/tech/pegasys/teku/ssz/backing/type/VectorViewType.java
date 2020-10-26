@@ -104,9 +104,4 @@ public class VectorViewType<C> extends CollectionViewType {
   public int sszSerialize(TreeNode node, Consumer<Bytes> writer) {
     return sszSerializeVector(node, writer, getLength());
   }
-
-  @Override
-  public TreeNode sszDeserialize(Bytes ssz) {
-    throw new UnsupportedOperationException("TODO");
-  }
 }

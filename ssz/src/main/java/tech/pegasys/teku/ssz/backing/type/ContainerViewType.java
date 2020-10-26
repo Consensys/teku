@@ -142,9 +142,4 @@ public class ContainerViewType<C extends ContainerViewRead> implements Composite
     }
     return variableChildOffset;
   }
-
-  @Override
-  public TreeNode sszDeserialize(Bytes ssz) {
-    throw new UnsupportedOperationException("TODO");
-  }
 }

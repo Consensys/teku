@@ -185,6 +185,9 @@ public class TreeUtil {
         iterateLeavesPriv(bNode.left(), fromChildIdx, toChildIdx, visitor);
       } else if (!fromLeft && !toLeft) {
         iterateLeavesPriv(bNode.right(), fromChildIdx, toChildIdx, visitor);
+      } else {
+        throw new IllegalArgumentException(
+            "fromGeneralIndex < toGeneralIndex: " + fromGeneralIndex + " < " + toGeneralIndex);
       }
     }
   }
