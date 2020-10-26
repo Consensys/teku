@@ -202,9 +202,7 @@ public class ChainDataProvider {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
         .getSingleBlock()
-        .thenApply(maybeBlock ->
-            maybeBlock.map(block -> new BlockHeader(block, true)));
-
+        .thenApply(maybeBlock -> maybeBlock.map(block -> new BlockHeader(block, true)));
   }
 
   public boolean isStoreAvailable() {
