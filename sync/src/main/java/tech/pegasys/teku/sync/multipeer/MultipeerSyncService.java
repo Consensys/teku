@@ -79,9 +79,8 @@ public class MultipeerSyncService extends Service implements SyncService {
             eventThread,
             new OrderedAsyncRunner(asyncRunner),
             recentChainData,
-            ChainSelector.createFinalizedChainSelector(recentChainData, finalizedTargetChains),
-            ChainSelector.createNonfinalizedChainSelector(
-                recentChainData, nonfinalizedTargetChains),
+            new ChainSelector(recentChainData, finalizedTargetChains),
+            new ChainSelector(recentChainData, nonfinalizedTargetChains),
             batchSync);
     final PeerChainTracker peerChainTracker =
         new PeerChainTracker(

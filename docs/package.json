@@ -7,14 +7,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/PegaSysEng/teku.git"
+    "url": "git+https://github.com/ConsenSys/teku.git"
   },
   "author": "Consensys/Pegasys",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/PegaSysEng/teku/issues"
+    "url": "https://github.com/ConsenSys/teku/issues"
   },
-  "homepage": "https://pegasyseng.github.io/teku",
+  "homepage": "https://consensys.github.io/teku",
   "dependencies": {
     "minimist": "~1.2.5"
   }

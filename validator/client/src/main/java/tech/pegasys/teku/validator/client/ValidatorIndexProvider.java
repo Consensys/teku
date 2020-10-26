@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 import java.util.Collection;
@@ -49,16 +50,29 @@ public class ValidatorIndexProvider {
     if (unknownValidators.isEmpty()) {
       return;
     }
+    LOG.trace("Looking up {} unknown validators", unknownValidators.size());
     validatorApiChannel
         .getValidatorIndices(unknownValidators)
         .thenAccept(
             knownValidators -> {
+              logNewValidatorIndices(knownValidators);
               validatorIndexesByPublicKey.putAll(knownValidators);
               unknownValidators.removeAll(knownValidators.keySet());
             })
         .orTimeout(30, TimeUnit.SECONDS)
         .whenComplete((result, error) -> requestInProgress.set(false))
         .finish(error -> LOG.debug("Failed to load validator indexes.", error));
+  }
+
+  private void logNewValidatorIndices(final Map<BLSPublicKey, Integer> knownValidators) {
+    if (!knownValidators.isEmpty()) {
+      LOG.debug(
+          "Discovered new indices for validators: {}",
+          () ->
+              knownValidators.entrySet().stream()
+                  .map(entry -> entry.getKey().toAbbreviatedString() + "=" + entry.getValue())
+                  .collect(joining(", ")));
+    }
   }
 
   public Optional<Integer> getValidatorIndex(final BLSPublicKey publicKey) {
