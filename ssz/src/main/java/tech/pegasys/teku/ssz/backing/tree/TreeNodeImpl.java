@@ -132,9 +132,4 @@ abstract class TreeNodeImpl implements TreeNode {
       return "(" + left + ", " + right + ')';
     }
   }
-
-  @Override
-  public boolean isZero() {
-    return false;
-  }
 }

@@ -165,8 +165,6 @@ public interface TreeNode {
    */
   TreeNode updated(long generalizedIndex, Function<TreeNode, TreeNode> nodeUpdater);
 
-  boolean isZero();
-
   /** Updates the tree in a batch */
   default TreeNode updated(TreeUpdates newNodes) {
     TreeNode ret = this;

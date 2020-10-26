@@ -34,11 +34,6 @@ public class TreeUtil {
     }
 
     @Override
-    public boolean isZero() {
-      return true;
-    }
-
-    @Override
     public String toString() {
       return "(" + getData() + ")";
     }
@@ -50,11 +45,6 @@ public class TreeUtil {
     public ZeroBranchNode(TreeNode left, TreeNode right, int height) {
       super(left, right);
       this.height = height;
-    }
-
-    @Override
-    public boolean isZero() {
-      return true;
     }
 
     @Override
