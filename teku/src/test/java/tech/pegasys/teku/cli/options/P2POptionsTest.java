@@ -19,13 +19,14 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
-import tech.pegasys.teku.util.config.GlobalConfiguration;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
 
 public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldReadFromConfigurationFile() {
-    final GlobalConfiguration config = getGlobalConfigurationFromFile("P2POptions_config.yaml");
+    final P2PConfig config =
+        getTekuConfigurationFromFile("P2POptions_config.yaml").beaconChain().p2pConfig();
 
     assertThat(config.getP2pAdvertisedIp()).isEqualTo(Optional.of("127.200.0.1"));
     assertThat(config.getP2pInterface()).isEqualTo("127.100.0.1");
@@ -41,39 +42,47 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void p2pEnabled_shouldNotRequireAValue() {
-    final GlobalConfiguration globalConfiguration =
-        getGlobalConfigurationFromArguments("--p2p-enabled");
+    final P2PConfig globalConfiguration =
+        getTekuConfigurationFromArguments("--p2p-enabled").beaconChain().p2pConfig();
     assertThat(globalConfiguration.isP2pEnabled()).isTrue();
   }
 
   @Test
   public void p2pDiscoveryEnabled_shouldNotRequireAValue() {
-    final GlobalConfiguration globalConfiguration =
-        getGlobalConfigurationFromArguments("--p2p-discovery-enabled");
+    final P2PConfig globalConfiguration =
+        getTekuConfigurationFromArguments("--p2p-discovery-enabled").beaconChain().p2pConfig();
     assertThat(globalConfiguration.isP2pEnabled()).isTrue();
   }
 
   @Test
   public void advertisedIp_shouldDefaultToEmpty() {
-    assertThat(getGlobalConfigurationFromArguments().getP2pAdvertisedIp()).isEmpty();
+    assertThat(getTekuConfigurationFromArguments().beaconChain().p2pConfig().getP2pAdvertisedIp())
+        .isEmpty();
   }
 
   @Test
   public void advertisedIp_shouldAcceptValue() {
     final String ip = "10.0.1.200";
-    assertThat(getGlobalConfigurationFromArguments("--p2p-advertised-ip", ip).getP2pAdvertisedIp())
+    assertThat(
+            getTekuConfigurationFromArguments("--p2p-advertised-ip", ip)
+                .beaconChain()
+                .p2pConfig()
+                .getP2pAdvertisedIp())
         .contains(ip);
   }
 
   @Test
   public void advertisedPort_shouldDefaultToEmpty() {
-    assertThat(getGlobalConfigurationFromArguments().getP2pAdvertisedPort()).isEmpty();
+    assertThat(getTekuConfigurationFromArguments().beaconChain().p2pConfig().getP2pAdvertisedPort())
+        .isEmpty();
   }
 
   @Test
   public void advertisedPort_shouldAcceptValue() {
     assertThat(
-            getGlobalConfigurationFromArguments("--p2p-advertised-port", "8056")
+            getTekuConfigurationFromArguments("--p2p-advertised-port", "8056")
+                .beaconChain()
+                .p2pConfig()
                 .getP2pAdvertisedPort())
         .hasValue(8056);
   }

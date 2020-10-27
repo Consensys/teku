@@ -63,6 +63,15 @@ public class BlockValidatorTest {
   }
 
   @Test
+  void shouldIgnoreAlreadyImportedBlock() throws Exception {
+    final SignedBeaconBlock block =
+        beaconChainUtil.createAndImportBlockAtSlot(recentChainData.getHeadSlot().plus(ONE));
+
+    assertThat(blockValidator.validate(block))
+        .isCompletedWithValue(InternalValidationResult.IGNORE);
+  }
+
+  @Test
   void shouldReturnInvalidForSecondValidBlockForSlotAndProposer() throws Exception {
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     beaconChainUtil.setSlot(nextSlot);

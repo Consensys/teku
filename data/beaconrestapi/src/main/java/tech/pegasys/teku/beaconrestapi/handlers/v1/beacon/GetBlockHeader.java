@@ -80,7 +80,7 @@ public class GetBlockHeader extends AbstractHandler implements Handler {
     final Map<String, String> pathParams = ctx.pathParamMap();
     try {
       final SafeFuture<Optional<BlockHeader>> future =
-          chainDataProvider.getBlockHeaderByBlockId(pathParams.get(PARAM_BLOCK_ID));
+          chainDataProvider.getBlockHeader(pathParams.get(PARAM_BLOCK_ID));
       handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
     } catch (IllegalArgumentException ex) {
       LOG.trace(ex);
