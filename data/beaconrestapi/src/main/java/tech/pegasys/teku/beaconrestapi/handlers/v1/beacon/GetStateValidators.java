@@ -24,6 +24,7 @@ import static tech.pegasys.teku.beaconrestapi.RestApiConstants.RES_SERVICE_UNAVA
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.STATUS;
 import static tech.pegasys.teku.beaconrestapi.RestApiConstants.TAG_V1_BEACON;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
@@ -32,19 +33,19 @@ import io.javalin.plugin.openapi.annotations.OpenApi;
 import io.javalin.plugin.openapi.annotations.OpenApiContent;
 import io.javalin.plugin.openapi.annotations.OpenApiParam;
 import io.javalin.plugin.openapi.annotations.OpenApiResponse;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.beaconrestapi.ListQueryParameterUtils;
 import tech.pegasys.teku.beaconrestapi.handlers.AbstractHandler;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class GetStateValidators extends AbstractHandler {
@@ -101,21 +102,21 @@ public class GetStateValidators extends AbstractHandler {
       })
   @Override
   public void handle(@NotNull final Context ctx) throws Exception {
-    final List<Integer> validatorIndices =
-        stateValidatorsUtil.parseValidatorsParam(chainDataProvider, ctx);
+    final Map<String, List<String>> queryParamMap = ctx.queryParamMap();
+    final Map<String, String> pathParamMap = ctx.pathParamMap();
 
-    final List<ValidatorStatus> statusFilter =
-        stateValidatorsUtil.parseStatusFilter(ctx.queryParamMap());
+    final List<String> validators =
+        queryParamMap.containsKey(PARAM_ID)
+            ? ListQueryParameterUtils.getParameterAsStringList(ctx.queryParamMap(), PARAM_ID)
+            : Collections.emptyList();
 
-    final Function<Bytes32, SafeFuture<Optional<List<ValidatorResponse>>>> rootHandler =
-        (root) ->
-            chainDataProvider.getValidatorsDetailsByStateRoot(root, validatorIndices, statusFilter);
-    final Function<UInt64, SafeFuture<Optional<List<ValidatorResponse>>>> slotHandler =
-        (slot) ->
-            chainDataProvider.getValidatorsDetailsBySlot(slot, validatorIndices, statusFilter);
+    final List<ValidatorStatus> statusFilter = stateValidatorsUtil.parseStatusFilter(queryParamMap);
 
-    processStateEndpointRequest(
-        chainDataProvider, ctx, rootHandler, slotHandler, this::handleResult);
+    SafeFuture<Optional<List<ValidatorResponse>>> future =
+        chainDataProvider.getStateValidators(
+            pathParamMap.getOrDefault(PARAM_STATE_ID, "head"), validators, statusFilter);
+
+    handleOptionalResult(ctx, future, this::handleResult, SC_NOT_FOUND);
   }
 
   private Optional<String> handleResult(Context ctx, final List<ValidatorResponse> response)
