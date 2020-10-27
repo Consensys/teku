@@ -16,6 +16,7 @@ package tech.pegasys.teku.datastructures.util;
 import static java.lang.Math.toIntExact;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_domain;
 import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_signing_root;
+import static tech.pegasys.teku.datastructures.util.BeaconStateUtil.compute_start_slot_at_epoch;
 import static tech.pegasys.teku.util.config.Constants.DOMAIN_DEPOSIT;
 
 import java.util.ArrayList;
@@ -605,6 +606,16 @@ public final class DataStructureUtil {
 
   public BeaconState randomBeaconState(UInt64 slot) {
     return randomBeaconState().updated(state -> state.setSlot(slot));
+  }
+
+  public AnchorPoint randomAnchorPoint(final long epoch) {
+    return randomAnchorPoint(UInt64.valueOf(epoch));
+  }
+
+  public AnchorPoint randomAnchorPoint(final UInt64 epoch) {
+    final SignedBlockAndState anchorBlockAndState =
+        randomSignedBlockAndState(compute_start_slot_at_epoch(epoch));
+    return AnchorPoint.fromInitialBlockAndState(anchorBlockAndState);
   }
 
   public AnchorPoint createAnchorFromState(final BeaconState anchorState) {
